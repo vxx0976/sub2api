@@ -20,7 +20,11 @@ function injectPublicSettings(backendUrl: string): Plugin {
           if (response.ok) {
             const data = await response.json()
             if (data.code === 0 && data.data) {
-              const script = `<script>window.__APP_CONFIG__=${JSON.stringify(data.data)};</script>`
+              // Keep consistent with backend CSP nonce placeholder replacement.
+              // In production, the Go server replaces "__CSP_NONCE_VALUE__" with the per-request nonce.
+              const script = `<script nonce="__CSP_NONCE_VALUE__">window.__APP_CONFIG__=${JSON.stringify(
+                data.data
+              )};</script>`
               return html.replace('</head>', `${script}\n</head>`)
             }
           }
@@ -33,21 +37,27 @@ function injectPublicSettings(backendUrl: string): Plugin {
   }
 }
 
-export default defineConfig(({ mode }) => {
+export default defineConfig(({ mode, command }) => {
   // 加载环境变量
   const env = loadEnv(mode, process.cwd(), '')
   const backendUrl = env.VITE_DEV_PROXY_TARGET || 'http://localhost:8080'
   const devPort = Number(env.VITE_DEV_PORT || 3000)
 
+  const plugins: Plugin[] = [
+    vue(),
+    checker({
+      typescript: true,
+      vueTsc: true
+    })
+  ]
+
+  // 仅在开发服务器下注入，避免 build/preview 产物带上运行时配置
+  if (command === 'serve' && mode !== 'production') {
+    plugins.push(injectPublicSettings(backendUrl))
+  }
+
   return {
-    plugins: [
-      vue(),
-      checker({
-        typescript: true,
-        vueTsc: true
-      }),
-      injectPublicSettings(backendUrl)
-    ],
+    plugins,
     resolve: {
       alias: {
         '@': resolve(__dirname, 'src'),

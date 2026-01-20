@@ -31,5 +31,7 @@ func RegisterPaymentRoutes(
 		authenticated.POST("/orders", h.Payment.CreateOrder)
 		// 获取用户订单列表
 		authenticated.GET("/orders", h.Payment.GetUserOrders)
+		// 继续支付（重新获取支付链接）
+		authenticated.POST("/orders/:order_no/repay", h.Payment.RepayOrder)
 	}
 }

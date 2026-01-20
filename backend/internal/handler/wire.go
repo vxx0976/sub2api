@@ -24,6 +24,7 @@ func ProvideAdminHandlers(
 	opsHandler *admin.OpsHandler,
 	systemHandler *admin.SystemHandler,
 	subscriptionHandler *admin.SubscriptionHandler,
+	orderHandler *admin.OrderHandler,
 	usageHandler *admin.UsageHandler,
 	userAttributeHandler *admin.UserAttributeHandler,
 ) *AdminHandlers {
@@ -43,6 +44,7 @@ func ProvideAdminHandlers(
 		Ops:              opsHandler,
 		System:           systemHandler,
 		Subscription:     subscriptionHandler,
+		Order:            orderHandler,
 		Usage:            usageHandler,
 		UserAttribute:    userAttributeHandler,
 	}
@@ -117,6 +119,7 @@ var ProviderSet = wire.NewSet(
 	admin.NewOpsHandler,
 	ProvideSystemHandler,
 	admin.NewSubscriptionHandler,
+	admin.NewOrderHandler,
 	admin.NewUsageHandler,
 	admin.NewUserAttributeHandler,
 

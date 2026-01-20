@@ -349,6 +349,7 @@ export default {
     mySubscriptions: 'My Subscriptions',
     plans: 'Plans',
     orders: 'My Orders',
+    adminOrders: 'Order Management',
     docs: 'Docs'
   },
 
@@ -1176,6 +1177,34 @@ export default {
       validityDaysRequired: 'Please enter a valid number of days (at least 1)',
       revokeConfirm:
         "Are you sure you want to revoke the subscription for '{user}'? This action cannot be undone."
+    },
+
+    // Orders Management
+    orders: {
+      title: 'Order Management',
+      description: 'Manage all user orders',
+      searchPlaceholder: 'Search order number...',
+      allStatus: 'All Status',
+      noOrdersYet: 'No orders yet',
+      noOrdersDesc: 'There are no order records yet.',
+      failedToLoad: 'Failed to load orders',
+      userPrefix: 'User #{id}',
+      columns: {
+        orderNo: 'Order No',
+        user: 'User',
+        group: 'Plan',
+        amount: 'Amount',
+        status: 'Status',
+        payType: 'Payment',
+        createdAt: 'Created',
+        paidAt: 'Paid At'
+      },
+      statusLabels: {
+        pending: 'Pending',
+        paid: 'Paid',
+        expired: 'Expired',
+        refunded: 'Refunded'
+      }
     },
 
     // Accounts
@@ -3180,7 +3209,12 @@ export default {
       paid: 'Paid',
       expired: 'Expired',
       refunded: 'Refunded'
-    }
+    },
+    actions: 'Actions',
+    continuePay: 'Pay Now',
+    paying: 'Processing...',
+    expired: 'Expired',
+    repayFailed: 'Failed to get payment link'
   },
 
   // Onboarding Tour

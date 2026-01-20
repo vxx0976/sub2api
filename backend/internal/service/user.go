@@ -7,22 +7,22 @@ import (
 )
 
 type User struct {
-	ID            int64
-	Email         string
-	Username      string
-	Notes         string
-	PasswordHash  string
-	Role          string
-	Balance       float64
-	Concurrency   int
-	Status        string
-	AllowedGroups []int64
-	TokenVersion  int64 // Incremented on password change to invalidate existing tokens
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
+	ID            int64     `json:"id"`
+	Email         string    `json:"email"`
+	Username      string    `json:"username"`
+	Notes         string    `json:"notes,omitempty"`
+	PasswordHash  string    `json:"-"` // Never expose password hash
+	Role          string    `json:"role"`
+	Balance       float64   `json:"balance"`
+	Concurrency   int       `json:"concurrency"`
+	Status        string    `json:"status"`
+	AllowedGroups []int64   `json:"allowed_groups,omitempty"`
+	TokenVersion  int64     `json:"-"` // Internal use only
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
 
-	APIKeys       []APIKey
-	Subscriptions []UserSubscription
+	APIKeys       []APIKey           `json:"api_keys,omitempty"`
+	Subscriptions []UserSubscription `json:"subscriptions,omitempty"`
 }
 
 func (u *User) IsAdmin() bool {

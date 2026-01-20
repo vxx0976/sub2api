@@ -328,6 +328,18 @@ const routes: RouteRecordRaw[] = [
       descriptionKey: 'admin.usage.description'
     }
   },
+  {
+    path: '/admin/orders',
+    name: 'AdminOrders',
+    component: () => import('@/views/admin/OrdersView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: 'Order Management',
+      titleKey: 'admin.orders.title',
+      descriptionKey: 'admin.orders.description'
+    }
+  },
 
   // ==================== 404 Not Found ====================
   {

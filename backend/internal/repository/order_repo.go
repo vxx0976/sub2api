@@ -154,6 +154,40 @@ func (r *orderRepository) ListByUserID(ctx context.Context, userID int64, params
 	return orderEntitiesToService(orders), paginationResultFromTotal(int64(total), params), nil
 }
 
+func (r *orderRepository) ListAll(ctx context.Context, params pagination.PaginationParams, status string, search string) ([]service.Order, *pagination.PaginationResult, error) {
+	client := clientFromContext(ctx, r.client)
+	q := client.Order.Query()
+
+	// 过滤状态
+	if status != "" {
+		q = q.Where(order.StatusEQ(status))
+	}
+
+	// 搜索订单号
+	if search != "" {
+		q = q.Where(order.OrderNoContains(search))
+	}
+
+	total, err := q.Clone().Count(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	orders, err := q.
+		WithUser().
+		WithGroup().
+		WithSubscription().
+		Order(dbent.Desc(order.FieldCreatedAt)).
+		Offset(params.Offset()).
+		Limit(params.Limit()).
+		All(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return orderEntitiesToService(orders), paginationResultFromTotal(int64(total), params), nil
+}
+
 func (r *orderRepository) ListPending(ctx context.Context) ([]service.Order, error) {
 	client := clientFromContext(ctx, r.client)
 	orders, err := client.Order.Query().

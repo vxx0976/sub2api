@@ -348,6 +348,7 @@ export default {
     mySubscriptions: '我的订阅',
     plans: '套餐计划',
     orders: '我的订单',
+    adminOrders: '订单管理',
     docs: '文档'
   },
 
@@ -1252,6 +1253,34 @@ export default {
       pleaseSelectGroup: '请选择分组',
       validityDaysRequired: '请输入有效的天数（至少1天）',
       revokeConfirm: "确定要撤销 '{user}' 的订阅吗？此操作无法撤销。"
+    },
+
+    // Orders Management
+    orders: {
+      title: '订单管理',
+      description: '管理所有用户的订单记录',
+      searchPlaceholder: '搜索订单号...',
+      allStatus: '全部状态',
+      noOrdersYet: '暂无订单',
+      noOrdersDesc: '还没有任何订单记录。',
+      failedToLoad: '加载订单列表失败',
+      userPrefix: '用户 #{id}',
+      columns: {
+        orderNo: '订单号',
+        user: '用户',
+        group: '套餐',
+        amount: '金额',
+        status: '状态',
+        payType: '支付方式',
+        createdAt: '创建时间',
+        paidAt: '支付时间'
+      },
+      statusLabels: {
+        pending: '待支付',
+        paid: '已支付',
+        expired: '已过期',
+        refunded: '已退款'
+      }
     },
 
     // Accounts Management
@@ -3331,7 +3360,12 @@ export default {
       paid: '已支付',
       expired: '已过期',
       refunded: '已退款'
-    }
+    },
+    actions: '操作',
+    continuePay: '继续支付',
+    paying: '支付中...',
+    expired: '已过期',
+    repayFailed: '获取支付链接失败'
   },
 
   // Onboarding Tour

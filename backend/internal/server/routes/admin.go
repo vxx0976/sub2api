@@ -59,6 +59,9 @@ func RegisterAdminRoutes(
 		// 订阅管理
 		registerSubscriptionRoutes(admin, h)
 
+		// 订单管理
+		registerOrderRoutes(admin, h)
+
 		// 使用记录管理
 		registerUsageRoutes(admin, h)
 
@@ -345,6 +348,13 @@ func registerSubscriptionRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 
 	// 用户下的订阅列表
 	admin.GET("/users/:id/subscriptions", h.Admin.Subscription.ListByUser)
+}
+
+func registerOrderRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
+	orders := admin.Group("/orders")
+	{
+		orders.GET("", h.Admin.Order.List)
+	}
 }
 
 func registerUsageRoutes(admin *gin.RouterGroup, h *handler.Handlers) {

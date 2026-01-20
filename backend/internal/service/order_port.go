@@ -29,6 +29,9 @@ type OrderRepository interface {
 	// ListByUserID retrieves orders for a user with pagination
 	ListByUserID(ctx context.Context, userID int64, params pagination.PaginationParams) ([]Order, *pagination.PaginationResult, error)
 
+	// ListAll retrieves all orders with pagination and filters (admin use)
+	ListAll(ctx context.Context, params pagination.PaginationParams, status string, search string) ([]Order, *pagination.PaginationResult, error)
+
 	// ListPending retrieves pending orders that are about to expire
 	ListPending(ctx context.Context) ([]Order, error)
 

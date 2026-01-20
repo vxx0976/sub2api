@@ -212,3 +212,31 @@ func (h *PaymentHandler) GetUserOrders(c *gin.Context) {
 
 	response.Paginated(c, orders, pag.Total, page, pageSize)
 }
+
+// RepayOrder handles repaying an existing pending order
+// POST /api/v1/orders/:order_no/repay
+func (h *PaymentHandler) RepayOrder(c *gin.Context) {
+	subject, ok := middleware2.GetAuthSubjectFromContext(c)
+	if !ok {
+		response.Unauthorized(c, "User not found in context")
+		return
+	}
+
+	orderNo := c.Param("order_no")
+	if orderNo == "" {
+		response.BadRequest(c, "order_no is required")
+		return
+	}
+
+	result, err := h.orderService.RepayOrder(c.Request.Context(), subject.UserID, orderNo)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+
+	response.Success(c, CreateOrderResponse{
+		OrderNo: result.OrderNo,
+		PayURL:  result.PayURL,
+		Amount:  result.Amount,
+	})
+}

@@ -165,6 +165,12 @@ func (s *OrderService) GetUserOrders(ctx context.Context, userID int64, page, pa
 	return s.orderRepo.ListByUserID(ctx, userID, params)
 }
 
+// GetAllOrders retrieves all orders with pagination and filters (admin use)
+func (s *OrderService) GetAllOrders(ctx context.Context, page, pageSize int, status, search string) ([]Order, *pagination.PaginationResult, error) {
+	params := pagination.PaginationParams{Page: page, PageSize: pageSize}
+	return s.orderRepo.ListAll(ctx, params, status, search)
+}
+
 // GetOrderByNo retrieves an order by order number
 func (s *OrderService) GetOrderByNo(ctx context.Context, orderNo string) (*Order, error) {
 	return s.orderRepo.GetByOrderNo(ctx, orderNo)
@@ -176,6 +182,59 @@ func (s *OrderService) GetPurchasablePlans(ctx context.Context) ([]Group, error)
 		return nil, ErrPaymentDisabled
 	}
 	return s.groupRepo.ListPurchasable(ctx)
+}
+
+// RepayOrder generates a new payment URL for an existing pending order
+func (s *OrderService) RepayOrder(ctx context.Context, userID int64, orderNo string) (*CreateOrderOutput, error) {
+	// Check if payment is enabled
+	if !s.cfg.Payment.Enabled {
+		return nil, ErrPaymentDisabled
+	}
+
+	// Get order
+	order, err := s.orderRepo.GetByOrderNo(ctx, orderNo)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check if order belongs to user
+	if order.UserID != userID {
+		return nil, ErrOrderNotFound
+	}
+
+	// Check if order is pending
+	if order.Status != OrderStatusPending {
+		if order.Status == OrderStatusPaid {
+			return nil, ErrOrderAlreadyPaid
+		}
+		return nil, ErrOrderExpired
+	}
+
+	// Check if order has expired
+	if order.ExpiredAt != nil && time.Now().After(*order.ExpiredAt) {
+		// Update status to expired
+		_ = s.orderRepo.UpdateStatus(ctx, order.ID, OrderStatusExpired, nil, nil)
+		return nil, ErrOrderExpired
+	}
+
+	// Get group for name
+	group, err := s.groupRepo.GetByID(ctx, order.GroupID)
+	if err != nil {
+		return nil, fmt.Errorf("get group: %w", err)
+	}
+
+	// Generate payment URL
+	payURL := s.musePayment.PaymentURL(payment.CreatePayParams{
+		OrderNo: order.OrderNo,
+		Money:   order.Amount,
+		Name:    fmt.Sprintf("%s 订阅套餐", group.Name),
+	})
+
+	return &CreateOrderOutput{
+		OrderNo: order.OrderNo,
+		PayURL:  payURL,
+		Amount:  order.Amount,
+	}, nil
 }
 
 // generateOrderNo generates a unique order number

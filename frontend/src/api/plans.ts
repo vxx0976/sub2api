@@ -111,9 +111,18 @@ export async function verifyPayment(params: PaymentReturnParams): Promise<Verify
   return response.data
 }
 
+/**
+ * Repay an existing pending order
+ */
+export async function repayOrder(orderNo: string): Promise<CreateOrderResponse> {
+  const response = await apiClient.post<CreateOrderResponse>(`/orders/${orderNo}/repay`)
+  return response.data
+}
+
 export default {
   getPlans,
   createOrder,
   getOrders,
-  verifyPayment
+  verifyPayment,
+  repayOrder
 }
