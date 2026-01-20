@@ -6,47 +6,47 @@ import (
 )
 
 type Group struct {
-	ID             int64
-	Name           string
-	Description    string
-	Platform       string
-	RateMultiplier float64
-	IsExclusive    bool
-	Status         string
-	Hydrated       bool // indicates the group was loaded from a trusted repository source
+	ID             int64   `json:"id"`
+	Name           string  `json:"name"`
+	Description    string  `json:"description"`
+	Platform       string  `json:"platform"`
+	RateMultiplier float64 `json:"rate_multiplier"`
+	IsExclusive    bool    `json:"is_exclusive"`
+	Status         string  `json:"status"`
+	Hydrated       bool    `json:"-"` // indicates the group was loaded from a trusted repository source
 
-	SubscriptionType    string
-	DailyLimitUSD       *float64
-	WeeklyLimitUSD      *float64
-	MonthlyLimitUSD     *float64
-	DefaultValidityDays int
+	SubscriptionType    string   `json:"subscription_type"`
+	DailyLimitUSD       *float64 `json:"daily_limit_usd"`
+	WeeklyLimitUSD      *float64 `json:"weekly_limit_usd"`
+	MonthlyLimitUSD     *float64 `json:"monthly_limit_usd"`
+	DefaultValidityDays int      `json:"default_validity_days"`
 
 	// 图片生成计费配置（antigravity 和 gemini 平台使用）
-	ImagePrice1K *float64
-	ImagePrice2K *float64
-	ImagePrice4K *float64
+	ImagePrice1K *float64 `json:"image_price_1k"`
+	ImagePrice2K *float64 `json:"image_price_2k"`
+	ImagePrice4K *float64 `json:"image_price_4k"`
 
 	// Claude Code 客户端限制
-	ClaudeCodeOnly  bool
-	FallbackGroupID *int64
+	ClaudeCodeOnly  bool   `json:"claude_code_only"`
+	FallbackGroupID *int64 `json:"fallback_group_id"`
 
 	// 模型路由配置
 	// key: 模型匹配模式（支持 * 通配符，如 "claude-opus-*"）
 	// value: 优先账号 ID 列表
-	ModelRouting        map[string][]int64
-	ModelRoutingEnabled bool
+	ModelRouting        map[string][]int64 `json:"model_routing"`
+	ModelRoutingEnabled bool               `json:"model_routing_enabled"`
 
 	// 支付相关
-	Price         *float64
-	IsPurchasable bool
-	SortOrder     int
-	IsRecommended bool
+	Price         *float64 `json:"price"`
+	IsPurchasable bool     `json:"is_purchasable"`
+	SortOrder     int      `json:"sort_order"`
+	IsRecommended bool     `json:"is_recommended"`
 
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 
-	AccountGroups []AccountGroup
-	AccountCount  int64
+	AccountGroups []AccountGroup `json:"account_groups,omitempty"`
+	AccountCount  int64          `json:"account_count,omitempty"`
 }
 
 func (g *Group) IsActive() bool {
