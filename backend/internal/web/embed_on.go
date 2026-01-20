@@ -20,6 +20,16 @@ import (
 const (
 	// NonceHTMLPlaceholder is the placeholder for nonce in HTML script tags
 	NonceHTMLPlaceholder = "__CSP_NONCE_VALUE__"
+
+	// SEO placeholders
+	SEOTitlePlaceholder       = "__SEO_TITLE__"
+	SEODescriptionPlaceholder = "__SEO_DESCRIPTION__"
+	SEOImagePlaceholder       = "__SEO_IMAGE__"
+
+	// Default SEO values
+	DefaultSEOTitle       = "Sub2API - AI Coding Relay"
+	DefaultSEODescription = "One API key for Claude Code, Codex CLI, Gemini CLI, and Cursor — transparent billing, real-time usage, and safety limits."
+	DefaultSEOImage       = "/logo.png"
 )
 
 //go:embed all:dist
@@ -179,14 +189,55 @@ func (s *FrontendServer) serveIndexHTML(c *gin.Context) {
 	c.Abort()
 }
 
+// seoSettings is used to extract SEO-related fields from settings JSON
+type seoSettings struct {
+	SiteName     string `json:"site_name"`
+	SiteSubtitle string `json:"site_subtitle"`
+	SiteLogo     string `json:"site_logo"`
+}
+
 func (s *FrontendServer) injectSettings(settingsJSON []byte) []byte {
 	// Create the script tag to inject with nonce placeholder
 	// The placeholder will be replaced with actual nonce at request time
 	script := []byte(`<script nonce="` + NonceHTMLPlaceholder + `">window.__APP_CONFIG__=` + string(settingsJSON) + `;</script>`)
 
-	// Inject before </head>
+	// Start with base HTML
+	result := s.baseHTML
+
+	// Extract SEO values from settings
+	var seo seoSettings
+	if err := json.Unmarshal(settingsJSON, &seo); err == nil {
+		// Build SEO title: "SiteName - SiteSubtitle" or just "SiteName"
+		seoTitle := DefaultSEOTitle
+		if seo.SiteName != "" {
+			if seo.SiteSubtitle != "" {
+				seoTitle = seo.SiteName + " - " + seo.SiteSubtitle
+			} else {
+				seoTitle = seo.SiteName
+			}
+		}
+
+		// SEO description: use subtitle or default
+		seoDesc := DefaultSEODescription
+		if seo.SiteSubtitle != "" {
+			seoDesc = seo.SiteSubtitle
+		}
+
+		// SEO image: use logo or default
+		seoImage := DefaultSEOImage
+		if seo.SiteLogo != "" {
+			seoImage = seo.SiteLogo
+		}
+
+		// Replace SEO placeholders
+		result = bytes.ReplaceAll(result, []byte(SEOTitlePlaceholder), []byte(seoTitle))
+		result = bytes.ReplaceAll(result, []byte(SEODescriptionPlaceholder), []byte(seoDesc))
+		result = bytes.ReplaceAll(result, []byte(SEOImagePlaceholder), []byte(seoImage))
+	}
+
+	// Inject script before </head>
 	headClose := []byte("</head>")
-	return bytes.Replace(s.baseHTML, headClose, append(script, headClose...), 1)
+	return bytes.Replace(result, headClose, append(script, headClose...), 1)
 }
 
 // replaceNoncePlaceholder replaces the nonce placeholder with actual nonce value
