@@ -27,7 +27,7 @@ export default {
     hero: {
       badge: '平价 AI 编码中转站',
       title: '一站式 Vibe Coding：一个 Key 接入多模型',
-      subtitle: '面向普通用户和初级程序员：Claude Code / Codex CLI / Gemini CLI / Cursor 一键配置，明码标价，用量实时可见。',
+      subtitle: '支持 Claude Code / Codex CLI / Gemini CLI / Cursor 等主流工具，一键配置，明码标价，用量实时可见。',
       viewPricing: '查看定价',
       supportedToolsLabel: '支持工具',
       platformsLabel: '适用系统',

@@ -246,7 +246,7 @@
                 </div>
               </div>
 
-              <div class="mt-4 rounded-3xl bg-gray-950 p-4 ring-1 ring-black/10 sm:p-5 dark:ring-white/10">
+              <div class="mt-4 overflow-x-auto rounded-3xl bg-gray-950 p-4 ring-1 ring-black/10 sm:p-5 dark:ring-white/10">
                 <TypewriterTerminal :lines="terminalLines" :loop="true" />
               </div>
 
