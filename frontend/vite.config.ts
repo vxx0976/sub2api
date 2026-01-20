@@ -1,4 +1,4 @@
-import { defineConfig, Plugin } from 'vite'
+import { defineConfig, Plugin, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import checker from 'vite-plugin-checker'
 import { resolve } from 'path'
@@ -7,9 +7,7 @@ import { resolve } from 'path'
  * Vite 插件：开发模式下注入公开配置到 index.html
  * 与生产模式的后端注入行为保持一致，消除闪烁
  */
-function injectPublicSettings(): Plugin {
-  const backendUrl = process.env.VITE_DEV_PROXY_TARGET || 'http://localhost:8080'
-
+function injectPublicSettings(backendUrl: string): Plugin {
   return {
     name: 'inject-public-settings',
     transformIndexHtml: {
@@ -35,14 +33,18 @@ function injectPublicSettings(): Plugin {
   }
 }
 
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), 'VITE_')
+  const proxyTarget = env.VITE_DEV_PROXY_TARGET || 'http://localhost:8080'
+
+  return {
   plugins: [
     vue(),
     checker({
       typescript: true,
       vueTsc: true
     }),
-    injectPublicSettings()
+    injectPublicSettings(proxyTarget)
   ],
   resolve: {
     alias: {
@@ -104,16 +106,18 @@ export default defineConfig({
   },
   server: {
     host: '0.0.0.0',
-    port: Number(process.env.VITE_DEV_PORT || 3000),
+    port: Number(env.VITE_DEV_PORT || 3000),
     proxy: {
       '/api': {
-        target: process.env.VITE_DEV_PROXY_TARGET || 'http://localhost:8080',
-        changeOrigin: true
+        target: proxyTarget,
+        changeOrigin: true,
+        secure: false
       },
       '/setup': {
-        target: process.env.VITE_DEV_PROXY_TARGET || 'http://localhost:8080',
-        changeOrigin: true
+        target: proxyTarget,
+        changeOrigin: true,
+        secure: false
       }
     }
   }
-})
+}})

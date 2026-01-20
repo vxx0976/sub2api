@@ -256,70 +256,64 @@
             </div>
           </div>
 
-          <!-- Quick stats (no fake numbers) -->
-          <div class="mx-auto mt-10 grid max-w-6xl gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div class="card card-glass px-4 py-3">
-              <div class="flex items-center justify-center gap-2 text-sm font-semibold text-gray-800 dark:text-dark-200">
-                <Icon name="bolt" size="sm" class="text-primary-600 dark:text-primary-300" />
-                <span>{{ t('home.hero.stats.standard') }}</span>
-              </div>
+          <!-- Quick stats - compact horizontal badges -->
+          <div class="mx-auto mt-10 flex max-w-4xl flex-wrap items-center justify-center gap-3">
+            <div class="inline-flex items-center gap-1.5 rounded-full border border-gray-200/60 bg-white/70 px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm dark:border-dark-700/70 dark:bg-dark-900/40 dark:text-dark-200">
+              <Icon name="bolt" size="xs" class="text-primary-600 dark:text-primary-300" />
+              <span>{{ t('home.hero.stats.standard') }}</span>
             </div>
-            <div class="card card-glass px-4 py-3">
-              <div class="flex items-center justify-center gap-2 text-sm font-semibold text-gray-800 dark:text-dark-200">
-                <Icon name="copy" size="sm" class="text-primary-600 dark:text-primary-300" />
-                <span>{{ t('home.hero.stats.copy') }}</span>
-              </div>
+            <div class="inline-flex items-center gap-1.5 rounded-full border border-gray-200/60 bg-white/70 px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm dark:border-dark-700/70 dark:bg-dark-900/40 dark:text-dark-200">
+              <Icon name="copy" size="xs" class="text-primary-600 dark:text-primary-300" />
+              <span>{{ t('home.hero.stats.copy') }}</span>
             </div>
-            <div class="card card-glass px-4 py-3">
-              <div class="flex items-center justify-center gap-2 text-sm font-semibold text-gray-800 dark:text-dark-200">
-                <Icon name="dollar" size="sm" class="text-primary-600 dark:text-primary-300" />
-                <span>{{ t('home.hero.stats.transparent') }}</span>
-              </div>
+            <div class="inline-flex items-center gap-1.5 rounded-full border border-gray-200/60 bg-white/70 px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm dark:border-dark-700/70 dark:bg-dark-900/40 dark:text-dark-200">
+              <Icon name="dollar" size="xs" class="text-primary-600 dark:text-primary-300" />
+              <span>{{ t('home.hero.stats.transparent') }}</span>
             </div>
-            <div class="card card-glass px-4 py-3">
-              <div class="flex items-center justify-center gap-2 text-sm font-semibold text-gray-800 dark:text-dark-200">
-                <Icon name="shield" size="sm" class="text-primary-600 dark:text-primary-300" />
-                <span>{{ t('home.hero.stats.protect') }}</span>
-              </div>
+            <div class="inline-flex items-center gap-1.5 rounded-full border border-gray-200/60 bg-white/70 px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm dark:border-dark-700/70 dark:bg-dark-900/40 dark:text-dark-200">
+              <Icon name="shield" size="xs" class="text-primary-600 dark:text-primary-300" />
+              <span>{{ t('home.hero.stats.protect') }}</span>
+            </div>
+            <div class="inline-flex items-center gap-1.5 rounded-full border border-gray-200/60 bg-white/70 px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm dark:border-dark-700/70 dark:bg-dark-900/40 dark:text-dark-200">
+              <Icon name="server" size="xs" class="text-primary-600 dark:text-primary-300" />
+              <span>{{ t('home.hero.stats.stable') }}</span>
             </div>
           </div>
 
-          <!-- 3 steps -->
-          <div class="mx-auto mt-8 max-w-6xl">
-            <div class="grid gap-4 text-left sm:grid-cols-3">
-              <div class="card card-glass p-5">
-                <div class="flex items-center gap-3">
-                  <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300">
-                    <Icon name="login" size="md" />
-                  </div>
-                  <div>
-                    <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ t('home.steps.oneTitle') }}</div>
-                    <div class="mt-1 text-xs text-gray-600 dark:text-dark-400">{{ t('home.steps.oneDesc') }}</div>
-                  </div>
+          <!-- 3 steps - more compact -->
+          <div class="mx-auto mt-6 max-w-4xl">
+            <div class="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-center">
+              <div class="flex items-center gap-3 rounded-2xl border border-gray-200/60 bg-white/70 px-4 py-3 shadow-sm backdrop-blur dark:border-dark-800/60 dark:bg-dark-900/40">
+                <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300">
+                  <Icon name="login" size="sm" />
+                </div>
+                <div>
+                  <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ t('home.steps.oneTitle') }}</div>
+                  <div class="text-xs text-gray-600 dark:text-dark-400">{{ t('home.steps.oneDesc') }}</div>
                 </div>
               </div>
 
-              <div class="card card-glass p-5">
-                <div class="flex items-center gap-3">
-                  <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300">
-                    <Icon name="grid" size="md" />
-                  </div>
-                  <div>
-                    <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ t('home.steps.twoTitle') }}</div>
-                    <div class="mt-1 text-xs text-gray-600 dark:text-dark-400">{{ t('home.steps.twoDesc') }}</div>
-                  </div>
+              <Icon name="arrowRight" size="sm" class="hidden text-gray-400 dark:text-dark-500 sm:block" />
+
+              <div class="flex items-center gap-3 rounded-2xl border border-gray-200/60 bg-white/70 px-4 py-3 shadow-sm backdrop-blur dark:border-dark-800/60 dark:bg-dark-900/40">
+                <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300">
+                  <Icon name="grid" size="sm" />
+                </div>
+                <div>
+                  <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ t('home.steps.twoTitle') }}</div>
+                  <div class="text-xs text-gray-600 dark:text-dark-400">{{ t('home.steps.twoDesc') }}</div>
                 </div>
               </div>
 
-              <div class="card card-glass p-5">
-                <div class="flex items-center gap-3">
-                  <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300">
-                    <Icon name="play" size="md" />
-                  </div>
-                  <div>
-                    <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ t('home.steps.threeTitle') }}</div>
-                    <div class="mt-1 text-xs text-gray-600 dark:text-dark-400">{{ t('home.steps.threeDesc') }}</div>
-                  </div>
+              <Icon name="arrowRight" size="sm" class="hidden text-gray-400 dark:text-dark-500 sm:block" />
+
+              <div class="flex items-center gap-3 rounded-2xl border border-gray-200/60 bg-white/70 px-4 py-3 shadow-sm backdrop-blur dark:border-dark-800/60 dark:bg-dark-900/40">
+                <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300">
+                  <Icon name="play" size="sm" />
+                </div>
+                <div>
+                  <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ t('home.steps.threeTitle') }}</div>
+                  <div class="text-xs text-gray-600 dark:text-dark-400">{{ t('home.steps.threeDesc') }}</div>
                 </div>
               </div>
             </div>

@@ -35,7 +35,8 @@ export default {
         standard: 'Mainstream tools supported',
         copy: 'Copy & run',
         transparent: 'Transparent billing',
-        protect: 'Safety limits'
+        protect: 'Safety limits',
+        stable: 'Stable & reliable'
       },
       terminal: {
         title: 'Quickstart',

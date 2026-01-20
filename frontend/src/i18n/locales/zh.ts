@@ -35,7 +35,8 @@ export default {
         standard: '主流工具可用',
         copy: '复制即用',
         transparent: '明码标价',
-        protect: '限额保护'
+        protect: '限额保护',
+        stable: '稳定可靠'
       },
       terminal: {
         title: '快速配置示例',
