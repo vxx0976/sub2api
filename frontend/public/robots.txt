@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /home
+Disallow: /setup
+Disallow: /login
+Disallow: /register
+Disallow: /email-verify
+Disallow: /auth
+Disallow: /dashboard
+Disallow: /keys
+Disallow: /usage
+Disallow: /redeem
+Disallow: /profile
+Disallow: /admin

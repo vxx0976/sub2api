@@ -85,14 +85,6 @@
 
           <!-- Right: Actions -->
           <div class="ml-auto flex flex-wrap items-center justify-end gap-3">
-            <button
-              @click="loadSubscriptions"
-              :disabled="loading"
-              class="btn btn-secondary"
-              :title="t('common.refresh')"
-            >
-              <Icon name="refresh" size="md" :class="loading ? 'animate-spin' : ''" />
-            </button>
             <!-- Column Settings Dropdown -->
             <div class="relative" ref="columnDropdownRef">
               <button
@@ -144,6 +136,14 @@
                 </div>
               </div>
             </div>
+            <button
+              @click="loadSubscriptions"
+              :disabled="loading"
+              class="btn btn-secondary"
+              :title="t('common.refresh')"
+            >
+              <Icon name="refresh" size="md" :class="loading ? 'animate-spin' : ''" />
+            </button>
             <button @click="showAssignModal = true" class="btn btn-primary">
               <Icon name="plus" size="md" class="mr-2" />
               {{ t('admin.subscriptions.assignSubscription') }}
@@ -359,10 +359,10 @@
               <button
                 v-if="row.status === 'active'"
                 @click="handleExtend(row)"
-                class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20 dark:hover:text-blue-400"
+                class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-green-50 hover:text-green-600 dark:hover:bg-green-900/20 dark:hover:text-green-400"
               >
-                <Icon name="calendar" size="sm" />
-                <span class="text-xs">{{ t('admin.subscriptions.adjust') }}</span>
+                <Icon name="clock" size="sm" />
+                <span class="text-xs">{{ t('admin.subscriptions.extend') }}</span>
               </button>
               <button
                 v-if="row.status === 'active'"
@@ -512,10 +512,10 @@
       </template>
     </BaseDialog>
 
-    <!-- Adjust Subscription Modal -->
+    <!-- Extend Subscription Modal -->
     <BaseDialog
       :show="showExtendModal"
-      :title="t('admin.subscriptions.adjustSubscription')"
+      :title="t('admin.subscriptions.extendSubscription')"
       width="narrow"
       @close="closeExtendModal"
     >
@@ -527,7 +527,7 @@
       >
         <div class="rounded-lg bg-gray-50 p-4 dark:bg-dark-700">
           <p class="text-sm text-gray-600 dark:text-gray-400">
-            {{ t('admin.subscriptions.adjustingFor') }}
+            {{ t('admin.subscriptions.extendingFor') }}
             <span class="font-medium text-gray-900 dark:text-white">{{
               extendingSubscription.user?.email
             }}</span>
@@ -542,25 +542,10 @@
               }}
             </span>
           </p>
-          <p v-if="extendingSubscription.expires_at" class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-            {{ t('admin.subscriptions.remainingDays') }}:
-            <span class="font-medium text-gray-900 dark:text-white">
-              {{ getDaysRemaining(extendingSubscription.expires_at) ?? 0 }}
-            </span>
-          </p>
         </div>
         <div>
-          <label class="input-label">{{ t('admin.subscriptions.form.adjustDays') }}</label>
-          <div class="flex items-center gap-2">
-            <input
-              v-model.number="extendForm.days"
-              type="number"
-              required
-              class="input text-center"
-              :placeholder="t('admin.subscriptions.adjustDaysPlaceholder')"
-            />
-          </div>
-          <p class="input-hint">{{ t('admin.subscriptions.adjustHint') }}</p>
+          <label class="input-label">{{ t('admin.subscriptions.form.extendDays') }}</label>
+          <input v-model.number="extendForm.days" type="number" min="1" required class="input" />
         </div>
       </form>
       <template #footer>
@@ -574,7 +559,7 @@
             :disabled="submitting"
             class="btn btn-primary"
           >
-            {{ submitting ? t('admin.subscriptions.adjusting') : t('admin.subscriptions.adjust') }}
+            {{ submitting ? t('admin.subscriptions.extending') : t('admin.subscriptions.extend') }}
           </button>
         </div>
       </template>
@@ -1015,27 +1000,17 @@ const closeExtendModal = () => {
 const handleExtendSubscription = async () => {
   if (!extendingSubscription.value) return
 
-  // 前端验证：调整后剩余天数必须 > 0
-  if (extendingSubscription.value.expires_at) {
-    const currentDaysRemaining = getDaysRemaining(extendingSubscription.value.expires_at) ?? 0
-    const newDaysRemaining = currentDaysRemaining + extendForm.days
-    if (newDaysRemaining <= 0) {
-      appStore.showError(t('admin.subscriptions.adjustWouldExpire'))
-      return
-    }
-  }
-
   submitting.value = true
   try {
     await adminAPI.subscriptions.extend(extendingSubscription.value.id, {
       days: extendForm.days
     })
-    appStore.showSuccess(t('admin.subscriptions.subscriptionAdjusted'))
+    appStore.showSuccess(t('admin.subscriptions.subscriptionExtended'))
     closeExtendModal()
     loadSubscriptions()
   } catch (error: any) {
-    appStore.showError(error.response?.data?.detail || t('admin.subscriptions.failedToAdjust'))
-    console.error('Error adjusting subscription:', error)
+    appStore.showError(error.response?.data?.detail || t('admin.subscriptions.failedToExtend'))
+    console.error('Error extending subscription:', error)
   } finally {
     submitting.value = false
   }

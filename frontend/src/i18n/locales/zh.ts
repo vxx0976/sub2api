@@ -10,28 +10,177 @@ export default {
     login: '登录',
     getStarted: '开始使用',
     goToDashboard: '进入控制台',
+    seo: {
+      title: '{siteName} - 平价 AI 编码中转站（Claude Code / Codex CLI / Gemini CLI）',
+      description:
+        '一个 API Key 即可接入 Claude Code、Codex CLI、Gemini CLI 等 AI 编码工具。明码标价、用量实时可见，并提供限额保护。',
+      keywords:
+        'Sub2API, AI 编码中转站, Vibe Coding, Claude Code, Codex CLI, Gemini CLI, Cursor, OpenCode, API Key, 透明定价, 用量统计, 限额'
+    },
+    nav: {
+      quickstart: '快速上手',
+      features: '为什么选我们',
+      pricing: '定价与计费',
+      providers: '模型覆盖',
+      faq: '常见问题'
+    },
+    hero: {
+      badge: '平价 AI 编码中转站',
+      title: '一站式 Vibe Coding：一个 Key 接入多模型',
+      subtitle: '面向普通用户和初级程序员：Claude Code / Codex CLI / Gemini CLI / Cursor 一键配置，明码标价，用量实时可见。',
+      viewPricing: '查看定价',
+      supportedToolsLabel: '支持工具',
+      platformsLabel: '适用系统',
+      stats: {
+        standard: '主流工具可用',
+        copy: '复制即用',
+        transparent: '明码标价',
+        protect: '限额保护'
+      },
+      terminal: {
+        title: '快速配置示例',
+        copy: '复制',
+        hint: '把 sk-xxx 换成你在控制台生成的 API Key；路径/命令可能因版本略有不同，详情以文档/控制台为准。',
+        claude: {
+          line1: '# 配置 Claude Code',
+          line2: '# 启动',
+          success: '✅ Claude Code 已就绪'
+        },
+        codex: {
+          line1: '# ~/.codex/config.toml（示例）',
+          line2: '# ~/.codex/auth.json',
+          line3: '# 启动'
+        },
+        gemini: {
+          line1: '# 配置 Gemini CLI',
+          line2: '# 启动',
+          success: '✅ Gemini CLI 已就绪'
+        }
+      }
+    },
+    steps: {
+      oneTitle: '登录 / 注册',
+      oneDesc: '创建账号，生成 API Key',
+      twoTitle: '选择你的工具',
+      twoDesc: 'Claude/Codex/Gemini 一键配置',
+      threeTitle: '开始 Vibe Coding',
+      threeDesc: '写代码、改 Bug、补测试'
+    },
+    quickstart: {
+      title: '快速上手',
+      description: '把 BASE_URL 和 API Key 换成你的，然后运行：',
+      copy: '复制示例',
+      snippetTitle: '终端示例',
+      tip1: '如果你在用 SDK，只需要把 base URL/endpoint 改成你的站点地址。',
+      tip2: '建议先用短文本测试，确认通了再上复杂请求。'
+    },
+    why: {
+      title: '为什么选 Sub2API',
+      subtitle: '对普通用户和初级程序员更友好的几个点。'
+    },
     tags: {
       subscriptionToApi: '订阅转 API',
       stickySession: '粘性会话',
       realtimeBilling: '实时计费'
     },
     features: {
-      unifiedGateway: '统一 API 网关',
-      unifiedGatewayDesc: '将 Claude 订阅转换为 API 接口，通过标准 /v1/messages 接口访问 AI 能力。',
-      multiAccount: '多账号池',
-      multiAccountDesc: '智能负载均衡管理多个上游账号，支持 OAuth 和 API Key 认证。',
-      balanceQuota: '余额与配额',
-      balanceQuotaDesc: '基于 Token 的精确计费和用量追踪，支持配额管理和兑换码充值。'
+      unifiedGateway: '主流工具一键接入',
+      unifiedGatewayDesc: 'Claude Code、Codex CLI、Gemini CLI 等，用一个 Key 直接跑。',
+      multiAccount: '中转更稳定',
+      multiAccountDesc: '多上游/多账号自动切换，减少临时波动。',
+      balanceQuota: '用量实时可见',
+      balanceQuotaDesc: 'Token 级明细，按模型/按天统计，余额更清晰。',
+      rateLimit: '限额保护',
+      rateLimitDesc: '支持限流与日/周/月限额，防止意外爆量。',
+      concurrency: '高峰也能顶住',
+      concurrencyDesc: '并发保护与队列策略，让高峰期更稳。',
+      adminConsole: '透明计费与规则',
+      adminConsoleDesc: '模型定价/倍率公开展示，账单可追溯。'
+    },
+    metrics: {
+      title: '我们的原则',
+      subtitle: '把复杂留给中转站，你只管写代码。',
+      items: {
+        setup: '上手门槛',
+        setupDesc: '复制配置，几分钟跑通。',
+        cost: '性价比',
+        costDesc: '多模型选择，按需使用更省。',
+        transparent: '透明度',
+        transparentDesc: '计费规则与用量明细清清楚楚。',
+        coverage: '工具覆盖',
+        coverageDesc: '兼容常用 CLI/IDE 工作流。'
+      }
+    },
+    pricing: {
+      title: '选择适合你的套餐',
+      subtitle: '多种套餐满足不同需求，用多少充多少。无隐藏费用，随时可查看消费明细。',
+      recommended: '推荐',
+      buy: '立即购买',
+      note: '套餐展示用于帮助你快速上手；实际额度、并发与计费规则以站点控制台为准。',
+      plans: {
+        starter: {
+          name: '入门体验',
+          price: '9.9',
+          credit: '含 $20 额度：约 1 千万 tokens',
+          f1: '30 天有效期',
+          f2: '基础并发 2 RPM',
+          f3: '全模型支持'
+        },
+        lite: {
+          name: '轻量版',
+          price: '19.9',
+          credit: '含 $40 额度：约 2 千万 tokens',
+          f1: '30 天有效期',
+          f2: '标准并发 10 RPM',
+          f3: '全模型支持'
+        },
+        standard: {
+          name: '标准版',
+          price: '49.9',
+          credit: '含 $100 额度：约 5 千万 tokens',
+          f1: '30 天有效期',
+          f2: '高并发 30 RPM',
+          f3: '全模型支持'
+        },
+        pro: {
+          name: '专业版',
+          price: '99.9',
+          credit: '含 $200 额度：约 1 亿 tokens',
+          f1: '30 天有效期',
+          f2: '企业级 60 RPM',
+          f3: '香港/日本 CN2 专线',
+          f4: '1 对 1 技术支持'
+        }
+      }
     },
     providers: {
-      title: '支持的服务商',
-      description: 'AI 服务的统一 API 接口',
+      title: '支持的模型与平台',
+      description: '常用模型都能用，随时切换。',
       supported: '已支持',
       soon: '即将推出',
       claude: 'Claude',
       gemini: 'Gemini',
       antigravity: 'Antigravity',
       more: '更多'
+    },
+    faq: {
+      title: '常见问题',
+      subtitle: '第一次用？这里先帮你把坑填平。',
+      q1: '我需要先懂 API 吗？',
+      a1: '不需要。选你正在用的工具，复制配置即可；想更深入再看文档。',
+      q2: 'API Key 在哪里拿？',
+      a2: '登录后进入「控制台 → API Keys」创建/复制。',
+      q3: '支持哪些工具/客户端？',
+      a3: 'Claude Code、Codex CLI、Gemini CLI、OpenCode 等；具体以示例/文档为准。',
+      q4: '价格怎么算？',
+      a4: '计费规则与用量明细会在控制台展示；你可以按模型、按天查看记录。',
+      q5: '遇到报错怎么办？',
+      a5: '先检查站点地址、API Key、网络是否通，再到控制台看报错或联系管理员。',
+      more: '查看文档'
+    },
+    cta: {
+      title: '准备试试了吗？',
+      description: '登录后生成一个 API Key，选择工具复制配置，就能开始写代码。'
     },
     footer: {
       allRightsReserved: '保留所有权利。'
@@ -1025,7 +1174,7 @@ export default {
       title: '订阅管理',
       description: '管理用户订阅和配额限制',
       assignSubscription: '分配订阅',
-      adjustSubscription: '调整订阅',
+      extendSubscription: '延长订阅',
       revokeSubscription: '撤销订阅',
       allStatus: '全部状态',
       allGroups: '全部分组',
@@ -1040,7 +1189,6 @@ export default {
       resetInHoursMinutes: '{hours} 小时 {minutes} 分钟后重置',
       resetInDaysHours: '{days} 天 {hours} 小时后重置',
       daysRemaining: '天剩余',
-      remainingDays: '剩余天数',
       noExpiration: '无过期时间',
       status: {
         active: '生效中',
@@ -1059,32 +1207,28 @@ export default {
         user: '用户',
         group: '订阅分组',
         validityDays: '有效期（天）',
-        adjustDays: '调整天数'
+        extendDays: '延长天数'
       },
       selectUser: '选择用户',
       selectGroup: '选择订阅分组',
       groupHint: '仅显示订阅计费类型的分组',
       validityHint: '订阅的有效天数',
-      adjustingFor: '为以下用户调整订阅',
+      extendingFor: '为以下用户延长订阅',
       currentExpiration: '当前到期时间',
-      adjustDaysPlaceholder: '正数延长，负数缩短',
-      adjustHint: '输入正数延长订阅，负数缩短订阅（缩短后剩余天数需大于0）',
       assign: '分配',
       assigning: '分配中...',
-      adjust: '调整',
-      adjusting: '调整中...',
+      extend: '延长',
+      extending: '延长中...',
       revoke: '撤销',
       noSubscriptionsYet: '暂无订阅',
       assignFirstSubscription: '分配一个订阅以开始使用。',
       subscriptionAssigned: '订阅分配成功',
-      subscriptionAdjusted: '订阅调整成功',
+      subscriptionExtended: '订阅延长成功',
       subscriptionRevoked: '订阅撤销成功',
       failedToLoad: '加载订阅列表失败',
       failedToAssign: '分配订阅失败',
-      failedToAdjust: '调整订阅失败',
+      failedToExtend: '延长订阅失败',
       failedToRevoke: '撤销订阅失败',
-      adjustWouldExpire: '调整后剩余天数必须大于0',
-      adjustOutOfRange: '调整天数必须在 -36500 到 36500 之间',
       pleaseSelectUser: '请选择用户',
       pleaseSelectGroup: '请选择分组',
       validityDaysRequired: '请输入有效的天数（至少1天）',
@@ -2947,9 +3091,7 @@ export default {
         homeContent: '首页内容',
         homeContentPlaceholder: '在此输入首页内容，支持 Markdown & HTML 代码。如果输入的是一个链接，则会使用该链接作为 iframe 的 src 属性。',
         homeContentHint: '自定义首页内容，支持 Markdown/HTML。如果输入的是链接（以 http:// 或 https:// 开头），则会使用该链接作为 iframe 的 src 属性，这允许你设置任意网页作为首页。设置后首页的状态信息将不再显示。',
-        homeContentIframeWarning: '⚠️ iframe 模式提示：部分网站设置了 X-Frame-Options 或 CSP 安全策略，禁止被嵌入到 iframe 中。如果页面显示空白或报错，请确认目标网站允许被嵌入，或考虑使用 HTML 模式自行构建页面内容。',
-        hideCcsImportButton: '隐藏 CCS 导入按钮',
-        hideCcsImportButtonHint: '启用后将在 API Keys 页面隐藏"导入 CCS"按钮'
+        homeContentIframeWarning: '⚠️ iframe 模式提示：部分网站设置了 X-Frame-Options 或 CSP 安全策略，禁止被嵌入到 iframe 中。如果页面显示空白或报错，请确认目标网站允许被嵌入，或考虑使用 HTML 模式自行构建页面内容。'
       },
       smtp: {
         title: 'SMTP 设置',

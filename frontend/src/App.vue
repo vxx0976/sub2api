@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import { RouterView, useRouter, useRoute } from 'vue-router'
 import { onMounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import Toast from '@/components/common/Toast.vue'
 import NavigationProgress from '@/components/common/NavigationProgress.vue'
 import { useAppStore, useAuthStore, useSubscriptionStore } from '@/stores'
 import { getSetupStatus } from '@/api/setup'
+import { applySeoMeta } from '@/utils/seo'
 
 const router = useRouter()
 const route = useRoute()
+const { t, locale } = useI18n()
 const appStore = useAppStore()
 const authStore = useAuthStore()
 const subscriptionStore = useSubscriptionStore()
@@ -39,13 +42,75 @@ watch(
   { immediate: true }
 )
 
-watch(
-  () => appStore.siteName,
-  (newName) => {
-    if (newName) {
-      document.title = `${newName} - AI API Gateway`
+function toAbsoluteUrl(url: string) {
+  if (!url) return `${window.location.origin}/logo.png`
+  if (url.startsWith('http://') || url.startsWith('https://')) return url
+  return new URL(url, window.location.origin).toString()
+}
+
+function updateSeo() {
+  if (typeof window === 'undefined') return
+
+  const siteName = appStore.cachedPublicSettings?.site_name || appStore.siteName || 'Sub2API'
+  const siteSubtitle =
+    appStore.cachedPublicSettings?.site_subtitle || 'AI API Gateway Platform'
+
+  const meta = route.meta as Record<string, unknown>
+  const requiresAuth = route.meta.requiresAuth !== false
+
+  const titleKey = typeof meta.titleKey === 'string' ? meta.titleKey : ''
+  const rawTitle = titleKey ? t(titleKey, { siteName }) : (meta.title as string | undefined) || siteName
+  const title = rawTitle.includes(siteName) ? rawTitle : `${rawTitle} - ${siteName}`
+
+  const descriptionKey = typeof meta.descriptionKey === 'string' ? meta.descriptionKey : ''
+  const description = descriptionKey ? t(descriptionKey, { siteName, siteSubtitle }) : siteSubtitle
+
+  const keywordsKey = typeof meta.keywordsKey === 'string' ? meta.keywordsKey : ''
+  const keywords = keywordsKey ? t(keywordsKey) : ''
+
+  const canonicalUrl = `${window.location.origin}${route.path}`
+  const logoUrl = appStore.cachedPublicSettings?.site_logo || appStore.siteLogo || '/logo.png'
+  const imageUrl = toAbsoluteUrl(logoUrl)
+
+  const isHome = route.name === 'Home' || route.path === '/home'
+  const structuredData = isHome ? [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'SoftwareApplication',
+      name: siteName,
+      applicationCategory: 'DeveloperApplication',
+      operatingSystem: 'Web',
+      url: window.location.origin,
+      description,
+      image: imageUrl
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: [1, 2, 3, 4, 5].map((n) => ({
+        '@type': 'Question',
+        name: t(`home.faq.q${n}`),
+        acceptedAnswer: { '@type': 'Answer', text: t(`home.faq.a${n}`) }
+      }))
     }
-  },
+  ] : undefined
+
+  applySeoMeta({
+    title,
+    description,
+    keywords,
+    canonicalUrl,
+    imageUrl,
+    siteName,
+    locale: (locale.value === 'zh' ? 'zh' : 'en'),
+    noindex: meta.noindex === true || requiresAuth,
+    structuredData
+  })
+}
+
+watch(
+  () => [route.fullPath, locale.value, appStore.siteName, appStore.siteLogo, appStore.cachedPublicSettings?.site_subtitle],
+  () => updateSeo(),
   { immediate: true }
 )
 

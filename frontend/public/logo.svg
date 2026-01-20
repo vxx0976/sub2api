@@ -1,0 +1,35 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="dsrrr-grad" x1="44" y1="44" x2="212" y2="212" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#e98a6d" />
+      <stop offset="1" stop-color="#d17556" />
+    </linearGradient>
+  </defs>
+
+  <rect x="24" y="24" width="208" height="208" rx="52" fill="url(#dsrrr-grad)" />
+
+  <!-- Terminal mark: </> + prompt -->
+  <path
+    d="M96 92L72 116L96 140"
+    stroke="white"
+    stroke-width="18"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    opacity="0.98"
+  />
+  <path
+    d="M160 92L184 116L160 140"
+    stroke="white"
+    stroke-width="18"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    opacity="0.98"
+  />
+  <path
+    d="M96 172H164"
+    stroke="white"
+    stroke-width="18"
+    stroke-linecap="round"
+    opacity="0.92"
+  />
+</svg>

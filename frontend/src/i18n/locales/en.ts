@@ -10,31 +10,178 @@ export default {
     login: 'Login',
     getStarted: 'Get Started',
     goToDashboard: 'Go to Dashboard',
+    seo: {
+      title: '{siteName} - Affordable AI Coding Relay (Claude Code / Codex CLI / Gemini CLI)',
+      description:
+        'One API key for Claude Code, Codex CLI, and Gemini CLI. Transparent pricing, real-time usage, and safety limits for beginners.',
+      keywords:
+        'Sub2API, AI coding relay, Vibe Coding, Claude Code, Codex CLI, Gemini CLI, Cursor, OpenCode, API key, transparent pricing, usage, limits'
+    },
+    nav: {
+      quickstart: 'Quickstart',
+      features: 'Why Us',
+      pricing: 'Pricing',
+      providers: 'Model Coverage',
+      faq: 'FAQ'
+    },
+    hero: {
+      badge: 'Affordable AI coding relay',
+      title: 'One key for Vibe Coding across models',
+      subtitle: 'Beginner-friendly setup for Claude Code, Codex CLI, Gemini CLI, and Cursor — transparent billing with real-time usage.',
+      viewPricing: 'Pricing',
+      supportedToolsLabel: 'Works with',
+      platformsLabel: 'Platforms',
+      stats: {
+        standard: 'Mainstream tools supported',
+        copy: 'Copy & run',
+        transparent: 'Transparent billing',
+        protect: 'Safety limits'
+      },
+      terminal: {
+        title: 'Quickstart',
+        copy: 'Copy',
+        hint: 'Replace sk-xxx with the API key from your dashboard. Paths/commands may vary by version — check docs/dashboard for details.',
+        claude: {
+          line1: '# Configure Claude Code',
+          line2: '# Launch',
+          success: '✅ Claude Code is ready'
+        },
+        codex: {
+          line1: '# ~/.codex/config.toml (example)',
+          line2: '# ~/.codex/auth.json',
+          line3: '# Launch'
+        },
+        gemini: {
+          line1: '# Configure Gemini CLI',
+          line2: '# Launch',
+          success: '✅ Gemini CLI is ready'
+        }
+      }
+    },
+    steps: {
+      oneTitle: 'Sign in',
+      oneDesc: 'Create an account and generate an API key',
+      twoTitle: 'Pick your tool',
+      twoDesc: 'One-click config for Claude/Codex/Gemini',
+      threeTitle: 'Start Vibe Coding',
+      threeDesc: 'Write code, fix bugs, add tests'
+    },
+    quickstart: {
+      title: 'Quickstart',
+      description: 'Replace BASE_URL and API key, then run:',
+      copy: 'Copy example',
+      snippetTitle: 'Terminal',
+      tip1: 'If you use an SDK, just set base URL/endpoint to your host.',
+      tip2: 'Start small: try a short prompt first to verify everything works.'
+    },
+    why: {
+      title: 'Why Sub2API',
+      subtitle: 'A few things that help beginners get started faster.'
+    },
     tags: {
       subscriptionToApi: 'Subscription to API',
       stickySession: 'Sticky Session',
       realtimeBilling: 'Real-time Billing'
     },
     features: {
-      unifiedGateway: 'Unified API Gateway',
-      unifiedGatewayDesc:
-        'Convert Claude subscriptions to API endpoints. Access AI capabilities through standard /v1/messages interface.',
-      multiAccount: 'Multi-Account Pool',
-      multiAccountDesc:
-        'Manage multiple upstream accounts with smart load balancing. Support OAuth and API Key authentication.',
-      balanceQuota: 'Balance & Quota',
-      balanceQuotaDesc:
-        'Token-based billing with precise usage tracking. Manage quotas and recharge with redeem codes.'
+      unifiedGateway: 'One-key tool integration',
+      unifiedGatewayDesc: 'Use Claude Code, Codex CLI, and Gemini CLI with a single API key.',
+      multiAccount: 'More stable relay',
+      multiAccountDesc: 'Multiple upstreams/accounts with automatic fallback to reduce volatility.',
+      balanceQuota: 'Usage visibility',
+      balanceQuotaDesc: 'Token-level records with model/day breakdown and clearer balance.',
+      rateLimit: 'Cost guards',
+      rateLimitDesc: 'Rate limits and daily/weekly/monthly caps help prevent surprises.',
+      concurrency: 'Peak-time resilience',
+      concurrencyDesc: 'Concurrency protection and queue strategies for steadier peaks.',
+      adminConsole: 'Transparent rules',
+      adminConsoleDesc: 'Model pricing/rates are visible with traceable billing records.'
+    },
+    metrics: {
+      title: 'Our principles',
+      subtitle: 'Let the relay handle the complexity — you focus on shipping.',
+      items: {
+        setup: 'Setup',
+        setupDesc: 'Copy config and get running in minutes.',
+        cost: 'Value',
+        costDesc: 'Choose models as needed to optimize cost.',
+        transparent: 'Transparency',
+        transparentDesc: 'Clear billing rules and detailed usage records.',
+        coverage: 'Coverage',
+        coverageDesc: 'Fits common CLI/IDE workflows.'
+      }
+    },
+    pricing: {
+      title: 'Choose a plan that fits you',
+      subtitle:
+        'Multiple packages for different needs. No hidden fees — you can always view detailed usage.',
+      recommended: 'Recommended',
+      buy: 'Buy now',
+      note: 'Plan cards are for quick onboarding. Actual credits, limits, and billing rules depend on your instance.',
+      plans: {
+        starter: {
+          name: 'Starter',
+          price: '9.9',
+          credit: 'Includes $20 credits: ~10M tokens',
+          f1: 'Valid for 30 days',
+          f2: 'Basic concurrency: 2 RPM',
+          f3: 'All models supported'
+        },
+        lite: {
+          name: 'Lite',
+          price: '19.9',
+          credit: 'Includes $40 credits: ~20M tokens',
+          f1: 'Valid for 30 days',
+          f2: 'Standard concurrency: 10 RPM',
+          f3: 'All models supported'
+        },
+        standard: {
+          name: 'Standard',
+          price: '49.9',
+          credit: 'Includes $100 credits: ~50M tokens',
+          f1: 'Valid for 30 days',
+          f2: 'High concurrency: 30 RPM',
+          f3: 'All models supported'
+        },
+        pro: {
+          name: 'Pro',
+          price: '99.9',
+          credit: 'Includes $200 credits: ~100M tokens',
+          f1: 'Valid for 30 days',
+          f2: 'Enterprise concurrency: 60 RPM',
+          f3: 'CN2 dedicated route (HK/JP)',
+          f4: '1-on-1 technical support'
+        }
+      }
     },
     providers: {
-      title: 'Supported Providers',
-      description: 'Unified API interface for AI services',
+      title: 'Supported models & platforms',
+      description: 'Use mainstream models and switch anytime.',
       supported: 'Supported',
       soon: 'Soon',
       claude: 'Claude',
       gemini: 'Gemini',
       antigravity: 'Antigravity',
       more: 'More'
+    },
+    faq: {
+      title: 'FAQ',
+      subtitle: 'Common questions for first-time users.',
+      q1: 'Do I need to learn APIs first?',
+      a1: 'No. Pick your tool and copy the config. Read the docs when you want more options.',
+      q2: 'Where do I get an API key?',
+      a2: 'After signing in, go to Dashboard → API Keys to create/copy one.',
+      q3: 'Which tools/clients are supported?',
+      a3: 'Claude Code, Codex CLI, Gemini CLI, OpenCode, and more — see examples/docs for details.',
+      q4: 'How does pricing work?',
+      a4: 'Billing rules and usage details are shown in the dashboard. You can view by model/day.',
+      q5: 'What if a request fails?',
+      a5: 'Check host URL, API key, and network connectivity first, then look at the dashboard or contact the admin.',
+      more: 'Read the docs'
+    },
+    cta: {
+      title: 'Ready to try it?',
+      description: 'Sign in, generate an API key, copy the tool config, and start coding.'
     },
     footer: {
       allRightsReserved: 'All rights reserved.'
@@ -950,7 +1097,7 @@ export default {
       title: 'Subscription Management',
       description: 'Manage user subscriptions and quota limits',
       assignSubscription: 'Assign Subscription',
-      adjustSubscription: 'Adjust Subscription',
+      extendSubscription: 'Extend Subscription',
       revokeSubscription: 'Revoke Subscription',
       allStatus: 'All Status',
       allGroups: 'All Groups',
@@ -965,7 +1112,6 @@ export default {
       resetInHoursMinutes: 'Resets in {hours}h {minutes}m',
       resetInDaysHours: 'Resets in {days}d {hours}h',
       daysRemaining: 'days remaining',
-      remainingDays: 'Remaining days',
       noExpiration: 'No expiration',
       status: {
         active: 'Active',
@@ -984,32 +1130,28 @@ export default {
         user: 'User',
         group: 'Subscription Group',
         validityDays: 'Validity (Days)',
-        adjustDays: 'Adjust by (Days)'
+        extendDays: 'Extend by (Days)'
       },
       selectUser: 'Select a user',
       selectGroup: 'Select a subscription group',
       groupHint: 'Only groups with subscription billing type are shown',
       validityHint: 'Number of days the subscription will be valid',
-      adjustingFor: 'Adjusting subscription for',
+      extendingFor: 'Extending subscription for',
       currentExpiration: 'Current expiration',
-      adjustDaysPlaceholder: 'Positive to extend, negative to shorten',
-      adjustHint: 'Enter positive number to extend, negative to shorten (remaining days must be > 0)',
       assign: 'Assign',
       assigning: 'Assigning...',
-      adjust: 'Adjust',
-      adjusting: 'Adjusting...',
+      extend: 'Extend',
+      extending: 'Extending...',
       revoke: 'Revoke',
       noSubscriptionsYet: 'No subscriptions yet',
       assignFirstSubscription: 'Assign a subscription to get started.',
       subscriptionAssigned: 'Subscription assigned successfully',
-      subscriptionAdjusted: 'Subscription adjusted successfully',
+      subscriptionExtended: 'Subscription extended successfully',
       subscriptionRevoked: 'Subscription revoked successfully',
       failedToLoad: 'Failed to load subscriptions',
       failedToAssign: 'Failed to assign subscription',
-      failedToAdjust: 'Failed to adjust subscription',
+      failedToExtend: 'Failed to extend subscription',
       failedToRevoke: 'Failed to revoke subscription',
-      adjustWouldExpire: 'Remaining days after adjustment must be greater than 0',
-      adjustOutOfRange: 'Adjustment days must be between -36500 and 36500',
       pleaseSelectUser: 'Please select a user',
       pleaseSelectGroup: 'Please select a group',
       validityDaysRequired: 'Please enter a valid number of days (at least 1)',
@@ -2796,9 +2938,7 @@ export default {
         homeContent: 'Home Page Content',
         homeContentPlaceholder: 'Enter custom content for the home page. Supports Markdown & HTML. If a URL is entered, it will be displayed as an iframe.',
         homeContentHint: 'Customize the home page content. Supports Markdown/HTML. If you enter a URL (starting with http:// or https://), it will be used as an iframe src to embed an external page. When set, the default status information will no longer be displayed.',
-        homeContentIframeWarning: '⚠️ iframe mode note: Some websites have X-Frame-Options or CSP security policies that prevent embedding in iframes. If the page appears blank or shows an error, please verify the target website allows embedding, or consider using HTML mode to build your own content.',
-        hideCcsImportButton: 'Hide CCS Import Button',
-        hideCcsImportButtonHint: 'When enabled, the "Import to CCS" button will be hidden on the API Keys page'
+        homeContentIframeWarning: '⚠️ iframe mode note: Some websites have X-Frame-Options or CSP security policies that prevent embedding in iframes. If the page appears blank or shows an error, please verify the target website allows embedding, or consider using HTML mode to build your own content.'
       },
       smtp: {
         title: 'SMTP Settings',

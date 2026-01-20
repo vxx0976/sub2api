@@ -37,7 +37,7 @@ export function setLocale(locale: string) {
   if (['en', 'zh'].includes(locale)) {
     i18n.global.locale.value = locale as 'en' | 'zh'
     localStorage.setItem(LOCALE_KEY, locale)
-    document.documentElement.setAttribute('lang', locale)
+    document.documentElement.setAttribute('lang', locale === 'zh' ? 'zh-CN' : 'en')
   }
 }
 

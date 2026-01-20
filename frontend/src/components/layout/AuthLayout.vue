@@ -20,7 +20,7 @@
 
       <!-- Grid Pattern -->
       <div
-        class="absolute inset-0 bg-[linear-gradient(rgba(20,184,166,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(20,184,166,0.03)_1px,transparent_1px)] bg-[size:64px_64px]"
+        class="absolute inset-0 bg-[linear-gradient(rgba(209,117,86,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(209,117,86,0.03)_1px,transparent_1px)] bg-[size:64px_64px]"
       ></div>
     </div>
 
@@ -32,7 +32,7 @@
         <div
           class="mb-4 inline-flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl shadow-lg shadow-primary-500/30"
         >
-          <img :src="siteLogo || '/logo.png'" alt="Logo" class="h-full w-full object-contain" />
+          <img :src="siteLogo || '/logo.svg'" alt="Logo" class="h-full w-full object-contain" />
         </div>
         <h1 class="text-gradient mb-2 text-3xl font-bold">
           {{ siteName }}
