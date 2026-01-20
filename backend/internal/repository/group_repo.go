@@ -50,7 +50,10 @@ func (r *groupRepository) Create(ctx context.Context, groupIn *service.Group) er
 		SetDefaultValidityDays(groupIn.DefaultValidityDays).
 		SetClaudeCodeOnly(groupIn.ClaudeCodeOnly).
 		SetNillableFallbackGroupID(groupIn.FallbackGroupID).
-		SetModelRoutingEnabled(groupIn.ModelRoutingEnabled)
+		SetModelRoutingEnabled(groupIn.ModelRoutingEnabled).
+		SetNillablePrice(groupIn.Price).
+		SetIsPurchasable(groupIn.IsPurchasable).
+		SetSortOrder(groupIn.SortOrder)
 
 	// 设置模型路由配置
 	if groupIn.ModelRouting != nil {
@@ -108,7 +111,10 @@ func (r *groupRepository) Update(ctx context.Context, groupIn *service.Group) er
 		SetNillableImagePrice4k(groupIn.ImagePrice4K).
 		SetDefaultValidityDays(groupIn.DefaultValidityDays).
 		SetClaudeCodeOnly(groupIn.ClaudeCodeOnly).
-		SetModelRoutingEnabled(groupIn.ModelRoutingEnabled)
+		SetModelRoutingEnabled(groupIn.ModelRoutingEnabled).
+		SetNillablePrice(groupIn.Price).
+		SetIsPurchasable(groupIn.IsPurchasable).
+		SetSortOrder(groupIn.SortOrder)
 
 	// 处理 FallbackGroupID：nil 时清除，否则设置
 	if groupIn.FallbackGroupID != nil {
@@ -252,6 +258,26 @@ func (r *groupRepository) ListActiveByPlatform(ctx context.Context, platform str
 		}
 	}
 
+	return outGroups, nil
+}
+
+func (r *groupRepository) ListPurchasable(ctx context.Context) ([]service.Group, error) {
+	groups, err := r.client.Group.Query().
+		Where(
+			group.StatusEQ(service.StatusActive),
+			group.IsPurchasableEQ(true),
+			group.SubscriptionTypeEQ(service.SubscriptionTypeSubscription),
+		).
+		Order(dbent.Desc(group.FieldSortOrder), dbent.Asc(group.FieldID)).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	outGroups := make([]service.Group, 0, len(groups))
+	for i := range groups {
+		outGroups = append(outGroups, *groupEntityToService(groups[i]))
+	}
 	return outGroups, nil
 }
 

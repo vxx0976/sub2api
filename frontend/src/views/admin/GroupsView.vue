@@ -359,6 +359,69 @@
           </div>
         </div>
 
+        <!-- Payment Settings (only show when subscription type is selected) -->
+        <div v-if="createForm.subscription_type === 'subscription'" class="border-t pt-4">
+          <label class="block mb-2 font-medium text-gray-700 dark:text-gray-300">
+            {{ t('admin.groups.payment.title') }}
+          </label>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">
+            {{ t('admin.groups.payment.description') }}
+          </p>
+          <div class="space-y-4">
+            <div>
+              <label class="input-label">{{ t('admin.groups.payment.price') }}</label>
+              <input
+                v-model.number="createForm.price"
+                type="number"
+                step="0.01"
+                min="0"
+                class="input"
+                placeholder="0.00"
+              />
+              <p class="input-hint">{{ t('admin.groups.payment.priceHint') }}</p>
+            </div>
+            <div>
+              <label class="input-label">{{ t('admin.groups.payment.sortOrder') }}</label>
+              <input
+                v-model.number="createForm.sort_order"
+                type="number"
+                step="1"
+                min="0"
+                class="input"
+                placeholder="0"
+              />
+              <p class="input-hint">{{ t('admin.groups.payment.sortOrderHint') }}</p>
+            </div>
+            <div>
+              <div class="mb-1.5 flex items-center gap-1">
+                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {{ t('admin.groups.payment.isPurchasable') }}
+                </label>
+              </div>
+              <div class="flex items-center gap-3">
+                <button
+                  type="button"
+                  @click="createForm.is_purchasable = !createForm.is_purchasable"
+                  :class="[
+                    'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
+                    createForm.is_purchasable ? 'bg-primary-500' : 'bg-gray-300 dark:bg-dark-600'
+                  ]"
+                >
+                  <span
+                    :class="[
+                      'inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform',
+                      createForm.is_purchasable ? 'translate-x-6' : 'translate-x-1'
+                    ]"
+                  />
+                </button>
+                <span class="text-sm text-gray-500 dark:text-gray-400">
+                  {{ t('admin.groups.payment.isPurchasableHint') }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- 图片生成计费配置（antigravity 和 gemini 平台） -->
         <div v-if="createForm.platform === 'antigravity' || createForm.platform === 'gemini'" class="border-t pt-4">
           <label class="block mb-2 font-medium text-gray-700 dark:text-gray-300">
@@ -799,6 +862,69 @@
                 class="input"
                 :placeholder="t('admin.groups.subscription.noLimit')"
               />
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment Settings (only show when subscription type is selected) -->
+        <div v-if="editForm.subscription_type === 'subscription'" class="border-t pt-4">
+          <label class="block mb-2 font-medium text-gray-700 dark:text-gray-300">
+            {{ t('admin.groups.payment.title') }}
+          </label>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">
+            {{ t('admin.groups.payment.description') }}
+          </p>
+          <div class="space-y-4">
+            <div>
+              <label class="input-label">{{ t('admin.groups.payment.price') }}</label>
+              <input
+                v-model.number="editForm.price"
+                type="number"
+                step="0.01"
+                min="0"
+                class="input"
+                placeholder="0.00"
+              />
+              <p class="input-hint">{{ t('admin.groups.payment.priceHint') }}</p>
+            </div>
+            <div>
+              <label class="input-label">{{ t('admin.groups.payment.sortOrder') }}</label>
+              <input
+                v-model.number="editForm.sort_order"
+                type="number"
+                step="1"
+                min="0"
+                class="input"
+                placeholder="0"
+              />
+              <p class="input-hint">{{ t('admin.groups.payment.sortOrderHint') }}</p>
+            </div>
+            <div>
+              <div class="mb-1.5 flex items-center gap-1">
+                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {{ t('admin.groups.payment.isPurchasable') }}
+                </label>
+              </div>
+              <div class="flex items-center gap-3">
+                <button
+                  type="button"
+                  @click="editForm.is_purchasable = !editForm.is_purchasable"
+                  :class="[
+                    'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
+                    editForm.is_purchasable ? 'bg-primary-500' : 'bg-gray-300 dark:bg-dark-600'
+                  ]"
+                >
+                  <span
+                    :class="[
+                      'inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform',
+                      editForm.is_purchasable ? 'translate-x-6' : 'translate-x-1'
+                    ]"
+                  />
+                </button>
+                <span class="text-sm text-gray-500 dark:text-gray-400">
+                  {{ t('admin.groups.payment.isPurchasableHint') }}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -1244,7 +1370,11 @@ const createForm = reactive({
   claude_code_only: false,
   fallback_group_id: null as number | null,
   // 模型路由开关
-  model_routing_enabled: false
+  model_routing_enabled: false,
+  // 支付相关
+  price: null as number | null,
+  is_purchasable: false,
+  sort_order: 0
 })
 
 // 简单账号类型（用于模型路由选择）
@@ -1415,7 +1545,11 @@ const editForm = reactive({
   claude_code_only: false,
   fallback_group_id: null as number | null,
   // 模型路由开关
-  model_routing_enabled: false
+  model_routing_enabled: false,
+  // 支付相关
+  price: null as number | null,
+  is_purchasable: false,
+  sort_order: 0
 })
 
 // 根据分组类型返回不同的删除确认消息
@@ -1497,6 +1631,9 @@ const closeCreateModal = () => {
   createForm.image_price_4k = null
   createForm.claude_code_only = false
   createForm.fallback_group_id = null
+  createForm.price = null
+  createForm.is_purchasable = false
+  createForm.sort_order = 0
   createModelRoutingRules.value = []
 }
 
@@ -1547,6 +1684,9 @@ const handleEdit = async (group: Group) => {
   editForm.claude_code_only = group.claude_code_only || false
   editForm.fallback_group_id = group.fallback_group_id
   editForm.model_routing_enabled = group.model_routing_enabled || false
+  editForm.price = group.price
+  editForm.is_purchasable = group.is_purchasable || false
+  editForm.sort_order = group.sort_order || 0
   // 加载模型路由规则（异步加载账号名称）
   editModelRoutingRules.value = await convertApiFormatToRoutingRules(group.model_routing)
   showEditModal.value = true

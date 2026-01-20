@@ -36,6 +36,11 @@ type Group struct {
 	ModelRouting        map[string][]int64
 	ModelRoutingEnabled bool
 
+	// 支付相关
+	Price         *float64
+	IsPurchasable bool
+	SortOrder     int
+
 	CreatedAt time.Time
 	UpdatedAt time.Time
 

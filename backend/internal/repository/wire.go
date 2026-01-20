@@ -64,6 +64,7 @@ var ProviderSet = wire.NewSet(
 	NewUserSubscriptionRepository,
 	NewUserAttributeDefinitionRepository,
 	NewUserAttributeValueRepository,
+	NewOrderRepository,
 
 	// Cache implementations
 	NewGatewayCache,

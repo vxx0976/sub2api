@@ -166,6 +166,30 @@ const routes: RouteRecordRaw[] = [
       descriptionKey: 'userSubscriptions.description'
     }
   },
+  {
+    path: '/plans',
+    name: 'Plans',
+    component: () => import('@/views/user/PlansView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: false,
+      title: 'Purchase Plans',
+      titleKey: 'plans.title',
+      descriptionKey: 'plans.description'
+    }
+  },
+  {
+    path: '/orders',
+    name: 'Orders',
+    component: () => import('@/views/user/OrdersView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: false,
+      title: 'My Orders',
+      titleKey: 'userOrders.title',
+      descriptionKey: 'userOrders.description'
+    }
+  },
 
   // ==================== Admin Routes ====================
   {

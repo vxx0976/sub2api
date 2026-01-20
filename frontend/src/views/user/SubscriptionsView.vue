@@ -1,8 +1,23 @@
 <template>
   <AppLayout>
     <div class="space-y-6">
+      <!-- Payment Verification State -->
+      <div v-if="verifyingPayment" class="card p-12 text-center">
+        <div class="flex flex-col items-center gap-4">
+          <div
+            class="h-12 w-12 animate-spin rounded-full border-4 border-primary-500 border-t-transparent"
+          ></div>
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+            {{ t('common.processing') }}
+          </h3>
+          <p class="text-gray-500 dark:text-dark-400">
+            正在验证支付结果...
+          </p>
+        </div>
+      </div>
+
       <!-- Loading State -->
-      <div v-if="loading" class="flex justify-center py-12">
+      <div v-else-if="loading" class="flex justify-center py-12">
         <div
           class="h-8 w-8 animate-spin rounded-full border-2 border-primary-500 border-t-transparent"
         ></div>
@@ -21,15 +36,31 @@
         <p class="text-gray-500 dark:text-dark-400">
           {{ t('userSubscriptions.noActiveSubscriptionsDesc') }}
         </p>
+        <router-link to="/plans" class="btn btn-primary mt-4">
+          {{ t('userSubscriptions.purchasePlan') }}
+        </router-link>
       </div>
 
-      <!-- Subscriptions Grid -->
-      <div v-else class="grid gap-6 lg:grid-cols-2">
-        <div
-          v-for="subscription in subscriptions"
-          :key="subscription.id"
-          class="card overflow-hidden"
-        >
+      <!-- Subscriptions List -->
+      <div v-else class="space-y-6">
+        <!-- Header with Purchase Button -->
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+            {{ t('userSubscriptions.mySubscriptions') }}
+          </h2>
+          <router-link to="/plans" class="btn btn-primary">
+            <Icon name="plus" size="sm" />
+            {{ t('userSubscriptions.purchasePlan') }}
+          </router-link>
+        </div>
+
+        <!-- Subscriptions Grid -->
+        <div class="grid gap-6 lg:grid-cols-2">
+          <div
+            v-for="subscription in subscriptions"
+            :key="subscription.id"
+            class="card overflow-hidden"
+          >
           <!-- Header -->
           <div
             class="flex items-center justify-between border-b border-gray-100 p-4 dark:border-dark-700"
@@ -229,6 +260,7 @@
             </div>
           </div>
         </div>
+        </div>
       </div>
     </div>
   </AppLayout>
@@ -237,18 +269,23 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRoute, useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import subscriptionsAPI from '@/api/subscriptions'
+import plansAPI, { type PaymentReturnParams } from '@/api/plans'
 import type { UserSubscription } from '@/types'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import Icon from '@/components/icons/Icon.vue'
 import { formatDateOnly } from '@/utils/format'
 
 const { t } = useI18n()
+const route = useRoute()
+const router = useRouter()
 const appStore = useAppStore()
 
 const subscriptions = ref<UserSubscription[]>([])
 const loading = ref(true)
+const verifyingPayment = ref(false)
 
 async function loadSubscriptions() {
   try {
@@ -259,6 +296,71 @@ async function loadSubscriptions() {
     appStore.showError(t('userSubscriptions.failedToLoad'))
   } finally {
     loading.value = false
+  }
+}
+
+// Check if URL contains payment callback parameters
+function hasPaymentParams(): boolean {
+  return !!(
+    route.query.trade_status &&
+    route.query.out_trade_no &&
+    route.query.sign
+  )
+}
+
+// Extract payment parameters from URL
+function getPaymentParams(): PaymentReturnParams {
+  return {
+    pid: String(route.query.pid || ''),
+    trade_no: String(route.query.trade_no || ''),
+    out_trade_no: String(route.query.out_trade_no || ''),
+    type: String(route.query.type || ''),
+    name: String(route.query.name || ''),
+    money: String(route.query.money || ''),
+    trade_status: String(route.query.trade_status || ''),
+    sign: String(route.query.sign || ''),
+    sign_type: String(route.query.sign_type || '')
+  }
+}
+
+// Verify payment and process order
+async function verifyPayment() {
+  if (!hasPaymentParams()) return
+
+  const params = getPaymentParams()
+
+  // Only process if trade status indicates success
+  if (params.trade_status !== 'TRADE_SUCCESS') {
+    appStore.showError(t('userSubscriptions.paymentFailed'))
+    // Clean URL params
+    router.replace({ path: route.path })
+    return
+  }
+
+  try {
+    verifyingPayment.value = true
+    const result = await plansAPI.verifyPayment(params)
+
+    if (result.paid) {
+      appStore.showSuccess(t('userSubscriptions.paymentSuccess'))
+    } else {
+      appStore.showError(t('userSubscriptions.paymentPending'))
+    }
+  } catch (error: unknown) {
+    console.error('Failed to verify payment:', error)
+    // Check if it's a signature error
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    if (errorMessage.includes('signature')) {
+      appStore.showError(t('userSubscriptions.paymentVerifyFailed'))
+    } else {
+      appStore.showError(t('userSubscriptions.paymentProcessError'))
+    }
+  } finally {
+    verifyingPayment.value = false
+    // Clean URL params
+    router.replace({ path: route.path })
+    // Reload subscriptions to show the new one
+    await loadSubscriptions()
   }
 }
 
@@ -336,7 +438,12 @@ function formatResetTime(windowStart: string | null, windowHours: number): strin
   return `${minutes}m`
 }
 
-onMounted(() => {
-  loadSubscriptions()
+onMounted(async () => {
+  // Check for payment callback first
+  if (hasPaymentParams()) {
+    await verifyPayment()
+  } else {
+    await loadSubscriptions()
+  }
 })
 </script>

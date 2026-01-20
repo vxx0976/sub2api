@@ -317,7 +317,9 @@ export default {
       minutesAgo: '{n}分钟前',
       hoursAgo: '{n}小时前',
       daysAgo: '{n}天前'
-    }
+    },
+    processing: '处理中...',
+    retry: '重试'
   },
 
   // Navigation
@@ -344,6 +346,8 @@ export default {
     logout: '退出登录',
     github: 'GitHub',
     mySubscriptions: '我的订阅',
+    plans: '套餐计划',
+    orders: '我的订单',
     docs: '文档'
   },
 
@@ -1167,6 +1171,16 @@ export default {
         noRulesHint: '添加路由规则以将特定模型请求优先路由到指定账号',
         searchAccountPlaceholder: '搜索账号...',
         accountsHint: '选择此模型模式优先使用的账号'
+      },
+      payment: {
+        title: '套餐销售设置',
+        description: '配置分组作为可购买套餐的销售参数',
+        price: '售价（元）',
+        priceHint: '用户购买此套餐需要支付的金额',
+        isPurchasable: '允许购买',
+        isPurchasableHint: '启用后，用户可在套餐页面购买此分组',
+        sortOrder: '排序权重',
+        sortOrderHint: '数值越大排序越靠前'
       }
     },
 
@@ -3242,9 +3256,16 @@ export default {
   userSubscriptions: {
     title: '我的订阅',
     description: '查看您的订阅计划和用量',
+    mySubscriptions: '我的订阅',
     noActiveSubscriptions: '暂无有效订阅',
     noActiveSubscriptionsDesc: '您没有任何有效订阅。请联系管理员获取订阅。',
+    purchasePlan: '购买套餐',
     failedToLoad: '加载订阅失败',
+    paymentFailed: '支付失败',
+    paymentSuccess: '支付成功',
+    paymentPending: '支付处理中',
+    paymentVerifyFailed: '支付验证失败',
+    paymentProcessError: '支付处理出错',
     status: {
       active: '有效',
       expired: '已过期',
@@ -3263,6 +3284,48 @@ export default {
     resetIn: '{time} 后重置',
     windowNotActive: '等待首次使用',
     usageOf: '已用 {used} / {limit}'
+  },
+
+  // Plans (user purchase page)
+  plans: {
+    title: '套餐计划',
+    description: '选择适合您的套餐计划',
+    subtitle: '选择适合您的套餐，立即开始使用',
+    loadError: '加载套餐列表失败',
+    noPlans: '暂无可购买套餐',
+    noPlansDesc: '管理员尚未配置可购买的套餐，请稍后再来',
+    recommended: '推荐',
+    validityPeriod: '{days} 天有效期',
+    validFor: '有效期 {days} 天',
+    dailyLimit: '每日限额 ${amount}',
+    weeklyLimit: '每周限额 ${amount}',
+    monthlyLimit: '每月限额 ${amount}',
+    unlimited: '无限额',
+    processing: '处理中...',
+    purchase: '立即购买',
+    purchaseError: '创建订单失败，请稍后重试'
+  },
+
+  // User Orders
+  userOrders: {
+    title: '我的订单',
+    description: '查看您的订单记录',
+    myOrders: '我的订单',
+    noOrders: '暂无订单',
+    noOrdersDesc: '您还没有购买过任何套餐',
+    purchasePlan: '购买套餐',
+    orderNo: '订单号',
+    planName: '套餐名称',
+    amount: '金额',
+    status: '状态',
+    createdAt: '创建时间',
+    failedToLoad: '加载订单列表失败',
+    statusLabels: {
+      pending: '待支付',
+      paid: '已支付',
+      expired: '已过期',
+      refunded: '已退款'
+    }
   },
 
   // Onboarding Tour

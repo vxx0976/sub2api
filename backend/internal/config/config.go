@@ -21,7 +21,8 @@ const (
 
 // DefaultCSPPolicy is the default Content-Security-Policy with nonce support
 // __CSP_NONCE__ will be replaced with actual nonce at request time by the SecurityHeaders middleware
-const DefaultCSPPolicy = "default-src 'self'; script-src 'self' __CSP_NONCE__ https://challenges.cloudflare.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https:; frame-src https://challenges.cloudflare.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+// Note: 'unsafe-inline' is added to script-src for Cloudflare Turnstile compatibility, but it's only used as fallback when nonce is not supported
+const DefaultCSPPolicy = "default-src 'self'; script-src 'self' __CSP_NONCE__ 'unsafe-inline' https://challenges.cloudflare.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https:; frame-src https://challenges.cloudflare.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
 
 // 连接池隔离策略常量
 // 用于控制上游 HTTP 连接池的隔离粒度，影响连接复用和资源消耗
@@ -62,6 +63,7 @@ type Config struct {
 	Timezone     string                     `mapstructure:"timezone"` // e.g. "Asia/Shanghai", "UTC"
 	Gemini       GeminiConfig               `mapstructure:"gemini"`
 	Update       UpdateConfig               `mapstructure:"update"`
+	Payment      PaymentConfig              `mapstructure:"payment"`
 }
 
 type GeminiConfig struct {
@@ -91,6 +93,28 @@ type UpdateConfig struct {
 	// 支持 http/https/socks5/socks5h 协议
 	// 例如: "http://127.0.0.1:7890", "socks5://127.0.0.1:1080"
 	ProxyURL string `mapstructure:"proxy_url"`
+}
+
+// PaymentConfig 支付配置
+type PaymentConfig struct {
+	// Enabled 是否启用支付功能
+	Enabled bool `mapstructure:"enabled"`
+	// Muse 暮色聚合支付配置
+	Muse MusePaymentConfig `mapstructure:"muse"`
+}
+
+// MusePaymentConfig 暮色聚合支付配置
+type MusePaymentConfig struct {
+	// PID 商户ID
+	PID string `mapstructure:"pid"`
+	// Key 商户密钥
+	Key string `mapstructure:"key"`
+	// SubmitURL 支付提交地址
+	SubmitURL string `mapstructure:"submit_url"`
+	// NotifyURL 支付回调通知地址
+	NotifyURL string `mapstructure:"notify_url"`
+	// ReturnURL 支付完成跳转地址
+	ReturnURL string `mapstructure:"return_url"`
 }
 
 type LinuxDoConnectConfig struct {
@@ -869,6 +893,14 @@ func setDefaults() {
 	viper.SetDefault("gemini.oauth.client_secret", "")
 	viper.SetDefault("gemini.oauth.scopes", "")
 	viper.SetDefault("gemini.quota.policy", "")
+
+	// Payment - 支付配置
+	viper.SetDefault("payment.enabled", false)
+	viper.SetDefault("payment.muse.pid", "")
+	viper.SetDefault("payment.muse.key", "")
+	viper.SetDefault("payment.muse.submit_url", "https://ms.1212z.cn/submit.php")
+	viper.SetDefault("payment.muse.notify_url", "")
+	viper.SetDefault("payment.muse.return_url", "")
 }
 
 func (c *Config) Validate() error {

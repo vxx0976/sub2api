@@ -110,6 +110,10 @@ type CreateGroupInput struct {
 	// 模型路由配置（仅 anthropic 平台使用）
 	ModelRouting        map[string][]int64
 	ModelRoutingEnabled bool // 是否启用模型路由
+	// 支付相关
+	Price         *float64
+	IsPurchasable bool
+	SortOrder     int
 }
 
 type UpdateGroupInput struct {
@@ -132,6 +136,10 @@ type UpdateGroupInput struct {
 	// 模型路由配置（仅 anthropic 平台使用）
 	ModelRouting        map[string][]int64
 	ModelRoutingEnabled *bool // 是否启用模型路由
+	// 支付相关
+	Price         *float64
+	IsPurchasable *bool
+	SortOrder     *int
 }
 
 type CreateAccountInput struct {
@@ -589,6 +597,9 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 		ClaudeCodeOnly:   input.ClaudeCodeOnly,
 		FallbackGroupID:  input.FallbackGroupID,
 		ModelRouting:     input.ModelRouting,
+		Price:            input.Price,
+		IsPurchasable:    input.IsPurchasable,
+		SortOrder:        input.SortOrder,
 	}
 	if err := s.groupRepo.Create(ctx, group); err != nil {
 		return nil, err
@@ -723,6 +734,17 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 	}
 	if input.ModelRoutingEnabled != nil {
 		group.ModelRoutingEnabled = *input.ModelRoutingEnabled
+	}
+
+	// 支付相关
+	if input.Price != nil {
+		group.Price = input.Price
+	}
+	if input.IsPurchasable != nil {
+		group.IsPurchasable = *input.IsPurchasable
+	}
+	if input.SortOrder != nil {
+		group.SortOrder = *input.SortOrder
 	}
 
 	if err := s.groupRepo.Update(ctx, group); err != nil {

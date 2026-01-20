@@ -14,6 +14,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/account"
 	"github.com/Wei-Shaw/sub2api/ent/apikey"
 	"github.com/Wei-Shaw/sub2api/ent/group"
+	"github.com/Wei-Shaw/sub2api/ent/order"
 	"github.com/Wei-Shaw/sub2api/ent/redeemcode"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
 	"github.com/Wei-Shaw/sub2api/ent/user"
@@ -306,6 +307,54 @@ func (_c *GroupCreate) SetNillableModelRoutingEnabled(v *bool) *GroupCreate {
 	return _c
 }
 
+// SetPrice sets the "price" field.
+func (_c *GroupCreate) SetPrice(v float64) *GroupCreate {
+	_c.mutation.SetPrice(v)
+	return _c
+}
+
+// SetNillablePrice sets the "price" field if the given value is not nil.
+func (_c *GroupCreate) SetNillablePrice(v *float64) *GroupCreate {
+	if v != nil {
+		_c.SetPrice(*v)
+	}
+	return _c
+}
+
+// SetIsPurchasable sets the "is_purchasable" field.
+func (_c *GroupCreate) SetIsPurchasable(v bool) *GroupCreate {
+	_c.mutation.SetIsPurchasable(v)
+	return _c
+}
+
+// SetNillableIsPurchasable sets the "is_purchasable" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableIsPurchasable(v *bool) *GroupCreate {
+	if v != nil {
+		_c.SetIsPurchasable(*v)
+	}
+	return _c
+}
+
+// SetSortOrder sets the "sort_order" field.
+func (_c *GroupCreate) SetSortOrder(v int) *GroupCreate {
+	_c.mutation.SetSortOrder(v)
+	return _c
+}
+
+// SetNillableSortOrder sets the "sort_order" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableSortOrder(v *int) *GroupCreate {
+	if v != nil {
+		_c.SetSortOrder(*v)
+	}
+	return _c
+}
+
+// SetPlanFeatures sets the "plan_features" field.
+func (_c *GroupCreate) SetPlanFeatures(v []string) *GroupCreate {
+	_c.mutation.SetPlanFeatures(v)
+	return _c
+}
+
 // AddAPIKeyIDs adds the "api_keys" edge to the APIKey entity by IDs.
 func (_c *GroupCreate) AddAPIKeyIDs(ids ...int64) *GroupCreate {
 	_c.mutation.AddAPIKeyIDs(ids...)
@@ -364,6 +413,21 @@ func (_c *GroupCreate) AddUsageLogs(v ...*UsageLog) *GroupCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddUsageLogIDs(ids...)
+}
+
+// AddOrderIDs adds the "orders" edge to the Order entity by IDs.
+func (_c *GroupCreate) AddOrderIDs(ids ...int64) *GroupCreate {
+	_c.mutation.AddOrderIDs(ids...)
+	return _c
+}
+
+// AddOrders adds the "orders" edges to the Order entity.
+func (_c *GroupCreate) AddOrders(v ...*Order) *GroupCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddOrderIDs(ids...)
 }
 
 // AddAccountIDs adds the "accounts" edge to the Account entity by IDs.
@@ -479,6 +543,14 @@ func (_c *GroupCreate) defaults() error {
 		v := group.DefaultModelRoutingEnabled
 		_c.mutation.SetModelRoutingEnabled(v)
 	}
+	if _, ok := _c.mutation.IsPurchasable(); !ok {
+		v := group.DefaultIsPurchasable
+		_c.mutation.SetIsPurchasable(v)
+	}
+	if _, ok := _c.mutation.SortOrder(); !ok {
+		v := group.DefaultSortOrder
+		_c.mutation.SetSortOrder(v)
+	}
 	return nil
 }
 
@@ -536,6 +608,12 @@ func (_c *GroupCreate) check() error {
 	}
 	if _, ok := _c.mutation.ModelRoutingEnabled(); !ok {
 		return &ValidationError{Name: "model_routing_enabled", err: errors.New(`ent: missing required field "Group.model_routing_enabled"`)}
+	}
+	if _, ok := _c.mutation.IsPurchasable(); !ok {
+		return &ValidationError{Name: "is_purchasable", err: errors.New(`ent: missing required field "Group.is_purchasable"`)}
+	}
+	if _, ok := _c.mutation.SortOrder(); !ok {
+		return &ValidationError{Name: "sort_order", err: errors.New(`ent: missing required field "Group.sort_order"`)}
 	}
 	return nil
 }
@@ -648,6 +726,22 @@ func (_c *GroupCreate) createSpec() (*Group, *sqlgraph.CreateSpec) {
 		_spec.SetField(group.FieldModelRoutingEnabled, field.TypeBool, value)
 		_node.ModelRoutingEnabled = value
 	}
+	if value, ok := _c.mutation.Price(); ok {
+		_spec.SetField(group.FieldPrice, field.TypeFloat64, value)
+		_node.Price = &value
+	}
+	if value, ok := _c.mutation.IsPurchasable(); ok {
+		_spec.SetField(group.FieldIsPurchasable, field.TypeBool, value)
+		_node.IsPurchasable = value
+	}
+	if value, ok := _c.mutation.SortOrder(); ok {
+		_spec.SetField(group.FieldSortOrder, field.TypeInt, value)
+		_node.SortOrder = value
+	}
+	if value, ok := _c.mutation.PlanFeatures(); ok {
+		_spec.SetField(group.FieldPlanFeatures, field.TypeJSON, value)
+		_node.PlanFeatures = value
+	}
 	if nodes := _c.mutation.APIKeysIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -705,6 +799,22 @@ func (_c *GroupCreate) createSpec() (*Group, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(usagelog.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.OrdersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   group.OrdersTable,
+			Columns: []string{group.OrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -1155,6 +1265,78 @@ func (u *GroupUpsert) SetModelRoutingEnabled(v bool) *GroupUpsert {
 // UpdateModelRoutingEnabled sets the "model_routing_enabled" field to the value that was provided on create.
 func (u *GroupUpsert) UpdateModelRoutingEnabled() *GroupUpsert {
 	u.SetExcluded(group.FieldModelRoutingEnabled)
+	return u
+}
+
+// SetPrice sets the "price" field.
+func (u *GroupUpsert) SetPrice(v float64) *GroupUpsert {
+	u.Set(group.FieldPrice, v)
+	return u
+}
+
+// UpdatePrice sets the "price" field to the value that was provided on create.
+func (u *GroupUpsert) UpdatePrice() *GroupUpsert {
+	u.SetExcluded(group.FieldPrice)
+	return u
+}
+
+// AddPrice adds v to the "price" field.
+func (u *GroupUpsert) AddPrice(v float64) *GroupUpsert {
+	u.Add(group.FieldPrice, v)
+	return u
+}
+
+// ClearPrice clears the value of the "price" field.
+func (u *GroupUpsert) ClearPrice() *GroupUpsert {
+	u.SetNull(group.FieldPrice)
+	return u
+}
+
+// SetIsPurchasable sets the "is_purchasable" field.
+func (u *GroupUpsert) SetIsPurchasable(v bool) *GroupUpsert {
+	u.Set(group.FieldIsPurchasable, v)
+	return u
+}
+
+// UpdateIsPurchasable sets the "is_purchasable" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateIsPurchasable() *GroupUpsert {
+	u.SetExcluded(group.FieldIsPurchasable)
+	return u
+}
+
+// SetSortOrder sets the "sort_order" field.
+func (u *GroupUpsert) SetSortOrder(v int) *GroupUpsert {
+	u.Set(group.FieldSortOrder, v)
+	return u
+}
+
+// UpdateSortOrder sets the "sort_order" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateSortOrder() *GroupUpsert {
+	u.SetExcluded(group.FieldSortOrder)
+	return u
+}
+
+// AddSortOrder adds v to the "sort_order" field.
+func (u *GroupUpsert) AddSortOrder(v int) *GroupUpsert {
+	u.Add(group.FieldSortOrder, v)
+	return u
+}
+
+// SetPlanFeatures sets the "plan_features" field.
+func (u *GroupUpsert) SetPlanFeatures(v []string) *GroupUpsert {
+	u.Set(group.FieldPlanFeatures, v)
+	return u
+}
+
+// UpdatePlanFeatures sets the "plan_features" field to the value that was provided on create.
+func (u *GroupUpsert) UpdatePlanFeatures() *GroupUpsert {
+	u.SetExcluded(group.FieldPlanFeatures)
+	return u
+}
+
+// ClearPlanFeatures clears the value of the "plan_features" field.
+func (u *GroupUpsert) ClearPlanFeatures() *GroupUpsert {
+	u.SetNull(group.FieldPlanFeatures)
 	return u
 }
 
@@ -1613,6 +1795,90 @@ func (u *GroupUpsertOne) SetModelRoutingEnabled(v bool) *GroupUpsertOne {
 func (u *GroupUpsertOne) UpdateModelRoutingEnabled() *GroupUpsertOne {
 	return u.Update(func(s *GroupUpsert) {
 		s.UpdateModelRoutingEnabled()
+	})
+}
+
+// SetPrice sets the "price" field.
+func (u *GroupUpsertOne) SetPrice(v float64) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetPrice(v)
+	})
+}
+
+// AddPrice adds v to the "price" field.
+func (u *GroupUpsertOne) AddPrice(v float64) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.AddPrice(v)
+	})
+}
+
+// UpdatePrice sets the "price" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdatePrice() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdatePrice()
+	})
+}
+
+// ClearPrice clears the value of the "price" field.
+func (u *GroupUpsertOne) ClearPrice() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.ClearPrice()
+	})
+}
+
+// SetIsPurchasable sets the "is_purchasable" field.
+func (u *GroupUpsertOne) SetIsPurchasable(v bool) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetIsPurchasable(v)
+	})
+}
+
+// UpdateIsPurchasable sets the "is_purchasable" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateIsPurchasable() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateIsPurchasable()
+	})
+}
+
+// SetSortOrder sets the "sort_order" field.
+func (u *GroupUpsertOne) SetSortOrder(v int) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetSortOrder(v)
+	})
+}
+
+// AddSortOrder adds v to the "sort_order" field.
+func (u *GroupUpsertOne) AddSortOrder(v int) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.AddSortOrder(v)
+	})
+}
+
+// UpdateSortOrder sets the "sort_order" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateSortOrder() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateSortOrder()
+	})
+}
+
+// SetPlanFeatures sets the "plan_features" field.
+func (u *GroupUpsertOne) SetPlanFeatures(v []string) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetPlanFeatures(v)
+	})
+}
+
+// UpdatePlanFeatures sets the "plan_features" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdatePlanFeatures() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdatePlanFeatures()
+	})
+}
+
+// ClearPlanFeatures clears the value of the "plan_features" field.
+func (u *GroupUpsertOne) ClearPlanFeatures() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.ClearPlanFeatures()
 	})
 }
 
@@ -2237,6 +2503,90 @@ func (u *GroupUpsertBulk) SetModelRoutingEnabled(v bool) *GroupUpsertBulk {
 func (u *GroupUpsertBulk) UpdateModelRoutingEnabled() *GroupUpsertBulk {
 	return u.Update(func(s *GroupUpsert) {
 		s.UpdateModelRoutingEnabled()
+	})
+}
+
+// SetPrice sets the "price" field.
+func (u *GroupUpsertBulk) SetPrice(v float64) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetPrice(v)
+	})
+}
+
+// AddPrice adds v to the "price" field.
+func (u *GroupUpsertBulk) AddPrice(v float64) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.AddPrice(v)
+	})
+}
+
+// UpdatePrice sets the "price" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdatePrice() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdatePrice()
+	})
+}
+
+// ClearPrice clears the value of the "price" field.
+func (u *GroupUpsertBulk) ClearPrice() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.ClearPrice()
+	})
+}
+
+// SetIsPurchasable sets the "is_purchasable" field.
+func (u *GroupUpsertBulk) SetIsPurchasable(v bool) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetIsPurchasable(v)
+	})
+}
+
+// UpdateIsPurchasable sets the "is_purchasable" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateIsPurchasable() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateIsPurchasable()
+	})
+}
+
+// SetSortOrder sets the "sort_order" field.
+func (u *GroupUpsertBulk) SetSortOrder(v int) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetSortOrder(v)
+	})
+}
+
+// AddSortOrder adds v to the "sort_order" field.
+func (u *GroupUpsertBulk) AddSortOrder(v int) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.AddSortOrder(v)
+	})
+}
+
+// UpdateSortOrder sets the "sort_order" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateSortOrder() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateSortOrder()
+	})
+}
+
+// SetPlanFeatures sets the "plan_features" field.
+func (u *GroupUpsertBulk) SetPlanFeatures(v []string) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetPlanFeatures(v)
+	})
+}
+
+// UpdatePlanFeatures sets the "plan_features" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdatePlanFeatures() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdatePlanFeatures()
+	})
+}
+
+// ClearPlanFeatures clears the value of the "plan_features" field.
+func (u *GroupUpsertBulk) ClearPlanFeatures() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.ClearPlanFeatures()
 	})
 }
 

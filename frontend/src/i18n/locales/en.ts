@@ -318,7 +318,9 @@ export default {
       minutesAgo: '{n}m ago',
       hoursAgo: '{n}h ago',
       daysAgo: '{n}d ago'
-    }
+    },
+    processing: 'Processing...',
+    retry: 'Retry'
   },
 
   // Navigation
@@ -345,6 +347,8 @@ export default {
     logout: 'Logout',
     github: 'GitHub',
     mySubscriptions: 'My Subscriptions',
+    plans: 'Plans',
+    orders: 'My Orders',
     docs: 'Docs'
   },
 
@@ -1090,6 +1094,16 @@ export default {
         noRulesHint: 'Add routing rules to route specific model requests to designated accounts',
         searchAccountPlaceholder: 'Search accounts...',
         accountsHint: 'Select accounts to prioritize for this model pattern'
+      },
+      payment: {
+        title: 'Plan Sales Settings',
+        description: 'Configure the group as a purchasable plan',
+        price: 'Price (CNY)',
+        priceHint: 'The amount users pay to purchase this plan',
+        isPurchasable: 'Allow Purchase',
+        isPurchasableHint: 'When enabled, users can purchase this group on the plans page',
+        sortOrder: 'Sort Weight',
+        sortOrderHint: 'Higher values appear first in the list'
       }
     },
 
@@ -3090,10 +3104,17 @@ export default {
   userSubscriptions: {
     title: 'My Subscriptions',
     description: 'View your subscription plans and usage',
+    mySubscriptions: 'My Subscriptions',
     noActiveSubscriptions: 'No Active Subscriptions',
     noActiveSubscriptionsDesc:
       "You don't have any active subscriptions. Contact administrator to get one.",
+    purchasePlan: 'Purchase Plan',
     failedToLoad: 'Failed to load subscriptions',
+    paymentFailed: 'Payment failed',
+    paymentSuccess: 'Payment successful',
+    paymentPending: 'Payment pending',
+    paymentVerifyFailed: 'Payment verification failed',
+    paymentProcessError: 'Payment processing error',
     status: {
       active: 'Active',
       expired: 'Expired',
@@ -3112,6 +3133,48 @@ export default {
     resetIn: 'Resets in {time}',
     windowNotActive: 'Awaiting first use',
     usageOf: '{used} of {limit}'
+  },
+
+  // Plans (user purchase page)
+  plans: {
+    title: 'Plans',
+    description: 'Choose your plan',
+    subtitle: 'Select the plan that fits your needs',
+    loadError: 'Failed to load plans',
+    noPlans: 'No Plans Available',
+    noPlansDesc: 'No purchasable plans are configured. Please check back later.',
+    recommended: 'Recommended',
+    validityPeriod: '{days} days validity',
+    validFor: 'Valid for {days} days',
+    dailyLimit: 'Daily limit ${amount}',
+    weeklyLimit: 'Weekly limit ${amount}',
+    monthlyLimit: 'Monthly limit ${amount}',
+    unlimited: 'Unlimited',
+    processing: 'Processing...',
+    purchase: 'Purchase Now',
+    purchaseError: 'Failed to create order. Please try again.'
+  },
+
+  // User Orders
+  userOrders: {
+    title: 'My Orders',
+    description: 'View your order history',
+    myOrders: 'My Orders',
+    noOrders: 'No Orders',
+    noOrdersDesc: "You haven't purchased any plans yet",
+    purchasePlan: 'Purchase a Plan',
+    orderNo: 'Order No.',
+    planName: 'Plan',
+    amount: 'Amount',
+    status: 'Status',
+    createdAt: 'Created At',
+    failedToLoad: 'Failed to load orders',
+    statusLabels: {
+      pending: 'Pending',
+      paid: 'Paid',
+      expired: 'Expired',
+      refunded: 'Refunded'
+    }
   },
 
   // Onboarding Tour

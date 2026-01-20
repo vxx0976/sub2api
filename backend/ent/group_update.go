@@ -10,10 +10,12 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
 	"github.com/Wei-Shaw/sub2api/ent/account"
 	"github.com/Wei-Shaw/sub2api/ent/apikey"
 	"github.com/Wei-Shaw/sub2api/ent/group"
+	"github.com/Wei-Shaw/sub2api/ent/order"
 	"github.com/Wei-Shaw/sub2api/ent/predicate"
 	"github.com/Wei-Shaw/sub2api/ent/redeemcode"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
@@ -421,6 +423,86 @@ func (_u *GroupUpdate) SetNillableModelRoutingEnabled(v *bool) *GroupUpdate {
 	return _u
 }
 
+// SetPrice sets the "price" field.
+func (_u *GroupUpdate) SetPrice(v float64) *GroupUpdate {
+	_u.mutation.ResetPrice()
+	_u.mutation.SetPrice(v)
+	return _u
+}
+
+// SetNillablePrice sets the "price" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillablePrice(v *float64) *GroupUpdate {
+	if v != nil {
+		_u.SetPrice(*v)
+	}
+	return _u
+}
+
+// AddPrice adds value to the "price" field.
+func (_u *GroupUpdate) AddPrice(v float64) *GroupUpdate {
+	_u.mutation.AddPrice(v)
+	return _u
+}
+
+// ClearPrice clears the value of the "price" field.
+func (_u *GroupUpdate) ClearPrice() *GroupUpdate {
+	_u.mutation.ClearPrice()
+	return _u
+}
+
+// SetIsPurchasable sets the "is_purchasable" field.
+func (_u *GroupUpdate) SetIsPurchasable(v bool) *GroupUpdate {
+	_u.mutation.SetIsPurchasable(v)
+	return _u
+}
+
+// SetNillableIsPurchasable sets the "is_purchasable" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillableIsPurchasable(v *bool) *GroupUpdate {
+	if v != nil {
+		_u.SetIsPurchasable(*v)
+	}
+	return _u
+}
+
+// SetSortOrder sets the "sort_order" field.
+func (_u *GroupUpdate) SetSortOrder(v int) *GroupUpdate {
+	_u.mutation.ResetSortOrder()
+	_u.mutation.SetSortOrder(v)
+	return _u
+}
+
+// SetNillableSortOrder sets the "sort_order" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillableSortOrder(v *int) *GroupUpdate {
+	if v != nil {
+		_u.SetSortOrder(*v)
+	}
+	return _u
+}
+
+// AddSortOrder adds value to the "sort_order" field.
+func (_u *GroupUpdate) AddSortOrder(v int) *GroupUpdate {
+	_u.mutation.AddSortOrder(v)
+	return _u
+}
+
+// SetPlanFeatures sets the "plan_features" field.
+func (_u *GroupUpdate) SetPlanFeatures(v []string) *GroupUpdate {
+	_u.mutation.SetPlanFeatures(v)
+	return _u
+}
+
+// AppendPlanFeatures appends value to the "plan_features" field.
+func (_u *GroupUpdate) AppendPlanFeatures(v []string) *GroupUpdate {
+	_u.mutation.AppendPlanFeatures(v)
+	return _u
+}
+
+// ClearPlanFeatures clears the value of the "plan_features" field.
+func (_u *GroupUpdate) ClearPlanFeatures() *GroupUpdate {
+	_u.mutation.ClearPlanFeatures()
+	return _u
+}
+
 // AddAPIKeyIDs adds the "api_keys" edge to the APIKey entity by IDs.
 func (_u *GroupUpdate) AddAPIKeyIDs(ids ...int64) *GroupUpdate {
 	_u.mutation.AddAPIKeyIDs(ids...)
@@ -479,6 +561,21 @@ func (_u *GroupUpdate) AddUsageLogs(v ...*UsageLog) *GroupUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.AddUsageLogIDs(ids...)
+}
+
+// AddOrderIDs adds the "orders" edge to the Order entity by IDs.
+func (_u *GroupUpdate) AddOrderIDs(ids ...int64) *GroupUpdate {
+	_u.mutation.AddOrderIDs(ids...)
+	return _u
+}
+
+// AddOrders adds the "orders" edges to the Order entity.
+func (_u *GroupUpdate) AddOrders(v ...*Order) *GroupUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddOrderIDs(ids...)
 }
 
 // AddAccountIDs adds the "accounts" edge to the Account entity by IDs.
@@ -598,6 +695,27 @@ func (_u *GroupUpdate) RemoveUsageLogs(v ...*UsageLog) *GroupUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveUsageLogIDs(ids...)
+}
+
+// ClearOrders clears all "orders" edges to the Order entity.
+func (_u *GroupUpdate) ClearOrders() *GroupUpdate {
+	_u.mutation.ClearOrders()
+	return _u
+}
+
+// RemoveOrderIDs removes the "orders" edge to Order entities by IDs.
+func (_u *GroupUpdate) RemoveOrderIDs(ids ...int64) *GroupUpdate {
+	_u.mutation.RemoveOrderIDs(ids...)
+	return _u
+}
+
+// RemoveOrders removes "orders" edges to Order entities.
+func (_u *GroupUpdate) RemoveOrders(v ...*Order) *GroupUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveOrderIDs(ids...)
 }
 
 // ClearAccounts clears all "accounts" edges to the Account entity.
@@ -838,6 +956,35 @@ func (_u *GroupUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.ModelRoutingEnabled(); ok {
 		_spec.SetField(group.FieldModelRoutingEnabled, field.TypeBool, value)
 	}
+	if value, ok := _u.mutation.Price(); ok {
+		_spec.SetField(group.FieldPrice, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedPrice(); ok {
+		_spec.AddField(group.FieldPrice, field.TypeFloat64, value)
+	}
+	if _u.mutation.PriceCleared() {
+		_spec.ClearField(group.FieldPrice, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.IsPurchasable(); ok {
+		_spec.SetField(group.FieldIsPurchasable, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.SortOrder(); ok {
+		_spec.SetField(group.FieldSortOrder, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedSortOrder(); ok {
+		_spec.AddField(group.FieldSortOrder, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.PlanFeatures(); ok {
+		_spec.SetField(group.FieldPlanFeatures, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedPlanFeatures(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, group.FieldPlanFeatures, value)
+		})
+	}
+	if _u.mutation.PlanFeaturesCleared() {
+		_spec.ClearField(group.FieldPlanFeatures, field.TypeJSON)
+	}
 	if _u.mutation.APIKeysCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -1011,6 +1158,51 @@ func (_u *GroupUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(usagelog.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.OrdersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   group.OrdersTable,
+			Columns: []string{group.OrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedOrdersIDs(); len(nodes) > 0 && !_u.mutation.OrdersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   group.OrdersTable,
+			Columns: []string{group.OrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.OrdersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   group.OrdersTable,
+			Columns: []string{group.OrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -1539,6 +1731,86 @@ func (_u *GroupUpdateOne) SetNillableModelRoutingEnabled(v *bool) *GroupUpdateOn
 	return _u
 }
 
+// SetPrice sets the "price" field.
+func (_u *GroupUpdateOne) SetPrice(v float64) *GroupUpdateOne {
+	_u.mutation.ResetPrice()
+	_u.mutation.SetPrice(v)
+	return _u
+}
+
+// SetNillablePrice sets the "price" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillablePrice(v *float64) *GroupUpdateOne {
+	if v != nil {
+		_u.SetPrice(*v)
+	}
+	return _u
+}
+
+// AddPrice adds value to the "price" field.
+func (_u *GroupUpdateOne) AddPrice(v float64) *GroupUpdateOne {
+	_u.mutation.AddPrice(v)
+	return _u
+}
+
+// ClearPrice clears the value of the "price" field.
+func (_u *GroupUpdateOne) ClearPrice() *GroupUpdateOne {
+	_u.mutation.ClearPrice()
+	return _u
+}
+
+// SetIsPurchasable sets the "is_purchasable" field.
+func (_u *GroupUpdateOne) SetIsPurchasable(v bool) *GroupUpdateOne {
+	_u.mutation.SetIsPurchasable(v)
+	return _u
+}
+
+// SetNillableIsPurchasable sets the "is_purchasable" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillableIsPurchasable(v *bool) *GroupUpdateOne {
+	if v != nil {
+		_u.SetIsPurchasable(*v)
+	}
+	return _u
+}
+
+// SetSortOrder sets the "sort_order" field.
+func (_u *GroupUpdateOne) SetSortOrder(v int) *GroupUpdateOne {
+	_u.mutation.ResetSortOrder()
+	_u.mutation.SetSortOrder(v)
+	return _u
+}
+
+// SetNillableSortOrder sets the "sort_order" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillableSortOrder(v *int) *GroupUpdateOne {
+	if v != nil {
+		_u.SetSortOrder(*v)
+	}
+	return _u
+}
+
+// AddSortOrder adds value to the "sort_order" field.
+func (_u *GroupUpdateOne) AddSortOrder(v int) *GroupUpdateOne {
+	_u.mutation.AddSortOrder(v)
+	return _u
+}
+
+// SetPlanFeatures sets the "plan_features" field.
+func (_u *GroupUpdateOne) SetPlanFeatures(v []string) *GroupUpdateOne {
+	_u.mutation.SetPlanFeatures(v)
+	return _u
+}
+
+// AppendPlanFeatures appends value to the "plan_features" field.
+func (_u *GroupUpdateOne) AppendPlanFeatures(v []string) *GroupUpdateOne {
+	_u.mutation.AppendPlanFeatures(v)
+	return _u
+}
+
+// ClearPlanFeatures clears the value of the "plan_features" field.
+func (_u *GroupUpdateOne) ClearPlanFeatures() *GroupUpdateOne {
+	_u.mutation.ClearPlanFeatures()
+	return _u
+}
+
 // AddAPIKeyIDs adds the "api_keys" edge to the APIKey entity by IDs.
 func (_u *GroupUpdateOne) AddAPIKeyIDs(ids ...int64) *GroupUpdateOne {
 	_u.mutation.AddAPIKeyIDs(ids...)
@@ -1597,6 +1869,21 @@ func (_u *GroupUpdateOne) AddUsageLogs(v ...*UsageLog) *GroupUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.AddUsageLogIDs(ids...)
+}
+
+// AddOrderIDs adds the "orders" edge to the Order entity by IDs.
+func (_u *GroupUpdateOne) AddOrderIDs(ids ...int64) *GroupUpdateOne {
+	_u.mutation.AddOrderIDs(ids...)
+	return _u
+}
+
+// AddOrders adds the "orders" edges to the Order entity.
+func (_u *GroupUpdateOne) AddOrders(v ...*Order) *GroupUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddOrderIDs(ids...)
 }
 
 // AddAccountIDs adds the "accounts" edge to the Account entity by IDs.
@@ -1716,6 +2003,27 @@ func (_u *GroupUpdateOne) RemoveUsageLogs(v ...*UsageLog) *GroupUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveUsageLogIDs(ids...)
+}
+
+// ClearOrders clears all "orders" edges to the Order entity.
+func (_u *GroupUpdateOne) ClearOrders() *GroupUpdateOne {
+	_u.mutation.ClearOrders()
+	return _u
+}
+
+// RemoveOrderIDs removes the "orders" edge to Order entities by IDs.
+func (_u *GroupUpdateOne) RemoveOrderIDs(ids ...int64) *GroupUpdateOne {
+	_u.mutation.RemoveOrderIDs(ids...)
+	return _u
+}
+
+// RemoveOrders removes "orders" edges to Order entities.
+func (_u *GroupUpdateOne) RemoveOrders(v ...*Order) *GroupUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveOrderIDs(ids...)
 }
 
 // ClearAccounts clears all "accounts" edges to the Account entity.
@@ -1986,6 +2294,35 @@ func (_u *GroupUpdateOne) sqlSave(ctx context.Context) (_node *Group, err error)
 	if value, ok := _u.mutation.ModelRoutingEnabled(); ok {
 		_spec.SetField(group.FieldModelRoutingEnabled, field.TypeBool, value)
 	}
+	if value, ok := _u.mutation.Price(); ok {
+		_spec.SetField(group.FieldPrice, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedPrice(); ok {
+		_spec.AddField(group.FieldPrice, field.TypeFloat64, value)
+	}
+	if _u.mutation.PriceCleared() {
+		_spec.ClearField(group.FieldPrice, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.IsPurchasable(); ok {
+		_spec.SetField(group.FieldIsPurchasable, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.SortOrder(); ok {
+		_spec.SetField(group.FieldSortOrder, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedSortOrder(); ok {
+		_spec.AddField(group.FieldSortOrder, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.PlanFeatures(); ok {
+		_spec.SetField(group.FieldPlanFeatures, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedPlanFeatures(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, group.FieldPlanFeatures, value)
+		})
+	}
+	if _u.mutation.PlanFeaturesCleared() {
+		_spec.ClearField(group.FieldPlanFeatures, field.TypeJSON)
+	}
 	if _u.mutation.APIKeysCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -2159,6 +2496,51 @@ func (_u *GroupUpdateOne) sqlSave(ctx context.Context) (_node *Group, err error)
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(usagelog.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.OrdersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   group.OrdersTable,
+			Columns: []string{group.OrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedOrdersIDs(); len(nodes) > 0 && !_u.mutation.OrdersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   group.OrdersTable,
+			Columns: []string{group.OrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.OrdersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   group.OrdersTable,
+			Columns: []string{group.OrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
