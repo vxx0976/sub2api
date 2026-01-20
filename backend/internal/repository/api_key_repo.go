@@ -426,8 +426,13 @@ func groupEntityToService(g *dbent.Group) *service.Group {
 		FallbackGroupID:     g.FallbackGroupID,
 		ModelRouting:        g.ModelRouting,
 		ModelRoutingEnabled: g.ModelRoutingEnabled,
-		CreatedAt:           g.CreatedAt,
-		UpdatedAt:           g.UpdatedAt,
+		// 支付相关字段
+		Price:         g.Price,
+		IsPurchasable: g.IsPurchasable,
+		SortOrder:     g.SortOrder,
+		IsRecommended: g.IsRecommended,
+		CreatedAt:     g.CreatedAt,
+		UpdatedAt:     g.UpdatedAt,
 	}
 }
 

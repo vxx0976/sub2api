@@ -273,10 +273,13 @@ export interface Group {
   // 模型路由配置（仅 anthropic 平台使用）
   model_routing: Record<string, number[]> | null
   model_routing_enabled: boolean
+  // 订阅时长
+  default_validity_days: number
   // 支付相关
   price: number | null
   is_purchasable: boolean
   sort_order: number
+  is_recommended: boolean
   account_count?: number
   created_at: string
   updated_at: string

@@ -60,14 +60,14 @@ type Group struct {
 	ModelRouting map[string][]int64 `json:"model_routing,omitempty"`
 	// 是否启用模型路由配置
 	ModelRoutingEnabled bool `json:"model_routing_enabled,omitempty"`
-	// 套餐价格
+	// 套餐售价（元）
 	Price *float64 `json:"price,omitempty"`
-	// 是否可购买
+	// 是否允许用户购买
 	IsPurchasable bool `json:"is_purchasable,omitempty"`
-	// 排序顺序
+	// 排序权重，数值越大越靠前
 	SortOrder int `json:"sort_order,omitempty"`
-	// 套餐特性列表，用于前端展示
-	PlanFeatures []string `json:"plan_features,omitempty"`
+	// 是否推荐套餐
+	IsRecommended bool `json:"is_recommended,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the GroupQuery when eager-loading is set.
 	Edges        GroupEdges `json:"edges"`
@@ -185,9 +185,9 @@ func (*Group) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case group.FieldModelRouting, group.FieldPlanFeatures:
+		case group.FieldModelRouting:
 			values[i] = new([]byte)
-		case group.FieldIsExclusive, group.FieldClaudeCodeOnly, group.FieldModelRoutingEnabled, group.FieldIsPurchasable:
+		case group.FieldIsExclusive, group.FieldClaudeCodeOnly, group.FieldModelRoutingEnabled, group.FieldIsPurchasable, group.FieldIsRecommended:
 			values[i] = new(sql.NullBool)
 		case group.FieldRateMultiplier, group.FieldDailyLimitUsd, group.FieldWeeklyLimitUsd, group.FieldMonthlyLimitUsd, group.FieldImagePrice1k, group.FieldImagePrice2k, group.FieldImagePrice4k, group.FieldPrice:
 			values[i] = new(sql.NullFloat64)
@@ -374,13 +374,11 @@ func (_m *Group) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.SortOrder = int(value.Int64)
 			}
-		case group.FieldPlanFeatures:
-			if value, ok := values[i].(*[]byte); !ok {
-				return fmt.Errorf("unexpected type %T for field plan_features", values[i])
-			} else if value != nil && len(*value) > 0 {
-				if err := json.Unmarshal(*value, &_m.PlanFeatures); err != nil {
-					return fmt.Errorf("unmarshal field plan_features: %w", err)
-				}
+		case group.FieldIsRecommended:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field is_recommended", values[i])
+			} else if value.Valid {
+				_m.IsRecommended = value.Bool
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -555,8 +553,8 @@ func (_m *Group) String() string {
 	builder.WriteString("sort_order=")
 	builder.WriteString(fmt.Sprintf("%v", _m.SortOrder))
 	builder.WriteString(", ")
-	builder.WriteString("plan_features=")
-	builder.WriteString(fmt.Sprintf("%v", _m.PlanFeatures))
+	builder.WriteString("is_recommended=")
+	builder.WriteString(fmt.Sprintf("%v", _m.IsRecommended))
 	builder.WriteByte(')')
 	return builder.String()
 }

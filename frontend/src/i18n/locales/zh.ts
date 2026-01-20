@@ -1175,12 +1175,16 @@ export default {
       payment: {
         title: '套餐销售设置',
         description: '配置分组作为可购买套餐的销售参数',
+        validityDays: '有效期（天）',
+        validityDaysHint: '购买后订阅的有效天数',
         price: '售价（元）',
         priceHint: '用户购买此套餐需要支付的金额',
         isPurchasable: '允许购买',
         isPurchasableHint: '启用后，用户可在套餐页面购买此分组',
         sortOrder: '排序权重',
-        sortOrderHint: '数值越大排序越靠前'
+        sortOrderHint: '数值越大排序越靠前',
+        isRecommended: '推荐套餐',
+        isRecommendedHint: '在套餐页面显示推荐标识'
       }
     },
 

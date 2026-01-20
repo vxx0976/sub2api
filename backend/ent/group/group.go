@@ -63,8 +63,8 @@ const (
 	FieldIsPurchasable = "is_purchasable"
 	// FieldSortOrder holds the string denoting the sort_order field in the database.
 	FieldSortOrder = "sort_order"
-	// FieldPlanFeatures holds the string denoting the plan_features field in the database.
-	FieldPlanFeatures = "plan_features"
+	// FieldIsRecommended holds the string denoting the is_recommended field in the database.
+	FieldIsRecommended = "is_recommended"
 	// EdgeAPIKeys holds the string denoting the api_keys edge name in mutations.
 	EdgeAPIKeys = "api_keys"
 	// EdgeRedeemCodes holds the string denoting the redeem_codes edge name in mutations.
@@ -173,7 +173,7 @@ var Columns = []string{
 	FieldPrice,
 	FieldIsPurchasable,
 	FieldSortOrder,
-	FieldPlanFeatures,
+	FieldIsRecommended,
 }
 
 var (
@@ -237,6 +237,8 @@ var (
 	DefaultIsPurchasable bool
 	// DefaultSortOrder holds the default value on creation for the "sort_order" field.
 	DefaultSortOrder int
+	// DefaultIsRecommended holds the default value on creation for the "is_recommended" field.
+	DefaultIsRecommended bool
 )
 
 // OrderOption defines the ordering options for the Group queries.
@@ -360,6 +362,11 @@ func ByIsPurchasable(opts ...sql.OrderTermOption) OrderOption {
 // BySortOrder orders the results by the sort_order field.
 func BySortOrder(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSortOrder, opts...).ToFunc()
+}
+
+// ByIsRecommended orders the results by the is_recommended field.
+func ByIsRecommended(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldIsRecommended, opts...).ToFunc()
 }
 
 // ByAPIKeysCount orders the results by api_keys count.

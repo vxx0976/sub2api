@@ -1098,12 +1098,16 @@ export default {
       payment: {
         title: 'Plan Sales Settings',
         description: 'Configure the group as a purchasable plan',
+        validityDays: 'Validity (days)',
+        validityDaysHint: 'The number of days the subscription is valid after purchase',
         price: 'Price (CNY)',
         priceHint: 'The amount users pay to purchase this plan',
         isPurchasable: 'Allow Purchase',
         isPurchasableHint: 'When enabled, users can purchase this group on the plans page',
         sortOrder: 'Sort Weight',
-        sortOrderHint: 'Higher values appear first in the list'
+        sortOrderHint: 'Higher values appear first in the list',
+        isRecommended: 'Recommended',
+        isRecommendedHint: 'Show recommended badge on the plans page'
       }
     },
 

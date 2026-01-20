@@ -369,6 +369,18 @@
           </p>
           <div class="space-y-4">
             <div>
+              <label class="input-label">{{ t('admin.groups.payment.validityDays') }}</label>
+              <input
+                v-model.number="createForm.default_validity_days"
+                type="number"
+                step="1"
+                min="1"
+                class="input"
+                placeholder="30"
+              />
+              <p class="input-hint">{{ t('admin.groups.payment.validityDaysHint') }}</p>
+            </div>
+            <div>
               <label class="input-label">{{ t('admin.groups.payment.price') }}</label>
               <input
                 v-model.number="createForm.price"
@@ -416,6 +428,33 @@
                 </button>
                 <span class="text-sm text-gray-500 dark:text-gray-400">
                   {{ t('admin.groups.payment.isPurchasableHint') }}
+                </span>
+              </div>
+            </div>
+            <div>
+              <div class="mb-1.5 flex items-center gap-1">
+                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {{ t('admin.groups.payment.isRecommended') }}
+                </label>
+              </div>
+              <div class="flex items-center gap-3">
+                <button
+                  type="button"
+                  @click="createForm.is_recommended = !createForm.is_recommended"
+                  :class="[
+                    'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
+                    createForm.is_recommended ? 'bg-primary-500' : 'bg-gray-300 dark:bg-dark-600'
+                  ]"
+                >
+                  <span
+                    :class="[
+                      'inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform',
+                      createForm.is_recommended ? 'translate-x-6' : 'translate-x-1'
+                    ]"
+                  />
+                </button>
+                <span class="text-sm text-gray-500 dark:text-gray-400">
+                  {{ t('admin.groups.payment.isRecommendedHint') }}
                 </span>
               </div>
             </div>
@@ -876,6 +915,18 @@
           </p>
           <div class="space-y-4">
             <div>
+              <label class="input-label">{{ t('admin.groups.payment.validityDays') }}</label>
+              <input
+                v-model.number="editForm.default_validity_days"
+                type="number"
+                step="1"
+                min="1"
+                class="input"
+                placeholder="30"
+              />
+              <p class="input-hint">{{ t('admin.groups.payment.validityDaysHint') }}</p>
+            </div>
+            <div>
               <label class="input-label">{{ t('admin.groups.payment.price') }}</label>
               <input
                 v-model.number="editForm.price"
@@ -923,6 +974,33 @@
                 </button>
                 <span class="text-sm text-gray-500 dark:text-gray-400">
                   {{ t('admin.groups.payment.isPurchasableHint') }}
+                </span>
+              </div>
+            </div>
+            <div>
+              <div class="mb-1.5 flex items-center gap-1">
+                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {{ t('admin.groups.payment.isRecommended') }}
+                </label>
+              </div>
+              <div class="flex items-center gap-3">
+                <button
+                  type="button"
+                  @click="editForm.is_recommended = !editForm.is_recommended"
+                  :class="[
+                    'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
+                    editForm.is_recommended ? 'bg-primary-500' : 'bg-gray-300 dark:bg-dark-600'
+                  ]"
+                >
+                  <span
+                    :class="[
+                      'inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform',
+                      editForm.is_recommended ? 'translate-x-6' : 'translate-x-1'
+                    ]"
+                  />
+                </button>
+                <span class="text-sm text-gray-500 dark:text-gray-400">
+                  {{ t('admin.groups.payment.isRecommendedHint') }}
                 </span>
               </div>
             </div>
@@ -1372,9 +1450,11 @@ const createForm = reactive({
   // 模型路由开关
   model_routing_enabled: false,
   // 支付相关
+  default_validity_days: 30,
   price: null as number | null,
   is_purchasable: false,
-  sort_order: 0
+  sort_order: 0,
+  is_recommended: false
 })
 
 // 简单账号类型（用于模型路由选择）
@@ -1547,9 +1627,11 @@ const editForm = reactive({
   // 模型路由开关
   model_routing_enabled: false,
   // 支付相关
+  default_validity_days: 30,
   price: null as number | null,
   is_purchasable: false,
-  sort_order: 0
+  sort_order: 0,
+  is_recommended: false
 })
 
 // 根据分组类型返回不同的删除确认消息
@@ -1631,9 +1713,11 @@ const closeCreateModal = () => {
   createForm.image_price_4k = null
   createForm.claude_code_only = false
   createForm.fallback_group_id = null
+  createForm.default_validity_days = 30
   createForm.price = null
   createForm.is_purchasable = false
   createForm.sort_order = 0
+  createForm.is_recommended = false
   createModelRoutingRules.value = []
 }
 
@@ -1684,9 +1768,11 @@ const handleEdit = async (group: Group) => {
   editForm.claude_code_only = group.claude_code_only || false
   editForm.fallback_group_id = group.fallback_group_id
   editForm.model_routing_enabled = group.model_routing_enabled || false
+  editForm.default_validity_days = group.default_validity_days || 30
   editForm.price = group.price
   editForm.is_purchasable = group.is_purchasable || false
   editForm.sort_order = group.sort_order || 0
+  editForm.is_recommended = group.is_recommended || false
   // 加载模型路由规则（异步加载账号名称）
   editModelRoutingRules.value = await convertApiFormatToRoutingRules(group.model_routing)
   showEditModal.value = true

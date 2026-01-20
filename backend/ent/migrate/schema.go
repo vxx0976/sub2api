@@ -231,7 +231,7 @@ var (
 		{Name: "price", Type: field.TypeFloat64, Nullable: true, SchemaType: map[string]string{"postgres": "decimal(10,2)"}},
 		{Name: "is_purchasable", Type: field.TypeBool, Default: false},
 		{Name: "sort_order", Type: field.TypeInt, Default: 0},
-		{Name: "plan_features", Type: field.TypeJSON, Nullable: true, SchemaType: map[string]string{"postgres": "jsonb"}},
+		{Name: "is_recommended", Type: field.TypeBool, Default: false},
 	}
 	// GroupsTable holds the schema information for the "groups" table.
 	GroupsTable = &schema.Table{
@@ -263,16 +263,6 @@ var (
 				Name:    "group_deleted_at",
 				Unique:  false,
 				Columns: []*schema.Column{GroupsColumns[3]},
-			},
-			{
-				Name:    "group_is_purchasable",
-				Unique:  false,
-				Columns: []*schema.Column{GroupsColumns[23]},
-			},
-			{
-				Name:    "group_sort_order",
-				Unique:  false,
-				Columns: []*schema.Column{GroupsColumns[24]},
 			},
 		},
 	}

@@ -55,17 +55,17 @@
 
         <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           <div
-            v-for="(plan, index) in plans"
+            v-for="plan in plans"
             :key="plan.id"
             class="group relative flex flex-col overflow-hidden rounded-3xl border transition-all duration-300"
             :class="[
-              index === 1
+              plan.id === recommendedPlanId
                 ? 'border-primary-500/50 bg-gradient-to-b from-primary-50 to-white shadow-lg shadow-primary-500/10 dark:from-primary-900/20 dark:to-dark-800 dark:border-primary-500/30'
                 : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-lg dark:border-dark-600 dark:bg-dark-800 dark:hover:border-dark-500'
             ]"
           >
             <!-- Recommended Badge -->
-            <div v-if="index === 1" class="absolute right-4 top-4">
+            <div v-if="plan.id === recommendedPlanId" class="absolute right-4 top-4">
               <span class="inline-flex items-center gap-1 rounded-full bg-primary-500 px-3 py-1 text-xs font-semibold text-white shadow-lg shadow-primary-500/30">
                 <Icon name="sparkles" size="xs" />
                 {{ t('plans.recommended') }}
@@ -150,7 +150,7 @@
                 :disabled="purchasing === plan.id"
                 class="w-full rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-200"
                 :class="[
-                  index === 1
+                  plan.id === recommendedPlanId
                     ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/30 hover:bg-primary-600 hover:shadow-xl hover:shadow-primary-500/40 disabled:opacity-50'
                     : 'border border-gray-200 bg-gray-50 text-gray-700 hover:border-gray-300 hover:bg-gray-100 dark:border-dark-600 dark:bg-dark-700 dark:text-gray-200 dark:hover:bg-dark-600 disabled:opacity-50'
                 ]"
@@ -170,7 +170,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
 import plansAPI, { type PurchasablePlan } from '@/api/plans'
@@ -184,6 +184,13 @@ const plans = ref<PurchasablePlan[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 const purchasing = ref<number | null>(null)
+
+// 推荐套餐：is_recommended 为 true 的
+const recommendedPlanId = computed(() => {
+  if (plans.value.length === 0) return null
+  const recommended = plans.value.find(p => p.is_recommended)
+  return recommended?.id ?? null
+})
 
 async function loadPlans() {
   try {

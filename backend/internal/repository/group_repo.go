@@ -53,7 +53,8 @@ func (r *groupRepository) Create(ctx context.Context, groupIn *service.Group) er
 		SetModelRoutingEnabled(groupIn.ModelRoutingEnabled).
 		SetNillablePrice(groupIn.Price).
 		SetIsPurchasable(groupIn.IsPurchasable).
-		SetSortOrder(groupIn.SortOrder)
+		SetSortOrder(groupIn.SortOrder).
+		SetIsRecommended(groupIn.IsRecommended)
 
 	// 设置模型路由配置
 	if groupIn.ModelRouting != nil {
@@ -114,7 +115,8 @@ func (r *groupRepository) Update(ctx context.Context, groupIn *service.Group) er
 		SetModelRoutingEnabled(groupIn.ModelRoutingEnabled).
 		SetNillablePrice(groupIn.Price).
 		SetIsPurchasable(groupIn.IsPurchasable).
-		SetSortOrder(groupIn.SortOrder)
+		SetSortOrder(groupIn.SortOrder).
+		SetIsRecommended(groupIn.IsRecommended)
 
 	// 处理 FallbackGroupID：nil 时清除，否则设置
 	if groupIn.FallbackGroupID != nil {

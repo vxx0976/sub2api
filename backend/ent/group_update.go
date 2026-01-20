@@ -10,7 +10,6 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
-	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
 	"github.com/Wei-Shaw/sub2api/ent/account"
 	"github.com/Wei-Shaw/sub2api/ent/apikey"
@@ -485,21 +484,17 @@ func (_u *GroupUpdate) AddSortOrder(v int) *GroupUpdate {
 	return _u
 }
 
-// SetPlanFeatures sets the "plan_features" field.
-func (_u *GroupUpdate) SetPlanFeatures(v []string) *GroupUpdate {
-	_u.mutation.SetPlanFeatures(v)
+// SetIsRecommended sets the "is_recommended" field.
+func (_u *GroupUpdate) SetIsRecommended(v bool) *GroupUpdate {
+	_u.mutation.SetIsRecommended(v)
 	return _u
 }
 
-// AppendPlanFeatures appends value to the "plan_features" field.
-func (_u *GroupUpdate) AppendPlanFeatures(v []string) *GroupUpdate {
-	_u.mutation.AppendPlanFeatures(v)
-	return _u
-}
-
-// ClearPlanFeatures clears the value of the "plan_features" field.
-func (_u *GroupUpdate) ClearPlanFeatures() *GroupUpdate {
-	_u.mutation.ClearPlanFeatures()
+// SetNillableIsRecommended sets the "is_recommended" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillableIsRecommended(v *bool) *GroupUpdate {
+	if v != nil {
+		_u.SetIsRecommended(*v)
+	}
 	return _u
 }
 
@@ -974,16 +969,8 @@ func (_u *GroupUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.AddedSortOrder(); ok {
 		_spec.AddField(group.FieldSortOrder, field.TypeInt, value)
 	}
-	if value, ok := _u.mutation.PlanFeatures(); ok {
-		_spec.SetField(group.FieldPlanFeatures, field.TypeJSON, value)
-	}
-	if value, ok := _u.mutation.AppendedPlanFeatures(); ok {
-		_spec.AddModifier(func(u *sql.UpdateBuilder) {
-			sqljson.Append(u, group.FieldPlanFeatures, value)
-		})
-	}
-	if _u.mutation.PlanFeaturesCleared() {
-		_spec.ClearField(group.FieldPlanFeatures, field.TypeJSON)
+	if value, ok := _u.mutation.IsRecommended(); ok {
+		_spec.SetField(group.FieldIsRecommended, field.TypeBool, value)
 	}
 	if _u.mutation.APIKeysCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -1793,21 +1780,17 @@ func (_u *GroupUpdateOne) AddSortOrder(v int) *GroupUpdateOne {
 	return _u
 }
 
-// SetPlanFeatures sets the "plan_features" field.
-func (_u *GroupUpdateOne) SetPlanFeatures(v []string) *GroupUpdateOne {
-	_u.mutation.SetPlanFeatures(v)
+// SetIsRecommended sets the "is_recommended" field.
+func (_u *GroupUpdateOne) SetIsRecommended(v bool) *GroupUpdateOne {
+	_u.mutation.SetIsRecommended(v)
 	return _u
 }
 
-// AppendPlanFeatures appends value to the "plan_features" field.
-func (_u *GroupUpdateOne) AppendPlanFeatures(v []string) *GroupUpdateOne {
-	_u.mutation.AppendPlanFeatures(v)
-	return _u
-}
-
-// ClearPlanFeatures clears the value of the "plan_features" field.
-func (_u *GroupUpdateOne) ClearPlanFeatures() *GroupUpdateOne {
-	_u.mutation.ClearPlanFeatures()
+// SetNillableIsRecommended sets the "is_recommended" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillableIsRecommended(v *bool) *GroupUpdateOne {
+	if v != nil {
+		_u.SetIsRecommended(*v)
+	}
 	return _u
 }
 
@@ -2312,16 +2295,8 @@ func (_u *GroupUpdateOne) sqlSave(ctx context.Context) (_node *Group, err error)
 	if value, ok := _u.mutation.AddedSortOrder(); ok {
 		_spec.AddField(group.FieldSortOrder, field.TypeInt, value)
 	}
-	if value, ok := _u.mutation.PlanFeatures(); ok {
-		_spec.SetField(group.FieldPlanFeatures, field.TypeJSON, value)
-	}
-	if value, ok := _u.mutation.AppendedPlanFeatures(); ok {
-		_spec.AddModifier(func(u *sql.UpdateBuilder) {
-			sqljson.Append(u, group.FieldPlanFeatures, value)
-		})
-	}
-	if _u.mutation.PlanFeaturesCleared() {
-		_spec.ClearField(group.FieldPlanFeatures, field.TypeJSON)
+	if value, ok := _u.mutation.IsRecommended(); ok {
+		_spec.SetField(group.FieldIsRecommended, field.TypeBool, value)
 	}
 	if _u.mutation.APIKeysCleared() {
 		edge := &sqlgraph.EdgeSpec{

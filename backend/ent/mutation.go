@@ -3876,8 +3876,7 @@ type GroupMutation struct {
 	is_purchasable           *bool
 	sort_order               *int
 	addsort_order            *int
-	plan_features            *[]string
-	appendplan_features      []string
+	is_recommended           *bool
 	clearedFields            map[string]struct{}
 	api_keys                 map[int64]struct{}
 	removedapi_keys          map[int64]struct{}
@@ -5238,69 +5237,40 @@ func (m *GroupMutation) ResetSortOrder() {
 	m.addsort_order = nil
 }
 
-// SetPlanFeatures sets the "plan_features" field.
-func (m *GroupMutation) SetPlanFeatures(s []string) {
-	m.plan_features = &s
-	m.appendplan_features = nil
+// SetIsRecommended sets the "is_recommended" field.
+func (m *GroupMutation) SetIsRecommended(b bool) {
+	m.is_recommended = &b
 }
 
-// PlanFeatures returns the value of the "plan_features" field in the mutation.
-func (m *GroupMutation) PlanFeatures() (r []string, exists bool) {
-	v := m.plan_features
+// IsRecommended returns the value of the "is_recommended" field in the mutation.
+func (m *GroupMutation) IsRecommended() (r bool, exists bool) {
+	v := m.is_recommended
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldPlanFeatures returns the old "plan_features" field's value of the Group entity.
+// OldIsRecommended returns the old "is_recommended" field's value of the Group entity.
 // If the Group object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *GroupMutation) OldPlanFeatures(ctx context.Context) (v []string, err error) {
+func (m *GroupMutation) OldIsRecommended(ctx context.Context) (v bool, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldPlanFeatures is only allowed on UpdateOne operations")
+		return v, errors.New("OldIsRecommended is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldPlanFeatures requires an ID field in the mutation")
+		return v, errors.New("OldIsRecommended requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldPlanFeatures: %w", err)
+		return v, fmt.Errorf("querying old value for OldIsRecommended: %w", err)
 	}
-	return oldValue.PlanFeatures, nil
+	return oldValue.IsRecommended, nil
 }
 
-// AppendPlanFeatures adds s to the "plan_features" field.
-func (m *GroupMutation) AppendPlanFeatures(s []string) {
-	m.appendplan_features = append(m.appendplan_features, s...)
-}
-
-// AppendedPlanFeatures returns the list of values that were appended to the "plan_features" field in this mutation.
-func (m *GroupMutation) AppendedPlanFeatures() ([]string, bool) {
-	if len(m.appendplan_features) == 0 {
-		return nil, false
-	}
-	return m.appendplan_features, true
-}
-
-// ClearPlanFeatures clears the value of the "plan_features" field.
-func (m *GroupMutation) ClearPlanFeatures() {
-	m.plan_features = nil
-	m.appendplan_features = nil
-	m.clearedFields[group.FieldPlanFeatures] = struct{}{}
-}
-
-// PlanFeaturesCleared returns if the "plan_features" field was cleared in this mutation.
-func (m *GroupMutation) PlanFeaturesCleared() bool {
-	_, ok := m.clearedFields[group.FieldPlanFeatures]
-	return ok
-}
-
-// ResetPlanFeatures resets all changes to the "plan_features" field.
-func (m *GroupMutation) ResetPlanFeatures() {
-	m.plan_features = nil
-	m.appendplan_features = nil
-	delete(m.clearedFields, group.FieldPlanFeatures)
+// ResetIsRecommended resets all changes to the "is_recommended" field.
+func (m *GroupMutation) ResetIsRecommended() {
+	m.is_recommended = nil
 }
 
 // AddAPIKeyIDs adds the "api_keys" edge to the APIKey entity by ids.
@@ -5788,8 +5758,8 @@ func (m *GroupMutation) Fields() []string {
 	if m.sort_order != nil {
 		fields = append(fields, group.FieldSortOrder)
 	}
-	if m.plan_features != nil {
-		fields = append(fields, group.FieldPlanFeatures)
+	if m.is_recommended != nil {
+		fields = append(fields, group.FieldIsRecommended)
 	}
 	return fields
 }
@@ -5847,8 +5817,8 @@ func (m *GroupMutation) Field(name string) (ent.Value, bool) {
 		return m.IsPurchasable()
 	case group.FieldSortOrder:
 		return m.SortOrder()
-	case group.FieldPlanFeatures:
-		return m.PlanFeatures()
+	case group.FieldIsRecommended:
+		return m.IsRecommended()
 	}
 	return nil, false
 }
@@ -5906,8 +5876,8 @@ func (m *GroupMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldIsPurchasable(ctx)
 	case group.FieldSortOrder:
 		return m.OldSortOrder(ctx)
-	case group.FieldPlanFeatures:
-		return m.OldPlanFeatures(ctx)
+	case group.FieldIsRecommended:
+		return m.OldIsRecommended(ctx)
 	}
 	return nil, fmt.Errorf("unknown Group field %s", name)
 }
@@ -6085,12 +6055,12 @@ func (m *GroupMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetSortOrder(v)
 		return nil
-	case group.FieldPlanFeatures:
-		v, ok := value.([]string)
+	case group.FieldIsRecommended:
+		v, ok := value.(bool)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetPlanFeatures(v)
+		m.SetIsRecommended(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Group field %s", name)
@@ -6290,9 +6260,6 @@ func (m *GroupMutation) ClearedFields() []string {
 	if m.FieldCleared(group.FieldPrice) {
 		fields = append(fields, group.FieldPrice)
 	}
-	if m.FieldCleared(group.FieldPlanFeatures) {
-		fields = append(fields, group.FieldPlanFeatures)
-	}
 	return fields
 }
 
@@ -6339,9 +6306,6 @@ func (m *GroupMutation) ClearField(name string) error {
 		return nil
 	case group.FieldPrice:
 		m.ClearPrice()
-		return nil
-	case group.FieldPlanFeatures:
-		m.ClearPlanFeatures()
 		return nil
 	}
 	return fmt.Errorf("unknown Group nullable field %s", name)
@@ -6423,8 +6387,8 @@ func (m *GroupMutation) ResetField(name string) error {
 	case group.FieldSortOrder:
 		m.ResetSortOrder()
 		return nil
-	case group.FieldPlanFeatures:
-		m.ResetPlanFeatures()
+	case group.FieldIsRecommended:
+		m.ResetIsRecommended()
 		return nil
 	}
 	return fmt.Errorf("unknown Group field %s", name)

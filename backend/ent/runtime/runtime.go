@@ -294,6 +294,10 @@ func init() {
 	groupDescSortOrder := groupFields[20].Descriptor()
 	// group.DefaultSortOrder holds the default value on creation for the sort_order field.
 	group.DefaultSortOrder = groupDescSortOrder.Default.(int)
+	// groupDescIsRecommended is the schema descriptor for is_recommended field.
+	groupDescIsRecommended := groupFields[21].Descriptor()
+	// group.DefaultIsRecommended holds the default value on creation for the is_recommended field.
+	group.DefaultIsRecommended = groupDescIsRecommended.Default.(bool)
 	orderFields := schema.Order{}.Fields()
 	_ = orderFields
 	// orderDescOrderNo is the schema descriptor for order_no field.

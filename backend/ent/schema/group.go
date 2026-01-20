@@ -106,6 +106,22 @@ func (Group) Fields() []ent.Field {
 		field.Bool("model_routing_enabled").
 			Default(false).
 			Comment("是否启用模型路由配置"),
+
+		// 支付相关字段 (added by migration 044)
+		field.Float("price").
+			Optional().
+			Nillable().
+			SchemaType(map[string]string{dialect.Postgres: "decimal(10,2)"}).
+			Comment("套餐售价（元）"),
+		field.Bool("is_purchasable").
+			Default(false).
+			Comment("是否允许用户购买"),
+		field.Int("sort_order").
+			Default(0).
+			Comment("排序权重，数值越大越靠前"),
+		field.Bool("is_recommended").
+			Default(false).
+			Comment("是否推荐套餐"),
 	}
 }
 
@@ -115,6 +131,7 @@ func (Group) Edges() []ent.Edge {
 		edge.To("redeem_codes", RedeemCode.Type),
 		edge.To("subscriptions", UserSubscription.Type),
 		edge.To("usage_logs", UsageLog.Type),
+		edge.To("orders", Order.Type),
 		edge.From("accounts", Account.Type).
 			Ref("groups").
 			Through("account_groups", AccountGroup.Type),

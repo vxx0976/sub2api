@@ -40,6 +40,7 @@ type Group struct {
 	Price         *float64
 	IsPurchasable bool
 	SortOrder     int
+	IsRecommended bool
 
 	CreatedAt time.Time
 	UpdatedAt time.Time

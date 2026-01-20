@@ -349,9 +349,17 @@ func (_c *GroupCreate) SetNillableSortOrder(v *int) *GroupCreate {
 	return _c
 }
 
-// SetPlanFeatures sets the "plan_features" field.
-func (_c *GroupCreate) SetPlanFeatures(v []string) *GroupCreate {
-	_c.mutation.SetPlanFeatures(v)
+// SetIsRecommended sets the "is_recommended" field.
+func (_c *GroupCreate) SetIsRecommended(v bool) *GroupCreate {
+	_c.mutation.SetIsRecommended(v)
+	return _c
+}
+
+// SetNillableIsRecommended sets the "is_recommended" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableIsRecommended(v *bool) *GroupCreate {
+	if v != nil {
+		_c.SetIsRecommended(*v)
+	}
 	return _c
 }
 
@@ -551,6 +559,10 @@ func (_c *GroupCreate) defaults() error {
 		v := group.DefaultSortOrder
 		_c.mutation.SetSortOrder(v)
 	}
+	if _, ok := _c.mutation.IsRecommended(); !ok {
+		v := group.DefaultIsRecommended
+		_c.mutation.SetIsRecommended(v)
+	}
 	return nil
 }
 
@@ -614,6 +626,9 @@ func (_c *GroupCreate) check() error {
 	}
 	if _, ok := _c.mutation.SortOrder(); !ok {
 		return &ValidationError{Name: "sort_order", err: errors.New(`ent: missing required field "Group.sort_order"`)}
+	}
+	if _, ok := _c.mutation.IsRecommended(); !ok {
+		return &ValidationError{Name: "is_recommended", err: errors.New(`ent: missing required field "Group.is_recommended"`)}
 	}
 	return nil
 }
@@ -738,9 +753,9 @@ func (_c *GroupCreate) createSpec() (*Group, *sqlgraph.CreateSpec) {
 		_spec.SetField(group.FieldSortOrder, field.TypeInt, value)
 		_node.SortOrder = value
 	}
-	if value, ok := _c.mutation.PlanFeatures(); ok {
-		_spec.SetField(group.FieldPlanFeatures, field.TypeJSON, value)
-		_node.PlanFeatures = value
+	if value, ok := _c.mutation.IsRecommended(); ok {
+		_spec.SetField(group.FieldIsRecommended, field.TypeBool, value)
+		_node.IsRecommended = value
 	}
 	if nodes := _c.mutation.APIKeysIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -1322,21 +1337,15 @@ func (u *GroupUpsert) AddSortOrder(v int) *GroupUpsert {
 	return u
 }
 
-// SetPlanFeatures sets the "plan_features" field.
-func (u *GroupUpsert) SetPlanFeatures(v []string) *GroupUpsert {
-	u.Set(group.FieldPlanFeatures, v)
+// SetIsRecommended sets the "is_recommended" field.
+func (u *GroupUpsert) SetIsRecommended(v bool) *GroupUpsert {
+	u.Set(group.FieldIsRecommended, v)
 	return u
 }
 
-// UpdatePlanFeatures sets the "plan_features" field to the value that was provided on create.
-func (u *GroupUpsert) UpdatePlanFeatures() *GroupUpsert {
-	u.SetExcluded(group.FieldPlanFeatures)
-	return u
-}
-
-// ClearPlanFeatures clears the value of the "plan_features" field.
-func (u *GroupUpsert) ClearPlanFeatures() *GroupUpsert {
-	u.SetNull(group.FieldPlanFeatures)
+// UpdateIsRecommended sets the "is_recommended" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateIsRecommended() *GroupUpsert {
+	u.SetExcluded(group.FieldIsRecommended)
 	return u
 }
 
@@ -1861,24 +1870,17 @@ func (u *GroupUpsertOne) UpdateSortOrder() *GroupUpsertOne {
 	})
 }
 
-// SetPlanFeatures sets the "plan_features" field.
-func (u *GroupUpsertOne) SetPlanFeatures(v []string) *GroupUpsertOne {
+// SetIsRecommended sets the "is_recommended" field.
+func (u *GroupUpsertOne) SetIsRecommended(v bool) *GroupUpsertOne {
 	return u.Update(func(s *GroupUpsert) {
-		s.SetPlanFeatures(v)
+		s.SetIsRecommended(v)
 	})
 }
 
-// UpdatePlanFeatures sets the "plan_features" field to the value that was provided on create.
-func (u *GroupUpsertOne) UpdatePlanFeatures() *GroupUpsertOne {
+// UpdateIsRecommended sets the "is_recommended" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateIsRecommended() *GroupUpsertOne {
 	return u.Update(func(s *GroupUpsert) {
-		s.UpdatePlanFeatures()
-	})
-}
-
-// ClearPlanFeatures clears the value of the "plan_features" field.
-func (u *GroupUpsertOne) ClearPlanFeatures() *GroupUpsertOne {
-	return u.Update(func(s *GroupUpsert) {
-		s.ClearPlanFeatures()
+		s.UpdateIsRecommended()
 	})
 }
 
@@ -2569,24 +2571,17 @@ func (u *GroupUpsertBulk) UpdateSortOrder() *GroupUpsertBulk {
 	})
 }
 
-// SetPlanFeatures sets the "plan_features" field.
-func (u *GroupUpsertBulk) SetPlanFeatures(v []string) *GroupUpsertBulk {
+// SetIsRecommended sets the "is_recommended" field.
+func (u *GroupUpsertBulk) SetIsRecommended(v bool) *GroupUpsertBulk {
 	return u.Update(func(s *GroupUpsert) {
-		s.SetPlanFeatures(v)
+		s.SetIsRecommended(v)
 	})
 }
 
-// UpdatePlanFeatures sets the "plan_features" field to the value that was provided on create.
-func (u *GroupUpsertBulk) UpdatePlanFeatures() *GroupUpsertBulk {
+// UpdateIsRecommended sets the "is_recommended" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateIsRecommended() *GroupUpsertBulk {
 	return u.Update(func(s *GroupUpsert) {
-		s.UpdatePlanFeatures()
-	})
-}
-
-// ClearPlanFeatures clears the value of the "plan_features" field.
-func (u *GroupUpsertBulk) ClearPlanFeatures() *GroupUpsertBulk {
-	return u.Update(func(s *GroupUpsert) {
-		s.ClearPlanFeatures()
+		s.UpdateIsRecommended()
 	})
 }
 

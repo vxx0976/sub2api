@@ -170,6 +170,11 @@ func SortOrder(v int) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldSortOrder, v))
 }
 
+// IsRecommended applies equality check predicate on the "is_recommended" field. It's identical to IsRecommendedEQ.
+func IsRecommended(v bool) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldIsRecommended, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldCreatedAt, v))
@@ -1205,14 +1210,14 @@ func SortOrderLTE(v int) predicate.Group {
 	return predicate.Group(sql.FieldLTE(FieldSortOrder, v))
 }
 
-// PlanFeaturesIsNil applies the IsNil predicate on the "plan_features" field.
-func PlanFeaturesIsNil() predicate.Group {
-	return predicate.Group(sql.FieldIsNull(FieldPlanFeatures))
+// IsRecommendedEQ applies the EQ predicate on the "is_recommended" field.
+func IsRecommendedEQ(v bool) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldIsRecommended, v))
 }
 
-// PlanFeaturesNotNil applies the NotNil predicate on the "plan_features" field.
-func PlanFeaturesNotNil() predicate.Group {
-	return predicate.Group(sql.FieldNotNull(FieldPlanFeatures))
+// IsRecommendedNEQ applies the NEQ predicate on the "is_recommended" field.
+func IsRecommendedNEQ(v bool) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldIsRecommended, v))
 }
 
 // HasAPIKeys applies the HasEdge predicate on the "api_keys" edge.

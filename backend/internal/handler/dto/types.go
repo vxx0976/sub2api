@@ -66,9 +66,11 @@ type Group struct {
 	FallbackGroupID *int64 `json:"fallback_group_id"`
 
 	// 支付相关
-	Price         *float64 `json:"price"`
-	IsPurchasable bool     `json:"is_purchasable"`
-	SortOrder     int      `json:"sort_order"`
+	DefaultValidityDays int      `json:"default_validity_days"`
+	Price               *float64 `json:"price"`
+	IsPurchasable       bool     `json:"is_purchasable"`
+	SortOrder           int      `json:"sort_order"`
+	IsRecommended       bool     `json:"is_recommended"`
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`

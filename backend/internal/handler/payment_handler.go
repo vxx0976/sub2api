@@ -22,6 +22,8 @@ type PurchasablePlan struct {
 	DailyLimitUSD   *float64 `json:"daily_limit_usd,omitempty"`
 	WeeklyLimitUSD  *float64 `json:"weekly_limit_usd,omitempty"`
 	MonthlyLimitUSD *float64 `json:"monthly_limit_usd,omitempty"`
+	SortOrder       int      `json:"sort_order"`
+	IsRecommended   bool     `json:"is_recommended"`
 }
 
 // CreateOrderRequest represents a request to create an order
@@ -62,10 +64,12 @@ func (h *PaymentHandler) GetPlans(c *gin.Context) {
 	result := make([]PurchasablePlan, 0, len(plans))
 	for _, p := range plans {
 		plan := PurchasablePlan{
-			ID:           p.ID,
-			Name:         p.Name,
-			Description:  p.Description,
-			ValidityDays: p.DefaultValidityDays,
+			ID:            p.ID,
+			Name:          p.Name,
+			Description:   p.Description,
+			ValidityDays:  p.DefaultValidityDays,
+			SortOrder:     p.SortOrder,
+			IsRecommended: p.IsRecommended,
 		}
 		if p.Price != nil {
 			plan.Price = *p.Price

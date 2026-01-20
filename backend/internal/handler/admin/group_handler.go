@@ -44,9 +44,11 @@ type CreateGroupRequest struct {
 	ModelRouting        map[string][]int64 `json:"model_routing"`
 	ModelRoutingEnabled bool               `json:"model_routing_enabled"`
 	// 支付相关
-	Price         *float64 `json:"price"`
-	IsPurchasable bool     `json:"is_purchasable"`
-	SortOrder     int      `json:"sort_order"`
+	DefaultValidityDays int      `json:"default_validity_days"`
+	Price               *float64 `json:"price"`
+	IsPurchasable       bool     `json:"is_purchasable"`
+	SortOrder           int      `json:"sort_order"`
+	IsRecommended       bool     `json:"is_recommended"`
 }
 
 // UpdateGroupRequest represents update group request
@@ -71,9 +73,11 @@ type UpdateGroupRequest struct {
 	ModelRouting        map[string][]int64 `json:"model_routing"`
 	ModelRoutingEnabled *bool              `json:"model_routing_enabled"`
 	// 支付相关
-	Price         *float64 `json:"price"`
-	IsPurchasable *bool    `json:"is_purchasable"`
-	SortOrder     *int     `json:"sort_order"`
+	DefaultValidityDays *int     `json:"default_validity_days"`
+	Price               *float64 `json:"price"`
+	IsPurchasable       *bool    `json:"is_purchasable"`
+	SortOrder           *int     `json:"sort_order"`
+	IsRecommended       *bool    `json:"is_recommended"`
 }
 
 // List handles listing all groups with pagination
@@ -179,9 +183,11 @@ func (h *GroupHandler) Create(c *gin.Context) {
 		FallbackGroupID:     req.FallbackGroupID,
 		ModelRouting:        req.ModelRouting,
 		ModelRoutingEnabled: req.ModelRoutingEnabled,
+		DefaultValidityDays: req.DefaultValidityDays,
 		Price:               req.Price,
 		IsPurchasable:       req.IsPurchasable,
 		SortOrder:           req.SortOrder,
+		IsRecommended:       req.IsRecommended,
 	})
 	if err != nil {
 		response.ErrorFrom(c, err)
@@ -224,9 +230,11 @@ func (h *GroupHandler) Update(c *gin.Context) {
 		FallbackGroupID:     req.FallbackGroupID,
 		ModelRouting:        req.ModelRouting,
 		ModelRoutingEnabled: req.ModelRoutingEnabled,
+		DefaultValidityDays: req.DefaultValidityDays,
 		Price:               req.Price,
 		IsPurchasable:       req.IsPurchasable,
 		SortOrder:           req.SortOrder,
+		IsRecommended:       req.IsRecommended,
 	})
 	if err != nil {
 		response.ErrorFrom(c, err)

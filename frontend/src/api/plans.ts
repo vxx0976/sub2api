@@ -17,6 +17,8 @@ export interface PurchasablePlan {
   daily_limit_usd?: number
   weekly_limit_usd?: number
   monthly_limit_usd?: number
+  sort_order: number
+  is_recommended: boolean
 }
 
 /**

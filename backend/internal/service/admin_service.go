@@ -111,9 +111,11 @@ type CreateGroupInput struct {
 	ModelRouting        map[string][]int64
 	ModelRoutingEnabled bool // 是否启用模型路由
 	// 支付相关
-	Price         *float64
-	IsPurchasable bool
-	SortOrder     int
+	DefaultValidityDays int
+	Price               *float64
+	IsPurchasable       bool
+	SortOrder           int
+	IsRecommended       bool
 }
 
 type UpdateGroupInput struct {
@@ -137,9 +139,11 @@ type UpdateGroupInput struct {
 	ModelRouting        map[string][]int64
 	ModelRoutingEnabled *bool // 是否启用模型路由
 	// 支付相关
-	Price         *float64
-	IsPurchasable *bool
-	SortOrder     *int
+	DefaultValidityDays *int
+	Price               *float64
+	IsPurchasable       *bool
+	SortOrder           *int
+	IsRecommended       *bool
 }
 
 type CreateAccountInput struct {
@@ -580,26 +584,35 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 		}
 	}
 
+	// 默认有效期
+	defaultValidityDays := input.DefaultValidityDays
+	if defaultValidityDays <= 0 {
+		defaultValidityDays = 30
+	}
+
 	group := &Group{
-		Name:             input.Name,
-		Description:      input.Description,
-		Platform:         platform,
-		RateMultiplier:   input.RateMultiplier,
-		IsExclusive:      input.IsExclusive,
-		Status:           StatusActive,
-		SubscriptionType: subscriptionType,
-		DailyLimitUSD:    dailyLimit,
-		WeeklyLimitUSD:   weeklyLimit,
-		MonthlyLimitUSD:  monthlyLimit,
-		ImagePrice1K:     imagePrice1K,
-		ImagePrice2K:     imagePrice2K,
-		ImagePrice4K:     imagePrice4K,
-		ClaudeCodeOnly:   input.ClaudeCodeOnly,
-		FallbackGroupID:  input.FallbackGroupID,
-		ModelRouting:     input.ModelRouting,
-		Price:            input.Price,
-		IsPurchasable:    input.IsPurchasable,
-		SortOrder:        input.SortOrder,
+		Name:                input.Name,
+		Description:         input.Description,
+		Platform:            platform,
+		RateMultiplier:      input.RateMultiplier,
+		IsExclusive:         input.IsExclusive,
+		Status:              StatusActive,
+		SubscriptionType:    subscriptionType,
+		DailyLimitUSD:       dailyLimit,
+		WeeklyLimitUSD:      weeklyLimit,
+		MonthlyLimitUSD:     monthlyLimit,
+		ImagePrice1K:        imagePrice1K,
+		ImagePrice2K:        imagePrice2K,
+		ImagePrice4K:        imagePrice4K,
+		ClaudeCodeOnly:      input.ClaudeCodeOnly,
+		FallbackGroupID:     input.FallbackGroupID,
+		ModelRouting:        input.ModelRouting,
+		ModelRoutingEnabled: input.ModelRoutingEnabled,
+		DefaultValidityDays: defaultValidityDays,
+		Price:               input.Price,
+		IsPurchasable:       input.IsPurchasable,
+		SortOrder:           input.SortOrder,
+		IsRecommended:       input.IsRecommended,
 	}
 	if err := s.groupRepo.Create(ctx, group); err != nil {
 		return nil, err
@@ -737,6 +750,9 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 	}
 
 	// 支付相关
+	if input.DefaultValidityDays != nil {
+		group.DefaultValidityDays = *input.DefaultValidityDays
+	}
 	if input.Price != nil {
 		group.Price = input.Price
 	}
@@ -745,6 +761,9 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 	}
 	if input.SortOrder != nil {
 		group.SortOrder = *input.SortOrder
+	}
+	if input.IsRecommended != nil {
+		group.IsRecommended = *input.IsRecommended
 	}
 
 	if err := s.groupRepo.Update(ctx, group); err != nil {
