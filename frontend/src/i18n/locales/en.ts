@@ -119,6 +119,15 @@ export default {
       recommended: 'Recommended',
       buy: 'Buy now',
       note: 'Plan cards are for quick onboarding. Actual credits, limits, and billing rules depend on your instance.',
+      unitPrice: 'Only ¥{price}/dollar',
+      monthlyCredit: 'Monthly limit',
+      customCredit: 'Custom credits',
+      noPlans: 'No plans available',
+      features: {
+        monthlyLimit: 'Monthly limit ${limit}',
+        validity: '{days} days validity',
+        unitPrice: 'Only ¥{price}/dollar'
+      },
       plans: {
         starter: {
           name: 'Starter',
@@ -3240,6 +3249,9 @@ export default {
     processing: 'Processing...',
     purchase: 'Purchase Now',
     purchaseError: 'Failed to create order. Please try again.',
+    pricePerDollar: 'Only ¥{price}/dollar',
+    estimatedUsage: '~{count} calls (mixed usage)',
+    estimatedTokens: '~{tokens} tokens',
     paygo: {
       title: 'PayGo Pay-As-You-Go',
       description: 'Flexible recharge, use as you need',
@@ -3272,6 +3284,16 @@ export default {
     rechargeFailed: 'Recharge failed',
     invalidAmount: 'Amount must be between ¥{min} and ¥{max}',
     rechargeSuccess: 'Recharge successful',
+
+    // Promotional copy
+    promoTitle: '💰 Recharge for bonus! More recharge, more bonus',
+    promoSubtitle: 'Balance never expires, pay as you use, great value',
+    quickTip: 'Recommended: ¥200+ for better value',
+    moreGetMore: 'More recharge, more bonus',
+    usageRuleTitle: '💡 Usage Rules',
+    usageRuleDesc: 'Balance is consumed at ¥1 = $1. Higher multiplier = lower unit price',
+    benefitTitle: '✨ Balance never expires',
+    benefitDesc: 'Recharged balance is permanent, charged by actual usage, no waste',
 
     // Order related
     myOrders: 'Recharge History',

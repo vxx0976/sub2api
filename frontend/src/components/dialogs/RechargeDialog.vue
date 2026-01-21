@@ -5,6 +5,19 @@
     width="normal"
     @close="handleClose"
   >
+    <!-- 促销标语 -->
+    <div class="mb-4 rounded-lg bg-gradient-to-r from-amber-50 to-orange-50 p-3 dark:from-amber-900/20 dark:to-orange-900/20">
+      <div class="flex items-center gap-2">
+        <Icon name="sparkles" size="sm" class="text-amber-600 dark:text-amber-400" />
+        <p class="text-sm font-medium text-amber-900 dark:text-amber-200">
+          {{ t('recharge.promoTitle') }}
+        </p>
+      </div>
+      <p class="mt-1 text-xs text-amber-700 dark:text-amber-300">
+        {{ t('recharge.promoSubtitle') }}
+      </p>
+    </div>
+
     <div class="space-y-4">
       <!-- 充值金额输入 -->
       <div>
@@ -28,17 +41,33 @@
 
       <!-- 快捷金额 -->
       <div>
-        <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-          {{ t('recharge.quickAmounts') }}
-        </label>
+        <div class="mb-2 flex items-center justify-between">
+          <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+            {{ t('recharge.quickAmounts') }}
+          </label>
+          <span class="text-xs text-gray-500 dark:text-gray-400">
+            💰 {{ t('recharge.quickTip') }}
+          </span>
+        </div>
         <div class="grid grid-cols-4 gap-2">
           <button
             v-for="quickAmount in quickAmounts"
             :key="quickAmount"
             @click="amount = quickAmount"
             type="button"
-            class="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-100 dark:border-dark-600 dark:bg-dark-700 dark:text-gray-200 dark:hover:border-dark-500 dark:hover:bg-dark-600"
+            :class="[
+              'relative rounded-lg border px-3 py-2 text-sm font-medium transition-all',
+              quickAmount >= 200
+                ? 'border-primary-300 bg-primary-50 text-primary-700 hover:bg-primary-100 dark:border-primary-700 dark:bg-primary-900/30 dark:text-primary-300 dark:hover:bg-primary-900/50'
+                : 'border-gray-200 bg-gray-50 text-gray-700 hover:border-gray-300 hover:bg-gray-100 dark:border-dark-600 dark:bg-dark-700 dark:text-gray-200 dark:hover:border-dark-500 dark:hover:bg-dark-600'
+            ]"
           >
+            <span v-if="quickAmount >= 1000" class="absolute -top-2 -right-2 rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-bold text-white shadow-lg">
+              🔥
+            </span>
+            <span v-else-if="quickAmount >= 500" class="absolute -top-2 -right-2 rounded-full bg-orange-500 px-1.5 py-0.5 text-[10px] font-bold text-white shadow-lg">
+              HOT
+            </span>
             ¥{{ quickAmount }}
           </button>
         </div>
@@ -67,9 +96,14 @@
 
       <!-- 阶梯倍率说明 -->
       <div v-if="config && config.tiers && config.tiers.length > 0" class="space-y-2">
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-          {{ t('recharge.tierInfo') }}
-        </label>
+        <div class="flex items-center justify-between">
+          <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+            {{ t('recharge.tierInfo') }}
+          </label>
+          <span class="text-xs font-medium text-green-600 dark:text-green-400">
+            🎁 {{ t('recharge.moreGetMore') }}
+          </span>
+        </div>
         <div class="space-y-1">
           <div
             v-for="(tier, index) in config.tiers"
@@ -84,20 +118,53 @@
             <span>
               ¥{{ tier.min }}{{ tier.max ? ` - ¥${tier.max}` : '+' }}
             </span>
-            <span class="flex items-center">
-              {{ tier.multiplier }}×
-              <span v-if="tier.multiplier > 1.0" class="ml-2 text-xs">
-                (+{{ ((tier.multiplier - 1) * 100).toFixed(0) }}%)
+            <span class="flex items-center gap-2">
+              <span class="font-medium">{{ tier.multiplier }}×</span>
+              <!-- 增幅 < 30%: 灰色小字 -->
+              <span v-if="tier.multiplier > 1.0 && (tier.multiplier - 1) * 100 < 30" class="text-xs text-gray-500 dark:text-gray-400">
+                +{{ ((tier.multiplier - 1) * 100).toFixed(0) }}%
+              </span>
+              <!-- 增幅 >= 30% && < 60%: 橙色徽章 -->
+              <span v-else-if="tier.multiplier >= 1.3 && tier.multiplier < 1.6" class="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-2.5 py-0.5 text-xs font-bold text-white shadow-md">
+                +{{ ((tier.multiplier - 1) * 100).toFixed(0) }}%
+              </span>
+              <!-- 增幅 >= 60%: 红色徽章 -->
+              <span v-else-if="tier.multiplier >= 1.6" class="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-orange-600 to-red-600 px-2.5 py-0.5 text-xs font-bold text-white shadow-lg">
+                <span>🔥</span>
+                <span>+{{ ((tier.multiplier - 1) * 100).toFixed(0) }}%</span>
               </span>
             </span>
           </div>
         </div>
       </div>
 
-      <!-- 提示信息 -->
-      <div class="text-xs text-gray-500 dark:text-dark-400">
-        <p>{{ t('recharge.minAmount') }}: ¥{{ config?.min_amount || 10 }}</p>
-        <p>{{ t('recharge.maxAmount') }}: ¥{{ config?.max_amount || 10000 }}</p>
+      <!-- 温馨提示 -->
+      <div class="space-y-2">
+        <!-- 扣费规则说明 -->
+        <div class="rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/20">
+          <div class="flex items-start gap-2">
+            <Icon name="infoCircle" size="sm" class="mt-0.5 text-blue-600 dark:text-blue-400" />
+            <div class="flex-1 text-xs text-blue-700 dark:text-blue-300">
+              <p class="font-medium">{{ t('recharge.usageRuleTitle') }}</p>
+              <p class="mt-1">{{ t('recharge.usageRuleDesc') }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 余额优势 -->
+        <div class="rounded-lg border border-green-200 bg-green-50 p-3 dark:border-green-800 dark:bg-green-900/20">
+          <div class="flex items-start gap-2">
+            <Icon name="check" size="sm" class="mt-0.5 text-green-600 dark:text-green-400" />
+            <div class="flex-1 text-xs text-green-700 dark:text-green-300">
+              <p class="font-medium">{{ t('recharge.benefitTitle') }}</p>
+              <p class="mt-1">{{ t('recharge.benefitDesc') }}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="text-xs text-gray-500 dark:text-gray-400">
+          <p>{{ t('recharge.minAmount') }}: ¥{{ config?.min_amount || 10 }} · {{ t('recharge.maxAmount') }}: ¥{{ config?.max_amount || 10000 }}</p>
+        </div>
       </div>
     </div>
 

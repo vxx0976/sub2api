@@ -532,6 +532,7 @@
             </p>
           </div>
 
+          <!-- Plans Grid -->
           <div class="mt-10 grid gap-6 lg:grid-cols-4">
             <div
               v-for="plan in pricingPlans"
@@ -539,6 +540,7 @@
               class="relative flex flex-col overflow-hidden rounded-4xl border border-white/10 bg-white/5 p-6 shadow-[0_18px_60px_rgba(0,0,0,0.35)]"
               :class="plan.recommended ? 'ring-1 ring-primary-500/40' : ''"
             >
+              <!-- Recommended Badge -->
               <div v-if="plan.recommended" class="absolute right-4 top-4">
                 <span class="inline-flex items-center gap-1 rounded-full bg-primary-500 px-3 py-1 text-xs font-semibold text-white">
                   <Icon name="sparkles" size="xs" />
@@ -546,8 +548,10 @@
                 </span>
               </div>
 
+              <!-- Plan Name -->
               <div class="text-sm font-semibold text-gray-200">{{ plan.name }}</div>
 
+              <!-- Price -->
               <div class="mt-4 flex items-end gap-2">
                 <span class="text-xl font-semibold text-gray-300">¥</span>
                 <span class="text-5xl font-semibold tracking-tight text-white">{{ plan.price }}</span>
@@ -556,6 +560,13 @@
                 {{ plan.credit }}
               </div>
 
+              <!-- Promotional Badge -->
+              <div class="mt-3 inline-flex items-center gap-1 self-start rounded-md bg-gradient-to-r from-amber-400/20 to-orange-400/20 px-2.5 py-1 text-xs font-medium text-amber-200">
+                <Icon name="sparkles" size="xs" />
+                <span>{{ plan.unitPrice }}</span>
+              </div>
+
+              <!-- Features List -->
               <ul class="mt-6 space-y-3 text-sm text-gray-200">
                 <li v-for="(feature, idx) in plan.features" :key="idx" class="flex items-start gap-2">
                   <Icon
@@ -568,6 +579,7 @@
                 </li>
               </ul>
 
+              <!-- Buy Button -->
               <div class="mt-auto pt-6">
                 <router-link
                   :to="isAuthenticated ? dashboardPath : '/login'"
@@ -916,54 +928,70 @@ const terminalLines = computed<TerminalLine[]>(() => buildTerminalLines(apiBaseR
 
 const terminalExampleText = computed(() => terminalLines.value.map((l) => l.text).join('\n'))
 
+// Static pricing plans with promotional info
 const pricingPlans = computed(() => [
   {
     key: 'starter',
     recommended: false,
-    name: t('home.pricing.plans.starter.name'),
-    price: t('home.pricing.plans.starter.price'),
-    credit: t('home.pricing.plans.starter.credit'),
+    name: '体验版 🎁',
+    price: '9.9',
+    credit: '$22 月限额',
+    unitPrice: '¥0.45/刀',
+    badge: '新人专享',
     features: [
-      t('home.pricing.plans.starter.f1'),
-      t('home.pricing.plans.starter.f2'),
-      t('home.pricing.plans.starter.f3')
+      '月限额 $22（约 3300 万 tokens）',
+      '30 天有效期',
+      '支持全模型',
+      '单价仅 ¥0.45/刀',
+      '适合轻度使用、快速体验'
     ]
   },
   {
     key: 'lite',
     recommended: false,
-    name: t('home.pricing.plans.lite.name'),
-    price: t('home.pricing.plans.lite.price'),
-    credit: t('home.pricing.plans.lite.credit'),
+    name: '基础版',
+    price: '29.9',
+    credit: '$70 月限额',
+    unitPrice: '¥0.43/刀',
+    badge: '日常使用',
     features: [
-      t('home.pricing.plans.lite.f1'),
-      t('home.pricing.plans.lite.f2'),
-      t('home.pricing.plans.lite.f3')
+      '月限额 $70（约 1 亿 tokens）',
+      '30 天有效期',
+      '支持全模型',
+      '单价仅 ¥0.43/刀',
+      '满足日常开发需求'
     ]
   },
   {
     key: 'standard',
-    recommended: false,
-    name: t('home.pricing.plans.standard.name'),
-    price: t('home.pricing.plans.standard.price'),
-    credit: t('home.pricing.plans.standard.credit'),
+    recommended: true,
+    name: '标准版 ⭐',
+    price: '69.9',
+    credit: '$170 月限额',
+    unitPrice: '¥0.41/刀',
+    badge: '性价比之选',
     features: [
-      t('home.pricing.plans.standard.f1'),
-      t('home.pricing.plans.standard.f2'),
-      t('home.pricing.plans.standard.f3')
+      '月限额 $170（约 2.5 亿 tokens）',
+      '30 天有效期',
+      '支持全模型',
+      '单价仅 ¥0.41/刀 💰',
+      '最受欢迎，性价比最高'
     ]
   },
   {
     key: 'pro',
     recommended: true,
-    name: t('home.pricing.plans.pro.name'),
-    price: t('home.pricing.plans.pro.price'),
-    credit: t('home.pricing.plans.pro.credit'),
+    name: '专业版 ⭐⭐',
+    price: '149.9',
+    credit: '$380 月限额',
+    unitPrice: '¥0.39/刀',
+    badge: '重度使用',
     features: [
-      t('home.pricing.plans.pro.f1'),
-      t('home.pricing.plans.pro.f2'),
-      t('home.pricing.plans.pro.f3'),
-      t('home.pricing.plans.pro.f4')
+      '月限额 $380（约 5.7 亿 tokens）',
+      '30 天有效期',
+      '支持全模型',
+      '单价低至 ¥0.39/刀 🔥',
+      '重度使用首选，单价最低'
     ]
   }
 ])

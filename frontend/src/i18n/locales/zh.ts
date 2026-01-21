@@ -118,6 +118,15 @@ export default {
       recommended: '推荐',
       buy: '立即购买',
       note: '套餐展示用于帮助你快速上手；实际额度、并发与计费规则以站点控制台为准。',
+      unitPrice: '仅 ¥{price}/刀',
+      monthlyCredit: '月限额',
+      customCredit: '自定义额度',
+      noPlans: '暂无套餐',
+      features: {
+        monthlyLimit: '月限额 ${limit}',
+        validity: '{days} 天有效期',
+        unitPrice: '单价仅 ¥{price}/刀'
+      },
       plans: {
         starter: {
           name: '入门体验',
@@ -3391,6 +3400,9 @@ export default {
     processing: '处理中...',
     purchase: '立即购买',
     purchaseError: '创建订单失败，请稍后重试',
+    pricePerDollar: '仅 ¥{price}/刀',
+    estimatedUsage: '约可调用 {count} 次（混合使用）',
+    estimatedTokens: '约 {tokens} tokens',
     paygo: {
       title: 'PayGo 按量付费',
       description: '随充随用，灵活便捷',
@@ -3423,6 +3435,16 @@ export default {
     rechargeFailed: '充值失败',
     invalidAmount: '充值金额必须在 ¥{min} 到 ¥{max} 之间',
     rechargeSuccess: '充值成功',
+
+    // 促销文案
+    promoTitle: '💰 充值送额外余额！充得越多，送得越多',
+    promoSubtitle: '余额永久有效，按实际使用扣费，超值划算',
+    quickTip: '推荐充值 ¥200 以上更划算',
+    moreGetMore: '充得多送得多',
+    usageRuleTitle: '💡 使用规则说明',
+    usageRuleDesc: '余额按 ¥1 = $1 消耗，充值倍率越高单价越低',
+    benefitTitle: '✨ 余额永不过期，随时可用',
+    benefitDesc: '充值余额永久有效，按实际消费扣费，用多少扣多少，不用担心浪费',
 
     // 订单相关
     myOrders: '充值记录',

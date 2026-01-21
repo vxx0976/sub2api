@@ -167,7 +167,7 @@
                       type="number"
                       min="1"
                       max="10"
-                      step="0.1"
+                      step="0.01"
                       class="input input-sm"
                       placeholder="1.0"
                     />
