@@ -13,6 +13,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/promocode"
 	"github.com/Wei-Shaw/sub2api/ent/promocodeusage"
 	"github.com/Wei-Shaw/sub2api/ent/proxy"
+	"github.com/Wei-Shaw/sub2api/ent/rechargeorder"
 	"github.com/Wei-Shaw/sub2api/ent/redeemcode"
 	"github.com/Wei-Shaw/sub2api/ent/schema"
 	"github.com/Wei-Shaw/sub2api/ent/setting"
@@ -483,6 +484,40 @@ func init() {
 	proxy.DefaultStatus = proxyDescStatus.Default.(string)
 	// proxy.StatusValidator is a validator for the "status" field. It is called by the builders before save.
 	proxy.StatusValidator = proxyDescStatus.Validators[0].(func(string) error)
+	rechargeorderFields := schema.RechargeOrder{}.Fields()
+	_ = rechargeorderFields
+	// rechargeorderDescOrderNo is the schema descriptor for order_no field.
+	rechargeorderDescOrderNo := rechargeorderFields[0].Descriptor()
+	// rechargeorder.OrderNoValidator is a validator for the "order_no" field. It is called by the builders before save.
+	rechargeorder.OrderNoValidator = rechargeorderDescOrderNo.Validators[0].(func(string) error)
+	// rechargeorderDescTradeNo is the schema descriptor for trade_no field.
+	rechargeorderDescTradeNo := rechargeorderFields[1].Descriptor()
+	// rechargeorder.TradeNoValidator is a validator for the "trade_no" field. It is called by the builders before save.
+	rechargeorder.TradeNoValidator = rechargeorderDescTradeNo.Validators[0].(func(string) error)
+	// rechargeorderDescMultiplier is the schema descriptor for multiplier field.
+	rechargeorderDescMultiplier := rechargeorderFields[5].Descriptor()
+	// rechargeorder.DefaultMultiplier holds the default value on creation for the multiplier field.
+	rechargeorder.DefaultMultiplier = rechargeorderDescMultiplier.Default.(float64)
+	// rechargeorderDescStatus is the schema descriptor for status field.
+	rechargeorderDescStatus := rechargeorderFields[6].Descriptor()
+	// rechargeorder.DefaultStatus holds the default value on creation for the status field.
+	rechargeorder.DefaultStatus = rechargeorderDescStatus.Default.(string)
+	// rechargeorder.StatusValidator is a validator for the "status" field. It is called by the builders before save.
+	rechargeorder.StatusValidator = rechargeorderDescStatus.Validators[0].(func(string) error)
+	// rechargeorderDescPayType is the schema descriptor for pay_type field.
+	rechargeorderDescPayType := rechargeorderFields[7].Descriptor()
+	// rechargeorder.PayTypeValidator is a validator for the "pay_type" field. It is called by the builders before save.
+	rechargeorder.PayTypeValidator = rechargeorderDescPayType.Validators[0].(func(string) error)
+	// rechargeorderDescCreatedAt is the schema descriptor for created_at field.
+	rechargeorderDescCreatedAt := rechargeorderFields[9].Descriptor()
+	// rechargeorder.DefaultCreatedAt holds the default value on creation for the created_at field.
+	rechargeorder.DefaultCreatedAt = rechargeorderDescCreatedAt.Default.(func() time.Time)
+	// rechargeorderDescUpdatedAt is the schema descriptor for updated_at field.
+	rechargeorderDescUpdatedAt := rechargeorderFields[10].Descriptor()
+	// rechargeorder.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	rechargeorder.DefaultUpdatedAt = rechargeorderDescUpdatedAt.Default.(func() time.Time)
+	// rechargeorder.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	rechargeorder.UpdateDefaultUpdatedAt = rechargeorderDescUpdatedAt.UpdateDefault.(func() time.Time)
 	redeemcodeFields := schema.RedeemCode{}.Fields()
 	_ = redeemcodeFields
 	// redeemcodeDescCode is the schema descriptor for code field.

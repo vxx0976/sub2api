@@ -54,6 +54,12 @@
         </div>
 
         <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <!-- PayGo Card (First Position) -->
+          <PayGoCard
+            :config="rechargeConfig"
+            :current-balance="userBalance"
+            @recharge="showRechargeDialog = true"
+          />
           <div
             v-for="plan in plans"
             :key="plan.id"
@@ -166,6 +172,14 @@
         </div>
       </div>
     </div>
+
+    <!-- Recharge Dialog -->
+    <RechargeDialog
+      :show="showRechargeDialog"
+      :config="rechargeConfig"
+      @close="showRechargeDialog = false"
+      @confirm="handleRecharge"
+    />
   </AppLayout>
 </template>
 
@@ -173,17 +187,30 @@
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
+import { useAuthStore } from '@/stores/auth'
 import plansAPI, { type PurchasablePlan } from '@/api/plans'
+import { getRechargeConfig, createRechargeOrder } from '@/api/recharge'
+import type { RechargeConfig } from '@/api/recharge'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import Icon from '@/components/icons/Icon.vue'
+import PayGoCard from '@/components/plans/PayGoCard.vue'
+import RechargeDialog from '@/components/dialogs/RechargeDialog.vue'
 
 const { t } = useI18n()
 const appStore = useAppStore()
+const authStore = useAuthStore()
 
 const plans = ref<PurchasablePlan[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 const purchasing = ref<number | null>(null)
+
+// Recharge related state
+const rechargeConfig = ref<RechargeConfig | null>(null)
+const showRechargeDialog = ref(false)
+
+// User balance from auth store
+const userBalance = computed(() => authStore.user?.balance ?? null)
 
 // 推荐套餐：is_recommended 为 true 的
 const recommendedPlanId = computed(() => {
@@ -219,7 +246,29 @@ async function purchasePlan(plan: PurchasablePlan) {
   }
 }
 
+async function loadRechargeConfig() {
+  try {
+    rechargeConfig.value = await getRechargeConfig()
+  } catch (err: any) {
+    console.error('Failed to load recharge config:', err)
+    // Silently fail - recharge will be disabled if config can't be loaded
+  }
+}
+
+async function handleRecharge(amount: number) {
+  try {
+    const result = await createRechargeOrder(amount)
+    // Redirect to payment URL
+    window.location.href = result.pay_url
+  } catch (err: any) {
+    console.error('Failed to create recharge order:', err)
+    appStore.showError(err.message || t('recharge.rechargeFailed'))
+    showRechargeDialog.value = false
+  }
+}
+
 onMounted(() => {
   loadPlans()
+  loadRechargeConfig()
 })
 </script>

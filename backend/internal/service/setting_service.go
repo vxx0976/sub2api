@@ -779,3 +779,120 @@ func (s *SettingService) SetStreamTimeoutSettings(ctx context.Context, settings 
 
 	return s.settingRepo.Set(ctx, SettingKeyStreamTimeoutSettings, string(data))
 }
+
+// GetRechargeConfig 获取充值配置
+func (s *SettingService) GetRechargeConfig(ctx context.Context) (*RechargeConfig, error) {
+	settings, err := s.settingRepo.GetMultiple(ctx, []string{
+		"recharge_enabled",
+		"recharge_min_amount",
+		"recharge_max_amount",
+		"recharge_tiers",
+	})
+	if err != nil {
+		return nil, fmt.Errorf("get recharge settings: %w", err)
+	}
+
+	config := &RechargeConfig{
+		Enabled:   settings["recharge_enabled"] == "true",
+		MinAmount: 10.0,
+		MaxAmount: 10000.0,
+		Tiers:     []RechargeTier{},
+	}
+
+	if minStr := settings["recharge_min_amount"]; minStr != "" {
+		if min, err := strconv.ParseFloat(minStr, 64); err == nil {
+			config.MinAmount = min
+		}
+	}
+
+	if maxStr := settings["recharge_max_amount"]; maxStr != "" {
+		if max, err := strconv.ParseFloat(maxStr, 64); err == nil {
+			config.MaxAmount = max
+		}
+	}
+
+	if tiersJSON := settings["recharge_tiers"]; tiersJSON != "" {
+		if err := json.Unmarshal([]byte(tiersJSON), &config.Tiers); err == nil {
+			// 验证阶梯配置有效性
+			if err := validateRechargeTiers(config.Tiers); err != nil {
+				// 使用默认阶梯
+				config.Tiers = getDefaultRechargeTiers()
+			}
+		} else {
+			config.Tiers = getDefaultRechargeTiers()
+		}
+	} else {
+		config.Tiers = getDefaultRechargeTiers()
+	}
+
+	return config, nil
+}
+
+// UpdateRechargeConfig 更新充值配置
+func (s *SettingService) UpdateRechargeConfig(ctx context.Context, config *RechargeConfig) error {
+	// 验证阶梯配置
+	if err := validateRechargeTiers(config.Tiers); err != nil {
+		return err
+	}
+
+	tiersJSON, err := json.Marshal(config.Tiers)
+	if err != nil {
+		return fmt.Errorf("marshal tiers: %w", err)
+	}
+
+	updates := map[string]string{
+		"recharge_enabled":    strconv.FormatBool(config.Enabled),
+		"recharge_min_amount": fmt.Sprintf("%.2f", config.MinAmount),
+		"recharge_max_amount": fmt.Sprintf("%.2f", config.MaxAmount),
+		"recharge_tiers":      string(tiersJSON),
+	}
+
+	err = s.settingRepo.SetMultiple(ctx, updates)
+	if err == nil && s.onUpdate != nil {
+		s.onUpdate()
+	}
+	return err
+}
+
+// validateRechargeTiers 验证充值阶梯配置
+func validateRechargeTiers(tiers []RechargeTier) error {
+	if len(tiers) == 0 {
+		return errors.New("at least one tier is required")
+	}
+
+	for i, tier := range tiers {
+		if tier.Min < 0 {
+			return fmt.Errorf("tier %d: min amount must be >= 0", i)
+		}
+		if tier.Max != nil && *tier.Max <= tier.Min {
+			return fmt.Errorf("tier %d: max must be greater than min", i)
+		}
+		if tier.Multiplier < 1.0 || tier.Multiplier > 10.0 {
+			return fmt.Errorf("tier %d: multiplier must be between 1.0 and 10.0", i)
+		}
+
+		// 检查阶梯是否有重叠
+		if i > 0 {
+			prevMax := tiers[i-1].Max
+			if prevMax != nil && *prevMax >= tier.Min {
+				return fmt.Errorf("tier %d overlaps with tier %d", i, i-1)
+			}
+		}
+	}
+
+	return nil
+}
+
+// getDefaultRechargeTiers 获取默认充值阶梯配置
+func getDefaultRechargeTiers() []RechargeTier {
+	max49 := 49.99
+	max99 := 99.99
+	max499 := 499.99
+
+	return []RechargeTier{
+		{Min: 10, Max: &max49, Multiplier: 1.0},
+		{Min: 50, Max: &max99, Multiplier: 1.2},
+		{Min: 100, Max: &max499, Multiplier: 1.5},
+		{Min: 500, Max: nil, Multiplier: 2.0},
+	}
+}

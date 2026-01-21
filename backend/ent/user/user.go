@@ -55,6 +55,8 @@ const (
 	EdgePromoCodeUsages = "promo_code_usages"
 	// EdgeOrders holds the string denoting the orders edge name in mutations.
 	EdgeOrders = "orders"
+	// EdgeRechargeOrders holds the string denoting the recharge_orders edge name in mutations.
+	EdgeRechargeOrders = "recharge_orders"
 	// EdgeUserAllowedGroups holds the string denoting the user_allowed_groups edge name in mutations.
 	EdgeUserAllowedGroups = "user_allowed_groups"
 	// Table holds the table name of the user in the database.
@@ -120,6 +122,13 @@ const (
 	OrdersInverseTable = "orders"
 	// OrdersColumn is the table column denoting the orders relation/edge.
 	OrdersColumn = "user_id"
+	// RechargeOrdersTable is the table that holds the recharge_orders relation/edge.
+	RechargeOrdersTable = "recharge_orders"
+	// RechargeOrdersInverseTable is the table name for the RechargeOrder entity.
+	// It exists in this package in order to avoid circular dependency with the "rechargeorder" package.
+	RechargeOrdersInverseTable = "recharge_orders"
+	// RechargeOrdersColumn is the table column denoting the recharge_orders relation/edge.
+	RechargeOrdersColumn = "user_id"
 	// UserAllowedGroupsTable is the table that holds the user_allowed_groups relation/edge.
 	UserAllowedGroupsTable = "user_allowed_groups"
 	// UserAllowedGroupsInverseTable is the table name for the UserAllowedGroup entity.
@@ -388,6 +397,20 @@ func ByOrders(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
+// ByRechargeOrdersCount orders the results by recharge_orders count.
+func ByRechargeOrdersCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newRechargeOrdersStep(), opts...)
+	}
+}
+
+// ByRechargeOrders orders the results by recharge_orders terms.
+func ByRechargeOrders(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newRechargeOrdersStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByUserAllowedGroupsCount orders the results by user_allowed_groups count.
 func ByUserAllowedGroupsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -462,6 +485,13 @@ func newOrdersStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(OrdersInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, OrdersTable, OrdersColumn),
+	)
+}
+func newRechargeOrdersStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(RechargeOrdersInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, RechargeOrdersTable, RechargeOrdersColumn),
 	)
 }
 func newUserAllowedGroupsStep() *sqlgraph.Step {

@@ -190,6 +190,18 @@ const routes: RouteRecordRaw[] = [
       descriptionKey: 'userOrders.description'
     }
   },
+  {
+    path: '/recharge-orders',
+    name: 'RechargeOrders',
+    component: () => import('@/views/user/RechargeOrdersView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: false,
+      title: 'Recharge History',
+      titleKey: 'recharge.myOrders',
+      descriptionKey: 'recharge.myOrders'
+    }
+  },
 
   // ==================== Admin Routes ====================
   {
@@ -338,6 +350,30 @@ const routes: RouteRecordRaw[] = [
       title: 'Order Management',
       titleKey: 'admin.orders.title',
       descriptionKey: 'admin.orders.description'
+    }
+  },
+  {
+    path: '/admin/recharge-orders',
+    name: 'AdminRechargeOrders',
+    component: () => import('@/views/admin/RechargeOrdersView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: 'Recharge Orders',
+      titleKey: 'admin.rechargeOrders.title',
+      descriptionKey: 'admin.rechargeOrders.description'
+    }
+  },
+  {
+    path: '/admin/recharge-settings',
+    name: 'AdminRechargeSettings',
+    component: () => import('@/views/admin/RechargeSettingsView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: 'Recharge Settings',
+      titleKey: 'admin.settings.recharge.title',
+      descriptionKey: 'admin.settings.recharge.description'
     }
   },
 

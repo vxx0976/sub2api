@@ -329,6 +329,24 @@ async function verifyPayment() {
 
   const params = getPaymentParams()
 
+  // Check if this is a recharge order (order_no starts with 'R')
+  if (params.out_trade_no && params.out_trade_no.startsWith('R')) {
+    // This is a recharge order, process payment verification
+    if (params.trade_status === 'TRADE_SUCCESS') {
+      try {
+        // Call verify API to process recharge payment (same as subscription orders)
+        await plansAPI.verifyPayment(params)
+        appStore.showSuccess(t('recharge.rechargeSuccess'))
+      } catch (error) {
+        console.error('Failed to verify recharge payment:', error)
+        appStore.showError(t('recharge.rechargeFailed'))
+      }
+    }
+    // Redirect to recharge orders page
+    router.replace({ path: '/recharge-orders', query: {} })
+    return
+  }
+
   // Only process if trade status indicates success
   if (params.trade_status !== 'TRADE_SUCCESS') {
     appStore.showError(t('userSubscriptions.paymentFailed'))

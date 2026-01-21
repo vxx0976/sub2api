@@ -21,6 +21,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/promocode"
 	"github.com/Wei-Shaw/sub2api/ent/promocodeusage"
 	"github.com/Wei-Shaw/sub2api/ent/proxy"
+	"github.com/Wei-Shaw/sub2api/ent/rechargeorder"
 	"github.com/Wei-Shaw/sub2api/ent/redeemcode"
 	"github.com/Wei-Shaw/sub2api/ent/setting"
 	"github.com/Wei-Shaw/sub2api/ent/usagecleanuptask"
@@ -49,6 +50,7 @@ const (
 	TypePromoCode               = "PromoCode"
 	TypePromoCodeUsage          = "PromoCodeUsage"
 	TypeProxy                   = "Proxy"
+	TypeRechargeOrder           = "RechargeOrder"
 	TypeRedeemCode              = "RedeemCode"
 	TypeSetting                 = "Setting"
 	TypeUsageCleanupTask        = "UsageCleanupTask"
@@ -10453,6 +10455,1161 @@ func (m *ProxyMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown Proxy edge %s", name)
 }
 
+// RechargeOrderMutation represents an operation that mutates the RechargeOrder nodes in the graph.
+type RechargeOrderMutation struct {
+	config
+	op               Op
+	typ              string
+	id               *int64
+	order_no         *string
+	trade_no         *string
+	amount           *float64
+	addamount        *float64
+	credit_amount    *float64
+	addcredit_amount *float64
+	multiplier       *float64
+	addmultiplier    *float64
+	status           *string
+	pay_type         *string
+	paid_at          *time.Time
+	created_at       *time.Time
+	updated_at       *time.Time
+	expired_at       *time.Time
+	clearedFields    map[string]struct{}
+	user             *int64
+	cleareduser      bool
+	done             bool
+	oldValue         func(context.Context) (*RechargeOrder, error)
+	predicates       []predicate.RechargeOrder
+}
+
+var _ ent.Mutation = (*RechargeOrderMutation)(nil)
+
+// rechargeorderOption allows management of the mutation configuration using functional options.
+type rechargeorderOption func(*RechargeOrderMutation)
+
+// newRechargeOrderMutation creates new mutation for the RechargeOrder entity.
+func newRechargeOrderMutation(c config, op Op, opts ...rechargeorderOption) *RechargeOrderMutation {
+	m := &RechargeOrderMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeRechargeOrder,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withRechargeOrderID sets the ID field of the mutation.
+func withRechargeOrderID(id int64) rechargeorderOption {
+	return func(m *RechargeOrderMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *RechargeOrder
+		)
+		m.oldValue = func(ctx context.Context) (*RechargeOrder, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().RechargeOrder.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withRechargeOrder sets the old RechargeOrder of the mutation.
+func withRechargeOrder(node *RechargeOrder) rechargeorderOption {
+	return func(m *RechargeOrderMutation) {
+		m.oldValue = func(context.Context) (*RechargeOrder, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m RechargeOrderMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m RechargeOrderMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *RechargeOrderMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *RechargeOrderMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().RechargeOrder.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetOrderNo sets the "order_no" field.
+func (m *RechargeOrderMutation) SetOrderNo(s string) {
+	m.order_no = &s
+}
+
+// OrderNo returns the value of the "order_no" field in the mutation.
+func (m *RechargeOrderMutation) OrderNo() (r string, exists bool) {
+	v := m.order_no
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOrderNo returns the old "order_no" field's value of the RechargeOrder entity.
+// If the RechargeOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RechargeOrderMutation) OldOrderNo(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOrderNo is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOrderNo requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOrderNo: %w", err)
+	}
+	return oldValue.OrderNo, nil
+}
+
+// ResetOrderNo resets all changes to the "order_no" field.
+func (m *RechargeOrderMutation) ResetOrderNo() {
+	m.order_no = nil
+}
+
+// SetTradeNo sets the "trade_no" field.
+func (m *RechargeOrderMutation) SetTradeNo(s string) {
+	m.trade_no = &s
+}
+
+// TradeNo returns the value of the "trade_no" field in the mutation.
+func (m *RechargeOrderMutation) TradeNo() (r string, exists bool) {
+	v := m.trade_no
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTradeNo returns the old "trade_no" field's value of the RechargeOrder entity.
+// If the RechargeOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RechargeOrderMutation) OldTradeNo(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTradeNo is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTradeNo requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTradeNo: %w", err)
+	}
+	return oldValue.TradeNo, nil
+}
+
+// ClearTradeNo clears the value of the "trade_no" field.
+func (m *RechargeOrderMutation) ClearTradeNo() {
+	m.trade_no = nil
+	m.clearedFields[rechargeorder.FieldTradeNo] = struct{}{}
+}
+
+// TradeNoCleared returns if the "trade_no" field was cleared in this mutation.
+func (m *RechargeOrderMutation) TradeNoCleared() bool {
+	_, ok := m.clearedFields[rechargeorder.FieldTradeNo]
+	return ok
+}
+
+// ResetTradeNo resets all changes to the "trade_no" field.
+func (m *RechargeOrderMutation) ResetTradeNo() {
+	m.trade_no = nil
+	delete(m.clearedFields, rechargeorder.FieldTradeNo)
+}
+
+// SetUserID sets the "user_id" field.
+func (m *RechargeOrderMutation) SetUserID(i int64) {
+	m.user = &i
+}
+
+// UserID returns the value of the "user_id" field in the mutation.
+func (m *RechargeOrderMutation) UserID() (r int64, exists bool) {
+	v := m.user
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserID returns the old "user_id" field's value of the RechargeOrder entity.
+// If the RechargeOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RechargeOrderMutation) OldUserID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserID: %w", err)
+	}
+	return oldValue.UserID, nil
+}
+
+// ResetUserID resets all changes to the "user_id" field.
+func (m *RechargeOrderMutation) ResetUserID() {
+	m.user = nil
+}
+
+// SetAmount sets the "amount" field.
+func (m *RechargeOrderMutation) SetAmount(f float64) {
+	m.amount = &f
+	m.addamount = nil
+}
+
+// Amount returns the value of the "amount" field in the mutation.
+func (m *RechargeOrderMutation) Amount() (r float64, exists bool) {
+	v := m.amount
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAmount returns the old "amount" field's value of the RechargeOrder entity.
+// If the RechargeOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RechargeOrderMutation) OldAmount(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAmount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAmount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAmount: %w", err)
+	}
+	return oldValue.Amount, nil
+}
+
+// AddAmount adds f to the "amount" field.
+func (m *RechargeOrderMutation) AddAmount(f float64) {
+	if m.addamount != nil {
+		*m.addamount += f
+	} else {
+		m.addamount = &f
+	}
+}
+
+// AddedAmount returns the value that was added to the "amount" field in this mutation.
+func (m *RechargeOrderMutation) AddedAmount() (r float64, exists bool) {
+	v := m.addamount
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetAmount resets all changes to the "amount" field.
+func (m *RechargeOrderMutation) ResetAmount() {
+	m.amount = nil
+	m.addamount = nil
+}
+
+// SetCreditAmount sets the "credit_amount" field.
+func (m *RechargeOrderMutation) SetCreditAmount(f float64) {
+	m.credit_amount = &f
+	m.addcredit_amount = nil
+}
+
+// CreditAmount returns the value of the "credit_amount" field in the mutation.
+func (m *RechargeOrderMutation) CreditAmount() (r float64, exists bool) {
+	v := m.credit_amount
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreditAmount returns the old "credit_amount" field's value of the RechargeOrder entity.
+// If the RechargeOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RechargeOrderMutation) OldCreditAmount(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreditAmount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreditAmount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreditAmount: %w", err)
+	}
+	return oldValue.CreditAmount, nil
+}
+
+// AddCreditAmount adds f to the "credit_amount" field.
+func (m *RechargeOrderMutation) AddCreditAmount(f float64) {
+	if m.addcredit_amount != nil {
+		*m.addcredit_amount += f
+	} else {
+		m.addcredit_amount = &f
+	}
+}
+
+// AddedCreditAmount returns the value that was added to the "credit_amount" field in this mutation.
+func (m *RechargeOrderMutation) AddedCreditAmount() (r float64, exists bool) {
+	v := m.addcredit_amount
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetCreditAmount resets all changes to the "credit_amount" field.
+func (m *RechargeOrderMutation) ResetCreditAmount() {
+	m.credit_amount = nil
+	m.addcredit_amount = nil
+}
+
+// SetMultiplier sets the "multiplier" field.
+func (m *RechargeOrderMutation) SetMultiplier(f float64) {
+	m.multiplier = &f
+	m.addmultiplier = nil
+}
+
+// Multiplier returns the value of the "multiplier" field in the mutation.
+func (m *RechargeOrderMutation) Multiplier() (r float64, exists bool) {
+	v := m.multiplier
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMultiplier returns the old "multiplier" field's value of the RechargeOrder entity.
+// If the RechargeOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RechargeOrderMutation) OldMultiplier(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMultiplier is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMultiplier requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMultiplier: %w", err)
+	}
+	return oldValue.Multiplier, nil
+}
+
+// AddMultiplier adds f to the "multiplier" field.
+func (m *RechargeOrderMutation) AddMultiplier(f float64) {
+	if m.addmultiplier != nil {
+		*m.addmultiplier += f
+	} else {
+		m.addmultiplier = &f
+	}
+}
+
+// AddedMultiplier returns the value that was added to the "multiplier" field in this mutation.
+func (m *RechargeOrderMutation) AddedMultiplier() (r float64, exists bool) {
+	v := m.addmultiplier
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetMultiplier resets all changes to the "multiplier" field.
+func (m *RechargeOrderMutation) ResetMultiplier() {
+	m.multiplier = nil
+	m.addmultiplier = nil
+}
+
+// SetStatus sets the "status" field.
+func (m *RechargeOrderMutation) SetStatus(s string) {
+	m.status = &s
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *RechargeOrderMutation) Status() (r string, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the RechargeOrder entity.
+// If the RechargeOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RechargeOrderMutation) OldStatus(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *RechargeOrderMutation) ResetStatus() {
+	m.status = nil
+}
+
+// SetPayType sets the "pay_type" field.
+func (m *RechargeOrderMutation) SetPayType(s string) {
+	m.pay_type = &s
+}
+
+// PayType returns the value of the "pay_type" field in the mutation.
+func (m *RechargeOrderMutation) PayType() (r string, exists bool) {
+	v := m.pay_type
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPayType returns the old "pay_type" field's value of the RechargeOrder entity.
+// If the RechargeOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RechargeOrderMutation) OldPayType(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPayType is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPayType requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPayType: %w", err)
+	}
+	return oldValue.PayType, nil
+}
+
+// ClearPayType clears the value of the "pay_type" field.
+func (m *RechargeOrderMutation) ClearPayType() {
+	m.pay_type = nil
+	m.clearedFields[rechargeorder.FieldPayType] = struct{}{}
+}
+
+// PayTypeCleared returns if the "pay_type" field was cleared in this mutation.
+func (m *RechargeOrderMutation) PayTypeCleared() bool {
+	_, ok := m.clearedFields[rechargeorder.FieldPayType]
+	return ok
+}
+
+// ResetPayType resets all changes to the "pay_type" field.
+func (m *RechargeOrderMutation) ResetPayType() {
+	m.pay_type = nil
+	delete(m.clearedFields, rechargeorder.FieldPayType)
+}
+
+// SetPaidAt sets the "paid_at" field.
+func (m *RechargeOrderMutation) SetPaidAt(t time.Time) {
+	m.paid_at = &t
+}
+
+// PaidAt returns the value of the "paid_at" field in the mutation.
+func (m *RechargeOrderMutation) PaidAt() (r time.Time, exists bool) {
+	v := m.paid_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPaidAt returns the old "paid_at" field's value of the RechargeOrder entity.
+// If the RechargeOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RechargeOrderMutation) OldPaidAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPaidAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPaidAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPaidAt: %w", err)
+	}
+	return oldValue.PaidAt, nil
+}
+
+// ClearPaidAt clears the value of the "paid_at" field.
+func (m *RechargeOrderMutation) ClearPaidAt() {
+	m.paid_at = nil
+	m.clearedFields[rechargeorder.FieldPaidAt] = struct{}{}
+}
+
+// PaidAtCleared returns if the "paid_at" field was cleared in this mutation.
+func (m *RechargeOrderMutation) PaidAtCleared() bool {
+	_, ok := m.clearedFields[rechargeorder.FieldPaidAt]
+	return ok
+}
+
+// ResetPaidAt resets all changes to the "paid_at" field.
+func (m *RechargeOrderMutation) ResetPaidAt() {
+	m.paid_at = nil
+	delete(m.clearedFields, rechargeorder.FieldPaidAt)
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *RechargeOrderMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *RechargeOrderMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the RechargeOrder entity.
+// If the RechargeOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RechargeOrderMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *RechargeOrderMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *RechargeOrderMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *RechargeOrderMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the RechargeOrder entity.
+// If the RechargeOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RechargeOrderMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *RechargeOrderMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetExpiredAt sets the "expired_at" field.
+func (m *RechargeOrderMutation) SetExpiredAt(t time.Time) {
+	m.expired_at = &t
+}
+
+// ExpiredAt returns the value of the "expired_at" field in the mutation.
+func (m *RechargeOrderMutation) ExpiredAt() (r time.Time, exists bool) {
+	v := m.expired_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExpiredAt returns the old "expired_at" field's value of the RechargeOrder entity.
+// If the RechargeOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RechargeOrderMutation) OldExpiredAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExpiredAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExpiredAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExpiredAt: %w", err)
+	}
+	return oldValue.ExpiredAt, nil
+}
+
+// ClearExpiredAt clears the value of the "expired_at" field.
+func (m *RechargeOrderMutation) ClearExpiredAt() {
+	m.expired_at = nil
+	m.clearedFields[rechargeorder.FieldExpiredAt] = struct{}{}
+}
+
+// ExpiredAtCleared returns if the "expired_at" field was cleared in this mutation.
+func (m *RechargeOrderMutation) ExpiredAtCleared() bool {
+	_, ok := m.clearedFields[rechargeorder.FieldExpiredAt]
+	return ok
+}
+
+// ResetExpiredAt resets all changes to the "expired_at" field.
+func (m *RechargeOrderMutation) ResetExpiredAt() {
+	m.expired_at = nil
+	delete(m.clearedFields, rechargeorder.FieldExpiredAt)
+}
+
+// ClearUser clears the "user" edge to the User entity.
+func (m *RechargeOrderMutation) ClearUser() {
+	m.cleareduser = true
+	m.clearedFields[rechargeorder.FieldUserID] = struct{}{}
+}
+
+// UserCleared reports if the "user" edge to the User entity was cleared.
+func (m *RechargeOrderMutation) UserCleared() bool {
+	return m.cleareduser
+}
+
+// UserIDs returns the "user" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// UserID instead. It exists only for internal usage by the builders.
+func (m *RechargeOrderMutation) UserIDs() (ids []int64) {
+	if id := m.user; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetUser resets all changes to the "user" edge.
+func (m *RechargeOrderMutation) ResetUser() {
+	m.user = nil
+	m.cleareduser = false
+}
+
+// Where appends a list predicates to the RechargeOrderMutation builder.
+func (m *RechargeOrderMutation) Where(ps ...predicate.RechargeOrder) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the RechargeOrderMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *RechargeOrderMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.RechargeOrder, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *RechargeOrderMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *RechargeOrderMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (RechargeOrder).
+func (m *RechargeOrderMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *RechargeOrderMutation) Fields() []string {
+	fields := make([]string, 0, 12)
+	if m.order_no != nil {
+		fields = append(fields, rechargeorder.FieldOrderNo)
+	}
+	if m.trade_no != nil {
+		fields = append(fields, rechargeorder.FieldTradeNo)
+	}
+	if m.user != nil {
+		fields = append(fields, rechargeorder.FieldUserID)
+	}
+	if m.amount != nil {
+		fields = append(fields, rechargeorder.FieldAmount)
+	}
+	if m.credit_amount != nil {
+		fields = append(fields, rechargeorder.FieldCreditAmount)
+	}
+	if m.multiplier != nil {
+		fields = append(fields, rechargeorder.FieldMultiplier)
+	}
+	if m.status != nil {
+		fields = append(fields, rechargeorder.FieldStatus)
+	}
+	if m.pay_type != nil {
+		fields = append(fields, rechargeorder.FieldPayType)
+	}
+	if m.paid_at != nil {
+		fields = append(fields, rechargeorder.FieldPaidAt)
+	}
+	if m.created_at != nil {
+		fields = append(fields, rechargeorder.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, rechargeorder.FieldUpdatedAt)
+	}
+	if m.expired_at != nil {
+		fields = append(fields, rechargeorder.FieldExpiredAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *RechargeOrderMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case rechargeorder.FieldOrderNo:
+		return m.OrderNo()
+	case rechargeorder.FieldTradeNo:
+		return m.TradeNo()
+	case rechargeorder.FieldUserID:
+		return m.UserID()
+	case rechargeorder.FieldAmount:
+		return m.Amount()
+	case rechargeorder.FieldCreditAmount:
+		return m.CreditAmount()
+	case rechargeorder.FieldMultiplier:
+		return m.Multiplier()
+	case rechargeorder.FieldStatus:
+		return m.Status()
+	case rechargeorder.FieldPayType:
+		return m.PayType()
+	case rechargeorder.FieldPaidAt:
+		return m.PaidAt()
+	case rechargeorder.FieldCreatedAt:
+		return m.CreatedAt()
+	case rechargeorder.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case rechargeorder.FieldExpiredAt:
+		return m.ExpiredAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *RechargeOrderMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case rechargeorder.FieldOrderNo:
+		return m.OldOrderNo(ctx)
+	case rechargeorder.FieldTradeNo:
+		return m.OldTradeNo(ctx)
+	case rechargeorder.FieldUserID:
+		return m.OldUserID(ctx)
+	case rechargeorder.FieldAmount:
+		return m.OldAmount(ctx)
+	case rechargeorder.FieldCreditAmount:
+		return m.OldCreditAmount(ctx)
+	case rechargeorder.FieldMultiplier:
+		return m.OldMultiplier(ctx)
+	case rechargeorder.FieldStatus:
+		return m.OldStatus(ctx)
+	case rechargeorder.FieldPayType:
+		return m.OldPayType(ctx)
+	case rechargeorder.FieldPaidAt:
+		return m.OldPaidAt(ctx)
+	case rechargeorder.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case rechargeorder.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case rechargeorder.FieldExpiredAt:
+		return m.OldExpiredAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown RechargeOrder field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *RechargeOrderMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case rechargeorder.FieldOrderNo:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOrderNo(v)
+		return nil
+	case rechargeorder.FieldTradeNo:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTradeNo(v)
+		return nil
+	case rechargeorder.FieldUserID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserID(v)
+		return nil
+	case rechargeorder.FieldAmount:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAmount(v)
+		return nil
+	case rechargeorder.FieldCreditAmount:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreditAmount(v)
+		return nil
+	case rechargeorder.FieldMultiplier:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMultiplier(v)
+		return nil
+	case rechargeorder.FieldStatus:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
+		return nil
+	case rechargeorder.FieldPayType:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPayType(v)
+		return nil
+	case rechargeorder.FieldPaidAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPaidAt(v)
+		return nil
+	case rechargeorder.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case rechargeorder.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case rechargeorder.FieldExpiredAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExpiredAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown RechargeOrder field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *RechargeOrderMutation) AddedFields() []string {
+	var fields []string
+	if m.addamount != nil {
+		fields = append(fields, rechargeorder.FieldAmount)
+	}
+	if m.addcredit_amount != nil {
+		fields = append(fields, rechargeorder.FieldCreditAmount)
+	}
+	if m.addmultiplier != nil {
+		fields = append(fields, rechargeorder.FieldMultiplier)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *RechargeOrderMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case rechargeorder.FieldAmount:
+		return m.AddedAmount()
+	case rechargeorder.FieldCreditAmount:
+		return m.AddedCreditAmount()
+	case rechargeorder.FieldMultiplier:
+		return m.AddedMultiplier()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *RechargeOrderMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case rechargeorder.FieldAmount:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAmount(v)
+		return nil
+	case rechargeorder.FieldCreditAmount:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCreditAmount(v)
+		return nil
+	case rechargeorder.FieldMultiplier:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddMultiplier(v)
+		return nil
+	}
+	return fmt.Errorf("unknown RechargeOrder numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *RechargeOrderMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(rechargeorder.FieldTradeNo) {
+		fields = append(fields, rechargeorder.FieldTradeNo)
+	}
+	if m.FieldCleared(rechargeorder.FieldPayType) {
+		fields = append(fields, rechargeorder.FieldPayType)
+	}
+	if m.FieldCleared(rechargeorder.FieldPaidAt) {
+		fields = append(fields, rechargeorder.FieldPaidAt)
+	}
+	if m.FieldCleared(rechargeorder.FieldExpiredAt) {
+		fields = append(fields, rechargeorder.FieldExpiredAt)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *RechargeOrderMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *RechargeOrderMutation) ClearField(name string) error {
+	switch name {
+	case rechargeorder.FieldTradeNo:
+		m.ClearTradeNo()
+		return nil
+	case rechargeorder.FieldPayType:
+		m.ClearPayType()
+		return nil
+	case rechargeorder.FieldPaidAt:
+		m.ClearPaidAt()
+		return nil
+	case rechargeorder.FieldExpiredAt:
+		m.ClearExpiredAt()
+		return nil
+	}
+	return fmt.Errorf("unknown RechargeOrder nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *RechargeOrderMutation) ResetField(name string) error {
+	switch name {
+	case rechargeorder.FieldOrderNo:
+		m.ResetOrderNo()
+		return nil
+	case rechargeorder.FieldTradeNo:
+		m.ResetTradeNo()
+		return nil
+	case rechargeorder.FieldUserID:
+		m.ResetUserID()
+		return nil
+	case rechargeorder.FieldAmount:
+		m.ResetAmount()
+		return nil
+	case rechargeorder.FieldCreditAmount:
+		m.ResetCreditAmount()
+		return nil
+	case rechargeorder.FieldMultiplier:
+		m.ResetMultiplier()
+		return nil
+	case rechargeorder.FieldStatus:
+		m.ResetStatus()
+		return nil
+	case rechargeorder.FieldPayType:
+		m.ResetPayType()
+		return nil
+	case rechargeorder.FieldPaidAt:
+		m.ResetPaidAt()
+		return nil
+	case rechargeorder.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case rechargeorder.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case rechargeorder.FieldExpiredAt:
+		m.ResetExpiredAt()
+		return nil
+	}
+	return fmt.Errorf("unknown RechargeOrder field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *RechargeOrderMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.user != nil {
+		edges = append(edges, rechargeorder.EdgeUser)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *RechargeOrderMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case rechargeorder.EdgeUser:
+		if id := m.user; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *RechargeOrderMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *RechargeOrderMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *RechargeOrderMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.cleareduser {
+		edges = append(edges, rechargeorder.EdgeUser)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *RechargeOrderMutation) EdgeCleared(name string) bool {
+	switch name {
+	case rechargeorder.EdgeUser:
+		return m.cleareduser
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *RechargeOrderMutation) ClearEdge(name string) error {
+	switch name {
+	case rechargeorder.EdgeUser:
+		m.ClearUser()
+		return nil
+	}
+	return fmt.Errorf("unknown RechargeOrder unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *RechargeOrderMutation) ResetEdge(name string) error {
+	switch name {
+	case rechargeorder.EdgeUser:
+		m.ResetUser()
+		return nil
+	}
+	return fmt.Errorf("unknown RechargeOrder edge %s", name)
+}
+
 // RedeemCodeMutation represents an operation that mutates the RedeemCode nodes in the graph.
 type RedeemCodeMutation struct {
 	config
@@ -15975,6 +17132,9 @@ type UserMutation struct {
 	orders                        map[int64]struct{}
 	removedorders                 map[int64]struct{}
 	clearedorders                 bool
+	recharge_orders               map[int64]struct{}
+	removedrecharge_orders        map[int64]struct{}
+	clearedrecharge_orders        bool
 	done                          bool
 	oldValue                      func(context.Context) (*User, error)
 	predicates                    []predicate.User
@@ -17013,6 +18173,60 @@ func (m *UserMutation) ResetOrders() {
 	m.removedorders = nil
 }
 
+// AddRechargeOrderIDs adds the "recharge_orders" edge to the RechargeOrder entity by ids.
+func (m *UserMutation) AddRechargeOrderIDs(ids ...int64) {
+	if m.recharge_orders == nil {
+		m.recharge_orders = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.recharge_orders[ids[i]] = struct{}{}
+	}
+}
+
+// ClearRechargeOrders clears the "recharge_orders" edge to the RechargeOrder entity.
+func (m *UserMutation) ClearRechargeOrders() {
+	m.clearedrecharge_orders = true
+}
+
+// RechargeOrdersCleared reports if the "recharge_orders" edge to the RechargeOrder entity was cleared.
+func (m *UserMutation) RechargeOrdersCleared() bool {
+	return m.clearedrecharge_orders
+}
+
+// RemoveRechargeOrderIDs removes the "recharge_orders" edge to the RechargeOrder entity by IDs.
+func (m *UserMutation) RemoveRechargeOrderIDs(ids ...int64) {
+	if m.removedrecharge_orders == nil {
+		m.removedrecharge_orders = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.recharge_orders, ids[i])
+		m.removedrecharge_orders[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedRechargeOrders returns the removed IDs of the "recharge_orders" edge to the RechargeOrder entity.
+func (m *UserMutation) RemovedRechargeOrdersIDs() (ids []int64) {
+	for id := range m.removedrecharge_orders {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// RechargeOrdersIDs returns the "recharge_orders" edge IDs in the mutation.
+func (m *UserMutation) RechargeOrdersIDs() (ids []int64) {
+	for id := range m.recharge_orders {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetRechargeOrders resets all changes to the "recharge_orders" edge.
+func (m *UserMutation) ResetRechargeOrders() {
+	m.recharge_orders = nil
+	m.clearedrecharge_orders = false
+	m.removedrecharge_orders = nil
+}
+
 // Where appends a list predicates to the UserMutation builder.
 func (m *UserMutation) Where(ps ...predicate.User) {
 	m.predicates = append(m.predicates, ps...)
@@ -17352,7 +18566,7 @@ func (m *UserMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *UserMutation) AddedEdges() []string {
-	edges := make([]string, 0, 9)
+	edges := make([]string, 0, 10)
 	if m.api_keys != nil {
 		edges = append(edges, user.EdgeAPIKeys)
 	}
@@ -17379,6 +18593,9 @@ func (m *UserMutation) AddedEdges() []string {
 	}
 	if m.orders != nil {
 		edges = append(edges, user.EdgeOrders)
+	}
+	if m.recharge_orders != nil {
+		edges = append(edges, user.EdgeRechargeOrders)
 	}
 	return edges
 }
@@ -17441,13 +18658,19 @@ func (m *UserMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgeRechargeOrders:
+		ids := make([]ent.Value, 0, len(m.recharge_orders))
+		for id := range m.recharge_orders {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UserMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 9)
+	edges := make([]string, 0, 10)
 	if m.removedapi_keys != nil {
 		edges = append(edges, user.EdgeAPIKeys)
 	}
@@ -17474,6 +18697,9 @@ func (m *UserMutation) RemovedEdges() []string {
 	}
 	if m.removedorders != nil {
 		edges = append(edges, user.EdgeOrders)
+	}
+	if m.removedrecharge_orders != nil {
+		edges = append(edges, user.EdgeRechargeOrders)
 	}
 	return edges
 }
@@ -17536,13 +18762,19 @@ func (m *UserMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgeRechargeOrders:
+		ids := make([]ent.Value, 0, len(m.removedrecharge_orders))
+		for id := range m.removedrecharge_orders {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *UserMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 9)
+	edges := make([]string, 0, 10)
 	if m.clearedapi_keys {
 		edges = append(edges, user.EdgeAPIKeys)
 	}
@@ -17570,6 +18802,9 @@ func (m *UserMutation) ClearedEdges() []string {
 	if m.clearedorders {
 		edges = append(edges, user.EdgeOrders)
 	}
+	if m.clearedrecharge_orders {
+		edges = append(edges, user.EdgeRechargeOrders)
+	}
 	return edges
 }
 
@@ -17595,6 +18830,8 @@ func (m *UserMutation) EdgeCleared(name string) bool {
 		return m.clearedpromo_code_usages
 	case user.EdgeOrders:
 		return m.clearedorders
+	case user.EdgeRechargeOrders:
+		return m.clearedrecharge_orders
 	}
 	return false
 }
@@ -17637,6 +18874,9 @@ func (m *UserMutation) ResetEdge(name string) error {
 		return nil
 	case user.EdgeOrders:
 		m.ResetOrders()
+		return nil
+	case user.EdgeRechargeOrders:
+		m.ResetRechargeOrders()
 		return nil
 	}
 	return fmt.Errorf("unknown User edge %s", name)

@@ -40,15 +40,24 @@ type CreateOrderResponse struct {
 
 // PaymentHandler handles payment-related HTTP requests
 type PaymentHandler struct {
-	orderService *service.OrderService
-	cfg          *config.Config
+	orderService         *service.OrderService
+	rechargeOrderService *service.RechargeOrderService
+	musePayment          *payment.MusePayment
+	cfg                  *config.Config
 }
 
 // NewPaymentHandler creates a new payment handler
-func NewPaymentHandler(orderService *service.OrderService, cfg *config.Config) *PaymentHandler {
+func NewPaymentHandler(
+	orderService *service.OrderService,
+	rechargeOrderService *service.RechargeOrderService,
+	musePayment *payment.MusePayment,
+	cfg *config.Config,
+) *PaymentHandler {
 	return &PaymentHandler{
-		orderService: orderService,
-		cfg:          cfg,
+		orderService:         orderService,
+		rechargeOrderService: rechargeOrderService,
+		musePayment:          musePayment,
+		cfg:                  cfg,
 	}
 }
 
@@ -123,9 +132,30 @@ func (h *PaymentHandler) PaymentNotify(c *gin.Context) {
 		return
 	}
 
-	if err := h.orderService.HandlePaymentNotify(c.Request.Context(), &params); err != nil {
+	// 验证签名
+	if !h.musePayment.VerifySign(params.ToMap()) {
 		c.String(http.StatusOK, "fail")
 		return
+	}
+
+	// 检查是否是充值订单（订单号以 R 开头）
+	if len(params.OutTradeNo) > 0 && params.OutTradeNo[0] == 'R' {
+		// 处理充值订单
+		if err := h.rechargeOrderService.HandleRechargeNotify(
+			c.Request.Context(),
+			params.OutTradeNo,
+			params.TradeNo,
+			params.Type,
+		); err != nil {
+			c.String(http.StatusOK, "fail")
+			return
+		}
+	} else {
+		// 处理套餐订单（原有逻辑）
+		if err := h.orderService.HandlePaymentNotify(c.Request.Context(), &params); err != nil {
+			c.String(http.StatusOK, "fail")
+			return
+		}
 	}
 
 	c.String(http.StatusOK, "success")
@@ -168,7 +198,29 @@ func (h *PaymentHandler) VerifyPaymentReturn(c *gin.Context) {
 		return
 	}
 
-	// Process the payment (verify signature, update order, assign subscription)
+	// Check if this is a recharge order (order_no starts with 'R')
+	if len(params.OutTradeNo) > 0 && params.OutTradeNo[0] == 'R' {
+		// Process recharge order
+		if err := h.rechargeOrderService.HandleRechargeNotify(
+			c.Request.Context(),
+			params.OutTradeNo,
+			params.TradeNo,
+			params.Type,
+		); err != nil {
+			response.ErrorFrom(c, err)
+			return
+		}
+
+		// Return success response for recharge order
+		response.Success(c, gin.H{
+			"status":   "paid",
+			"order_no": params.OutTradeNo,
+			"paid":     true,
+		})
+		return
+	}
+
+	// Process subscription order (original logic)
 	if err := h.orderService.HandlePaymentNotify(c.Request.Context(), &params); err != nil {
 		// Check if it's a known error
 		if err == service.ErrOrderExpired {

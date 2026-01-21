@@ -350,6 +350,8 @@ export default {
     plans: 'Plans',
     orders: 'My Orders',
     adminOrders: 'Order Management',
+    adminRechargeOrders: 'Recharge Management',
+    rechargeSettings: 'Recharge Settings',
     docs: 'Docs'
   },
 
@@ -1205,6 +1207,25 @@ export default {
         expired: 'Expired',
         refunded: 'Refunded'
       }
+    },
+
+    // Recharge Orders Management
+    rechargeOrders: {
+      title: 'Recharge Management',
+      description: 'Manage all user recharge orders',
+      searchPlaceholder: 'Search order number, user...',
+      allStatus: 'All Status',
+      noOrders: 'No Recharge Records',
+      noOrdersDesc: 'No recharge orders yet.',
+      failedToLoad: 'Failed to load recharge orders',
+      user: 'User',
+      tradeNo: 'Transaction No.',
+      payMethod: 'Payment Method',
+      paidAt: 'Paid At',
+      totalOrders: 'Total Orders',
+      totalAmount: 'Total Amount',
+      totalCredit: 'Total Credit',
+      averageMultiplier: 'Avg Multiplier'
     },
 
     // Accounts
@@ -3082,6 +3103,37 @@ export default {
         saved: 'Stream timeout settings saved',
         saveFailed: 'Failed to save stream timeout settings'
       },
+      recharge: {
+        title: 'Recharge Settings',
+        description: 'Configure recharge functionality and tier multipliers',
+        basicSettings: 'Basic Settings',
+        enabled: 'Enable Recharge',
+        enabledHint: 'Allow users to recharge account balance',
+        minAmount: 'Minimum Amount',
+        minAmountPlaceholder: '10',
+        minAmountHint: 'Minimum recharge amount per transaction (¥)',
+        maxAmount: 'Maximum Amount',
+        maxAmountPlaceholder: '10000',
+        maxAmountHint: 'Maximum recharge amount per transaction (¥)',
+        tiers: 'Tier Multipliers',
+        tiersHint: 'Set multiplier bonuses for different amounts',
+        tier: 'Tier',
+        tierMin: 'Min Amount',
+        tierMax: 'Max Amount',
+        tierMaxPlaceholder: 'Leave empty for unlimited',
+        tierMultiplier: 'Multiplier',
+        addTier: 'Add Tier',
+        noTiers: 'No tiers configured',
+        preview: 'Preview',
+        tierValidation: {
+          maxGreaterThanMin: 'Max amount must be greater than min',
+          multiplierRange: 'Multiplier must be between 1.0 and 10.0',
+          overlap: 'Tier ranges cannot overlap'
+        },
+        loadFailed: 'Failed to load recharge config',
+        saveSuccess: 'Recharge settings saved successfully',
+        saveFailed: 'Failed to save recharge settings'
+      },
       saveSettings: 'Save Settings',
       saving: 'Saving...',
       settingsSaved: 'Settings saved successfully',
@@ -3187,7 +3239,61 @@ export default {
     unlimited: 'Unlimited',
     processing: 'Processing...',
     purchase: 'Purchase Now',
-    purchaseError: 'Failed to create order. Please try again.'
+    purchaseError: 'Failed to create order. Please try again.',
+    paygo: {
+      title: 'PayGo Pay-As-You-Go',
+      description: 'Flexible recharge, use as you need',
+      features: {
+        anyAmount: 'Recharge any amount',
+        payAsYouGo: 'Pay only for what you use',
+        neverExpires: 'Balance never expires'
+      }
+    }
+  },
+
+  // Recharge
+  recharge: {
+    title: 'Recharge Account',
+    rechargeNow: 'Recharge Now',
+    rechargeAmount: 'Recharge Amount (¥)',
+    enterAmount: 'Enter recharge amount',
+    quickAmounts: 'Quick Amounts',
+    currentBalance: 'Current Balance',
+    bonus: 'Recharge Bonus',
+    actualCredit: 'Actual Credit',
+    multiplier: 'Multiplier',
+    multiplierInfo: '{multiplier}× multiplier',
+    tierInfo: 'Recharge Tiers',
+    bonusTip: 'Recharge more, get more bonus!',
+    minAmount: 'Min Amount',
+    maxAmount: 'Max Amount',
+    confirmRecharge: 'Confirm Recharge',
+    processing: 'Processing...',
+    rechargeFailed: 'Recharge failed',
+    invalidAmount: 'Amount must be between ¥{min} and ¥{max}',
+    rechargeSuccess: 'Recharge successful',
+
+    // Order related
+    myOrders: 'Recharge History',
+    orderNo: 'Order No.',
+    amount: 'Payment Amount',
+    creditAmount: 'Credit Amount',
+    status: 'Status',
+    createdAt: 'Created At',
+    paidAt: 'Paid At',
+    continuePay: 'Continue Payment',
+    paying: 'Processing...',
+    expired: 'Expired',
+    statusLabels: {
+      pending: 'Pending',
+      paid: 'Paid',
+      expired: 'Expired',
+      refunded: 'Refunded'
+    },
+    noOrders: 'No Recharge Records',
+    noOrdersDesc: "You haven't recharged yet",
+    failedToLoad: 'Failed to load recharge records',
+    repayFailed: 'Failed to get payment link'
   },
 
   // User Orders

@@ -349,6 +349,8 @@ export default {
     plans: '套餐计划',
     orders: '我的订单',
     adminOrders: '订单管理',
+    adminRechargeOrders: '充值管理',
+    rechargeSettings: '充值配置',
     docs: '文档'
   },
 
@@ -1281,6 +1283,25 @@ export default {
         expired: '已过期',
         refunded: '已退款'
       }
+    },
+
+    // Recharge Orders Management
+    rechargeOrders: {
+      title: '充值管理',
+      description: '管理所有用户的充值订单',
+      searchPlaceholder: '搜索订单号、用户...',
+      allStatus: '全部状态',
+      noOrders: '暂无充值记录',
+      noOrdersDesc: '还没有任何充值订单。',
+      failedToLoad: '加载充值订单失败',
+      user: '用户',
+      tradeNo: '交易号',
+      payMethod: '支付方式',
+      paidAt: '支付时间',
+      totalOrders: '订单总数',
+      totalAmount: '收款总额',
+      totalCredit: '到账总额',
+      averageMultiplier: '平均倍率'
     },
 
     // Accounts Management
@@ -3234,6 +3255,37 @@ export default {
         saved: '流超时设置保存成功',
         saveFailed: '保存流超时设置失败'
       },
+      recharge: {
+        title: '充值配置',
+        description: '配置用户充值功能和阶梯倍率',
+        basicSettings: '基础设置',
+        enabled: '启用充值功能',
+        enabledHint: '允许用户充值账户余额',
+        minAmount: '最小充值金额',
+        minAmountPlaceholder: '10',
+        minAmountHint: '用户单次充值的最小金额（元）',
+        maxAmount: '最大充值金额',
+        maxAmountPlaceholder: '10000',
+        maxAmountHint: '用户单次充值的最大金额（元）',
+        tiers: '阶梯倍率',
+        tiersHint: '设置不同充值金额的倍率优惠',
+        tier: '阶梯',
+        tierMin: '最小金额',
+        tierMax: '最大金额',
+        tierMaxPlaceholder: '留空表示无上限',
+        tierMultiplier: '倍率',
+        addTier: '添加阶梯',
+        noTiers: '暂无阶梯配置',
+        preview: '预览',
+        tierValidation: {
+          maxGreaterThanMin: '最大金额必须大于最小金额',
+          multiplierRange: '倍率必须在 1.0 到 10.0 之间',
+          overlap: '阶梯区间不能与其他阶梯重叠'
+        },
+        loadFailed: '加载充值配置失败',
+        saveSuccess: '保存充值配置成功',
+        saveFailed: '保存充值配置失败'
+      },
       saveSettings: '保存设置',
       saving: '保存中...',
       settingsSaved: '设置保存成功',
@@ -3338,7 +3390,61 @@ export default {
     unlimited: '无限额',
     processing: '处理中...',
     purchase: '立即购买',
-    purchaseError: '创建订单失败，请稍后重试'
+    purchaseError: '创建订单失败，请稍后重试',
+    paygo: {
+      title: 'PayGo 按量付费',
+      description: '随充随用，灵活便捷',
+      features: {
+        anyAmount: '充值任意金额',
+        payAsYouGo: '按实际使用扣费',
+        neverExpires: '余额永久有效'
+      }
+    }
+  },
+
+  // Recharge
+  recharge: {
+    title: '账户充值',
+    rechargeNow: '立即充值',
+    rechargeAmount: '充值金额（元）',
+    enterAmount: '请输入充值金额',
+    quickAmounts: '快捷金额',
+    currentBalance: '当前余额',
+    bonus: '充值优惠',
+    actualCredit: '实际到账',
+    multiplier: '充值倍率',
+    multiplierInfo: '倍率 {multiplier}×',
+    tierInfo: '充值阶梯',
+    bonusTip: '充值越多，赠送越多！',
+    minAmount: '最小充值',
+    maxAmount: '最大充值',
+    confirmRecharge: '确认充值',
+    processing: '处理中...',
+    rechargeFailed: '充值失败',
+    invalidAmount: '充值金额必须在 ¥{min} 到 ¥{max} 之间',
+    rechargeSuccess: '充值成功',
+
+    // 订单相关
+    myOrders: '充值记录',
+    orderNo: '订单号',
+    amount: '支付金额',
+    creditAmount: '到账金额',
+    status: '状态',
+    createdAt: '创建时间',
+    paidAt: '支付时间',
+    continuePay: '继续支付',
+    paying: '支付中...',
+    expired: '已过期',
+    statusLabels: {
+      pending: '待支付',
+      paid: '已支付',
+      expired: '已过期',
+      refunded: '已退款'
+    },
+    noOrders: '暂无充值记录',
+    noOrdersDesc: '您还没有充值过',
+    failedToLoad: '加载充值记录失败',
+    repayFailed: '获取支付链接失败'
   },
 
   // User Orders

@@ -45,9 +45,11 @@ type CreateOrderInput struct {
 
 // CreateOrderOutput output for creating an order
 type CreateOrderOutput struct {
-	OrderNo string
-	PayURL  string
-	Amount  float64
+	OrderNo      string
+	PayURL       string
+	Amount       float64
+	CreditAmount *float64 // 充值订单实际到账金额（可选）
+	Multiplier   *float64 // 充值订单倍率（可选）
 }
 
 // CreateOrder creates a new order for purchasing a subscription
