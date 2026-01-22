@@ -67,6 +67,11 @@ export default {
       threeTitle: '开始 Vibe Coding',
       threeDesc: '写代码、改 Bug、补测试'
     },
+    freeTrial: {
+      badge: '限时福利',
+      title: '添加客服微信，免费试用',
+      description: '扫码添加客服微信，即可获得免费试用额度，体验满血 Claude Code'
+    },
     quickstart: {
       title: '快速上手',
       description: '把 BASE_URL 和 API Key 换成你的，然后运行：',
@@ -3464,6 +3469,26 @@ export default {
         anyAmount: '充值任意金额',
         payAsYouGo: '按实际使用扣费',
         neverExpires: '余额永久有效'
+      }
+    },
+    enterprise: {
+      badge: '高端定制',
+      name: '定制专线',
+      description: '专属通道，极致体验，为企业级用户量身打造',
+      contactUs: '联系客服',
+      customized: '根据需求定制方案',
+      contact: '联系客服咨询',
+      contactMessage: '请联系客服获取定制方案：微信 AI码驿站',
+      features: {
+        dedicated: '独享专属线路',
+        unlimited: '无限额度配置',
+        priority: '优先响应支持',
+        sla: '99.9% SLA 保障'
+      },
+      dialog: {
+        title: '联系客服',
+        subtitle: '扫码添加微信，获取定制方案',
+        tip: '工作时间：周一至周日 9:00-22:00'
       }
     }
   },

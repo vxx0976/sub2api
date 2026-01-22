@@ -318,6 +318,49 @@
               </div>
             </div>
           </div>
+
+          <!-- Free Trial Banner -->
+          <div class="mx-auto mt-10 max-w-2xl">
+            <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 p-1 shadow-xl shadow-green-500/20">
+              <div class="rounded-[22px] bg-white/95 px-6 py-5 backdrop-blur dark:bg-dark-900/95">
+                <div class="flex flex-col items-center gap-5 sm:flex-row">
+                  <!-- QR Code -->
+                  <div class="flex-shrink-0">
+                    <div class="overflow-hidden rounded-2xl border-2 border-green-100 bg-white p-1.5 shadow-sm dark:border-green-900/50">
+                      <img
+                        :src="qrCodeUrl"
+                        alt="WeChat QR Code"
+                        class="h-28 w-28 object-contain"
+                        @error="handleQrError"
+                      />
+                    </div>
+                  </div>
+                  <!-- Text -->
+                  <div class="flex-1 text-center sm:text-left">
+                    <div class="inline-flex items-center gap-1.5 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700 dark:bg-green-900/30 dark:text-green-300">
+                      <span class="relative flex h-2 w-2">
+                        <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75"></span>
+                        <span class="relative inline-flex h-2 w-2 rounded-full bg-green-500"></span>
+                      </span>
+                      {{ t('home.freeTrial.badge') }}
+                    </div>
+                    <h3 class="mt-2 text-lg font-bold text-gray-900 dark:text-white">
+                      {{ t('home.freeTrial.title') }}
+                    </h3>
+                    <p class="mt-1 text-sm text-gray-600 dark:text-dark-400">
+                      {{ t('home.freeTrial.description') }}
+                    </p>
+                    <div class="mt-2 inline-flex items-center gap-2 text-sm font-medium text-green-600 dark:text-green-400">
+                      <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8.691 2.188C3.891 2.188 0 5.476 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 01.213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.29.295a.326.326 0 00.167-.054l1.903-1.114a.864.864 0 01.717-.098 10.16 10.16 0 002.837.403c.276 0 .543-.027.811-.05-.857-2.578.157-4.972 1.932-6.446 1.703-1.415 3.882-1.98 5.853-1.838-.576-3.583-4.196-6.348-8.596-6.348zM5.785 5.991c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 01-1.162 1.178A1.17 1.17 0 014.623 7.17c0-.651.52-1.18 1.162-1.18zm5.813 0c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 01-1.162 1.178 1.17 1.17 0 01-1.162-1.178c0-.651.52-1.18 1.162-1.18z"/>
+                      </svg>
+                      <span>AI码驿站</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -582,7 +625,7 @@
               <!-- Buy Button -->
               <div class="mt-auto pt-6">
                 <router-link
-                  :to="isAuthenticated ? dashboardPath : '/login'"
+                  :to="isAuthenticated ? '/plans' : '/login?redirect=/plans'"
                   class="inline-flex w-full items-center justify-center rounded-2xl px-4 py-3 text-sm font-semibold transition-colors"
                   :class="plan.recommended ? 'bg-primary-500 text-white hover:bg-primary-600' : 'border border-white/10 bg-white/5 text-white hover:bg-white/10'"
                 >
@@ -860,6 +903,9 @@ const isHomeContentUrl = computed(() => {
   return content.startsWith('http://') || content.startsWith('https://')
 })
 
+// QR code URL (runtime to avoid Vite static analysis)
+const qrCodeUrl = '/wechat-qrcode.png'
+
 // Theme
 const isDark = ref(document.documentElement.classList.contains('dark'))
 
@@ -998,6 +1044,12 @@ const pricingPlans = computed(() => [
 
 function copyTerminalExample() {
   copyToClipboard(terminalExampleText.value)
+}
+
+// Handle QR code image error
+function handleQrError(e: Event) {
+  const img = e.target as HTMLImageElement
+  img.style.display = 'none'
 }
 
 // Toggle theme

@@ -179,6 +179,82 @@
               </button>
             </div>
           </div>
+
+          <!-- Custom Enterprise Card -->
+          <div
+            class="group relative flex flex-col overflow-hidden rounded-3xl border border-purple-300/50 bg-gradient-to-br from-purple-50 via-white to-amber-50 shadow-lg shadow-purple-500/10 transition-all duration-300 hover:shadow-xl dark:border-purple-500/30 dark:from-purple-900/20 dark:via-dark-800 dark:to-amber-900/10"
+          >
+            <!-- Premium Badge -->
+            <div class="absolute right-4 top-4">
+              <span class="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-purple-500 to-amber-500 px-3 py-1 text-xs font-semibold text-white shadow-lg">
+                <Icon name="sparkles" size="xs" />
+                {{ t('plans.enterprise.badge') }}
+              </span>
+            </div>
+
+            <!-- Card Content -->
+            <div class="flex flex-1 flex-col p-6">
+              <!-- Plan Name -->
+              <div class="mb-4">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                  {{ t('plans.enterprise.name') }}
+                </h3>
+                <p class="mt-1 text-sm text-gray-500 dark:text-dark-400 line-clamp-2">
+                  {{ t('plans.enterprise.description') }}
+                </p>
+              </div>
+
+              <!-- Price - Contact Us -->
+              <div class="mb-6">
+                <div class="flex items-end gap-1">
+                  <span class="text-3xl font-bold tracking-tight text-purple-600 dark:text-purple-400">
+                    {{ t('plans.enterprise.contactUs') }}
+                  </span>
+                </div>
+                <div class="mt-1 text-sm text-gray-500 dark:text-dark-400">
+                  {{ t('plans.enterprise.customized') }}
+                </div>
+              </div>
+
+              <!-- Features -->
+              <ul class="mb-6 flex-1 space-y-3">
+                <li class="flex items-start gap-3 text-sm">
+                  <div class="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900/30">
+                    <Icon name="check" size="xs" class="text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <span class="text-gray-600 dark:text-gray-300">{{ t('plans.enterprise.features.dedicated') }}</span>
+                </li>
+                <li class="flex items-start gap-3 text-sm">
+                  <div class="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900/30">
+                    <Icon name="check" size="xs" class="text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <span class="text-gray-600 dark:text-gray-300">{{ t('plans.enterprise.features.unlimited') }}</span>
+                </li>
+                <li class="flex items-start gap-3 text-sm">
+                  <div class="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900/30">
+                    <Icon name="check" size="xs" class="text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <span class="text-gray-600 dark:text-gray-300">{{ t('plans.enterprise.features.priority') }}</span>
+                </li>
+                <li class="flex items-start gap-3 text-sm">
+                  <div class="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900/30">
+                    <Icon name="check" size="xs" class="text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <span class="text-gray-600 dark:text-gray-300">{{ t('plans.enterprise.features.sla') }}</span>
+                </li>
+              </ul>
+
+              <!-- Contact Button -->
+              <a
+                href="javascript:void(0)"
+                @click="contactEnterprise"
+                class="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-purple-500/30 transition-all duration-200 hover:from-purple-600 hover:to-purple-700 hover:shadow-xl hover:shadow-purple-500/40"
+              >
+                <Icon name="chat" size="sm" />
+                {{ t('plans.enterprise.contact') }}
+              </a>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -189,6 +265,12 @@
       :config="rechargeConfig"
       @close="showRechargeDialog = false"
       @confirm="handleRecharge"
+    />
+
+    <!-- Contact Dialog -->
+    <ContactDialog
+      :show="showContactDialog"
+      @close="showContactDialog = false"
     />
   </AppLayout>
 </template>
@@ -205,6 +287,7 @@ import AppLayout from '@/components/layout/AppLayout.vue'
 import Icon from '@/components/icons/Icon.vue'
 import PayGoCard from '@/components/plans/PayGoCard.vue'
 import RechargeDialog from '@/components/dialogs/RechargeDialog.vue'
+import ContactDialog from '@/components/dialogs/ContactDialog.vue'
 
 const { t } = useI18n()
 const appStore = useAppStore()
@@ -218,6 +301,7 @@ const purchasing = ref<number | null>(null)
 // Recharge related state
 const rechargeConfig = ref<RechargeConfig | null>(null)
 const showRechargeDialog = ref(false)
+const showContactDialog = ref(false)
 
 // User balance from auth store
 const userBalance = computed(() => authStore.user?.balance ?? null)
@@ -285,6 +369,10 @@ async function handleRecharge(amount: number) {
     appStore.showError(err.message || t('recharge.rechargeFailed'))
     showRechargeDialog.value = false
   }
+}
+
+function contactEnterprise() {
+  showContactDialog.value = true
 }
 
 onMounted(() => {

@@ -67,6 +67,11 @@ export default {
       threeTitle: 'Start Vibe Coding',
       threeDesc: 'Write code, fix bugs, add tests'
     },
+    freeTrial: {
+      badge: 'Limited Offer',
+      title: 'Add WeChat for Free Trial',
+      description: 'Scan to add customer service WeChat and get free trial credits for Claude Code'
+    },
     quickstart: {
       title: 'Quickstart',
       description: 'Replace BASE_URL and API key, then run:',
@@ -3313,6 +3318,26 @@ export default {
         anyAmount: 'Recharge any amount',
         payAsYouGo: 'Pay only for what you use',
         neverExpires: 'Balance never expires'
+      }
+    },
+    enterprise: {
+      badge: 'Premium',
+      name: 'Enterprise',
+      description: 'Dedicated line, ultimate experience, tailored for enterprise users',
+      contactUs: 'Contact Us',
+      customized: 'Customized solutions',
+      contact: 'Contact Sales',
+      contactMessage: 'Please contact us for a custom plan: WeChat AI码驿站',
+      features: {
+        dedicated: 'Dedicated private line',
+        unlimited: 'Unlimited quota',
+        priority: 'Priority support',
+        sla: '99.9% SLA guarantee'
+      },
+      dialog: {
+        title: 'Contact Us',
+        subtitle: 'Scan QR code to add WeChat for custom solutions',
+        tip: 'Business hours: Mon-Sun 9:00-22:00'
       }
     }
   },
