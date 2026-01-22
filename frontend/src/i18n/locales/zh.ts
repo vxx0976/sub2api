@@ -11,11 +11,11 @@ export default {
     getStarted: '开始使用',
     goToDashboard: '进入控制台',
     seo: {
-      title: '{siteName} - 平价 AI 编码中转站（Claude Code / Codex CLI / Gemini CLI）',
+      title: 'Claude Code API 官方直连 - 满血 Opus 4.5 / Sonnet 4.5 | {siteName}',
       description:
-        '一个 API Key 即可接入 Claude Code、Codex CLI、Gemini CLI 等 AI 编码工具。明码标价、用量实时可见，并提供限额保护。',
+        'Claude Code 官方 API 直连服务，支持 Opus 4.5、Sonnet 4.5 满血模型。套餐低至 ¥9.9，充值最高送 80%。快速响应、稳定可靠、明码标价。',
       keywords:
-        'Sub2API, AI 编码中转站, Vibe Coding, Claude Code, Codex CLI, Gemini CLI, Cursor, OpenCode, API Key, 透明定价, 用量统计, 限额'
+        'Claude Code, Claude API, AI编程助手, Opus 4.5, Sonnet 4.5, API直连, 满血不降智, Vibe Coding, Codex CLI, Gemini CLI, Cursor'
     },
     nav: {
       quickstart: '快速上手',
@@ -76,7 +76,7 @@ export default {
       tip2: '建议先用短文本测试，确认通了再上复杂请求。'
     },
     why: {
-      title: '为什么选 Sub2API',
+      title: '为什么选择我们',
       subtitle: '对普通用户和初级程序员更友好的几个点。'
     },
     tags: {
@@ -360,7 +360,61 @@ export default {
     adminOrders: '订单管理',
     adminRechargeOrders: '充值管理',
     rechargeSettings: '充值配置',
-    docs: '文档'
+    docs: '接入文档'
+  },
+
+  // Docs
+  docs: {
+    title: '使用文档',
+    subtitle: '快速了解如何配置和使用服务',
+    copy: '复制',
+    copied: '已复制',
+    quickStart: {
+      title: '快速开始',
+      step1: {
+        title: '获取 API Key',
+        desc: '在控制台的「API 密钥」页面创建一个新的密钥'
+      },
+      step2: {
+        title: '配置环境变量',
+        desc: '将 API Key 和 Base URL 配置到你的工具中'
+      },
+      step3: {
+        title: '开始使用',
+        desc: '运行工具，开始你的 AI 编程之旅'
+      }
+    },
+    claudeCode: {
+      title: 'Claude Code 配置',
+      desc: '在终端中设置以下环境变量，然后启动 Claude Code：',
+      replaceKey: '替换为你的 API Key'
+    },
+    models: {
+      title: '支持的模型',
+      opus: '最强大的模型，适合复杂任务',
+      sonnet: '平衡性能与成本的选择',
+      sonnet4: '高性价比的编程助手',
+      haiku: '轻量快速，适合简单任务'
+    },
+    faq: {
+      title: '常见问题',
+      q1: {
+        question: '余额是如何计算的？',
+        answer: '余额按实际 Token 使用量计费，不同模型有不同的价格倍率。具体价格请查看「套餐计划」页面。'
+      },
+      q2: {
+        question: '支持哪些工具？',
+        answer: '目前支持 Claude Code、Codex CLI、Gemini CLI 等主流 AI 编程工具。只要是支持自定义 API 端点的工具都可以使用。'
+      },
+      q3: {
+        question: '遇到问题怎么办？',
+        answer: '请先检查 API Key 和 Base URL 是否正确配置。如果问题持续，请联系客服获取帮助。'
+      }
+    },
+    contact: {
+      title: '需要帮助？',
+      desc: '如有任何问题，请联系客服或在控制台提交工单。'
+    }
   },
 
   // Auth

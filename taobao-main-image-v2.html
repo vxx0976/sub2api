@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>淘宝主图 V2 - AI码驿站</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: #1a1a1a;
+      padding: 20px;
+    }
+
+    .main-image {
+      width: 800px;
+      height: 800px;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* 背景光效 */
+    .bg-circle {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.4;
+    }
+
+    .bg-circle-1 {
+      top: -100px;
+      right: -100px;
+      width: 400px;
+      height: 400px;
+      background: #3b82f6;
+    }
+
+    .bg-circle-2 {
+      bottom: 100px;
+      left: -150px;
+      width: 350px;
+      height: 350px;
+      background: #8b5cf6;
+    }
+
+    /* 顶部条 */
+    .top-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 50px;
+      background: linear-gradient(90deg, #ef4444 0%, #f97316 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .top-bar-text {
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 4px;
+    }
+
+    /* 店铺名 */
+    .shop-name {
+      position: absolute;
+      top: 70px;
+      left: 40px;
+      font-size: 20px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .shop-name .ai {
+      color: #60a5fa;
+    }
+
+    /* 主内容 */
+    .content {
+      position: absolute;
+      top: 130px;
+      left: 0;
+      right: 0;
+      padding: 0 40px;
+    }
+
+    .main-title {
+      font-size: 72px;
+      font-weight: 900;
+      color: #fff;
+      text-align: center;
+      text-shadow: 0 4px 30px rgba(59, 130, 246, 0.3);
+    }
+
+    .sub-info {
+      text-align: center;
+      margin-top: 12px;
+      font-size: 24px;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .version-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 20px;
+      padding: 10px 24px;
+      background: linear-gradient(90deg, #3b82f6 0%, #8b5cf6 100%);
+      border-radius: 30px;
+      font-size: 26px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    /* 终端窗口 */
+    .terminal {
+      margin: 30px auto 0;
+      width: 380px;
+      background: #1e1e1e;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+
+    .terminal-header {
+      height: 32px;
+      background: #323232;
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      gap: 8px;
+    }
+
+    .terminal-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .terminal-dot.red { background: #ff5f56; }
+    .terminal-dot.yellow { background: #ffbd2e; }
+    .terminal-dot.green { background: #27ca40; }
+
+    .terminal-body {
+      padding: 20px;
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 16px;
+      color: #4ade80;
+    }
+
+    .terminal-line {
+      margin-bottom: 8px;
+    }
+
+    .terminal-prompt {
+      color: #60a5fa;
+    }
+
+    .terminal-cmd {
+      color: #fff;
+    }
+
+    .terminal-output {
+      color: #a78bfa;
+    }
+
+    /* 特性列表 */
+    .features-list {
+      position: absolute;
+      left: 40px;
+      top: 520px;
+    }
+
+    .feature-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+      font-size: 22px;
+      color: #fff;
+    }
+
+    .feature-check {
+      width: 28px;
+      height: 28px;
+      background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      color: #fff;
+    }
+
+    /* 右侧价格 */
+    .price-box {
+      position: absolute;
+      right: 40px;
+      top: 500px;
+      text-align: right;
+    }
+
+    .price-label {
+      font-size: 18px;
+      color: rgba(255, 255, 255, 0.6);
+      margin-bottom: 8px;
+    }
+
+    .price {
+      font-size: 24px;
+      color: #fbbf24;
+      font-weight: 600;
+    }
+
+    .price .num {
+      font-size: 56px;
+      font-weight: 800;
+    }
+
+    .price-tip {
+      margin-top: 12px;
+      padding: 8px 16px;
+      background: rgba(251, 191, 36, 0.15);
+      border: 1px solid rgba(251, 191, 36, 0.3);
+      border-radius: 8px;
+      color: #fbbf24;
+      font-size: 16px;
+    }
+
+    /* 底部 */
+    .bottom-section {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 80px;
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(10px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 40px;
+    }
+
+    .bottom-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 20px;
+      font-weight: 500;
+    }
+
+    .bottom-icon {
+      font-size: 24px;
+    }
+  </style>
+</head>
+<body>
+  <div class="main-image">
+    <!-- 背景光效 -->
+    <div class="bg-circle bg-circle-1"></div>
+    <div class="bg-circle bg-circle-2"></div>
+
+    <!-- 顶部条 -->
+    <div class="top-bar">
+      <span class="top-bar-text">源头商家 · 品质保障</span>
+    </div>
+
+    <!-- 店铺名 -->
+    <div class="shop-name"><span class="ai">AI</span>码驿站</div>
+
+    <!-- 主内容 -->
+    <div class="content">
+      <div class="main-title">Claude Code</div>
+      <div class="sub-info">官方客户端直连 · 原生满血版</div>
+
+      <div style="text-align: center;">
+        <span class="version-badge">
+          <span>✨</span>
+          Claude 4.5 Opus / Sonnet
+        </span>
+      </div>
+
+      <!-- 终端窗口 -->
+      <div class="terminal">
+        <div class="terminal-header">
+          <div class="terminal-dot red"></div>
+          <div class="terminal-dot yellow"></div>
+          <div class="terminal-dot green"></div>
+        </div>
+        <div class="terminal-body">
+          <div class="terminal-line">
+            <span class="terminal-prompt">$</span>
+            <span class="terminal-cmd"> claude code</span>
+          </div>
+          <div class="terminal-line terminal-output">
+            ✓ Connected to Claude API
+          </div>
+          <div class="terminal-line terminal-output">
+            ✓ Model: claude-opus-4-5
+          </div>
+          <div class="terminal-line terminal-output">
+            ✓ Status: Ready <span style="color: #4ade80;">●</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 特性列表 -->
+    <div class="features-list">
+      <div class="feature-item">
+        <div class="feature-check">✓</div>
+        <span>国内直连 快速响应</span>
+      </div>
+      <div class="feature-item">
+        <div class="feature-check">✓</div>
+        <span>不降智 满血版本</span>
+      </div>
+      <div class="feature-item">
+        <div class="feature-check">✓</div>
+        <span>稳定可靠 售后无忧</span>
+      </div>
+    </div>
+
+    <!-- 价格 -->
+    <div class="price-box">
+      <div class="price-label">套餐低至</div>
+      <div class="price">¥<span class="num">9.9</span>起</div>
+      <div class="price-tip">充值最高送 80%</div>
+    </div>
+
+    <!-- 底部 -->
+    <div class="bottom-section">
+      <div class="bottom-item">
+        <span class="bottom-icon">🎁</span>
+        <span>免费试用</span>
+      </div>
+      <div class="bottom-item">
+        <span class="bottom-icon">💯</span>
+        <span>不满意包退</span>
+      </div>
+      <div class="bottom-item">
+        <span class="bottom-icon">📱</span>
+        <span>支持开票</span>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

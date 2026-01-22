@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>淘宝主图 - AI码驿站</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: #f0f0f0;
+      padding: 20px;
+    }
+
+    .main-image {
+      width: 800px;
+      height: 800px;
+      background: #fff;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* 顶部条 */
+    .top-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 56px;
+      background: linear-gradient(90deg, #ff6b6b 0%, #ff8e53 100%);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 28px;
+    }
+
+    .top-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .shop-badge {
+      background: rgba(255,255,255,0.25);
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .top-tag {
+      font-size: 20px;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    /* 主内容区 */
+    .content-wrapper {
+      position: absolute;
+      top: 66px;
+      left: 0;
+      right: 0;
+      bottom: 70px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px 40px;
+    }
+
+    /* 标题区 */
+    .title-section {
+      text-align: center;
+      margin-bottom: 6px;
+    }
+
+    .claude-code-title {
+      font-size: 100px;
+      font-weight: 900;
+      color: #1a1a2e;
+      line-height: 1.0;
+      letter-spacing: -3px;
+    }
+
+    .claude-code-title .code {
+      background: linear-gradient(90deg, #6366f1 0%, #a855f7 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .sub-line {
+      margin-top: 10px;
+      font-size: 36px;
+      color: #555;
+      font-weight: 600;
+    }
+
+    /* 版本标签 */
+    .version-tags {
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      margin-top: 14px;
+    }
+
+    .version-tag {
+      padding: 10px 24px;
+      background: #1a1a2e;
+      border-radius: 25px;
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    /* 价格行 */
+    .price-row {
+      display: flex;
+      justify-content: center;
+      align-items: baseline;
+      gap: 50px;
+      margin-top: 20px;
+    }
+
+    .price-item {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+
+    .price-label {
+      font-size: 28px;
+      color: #888;
+    }
+
+    .price-value {
+      font-size: 56px;
+      font-weight: 900;
+      color: #1a1a2e;
+    }
+
+    .price-value.orange {
+      color: #ff6b35;
+    }
+
+    .price-value .unit {
+      font-size: 32px;
+    }
+
+    /* 中部内容 - 左右布局 */
+    .middle-section {
+      display: flex;
+      align-items: stretch;
+      gap: 30px;
+      margin-top: 20px;
+      width: 100%;
+      flex: 1;
+    }
+
+    /* 左侧特性 */
+    .left-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 24px;
+    }
+
+    .feature-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-size: 36px;
+      font-weight: 700;
+      color: #1a1a2e;
+    }
+
+    .feature-icon {
+      font-size: 36px;
+    }
+
+    /* 右侧终端 */
+    .right-section {
+      width: 400px;
+      display: flex;
+      align-items: center;
+    }
+
+    .terminal-window {
+      width: 100%;
+      background: #1e1e2e;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    }
+
+    .terminal-header {
+      height: 32px;
+      background: #2d2d3d;
+      display: flex;
+      align-items: center;
+      padding: 0 14px;
+      gap: 8px;
+    }
+
+    .terminal-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .terminal-dot.red { background: #ff5f56; }
+    .terminal-dot.yellow { background: #ffbd2e; }
+    .terminal-dot.green { background: #27ca40; }
+
+    .terminal-body {
+      padding: 16px 18px;
+      font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+    }
+
+    .terminal-welcome {
+      font-size: 13px;
+      color: #888;
+      margin-bottom: 14px;
+      padding: 10px 12px;
+      border: 1px dashed #444;
+      border-radius: 4px;
+    }
+
+    .terminal-welcome .highlight {
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .ascii-art {
+      font-size: 10px;
+      line-height: 1.2;
+      color: #ff6b6b;
+      white-space: pre;
+      letter-spacing: 0;
+    }
+
+    .terminal-status {
+      margin-top: 14px;
+      font-size: 13px;
+      color: #888;
+    }
+
+    .terminal-status .success {
+      color: #4ade80;
+      font-weight: 600;
+    }
+
+    /* 底部促销 */
+    .bottom-promo {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 70px;
+      background: linear-gradient(90deg, #ff8c00 0%, #ffb347 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 50px;
+    }
+
+    .promo-text {
+      font-size: 34px;
+      font-weight: 800;
+      color: #fff;
+      text-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+
+    .promo-dot {
+      width: 8px;
+      height: 8px;
+      background: rgba(255,255,255,0.6);
+      border-radius: 50%;
+    }
+  </style>
+</head>
+<body>
+  <div class="main-image">
+    <!-- 顶部条 -->
+    <div class="top-bar">
+      <div class="top-left">
+        <span class="shop-badge">AI码驿站</span>
+        <span class="top-tag">源头商家</span>
+      </div>
+      <span class="top-tag">满血不降智</span>
+    </div>
+
+    <!-- 主内容 -->
+    <div class="content-wrapper">
+      <!-- 标题区 -->
+      <div class="title-section">
+        <h1 class="claude-code-title">Claude <span class="code">Code</span></h1>
+        <p class="sub-line">官方 API 直连 · 原生满血版</p>
+
+        <div class="version-tags">
+          <span class="version-tag">Opus 4.5</span>
+          <span class="version-tag">Sonnet 4.5</span>
+        </div>
+      </div>
+
+      <!-- 价格行 -->
+      <div class="price-row">
+        <div class="price-item">
+          <span class="price-label">套餐低至</span>
+          <span class="price-value"><span class="unit">¥</span>9.9</span>
+        </div>
+        <div class="price-item">
+          <span class="price-label">充值最高送</span>
+          <span class="price-value orange">80<span class="unit">%</span></span>
+        </div>
+      </div>
+
+      <!-- 中部左右布局 -->
+      <div class="middle-section">
+        <!-- 左侧特性 -->
+        <div class="left-section">
+          <div class="feature-item">
+            <span class="feature-icon">⚡</span>
+            <span>快速响应</span>
+          </div>
+          <div class="feature-item">
+            <span class="feature-icon">🔒</span>
+            <span>稳定可靠</span>
+          </div>
+          <div class="feature-item">
+            <span class="feature-icon">💰</span>
+            <span>明码标价</span>
+          </div>
+        </div>
+
+        <!-- 右侧终端 -->
+        <div class="right-section">
+          <div class="terminal-window">
+            <div class="terminal-header">
+              <div class="terminal-dot red"></div>
+              <div class="terminal-dot yellow"></div>
+              <div class="terminal-dot green"></div>
+            </div>
+            <div class="terminal-body">
+              <div class="terminal-welcome">
+                ✱ Welcome to <span class="highlight">Claude Code</span> research preview!
+              </div>
+              <div class="ascii-art">╔═══╗╔╗───╔═══╗╔╗─╔╗╔═══╗╔═══╗
+║╔═╗║║║───║╔═╗║║║─║║╚╗╔╗║║╔══╝
+║║─╚╝║║───║║─║║║║─║║─║║║║║╚══╗
+║║─╔╗║║───║╚═╝║║║─║║─║║║║║╔══╝
+║╚═╝║║╚═╗─║╔═╗║║╚═╝║╔╝╚╝║║╚══╗
+╚═══╝╚══╝─╚╝─╚╝╚═══╝╚═══╝╚═══╝
+╔═══╗╔═══╗╔═══╗╔═══╗
+║╔═╗║║╔═╗║╚╗╔╗║║╔══╝
+║║─╚╝║║─║║─║║║║║╚══╗
+║║─╔╗║║─║║─║║║║║╔══╝
+║╚═╝║║╚═╝║╔╝╚╝║║╚══╗
+╚═══╝╚═══╝╚═══╝╚═══╝</div>
+              <div class="terminal-status">
+                ▶ Connected <span class="success">●</span> Press <span class="success">Enter</span> to continue
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 底部促销 -->
+    <div class="bottom-promo">
+      <span class="promo-text">🎁 免费试用</span>
+      <span class="promo-dot"></span>
+      <span class="promo-text">✅ 不满意包退</span>
+    </div>
+  </div>
+</body>
+</html>

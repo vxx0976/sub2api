@@ -11,19 +11,20 @@ function getDefaultLocale(): string {
     return saved
   }
 
-  // Check browser language
+  // Check browser language - 只有明确是英文才用英文，否则默认中文
   const browserLang = navigator.language.toLowerCase()
-  if (browserLang.startsWith('zh')) {
-    return 'zh'
+  if (browserLang.startsWith('en')) {
+    return 'en'
   }
 
-  return 'en'
+  // 默认中文，对中国用户和搜索引擎更友好
+  return 'zh'
 }
 
 export const i18n = createI18n({
   legacy: false,
   locale: getDefaultLocale(),
-  fallbackLocale: 'en',
+  fallbackLocale: 'zh',
   messages: {
     en,
     zh

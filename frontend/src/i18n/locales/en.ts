@@ -364,6 +364,60 @@ export default {
     docs: 'Docs'
   },
 
+  // Docs
+  docs: {
+    title: 'Documentation',
+    subtitle: 'Learn how to configure and use the service',
+    copy: 'Copy',
+    copied: 'Copied',
+    quickStart: {
+      title: 'Quick Start',
+      step1: {
+        title: 'Get API Key',
+        desc: 'Create a new API key in the "API Keys" page of your dashboard'
+      },
+      step2: {
+        title: 'Configure Environment',
+        desc: 'Set up the API Key and Base URL in your tool'
+      },
+      step3: {
+        title: 'Start Coding',
+        desc: 'Launch your tool and start your AI coding journey'
+      }
+    },
+    claudeCode: {
+      title: 'Claude Code Configuration',
+      desc: 'Set the following environment variables in your terminal, then launch Claude Code:',
+      replaceKey: 'Replace with your API Key'
+    },
+    models: {
+      title: 'Supported Models',
+      opus: 'Most powerful model for complex tasks',
+      sonnet: 'Balanced performance and cost',
+      sonnet4: 'Cost-effective coding assistant',
+      haiku: 'Fast and lightweight for simple tasks'
+    },
+    faq: {
+      title: 'FAQ',
+      q1: {
+        question: 'How is balance calculated?',
+        answer: 'Balance is charged based on actual token usage. Different models have different price multipliers. Check the "Plans" page for specific pricing.'
+      },
+      q2: {
+        question: 'Which tools are supported?',
+        answer: 'We support Claude Code, Codex CLI, Gemini CLI and other mainstream AI coding tools. Any tool that supports custom API endpoints can be used.'
+      },
+      q3: {
+        question: 'What if I encounter problems?',
+        answer: 'Please first check if your API Key and Base URL are correctly configured. If the issue persists, contact support for help.'
+      }
+    },
+    contact: {
+      title: 'Need Help?',
+      desc: 'If you have any questions, please contact support or submit a ticket in the dashboard.'
+    }
+  },
+
   // Auth
   auth: {
     welcomeBack: 'Welcome Back',

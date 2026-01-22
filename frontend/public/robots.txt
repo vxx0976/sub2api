@@ -6,8 +6,15 @@ Disallow: /register
 Disallow: /email-verify
 Disallow: /auth
 Disallow: /dashboard
+Disallow: /docs
 Disallow: /keys
 Disallow: /usage
 Disallow: /redeem
 Disallow: /profile
+Disallow: /subscriptions
+Disallow: /plans
+Disallow: /orders
+Disallow: /recharge-orders
 Disallow: /admin
+
+Sitemap: https://dsrrr.com/sitemap.xml
