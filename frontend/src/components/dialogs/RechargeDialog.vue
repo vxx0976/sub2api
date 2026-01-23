@@ -215,7 +215,7 @@ const amount = ref<number>(0)
 const amountError = ref<string>('')
 const submitting = ref(false)
 
-const quickAmounts = computed(() => [10, 50, 100, 200, 500, 1000])
+const quickAmounts = computed(() => [10, 50, 100, 200, 500, 800])
 
 // 计算当前倍率
 const currentMultiplier = computed(() => {

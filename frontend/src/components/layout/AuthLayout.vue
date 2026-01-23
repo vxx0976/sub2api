@@ -32,7 +32,7 @@
         <div
           class="mb-4 inline-flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl shadow-lg shadow-primary-500/30"
         >
-          <img :src="siteLogo || '/logo.svg'" alt="Logo" class="h-full w-full object-contain" />
+          <img :src="siteLogo || '/logo.svg?v=2'" alt="Logo" class="h-full w-full object-contain" />
         </div>
         <h1 class="text-gradient mb-2 text-3xl font-bold">
           {{ siteName }}
@@ -65,7 +65,7 @@ import { ref, computed, onMounted } from 'vue'
 import { getPublicSettings } from '@/api/auth'
 import { sanitizeUrl } from '@/utils/url'
 
-const siteName = ref('Sub2API')
+const siteName = ref('码驿站')
 const siteLogo = ref('')
 const siteSubtitle = ref('Subscription to API Conversion Platform')
 
@@ -74,7 +74,7 @@ const currentYear = computed(() => new Date().getFullYear())
 onMounted(async () => {
   try {
     const settings = await getPublicSettings()
-    siteName.value = settings.site_name || 'Sub2API'
+    siteName.value = settings.site_name || '码驿站'
     siteLogo.value = sanitizeUrl(settings.site_logo || '', { allowRelative: true })
     siteSubtitle.value = settings.site_subtitle || 'Subscription to API Conversion Platform'
   } catch (error) {

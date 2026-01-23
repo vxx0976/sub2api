@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>Logo PNG 生成器</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    body {
+      font-family: -apple-system, sans-serif;
+      background: #1a1a2e;
+      padding: 40px;
+      text-align: center;
+      color: white;
+    }
+    h1 { margin-bottom: 30px; }
+    .preview {
+      display: inline-flex;
+      flex-wrap: wrap;
+      gap: 40px;
+      justify-content: center;
+      margin-bottom: 40px;
+    }
+    .size-box {
+      background: #252542;
+      padding: 30px;
+      border-radius: 16px;
+    }
+    .size-box h3 {
+      margin-bottom: 20px;
+      color: #ffd700;
+    }
+    .logo-container {
+      display: inline-block;
+      background: transparent;
+    }
+    button {
+      background: linear-gradient(135deg, #ff7043, #ff5722);
+      color: white;
+      border: none;
+      padding: 12px 28px;
+      border-radius: 50px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+    button:hover {
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+  <h1>Logo PNG 生成器</h1>
+
+  <div class="preview">
+    <!-- 256x256 -->
+    <div class="size-box">
+      <h3>256 x 256 (标准)</h3>
+      <div class="logo-container" id="logo-256">
+        <svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="grad1" x1="44" y1="44" x2="212" y2="212" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#e98a6d"/>
+              <stop offset="1" stop-color="#d17556"/>
+            </linearGradient>
+          </defs>
+          <rect x="24" y="24" width="208" height="208" rx="52" fill="url(#grad1)"/>
+          <path d="M88 80L56 128L88 176" stroke="white" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M168 80L200 128L168 176" stroke="white" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M144 68L112 188" stroke="white" stroke-width="16" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <br>
+      <button onclick="downloadPNG('logo-256', 'logo-256', 256)">下载 PNG</button>
+    </div>
+
+    <!-- 192x192 -->
+    <div class="size-box">
+      <h3>192 x 192 (PWA)</h3>
+      <div class="logo-container" id="logo-192">
+        <svg width="192" height="192" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="grad2" x1="44" y1="44" x2="212" y2="212" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#e98a6d"/>
+              <stop offset="1" stop-color="#d17556"/>
+            </linearGradient>
+          </defs>
+          <rect x="24" y="24" width="208" height="208" rx="52" fill="url(#grad2)"/>
+          <path d="M88 80L56 128L88 176" stroke="white" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M168 80L200 128L168 176" stroke="white" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M144 68L112 188" stroke="white" stroke-width="16" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <br>
+      <button onclick="downloadPNG('logo-192', 'logo-192', 192)">下载 PNG</button>
+    </div>
+
+    <!-- 128x128 -->
+    <div class="size-box">
+      <h3>128 x 128</h3>
+      <div class="logo-container" id="logo-128">
+        <svg width="128" height="128" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="grad3" x1="44" y1="44" x2="212" y2="212" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#e98a6d"/>
+              <stop offset="1" stop-color="#d17556"/>
+            </linearGradient>
+          </defs>
+          <rect x="24" y="24" width="208" height="208" rx="52" fill="url(#grad3)"/>
+          <path d="M88 80L56 128L88 176" stroke="white" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M168 80L200 128L168 176" stroke="white" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M144 68L112 188" stroke="white" stroke-width="16" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <br>
+      <button onclick="downloadPNG('logo-128', 'logo-128', 128)">下载 PNG</button>
+    </div>
+
+    <!-- 64x64 -->
+    <div class="size-box">
+      <h3>64 x 64</h3>
+      <div class="logo-container" id="logo-64">
+        <svg width="64" height="64" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="grad4" x1="44" y1="44" x2="212" y2="212" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#e98a6d"/>
+              <stop offset="1" stop-color="#d17556"/>
+            </linearGradient>
+          </defs>
+          <rect x="24" y="24" width="208" height="208" rx="52" fill="url(#grad4)"/>
+          <path d="M88 80L56 128L88 176" stroke="white" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M168 80L200 128L168 176" stroke="white" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M144 68L112 188" stroke="white" stroke-width="16" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <br>
+      <button onclick="downloadPNG('logo-64', 'logo-64', 64)">下载 PNG</button>
+    </div>
+
+    <!-- 32x32 (favicon) -->
+    <div class="size-box">
+      <h3>32 x 32 (Favicon)</h3>
+      <div class="logo-container" id="logo-32">
+        <svg width="32" height="32" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="grad5" x1="44" y1="44" x2="212" y2="212" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#e98a6d"/>
+              <stop offset="1" stop-color="#d17556"/>
+            </linearGradient>
+          </defs>
+          <rect x="24" y="24" width="208" height="208" rx="52" fill="url(#grad5)"/>
+          <path d="M88 80L56 128L88 176" stroke="white" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M168 80L200 128L168 176" stroke="white" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M144 68L112 188" stroke="white" stroke-width="16" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <br>
+      <button onclick="downloadPNG('logo-32', 'favicon-32', 32)">下载 PNG</button>
+    </div>
+  </div>
+
+  <p style="color: #888;">下载 256x256 的 PNG 后，重命名为 logo.png 放到 frontend/public/ 目录替换原文件</p>
+
+  <script>
+    async function downloadPNG(elementId, filename, size) {
+      const element = document.getElementById(elementId);
+
+      try {
+        const canvas = await html2canvas(element, {
+          scale: 2,
+          backgroundColor: null,
+          width: size,
+          height: size
+        });
+
+        const link = document.createElement('a');
+        link.download = `${filename}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      } catch (error) {
+        console.error('下载失败:', error);
+        alert('下载失败，请重试');
+      }
+    }
+  </script>
+</body>
+</html>

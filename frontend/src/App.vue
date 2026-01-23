@@ -51,7 +51,7 @@ function toAbsoluteUrl(url: string) {
 function updateSeo() {
   if (typeof window === 'undefined') return
 
-  const siteName = appStore.cachedPublicSettings?.site_name || appStore.siteName || 'Sub2API'
+  const siteName = appStore.cachedPublicSettings?.site_name || appStore.siteName || '码驿站'
   const siteSubtitle =
     appStore.cachedPublicSettings?.site_subtitle || 'AI API Gateway Platform'
 
@@ -69,7 +69,7 @@ function updateSeo() {
   const keywords = keywordsKey ? t(keywordsKey) : ''
 
   const canonicalUrl = `${window.location.origin}${route.path}`
-  const logoUrl = appStore.cachedPublicSettings?.site_logo || appStore.siteLogo || '/logo.png'
+  const logoUrl = appStore.cachedPublicSettings?.site_logo || appStore.siteLogo || '/logo.png?v=2'
   const imageUrl = toAbsoluteUrl(logoUrl)
 
   const isHome = route.name === 'Home' || route.path === '/home'

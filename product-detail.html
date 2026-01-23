@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>商品详情图</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+      background: #f0f0f0;
+      padding: 40px;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .section-wrapper {
+      position: relative;
+      margin-bottom: 60px;
+    }
+
+    .section {
+      width: 800px;
+      background: white;
+      position: relative;
+    }
+
+    /* 防盗水印 */
+    .watermark {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      font-size: 16px;
+      font-weight: 600;
+      color: rgba(0,0,0,0.15);
+      z-index: 100;
+      pointer-events: none;
+    }
+
+    .watermark-light {
+      color: rgba(255,255,255,0.2);
+    }
+
+    .watermark-gold {
+      color: rgba(255,215,0,0.3);
+    }
+
+    .download-btn {
+      display: block;
+      margin: 20px auto 0;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      padding: 12px 32px;
+      font-size: 16px;
+      font-weight: 600;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(102,126,234,0.4);
+      transition: all 0.3s ease;
+    }
+
+    .download-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102,126,234,0.5);
+    }
+
+    .download-all-btn {
+      display: block;
+      margin: 40px auto;
+      background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+      color: white;
+      border: none;
+      padding: 16px 48px;
+      font-size: 18px;
+      font-weight: 700;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(238,90,90,0.4);
+    }
+
+    /* ========== 第一张：头图 Banner ========== */
+    .section-banner {
+      min-height: 800px;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .section-banner::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255,215,0,0.1) 0%, transparent 50%);
+      animation: pulse 4s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 0.5; }
+      50% { transform: scale(1.1); opacity: 0.8; }
+    }
+
+    .banner-top {
+      display: flex;
+      align-items: center;
+      gap: 30px;
+      margin-bottom: 40px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .banner-brand {
+      font-size: 100px;
+      font-weight: 800;
+      color: #ffd700;
+      letter-spacing: 16px;
+      text-shadow: 0 6px 30px rgba(255,215,0,0.5);
+    }
+
+    .banner-logo {
+      width: 120px;
+      height: 120px;
+      background: linear-gradient(135deg, #ff7043, #ff5722);
+      border-radius: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 56px;
+      color: white;
+      font-weight: bold;
+      box-shadow: 0 20px 60px rgba(255,87,34,0.4);
+      flex-shrink: 0;
+    }
+
+    .banner-title {
+      font-size: 72px;
+      font-weight: 800;
+      color: white;
+      margin-bottom: 20px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .banner-subtitle {
+      font-size: 32px;
+      color: #ffd700;
+      margin-bottom: 40px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .banner-tags {
+      display: flex;
+      gap: 20px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .banner-tag {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      padding: 12px 28px;
+      border-radius: 50px;
+      color: white;
+      font-size: 20px;
+      font-weight: 500;
+    }
+
+    .banner-price-hint {
+      position: absolute;
+      bottom: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+      padding: 16px 40px;
+      border-radius: 50px;
+      color: white;
+      font-size: 24px;
+      font-weight: 700;
+      box-shadow: 0 10px 30px rgba(238,90,90,0.4);
+      z-index: 1;
+    }
+
+    /* ========== 第二张：核心优势 ========== */
+    .section-features {
+      min-height: 1000px;
+      background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+      padding: 60px;
+      padding-bottom: 80px;
+    }
+
+    .section-title {
+      text-align: center;
+      font-size: 48px;
+      font-weight: 800;
+      color: #1a1a2e;
+      margin-bottom: 16px;
+    }
+
+    .section-subtitle {
+      text-align: center;
+      font-size: 24px;
+      color: #666;
+      margin-bottom: 50px;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 30px;
+    }
+
+    .feature-card {
+      background: white;
+      border-radius: 24px;
+      padding: 40px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+      transition: transform 0.3s ease;
+    }
+
+    .feature-icon {
+      width: 80px;
+      height: 80px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+      margin-bottom: 24px;
+    }
+
+    .feature-icon-1 { background: linear-gradient(135deg, #667eea, #764ba2); }
+    .feature-icon-2 { background: linear-gradient(135deg, #f093fb, #f5576c); }
+    .feature-icon-3 { background: linear-gradient(135deg, #4facfe, #00f2fe); }
+    .feature-icon-4 { background: linear-gradient(135deg, #43e97b, #38f9d7); }
+
+    .feature-title {
+      font-size: 28px;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin-bottom: 12px;
+    }
+
+    .feature-desc {
+      font-size: 18px;
+      color: #666;
+      line-height: 1.6;
+    }
+
+    /* ========== 第三张：套餐对比 ========== */
+    .section-pricing {
+      min-height: 1100px;
+      background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
+      padding: 60px 40px;
+      padding-bottom: 80px;
+    }
+
+    .pricing-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      background: white;
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+    }
+
+    .pricing-table th,
+    .pricing-table td {
+      padding: 24px 16px;
+      text-align: center;
+      border-bottom: 1px solid #eee;
+    }
+
+    .pricing-table th {
+      background: #1a1a2e;
+      color: white;
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .pricing-table th:first-child {
+      text-align: left;
+      padding-left: 30px;
+    }
+
+    .pricing-table td:first-child {
+      text-align: left;
+      padding-left: 30px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .pricing-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .pricing-table .highlight-col {
+      background: #fff8e1;
+    }
+
+    .pricing-table th.highlight-col {
+      background: linear-gradient(135deg, #ff9800, #f57c00);
+    }
+
+    .price-cell {
+      font-size: 28px;
+      font-weight: 800;
+      color: #1a1a2e;
+    }
+
+    .price-cell.highlight {
+      color: #e65100;
+    }
+
+    .recommend-badge-table {
+      display: inline-block;
+      background: linear-gradient(135deg, #ff9800, #f57c00);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-left: 8px;
+    }
+
+    .check-mark {
+      color: #4caf50;
+      font-size: 24px;
+    }
+
+    /* ========== 第四张：使用流程 ========== */
+    .section-steps {
+      min-height: 1000px;
+      padding: 60px;
+      padding-bottom: 80px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .section-steps .section-title {
+      color: white;
+    }
+
+    .section-steps .section-subtitle {
+      color: rgba(255,255,255,0.8);
+    }
+
+    .steps-container {
+      display: flex;
+      flex-direction: column;
+      gap: 30px;
+      margin-top: 40px;
+    }
+
+    .step-item {
+      display: flex;
+      align-items: center;
+      gap: 30px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 20px;
+      padding: 30px 40px;
+      backdrop-filter: blur(10px);
+    }
+
+    .step-number {
+      width: 70px;
+      height: 70px;
+      background: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      font-weight: 800;
+      color: #764ba2;
+      flex-shrink: 0;
+    }
+
+    .step-content {
+      flex: 1;
+    }
+
+    .step-title {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .step-desc {
+      font-size: 18px;
+      opacity: 0.9;
+      line-height: 1.5;
+    }
+
+    .step-code {
+      background: rgba(0,0,0,0.3);
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-family: 'Monaco', 'Consolas', monospace;
+      font-size: 16px;
+      margin-top: 12px;
+      display: inline-block;
+    }
+
+    /* ========== 第五张：常见问题 ========== */
+    .section-faq {
+      min-height: 950px;
+      background: white;
+      padding: 60px;
+      padding-bottom: 80px;
+    }
+
+    .faq-list {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .faq-item {
+      background: #f8f9fa;
+      border-radius: 20px;
+      padding: 30px;
+      border-left: 4px solid #667eea;
+    }
+
+    .faq-question {
+      font-size: 22px;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .faq-question::before {
+      content: 'Q';
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border-radius: 8px;
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .faq-answer {
+      font-size: 18px;
+      color: #555;
+      line-height: 1.7;
+      padding-left: 44px;
+    }
+
+    /* ========== 第六张：售后保障 ========== */
+    .section-guarantee {
+      min-height: 800px;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      padding: 60px;
+      padding-bottom: 80px;
+      color: white;
+    }
+
+    .section-guarantee .section-title {
+      color: #ffd700;
+    }
+
+    .section-guarantee .section-subtitle {
+      color: rgba(255,255,255,0.7);
+    }
+
+    .guarantee-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 30px;
+      margin-top: 50px;
+    }
+
+    .guarantee-item {
+      text-align: center;
+      padding: 40px 20px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 20px;
+      border: 1px solid rgba(255,215,0,0.2);
+    }
+
+    .guarantee-icon {
+      font-size: 60px;
+      margin-bottom: 20px;
+    }
+
+    .guarantee-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: #ffd700;
+      margin-bottom: 12px;
+    }
+
+    .guarantee-desc {
+      font-size: 16px;
+      color: rgba(255,255,255,0.7);
+      line-height: 1.6;
+    }
+
+    .contact-box {
+      margin-top: 50px;
+      text-align: center;
+      background: linear-gradient(135deg, rgba(255,215,0,0.1), rgba(255,170,0,0.1));
+      border: 1px solid rgba(255,215,0,0.3);
+      border-radius: 20px;
+      padding: 40px;
+    }
+
+    .contact-title {
+      font-size: 28px;
+      font-weight: 700;
+      color: #ffd700;
+      margin-bottom: 16px;
+    }
+
+    .contact-wechat {
+      font-size: 36px;
+      font-weight: 800;
+      color: white;
+    }
+
+    /* ========== 第七张：用户须知 ========== */
+    .section-notice {
+      min-height: 700px;
+      background: #fff;
+      padding: 60px;
+      padding-bottom: 80px;
+    }
+
+    .notice-box {
+      background: #fff8e1;
+      border: 2px solid #ffcc80;
+      border-radius: 20px;
+      padding: 40px;
+      margin-bottom: 30px;
+    }
+
+    .notice-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: #e65100;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .notice-list {
+      list-style: none;
+    }
+
+    .notice-list li {
+      font-size: 18px;
+      color: #555;
+      padding: 12px 0;
+      border-bottom: 1px dashed #ddd;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .notice-list li:last-child {
+      border-bottom: none;
+    }
+
+    .notice-list li::before {
+      content: '•';
+      color: #ff9800;
+      font-size: 24px;
+      line-height: 1;
+    }
+
+    .important-notice {
+      background: #ffebee;
+      border-color: #ef9a9a;
+    }
+
+    .important-notice .notice-title {
+      color: #c62828;
+    }
+
+    .important-notice li::before {
+      color: #f44336;
+    }
+  </style>
+</head>
+<body>
+  <button class="download-all-btn" onclick="downloadAll()">一键下载全部图片</button>
+
+  <div class="container">
+
+    <!-- 第一张：头图 Banner -->
+    <div class="section-wrapper">
+      <div class="section section-banner" id="section-1">
+        <div class="banner-top">
+          <div class="banner-logo">&lt;/&gt;</div>
+          <div class="banner-brand">码驿站</div>
+        </div>
+        <div class="banner-title">Claude Code API</div>
+        <div class="banner-subtitle">官方直连 · 稳定高速 · 按量计费</div>
+        <div class="banner-tags">
+          <span class="banner-tag">🚀 毫秒级响应</span>
+          <span class="banner-tag">🔒 数据安全</span>
+          <span class="banner-tag">💯 99.9% 可用</span>
+        </div>
+        <div class="banner-price-hint">低至 ¥0.39/刀 · 新人专享 ¥9.9 起</div>
+        <div class="watermark watermark-light">© 码驿站 · 盗图必究</div>
+      </div>
+      <button class="download-btn" onclick="downloadImage('section-1', '01-头图Banner')">下载图片</button>
+    </div>
+
+    <!-- 第二张：核心优势 -->
+    <div class="section-wrapper">
+      <div class="section section-features" id="section-2">
+        <div class="section-title">为什么选择我们？</div>
+        <div class="section-subtitle">四大核心优势，让您的 AI 开发更高效</div>
+
+        <div class="features-grid">
+          <div class="feature-card">
+            <div class="feature-icon feature-icon-1">🚀</div>
+            <div class="feature-title">官方直连通道</div>
+            <div class="feature-desc">直连 Anthropic 官方 API，无中转无延迟，响应速度快人一步，代码生成更流畅</div>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon feature-icon-2">💰</div>
+            <div class="feature-title">超高性价比</div>
+            <div class="feature-desc">低至 ¥0.39/刀，相比官方价格节省 70%+，大量使用更划算，企业首选方案</div>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon feature-icon-3">🛡️</div>
+            <div class="feature-title">稳定可靠保障</div>
+            <div class="feature-desc">99.9% SLA 服务保障，7×24 小时监控，多节点容灾备份，业务永不中断</div>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon feature-icon-4">🎯</div>
+            <div class="feature-title">全模型支持</div>
+            <div class="feature-desc">支持 Claude 全系列模型，包括最新 Opus/Sonnet/Haiku，一个 Key 畅享所有</div>
+          </div>
+        </div>
+        <div class="watermark">© 码驿站 · 盗图必究</div>
+      </div>
+      <button class="download-btn" onclick="downloadImage('section-2', '02-核心优势')">下载图片</button>
+    </div>
+
+    <!-- 第三张：套餐对比 -->
+    <div class="section-wrapper">
+      <div class="section section-pricing" id="section-3">
+        <div class="section-title">套餐价格一览</div>
+        <div class="section-subtitle">多种套餐任选，总有一款适合你</div>
+
+        <table class="pricing-table">
+          <tr>
+            <th>套餐</th>
+            <th>体验版</th>
+            <th>基础版</th>
+            <th class="highlight-col">标准版 <span class="recommend-badge-table">推荐</span></th>
+            <th>专业版</th>
+          </tr>
+          <tr>
+            <td>价格</td>
+            <td class="price-cell">¥9.9</td>
+            <td class="price-cell">¥29.9</td>
+            <td class="price-cell highlight highlight-col">¥69.9</td>
+            <td class="price-cell">¥149.9</td>
+          </tr>
+          <tr>
+            <td>月限额</td>
+            <td>$22</td>
+            <td>$70</td>
+            <td class="highlight-col"><strong>$170</strong></td>
+            <td>$380</td>
+          </tr>
+          <tr>
+            <td>Tokens 额度</td>
+            <td>3300万</td>
+            <td>1亿+</td>
+            <td class="highlight-col"><strong>2.5亿+</strong></td>
+            <td>5.7亿+</td>
+          </tr>
+          <tr>
+            <td>单价 (¥/刀)</td>
+            <td>0.45</td>
+            <td>0.43</td>
+            <td class="highlight-col"><strong>0.41</strong></td>
+            <td>0.39</td>
+          </tr>
+          <tr>
+            <td>有效期</td>
+            <td>30天</td>
+            <td>30天</td>
+            <td class="highlight-col">30天</td>
+            <td>30天</td>
+          </tr>
+          <tr>
+            <td>全模型支持</td>
+            <td><span class="check-mark">✓</span></td>
+            <td><span class="check-mark">✓</span></td>
+            <td class="highlight-col"><span class="check-mark">✓</span></td>
+            <td><span class="check-mark">✓</span></td>
+          </tr>
+          <tr>
+            <td>官方直连</td>
+            <td><span class="check-mark">✓</span></td>
+            <td><span class="check-mark">✓</span></td>
+            <td class="highlight-col"><span class="check-mark">✓</span></td>
+            <td><span class="check-mark">✓</span></td>
+          </tr>
+          <tr>
+            <td>适合人群</td>
+            <td>新人体验</td>
+            <td>轻度使用</td>
+            <td class="highlight-col"><strong>日常开发</strong></td>
+            <td>重度用户</td>
+          </tr>
+        </table>
+        <div class="watermark">© 码驿站 · 盗图必究</div>
+      </div>
+      <button class="download-btn" onclick="downloadImage('section-3', '03-套餐对比')">下载图片</button>
+    </div>
+
+    <!-- 第四张：使用流程 -->
+    <div class="section-wrapper">
+      <div class="section section-steps" id="section-4">
+        <div class="section-title">三步开始使用</div>
+        <div class="section-subtitle">简单配置，即刻体验 AI 编程助手</div>
+
+        <div class="steps-container">
+          <div class="step-item">
+            <div class="step-number">1</div>
+            <div class="step-content">
+              <div class="step-title">安装 Claude CLI</div>
+              <div class="step-desc">使用 npm 全局安装 Claude Code 命令行工具</div>
+              <div class="step-code">npm install -g @anthropic-ai/claude-code</div>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-number">2</div>
+            <div class="step-content">
+              <div class="step-title">配置 API Key</div>
+              <div class="step-desc">设置环境变量，填入购买后获得的 API Key</div>
+              <div class="step-code">export ANTHROPIC_API_KEY=sk-xxx</div>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-number">3</div>
+            <div class="step-content">
+              <div class="step-title">配置 API 地址</div>
+              <div class="step-desc">将 API 地址指向我们的服务端点</div>
+              <div class="step-code">export ANTHROPIC_BASE_URL=https://api.xxx.com</div>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-number">✓</div>
+            <div class="step-content">
+              <div class="step-title">开始使用</div>
+              <div class="step-desc">在终端运行 claude 命令，开启 AI 编程之旅！</div>
+              <div class="step-code">claude</div>
+            </div>
+          </div>
+        </div>
+        <div class="watermark watermark-light">© 码驿站 · 盗图必究</div>
+      </div>
+      <button class="download-btn" onclick="downloadImage('section-4', '04-使用流程')">下载图片</button>
+    </div>
+
+    <!-- 第五张：常见问题 -->
+    <div class="section-wrapper">
+      <div class="section section-faq" id="section-5">
+        <div class="section-title">常见问题解答</div>
+        <div class="section-subtitle">您关心的问题，这里都有答案</div>
+
+        <div class="faq-list">
+          <div class="faq-item">
+            <div class="faq-question">API Key 可以用多久？</div>
+            <div class="faq-answer">所有套餐有效期均为 30 天，从激活之日起计算。额度用完或到期后需要续费。</div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-question">支持哪些 Claude 模型？</div>
+            <div class="faq-answer">支持 Claude 全系列模型，包括 Claude Opus、Sonnet、Haiku 等，一个 Key 即可使用所有模型。</div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-question">响应速度怎么样？</div>
+            <div class="faq-answer">官方直连通道，毫秒级响应，与官方 API 速度一致，无额外延迟。</div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-question">可以用于商业项目吗？</div>
+            <div class="faq-answer">可以！我们的 API 可用于个人学习、商业开发等各种场景，无使用限制。</div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-question">额度不够用怎么办？</div>
+            <div class="faq-answer">可随时购买新套餐叠加使用，或联系客服定制大额套餐，享受更优惠价格。</div>
+          </div>
+        </div>
+        <div class="watermark">© 码驿站 · 盗图必究</div>
+      </div>
+      <button class="download-btn" onclick="downloadImage('section-5', '05-常见问题')">下载图片</button>
+    </div>
+
+    <!-- 第六张：售后保障 -->
+    <div class="section-wrapper">
+      <div class="section section-guarantee" id="section-6">
+        <div class="section-title">售后服务保障</div>
+        <div class="section-subtitle">专业团队支持，让您用得放心</div>
+
+        <div class="guarantee-grid">
+          <div class="guarantee-item">
+            <div class="guarantee-icon">💬</div>
+            <div class="guarantee-title">7×24 客服</div>
+            <div class="guarantee-desc">专业客服团队全天候在线，随时解答您的疑问</div>
+          </div>
+          <div class="guarantee-item">
+            <div class="guarantee-icon">📖</div>
+            <div class="guarantee-title">详细文档</div>
+            <div class="guarantee-desc">完善的接入文档和使用教程，小白也能轻松上手</div>
+          </div>
+          <div class="guarantee-item">
+            <div class="guarantee-icon">🔄</div>
+            <div class="guarantee-title">售后无忧</div>
+            <div class="guarantee-desc">使用问题及时响应，确保您的使用体验</div>
+          </div>
+        </div>
+
+        <div class="contact-box">
+          <div class="contact-title">联系客服，获取专属支持</div>
+          <div class="contact-wechat">码驿站 · 店铺内咨询</div>
+        </div>
+        <div class="watermark watermark-gold">© 码驿站 · 盗图必究</div>
+      </div>
+      <button class="download-btn" onclick="downloadImage('section-6', '06-售后保障')">下载图片</button>
+    </div>
+
+    <!-- 第七张：用户须知 -->
+    <div class="section-wrapper">
+      <div class="section section-notice" id="section-7">
+        <div class="section-title">购买须知</div>
+        <div class="section-subtitle">购买前请仔细阅读以下说明</div>
+
+        <div class="notice-box">
+          <div class="notice-title">⚠️ 使用说明</div>
+          <ul class="notice-list">
+            <li>本商品为虚拟服务商品，购买后自动发货 API Key</li>
+            <li>套餐有效期 30 天，从首次使用开始计算</li>
+            <li>额度为月限额，按实际 API 调用消耗扣减</li>
+            <li>支持 Claude Code CLI 工具，暂不支持 Web/Cursor</li>
+            <li>如有使用问题，请及时联系客服处理</li>
+          </ul>
+        </div>
+
+        <div class="notice-box important-notice">
+          <div class="notice-title">🚫 重要提醒</div>
+          <ul class="notice-list">
+            <li>虚拟商品一经售出，非质量问题不支持退款</li>
+            <li>请勿将 API Key 分享给他人使用</li>
+            <li>禁止用于违法违规用途</li>
+            <li>购买即表示同意以上条款</li>
+          </ul>
+        </div>
+        <div class="watermark">© 码驿站 · 盗图必究</div>
+      </div>
+      <button class="download-btn" onclick="downloadImage('section-7', '07-购买须知')">下载图片</button>
+    </div>
+
+  </div>
+
+  <button class="download-all-btn" onclick="downloadAll()">一键下载全部图片</button>
+
+  <script>
+    async function downloadImage(elementId, filename) {
+      const element = document.getElementById(elementId);
+      const buttons = document.querySelectorAll('.download-btn, .download-all-btn');
+
+      // 找到对应的按钮
+      const button = element.parentElement.querySelector('.download-btn');
+      const originalText = button.textContent;
+      button.textContent = '生成中...';
+      button.disabled = true;
+
+      try {
+        // 获取元素实际高度
+        const rect = element.getBoundingClientRect();
+        const canvas = await html2canvas(element, {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: null,
+          width: 800,
+          height: rect.height,
+          windowWidth: 800,
+          windowHeight: rect.height,
+          scrollX: 0,
+          scrollY: 0
+        });
+
+        const link = document.createElement('a');
+        link.download = `${filename}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      } catch (error) {
+        console.error('下载失败:', error);
+        alert('下载失败，请重试');
+      } finally {
+        button.textContent = originalText;
+        button.disabled = false;
+      }
+    }
+
+    async function downloadAll() {
+      const sections = [
+        { id: 'section-1', name: '01-头图Banner' },
+        { id: 'section-2', name: '02-核心优势' },
+        { id: 'section-3', name: '03-套餐对比' },
+        { id: 'section-4', name: '04-使用流程' },
+        { id: 'section-5', name: '05-常见问题' },
+        { id: 'section-6', name: '06-售后保障' },
+        { id: 'section-7', name: '07-购买须知' }
+      ];
+
+      const allButtons = document.querySelectorAll('.download-all-btn');
+      allButtons.forEach(btn => {
+        btn.textContent = '正在生成...';
+        btn.disabled = true;
+      });
+
+      for (let i = 0; i < sections.length; i++) {
+        const section = sections[i];
+        allButtons.forEach(btn => {
+          btn.textContent = `正在生成 ${i + 1}/${sections.length}...`;
+        });
+
+        try {
+          const element = document.getElementById(section.id);
+          const rect = element.getBoundingClientRect();
+          const canvas = await html2canvas(element, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: null,
+            width: 800,
+            height: rect.height,
+            windowWidth: 800,
+            windowHeight: rect.height,
+            scrollX: 0,
+            scrollY: 0
+          });
+
+          const link = document.createElement('a');
+          link.download = `${section.name}.png`;
+          link.href = canvas.toDataURL('image/png');
+          link.click();
+
+          // 等待一下避免浏览器阻止多次下载
+          await new Promise(resolve => setTimeout(resolve, 500));
+        } catch (error) {
+          console.error(`下载 ${section.name} 失败:`, error);
+        }
+      }
+
+      allButtons.forEach(btn => {
+        btn.textContent = '一键下载全部图片';
+        btn.disabled = false;
+      });
+
+      alert('全部图片下载完成！');
+    }
+  </script>
+</body>
+</html>

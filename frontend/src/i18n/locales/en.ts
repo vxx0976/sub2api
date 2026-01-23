@@ -27,7 +27,7 @@ export default {
     hero: {
       badge: 'Affordable AI coding relay',
       title: 'One key for Vibe Coding across models',
-      subtitle: 'Beginner-friendly setup for Claude Code, Codex CLI, Gemini CLI, and Cursor — transparent billing with real-time usage.',
+      subtitle: 'Beginner-friendly setup for Claude Code, Codex CLI, Gemini CLI — transparent billing with real-time usage.',
       viewPricing: 'Pricing',
       supportedToolsLabel: 'Works with',
       platformsLabel: 'Platforms',

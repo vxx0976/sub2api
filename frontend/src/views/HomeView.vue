@@ -32,7 +32,7 @@
           <div
             class="h-10 w-10 overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-200/60 dark:bg-dark-900 dark:ring-dark-800"
           >
-            <img :src="siteLogo || '/logo.svg'" alt="Logo" class="h-full w-full object-contain" />
+            <img :src="siteLogo || '/logo.svg?v=2'" alt="Logo" class="h-full w-full object-contain" />
           </div>
           <div class="hidden flex-col sm:flex">
             <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ siteName }}</span>
@@ -187,7 +187,6 @@
                   <span class="rounded-full border border-gray-200/60 bg-white/70 px-2.5 py-1 text-gray-700 shadow-sm dark:border-dark-700/70 dark:bg-dark-900/40 dark:text-dark-200">Claude Code</span>
                   <span class="rounded-full border border-gray-200/60 bg-white/70 px-2.5 py-1 text-gray-700 shadow-sm dark:border-dark-700/70 dark:bg-dark-900/40 dark:text-dark-200">Codex CLI</span>
                   <span class="rounded-full border border-gray-200/60 bg-white/70 px-2.5 py-1 text-gray-700 shadow-sm dark:border-dark-700/70 dark:bg-dark-900/40 dark:text-dark-200">Gemini CLI</span>
-                  <span class="rounded-full border border-gray-200/60 bg-white/70 px-2.5 py-1 text-gray-700 shadow-sm dark:border-dark-700/70 dark:bg-dark-900/40 dark:text-dark-200">Cursor</span>
                   <span class="rounded-full border border-gray-200/60 bg-white/70 px-2.5 py-1 text-gray-700 shadow-sm dark:border-dark-700/70 dark:bg-dark-900/40 dark:text-dark-200">OpenCode</span>
                 </div>
 
@@ -885,7 +884,7 @@ const { copyToClipboard } = useClipboard()
 type DemoKey = 'claude' | 'codex' | 'gemini'
 
 // Site settings - directly from appStore (already initialized from injected config)
-const siteName = computed(() => appStore.cachedPublicSettings?.site_name || appStore.siteName || 'Sub2API')
+const siteName = computed(() => appStore.cachedPublicSettings?.site_name || appStore.siteName || '码驿站')
 const siteLogo = computed(() => appStore.cachedPublicSettings?.site_logo || appStore.siteLogo || '')
 const siteSubtitle = computed(() => appStore.cachedPublicSettings?.site_subtitle || 'AI API Gateway Platform')
 const docUrl = computed(() => appStore.cachedPublicSettings?.doc_url || appStore.docUrl || '')

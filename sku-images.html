@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SKU 商品图</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+      background: #f5f5f5;
+      padding: 40px;
+    }
+
+    .container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 40px;
+      justify-content: center;
+    }
+
+    /* 每个SKU图片 800x800 */
+    .sku-card {
+      width: 800px;
+      height: 800px;
+      border-radius: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+    }
+
+    /* 体验版 - 清新绿色 */
+    .sku-starter {
+      background: linear-gradient(145deg, #e8f5e9 0%, #c8e6c9 50%, #a5d6a7 100%);
+    }
+
+    /* 基础版 - 天空蓝 */
+    .sku-basic {
+      background: linear-gradient(145deg, #e3f2fd 0%, #bbdefb 50%, #90caf9 100%);
+    }
+
+    /* 标准版 - 活力橙（推荐款） */
+    .sku-standard {
+      background: linear-gradient(145deg, #fff3e0 0%, #ffe0b2 50%, #ffcc80 100%);
+    }
+
+    /* 专业版 - 尊贵紫 */
+    .sku-pro {
+      background: linear-gradient(145deg, #f3e5f5 0%, #e1bee7 50%, #ce93d8 100%);
+    }
+
+    /* 高端定制 - 金黑尊贵 */
+    .sku-enterprise {
+      background: linear-gradient(145deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%);
+    }
+
+    .sku-enterprise .brand-name {
+      color: #ffd700;
+    }
+
+    .sku-enterprise .sku-name {
+      color: #ffd700;
+      text-shadow: 0 0 30px rgba(255,215,0,0.3);
+    }
+
+    .sku-enterprise .sku-desc {
+      color: #aaa;
+    }
+
+    .sku-enterprise .stat-box {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,215,0,0.2);
+    }
+
+    .sku-enterprise .stat-value {
+      color: #ffd700;
+    }
+
+    .sku-enterprise .stat-label {
+      color: #888;
+    }
+
+    .sku-enterprise .feature-tag {
+      background: rgba(255,215,0,0.15);
+      color: #ffd700;
+      border: 1px solid rgba(255,215,0,0.3);
+    }
+
+    .contact-price {
+      font-size: 72px !important;
+      background: linear-gradient(135deg, #ffd700, #ffaa00);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .enterprise-badge {
+      background: linear-gradient(135deg, #ffd700, #ffaa00) !important;
+      color: #1a1a2e !important;
+      box-shadow: 0 4px 20px rgba(255,215,0,0.4) !important;
+    }
+
+    .enterprise-logo {
+      background: linear-gradient(135deg, #ffd700, #ffaa00) !important;
+      color: #1a1a2e !important;
+    }
+
+    .wechat-hint {
+      position: absolute;
+      bottom: 120px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, rgba(255,215,0,0.2), rgba(255,170,0,0.2));
+      border: 1px solid rgba(255,215,0,0.4);
+      padding: 14px 36px;
+      border-radius: 50px;
+      color: #ffd700;
+      font-size: 24px;
+      font-weight: 600;
+    }
+
+    .badge {
+      position: absolute;
+      top: 40px;
+      right: -80px;
+      background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+      color: white;
+      padding: 12px 100px;
+      font-size: 24px;
+      font-weight: 700;
+      transform: rotate(45deg);
+      box-shadow: 0 4px 15px rgba(238,90,90,0.4);
+      z-index: 10;
+    }
+
+    .recommend-badge {
+      background: linear-gradient(135deg, #ff9800, #f57c00);
+      box-shadow: 0 4px 15px rgba(255,152,0,0.4);
+    }
+
+    .top-label {
+      position: absolute;
+      top: 50px;
+      left: 50px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo {
+      width: 56px;
+      height: 56px;
+      background: linear-gradient(135deg, #ff7043, #ff5722);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      color: white;
+      font-weight: bold;
+      box-shadow: 0 4px 15px rgba(255,87,34,0.3);
+    }
+
+    .brand-name {
+      font-size: 28px;
+      font-weight: 700;
+      color: #333;
+    }
+
+    .main-content {
+      text-align: center;
+      padding: 0 60px;
+    }
+
+    .sku-name {
+      font-size: 72px;
+      font-weight: 800;
+      margin-bottom: 16px;
+      letter-spacing: 2px;
+    }
+
+    .sku-starter .sku-name { color: #2e7d32; }
+    .sku-basic .sku-name { color: #1565c0; }
+    .sku-standard .sku-name { color: #e65100; }
+    .sku-pro .sku-name { color: #7b1fa2; }
+
+    .stars {
+      font-size: 48px;
+      margin-bottom: 24px;
+    }
+
+    .sku-desc {
+      font-size: 32px;
+      color: #555;
+      margin-bottom: 50px;
+      font-weight: 500;
+    }
+
+    .price-section {
+      margin-bottom: 50px;
+    }
+
+    .price {
+      font-size: 100px;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .sku-starter .price { color: #2e7d32; }
+    .sku-basic .price { color: #1565c0; }
+    .sku-standard .price { color: #e65100; }
+    .sku-pro .price { color: #7b1fa2; }
+
+    .price-unit {
+      font-size: 36px;
+      font-weight: 600;
+      opacity: 0.8;
+    }
+
+    .stats-grid {
+      display: flex;
+      gap: 40px;
+      justify-content: center;
+    }
+
+    .stat-box {
+      background: rgba(255,255,255,0.9);
+      border-radius: 20px;
+      padding: 30px 50px;
+      text-align: center;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+    }
+
+    .stat-value {
+      font-size: 48px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .sku-starter .stat-value { color: #2e7d32; }
+    .sku-basic .stat-value { color: #1565c0; }
+    .sku-standard .stat-value { color: #e65100; }
+    .sku-pro .stat-value { color: #7b1fa2; }
+
+    .stat-label {
+      font-size: 24px;
+      color: #666;
+      font-weight: 500;
+    }
+
+    .bottom-features {
+      position: absolute;
+      bottom: 50px;
+      left: 50px;
+      right: 50px;
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+    }
+
+    .feature-tag {
+      background: rgba(255,255,255,0.95);
+      padding: 14px 28px;
+      border-radius: 50px;
+      font-size: 22px;
+      font-weight: 600;
+      color: #444;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    }
+
+    .unit-price {
+      position: absolute;
+      top: 50px;
+      right: 50px;
+      background: rgba(255,255,255,0.95);
+      padding: 16px 28px;
+      border-radius: 16px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .unit-price-value {
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    .sku-starter .unit-price-value { color: #2e7d32; }
+    .sku-basic .unit-price-value { color: #1565c0; }
+    .sku-standard .unit-price-value { color: #e65100; }
+    .sku-pro .unit-price-value { color: #7b1fa2; }
+
+    .unit-price-label {
+      font-size: 18px;
+      color: #888;
+    }
+
+    .download-btn {
+      position: absolute;
+      bottom: -60px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      padding: 14px 40px;
+      font-size: 18px;
+      font-weight: 600;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(102,126,234,0.4);
+      transition: all 0.3s ease;
+    }
+
+    .download-btn:hover {
+      transform: translateX(-50%) translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102,126,234,0.5);
+    }
+
+    .sku-wrapper {
+      position: relative;
+      margin-bottom: 80px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <!-- 体验版 -->
+    <div class="sku-wrapper">
+    <div class="sku-card sku-starter" id="sku-starter">
+      <div class="top-label">
+        <div class="brand-logo">&lt;/&gt;</div>
+        <div class="brand-name">Claude Code API</div>
+      </div>
+
+      <div class="unit-price">
+        <div class="unit-price-value">¥0.45/刀</div>
+        <div class="unit-price-label">单价</div>
+      </div>
+
+      <div class="main-content">
+        <div class="sku-name">体验版</div>
+        <div class="sku-desc">新人专享 · 轻松入门 AI 之旅</div>
+
+        <div class="price-section">
+          <span class="price">¥9.9</span>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-box">
+            <div class="stat-value">$22</div>
+            <div class="stat-label">月限额</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-value">3300万</div>
+            <div class="stat-label">Tokens</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bottom-features">
+        <span class="feature-tag">✓ 30天有效</span>
+        <span class="feature-tag">✓ 全模型支持</span>
+        <span class="feature-tag">✓ 官方直连</span>
+      </div>
+    </div>
+    <button class="download-btn" onclick="downloadImage('sku-starter', '体验版')">下载图片</button>
+    </div>
+
+    <!-- 基础版 -->
+    <div class="sku-wrapper">
+    <div class="sku-card sku-basic" id="sku-basic">
+      <div class="top-label">
+        <div class="brand-logo">&lt;/&gt;</div>
+        <div class="brand-name">Claude Code API</div>
+      </div>
+
+      <div class="unit-price">
+        <div class="unit-price-value">¥0.43/刀</div>
+        <div class="unit-price-label">单价</div>
+      </div>
+
+      <div class="main-content">
+        <div class="sku-name">基础版 ⭐</div>
+        <div class="sku-desc">日常使用 · 够用一整月</div>
+
+        <div class="price-section">
+          <span class="price">¥29.9</span>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-box">
+            <div class="stat-value">$70</div>
+            <div class="stat-label">月限额</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-value">1亿+</div>
+            <div class="stat-label">Tokens</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bottom-features">
+        <span class="feature-tag">✓ 30天有效</span>
+        <span class="feature-tag">✓ 全模型支持</span>
+        <span class="feature-tag">✓ 满足日常需求</span>
+      </div>
+    </div>
+    <button class="download-btn" onclick="downloadImage('sku-basic', '基础版')">下载图片</button>
+    </div>
+
+    <!-- 标准版（推荐） -->
+    <div class="sku-wrapper">
+    <div class="sku-card sku-standard" id="sku-standard">
+      <div class="badge recommend-badge">爆款推荐</div>
+
+      <div class="top-label">
+        <div class="brand-logo">&lt;/&gt;</div>
+        <div class="brand-name">Claude Code API</div>
+      </div>
+
+      <div class="unit-price">
+        <div class="unit-price-value">¥0.41/刀</div>
+        <div class="unit-price-label">单价</div>
+      </div>
+
+      <div class="main-content">
+        <div class="sku-name">标准版 ⭐⭐</div>
+        <div class="sku-desc">最受欢迎 · 性价比之选</div>
+
+        <div class="price-section">
+          <span class="price">¥69.9</span>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-box">
+            <div class="stat-value">$170</div>
+            <div class="stat-label">月限额</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-value">2.5亿+</div>
+            <div class="stat-label">Tokens</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bottom-features">
+        <span class="feature-tag">✓ 30天有效</span>
+        <span class="feature-tag">✓ 全模型支持</span>
+        <span class="feature-tag">🔥 性价比最高</span>
+      </div>
+    </div>
+    <button class="download-btn" onclick="downloadImage('sku-standard', '标准版')">下载图片</button>
+    </div>
+
+    <!-- 专业版 -->
+    <div class="sku-wrapper">
+    <div class="sku-card sku-pro" id="sku-pro">
+      <div class="badge">单价最低</div>
+
+      <div class="top-label">
+        <div class="brand-logo">&lt;/&gt;</div>
+        <div class="brand-name">Claude Code API</div>
+      </div>
+
+      <div class="unit-price">
+        <div class="unit-price-value">¥0.39/刀</div>
+        <div class="unit-price-label">单价</div>
+      </div>
+
+      <div class="main-content">
+        <div class="sku-name">专业版 ⭐⭐⭐</div>
+        <div class="sku-desc">重度使用首选 · 单价最低</div>
+
+        <div class="price-section">
+          <span class="price">¥149.9</span>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-box">
+            <div class="stat-value">$380</div>
+            <div class="stat-label">月限额</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-value">5.7亿+</div>
+            <div class="stat-label">Tokens</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bottom-features">
+        <span class="feature-tag">✓ 30天有效</span>
+        <span class="feature-tag">✓ 全模型支持</span>
+        <span class="feature-tag">💎 重度用户首选</span>
+      </div>
+    </div>
+    <button class="download-btn" onclick="downloadImage('sku-pro', '专业版')">下载图片</button>
+    </div>
+
+    <!-- 高端定制 -->
+    <div class="sku-wrapper">
+    <div class="sku-card sku-enterprise" id="sku-enterprise">
+      <div class="badge enterprise-badge">VIP专属</div>
+
+      <div class="top-label">
+        <div class="brand-logo enterprise-logo">&lt;/&gt;</div>
+        <div class="brand-name">Claude Code API</div>
+      </div>
+
+      <div class="main-content">
+        <div class="sku-name">高端定制 👑</div>
+        <div class="sku-desc">专属通道 · 极致体验 · 企业首选</div>
+
+        <div class="price-section">
+          <span class="price contact-price">联系客服</span>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-box">
+            <div class="stat-value">无上限</div>
+            <div class="stat-label">额度配置</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-value">专属</div>
+            <div class="stat-label">独享线路</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bottom-features">
+        <span class="feature-tag">✓ 独享专属线路</span>
+        <span class="feature-tag">✓ 优先响应支持</span>
+        <span class="feature-tag">✓ 99.9% SLA保障</span>
+      </div>
+    </div>
+    <button class="download-btn" onclick="downloadImage('sku-enterprise', '高端定制')">下载图片</button>
+    </div>
+
+  </div>
+
+  <script>
+    async function downloadImage(elementId, filename) {
+      const element = document.getElementById(elementId);
+      const button = element.parentElement.querySelector('.download-btn');
+
+      // 显示加载状态
+      const originalText = button.textContent;
+      button.textContent = '生成中...';
+      button.disabled = true;
+
+      try {
+        const canvas = await html2canvas(element, {
+          scale: 2, // 高清输出
+          useCORS: true,
+          backgroundColor: null,
+          width: 800,
+          height: 800
+        });
+
+        // 创建下载链接
+        const link = document.createElement('a');
+        link.download = `${filename}-800x800.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      } catch (error) {
+        console.error('下载失败:', error);
+        alert('下载失败，请重试');
+      } finally {
+        button.textContent = originalText;
+        button.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>

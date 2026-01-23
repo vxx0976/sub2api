@@ -231,7 +231,7 @@ func (s *EmailService) SendVerifyCode(ctx context.Context, email, siteName strin
 	}
 
 	// 构建邮件内容
-	subject := fmt.Sprintf("[%s] Email Verification Code", siteName)
+	subject := fmt.Sprintf("[%s] 邮箱验证码", siteName)
 	body := s.buildVerifyCodeEmailBody(code, siteName)
 
 	// 发送邮件
@@ -281,12 +281,12 @@ func (s *EmailService) buildVerifyCodeEmailBody(code, siteName string) string {
 <head>
     <meta charset="UTF-8">
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; background-color: #f5f5f5; margin: 0; padding: 20px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif; background-color: #f5f5f5; margin: 0; padding: 20px; }
         .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .header { background: linear-gradient(135deg, #667eea 0%%, #764ba2 100%%); color: white; padding: 30px; text-align: center; }
+        .header { background: linear-gradient(135deg, #d17556 0%%, #b75d45 100%%); color: white; padding: 30px; text-align: center; }
         .header h1 { margin: 0; font-size: 24px; }
         .content { padding: 40px 30px; text-align: center; }
-        .code { font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #333; background-color: #f8f9fa; padding: 20px 30px; border-radius: 8px; display: inline-block; margin: 20px 0; font-family: monospace; }
+        .code { font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #d17556; background-color: #fff7f4; padding: 20px 30px; border-radius: 8px; display: inline-block; margin: 20px 0; font-family: monospace; border: 1px solid #ffd0c1; }
         .info { color: #666; font-size: 14px; line-height: 1.6; margin-top: 20px; }
         .footer { background-color: #f8f9fa; padding: 20px; text-align: center; color: #999; font-size: 12px; }
     </style>
@@ -297,15 +297,15 @@ func (s *EmailService) buildVerifyCodeEmailBody(code, siteName string) string {
             <h1>%s</h1>
         </div>
         <div class="content">
-            <p style="font-size: 18px; color: #333;">Your verification code is:</p>
+            <p style="font-size: 18px; color: #333;">您的验证码是：</p>
             <div class="code">%s</div>
             <div class="info">
-                <p>This code will expire in <strong>15 minutes</strong>.</p>
-                <p>If you did not request this code, please ignore this email.</p>
+                <p>此验证码将在 <strong>15 分钟</strong>后过期。</p>
+                <p>如果您没有请求此验证码，请忽略此邮件。</p>
             </div>
         </div>
         <div class="footer">
-            <p>This is an automated message, please do not reply.</p>
+            <p>此邮件由系统自动发送，请勿回复。</p>
         </div>
     </div>
 </body>

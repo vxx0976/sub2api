@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Logo 方案选择</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+      background: #1a1a2e;
+      padding: 40px;
+      min-height: 100vh;
+    }
+    h1 {
+      text-align: center;
+      color: white;
+      margin-bottom: 40px;
+      font-size: 32px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 40px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    .logo-card {
+      background: #252542;
+      border-radius: 24px;
+      padding: 40px;
+      text-align: center;
+    }
+    .logo-card h3 {
+      color: #ffd700;
+      margin-bottom: 24px;
+      font-size: 20px;
+    }
+    .logo-preview {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 30px;
+      margin-bottom: 24px;
+    }
+    .logo-preview svg {
+      filter: drop-shadow(0 10px 30px rgba(0,0,0,0.3));
+    }
+    .logo-card p {
+      color: #888;
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+    .download-btn {
+      background: linear-gradient(135deg, #ff7043, #ff5722);
+      color: white;
+      border: none;
+      padding: 12px 28px;
+      border-radius: 50px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .download-btn:hover {
+      transform: translateY(-2px);
+    }
+    .current {
+      border: 2px solid #ff5722;
+    }
+    .current h3::after {
+      content: ' (当前)';
+      color: #ff5722;
+    }
+  </style>
+</head>
+<body>
+  <h1>Logo 方案选择 - 橙色配色</h1>
+
+  <div class="grid">
+
+    <!-- 当前版本 -->
+    <div class="logo-card current">
+      <h3>当前版本</h3>
+      <div class="logo-preview">
+        <svg width="128" height="128" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="grad0" x1="44" y1="44" x2="212" y2="212" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#e98a6d"/>
+              <stop offset="1" stop-color="#d17556"/>
+            </linearGradient>
+          </defs>
+          <rect x="24" y="24" width="208" height="208" rx="52" fill="url(#grad0)"/>
+          <path d="M96 92L72 116L96 140" stroke="white" stroke-width="18" stroke-linecap="round" stroke-linejoin="round" opacity="0.98"/>
+          <path d="M160 92L184 116L160 140" stroke="white" stroke-width="18" stroke-linecap="round" stroke-linejoin="round" opacity="0.98"/>
+          <path d="M96 172H164" stroke="white" stroke-width="18" stroke-linecap="round" opacity="0.92"/>
+        </svg>
+        <svg width="64" height="64" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="grad0b" x1="44" y1="44" x2="212" y2="212" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#e98a6d"/>
+              <stop offset="1" stop-color="#d17556"/>
+            </linearGradient>
+          </defs>
+          <rect x="24" y="24" width="208" height="208" rx="52" fill="url(#grad0b)"/>
+          <path d="M96 92L72 116L96 140" stroke="white" stroke-width="18" stroke-linecap="round" stroke-linejoin="round" opacity="0.98"/>
+          <path d="M160 92L184 116L160 140" stroke="white" stroke-width="18" stroke-linecap="round" stroke-linejoin="round" opacity="0.98"/>
+          <path d="M96 172H164" stroke="white" stroke-width="18" stroke-linecap="round" opacity="0.92"/>
+        </svg>
+      </div>
+      <p>当前使用的 Logo</p>
+    </div>
+
+    <!-- 方案1: 简洁代码符号 -->
+    <div class="logo-card">
+      <h3>方案1: 简洁代码符号</h3>
+      <div class="logo-preview">
+        <svg id="logo1" width="128" height="128" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="grad1" x1="44" y1="44" x2="212" y2="212" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#e98a6d"/>
+              <stop offset="1" stop-color="#d17556"/>
+            </linearGradient>
+          </defs>
+          <rect x="24" y="24" width="208" height="208" rx="52" fill="url(#grad1)"/>
+          <path d="M100 72L52 128L100 184" stroke="white" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M156 72L204 128L156 184" stroke="white" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <svg width="64" height="64" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="grad1b" x1="44" y1="44" x2="212" y2="212" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#e98a6d"/>
+              <stop offset="1" stop-color="#d17556"/>
+            </linearGradient>
+          </defs>
+          <rect x="24" y="24" width="208" height="208" rx="52" fill="url(#grad1b)"/>
+          <path d="M100 72L52 128L100 184" stroke="white" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M156 72L204 128L156 184" stroke="white" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <p>放大的 &lt; &gt; 符号，更醒目</p>
+      <button class="download-btn" onclick="downloadSVG('logo1', 'logo-v1')">下载 SVG</button>
+    </div>
+
+    <!-- 方案2: 终端提示符 -->
+    <div class="logo-card">
+      <h3>方案2: 终端提示符</h3>
+      <div class="logo-preview">
+        <svg id="logo2" width="128" height="128" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="grad2" x1="44" y1="44" x2="212" y2="212" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#e98a6d"/>
+              <stop offset="1" stop-color="#d17556"/>
+            </linearGradient>
+          </defs>
+          <rect x="24" y="24" width="208" height="208" rx="52" fill="url(#grad2)"/>
+          <path d="M60 96L100 128L60 160" stroke="white" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M120 160H196" stroke="white" stroke-width="22" stroke-linecap="round"/>
+        </svg>
+        <svg width="64" height="64" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="grad2b" x1="44" y1="44" x2="212" y2="212" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#e98a6d"/>
+              <stop offset="1" stop-color="#d17556"/>
+            </linearGradient>
+          </defs>
+          <rect x="24" y="24" width="208" height="208" rx="52" fill="url(#grad2b)"/>
+          <path d="M60 96L100 128L60 160" stroke="white" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M120 160H196" stroke="white" stroke-width="22" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <p>&gt;_ 终端风格，开发者感强</p>
+      <button class="download-btn" onclick="downloadSVG('logo2', 'logo-v2')">下载 SVG</button>
+    </div>
+
+    <!-- 方案3: 斜杠代码 -->
+    <div class="logo-card">
+      <h3>方案3: 斜杠代码风</h3>
+      <div class="logo-preview">
+        <svg id="logo3" width="128" height="128" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="grad3" x1="44" y1="44" x2="212" y2="212" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#e98a6d"/>
+              <stop offset="1" stop-color="#d17556"/>
+            </linearGradient>
+          </defs>
+          <rect x="24" y="24" width="208" height="208" rx="52" fill="url(#grad3)"/>
+          <path d="M88 80L56 128L88 176" stroke="white" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M168 80L200 128L168 176" stroke="white" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M144 68L112 188" stroke="white" stroke-width="16" stroke-linecap="round"/>
+        </svg>
+        <svg width="64" height="64" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="grad3b" x1="44" y1="44" x2="212" y2="212" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#e98a6d"/>
+              <stop offset="1" stop-color="#d17556"/>
+            </linearGradient>
+          </defs>
+          <rect x="24" y="24" width="208" height="208" rx="52" fill="url(#grad3b)"/>
+          <path d="M88 80L56 128L88 176" stroke="white" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M168 80L200 128L168 176" stroke="white" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M144 68L112 188" stroke="white" stroke-width="16" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <p>&lt;/&gt; 完整闭合标签</p>
+      <button class="download-btn" onclick="downloadSVG('logo3', 'logo-v3')">下载 SVG</button>
+    </div>
+
+    <!-- 方案4: 圆形居中 -->
+    <div class="logo-card">
+      <h3>方案4: 圆心聚焦</h3>
+      <div class="logo-preview">
+        <svg id="logo4" width="128" height="128" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="grad4" x1="44" y1="44" x2="212" y2="212" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#e98a6d"/>
+              <stop offset="1" stop-color="#d17556"/>
+            </linearGradient>
+          </defs>
+          <rect x="24" y="24" width="208" height="208" rx="52" fill="url(#grad4)"/>
+          <circle cx="128" cy="128" r="60" stroke="white" stroke-width="16" fill="none"/>
+          <path d="M108 108L88 128L108 148" stroke="white" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M148 108L168 128L148 148" stroke="white" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <svg width="64" height="64" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="grad4b" x1="44" y1="44" x2="212" y2="212" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#e98a6d"/>
+              <stop offset="1" stop-color="#d17556"/>
+            </linearGradient>
+          </defs>
+          <rect x="24" y="24" width="208" height="208" rx="52" fill="url(#grad4b)"/>
+          <circle cx="128" cy="128" r="60" stroke="white" stroke-width="16" fill="none"/>
+          <path d="M108 108L88 128L108 148" stroke="white" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M148 108L168 128L148 148" stroke="white" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <p>圆环包裹代码符号</p>
+      <button class="download-btn" onclick="downloadSVG('logo4', 'logo-v4')">下载 SVG</button>
+    </div>
+
+    <!-- 方案5: AI 光点 -->
+    <div class="logo-card">
+      <h3>方案5: AI 智能点</h3>
+      <div class="logo-preview">
+        <svg id="logo5" width="128" height="128" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="grad5" x1="44" y1="44" x2="212" y2="212" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#e98a6d"/>
+              <stop offset="1" stop-color="#d17556"/>
+            </linearGradient>
+          </defs>
+          <rect x="24" y="24" width="208" height="208" rx="52" fill="url(#grad5)"/>
+          <path d="M92 84L56 128L92 172" stroke="white" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M164 84L200 128L164 172" stroke="white" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="128" cy="128" r="16" fill="white"/>
+          <circle cx="128" cy="128" r="28" stroke="white" stroke-width="4" opacity="0.5"/>
+        </svg>
+        <svg width="64" height="64" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="grad5b" x1="44" y1="44" x2="212" y2="212" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#e98a6d"/>
+              <stop offset="1" stop-color="#d17556"/>
+            </linearGradient>
+          </defs>
+          <rect x="24" y="24" width="208" height="208" rx="52" fill="url(#grad5b)"/>
+          <path d="M92 84L56 128L92 172" stroke="white" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M164 84L200 128L164 172" stroke="white" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="128" cy="128" r="16" fill="white"/>
+          <circle cx="128" cy="128" r="28" stroke="white" stroke-width="4" opacity="0.5"/>
+        </svg>
+      </div>
+      <p>代码符号 + 中心光点，代表 AI</p>
+      <button class="download-btn" onclick="downloadSVG('logo5', 'logo-v5')">下载 SVG</button>
+    </div>
+
+    <!-- 方案6: 极简箭头 -->
+    <div class="logo-card">
+      <h3>方案6: 极简箭头</h3>
+      <div class="logo-preview">
+        <svg id="logo6" width="128" height="128" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="grad6" x1="44" y1="44" x2="212" y2="212" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#e98a6d"/>
+              <stop offset="1" stop-color="#d17556"/>
+            </linearGradient>
+          </defs>
+          <rect x="24" y="24" width="208" height="208" rx="52" fill="url(#grad6)"/>
+          <path d="M80 128L128 80L176 128" stroke="white" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M128 96V192" stroke="white" stroke-width="24" stroke-linecap="round"/>
+        </svg>
+        <svg width="64" height="64" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="grad6b" x1="44" y1="44" x2="212" y2="212" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#e98a6d"/>
+              <stop offset="1" stop-color="#d17556"/>
+            </linearGradient>
+          </defs>
+          <rect x="24" y="24" width="208" height="208" rx="52" fill="url(#grad6b)"/>
+          <path d="M80 128L128 80L176 128" stroke="white" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M128 96V192" stroke="white" stroke-width="24" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <p>向上箭头，代表提升效率</p>
+      <button class="download-btn" onclick="downloadSVG('logo6', 'logo-v6')">下载 SVG</button>
+    </div>
+
+  </div>
+
+  <script>
+    function downloadSVG(elementId, filename) {
+      const svg = document.getElementById(elementId);
+      const svgData = new XMLSerializer().serializeToString(svg);
+      const blob = new Blob([svgData], {type: 'image/svg+xml'});
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename + '.svg';
+      a.click();
+
+      URL.revokeObjectURL(url);
+    }
+  </script>
+</body>
+</html>
