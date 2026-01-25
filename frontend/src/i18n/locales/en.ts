@@ -194,12 +194,84 @@ export default {
       a5: 'Check host URL, API key, and network connectivity first, then look at the dashboard or contact the admin.',
       more: 'Read the docs'
     },
+    referral: {
+      badge: 'Referral Bonus',
+      title: 'Invite Friends, Share Rewards',
+      description: 'Invite friends to make their first purchase, both get 10% of the plan price as bonus',
+      registerNow: 'Register Now',
+      goInvite: 'Invite',
+      feature1: 'Unlimited invites',
+      feature2: 'Instant credit',
+      feature3: 'Rewards scale with plan'
+    },
     cta: {
       title: 'Ready to try it?',
       description: 'Sign in, generate an API key, copy the tool config, and start coding.'
     },
     footer: {
       allRightsReserved: 'All rights reserved.'
+    }
+  },
+
+  // Console Home Page
+  consoleHome: {
+    title: 'Home',
+    description: 'Console Home',
+    welcome: 'Welcome back',
+    balance: 'Balance',
+    announcements: 'Announcements',
+    promotions: 'Promotions',
+    quickLinks: 'Quick Links',
+    announcement1: 'New feature: Referral rewards - 10% of plan price for both parties',
+    announcement2: 'Spring Festival bonus - up to 15% extra on recharge',
+    rechargeBonus: {
+      title: 'Recharge Bonus',
+      description: 'Recharge and get bonus credits',
+      tier1: 'Recharge $50 get $5 (10%)',
+      tier2: 'Recharge $100 get $15 (15%)',
+      action: 'Recharge Now'
+    },
+    referralReward: {
+      title: 'Referral Reward',
+      description: 'Invite friends to make their first purchase, both get 10% of plan price',
+      planItem: '¥{price} plan = ${reward} each',
+      action: 'Invite Friends'
+    },
+    links: {
+      subscriptions: 'Subscriptions',
+      plans: 'Buy Plans',
+      apiKeys: 'API Keys',
+      referral: 'Invite Friends'
+    }
+  },
+
+  // Pricing Page
+  pricing: {
+    subscriptionPlans: 'Subscription Plans',
+    otherPlans: 'Other Options',
+    paygo: {
+      name: 'Pay As You Go',
+      tagline: 'Flexible Usage',
+      asLowAs: 'As low as',
+      description: 'No subscription required, pay only for what you use, balance never expires',
+      feature1: 'Top up and use, more you add more you get',
+      feature2: 'Balance never expires',
+      feature3: 'All models supported',
+      feature4: 'Perfect for occasional use',
+      action: 'Top Up Now'
+    },
+    custom: {
+      name: 'Dedicated Line',
+      tagline: 'Enterprise Solution',
+      price: 'Custom Pricing',
+      description: 'Dedicated account pool and exclusive line for enterprise users',
+      feature1: 'Dedicated account pool',
+      feature2: 'Exclusive high-speed line',
+      feature3: 'Higher concurrency support',
+      feature4: 'Dedicated technical support',
+      action: 'Contact Us',
+      wechatTitle: 'Scan to Add WeChat',
+      wechatDesc: 'Add our WeChat to inquire about dedicated line service'
     }
   },
 
@@ -364,6 +436,7 @@ export default {
 
   // Navigation
   nav: {
+    consoleHome: 'Home',
     dashboard: 'Dashboard',
     apiKeys: 'API Keys',
     usage: 'Usage',
@@ -811,7 +884,7 @@ export default {
     totalEarnings: 'Total Earnings',
     rewardRules: 'Reward Rules',
     rule1: 'Friends enter your referral code when registering (in the promo code field)',
-    rule2: 'When friends make their first purchase (≥ ¥29.9), both parties receive $10 reward',
+    rule2: 'When friends make their first purchase, both parties receive 10% of the plan price as bonus',
     rule3: 'Rewards are credited to your account balance immediately',
     rule4: 'Rewards are only issued on first payment; recharges and redeem codes do not count',
     inviteeList: 'Invitation Records',
@@ -825,7 +898,7 @@ export default {
     showingPage: 'Page {current} of {total}',
     loadCodeFailed: 'Failed to load referral code',
     referralCodeValid: 'Referral code valid',
-    referralCodeHint: 'Get $10 bonus after your first purchase (≥¥29.9)',
+    referralCodeHint: 'Get 10% of plan price as bonus after your first purchase',
     referralCodeInvalid: 'Referral code is invalid or expired',
     referralCodeSelf: 'You cannot use your own referral code'
   },
@@ -3267,6 +3340,18 @@ export default {
         thresholdWindowMinutesHint: 'Time window for counting timeouts (1-60 minutes)',
         saved: 'Stream timeout settings saved',
         saveFailed: 'Failed to save stream timeout settings'
+      },
+      announcements: {
+        title: 'System Announcements',
+        description: 'Manage announcements displayed on the console home page',
+        titleLabel: 'Announcement Title',
+        titlePlaceholder: 'Enter announcement content',
+        dateLabel: 'Date (optional)',
+        datePlaceholder: 'e.g., 2026-01-25',
+        add: 'Add Announcement',
+        empty: 'No announcements',
+        saved: 'Announcements saved',
+        saveFailed: 'Failed to save announcements'
       },
       recharge: {
         title: 'Recharge Settings',

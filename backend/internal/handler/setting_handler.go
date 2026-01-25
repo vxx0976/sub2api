@@ -31,6 +31,15 @@ func (h *SettingHandler) GetPublicSettings(c *gin.Context) {
 		return
 	}
 
+	// Convert service announcements to DTO announcements
+	announcements := make([]dto.Announcement, 0, len(settings.Announcements))
+	for _, a := range settings.Announcements {
+		announcements = append(announcements, dto.Announcement{
+			Title: a.Title,
+			Date:  a.Date,
+		})
+	}
+
 	response.Success(c, dto.PublicSettings{
 		RegistrationEnabled:  settings.RegistrationEnabled,
 		EmailVerifyEnabled:   settings.EmailVerifyEnabled,
@@ -48,5 +57,6 @@ func (h *SettingHandler) GetPublicSettings(c *gin.Context) {
 		HideCcsImportButton:  settings.HideCcsImportButton,
 		LinuxDoOAuthEnabled:  settings.LinuxDoOAuthEnabled,
 		Version:              h.version,
+		Announcements:        announcements,
 	})
 }

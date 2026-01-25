@@ -64,10 +64,10 @@
                   <Icon name="arrowRight" size="md" :stroke-width="2" />
                 </router-link>
 
-                <a href="#pricing" class="btn btn-secondary btn-lg px-7">
+                <router-link to="/pricing" class="btn btn-secondary btn-lg px-7">
                   <Icon name="dollar" size="md" />
                   {{ t('home.hero.viewPricing') }}
-                </a>
+                </router-link>
 
                 <a
                   v-if="docUrl"
@@ -385,6 +385,50 @@
         </div>
       </section>
 
+      <!-- Referral Reward Section -->
+      <section class="relative overflow-hidden py-16">
+        <div class="absolute inset-0 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20"></div>
+        <div class="pointer-events-none absolute inset-0">
+          <div class="absolute -left-20 top-0 h-64 w-64 rounded-full bg-purple-400/20 blur-3xl"></div>
+          <div class="absolute -right-20 bottom-0 h-64 w-64 rounded-full bg-blue-400/20 blur-3xl"></div>
+        </div>
+        <div class="relative mx-auto max-w-4xl px-6 text-center">
+          <div class="inline-flex items-center gap-2 rounded-full border border-purple-200/60 bg-white/70 px-4 py-1.5 text-sm font-semibold text-purple-700 shadow-sm backdrop-blur dark:border-purple-800/60 dark:bg-purple-900/40 dark:text-purple-300">
+            <Icon name="gift" size="sm" />
+            <span>{{ t('home.referral.badge') }}</span>
+          </div>
+          <h2 class="mt-6 text-2xl font-semibold tracking-tight text-gray-900 dark:text-white sm:text-3xl">
+            {{ t('home.referral.title') }}
+          </h2>
+          <p class="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-gray-600 dark:text-dark-400">
+            {{ t('home.referral.description') }}
+          </p>
+          <div class="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
+            <router-link
+              :to="isAuthenticated ? '/referral' : '/register'"
+              class="btn btn-primary btn-lg px-8"
+            >
+              <Icon name="userPlus" size="md" />
+              {{ isAuthenticated ? t('home.referral.goInvite') : t('home.referral.registerNow') }}
+            </router-link>
+          </div>
+          <div class="mt-6 flex flex-wrap items-center justify-center gap-4 text-sm text-gray-500 dark:text-dark-400">
+            <div class="flex items-center gap-1.5">
+              <Icon name="check" size="sm" class="text-emerald-500" />
+              <span>{{ t('home.referral.feature1') }}</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <Icon name="check" size="sm" class="text-emerald-500" />
+              <span>{{ t('home.referral.feature2') }}</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <Icon name="check" size="sm" class="text-emerald-500" />
+              <span>{{ t('home.referral.feature3') }}</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- Metrics -->
       <section class="mx-auto max-w-7xl px-6 pb-12 pt-2 lg:pb-16">
         <div class="mx-auto max-w-3xl text-center">
@@ -448,95 +492,6 @@
             </div>
             <p class="mt-3 text-xs leading-relaxed text-gray-600 dark:text-dark-400">{{ t('home.metrics.items.coverageDesc') }}</p>
           </div>
-        </div>
-      </section>
-
-      <!-- Pricing -->
-      <section id="pricing" class="relative overflow-hidden py-14 lg:py-20">
-        <div class="absolute inset-0 bg-gray-950"></div>
-        <div class="pointer-events-none absolute inset-0">
-          <div class="absolute -top-36 left-1/2 h-[26rem] w-[44rem] -translate-x-1/2 rounded-full bg-primary-500/15 blur-3xl"></div>
-          <div class="absolute -bottom-44 right-[-14rem] h-[28rem] w-[28rem] rounded-full bg-primary-500/10 blur-3xl"></div>
-          <div class="absolute inset-0 opacity-60 [mask-image:radial-gradient(closest-side,white,transparent)]">
-            <div
-              class="h-full w-full bg-[linear-gradient(rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.08)_1px,transparent_1px)] bg-[size:84px_84px]"
-            ></div>
-          </div>
-        </div>
-
-        <div class="relative mx-auto max-w-7xl px-6">
-          <div class="mx-auto max-w-3xl text-center text-white">
-            <h2 class="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
-              {{ t('home.pricing.title') }}
-            </h2>
-            <p class="mt-3 text-sm leading-relaxed text-gray-300 sm:text-base">
-              {{ t('home.pricing.subtitle') }}
-            </p>
-          </div>
-
-          <!-- Plans Grid -->
-          <div class="mt-10 grid gap-6 lg:grid-cols-4">
-            <div
-              v-for="plan in pricingPlans"
-              :key="plan.key"
-              class="relative flex flex-col overflow-hidden rounded-4xl border border-white/10 bg-white/5 p-6 shadow-[0_18px_60px_rgba(0,0,0,0.35)]"
-              :class="plan.recommended ? 'ring-1 ring-primary-500/40' : ''"
-            >
-              <!-- Recommended Badge -->
-              <div v-if="plan.recommended" class="absolute right-4 top-4">
-                <span class="inline-flex items-center gap-1 rounded-full bg-primary-500 px-3 py-1 text-xs font-semibold text-white">
-                  <Icon name="sparkles" size="xs" />
-                  {{ t('home.pricing.recommended') }}
-                </span>
-              </div>
-
-              <!-- Plan Name -->
-              <div class="text-sm font-semibold text-gray-200">{{ plan.name }}</div>
-
-              <!-- Price -->
-              <div class="mt-4 flex items-end gap-2">
-                <span class="text-xl font-semibold text-gray-300">¥</span>
-                <span class="text-5xl font-semibold tracking-tight text-white">{{ plan.price }}</span>
-              </div>
-              <div class="mt-2 text-xs text-gray-400">
-                {{ plan.credit }}
-              </div>
-
-              <!-- Promotional Badge -->
-              <div class="mt-3 inline-flex items-center gap-1 self-start rounded-md bg-gradient-to-r from-amber-400/20 to-orange-400/20 px-2.5 py-1 text-xs font-medium text-amber-200">
-                <Icon name="sparkles" size="xs" />
-                <span>{{ plan.unitPrice }}</span>
-              </div>
-
-              <!-- Features List -->
-              <ul class="mt-6 space-y-3 text-sm text-gray-200">
-                <li v-for="(feature, idx) in plan.features" :key="idx" class="flex items-start gap-2">
-                  <Icon
-                    name="check"
-                    size="sm"
-                    class="mt-0.5 flex-shrink-0"
-                    :class="plan.recommended ? 'text-primary-400' : 'text-emerald-400'"
-                  />
-                  <span class="leading-relaxed">{{ feature }}</span>
-                </li>
-              </ul>
-
-              <!-- Buy Button -->
-              <div class="mt-auto pt-6">
-                <router-link
-                  :to="isAuthenticated ? '/plans' : '/login?redirect=/plans'"
-                  class="inline-flex w-full items-center justify-center rounded-2xl px-4 py-3 text-sm font-semibold transition-colors"
-                  :class="plan.recommended ? 'bg-primary-500 text-white hover:bg-primary-600' : 'border border-white/10 bg-white/5 text-white hover:bg-white/10'"
-                >
-                  {{ t('home.pricing.buy') }}
-                </router-link>
-              </div>
-            </div>
-          </div>
-
-          <p class="mx-auto mt-8 max-w-4xl text-center text-xs leading-relaxed text-gray-500">
-            {{ t('home.pricing.note') }}
-          </p>
         </div>
       </section>
 
@@ -862,74 +817,6 @@ function buildTerminalLines(baseUrl: string, demo: DemoKey): TerminalLine[] {
 const terminalLines = computed<TerminalLine[]>(() => buildTerminalLines(apiBaseRoot.value, activeDemo.value))
 
 const terminalExampleText = computed(() => terminalLines.value.map((l) => l.text).join('\n'))
-
-// Static pricing plans with promotional info
-const pricingPlans = computed(() => [
-  {
-    key: 'starter',
-    recommended: false,
-    name: '体验版 🎁',
-    price: '9.9',
-    credit: '$22 月限额',
-    unitPrice: '¥0.45/刀',
-    badge: '新人专享',
-    features: [
-      '月限额 $22（约 3300 万 tokens）',
-      '30 天有效期',
-      '支持全模型',
-      '单价仅 ¥0.45/刀',
-      '适合轻度使用、快速体验'
-    ]
-  },
-  {
-    key: 'lite',
-    recommended: false,
-    name: '基础版',
-    price: '29.9',
-    credit: '$70 月限额',
-    unitPrice: '¥0.43/刀',
-    badge: '日常使用',
-    features: [
-      '月限额 $70（约 1 亿 tokens）',
-      '30 天有效期',
-      '支持全模型',
-      '单价仅 ¥0.43/刀',
-      '满足日常开发需求'
-    ]
-  },
-  {
-    key: 'standard',
-    recommended: true,
-    name: '标准版 ⭐',
-    price: '69.9',
-    credit: '$170 月限额',
-    unitPrice: '¥0.41/刀',
-    badge: '性价比之选',
-    features: [
-      '月限额 $170（约 2.5 亿 tokens）',
-      '30 天有效期',
-      '支持全模型',
-      '单价仅 ¥0.41/刀 💰',
-      '最受欢迎，性价比最高'
-    ]
-  },
-  {
-    key: 'pro',
-    recommended: true,
-    name: '专业版 ⭐⭐',
-    price: '149.9',
-    credit: '$380 月限额',
-    unitPrice: '¥0.39/刀',
-    badge: '重度使用',
-    features: [
-      '月限额 $380（约 5.7 亿 tokens）',
-      '30 天有效期',
-      '支持全模型',
-      '单价低至 ¥0.39/刀 🔥',
-      '重度使用首选，单价最低'
-    ]
-  }
-])
 
 function copyTerminalExample() {
   copyToClipboard(terminalExampleText.value)

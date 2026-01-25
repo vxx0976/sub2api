@@ -577,6 +577,118 @@
           </div>
         </div>
 
+        <!-- Announcements Settings -->
+        <div class="card">
+          <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+              {{ t('admin.settings.announcements.title') }}
+            </h2>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              {{ t('admin.settings.announcements.description') }}
+            </p>
+          </div>
+          <div class="space-y-4 p-6">
+            <!-- Loading State -->
+            <div v-if="announcementsLoading" class="flex items-center gap-2 text-gray-500">
+              <div class="h-4 w-4 animate-spin rounded-full border-b-2 border-primary-600"></div>
+              {{ t('common.loading') }}
+            </div>
+
+            <template v-else>
+              <!-- Announcements List -->
+              <div v-if="announcementsList.length > 0" class="space-y-3">
+                <div
+                  v-for="(item, index) in announcementsList"
+                  :key="index"
+                  class="flex items-start gap-3 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-dark-600 dark:bg-dark-800"
+                >
+                  <div class="flex-1 space-y-3">
+                    <div>
+                      <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
+                        {{ t('admin.settings.announcements.titleLabel') }}
+                      </label>
+                      <input
+                        v-model="item.title"
+                        type="text"
+                        class="input text-sm"
+                        :placeholder="t('admin.settings.announcements.titlePlaceholder')"
+                      />
+                    </div>
+                    <div>
+                      <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
+                        {{ t('admin.settings.announcements.dateLabel') }}
+                      </label>
+                      <input
+                        v-model="item.date"
+                        type="text"
+                        class="input text-sm"
+                        :placeholder="t('admin.settings.announcements.datePlaceholder')"
+                      />
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    @click="removeAnnouncement(index)"
+                    class="mt-6 flex-shrink-0 rounded-lg p-2 text-gray-400 hover:bg-gray-200 hover:text-red-500 dark:hover:bg-dark-700"
+                  >
+                    <Icon name="trash" size="sm" />
+                  </button>
+                </div>
+              </div>
+
+              <!-- Empty State -->
+              <div v-else class="rounded-lg border-2 border-dashed border-gray-200 p-6 text-center dark:border-dark-600">
+                <Icon name="chatBubble" size="lg" class="mx-auto text-gray-400" />
+                <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                  {{ t('admin.settings.announcements.empty') }}
+                </p>
+              </div>
+
+              <!-- Add Button -->
+              <button
+                type="button"
+                @click="addAnnouncement"
+                class="btn btn-secondary btn-sm w-full"
+              >
+                <Icon name="plus" size="sm" class="mr-1" />
+                {{ t('admin.settings.announcements.add') }}
+              </button>
+
+              <!-- Save Button -->
+              <div class="flex justify-end border-t border-gray-100 pt-4 dark:border-dark-700">
+                <button
+                  type="button"
+                  @click="saveAnnouncements"
+                  :disabled="announcementsSaving"
+                  class="btn btn-primary btn-sm"
+                >
+                  <svg
+                    v-if="announcementsSaving"
+                    class="mr-1 h-4 w-4 animate-spin"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      class="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      stroke-width="4"
+                    ></circle>
+                    <path
+                      class="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  {{ announcementsSaving ? t('common.saving') : t('common.save') }}
+                </button>
+              </div>
+            </template>
+          </div>
+        </div>
+
         <!-- Site Settings -->
         <div class="card">
           <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
@@ -1020,6 +1132,15 @@ const streamTimeoutForm = reactive({
   threshold_window_minutes: 10
 })
 
+// Announcements 状态
+interface AnnouncementItem {
+  title: string
+  date?: string
+}
+const announcementsLoading = ref(true)
+const announcementsSaving = ref(false)
+const announcementsList = ref<AnnouncementItem[]>([])
+
 type SettingsForm = SystemSettings & {
   smtp_password: string
   turnstile_secret_key: string
@@ -1347,9 +1468,51 @@ async function saveStreamTimeoutSettings() {
   }
 }
 
+// Announcements 方法
+async function loadAnnouncements() {
+  announcementsLoading.value = true
+  try {
+    const result = await adminAPI.settings.getAnnouncements()
+    announcementsList.value = result.announcements || []
+  } catch (error: any) {
+    console.error('Failed to load announcements:', error)
+  } finally {
+    announcementsLoading.value = false
+  }
+}
+
+function addAnnouncement() {
+  announcementsList.value.push({ title: '', date: '' })
+}
+
+function removeAnnouncement(index: number) {
+  announcementsList.value.splice(index, 1)
+}
+
+async function saveAnnouncements() {
+  // Filter out empty announcements
+  const validAnnouncements = announcementsList.value.filter(a => a.title.trim())
+
+  announcementsSaving.value = true
+  try {
+    await adminAPI.settings.updateAnnouncements({ announcements: validAnnouncements })
+    announcementsList.value = validAnnouncements
+    // Refresh cached public settings
+    await appStore.fetchPublicSettings(true)
+    appStore.showSuccess(t('admin.settings.announcements.saved'))
+  } catch (error: any) {
+    appStore.showError(
+      t('admin.settings.announcements.saveFailed') + ': ' + (error.message || t('common.unknownError'))
+    )
+  } finally {
+    announcementsSaving.value = false
+  }
+}
+
 onMounted(() => {
   loadSettings()
   loadAdminApiKey()
   loadStreamTimeoutSettings()
+  loadAnnouncements()
 })
 </script>

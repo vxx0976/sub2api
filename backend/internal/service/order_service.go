@@ -165,8 +165,7 @@ func (s *OrderService) HandlePaymentNotify(ctx context.Context, params *payment.
 	// Only trigger if:
 	// 1. Referral service is enabled
 	// 2. This is a new subscription (not renewal)
-	// 3. Order amount meets the minimum threshold
-	if s.referralService != nil && isNewSubscription && order.Amount >= ReferralMinPaymentAmountCNY {
+	if s.referralService != nil && isNewSubscription {
 		go func() {
 			// Use background context since the original request may have completed
 			bgCtx := context.Background()

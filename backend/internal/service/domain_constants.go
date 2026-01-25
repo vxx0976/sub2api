@@ -103,6 +103,7 @@ const (
 	SettingKeyDocURL              = "doc_url"                // 文档链接
 	SettingKeyHomeContent         = "home_content"           // 首页内容（支持 Markdown/HTML，或 URL 作为 iframe src）
 	SettingKeyHideCcsImportButton = "hide_ccs_import_button" // 是否隐藏 API Keys 页面的导入 CCS 按钮
+	SettingKeyAnnouncements       = "announcements"          // 系统公告列表（JSON 数组）
 
 	// 默认配置
 	SettingKeyDefaultConcurrency = "default_concurrency" // 新用户默认并发量
@@ -169,9 +170,7 @@ const (
 	// ReferralCodeLength is the total length of referral code (including prefix)
 	ReferralCodeLength = 8
 
-	// ReferralMinPaymentAmountCNY is the minimum payment amount in CNY to trigger referral reward
-	ReferralMinPaymentAmountCNY = 29.9
-
-	// ReferralRewardAmountUSD is the reward amount in USD for both referrer and invitee
-	ReferralRewardAmountUSD = 10.0
+	// ReferralRewardPercentage is the percentage of order amount to reward (10%)
+	// Both referrer and invitee get this percentage of the order amount in USD (rounded)
+	ReferralRewardPercentage = 0.10
 )

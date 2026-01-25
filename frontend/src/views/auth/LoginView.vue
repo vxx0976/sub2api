@@ -311,8 +311,8 @@ async function handleLogin(): Promise<void> {
     // Show success toast
     appStore.showSuccess(t('auth.loginSuccess'))
 
-    // Redirect to dashboard or intended route
-    const redirectTo = (router.currentRoute.value.query.redirect as string) || '/dashboard'
+    // Redirect to console home or intended route
+    const redirectTo = (router.currentRoute.value.query.redirect as string) || '/console-home'
     await router.push(redirectTo)
   } catch (error: unknown) {
     // Reset Turnstile on error

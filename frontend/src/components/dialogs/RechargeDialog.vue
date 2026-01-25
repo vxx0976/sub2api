@@ -119,19 +119,23 @@
               ¥{{ tier.min }}{{ tier.max ? ` - ¥${tier.max}` : '+' }}
             </span>
             <span class="flex items-center gap-2">
+              <!-- 每刀价格 -->
+              <span class="text-xs text-gray-500 dark:text-gray-400">
+                ¥{{ (1 / tier.multiplier).toFixed(2) }}/刀
+              </span>
               <span class="font-medium">{{ tier.multiplier }}×</span>
-              <!-- 增幅 < 30%: 灰色小字 -->
-              <span v-if="tier.multiplier > 1.0 && (tier.multiplier - 1) * 100 < 30" class="text-xs text-gray-500 dark:text-gray-400">
+              <!-- 增幅 < 100%: 橙色徽章 -->
+              <span v-if="tier.multiplier >= 1.3 && tier.multiplier < 2.0" class="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-2.5 py-0.5 text-xs font-bold text-white shadow-md">
                 +{{ ((tier.multiplier - 1) * 100).toFixed(0) }}%
               </span>
-              <!-- 增幅 >= 30% && < 60%: 橙色徽章 -->
-              <span v-else-if="tier.multiplier >= 1.3 && tier.multiplier < 1.6" class="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-2.5 py-0.5 text-xs font-bold text-white shadow-md">
-                +{{ ((tier.multiplier - 1) * 100).toFixed(0) }}%
-              </span>
-              <!-- 增幅 >= 60%: 红色徽章 -->
-              <span v-else-if="tier.multiplier >= 1.6" class="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-orange-600 to-red-600 px-2.5 py-0.5 text-xs font-bold text-white shadow-lg">
+              <!-- 增幅 >= 100%: 红色徽章 -->
+              <span v-else-if="tier.multiplier >= 2.0" class="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-orange-600 to-red-600 px-2.5 py-0.5 text-xs font-bold text-white shadow-lg">
                 <span>🔥</span>
                 <span>+{{ ((tier.multiplier - 1) * 100).toFixed(0) }}%</span>
+              </span>
+              <!-- 增幅 < 30%: 灰色小字 -->
+              <span v-else-if="tier.multiplier > 1.0" class="text-xs text-gray-500 dark:text-gray-400">
+                +{{ ((tier.multiplier - 1) * 100).toFixed(0) }}%
               </span>
             </span>
           </div>

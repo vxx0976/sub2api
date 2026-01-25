@@ -133,12 +133,14 @@ export async function getAllRechargeOrders(
   return response.data
 }
 
-export default {
-  getRechargeConfig,
-  createRechargeOrder,
-  getRechargeOrders,
-  repayRechargeOrder,
-  getRechargeConfigAdmin,
-  updateRechargeConfig,
-  getAllRechargeOrders
+export const rechargeAPI = {
+  getConfig: getRechargeConfig,
+  createOrder: createRechargeOrder,
+  getOrders: getRechargeOrders,
+  repayOrder: repayRechargeOrder,
+  getConfigAdmin: getRechargeConfigAdmin,
+  updateConfig: updateRechargeConfig,
+  getAllOrders: getAllRechargeOrders
 }
+
+export default rechargeAPI

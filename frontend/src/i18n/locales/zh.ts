@@ -193,12 +193,84 @@ export default {
       a5: '先检查站点地址、API Key、网络是否通，再到控制台看报错或联系管理员。',
       more: '查看文档'
     },
+    referral: {
+      badge: '邀请有礼',
+      title: '邀请好友，共享奖励',
+      description: '邀请好友首次购买任意套餐，双方各得套餐价格 10% 的额度奖励',
+      registerNow: '立即注册',
+      goInvite: '去邀请',
+      feature1: '无上限邀请',
+      feature2: '即时到账',
+      feature3: '奖励随套餐递增'
+    },
     cta: {
       title: '准备试试了吗？',
       description: '登录后生成一个 API Key，选择工具复制配置，就能开始写代码。'
     },
     footer: {
       allRightsReserved: '保留所有权利。'
+    }
+  },
+
+  // Console Home Page
+  consoleHome: {
+    title: '首页',
+    description: '控制台首页',
+    welcome: '欢迎回来',
+    balance: '余额',
+    announcements: '系统公告',
+    promotions: '优惠活动',
+    quickLinks: '快捷入口',
+    announcement1: '新功能上线：邀请奖励系统，奖励按套餐价格 10% 计算',
+    announcement2: '春节期间充值享额外优惠，最高送 15%',
+    rechargeBonus: {
+      title: '充值优惠',
+      description: '充值即送，多充多得',
+      tier1: '充值 $50 送 $5（10%）',
+      tier2: '充值 $100 送 $15（15%）',
+      action: '去充值'
+    },
+    referralReward: {
+      title: '邀请奖励',
+      description: '邀请好友首次购买套餐，双方各得套餐价格 10% 额度',
+      planItem: '买 ¥{price} 套餐各得 ${reward}',
+      action: '去邀请'
+    },
+    links: {
+      subscriptions: '我的订阅',
+      plans: '购买套餐',
+      apiKeys: 'API 密钥',
+      referral: '邀请好友'
+    }
+  },
+
+  // Pricing Page
+  pricing: {
+    subscriptionPlans: '订阅套餐',
+    otherPlans: '其他方案',
+    paygo: {
+      name: '按量付费',
+      tagline: 'Pay As You Go',
+      asLowAs: '低至',
+      description: '无需订阅，按实际使用量计费，余额永不过期',
+      feature1: '充值即用，多充多送',
+      feature2: '余额永不过期',
+      feature3: '支持全模型',
+      feature4: '适合不定期使用',
+      action: '去充值'
+    },
+    custom: {
+      name: '定制专线',
+      tagline: 'Dedicated Line',
+      price: '按需定价',
+      description: '独立账号池、专属线路，适合企业级用户',
+      feature1: '独立账号池，不共享',
+      feature2: '专属高速线路',
+      feature3: '更高并发支持',
+      feature4: '专属技术支持',
+      action: '联系咨询',
+      wechatTitle: '扫码添加微信',
+      wechatDesc: '添加客服微信咨询定制专线服务'
     }
   },
 
@@ -363,6 +435,7 @@ export default {
 
   // Navigation
   nav: {
+    consoleHome: '首页',
     dashboard: '仪表盘',
     apiKeys: 'API 密钥',
     usage: '使用记录',
@@ -809,7 +882,7 @@ export default {
     totalEarnings: '累计收益',
     rewardRules: '奖励规则',
     rule1: '好友注册时输入您的邀请码（在优惠码输入框中输入）',
-    rule2: '好友首次购买套餐（满 ¥29.9）后，双方各获得 $10 奖励',
+    rule2: '好友首次购买任意套餐后，双方各获得套餐价格 10% 的额度奖励',
     rule3: '奖励直接充入账户余额，即时到账',
     rule4: '每位好友仅限首次付费时发放奖励，充值和兑换码不计入',
     inviteeList: '邀请记录',
@@ -823,7 +896,7 @@ export default {
     showingPage: '第 {current} 页，共 {total} 页',
     loadCodeFailed: '获取邀请码失败',
     referralCodeValid: '邀请码有效',
-    referralCodeHint: '首次购买套餐（≥¥29.9）后可获得 $10 奖励',
+    referralCodeHint: '首次购买套餐后可获得套餐价格 10% 的额度奖励',
     referralCodeInvalid: '邀请码无效或已失效',
     referralCodeSelf: '不能使用自己的邀请码'
   },
@@ -3419,6 +3492,18 @@ export default {
         thresholdWindowMinutesHint: '超时计数的时间窗口（1-60分钟）',
         saved: '流超时设置保存成功',
         saveFailed: '保存流超时设置失败'
+      },
+      announcements: {
+        title: '系统公告',
+        description: '管理在控制台首页显示的系统公告',
+        titleLabel: '公告标题',
+        titlePlaceholder: '输入公告内容',
+        dateLabel: '日期（可选）',
+        datePlaceholder: '如：2026-01-25',
+        add: '添加公告',
+        empty: '暂无公告',
+        saved: '公告保存成功',
+        saveFailed: '保存公告失败'
       },
       recharge: {
         title: '充值配置',

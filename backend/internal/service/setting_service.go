@@ -73,6 +73,7 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		SettingKeyHomeContent,
 		SettingKeyHideCcsImportButton,
 		SettingKeyLinuxDoConnectEnabled,
+		SettingKeyAnnouncements,
 	}
 
 	settings, err := s.settingRepo.GetMultiple(ctx, keys)
@@ -91,6 +92,12 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 	emailVerifyEnabled := settings[SettingKeyEmailVerifyEnabled] == "true"
 	passwordResetEnabled := emailVerifyEnabled && settings[SettingKeyPasswordResetEnabled] == "true"
 
+	// Parse announcements JSON
+	var announcements []Announcement
+	if raw := settings[SettingKeyAnnouncements]; raw != "" {
+		_ = json.Unmarshal([]byte(raw), &announcements)
+	}
+
 	return &PublicSettings{
 		RegistrationEnabled:  settings[SettingKeyRegistrationEnabled] == "true",
 		EmailVerifyEnabled:   emailVerifyEnabled,
@@ -107,6 +114,7 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		HomeContent:          settings[SettingKeyHomeContent],
 		HideCcsImportButton:  settings[SettingKeyHideCcsImportButton] == "true",
 		LinuxDoOAuthEnabled:  linuxDoEnabled,
+		Announcements:        announcements,
 	}, nil
 }
 
@@ -131,22 +139,23 @@ func (s *SettingService) GetPublicSettingsForInjection(ctx context.Context) (any
 
 	// Return a struct that matches the frontend's expected format
 	return &struct {
-		RegistrationEnabled  bool   `json:"registration_enabled"`
-		EmailVerifyEnabled   bool   `json:"email_verify_enabled"`
-		PromoCodeEnabled     bool   `json:"promo_code_enabled"`
-		PasswordResetEnabled bool   `json:"password_reset_enabled"`
-		TurnstileEnabled     bool   `json:"turnstile_enabled"`
-		TurnstileSiteKey     string `json:"turnstile_site_key,omitempty"`
-		SiteName             string `json:"site_name"`
-		SiteLogo             string `json:"site_logo,omitempty"`
-		SiteSubtitle         string `json:"site_subtitle,omitempty"`
-		APIBaseURL           string `json:"api_base_url,omitempty"`
-		ContactInfo          string `json:"contact_info,omitempty"`
-		DocURL               string `json:"doc_url,omitempty"`
-		HomeContent          string `json:"home_content,omitempty"`
-		HideCcsImportButton  bool   `json:"hide_ccs_import_button"`
-		LinuxDoOAuthEnabled  bool   `json:"linuxdo_oauth_enabled"`
-		Version              string `json:"version,omitempty"`
+		RegistrationEnabled  bool           `json:"registration_enabled"`
+		EmailVerifyEnabled   bool           `json:"email_verify_enabled"`
+		PromoCodeEnabled     bool           `json:"promo_code_enabled"`
+		PasswordResetEnabled bool           `json:"password_reset_enabled"`
+		TurnstileEnabled     bool           `json:"turnstile_enabled"`
+		TurnstileSiteKey     string         `json:"turnstile_site_key,omitempty"`
+		SiteName             string         `json:"site_name"`
+		SiteLogo             string         `json:"site_logo,omitempty"`
+		SiteSubtitle         string         `json:"site_subtitle,omitempty"`
+		APIBaseURL           string         `json:"api_base_url,omitempty"`
+		ContactInfo          string         `json:"contact_info,omitempty"`
+		DocURL               string         `json:"doc_url,omitempty"`
+		HomeContent          string         `json:"home_content,omitempty"`
+		HideCcsImportButton  bool           `json:"hide_ccs_import_button"`
+		LinuxDoOAuthEnabled  bool           `json:"linuxdo_oauth_enabled"`
+		Version              string         `json:"version,omitempty"`
+		Announcements        []Announcement `json:"announcements,omitempty"`
 	}{
 		RegistrationEnabled:  settings.RegistrationEnabled,
 		EmailVerifyEnabled:   settings.EmailVerifyEnabled,
@@ -164,6 +173,7 @@ func (s *SettingService) GetPublicSettingsForInjection(ctx context.Context) (any
 		HideCcsImportButton:  settings.HideCcsImportButton,
 		LinuxDoOAuthEnabled:  settings.LinuxDoOAuthEnabled,
 		Version:              s.version,
+		Announcements:        settings.Announcements,
 	}, nil
 }
 
@@ -920,4 +930,39 @@ func getDefaultRechargeTiers() []RechargeTier {
 		{Min: 100, Max: &max499, Multiplier: 1.5},
 		{Min: 500, Max: nil, Multiplier: 2.0},
 	}
+}
+
+// GetAnnouncements 获取系统公告
+func (s *SettingService) GetAnnouncements(ctx context.Context) ([]Announcement, error) {
+	value, err := s.settingRepo.GetValue(ctx, SettingKeyAnnouncements)
+	if err != nil {
+		if errors.Is(err, ErrSettingNotFound) {
+			return []Announcement{}, nil
+		}
+		return nil, fmt.Errorf("get announcements: %w", err)
+	}
+	if value == "" {
+		return []Announcement{}, nil
+	}
+
+	var announcements []Announcement
+	if err := json.Unmarshal([]byte(value), &announcements); err != nil {
+		return []Announcement{}, nil
+	}
+
+	return announcements, nil
+}
+
+// SetAnnouncements 设置系统公告
+func (s *SettingService) SetAnnouncements(ctx context.Context, announcements []Announcement) error {
+	data, err := json.Marshal(announcements)
+	if err != nil {
+		return fmt.Errorf("marshal announcements: %w", err)
+	}
+
+	err = s.settingRepo.Set(ctx, SettingKeyAnnouncements, string(data))
+	if err == nil && s.onUpdate != nil {
+		s.onUpdate()
+	}
+	return err
 }

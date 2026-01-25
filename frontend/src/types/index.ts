@@ -63,6 +63,11 @@ export interface SendVerifyCodeResponse {
   countdown: number
 }
 
+export interface Announcement {
+  title: string
+  date?: string
+}
+
 export interface PublicSettings {
   registration_enabled: boolean
   email_verify_enabled: boolean
@@ -79,6 +84,7 @@ export interface PublicSettings {
   home_content: string
   linuxdo_oauth_enabled: boolean
   version: string
+  announcements?: Announcement[]
 }
 
 export interface AuthResponse {

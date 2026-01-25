@@ -240,6 +240,40 @@ export async function updateStreamTimeoutSettings(
   return data
 }
 
+/**
+ * Announcement interface
+ */
+export interface Announcement {
+  title: string
+  date?: string
+}
+
+/**
+ * Announcements response
+ */
+export interface AnnouncementsResponse {
+  announcements: Announcement[]
+}
+
+/**
+ * Get announcements
+ * @returns Announcements list
+ */
+export async function getAnnouncements(): Promise<AnnouncementsResponse> {
+  const { data } = await apiClient.get<AnnouncementsResponse>('/admin/settings/announcements')
+  return data
+}
+
+/**
+ * Update announcements
+ * @param request - Announcements to save
+ * @returns Updated announcements
+ */
+export async function updateAnnouncements(request: AnnouncementsResponse): Promise<AnnouncementsResponse> {
+  const { data } = await apiClient.put<AnnouncementsResponse>('/admin/settings/announcements', request)
+  return data
+}
+
 export const settingsAPI = {
   getSettings,
   updateSettings,
@@ -249,7 +283,9 @@ export const settingsAPI = {
   regenerateAdminApiKey,
   deleteAdminApiKey,
   getStreamTimeoutSettings,
-  updateStreamTimeoutSettings
+  updateStreamTimeoutSettings,
+  getAnnouncements,
+  updateAnnouncements
 }
 
 export default settingsAPI

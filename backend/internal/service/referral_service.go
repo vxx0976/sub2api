@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"log"
+	"math"
 	"strings"
 	"time"
 
@@ -197,14 +198,17 @@ func (s *ReferralService) GetInvitees(ctx context.Context, userID int64, page, p
 }
 
 // ProcessReferralReward processes referral reward when an invitee makes their first qualifying payment
+// Reward amount = order amount × 10% (rounded to nearest integer USD)
 // Returns (referrerRewarded, inviteeRewarded, error)
 func (s *ReferralService) ProcessReferralReward(ctx context.Context, inviteeID int64, orderID int64, orderAmountCNY float64) (bool, bool, error) {
-	// Check if order amount meets minimum threshold
-	if orderAmountCNY < ReferralMinPaymentAmountCNY {
-		log.Printf("[Referral] Order amount %.2f CNY is below minimum %.2f CNY, skipping reward for user %d",
-			orderAmountCNY, ReferralMinPaymentAmountCNY, inviteeID)
-		return false, false, nil
+	// Calculate reward amount: 10% of order amount, rounded to nearest integer USD
+	rewardAmountUSD := math.Round(orderAmountCNY * ReferralRewardPercentage)
+	if rewardAmountUSD < 1 {
+		rewardAmountUSD = 1 // Minimum $1 reward
 	}
+
+	log.Printf("[Referral] Calculated reward: %.2f CNY × %.0f%% = $%.0f USD",
+		orderAmountCNY, ReferralRewardPercentage*100, rewardAmountUSD)
 
 	// Get invitee info
 	invitee, err := s.userRepo.GetByID(ctx, inviteeID)
@@ -232,7 +236,7 @@ func (s *ReferralService) ProcessReferralReward(ctx context.Context, inviteeID i
 		if errors.Is(err, ErrUserNotFound) {
 			log.Printf("[Referral] Referrer %d not found, giving reward only to invitee %d", referrerID, inviteeID)
 			// Referrer not found, give reward only to invitee
-			return s.distributeReward(ctx, referrerID, inviteeID, orderID, false, "referrer_not_found")
+			return s.distributeReward(ctx, referrerID, inviteeID, orderID, rewardAmountUSD, false, "referrer_not_found")
 		}
 		return false, false, err
 	}
@@ -241,24 +245,24 @@ func (s *ReferralService) ProcessReferralReward(ctx context.Context, inviteeID i
 	if referrer.Status != StatusActive {
 		log.Printf("[Referral] Referrer %d is not active (status: %s), giving reward only to invitee %d",
 			referrerID, referrer.Status, inviteeID)
-		return s.distributeReward(ctx, referrerID, inviteeID, orderID, false, "referrer_"+referrer.Status)
+		return s.distributeReward(ctx, referrerID, inviteeID, orderID, rewardAmountUSD, false, "referrer_"+referrer.Status)
 	}
 
 	// Both get rewards
-	return s.distributeReward(ctx, referrerID, inviteeID, orderID, true, "")
+	return s.distributeReward(ctx, referrerID, inviteeID, orderID, rewardAmountUSD, true, "")
 }
 
-// distributeReward distributes referral rewards
-func (s *ReferralService) distributeReward(ctx context.Context, referrerID, inviteeID, orderID int64, giveToReferrer bool, skipReason string) (bool, bool, error) {
+// distributeReward distributes referral rewards with dynamic amount
+func (s *ReferralService) distributeReward(ctx context.Context, referrerID, inviteeID, orderID int64, rewardAmountUSD float64, giveToReferrer bool, skipReason string) (bool, bool, error) {
 	reward := &ReferralReward{
 		ReferrerID:     referrerID,
 		InviteeID:      inviteeID,
 		TriggerOrderID: orderID,
-		InviteeReward:  ReferralRewardAmountUSD,
+		InviteeReward:  rewardAmountUSD,
 	}
 
 	if giveToReferrer {
-		reward.ReferrerReward = ReferralRewardAmountUSD
+		reward.ReferrerReward = rewardAmountUSD
 	} else if skipReason != "" {
 		reward.SkipReferrerReason = &skipReason
 	}
@@ -269,14 +273,14 @@ func (s *ReferralService) distributeReward(ctx context.Context, referrerID, invi
 	}
 
 	// Update invitee balance
-	if err := s.userRepo.UpdateBalance(ctx, inviteeID, ReferralRewardAmountUSD); err != nil {
+	if err := s.userRepo.UpdateBalance(ctx, inviteeID, rewardAmountUSD); err != nil {
 		log.Printf("[Referral] Failed to update invitee %d balance: %v", inviteeID, err)
 		// Continue even if balance update fails, the reward record is created
 	}
 
 	// Update referrer balance if applicable
 	if giveToReferrer {
-		if err := s.userRepo.UpdateBalance(ctx, referrerID, ReferralRewardAmountUSD); err != nil {
+		if err := s.userRepo.UpdateBalance(ctx, referrerID, rewardAmountUSD); err != nil {
 			log.Printf("[Referral] Failed to update referrer %d balance: %v", referrerID, err)
 			// Continue even if balance update fails
 		}
@@ -287,7 +291,7 @@ func (s *ReferralService) distributeReward(ctx context.Context, referrerID, invi
 		log.Printf("[Referral] Failed to mark user %d as rewarded: %v", inviteeID, err)
 	}
 
-	log.Printf("[Referral] Reward distributed: referrer=%d (%.2f USD), invitee=%d (%.2f USD), order=%d",
+	log.Printf("[Referral] Reward distributed: referrer=%d ($%.0f), invitee=%d ($%.0f), order=%d",
 		referrerID, reward.ReferrerReward, inviteeID, reward.InviteeReward, orderID)
 
 	return giveToReferrer, true, nil

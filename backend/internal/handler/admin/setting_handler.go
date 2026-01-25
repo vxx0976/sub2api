@@ -737,3 +737,41 @@ func (h *SettingHandler) UpdateStreamTimeoutSettings(c *gin.Context) {
 		ThresholdWindowMinutes: updatedSettings.ThresholdWindowMinutes,
 	})
 }
+
+// GetAnnouncements 获取系统公告
+// GET /api/v1/admin/settings/announcements
+func (h *SettingHandler) GetAnnouncements(c *gin.Context) {
+	announcements, err := h.settingService.GetAnnouncements(c.Request.Context())
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+
+	response.Success(c, gin.H{
+		"announcements": announcements,
+	})
+}
+
+// UpdateAnnouncementsRequest 更新公告请求
+type UpdateAnnouncementsRequest struct {
+	Announcements []service.Announcement `json:"announcements"`
+}
+
+// UpdateAnnouncements 更新系统公告
+// PUT /api/v1/admin/settings/announcements
+func (h *SettingHandler) UpdateAnnouncements(c *gin.Context) {
+	var req UpdateAnnouncementsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+
+	if err := h.settingService.SetAnnouncements(c.Request.Context(), req.Announcements); err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+
+	response.Success(c, gin.H{
+		"announcements": req.Announcements,
+	})
+}

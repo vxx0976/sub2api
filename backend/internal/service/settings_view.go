@@ -57,6 +57,12 @@ type SystemSettings struct {
 	OpsMetricsIntervalSeconds    int
 }
 
+// Announcement represents a single announcement item
+type Announcement struct {
+	Title string `json:"title"`
+	Date  string `json:"date,omitempty"`
+}
+
 type PublicSettings struct {
 	RegistrationEnabled  bool
 	EmailVerifyEnabled   bool
@@ -74,6 +80,7 @@ type PublicSettings struct {
 	HideCcsImportButton  bool
 	LinuxDoOAuthEnabled  bool
 	Version              string
+	Announcements        []Announcement
 }
 
 // StreamTimeoutSettings 流超时处理配置（仅控制超时后的处理方式，超时判定由网关配置控制）
