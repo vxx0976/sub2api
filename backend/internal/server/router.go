@@ -1,6 +1,7 @@
 package server
 
 import (
+	"database/sql"
 	"log"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
@@ -27,6 +28,7 @@ func SetupRouter(
 	settingService *service.SettingService,
 	cfg *config.Config,
 	redisClient *redis.Client,
+	db *sql.DB,
 ) *gin.Engine {
 	// 应用中间件
 	r.Use(middleware2.Logger())
@@ -47,7 +49,7 @@ func SetupRouter(
 	}
 
 	// 注册路由
-	registerRoutes(r, handlers, jwtAuth, adminAuth, apiKeyAuth, apiKeyService, subscriptionService, opsService, cfg, redisClient)
+	registerRoutes(r, handlers, jwtAuth, adminAuth, apiKeyAuth, apiKeyService, subscriptionService, opsService, cfg, redisClient, db)
 
 	return r
 }
@@ -64,9 +66,13 @@ func registerRoutes(
 	opsService *service.OpsService,
 	cfg *config.Config,
 	redisClient *redis.Client,
+	db *sql.DB,
 ) {
 	// 通用路由（健康检查、状态等）
-	routes.RegisterCommonRoutes(r)
+	routes.RegisterCommonRoutes(r, &routes.StatusDependencies{
+		DB:          db,
+		RedisClient: redisClient,
+	})
 
 	// API v1
 	v1 := r.Group("/api/v1")

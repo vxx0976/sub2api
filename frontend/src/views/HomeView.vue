@@ -23,107 +23,7 @@
     </div>
 
     <!-- Header -->
-    <header
-      class="sticky top-0 z-30 border-b border-gray-200/60 bg-white/70 backdrop-blur-xl dark:border-dark-800/60 dark:bg-dark-950/50"
-    >
-      <nav class="mx-auto flex max-w-7xl items-center justify-between px-6 py-3">
-        <!-- Brand -->
-        <router-link to="/" class="flex items-center gap-3">
-          <div
-            class="h-10 w-10 overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-200/60 dark:bg-dark-900 dark:ring-dark-800"
-          >
-            <img :src="siteLogo || '/logo.svg?v=2'" alt="Logo" class="h-full w-full object-contain" />
-          </div>
-          <div class="hidden flex-col sm:flex">
-            <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ siteName }}</span>
-            <span class="text-xs text-gray-500 dark:text-dark-400">{{ siteSubtitle }}</span>
-          </div>
-        </router-link>
-
-        <!-- Nav -->
-        <div class="hidden items-center gap-7 text-sm font-medium lg:flex">
-          <a
-            href="#quickstart"
-            class="text-gray-600 transition-colors hover:text-gray-900 dark:text-dark-300 dark:hover:text-white"
-            >{{ t('home.nav.quickstart') }}</a
-          >
-          <a
-            href="#features"
-            class="text-gray-600 transition-colors hover:text-gray-900 dark:text-dark-300 dark:hover:text-white"
-            >{{ t('home.nav.features') }}</a
-          >
-          <a
-            href="#pricing"
-            class="text-gray-600 transition-colors hover:text-gray-900 dark:text-dark-300 dark:hover:text-white"
-            >{{ t('home.nav.pricing') }}</a
-          >
-          <a
-            href="#providers"
-            class="text-gray-600 transition-colors hover:text-gray-900 dark:text-dark-300 dark:hover:text-white"
-            >{{ t('home.nav.providers') }}</a
-          >
-          <a
-            href="#faq"
-            class="text-gray-600 transition-colors hover:text-gray-900 dark:text-dark-300 dark:hover:text-white"
-            >{{ t('home.nav.faq') }}</a
-          >
-          <a
-            v-if="docUrl"
-            :href="docUrl"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="text-gray-600 transition-colors hover:text-gray-900 dark:text-dark-300 dark:hover:text-white"
-            >{{ t('home.docs') }}</a
-          >
-        </div>
-
-        <!-- Actions -->
-        <div class="flex items-center gap-2.5">
-          <LocaleSwitcher />
-
-          <a
-            v-if="docUrl"
-            :href="docUrl"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="hidden rounded-xl p-2 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-dark-300 dark:hover:bg-dark-900 dark:hover:text-white sm:inline-flex"
-            :title="t('home.viewDocs')"
-          >
-            <Icon name="book" size="md" />
-          </a>
-
-          <button
-            @click="toggleTheme"
-            class="rounded-xl p-2 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-dark-300 dark:hover:bg-dark-900 dark:hover:text-white"
-            :title="isDark ? t('home.switchToLight') : t('home.switchToDark')"
-          >
-            <Icon v-if="isDark" name="sun" size="md" />
-            <Icon v-else name="moon" size="md" />
-          </button>
-
-          <router-link
-            v-if="isAuthenticated"
-            :to="dashboardPath"
-            class="inline-flex items-center gap-1.5 rounded-full bg-gray-900 py-1 pl-1 pr-2.5 transition-colors hover:bg-gray-800 dark:bg-gray-800 dark:hover:bg-gray-700"
-          >
-            <span
-              class="flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-primary-400 to-primary-600 text-[10px] font-semibold text-white"
-            >
-              {{ userInitial }}
-            </span>
-            <span class="text-xs font-medium text-white">{{ t('home.dashboard') }}</span>
-            <Icon name="arrowRight" size="xs" class="text-gray-300" :stroke-width="2" />
-          </router-link>
-          <router-link
-            v-else
-            to="/login"
-            class="inline-flex items-center rounded-full bg-gray-900 px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-gray-800 dark:bg-gray-800 dark:hover:bg-gray-700"
-          >
-            {{ t('home.login') }}
-          </router-link>
-        </div>
-      </nav>
-    </header>
+    <PublicHeader />
 
     <!-- Main Content -->
     <main class="relative z-10 flex-1">
@@ -872,7 +772,7 @@ import { useI18n } from 'vue-i18n'
 import { useAuthStore, useAppStore } from '@/stores'
 import { useClipboard } from '@/composables/useClipboard'
 import TypewriterTerminal, { type TerminalLine } from '@/components/common/TypewriterTerminal.vue'
-import LocaleSwitcher from '@/components/common/LocaleSwitcher.vue'
+import PublicHeader from '@/components/layout/PublicHeader.vue'
 import Icon from '@/components/icons/Icon.vue'
 
 const { t } = useI18n()
@@ -885,8 +785,6 @@ type DemoKey = 'claude' | 'codex' | 'gemini'
 
 // Site settings - directly from appStore (already initialized from injected config)
 const siteName = computed(() => appStore.cachedPublicSettings?.site_name || appStore.siteName || '码驿站')
-const siteLogo = computed(() => appStore.cachedPublicSettings?.site_logo || appStore.siteLogo || '')
-const siteSubtitle = computed(() => appStore.cachedPublicSettings?.site_subtitle || 'AI API Gateway Platform')
 const docUrl = computed(() => appStore.cachedPublicSettings?.doc_url || appStore.docUrl || '')
 const homeContent = computed(() => appStore.cachedPublicSettings?.home_content || '')
 const apiBaseRoot = computed(() => {
@@ -905,18 +803,10 @@ const isHomeContentUrl = computed(() => {
 // QR code URL (runtime to avoid Vite static analysis)
 const qrCodeUrl = '/wechat-qrcode.png'
 
-// Theme
-const isDark = ref(document.documentElement.classList.contains('dark'))
-
 // Auth state
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 const isAdmin = computed(() => authStore.isAdmin)
 const dashboardPath = computed(() => (isAdmin.value ? '/admin/dashboard' : '/dashboard'))
-const userInitial = computed(() => {
-  const user = authStore.user
-  if (!user || !user.email) return ''
-  return user.email.charAt(0).toUpperCase()
-})
 
 // Current year for footer
 const currentYear = computed(() => new Date().getFullYear())
@@ -1051,21 +941,13 @@ function handleQrError(e: Event) {
   img.style.display = 'none'
 }
 
-// Toggle theme
-function toggleTheme() {
-  isDark.value = !isDark.value
-  document.documentElement.classList.toggle('dark', isDark.value)
-  localStorage.setItem('theme', isDark.value ? 'dark' : 'light')
-}
-
-// Initialize theme
+// Initialize theme on mount
 function initTheme() {
   const savedTheme = localStorage.getItem('theme')
   if (
     savedTheme === 'dark' ||
     (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)
   ) {
-    isDark.value = true
     document.documentElement.classList.add('dark')
   }
 }

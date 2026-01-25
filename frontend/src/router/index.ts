@@ -125,15 +125,36 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/pricing',
+    name: 'Pricing',
+    component: () => import('@/views/PricingView.vue'),
+    meta: {
+      requiresAuth: false,
+      title: 'Pricing',
+      titleKey: 'home.pricing.title',
+      descriptionKey: 'home.pricing.subtitle'
+    }
+  },
+  {
     path: '/docs',
     name: 'Docs',
     component: () => import('@/views/user/DocsView.vue'),
     meta: {
-      requiresAuth: true,
-      requiresAdmin: false,
+      requiresAuth: false,
       title: 'Documentation',
       titleKey: 'docs.title',
       descriptionKey: 'docs.subtitle'
+    }
+  },
+  {
+    path: '/status',
+    name: 'Status',
+    component: () => import('@/views/StatusView.vue'),
+    meta: {
+      requiresAuth: false,
+      title: 'System Status',
+      titleKey: 'status.title',
+      descriptionKey: 'status.description'
     }
   },
   {

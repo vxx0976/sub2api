@@ -8,6 +8,7 @@ export default {
     switchToDark: '切换到深色模式',
     dashboard: '控制台',
     login: '登录',
+    register: '注册',
     getStarted: '开始使用',
     goToDashboard: '进入控制台',
     seo: {
@@ -18,11 +19,10 @@ export default {
         'Claude Code, Claude API, AI编程助手, Opus 4.5, Sonnet 4.5, API直连, 满血不降智, Vibe Coding, Codex CLI, Gemini CLI, Cursor'
     },
     nav: {
-      quickstart: '快速上手',
-      features: '为什么选我们',
-      pricing: '定价与计费',
-      providers: '模型覆盖',
-      faq: '常见问题'
+      home: '首页',
+      pricing: '定价',
+      docs: '文档',
+      status: '状态'
     },
     hero: {
       badge: '平价 AI 编码中转站',
@@ -200,6 +200,25 @@ export default {
     footer: {
       allRightsReserved: '保留所有权利。'
     }
+  },
+
+  // Status Page
+  status: {
+    title: '系统状态',
+    description: '查看系统各服务的运行状态',
+    allOperational: '所有系统运行正常',
+    partialOutage: '部分服务受影响',
+    majorOutage: '服务中断',
+    checking: '检查中...',
+    operational: '正常运行',
+    degraded: '性能下降',
+    down: '服务中断',
+    unknown: '未知',
+    uptime: '正常运行时间',
+    daysAgo: '{days} 天前',
+    today: '今天',
+    lastUpdated: '最后更新',
+    dataFrom: '状态数据来自'
   },
 
   // Setup Wizard

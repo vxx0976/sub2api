@@ -1,5 +1,5 @@
 <template>
-  <AppLayout>
+  <PublicLayout>
     <div class="mx-auto max-w-4xl">
       <!-- Header -->
       <div class="mb-8 text-center">
@@ -274,12 +274,12 @@
         </ul>
       </section>
     </div>
-  </AppLayout>
+  </PublicLayout>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import AppLayout from '@/components/layout/AppLayout.vue'
+import PublicLayout from '@/components/layout/PublicLayout.vue'
 
 const copied = ref<string | null>(null)
 const activeInstallTab = ref('mac')

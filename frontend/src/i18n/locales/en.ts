@@ -8,6 +8,7 @@ export default {
     switchToDark: 'Switch to Dark Mode',
     dashboard: 'Dashboard',
     login: 'Login',
+    register: 'Register',
     getStarted: 'Get Started',
     goToDashboard: 'Go to Dashboard',
     seo: {
@@ -18,11 +19,10 @@ export default {
         'Sub2API, AI coding relay, Vibe Coding, Claude Code, Codex CLI, Gemini CLI, Cursor, OpenCode, API key, transparent pricing, usage, limits'
     },
     nav: {
-      quickstart: 'Quickstart',
-      features: 'Why Us',
+      home: 'Home',
       pricing: 'Pricing',
-      providers: 'Model Coverage',
-      faq: 'FAQ'
+      docs: 'Docs',
+      status: 'Status'
     },
     hero: {
       badge: 'Affordable AI coding relay',
@@ -201,6 +201,25 @@ export default {
     footer: {
       allRightsReserved: 'All rights reserved.'
     }
+  },
+
+  // Status Page
+  status: {
+    title: 'System Status',
+    description: 'View the status of system services',
+    allOperational: 'All Systems Operational',
+    partialOutage: 'Partial System Outage',
+    majorOutage: 'Major System Outage',
+    checking: 'Checking...',
+    operational: 'Operational',
+    degraded: 'Degraded Performance',
+    down: 'Service Disruption',
+    unknown: 'Unknown',
+    uptime: 'uptime',
+    daysAgo: '{days} days ago',
+    today: 'Today',
+    lastUpdated: 'Last updated',
+    dataFrom: 'status data from'
   },
 
   // Setup Wizard
