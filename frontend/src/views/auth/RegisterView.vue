@@ -318,9 +318,10 @@ onMounted(async () => {
     siteName.value = settings.site_name || '码驿站'
     linuxdoOAuthEnabled.value = settings.linuxdo_oauth_enabled
 
-    // Read promo code from URL parameter only if promo code is enabled
+    // Read promo/referral code from URL parameter only if promo code is enabled
     if (promoCodeEnabled.value) {
-      const promoParam = route.query.promo as string
+      // Support both ?promo= and ?ref= parameters
+      const promoParam = (route.query.ref || route.query.promo) as string
       if (promoParam) {
         formData.promo_code = promoParam
         // Validate the promo code from URL

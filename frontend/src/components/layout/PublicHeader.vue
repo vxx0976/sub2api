@@ -75,13 +75,13 @@
           </template>
           <template v-else>
             <router-link
-              to="/login"
+              :to="loginPath"
               class="inline-flex items-center rounded-full border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-dark-600 dark:bg-dark-800 dark:text-dark-200 dark:hover:bg-dark-700"
             >
               {{ t('home.login') }}
             </router-link>
             <router-link
-              to="/register"
+              :to="registerPath"
               class="inline-flex items-center rounded-full bg-gray-900 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-gray-800 dark:bg-gray-800 dark:hover:bg-gray-700"
             >
               {{ t('home.register') }}
@@ -117,6 +117,11 @@ const userInitial = computed(() => {
   if (!user || !user.email) return ''
   return user.email.charAt(0).toUpperCase()
 })
+
+// Pass ref parameter from URL to login/register pages
+const refCode = computed(() => route.query.ref as string | undefined)
+const registerPath = computed(() => refCode.value ? `/register?ref=${refCode.value}` : '/register')
+const loginPath = computed(() => refCode.value ? `/login?redirect=${encodeURIComponent(registerPath.value)}` : '/login')
 
 const isDark = ref(document.documentElement.classList.contains('dark'))
 

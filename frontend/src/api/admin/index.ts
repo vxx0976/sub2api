@@ -19,6 +19,7 @@ import antigravityAPI from './antigravity'
 import userAttributesAPI from './userAttributes'
 import opsAPI from './ops'
 import ordersAPI from './orders'
+import * as referralsAPI from './referrals'
 
 /**
  * Unified admin API object for convenient access
@@ -39,7 +40,8 @@ export const adminAPI = {
   antigravity: antigravityAPI,
   userAttributes: userAttributesAPI,
   ops: opsAPI,
-  orders: ordersAPI
+  orders: ordersAPI,
+  referrals: referralsAPI
 }
 
 export {
@@ -58,7 +60,8 @@ export {
   antigravityAPI,
   userAttributesAPI,
   opsAPI,
-  ordersAPI
+  ordersAPI,
+  referralsAPI
 }
 
 export default adminAPI

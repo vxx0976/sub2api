@@ -428,6 +428,18 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/admin/referrals',
+    name: 'AdminReferrals',
+    component: () => import('@/views/admin/ReferralsView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: 'Referral Management',
+      titleKey: 'admin.referrals.title',
+      descriptionKey: 'admin.referrals.description'
+    }
+  },
+  {
     path: '/admin/recharge-orders',
     name: 'AdminRechargeOrders',
     component: () => import('@/views/admin/RechargeOrdersView.vue'),

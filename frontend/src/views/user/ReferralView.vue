@@ -350,13 +350,20 @@ async function loadInvitees(page: number = 1) {
   }
 }
 
-// Copy code to clipboard
+// Generate referral link (to home page, register button will carry the ref)
+function getReferralLink(): string {
+  const baseUrl = window.location.origin
+  return `${baseUrl}/home?ref=${referralCode.value}`
+}
+
+// Copy referral link to clipboard
 async function copyCode() {
   try {
-    await navigator.clipboard.writeText(referralCode.value)
-    appStore.showSuccess(t('common.copiedToClipboard'))
+    const link = getReferralLink()
+    await navigator.clipboard.writeText(link)
+    appStore.showSuccess(t('referral.linkCopied'))
   } catch (error) {
-    console.error('Failed to copy code:', error)
+    console.error('Failed to copy link:', error)
     appStore.showError(t('common.copyFailed'))
   }
 }

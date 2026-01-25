@@ -461,6 +461,7 @@ export default {
     plans: '套餐计划',
     orders: '我的订单',
     adminOrders: '订单管理',
+    adminReferrals: '邀请管理',
     adminRechargeOrders: '充值管理',
     rechargeSettings: '充值配置',
     docs: '接入文档',
@@ -615,7 +616,19 @@ export default {
     invalidResetLink: '无效的重置链接',
     invalidResetLinkHint: '此密码重置链接无效或已过期。请重新请求一个新链接。',
     requestNewResetLink: '请求新的重置链接',
-    invalidOrExpiredToken: '密码重置链接无效或已过期。请重新请求一个新链接。'
+    invalidOrExpiredToken: '密码重置链接无效或已过期。请重新请求一个新链接。',
+    // 邮箱验证页面
+    sendCodeTo: '我们将发送验证码到',
+    codeSentSuccess: '验证码已发送！请检查您的收件箱。',
+    verifying: '验证中...',
+    verifyAndCreate: '验证并创建账户',
+    resendCodeIn: '{seconds}秒后可重新发送',
+    backToRegistration: '返回注册',
+    sendCodeFailed: '发送验证码失败，请重试。',
+    pleaseCompleteVerification: '请完成验证',
+    codeRequired: '请输入验证码',
+    codeInvalid: '请输入有效的6位验证码',
+    verificationFailed: '验证失败，请重试。'
   },
 
   // Dashboard
@@ -895,6 +908,7 @@ export default {
     statusPending: '待付费',
     showingPage: '第 {current} 页，共 {total} 页',
     loadCodeFailed: '获取邀请码失败',
+    linkCopied: '邀请链接已复制',
     referralCodeValid: '邀请码有效',
     referralCodeHint: '首次购买套餐后可获得套餐价格 10% 的额度奖励',
     referralCodeInvalid: '邀请码无效或已失效',
@@ -1509,6 +1523,34 @@ export default {
         paid: '已支付',
         expired: '已过期',
         refunded: '已退款'
+      }
+    },
+
+    // Referrals Management
+    referrals: {
+      title: '邀请管理',
+      description: '查看所有用户的邀请记录',
+      searchPlaceholder: '搜索邮箱...',
+      noRecords: '暂无邀请记录',
+      stats: {
+        totalRecords: '邀请总数',
+        totalReferrers: '邀请人数',
+        pending: '待支付',
+        rewarded: '已奖励',
+        referrerPaid: '邀请人奖励',
+        inviteePaid: '被邀请人奖励'
+      },
+      table: {
+        referrer: '邀请人',
+        invitee: '被邀请人',
+        status: '状态',
+        referrerReward: '邀请人奖励',
+        inviteeReward: '被邀请人奖励',
+        createdAt: '时间'
+      },
+      status: {
+        pending: '待支付',
+        rewarded: '已奖励'
       }
     },
 

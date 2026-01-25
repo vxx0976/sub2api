@@ -59,7 +59,7 @@
               </p>
 
               <div class="mt-7 flex flex-col items-center gap-3 sm:flex-row lg:justify-start">
-                <router-link :to="isAuthenticated ? dashboardPath : '/login'" class="btn btn-primary btn-lg px-7">
+                <router-link :to="isAuthenticated ? dashboardPath : loginPath" class="btn btn-primary btn-lg px-7">
                   {{ isAuthenticated ? t('home.goToDashboard') : t('home.getStarted') }}
                   <Icon name="arrowRight" size="md" :stroke-width="2" />
                 </router-link>
@@ -405,7 +405,7 @@
           </p>
           <div class="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <router-link
-              :to="isAuthenticated ? '/referral' : '/register'"
+              :to="isAuthenticated ? '/referral' : registerPath"
               class="btn btn-primary btn-lg px-8"
             >
               <Icon name="userPlus" size="md" />
@@ -675,7 +675,7 @@
 
             <div class="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
               <router-link
-                :to="isAuthenticated ? dashboardPath : '/login'"
+                :to="isAuthenticated ? dashboardPath : loginPath"
                 class="btn btn-primary btn-lg w-full px-7 sm:w-auto"
               >
                 {{ isAuthenticated ? t('home.goToDashboard') : t('home.getStarted') }}
@@ -724,6 +724,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRoute } from 'vue-router'
 import { useAuthStore, useAppStore } from '@/stores'
 import { useClipboard } from '@/composables/useClipboard'
 import TypewriterTerminal, { type TerminalLine } from '@/components/common/TypewriterTerminal.vue'
@@ -731,10 +732,16 @@ import PublicHeader from '@/components/layout/PublicHeader.vue'
 import Icon from '@/components/icons/Icon.vue'
 
 const { t } = useI18n()
+const route = useRoute()
 
 const authStore = useAuthStore()
 const appStore = useAppStore()
 const { copyToClipboard } = useClipboard()
+
+// Get referral code from URL if present
+const refCode = computed(() => route.query.ref as string | undefined)
+const registerPath = computed(() => refCode.value ? `/register?ref=${refCode.value}` : '/register')
+const loginPath = computed(() => refCode.value ? `/login?redirect=${encodeURIComponent(registerPath.value)}` : '/login')
 
 type DemoKey = 'claude' | 'codex' | 'gemini'
 

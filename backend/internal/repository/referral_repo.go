@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"log"
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/ent/referralreward"
@@ -219,4 +220,173 @@ func referralRewardEntityToService(e *dbent.ReferralReward) *service.ReferralRew
 		CreatedAt:          e.CreatedAt,
 		UpdatedAt:          e.UpdatedAt,
 	}
+}
+
+// GetAllReferralRecords gets all referral records for admin with user emails
+// This includes both rewarded and pending referrals
+func (r *referralRepository) GetAllReferralRecords(ctx context.Context, params pagination.PaginationParams, search string) ([]service.AdminReferralRecord, *pagination.PaginationResult, error) {
+	// Query all users who were referred (have referred_by set)
+	query := r.client.User.Query().
+		Where(dbuser.ReferredByNotNil())
+
+	// Apply search filter if provided
+	if search != "" {
+		query = query.Where(dbuser.EmailContainsFold(search))
+	}
+
+	total, err := query.Clone().Count(ctx)
+	if err != nil {
+		log.Printf("[AdminReferral] Count error: %v", err)
+		return nil, nil, err
+	}
+
+	log.Printf("[AdminReferral] Total users with referred_by: %d, page: %d, pageSize: %d", total, params.Page, params.PageSize)
+
+	invitees, err := query.
+		Offset(params.Offset()).
+		Limit(params.Limit()).
+		Order(dbent.Desc(dbuser.FieldCreatedAt)).
+		All(ctx)
+	if err != nil {
+		log.Printf("[AdminReferral] Query error: %v", err)
+		return nil, nil, err
+	}
+
+	log.Printf("[AdminReferral] Found %d invitees in current page", len(invitees))
+
+	if len(invitees) == 0 {
+		return []service.AdminReferralRecord{}, paginationResultFromTotal(int64(total), params), nil
+	}
+
+	// Collect invitee IDs and referrer IDs
+	inviteeIDs := make([]int64, len(invitees))
+	referrerIDSet := make(map[int64]bool)
+	for i, u := range invitees {
+		inviteeIDs[i] = u.ID
+		if u.ReferredBy != nil {
+			referrerIDSet[*u.ReferredBy] = true
+		}
+	}
+
+	// Fetch reward records for these invitees
+	rewardMap := make(map[int64]*dbent.ReferralReward)
+	rewards, err := r.client.ReferralReward.Query().
+		Where(referralreward.InviteeIDIn(inviteeIDs...)).
+		All(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	for _, rw := range rewards {
+		rewardMap[rw.InviteeID] = rw
+	}
+
+	// Fetch referrer emails
+	referrerIDs := make([]int64, 0, len(referrerIDSet))
+	for id := range referrerIDSet {
+		referrerIDs = append(referrerIDs, id)
+	}
+
+	referrerEmailMap := make(map[int64]string)
+	if len(referrerIDs) > 0 {
+		referrers, err := r.client.User.Query().
+			Where(dbuser.IDIn(referrerIDs...)).
+			Select(dbuser.FieldID, dbuser.FieldEmail).
+			All(ctx)
+		if err != nil {
+			return nil, nil, err
+		}
+		for _, u := range referrers {
+			referrerEmailMap[u.ID] = u.Email
+		}
+	}
+
+	// Build result
+	result := make([]service.AdminReferralRecord, len(invitees))
+	for i, invitee := range invitees {
+		referrerID := int64(0)
+		if invitee.ReferredBy != nil {
+			referrerID = *invitee.ReferredBy
+		}
+
+		record := service.AdminReferralRecord{
+			ReferrerID:    referrerID,
+			ReferrerEmail: referrerEmailMap[referrerID],
+			InviteeID:     invitee.ID,
+			InviteeEmail:  invitee.Email,
+			CreatedAt:     invitee.CreatedAt,
+			Status:        "pending",
+		}
+
+		// If there's a reward record, use its data
+		if rw, ok := rewardMap[invitee.ID]; ok {
+			record.ID = rw.ID
+			record.TriggerOrderID = rw.TriggerOrderID
+			record.ReferrerReward = rw.ReferrerReward
+			record.InviteeReward = rw.InviteeReward
+			record.SkipReferrerReason = rw.SkipReferrerReason
+			record.CreatedAt = rw.CreatedAt
+			record.Status = "rewarded"
+		}
+
+		result[i] = record
+	}
+
+	return result, paginationResultFromTotal(int64(total), params), nil
+}
+
+// GetAdminReferralStats gets overall referral statistics for admin
+func (r *referralRepository) GetAdminReferralStats(ctx context.Context) (*service.AdminReferralStats, error) {
+	// Count total invitees (users with referred_by set)
+	totalInvitees, err := r.client.User.Query().
+		Where(dbuser.ReferredByNotNil()).
+		Count(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Count rewarded invitees
+	totalRewarded, err := r.client.ReferralReward.Query().Count(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get unique referrers from users table
+	users, err := r.client.User.Query().
+		Where(dbuser.ReferredByNotNil()).
+		Select(dbuser.FieldReferredBy).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	referrerSet := make(map[int64]bool)
+	for _, u := range users {
+		if u.ReferredBy != nil {
+			referrerSet[*u.ReferredBy] = true
+		}
+	}
+
+	// Calculate total paid amounts
+	rewards, err := r.client.ReferralReward.Query().
+		Select(referralreward.FieldReferrerReward, referralreward.FieldInviteeReward).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var totalReferrerPaid, totalInviteePaid float64
+	for _, rw := range rewards {
+		totalReferrerPaid += rw.ReferrerReward
+		totalInviteePaid += rw.InviteeReward
+	}
+
+	return &service.AdminReferralStats{
+		TotalRecords:      totalInvitees,
+		TotalReferrers:    len(referrerSet),
+		TotalInvitees:     totalInvitees,
+		TotalPending:      totalInvitees - totalRewarded,
+		TotalRewarded:     totalRewarded,
+		TotalReferrerPaid: totalReferrerPaid,
+		TotalInviteePaid:  totalInviteePaid,
+	}, nil
 }

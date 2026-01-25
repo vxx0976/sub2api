@@ -67,6 +67,9 @@ func RegisterAdminRoutes(
 
 		// 用户属性管理
 		registerUserAttributeRoutes(admin, h)
+
+		// 邀请管理
+		registerReferralRoutes(admin, h)
 	}
 }
 
@@ -382,5 +385,13 @@ func registerUserAttributeRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 		attrs.PUT("/reorder", h.Admin.UserAttribute.ReorderDefinitions)
 		attrs.PUT("/:id", h.Admin.UserAttribute.UpdateDefinition)
 		attrs.DELETE("/:id", h.Admin.UserAttribute.DeleteDefinition)
+	}
+}
+
+func registerReferralRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
+	referrals := admin.Group("/referrals")
+	{
+		referrals.GET("", h.Admin.Referral.List)
+		referrals.GET("/stats", h.Admin.Referral.GetStats)
 	}
 }

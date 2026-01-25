@@ -462,6 +462,7 @@ export default {
     plans: 'Plans',
     orders: 'My Orders',
     adminOrders: 'Order Management',
+    adminReferrals: 'Referral Management',
     adminRechargeOrders: 'Recharge Management',
     rechargeSettings: 'Recharge Settings',
     docs: 'Docs',
@@ -616,7 +617,19 @@ export default {
     invalidResetLink: 'Invalid Reset Link',
     invalidResetLinkHint: 'This password reset link is invalid or has expired. Please request a new one.',
     requestNewResetLink: 'Request New Reset Link',
-    invalidOrExpiredToken: 'The password reset link is invalid or has expired. Please request a new one.'
+    invalidOrExpiredToken: 'The password reset link is invalid or has expired. Please request a new one.',
+    // Email verification page
+    sendCodeTo: "We'll send a verification code to",
+    codeSentSuccess: 'Verification code sent! Please check your inbox.',
+    verifying: 'Verifying...',
+    verifyAndCreate: 'Verify & Create Account',
+    resendCodeIn: 'Resend code in {seconds}s',
+    backToRegistration: 'Back to registration',
+    sendCodeFailed: 'Failed to send verification code. Please try again.',
+    pleaseCompleteVerification: 'Please complete the verification',
+    codeRequired: 'Verification code is required',
+    codeInvalid: 'Please enter a valid 6-digit code',
+    verificationFailed: 'Verification failed. Please try again.'
   },
 
   // Dashboard
@@ -897,6 +910,7 @@ export default {
     statusPending: 'Pending',
     showingPage: 'Page {current} of {total}',
     loadCodeFailed: 'Failed to load referral code',
+    linkCopied: 'Referral link copied',
     referralCodeValid: 'Referral code valid',
     referralCodeHint: 'Get 10% of plan price as bonus after your first purchase',
     referralCodeInvalid: 'Referral code is invalid or expired',
@@ -1433,6 +1447,34 @@ export default {
         paid: 'Paid',
         expired: 'Expired',
         refunded: 'Refunded'
+      }
+    },
+
+    // Referrals Management
+    referrals: {
+      title: 'Referral Management',
+      description: 'View all user referral records',
+      searchPlaceholder: 'Search email...',
+      noRecords: 'No referral records',
+      stats: {
+        totalRecords: 'Total Referrals',
+        totalReferrers: 'Referrers',
+        pending: 'Pending',
+        rewarded: 'Rewarded',
+        referrerPaid: 'Referrer Rewards',
+        inviteePaid: 'Invitee Rewards'
+      },
+      table: {
+        referrer: 'Referrer',
+        invitee: 'Invitee',
+        status: 'Status',
+        referrerReward: 'Referrer Reward',
+        inviteeReward: 'Invitee Reward',
+        createdAt: 'Time'
+      },
+      status: {
+        pending: 'Pending',
+        rewarded: 'Rewarded'
       }
     },
 

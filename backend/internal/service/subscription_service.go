@@ -178,7 +178,7 @@ func (s *SubscriptionService) AssignOrExtendSubscription(ctx context.Context, in
 
 		// 返回更新后的订阅
 		sub, err := s.userSubRepo.GetByID(ctx, existingSub.ID)
-		return sub, true, err // true 表示是续期
+		return sub, false, err // false 表示是续期（非新订阅）
 	}
 
 	// 没有订阅，创建新订阅
@@ -197,7 +197,7 @@ func (s *SubscriptionService) AssignOrExtendSubscription(ctx context.Context, in
 		}()
 	}
 
-	return sub, false, nil // false 表示是新建
+	return sub, true, nil // true 表示是新订阅（首次购买）
 }
 
 // createSubscription 创建新订阅（内部方法）

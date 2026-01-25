@@ -69,6 +69,10 @@ type ReferralRepository interface {
 	GetUserByReferralCode(ctx context.Context, code string) (*User, error)
 	// UpdateUserReferralRewarded marks user as having received referral reward
 	UpdateUserReferralRewarded(ctx context.Context, userID int64) error
+	// GetAllReferralRecords gets all referral records for admin
+	GetAllReferralRecords(ctx context.Context, params pagination.PaginationParams, search string) ([]AdminReferralRecord, *pagination.PaginationResult, error)
+	// GetAdminReferralStats gets overall referral statistics for admin
+	GetAdminReferralStats(ctx context.Context) (*AdminReferralStats, error)
 }
 
 // ReferralService handles referral-related business logic
@@ -313,4 +317,41 @@ func MaskEmail(email string) string {
 	}
 
 	return string(localPart[0]) + "***@" + domain
+}
+
+// AdminReferralRecord represents a referral record for admin view
+type AdminReferralRecord struct {
+	ID                 int64     `json:"id"`
+	ReferrerID         int64     `json:"referrer_id"`
+	ReferrerEmail      string    `json:"referrer_email"`
+	InviteeID          int64     `json:"invitee_id"`
+	InviteeEmail       string    `json:"invitee_email"`
+	TriggerOrderID     int64     `json:"trigger_order_id"`
+	ReferrerReward     float64   `json:"referrer_reward"`
+	InviteeReward      float64   `json:"invitee_reward"`
+	SkipReferrerReason *string   `json:"skip_referrer_reason,omitempty"`
+	Status             string    `json:"status"` // "pending" or "rewarded"
+	CreatedAt          time.Time `json:"created_at"`
+}
+
+// AdminReferralStats represents overall referral statistics for admin
+type AdminReferralStats struct {
+	TotalRecords       int     `json:"total_records"`
+	TotalReferrers     int     `json:"total_referrers"`
+	TotalInvitees      int     `json:"total_invitees"`
+	TotalPending       int     `json:"total_pending"`
+	TotalRewarded      int     `json:"total_rewarded"`
+	TotalReferrerPaid  float64 `json:"total_referrer_paid"`
+	TotalInviteePaid   float64 `json:"total_invitee_paid"`
+}
+
+// GetAllReferralRecords gets all referral records for admin
+func (s *ReferralService) GetAllReferralRecords(ctx context.Context, page, pageSize int, search string) ([]AdminReferralRecord, *pagination.PaginationResult, error) {
+	params := pagination.PaginationParams{Page: page, PageSize: pageSize}
+	return s.referralRepo.GetAllReferralRecords(ctx, params, search)
+}
+
+// GetAdminReferralStats gets overall referral statistics for admin
+func (s *ReferralService) GetAdminReferralStats(ctx context.Context) (*AdminReferralStats, error) {
+	return s.referralRepo.GetAdminReferralStats(ctx)
 }

@@ -524,6 +524,7 @@ const adminNavItems = computed(() => {
     { path: '/admin/promo-codes', label: t('nav.promoCodes'), icon: GiftIcon, hideInSimpleMode: true },
     { path: '/admin/usage', label: t('nav.usage'), icon: ChartIcon },
     { path: '/admin/orders', label: t('nav.adminOrders'), icon: OrdersIcon, hideInSimpleMode: true },
+    { path: '/admin/referrals', label: t('nav.adminReferrals'), icon: UsersIcon, hideInSimpleMode: true },
     { path: '/admin/recharge-orders', label: t('nav.adminRechargeOrders'), icon: WalletIcon, hideInSimpleMode: true },
     { path: '/admin/recharge-settings', label: t('nav.rechargeSettings'), icon: CogIcon, hideInSimpleMode: true },
   ]
