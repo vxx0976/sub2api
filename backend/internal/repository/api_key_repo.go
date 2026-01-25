@@ -387,17 +387,20 @@ func userEntityToService(u *dbent.User) *service.User {
 		return nil
 	}
 	return &service.User{
-		ID:           u.ID,
-		Email:        u.Email,
-		Username:     u.Username,
-		Notes:        u.Notes,
-		PasswordHash: u.PasswordHash,
-		Role:         u.Role,
-		Balance:      u.Balance,
-		Concurrency:  u.Concurrency,
-		Status:       u.Status,
-		CreatedAt:    u.CreatedAt,
-		UpdatedAt:    u.UpdatedAt,
+		ID:               u.ID,
+		Email:            u.Email,
+		Username:         u.Username,
+		Notes:            u.Notes,
+		PasswordHash:     u.PasswordHash,
+		Role:             u.Role,
+		Balance:          u.Balance,
+		Concurrency:      u.Concurrency,
+		Status:           u.Status,
+		ReferralCode:     u.ReferralCode,
+		ReferredBy:       u.ReferredBy,
+		ReferralRewarded: u.ReferralRewarded,
+		CreatedAt:        u.CreatedAt,
+		UpdatedAt:        u.UpdatedAt,
 	}
 }
 

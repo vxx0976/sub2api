@@ -53,6 +53,7 @@ type AuthService struct {
 	turnstileService  *TurnstileService
 	emailQueueService *EmailQueueService
 	promoService      *PromoService
+	referralService   *ReferralService
 }
 
 // NewAuthService 创建认证服务实例
@@ -64,6 +65,7 @@ func NewAuthService(
 	turnstileService *TurnstileService,
 	emailQueueService *EmailQueueService,
 	promoService *PromoService,
+	referralService *ReferralService,
 ) *AuthService {
 	return &AuthService{
 		userRepo:          userRepo,
@@ -73,6 +75,7 @@ func NewAuthService(
 		turnstileService:  turnstileService,
 		emailQueueService: emailQueueService,
 		promoService:      promoService,
+		referralService:   referralService,
 	}
 }
 
@@ -134,6 +137,32 @@ func (s *AuthService) RegisterWithVerification(ctx context.Context, email, passw
 		defaultConcurrency = s.settingService.GetDefaultConcurrency(ctx)
 	}
 
+	// 检查是否为邀请码并获取邀请人ID
+	var referrerID *int64
+	isReferralCode := false
+	if promoCode != "" && s.referralService != nil && s.referralService.IsReferralCode(promoCode) {
+		isReferralCode = true
+		referrer, err := s.referralService.ValidateReferralCodePublic(ctx, promoCode)
+		if err != nil {
+			// 邀请码验证失败只记录日志，不阻止注册
+			log.Printf("[Auth] Failed to validate referral code %s: %v", promoCode, err)
+		} else {
+			referrerID = &referrer.ID
+			log.Printf("[Auth] User registering with referral code from user %d", referrer.ID)
+		}
+	}
+
+	// 生成用户邀请码
+	var userReferralCode *string
+	if s.referralService != nil {
+		code, err := s.referralService.GenerateReferralCode()
+		if err != nil {
+			log.Printf("[Auth] Failed to generate referral code: %v", err)
+		} else {
+			userReferralCode = &code
+		}
+	}
+
 	// 创建用户
 	user := &User{
 		Email:        email,
@@ -142,6 +171,8 @@ func (s *AuthService) RegisterWithVerification(ctx context.Context, email, passw
 		Balance:      defaultBalance,
 		Concurrency:  defaultConcurrency,
 		Status:       StatusActive,
+		ReferralCode: userReferralCode,
+		ReferredBy:   referrerID,
 	}
 
 	if err := s.userRepo.Create(ctx, user); err != nil {
@@ -153,8 +184,8 @@ func (s *AuthService) RegisterWithVerification(ctx context.Context, email, passw
 		return "", nil, ErrServiceUnavailable
 	}
 
-	// 应用优惠码（如果提供且功能已启用）
-	if promoCode != "" && s.promoService != nil && s.settingService != nil && s.settingService.IsPromoCodeEnabled(ctx) {
+	// 应用优惠码（如果提供且功能已启用，且不是邀请码）
+	if promoCode != "" && !isReferralCode && s.promoService != nil && s.settingService != nil && s.settingService.IsPromoCodeEnabled(ctx) {
 		if err := s.promoService.ApplyPromoCode(ctx, user.ID, promoCode); err != nil {
 			// 优惠码应用失败不影响注册，只记录日志
 			log.Printf("[Auth] Failed to apply promo code for user %d: %v", user.ID, err)

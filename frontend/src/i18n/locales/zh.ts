@@ -390,7 +390,8 @@ export default {
     adminOrders: '订单管理',
     adminRechargeOrders: '充值管理',
     rechargeSettings: '充值配置',
-    docs: '接入文档'
+    docs: '接入文档',
+    referral: '邀请好友'
   },
 
   // Docs
@@ -794,6 +795,37 @@ export default {
     failedToRedeem: '兑换失败，请检查兑换码后重试。',
     subscriptionRefreshFailed: '兑换成功，但订阅状态刷新失败。',
     pleaseEnterCode: '请输入兑换码'
+  },
+
+  // Referral
+  referral: {
+    title: '邀请好友',
+    subtitle: '邀请好友加入，双方均可获得奖励',
+    yourCode: '您的邀请码',
+    shareCodeHint: '分享此邀请码给好友，好友注册时输入即可',
+    totalInvited: '已邀请',
+    totalRewarded: '已发放',
+    pendingPayment: '待付费',
+    totalEarnings: '累计收益',
+    rewardRules: '奖励规则',
+    rule1: '好友注册时输入您的邀请码（在优惠码输入框中输入）',
+    rule2: '好友首次购买套餐（满 ¥29.9）后，双方各获得 $10 奖励',
+    rule3: '奖励直接充入账户余额，即时到账',
+    rule4: '每位好友仅限首次付费时发放奖励，充值和兑换码不计入',
+    inviteeList: '邀请记录',
+    noInvitees: '暂无邀请记录',
+    inviteeEmail: '邮箱',
+    joinedAt: '注册时间',
+    status: '状态',
+    yourEarning: '您的收益',
+    statusRewarded: '已发放',
+    statusPending: '待付费',
+    showingPage: '第 {current} 页，共 {total} 页',
+    loadCodeFailed: '获取邀请码失败',
+    referralCodeValid: '邀请码有效',
+    referralCodeHint: '首次购买套餐（≥¥29.9）后可获得 $10 奖励',
+    referralCodeInvalid: '邀请码无效或已失效',
+    referralCodeSelf: '不能使用自己的邀请码'
   },
 
   // Profile

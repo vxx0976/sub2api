@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/order"
+	"github.com/Wei-Shaw/sub2api/ent/referralreward"
 	"github.com/Wei-Shaw/sub2api/ent/user"
 	"github.com/Wei-Shaw/sub2api/ent/usersubscription"
 )
@@ -174,6 +175,25 @@ func (_c *OrderCreate) SetGroup(v *Group) *OrderCreate {
 // SetSubscription sets the "subscription" edge to the UserSubscription entity.
 func (_c *OrderCreate) SetSubscription(v *UserSubscription) *OrderCreate {
 	return _c.SetSubscriptionID(v.ID)
+}
+
+// SetReferralRewardID sets the "referral_reward" edge to the ReferralReward entity by ID.
+func (_c *OrderCreate) SetReferralRewardID(id int64) *OrderCreate {
+	_c.mutation.SetReferralRewardID(id)
+	return _c
+}
+
+// SetNillableReferralRewardID sets the "referral_reward" edge to the ReferralReward entity by ID if the given value is not nil.
+func (_c *OrderCreate) SetNillableReferralRewardID(id *int64) *OrderCreate {
+	if id != nil {
+		_c = _c.SetReferralRewardID(*id)
+	}
+	return _c
+}
+
+// SetReferralReward sets the "referral_reward" edge to the ReferralReward entity.
+func (_c *OrderCreate) SetReferralReward(v *ReferralReward) *OrderCreate {
+	return _c.SetReferralRewardID(v.ID)
 }
 
 // Mutation returns the OrderMutation object of the builder.
@@ -386,6 +406,22 @@ func (_c *OrderCreate) createSpec() (*Order, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.SubscriptionID = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ReferralRewardIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   order.ReferralRewardTable,
+			Columns: []string{order.ReferralRewardColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(referralreward.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

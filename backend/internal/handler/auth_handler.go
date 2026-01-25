@@ -13,21 +13,23 @@ import (
 
 // AuthHandler handles authentication-related requests
 type AuthHandler struct {
-	cfg          *config.Config
-	authService  *service.AuthService
-	userService  *service.UserService
-	settingSvc   *service.SettingService
-	promoService *service.PromoService
+	cfg             *config.Config
+	authService     *service.AuthService
+	userService     *service.UserService
+	settingSvc      *service.SettingService
+	promoService    *service.PromoService
+	referralService *service.ReferralService
 }
 
 // NewAuthHandler creates a new AuthHandler
-func NewAuthHandler(cfg *config.Config, authService *service.AuthService, userService *service.UserService, settingService *service.SettingService, promoService *service.PromoService) *AuthHandler {
+func NewAuthHandler(cfg *config.Config, authService *service.AuthService, userService *service.UserService, settingService *service.SettingService, promoService *service.PromoService, referralService *service.ReferralService) *AuthHandler {
 	return &AuthHandler{
-		cfg:          cfg,
-		authService:  authService,
-		userService:  userService,
-		settingSvc:   settingService,
-		promoService: promoService,
+		cfg:             cfg,
+		authService:     authService,
+		userService:     userService,
+		settingSvc:      settingService,
+		promoService:    promoService,
+		referralService: referralService,
 	}
 }
 
@@ -184,29 +186,64 @@ type ValidatePromoCodeRequest struct {
 	Code string `json:"code" binding:"required"`
 }
 
-// ValidatePromoCodeResponse 验证优惠码响应
+// ValidatePromoCodeResponse 验证优惠码/邀请码响应
 type ValidatePromoCodeResponse struct {
-	Valid       bool    `json:"valid"`
-	BonusAmount float64 `json:"bonus_amount,omitempty"`
-	ErrorCode   string  `json:"error_code,omitempty"`
-	Message     string  `json:"message,omitempty"`
+	Valid        bool    `json:"valid"`
+	BonusAmount  float64 `json:"bonus_amount,omitempty"`
+	ErrorCode    string  `json:"error_code,omitempty"`
+	Message      string  `json:"message,omitempty"`
+	IsReferral   bool    `json:"is_referral,omitempty"`   // 是否为邀请码
+	ReferrerName string  `json:"referrer_name,omitempty"` // 邀请人用户名（脱敏）
 }
 
-// ValidatePromoCode 验证优惠码（公开接口，注册前调用）
+// ValidatePromoCode 验证优惠码或邀请码（公开接口，注册前调用）
 // POST /api/v1/auth/validate-promo-code
 func (h *AuthHandler) ValidatePromoCode(c *gin.Context) {
+	var req ValidatePromoCodeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+
+	// 首先检查是否为邀请码（以 R 开头的 8 位字符）
+	if h.referralService != nil && h.referralService.IsReferralCode(req.Code) {
+		referrer, err := h.referralService.ValidateReferralCodePublic(c.Request.Context(), req.Code)
+		if err != nil {
+			errorCode := "REFERRAL_CODE_INVALID"
+			switch err {
+			case service.ErrReferralCodeNotFound:
+				errorCode = "REFERRAL_CODE_NOT_FOUND"
+			case service.ErrReferralCodeInvalid:
+				errorCode = "REFERRAL_CODE_INVALID"
+			}
+			response.Success(c, ValidatePromoCodeResponse{
+				Valid:      false,
+				IsReferral: true,
+				ErrorCode:  errorCode,
+			})
+			return
+		}
+
+		// 邀请码有效，返回邀请人信息
+		referrerName := service.MaskEmail(referrer.Email)
+		if referrer.Username != "" {
+			referrerName = referrer.Username
+		}
+
+		response.Success(c, ValidatePromoCodeResponse{
+			Valid:        true,
+			IsReferral:   true,
+			ReferrerName: referrerName,
+		})
+		return
+	}
+
 	// 检查优惠码功能是否启用
 	if h.settingSvc != nil && !h.settingSvc.IsPromoCodeEnabled(c.Request.Context()) {
 		response.Success(c, ValidatePromoCodeResponse{
 			Valid:     false,
 			ErrorCode: "PROMO_CODE_DISABLED",
 		})
-		return
-	}
-
-	var req ValidatePromoCodeRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.BadRequest(c, "Invalid request: "+err.Error())
 		return
 	}
 

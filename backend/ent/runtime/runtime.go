@@ -15,6 +15,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/proxy"
 	"github.com/Wei-Shaw/sub2api/ent/rechargeorder"
 	"github.com/Wei-Shaw/sub2api/ent/redeemcode"
+	"github.com/Wei-Shaw/sub2api/ent/referralreward"
 	"github.com/Wei-Shaw/sub2api/ent/schema"
 	"github.com/Wei-Shaw/sub2api/ent/setting"
 	"github.com/Wei-Shaw/sub2api/ent/usagecleanuptask"
@@ -562,6 +563,33 @@ func init() {
 	redeemcodeDescValidityDays := redeemcodeFields[9].Descriptor()
 	// redeemcode.DefaultValidityDays holds the default value on creation for the validity_days field.
 	redeemcode.DefaultValidityDays = redeemcodeDescValidityDays.Default.(int)
+	referralrewardMixin := schema.ReferralReward{}.Mixin()
+	referralrewardMixinFields0 := referralrewardMixin[0].Fields()
+	_ = referralrewardMixinFields0
+	referralrewardFields := schema.ReferralReward{}.Fields()
+	_ = referralrewardFields
+	// referralrewardDescCreatedAt is the schema descriptor for created_at field.
+	referralrewardDescCreatedAt := referralrewardMixinFields0[0].Descriptor()
+	// referralreward.DefaultCreatedAt holds the default value on creation for the created_at field.
+	referralreward.DefaultCreatedAt = referralrewardDescCreatedAt.Default.(func() time.Time)
+	// referralrewardDescUpdatedAt is the schema descriptor for updated_at field.
+	referralrewardDescUpdatedAt := referralrewardMixinFields0[1].Descriptor()
+	// referralreward.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	referralreward.DefaultUpdatedAt = referralrewardDescUpdatedAt.Default.(func() time.Time)
+	// referralreward.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	referralreward.UpdateDefaultUpdatedAt = referralrewardDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// referralrewardDescReferrerReward is the schema descriptor for referrer_reward field.
+	referralrewardDescReferrerReward := referralrewardFields[3].Descriptor()
+	// referralreward.DefaultReferrerReward holds the default value on creation for the referrer_reward field.
+	referralreward.DefaultReferrerReward = referralrewardDescReferrerReward.Default.(float64)
+	// referralrewardDescInviteeReward is the schema descriptor for invitee_reward field.
+	referralrewardDescInviteeReward := referralrewardFields[4].Descriptor()
+	// referralreward.DefaultInviteeReward holds the default value on creation for the invitee_reward field.
+	referralreward.DefaultInviteeReward = referralrewardDescInviteeReward.Default.(float64)
+	// referralrewardDescSkipReferrerReason is the schema descriptor for skip_referrer_reason field.
+	referralrewardDescSkipReferrerReason := referralrewardFields[5].Descriptor()
+	// referralreward.SkipReferrerReasonValidator is a validator for the "skip_referrer_reason" field. It is called by the builders before save.
+	referralreward.SkipReferrerReasonValidator = referralrewardDescSkipReferrerReason.Validators[0].(func(string) error)
 	settingFields := schema.Setting{}.Fields()
 	_ = settingFields
 	// settingDescKey is the schema descriptor for key field.
@@ -828,6 +856,14 @@ func init() {
 	userDescNotes := userFields[7].Descriptor()
 	// user.DefaultNotes holds the default value on creation for the notes field.
 	user.DefaultNotes = userDescNotes.Default.(string)
+	// userDescReferralCode is the schema descriptor for referral_code field.
+	userDescReferralCode := userFields[8].Descriptor()
+	// user.ReferralCodeValidator is a validator for the "referral_code" field. It is called by the builders before save.
+	user.ReferralCodeValidator = userDescReferralCode.Validators[0].(func(string) error)
+	// userDescReferralRewarded is the schema descriptor for referral_rewarded field.
+	userDescReferralRewarded := userFields[10].Descriptor()
+	// user.DefaultReferralRewarded holds the default value on creation for the referral_rewarded field.
+	user.DefaultReferralRewarded = userDescReferralRewarded.Default.(bool)
 	userallowedgroupFields := schema.UserAllowedGroup{}.Fields()
 	_ = userallowedgroupFields
 	// userallowedgroupDescCreatedAt is the schema descriptor for created_at field.

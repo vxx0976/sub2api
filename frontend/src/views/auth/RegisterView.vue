@@ -134,7 +134,18 @@
           </div>
           <!-- Promo code validation result -->
           <transition name="fade">
-            <div v-if="promoValidation.valid" class="mt-2 flex items-center gap-2 rounded-lg bg-green-50 px-3 py-2 dark:bg-green-900/20">
+            <div v-if="promoValidation.valid && promoValidation.isReferralCode" class="mt-2 rounded-lg bg-green-50 px-3 py-2 dark:bg-green-900/20">
+              <div class="flex items-center gap-2">
+                <Icon name="userPlus" size="sm" class="text-green-600 dark:text-green-400" />
+                <span class="text-sm font-medium text-green-700 dark:text-green-400">
+                  {{ t('referral.referralCodeValid') }}
+                </span>
+              </div>
+              <p class="mt-1 text-xs text-green-600 dark:text-green-500">
+                {{ t('referral.referralCodeHint') }}
+              </p>
+            </div>
+            <div v-else-if="promoValidation.valid" class="mt-2 flex items-center gap-2 rounded-lg bg-green-50 px-3 py-2 dark:bg-green-900/20">
               <Icon name="gift" size="sm" class="text-green-600 dark:text-green-400" />
               <span class="text-sm text-green-700 dark:text-green-400">
                 {{ t('auth.promoCodeValid', { amount: promoValidation.bonusAmount?.toFixed(2) }) }}
@@ -276,7 +287,9 @@ const promoValidation = reactive({
   valid: false,
   invalid: false,
   bonusAmount: null as number | null,
-  message: ''
+  message: '',
+  isReferralCode: false,
+  referrerEmail: ''
 })
 let promoValidateTimeout: ReturnType<typeof setTimeout> | null = null
 
@@ -337,6 +350,8 @@ function handlePromoCodeInput(): void {
   promoValidation.invalid = false
   promoValidation.bonusAmount = null
   promoValidation.message = ''
+  promoValidation.isReferralCode = false
+  promoValidation.referrerEmail = ''
 
   if (!code) {
     promoValidating.value = false
@@ -364,12 +379,24 @@ async function validatePromoCodeDebounced(code: string): Promise<void> {
     if (result.valid) {
       promoValidation.valid = true
       promoValidation.invalid = false
-      promoValidation.bonusAmount = result.bonus_amount || 0
       promoValidation.message = ''
+
+      // Check if it's a referral code
+      if (result.is_referral) {
+        promoValidation.isReferralCode = true
+        promoValidation.referrerEmail = result.referrer_name || ''
+        promoValidation.bonusAmount = null
+      } else {
+        promoValidation.isReferralCode = false
+        promoValidation.referrerEmail = ''
+        promoValidation.bonusAmount = result.bonus_amount || 0
+      }
     } else {
       promoValidation.valid = false
       promoValidation.invalid = true
       promoValidation.bonusAmount = null
+      promoValidation.isReferralCode = false
+      promoValidation.referrerEmail = ''
       // 根据错误码显示对应的翻译
       promoValidation.message = getPromoErrorMessage(result.error_code)
     }
@@ -395,6 +422,11 @@ function getPromoErrorMessage(errorCode?: string): string {
       return t('auth.promoCodeMaxUsed')
     case 'PROMO_CODE_ALREADY_USED':
       return t('auth.promoCodeAlreadyUsed')
+    // Referral code errors
+    case 'REFERRAL_CODE_INVALID':
+      return t('referral.referralCodeInvalid')
+    case 'REFERRAL_CODE_SELF':
+      return t('referral.referralCodeSelf')
     default:
       return t('auth.promoCodeInvalid')
   }

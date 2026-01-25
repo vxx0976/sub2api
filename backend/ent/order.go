@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/order"
+	"github.com/Wei-Shaw/sub2api/ent/referralreward"
 	"github.com/Wei-Shaw/sub2api/ent/user"
 	"github.com/Wei-Shaw/sub2api/ent/usersubscription"
 )
@@ -58,9 +59,11 @@ type OrderEdges struct {
 	Group *Group `json:"group,omitempty"`
 	// Subscription holds the value of the subscription edge.
 	Subscription *UserSubscription `json:"subscription,omitempty"`
+	// ReferralReward holds the value of the referral_reward edge.
+	ReferralReward *ReferralReward `json:"referral_reward,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 }
 
 // UserOrErr returns the User value or an error if the edge
@@ -94,6 +97,17 @@ func (e OrderEdges) SubscriptionOrErr() (*UserSubscription, error) {
 		return nil, &NotFoundError{label: usersubscription.Label}
 	}
 	return nil, &NotLoadedError{edge: "subscription"}
+}
+
+// ReferralRewardOrErr returns the ReferralReward value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e OrderEdges) ReferralRewardOrErr() (*ReferralReward, error) {
+	if e.ReferralReward != nil {
+		return e.ReferralReward, nil
+	} else if e.loadedTypes[3] {
+		return nil, &NotFoundError{label: referralreward.Label}
+	}
+	return nil, &NotLoadedError{edge: "referral_reward"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -233,6 +247,11 @@ func (_m *Order) QueryGroup() *GroupQuery {
 // QuerySubscription queries the "subscription" edge of the Order entity.
 func (_m *Order) QuerySubscription() *UserSubscriptionQuery {
 	return NewOrderClient(_m.config).QuerySubscription(_m)
+}
+
+// QueryReferralReward queries the "referral_reward" edge of the Order entity.
+func (_m *Order) QueryReferralReward() *ReferralRewardQuery {
+	return NewOrderClient(_m.config).QueryReferralReward(_m)
 }
 
 // Update returns a builder for updating this Order.

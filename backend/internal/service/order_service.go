@@ -18,6 +18,7 @@ type OrderService struct {
 	subscriptionService *SubscriptionService
 	musePayment         *payment.MusePayment
 	cfg                 *config.Config
+	referralService     *ReferralService
 }
 
 // NewOrderService creates a new order service
@@ -27,6 +28,7 @@ func NewOrderService(
 	subscriptionService *SubscriptionService,
 	musePayment *payment.MusePayment,
 	cfg *config.Config,
+	referralService *ReferralService,
 ) *OrderService {
 	return &OrderService{
 		orderRepo:           orderRepo,
@@ -34,6 +36,7 @@ func NewOrderService(
 		subscriptionService: subscriptionService,
 		musePayment:         musePayment,
 		cfg:                 cfg,
+		referralService:     referralService,
 	}
 }
 
@@ -143,7 +146,7 @@ func (s *OrderService) HandlePaymentNotify(ctx context.Context, params *payment.
 		validityDays = 30 // Default to 30 days
 	}
 
-	sub, _, err := s.subscriptionService.AssignOrExtendSubscription(ctx, &AssignSubscriptionInput{
+	sub, isNewSubscription, err := s.subscriptionService.AssignOrExtendSubscription(ctx, &AssignSubscriptionInput{
 		UserID:       order.UserID,
 		GroupID:      order.GroupID,
 		ValidityDays: validityDays,
@@ -156,6 +159,24 @@ func (s *OrderService) HandlePaymentNotify(ctx context.Context, params *payment.
 	// Update order status
 	if err := s.orderRepo.SetPaid(ctx, order.ID, params.TradeNo, params.Type, sub.ID); err != nil {
 		return fmt.Errorf("update order status: %w", err)
+	}
+
+	// Process referral reward for first-time subscription payments
+	// Only trigger if:
+	// 1. Referral service is enabled
+	// 2. This is a new subscription (not renewal)
+	// 3. Order amount meets the minimum threshold
+	if s.referralService != nil && isNewSubscription && order.Amount >= ReferralMinPaymentAmountCNY {
+		go func() {
+			// Use background context since the original request may have completed
+			bgCtx := context.Background()
+			referrerRewarded, inviteeRewarded, err := s.referralService.ProcessReferralReward(bgCtx, order.UserID, order.ID, order.Amount)
+			if err != nil {
+				fmt.Printf("[Referral] Failed to process reward for order %d: %v\n", order.ID, err)
+			} else if referrerRewarded || inviteeRewarded {
+				fmt.Printf("[Referral] Processed reward for order %d: referrer=%v, invitee=%v\n", order.ID, referrerRewarded, inviteeRewarded)
+			}
+		}()
 	}
 
 	return nil

@@ -44,6 +44,8 @@ const (
 	EdgeGroup = "group"
 	// EdgeSubscription holds the string denoting the subscription edge name in mutations.
 	EdgeSubscription = "subscription"
+	// EdgeReferralReward holds the string denoting the referral_reward edge name in mutations.
+	EdgeReferralReward = "referral_reward"
 	// Table holds the table name of the order in the database.
 	Table = "orders"
 	// UserTable is the table that holds the user relation/edge.
@@ -67,6 +69,13 @@ const (
 	SubscriptionInverseTable = "user_subscriptions"
 	// SubscriptionColumn is the table column denoting the subscription relation/edge.
 	SubscriptionColumn = "subscription_id"
+	// ReferralRewardTable is the table that holds the referral_reward relation/edge.
+	ReferralRewardTable = "referral_rewards"
+	// ReferralRewardInverseTable is the table name for the ReferralReward entity.
+	// It exists in this package in order to avoid circular dependency with the "referralreward" package.
+	ReferralRewardInverseTable = "referral_rewards"
+	// ReferralRewardColumn is the table column denoting the referral_reward relation/edge.
+	ReferralRewardColumn = "trigger_order_id"
 )
 
 // Columns holds all SQL columns for order fields.
@@ -203,6 +212,13 @@ func BySubscriptionField(field string, opts ...sql.OrderTermOption) OrderOption 
 		sqlgraph.OrderByNeighborTerms(s, newSubscriptionStep(), sql.OrderByField(field, opts...))
 	}
 }
+
+// ByReferralRewardField orders the results by referral_reward field.
+func ByReferralRewardField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newReferralRewardStep(), sql.OrderByField(field, opts...))
+	}
+}
 func newUserStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -222,5 +238,12 @@ func newSubscriptionStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(SubscriptionInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, SubscriptionTable, SubscriptionColumn),
+	)
+}
+func newReferralRewardStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ReferralRewardInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2O, false, ReferralRewardTable, ReferralRewardColumn),
 	)
 }

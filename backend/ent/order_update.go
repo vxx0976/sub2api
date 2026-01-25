@@ -14,6 +14,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/order"
 	"github.com/Wei-Shaw/sub2api/ent/predicate"
+	"github.com/Wei-Shaw/sub2api/ent/referralreward"
 	"github.com/Wei-Shaw/sub2api/ent/user"
 	"github.com/Wei-Shaw/sub2api/ent/usersubscription"
 )
@@ -229,6 +230,25 @@ func (_u *OrderUpdate) SetSubscription(v *UserSubscription) *OrderUpdate {
 	return _u.SetSubscriptionID(v.ID)
 }
 
+// SetReferralRewardID sets the "referral_reward" edge to the ReferralReward entity by ID.
+func (_u *OrderUpdate) SetReferralRewardID(id int64) *OrderUpdate {
+	_u.mutation.SetReferralRewardID(id)
+	return _u
+}
+
+// SetNillableReferralRewardID sets the "referral_reward" edge to the ReferralReward entity by ID if the given value is not nil.
+func (_u *OrderUpdate) SetNillableReferralRewardID(id *int64) *OrderUpdate {
+	if id != nil {
+		_u = _u.SetReferralRewardID(*id)
+	}
+	return _u
+}
+
+// SetReferralReward sets the "referral_reward" edge to the ReferralReward entity.
+func (_u *OrderUpdate) SetReferralReward(v *ReferralReward) *OrderUpdate {
+	return _u.SetReferralRewardID(v.ID)
+}
+
 // Mutation returns the OrderMutation object of the builder.
 func (_u *OrderUpdate) Mutation() *OrderMutation {
 	return _u.mutation
@@ -249,6 +269,12 @@ func (_u *OrderUpdate) ClearGroup() *OrderUpdate {
 // ClearSubscription clears the "subscription" edge to the UserSubscription entity.
 func (_u *OrderUpdate) ClearSubscription() *OrderUpdate {
 	_u.mutation.ClearSubscription()
+	return _u
+}
+
+// ClearReferralReward clears the "referral_reward" edge to the ReferralReward entity.
+func (_u *OrderUpdate) ClearReferralReward() *OrderUpdate {
+	_u.mutation.ClearReferralReward()
 	return _u
 }
 
@@ -450,6 +476,35 @@ func (_u *OrderUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(usersubscription.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ReferralRewardCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   order.ReferralRewardTable,
+			Columns: []string{order.ReferralRewardColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(referralreward.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ReferralRewardIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   order.ReferralRewardTable,
+			Columns: []string{order.ReferralRewardColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(referralreward.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -675,6 +730,25 @@ func (_u *OrderUpdateOne) SetSubscription(v *UserSubscription) *OrderUpdateOne {
 	return _u.SetSubscriptionID(v.ID)
 }
 
+// SetReferralRewardID sets the "referral_reward" edge to the ReferralReward entity by ID.
+func (_u *OrderUpdateOne) SetReferralRewardID(id int64) *OrderUpdateOne {
+	_u.mutation.SetReferralRewardID(id)
+	return _u
+}
+
+// SetNillableReferralRewardID sets the "referral_reward" edge to the ReferralReward entity by ID if the given value is not nil.
+func (_u *OrderUpdateOne) SetNillableReferralRewardID(id *int64) *OrderUpdateOne {
+	if id != nil {
+		_u = _u.SetReferralRewardID(*id)
+	}
+	return _u
+}
+
+// SetReferralReward sets the "referral_reward" edge to the ReferralReward entity.
+func (_u *OrderUpdateOne) SetReferralReward(v *ReferralReward) *OrderUpdateOne {
+	return _u.SetReferralRewardID(v.ID)
+}
+
 // Mutation returns the OrderMutation object of the builder.
 func (_u *OrderUpdateOne) Mutation() *OrderMutation {
 	return _u.mutation
@@ -695,6 +769,12 @@ func (_u *OrderUpdateOne) ClearGroup() *OrderUpdateOne {
 // ClearSubscription clears the "subscription" edge to the UserSubscription entity.
 func (_u *OrderUpdateOne) ClearSubscription() *OrderUpdateOne {
 	_u.mutation.ClearSubscription()
+	return _u
+}
+
+// ClearReferralReward clears the "referral_reward" edge to the ReferralReward entity.
+func (_u *OrderUpdateOne) ClearReferralReward() *OrderUpdateOne {
+	_u.mutation.ClearReferralReward()
 	return _u
 }
 
@@ -926,6 +1006,35 @@ func (_u *OrderUpdateOne) sqlSave(ctx context.Context) (_node *Order, err error)
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(usersubscription.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ReferralRewardCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   order.ReferralRewardTable,
+			Columns: []string{order.ReferralRewardColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(referralreward.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ReferralRewardIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   order.ReferralRewardTable,
+			Columns: []string{order.ReferralRewardColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(referralreward.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

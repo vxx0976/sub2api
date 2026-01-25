@@ -19,6 +19,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/proxy"
 	"github.com/Wei-Shaw/sub2api/ent/rechargeorder"
 	"github.com/Wei-Shaw/sub2api/ent/redeemcode"
+	"github.com/Wei-Shaw/sub2api/ent/referralreward"
 	"github.com/Wei-Shaw/sub2api/ent/setting"
 	"github.com/Wei-Shaw/sub2api/ent/usagecleanuptask"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
@@ -355,6 +356,33 @@ func (f TraverseRedeemCode) Traverse(ctx context.Context, q ent.Query) error {
 	return fmt.Errorf("unexpected query type %T. expect *ent.RedeemCodeQuery", q)
 }
 
+// The ReferralRewardFunc type is an adapter to allow the use of ordinary function as a Querier.
+type ReferralRewardFunc func(context.Context, *ent.ReferralRewardQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f ReferralRewardFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.ReferralRewardQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.ReferralRewardQuery", q)
+}
+
+// The TraverseReferralReward type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseReferralReward func(context.Context, *ent.ReferralRewardQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseReferralReward) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseReferralReward) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.ReferralRewardQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.ReferralRewardQuery", q)
+}
+
 // The SettingFunc type is an adapter to allow the use of ordinary function as a Querier.
 type SettingFunc func(context.Context, *ent.SettingQuery) (ent.Value, error)
 
@@ -594,6 +622,8 @@ func NewQuery(q ent.Query) (Query, error) {
 		return &query[*ent.RechargeOrderQuery, predicate.RechargeOrder, rechargeorder.OrderOption]{typ: ent.TypeRechargeOrder, tq: q}, nil
 	case *ent.RedeemCodeQuery:
 		return &query[*ent.RedeemCodeQuery, predicate.RedeemCode, redeemcode.OrderOption]{typ: ent.TypeRedeemCode, tq: q}, nil
+	case *ent.ReferralRewardQuery:
+		return &query[*ent.ReferralRewardQuery, predicate.ReferralReward, referralreward.OrderOption]{typ: ent.TypeReferralReward, tq: q}, nil
 	case *ent.SettingQuery:
 		return &query[*ent.SettingQuery, predicate.Setting, setting.OrderOption]{typ: ent.TypeSetting, tq: q}, nil
 	case *ent.UsageCleanupTaskQuery:

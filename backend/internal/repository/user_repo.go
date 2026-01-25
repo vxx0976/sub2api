@@ -50,7 +50,7 @@ func (r *userRepository) Create(ctx context.Context, userIn *service.User) error
 		txClient = r.client
 	}
 
-	created, err := txClient.User.Create().
+	createBuilder := txClient.User.Create().
 		SetEmail(userIn.Email).
 		SetUsername(userIn.Username).
 		SetNotes(userIn.Notes).
@@ -59,7 +59,17 @@ func (r *userRepository) Create(ctx context.Context, userIn *service.User) error
 		SetBalance(userIn.Balance).
 		SetConcurrency(userIn.Concurrency).
 		SetStatus(userIn.Status).
-		Save(ctx)
+		SetReferralRewarded(userIn.ReferralRewarded)
+
+	// Set optional referral fields
+	if userIn.ReferralCode != nil {
+		createBuilder = createBuilder.SetReferralCode(*userIn.ReferralCode)
+	}
+	if userIn.ReferredBy != nil {
+		createBuilder = createBuilder.SetReferredBy(*userIn.ReferredBy)
+	}
+
+	created, err := createBuilder.Save(ctx)
 	if err != nil {
 		return translatePersistenceError(err, nil, service.ErrEmailExists)
 	}
@@ -132,7 +142,7 @@ func (r *userRepository) Update(ctx context.Context, userIn *service.User) error
 		txClient = r.client
 	}
 
-	updated, err := txClient.User.UpdateOneID(userIn.ID).
+	updateBuilder := txClient.User.UpdateOneID(userIn.ID).
 		SetEmail(userIn.Email).
 		SetUsername(userIn.Username).
 		SetNotes(userIn.Notes).
@@ -141,7 +151,17 @@ func (r *userRepository) Update(ctx context.Context, userIn *service.User) error
 		SetBalance(userIn.Balance).
 		SetConcurrency(userIn.Concurrency).
 		SetStatus(userIn.Status).
-		Save(ctx)
+		SetReferralRewarded(userIn.ReferralRewarded)
+
+	// Set optional referral fields
+	if userIn.ReferralCode != nil {
+		updateBuilder = updateBuilder.SetReferralCode(*userIn.ReferralCode)
+	}
+	if userIn.ReferredBy != nil {
+		updateBuilder = updateBuilder.SetReferredBy(*userIn.ReferredBy)
+	}
+
+	updated, err := updateBuilder.Save(ctx)
 	if err != nil {
 		return translatePersistenceError(err, service.ErrUserNotFound, service.ErrEmailExists)
 	}

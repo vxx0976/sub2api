@@ -37,6 +37,12 @@ const (
 	FieldUsername = "username"
 	// FieldNotes holds the string denoting the notes field in the database.
 	FieldNotes = "notes"
+	// FieldReferralCode holds the string denoting the referral_code field in the database.
+	FieldReferralCode = "referral_code"
+	// FieldReferredBy holds the string denoting the referred_by field in the database.
+	FieldReferredBy = "referred_by"
+	// FieldReferralRewarded holds the string denoting the referral_rewarded field in the database.
+	FieldReferralRewarded = "referral_rewarded"
 	// EdgeAPIKeys holds the string denoting the api_keys edge name in mutations.
 	EdgeAPIKeys = "api_keys"
 	// EdgeRedeemCodes holds the string denoting the redeem_codes edge name in mutations.
@@ -57,6 +63,10 @@ const (
 	EdgeOrders = "orders"
 	// EdgeRechargeOrders holds the string denoting the recharge_orders edge name in mutations.
 	EdgeRechargeOrders = "recharge_orders"
+	// EdgeReferralRewardsGiven holds the string denoting the referral_rewards_given edge name in mutations.
+	EdgeReferralRewardsGiven = "referral_rewards_given"
+	// EdgeReferralRewardReceived holds the string denoting the referral_reward_received edge name in mutations.
+	EdgeReferralRewardReceived = "referral_reward_received"
 	// EdgeUserAllowedGroups holds the string denoting the user_allowed_groups edge name in mutations.
 	EdgeUserAllowedGroups = "user_allowed_groups"
 	// Table holds the table name of the user in the database.
@@ -129,6 +139,20 @@ const (
 	RechargeOrdersInverseTable = "recharge_orders"
 	// RechargeOrdersColumn is the table column denoting the recharge_orders relation/edge.
 	RechargeOrdersColumn = "user_id"
+	// ReferralRewardsGivenTable is the table that holds the referral_rewards_given relation/edge.
+	ReferralRewardsGivenTable = "referral_rewards"
+	// ReferralRewardsGivenInverseTable is the table name for the ReferralReward entity.
+	// It exists in this package in order to avoid circular dependency with the "referralreward" package.
+	ReferralRewardsGivenInverseTable = "referral_rewards"
+	// ReferralRewardsGivenColumn is the table column denoting the referral_rewards_given relation/edge.
+	ReferralRewardsGivenColumn = "referrer_id"
+	// ReferralRewardReceivedTable is the table that holds the referral_reward_received relation/edge.
+	ReferralRewardReceivedTable = "referral_rewards"
+	// ReferralRewardReceivedInverseTable is the table name for the ReferralReward entity.
+	// It exists in this package in order to avoid circular dependency with the "referralreward" package.
+	ReferralRewardReceivedInverseTable = "referral_rewards"
+	// ReferralRewardReceivedColumn is the table column denoting the referral_reward_received relation/edge.
+	ReferralRewardReceivedColumn = "invitee_id"
 	// UserAllowedGroupsTable is the table that holds the user_allowed_groups relation/edge.
 	UserAllowedGroupsTable = "user_allowed_groups"
 	// UserAllowedGroupsInverseTable is the table name for the UserAllowedGroup entity.
@@ -152,6 +176,9 @@ var Columns = []string{
 	FieldStatus,
 	FieldUsername,
 	FieldNotes,
+	FieldReferralCode,
+	FieldReferredBy,
+	FieldReferralRewarded,
 }
 
 var (
@@ -206,6 +233,10 @@ var (
 	UsernameValidator func(string) error
 	// DefaultNotes holds the default value on creation for the "notes" field.
 	DefaultNotes string
+	// ReferralCodeValidator is a validator for the "referral_code" field. It is called by the builders before save.
+	ReferralCodeValidator func(string) error
+	// DefaultReferralRewarded holds the default value on creation for the "referral_rewarded" field.
+	DefaultReferralRewarded bool
 )
 
 // OrderOption defines the ordering options for the User queries.
@@ -269,6 +300,21 @@ func ByUsername(opts ...sql.OrderTermOption) OrderOption {
 // ByNotes orders the results by the notes field.
 func ByNotes(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldNotes, opts...).ToFunc()
+}
+
+// ByReferralCode orders the results by the referral_code field.
+func ByReferralCode(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldReferralCode, opts...).ToFunc()
+}
+
+// ByReferredBy orders the results by the referred_by field.
+func ByReferredBy(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldReferredBy, opts...).ToFunc()
+}
+
+// ByReferralRewarded orders the results by the referral_rewarded field.
+func ByReferralRewarded(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldReferralRewarded, opts...).ToFunc()
 }
 
 // ByAPIKeysCount orders the results by api_keys count.
@@ -411,6 +457,34 @@ func ByRechargeOrders(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
+// ByReferralRewardsGivenCount orders the results by referral_rewards_given count.
+func ByReferralRewardsGivenCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newReferralRewardsGivenStep(), opts...)
+	}
+}
+
+// ByReferralRewardsGiven orders the results by referral_rewards_given terms.
+func ByReferralRewardsGiven(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newReferralRewardsGivenStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByReferralRewardReceivedCount orders the results by referral_reward_received count.
+func ByReferralRewardReceivedCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newReferralRewardReceivedStep(), opts...)
+	}
+}
+
+// ByReferralRewardReceived orders the results by referral_reward_received terms.
+func ByReferralRewardReceived(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newReferralRewardReceivedStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByUserAllowedGroupsCount orders the results by user_allowed_groups count.
 func ByUserAllowedGroupsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -492,6 +566,20 @@ func newRechargeOrdersStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(RechargeOrdersInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, RechargeOrdersTable, RechargeOrdersColumn),
+	)
+}
+func newReferralRewardsGivenStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ReferralRewardsGivenInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ReferralRewardsGivenTable, ReferralRewardsGivenColumn),
+	)
+}
+func newReferralRewardReceivedStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ReferralRewardReceivedInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ReferralRewardReceivedTable, ReferralRewardReceivedColumn),
 	)
 }
 func newUserAllowedGroupsStep() *sqlgraph.Step {

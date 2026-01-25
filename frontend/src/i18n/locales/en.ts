@@ -391,7 +391,8 @@ export default {
     adminOrders: 'Order Management',
     adminRechargeOrders: 'Recharge Management',
     rechargeSettings: 'Recharge Settings',
-    docs: 'Docs'
+    docs: 'Docs',
+    referral: 'Invite Friends'
   },
 
   // Docs
@@ -796,6 +797,37 @@ export default {
     failedToRedeem: 'Failed to redeem code. Please check the code and try again.',
     subscriptionRefreshFailed: 'Redeemed successfully, but failed to refresh subscription status.',
     pleaseEnterCode: 'Please enter a redeem code'
+  },
+
+  // Referral
+  referral: {
+    title: 'Invite Friends',
+    subtitle: 'Invite friends to join and both get rewards',
+    yourCode: 'Your Referral Code',
+    shareCodeHint: 'Share this code with friends, they can use it when registering',
+    totalInvited: 'Total Invited',
+    totalRewarded: 'Rewarded',
+    pendingPayment: 'Pending Payment',
+    totalEarnings: 'Total Earnings',
+    rewardRules: 'Reward Rules',
+    rule1: 'Friends enter your referral code when registering (in the promo code field)',
+    rule2: 'When friends make their first purchase (≥ ¥29.9), both parties receive $10 reward',
+    rule3: 'Rewards are credited to your account balance immediately',
+    rule4: 'Rewards are only issued on first payment; recharges and redeem codes do not count',
+    inviteeList: 'Invitation Records',
+    noInvitees: 'No invitation records yet',
+    inviteeEmail: 'Email',
+    joinedAt: 'Joined At',
+    status: 'Status',
+    yourEarning: 'Your Earning',
+    statusRewarded: 'Rewarded',
+    statusPending: 'Pending',
+    showingPage: 'Page {current} of {total}',
+    loadCodeFailed: 'Failed to load referral code',
+    referralCodeValid: 'Referral code valid',
+    referralCodeHint: 'Get $10 bonus after your first purchase (≥¥29.9)',
+    referralCodeInvalid: 'Referral code is invalid or expired',
+    referralCodeSelf: 'You cannot use your own referral code'
   },
 
   // Profile

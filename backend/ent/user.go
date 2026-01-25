@@ -39,6 +39,12 @@ type User struct {
 	Username string `json:"username,omitempty"`
 	// Notes holds the value of the "notes" field.
 	Notes string `json:"notes,omitempty"`
+	// 用户专属邀请码（格式：R + 7位字符）
+	ReferralCode *string `json:"referral_code,omitempty"`
+	// 邀请人用户ID
+	ReferredBy *int64 `json:"referred_by,omitempty"`
+	// 是否已发放邀请奖励
+	ReferralRewarded bool `json:"referral_rewarded,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the UserQuery when eager-loading is set.
 	Edges        UserEdges `json:"edges"`
@@ -67,11 +73,15 @@ type UserEdges struct {
 	Orders []*Order `json:"orders,omitempty"`
 	// RechargeOrders holds the value of the recharge_orders edge.
 	RechargeOrders []*RechargeOrder `json:"recharge_orders,omitempty"`
+	// ReferralRewardsGiven holds the value of the referral_rewards_given edge.
+	ReferralRewardsGiven []*ReferralReward `json:"referral_rewards_given,omitempty"`
+	// ReferralRewardReceived holds the value of the referral_reward_received edge.
+	ReferralRewardReceived []*ReferralReward `json:"referral_reward_received,omitempty"`
 	// UserAllowedGroups holds the value of the user_allowed_groups edge.
 	UserAllowedGroups []*UserAllowedGroup `json:"user_allowed_groups,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [11]bool
+	loadedTypes [13]bool
 }
 
 // APIKeysOrErr returns the APIKeys value or an error if the edge
@@ -164,10 +174,28 @@ func (e UserEdges) RechargeOrdersOrErr() ([]*RechargeOrder, error) {
 	return nil, &NotLoadedError{edge: "recharge_orders"}
 }
 
+// ReferralRewardsGivenOrErr returns the ReferralRewardsGiven value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) ReferralRewardsGivenOrErr() ([]*ReferralReward, error) {
+	if e.loadedTypes[10] {
+		return e.ReferralRewardsGiven, nil
+	}
+	return nil, &NotLoadedError{edge: "referral_rewards_given"}
+}
+
+// ReferralRewardReceivedOrErr returns the ReferralRewardReceived value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) ReferralRewardReceivedOrErr() ([]*ReferralReward, error) {
+	if e.loadedTypes[11] {
+		return e.ReferralRewardReceived, nil
+	}
+	return nil, &NotLoadedError{edge: "referral_reward_received"}
+}
+
 // UserAllowedGroupsOrErr returns the UserAllowedGroups value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserEdges) UserAllowedGroupsOrErr() ([]*UserAllowedGroup, error) {
-	if e.loadedTypes[10] {
+	if e.loadedTypes[12] {
 		return e.UserAllowedGroups, nil
 	}
 	return nil, &NotLoadedError{edge: "user_allowed_groups"}
@@ -178,11 +206,13 @@ func (*User) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case user.FieldReferralRewarded:
+			values[i] = new(sql.NullBool)
 		case user.FieldBalance:
 			values[i] = new(sql.NullFloat64)
-		case user.FieldID, user.FieldConcurrency:
+		case user.FieldID, user.FieldConcurrency, user.FieldReferredBy:
 			values[i] = new(sql.NullInt64)
-		case user.FieldEmail, user.FieldPasswordHash, user.FieldRole, user.FieldStatus, user.FieldUsername, user.FieldNotes:
+		case user.FieldEmail, user.FieldPasswordHash, user.FieldRole, user.FieldStatus, user.FieldUsername, user.FieldNotes, user.FieldReferralCode:
 			values[i] = new(sql.NullString)
 		case user.FieldCreatedAt, user.FieldUpdatedAt, user.FieldDeletedAt:
 			values[i] = new(sql.NullTime)
@@ -274,6 +304,26 @@ func (_m *User) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Notes = value.String
 			}
+		case user.FieldReferralCode:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field referral_code", values[i])
+			} else if value.Valid {
+				_m.ReferralCode = new(string)
+				*_m.ReferralCode = value.String
+			}
+		case user.FieldReferredBy:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field referred_by", values[i])
+			} else if value.Valid {
+				_m.ReferredBy = new(int64)
+				*_m.ReferredBy = value.Int64
+			}
+		case user.FieldReferralRewarded:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field referral_rewarded", values[i])
+			} else if value.Valid {
+				_m.ReferralRewarded = value.Bool
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -335,6 +385,16 @@ func (_m *User) QueryOrders() *OrderQuery {
 // QueryRechargeOrders queries the "recharge_orders" edge of the User entity.
 func (_m *User) QueryRechargeOrders() *RechargeOrderQuery {
 	return NewUserClient(_m.config).QueryRechargeOrders(_m)
+}
+
+// QueryReferralRewardsGiven queries the "referral_rewards_given" edge of the User entity.
+func (_m *User) QueryReferralRewardsGiven() *ReferralRewardQuery {
+	return NewUserClient(_m.config).QueryReferralRewardsGiven(_m)
+}
+
+// QueryReferralRewardReceived queries the "referral_reward_received" edge of the User entity.
+func (_m *User) QueryReferralRewardReceived() *ReferralRewardQuery {
+	return NewUserClient(_m.config).QueryReferralRewardReceived(_m)
 }
 
 // QueryUserAllowedGroups queries the "user_allowed_groups" edge of the User entity.
@@ -399,6 +459,19 @@ func (_m *User) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("notes=")
 	builder.WriteString(_m.Notes)
+	builder.WriteString(", ")
+	if v := _m.ReferralCode; v != nil {
+		builder.WriteString("referral_code=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	if v := _m.ReferredBy; v != nil {
+		builder.WriteString("referred_by=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("referral_rewarded=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ReferralRewarded))
 	builder.WriteByte(')')
 	return builder.String()
 }

@@ -17,6 +17,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/promocodeusage"
 	"github.com/Wei-Shaw/sub2api/ent/rechargeorder"
 	"github.com/Wei-Shaw/sub2api/ent/redeemcode"
+	"github.com/Wei-Shaw/sub2api/ent/referralreward"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
 	"github.com/Wei-Shaw/sub2api/ent/user"
 	"github.com/Wei-Shaw/sub2api/ent/userattributevalue"
@@ -165,6 +166,48 @@ func (_c *UserCreate) SetNotes(v string) *UserCreate {
 func (_c *UserCreate) SetNillableNotes(v *string) *UserCreate {
 	if v != nil {
 		_c.SetNotes(*v)
+	}
+	return _c
+}
+
+// SetReferralCode sets the "referral_code" field.
+func (_c *UserCreate) SetReferralCode(v string) *UserCreate {
+	_c.mutation.SetReferralCode(v)
+	return _c
+}
+
+// SetNillableReferralCode sets the "referral_code" field if the given value is not nil.
+func (_c *UserCreate) SetNillableReferralCode(v *string) *UserCreate {
+	if v != nil {
+		_c.SetReferralCode(*v)
+	}
+	return _c
+}
+
+// SetReferredBy sets the "referred_by" field.
+func (_c *UserCreate) SetReferredBy(v int64) *UserCreate {
+	_c.mutation.SetReferredBy(v)
+	return _c
+}
+
+// SetNillableReferredBy sets the "referred_by" field if the given value is not nil.
+func (_c *UserCreate) SetNillableReferredBy(v *int64) *UserCreate {
+	if v != nil {
+		_c.SetReferredBy(*v)
+	}
+	return _c
+}
+
+// SetReferralRewarded sets the "referral_rewarded" field.
+func (_c *UserCreate) SetReferralRewarded(v bool) *UserCreate {
+	_c.mutation.SetReferralRewarded(v)
+	return _c
+}
+
+// SetNillableReferralRewarded sets the "referral_rewarded" field if the given value is not nil.
+func (_c *UserCreate) SetNillableReferralRewarded(v *bool) *UserCreate {
+	if v != nil {
+		_c.SetReferralRewarded(*v)
 	}
 	return _c
 }
@@ -319,6 +362,36 @@ func (_c *UserCreate) AddRechargeOrders(v ...*RechargeOrder) *UserCreate {
 	return _c.AddRechargeOrderIDs(ids...)
 }
 
+// AddReferralRewardsGivenIDs adds the "referral_rewards_given" edge to the ReferralReward entity by IDs.
+func (_c *UserCreate) AddReferralRewardsGivenIDs(ids ...int64) *UserCreate {
+	_c.mutation.AddReferralRewardsGivenIDs(ids...)
+	return _c
+}
+
+// AddReferralRewardsGiven adds the "referral_rewards_given" edges to the ReferralReward entity.
+func (_c *UserCreate) AddReferralRewardsGiven(v ...*ReferralReward) *UserCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddReferralRewardsGivenIDs(ids...)
+}
+
+// AddReferralRewardReceivedIDs adds the "referral_reward_received" edge to the ReferralReward entity by IDs.
+func (_c *UserCreate) AddReferralRewardReceivedIDs(ids ...int64) *UserCreate {
+	_c.mutation.AddReferralRewardReceivedIDs(ids...)
+	return _c
+}
+
+// AddReferralRewardReceived adds the "referral_reward_received" edges to the ReferralReward entity.
+func (_c *UserCreate) AddReferralRewardReceived(v ...*ReferralReward) *UserCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddReferralRewardReceivedIDs(ids...)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (_c *UserCreate) Mutation() *UserMutation {
 	return _c.mutation
@@ -394,6 +467,10 @@ func (_c *UserCreate) defaults() error {
 		v := user.DefaultNotes
 		_c.mutation.SetNotes(v)
 	}
+	if _, ok := _c.mutation.ReferralRewarded(); !ok {
+		v := user.DefaultReferralRewarded
+		_c.mutation.SetReferralRewarded(v)
+	}
 	return nil
 }
 
@@ -453,6 +530,14 @@ func (_c *UserCreate) check() error {
 	}
 	if _, ok := _c.mutation.Notes(); !ok {
 		return &ValidationError{Name: "notes", err: errors.New(`ent: missing required field "User.notes"`)}
+	}
+	if v, ok := _c.mutation.ReferralCode(); ok {
+		if err := user.ReferralCodeValidator(v); err != nil {
+			return &ValidationError{Name: "referral_code", err: fmt.Errorf(`ent: validator failed for field "User.referral_code": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.ReferralRewarded(); !ok {
+		return &ValidationError{Name: "referral_rewarded", err: errors.New(`ent: missing required field "User.referral_rewarded"`)}
 	}
 	return nil
 }
@@ -524,6 +609,18 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Notes(); ok {
 		_spec.SetField(user.FieldNotes, field.TypeString, value)
 		_node.Notes = value
+	}
+	if value, ok := _c.mutation.ReferralCode(); ok {
+		_spec.SetField(user.FieldReferralCode, field.TypeString, value)
+		_node.ReferralCode = &value
+	}
+	if value, ok := _c.mutation.ReferredBy(); ok {
+		_spec.SetField(user.FieldReferredBy, field.TypeInt64, value)
+		_node.ReferredBy = &value
+	}
+	if value, ok := _c.mutation.ReferralRewarded(); ok {
+		_spec.SetField(user.FieldReferralRewarded, field.TypeBool, value)
+		_node.ReferralRewarded = value
 	}
 	if nodes := _c.mutation.APIKeysIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -682,6 +779,38 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(rechargeorder.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ReferralRewardsGivenIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ReferralRewardsGivenTable,
+			Columns: []string{user.ReferralRewardsGivenColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(referralreward.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ReferralRewardReceivedIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ReferralRewardReceivedTable,
+			Columns: []string{user.ReferralRewardReceivedColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(referralreward.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -876,6 +1005,60 @@ func (u *UserUpsert) SetNotes(v string) *UserUpsert {
 // UpdateNotes sets the "notes" field to the value that was provided on create.
 func (u *UserUpsert) UpdateNotes() *UserUpsert {
 	u.SetExcluded(user.FieldNotes)
+	return u
+}
+
+// SetReferralCode sets the "referral_code" field.
+func (u *UserUpsert) SetReferralCode(v string) *UserUpsert {
+	u.Set(user.FieldReferralCode, v)
+	return u
+}
+
+// UpdateReferralCode sets the "referral_code" field to the value that was provided on create.
+func (u *UserUpsert) UpdateReferralCode() *UserUpsert {
+	u.SetExcluded(user.FieldReferralCode)
+	return u
+}
+
+// ClearReferralCode clears the value of the "referral_code" field.
+func (u *UserUpsert) ClearReferralCode() *UserUpsert {
+	u.SetNull(user.FieldReferralCode)
+	return u
+}
+
+// SetReferredBy sets the "referred_by" field.
+func (u *UserUpsert) SetReferredBy(v int64) *UserUpsert {
+	u.Set(user.FieldReferredBy, v)
+	return u
+}
+
+// UpdateReferredBy sets the "referred_by" field to the value that was provided on create.
+func (u *UserUpsert) UpdateReferredBy() *UserUpsert {
+	u.SetExcluded(user.FieldReferredBy)
+	return u
+}
+
+// AddReferredBy adds v to the "referred_by" field.
+func (u *UserUpsert) AddReferredBy(v int64) *UserUpsert {
+	u.Add(user.FieldReferredBy, v)
+	return u
+}
+
+// ClearReferredBy clears the value of the "referred_by" field.
+func (u *UserUpsert) ClearReferredBy() *UserUpsert {
+	u.SetNull(user.FieldReferredBy)
+	return u
+}
+
+// SetReferralRewarded sets the "referral_rewarded" field.
+func (u *UserUpsert) SetReferralRewarded(v bool) *UserUpsert {
+	u.Set(user.FieldReferralRewarded, v)
+	return u
+}
+
+// UpdateReferralRewarded sets the "referral_rewarded" field to the value that was provided on create.
+func (u *UserUpsert) UpdateReferralRewarded() *UserUpsert {
+	u.SetExcluded(user.FieldReferralRewarded)
 	return u
 }
 
@@ -1082,6 +1265,69 @@ func (u *UserUpsertOne) SetNotes(v string) *UserUpsertOne {
 func (u *UserUpsertOne) UpdateNotes() *UserUpsertOne {
 	return u.Update(func(s *UserUpsert) {
 		s.UpdateNotes()
+	})
+}
+
+// SetReferralCode sets the "referral_code" field.
+func (u *UserUpsertOne) SetReferralCode(v string) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.SetReferralCode(v)
+	})
+}
+
+// UpdateReferralCode sets the "referral_code" field to the value that was provided on create.
+func (u *UserUpsertOne) UpdateReferralCode() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateReferralCode()
+	})
+}
+
+// ClearReferralCode clears the value of the "referral_code" field.
+func (u *UserUpsertOne) ClearReferralCode() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearReferralCode()
+	})
+}
+
+// SetReferredBy sets the "referred_by" field.
+func (u *UserUpsertOne) SetReferredBy(v int64) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.SetReferredBy(v)
+	})
+}
+
+// AddReferredBy adds v to the "referred_by" field.
+func (u *UserUpsertOne) AddReferredBy(v int64) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.AddReferredBy(v)
+	})
+}
+
+// UpdateReferredBy sets the "referred_by" field to the value that was provided on create.
+func (u *UserUpsertOne) UpdateReferredBy() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateReferredBy()
+	})
+}
+
+// ClearReferredBy clears the value of the "referred_by" field.
+func (u *UserUpsertOne) ClearReferredBy() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearReferredBy()
+	})
+}
+
+// SetReferralRewarded sets the "referral_rewarded" field.
+func (u *UserUpsertOne) SetReferralRewarded(v bool) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.SetReferralRewarded(v)
+	})
+}
+
+// UpdateReferralRewarded sets the "referral_rewarded" field to the value that was provided on create.
+func (u *UserUpsertOne) UpdateReferralRewarded() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateReferralRewarded()
 	})
 }
 
@@ -1454,6 +1700,69 @@ func (u *UserUpsertBulk) SetNotes(v string) *UserUpsertBulk {
 func (u *UserUpsertBulk) UpdateNotes() *UserUpsertBulk {
 	return u.Update(func(s *UserUpsert) {
 		s.UpdateNotes()
+	})
+}
+
+// SetReferralCode sets the "referral_code" field.
+func (u *UserUpsertBulk) SetReferralCode(v string) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.SetReferralCode(v)
+	})
+}
+
+// UpdateReferralCode sets the "referral_code" field to the value that was provided on create.
+func (u *UserUpsertBulk) UpdateReferralCode() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateReferralCode()
+	})
+}
+
+// ClearReferralCode clears the value of the "referral_code" field.
+func (u *UserUpsertBulk) ClearReferralCode() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearReferralCode()
+	})
+}
+
+// SetReferredBy sets the "referred_by" field.
+func (u *UserUpsertBulk) SetReferredBy(v int64) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.SetReferredBy(v)
+	})
+}
+
+// AddReferredBy adds v to the "referred_by" field.
+func (u *UserUpsertBulk) AddReferredBy(v int64) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.AddReferredBy(v)
+	})
+}
+
+// UpdateReferredBy sets the "referred_by" field to the value that was provided on create.
+func (u *UserUpsertBulk) UpdateReferredBy() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateReferredBy()
+	})
+}
+
+// ClearReferredBy clears the value of the "referred_by" field.
+func (u *UserUpsertBulk) ClearReferredBy() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearReferredBy()
+	})
+}
+
+// SetReferralRewarded sets the "referral_rewarded" field.
+func (u *UserUpsertBulk) SetReferralRewarded(v bool) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.SetReferralRewarded(v)
+	})
+}
+
+// UpdateReferralRewarded sets the "referral_rewarded" field to the value that was provided on create.
+func (u *UserUpsertBulk) UpdateReferralRewarded() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateReferralRewarded()
 	})
 }
 

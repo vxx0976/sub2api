@@ -15,6 +15,8 @@ export { usageAPI } from './usage'
 export { userAPI } from './user'
 export { redeemAPI, type RedeemHistoryItem } from './redeem'
 export { userGroupsAPI } from './groups'
+export { default as referralAPI } from './referral'
+export type { ReferralStats, InviteeInfo, InviteesListResponse } from './referral'
 
 // Admin APIs
 export { adminAPI } from './admin'

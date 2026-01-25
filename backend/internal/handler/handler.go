@@ -40,6 +40,7 @@ type Handlers struct {
 	Gateway       *GatewayHandler
 	OpenAIGateway *OpenAIGatewayHandler
 	Setting       *SettingHandler
+	Referral      *ReferralHandler
 }
 
 // BuildInfo contains build-time information

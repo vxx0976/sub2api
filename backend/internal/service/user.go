@@ -21,6 +21,11 @@ type User struct {
 	CreatedAt     time.Time `json:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at"`
 
+	// Referral system fields
+	ReferralCode     *string `json:"referral_code,omitempty"`
+	ReferredBy       *int64  `json:"-"` // Internal use only
+	ReferralRewarded bool    `json:"-"` // Internal use only
+
 	APIKeys       []APIKey           `json:"api_keys,omitempty"`
 	Subscriptions []UserSubscription `json:"subscriptions,omitempty"`
 }

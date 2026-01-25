@@ -160,3 +160,18 @@ const (
 
 // AdminAPIKeyPrefix is the prefix for admin API keys (distinct from user "sk-" keys).
 const AdminAPIKeyPrefix = "admin-"
+
+// Referral system constants
+const (
+	// ReferralCodePrefix is the prefix for referral codes
+	ReferralCodePrefix = "R"
+
+	// ReferralCodeLength is the total length of referral code (including prefix)
+	ReferralCodeLength = 8
+
+	// ReferralMinPaymentAmountCNY is the minimum payment amount in CNY to trigger referral reward
+	ReferralMinPaymentAmountCNY = 29.9
+
+	// ReferralRewardAmountUSD is the reward amount in USD for both referrer and invitee
+	ReferralRewardAmountUSD = 10.0
+)

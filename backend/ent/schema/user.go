@@ -61,6 +61,21 @@ func (User) Fields() []ent.Field {
 		field.String("notes").
 			SchemaType(map[string]string{dialect.Postgres: "text"}).
 			Default(""),
+
+		// Referral system fields
+		field.String("referral_code").
+			MaxLen(8).
+			Optional().
+			Unique().
+			Nillable().
+			Comment("用户专属邀请码（格式：R + 7位字符）"),
+		field.Int64("referred_by").
+			Optional().
+			Nillable().
+			Comment("邀请人用户ID"),
+		field.Bool("referral_rewarded").
+			Default(false).
+			Comment("是否已发放邀请奖励"),
 	}
 }
 
@@ -77,6 +92,9 @@ func (User) Edges() []ent.Edge {
 		edge.To("promo_code_usages", PromoCodeUsage.Type),
 		edge.To("orders", Order.Type),
 		edge.To("recharge_orders", RechargeOrder.Type),
+		// Referral system edges
+		edge.To("referral_rewards_given", ReferralReward.Type),
+		edge.To("referral_reward_received", ReferralReward.Type),
 	}
 }
 

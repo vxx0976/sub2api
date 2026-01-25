@@ -94,6 +94,9 @@ func (Order) Edges() []ent.Edge {
 			Ref("orders").
 			Field("subscription_id").
 			Unique(),
+		// Referral reward triggered by this order (if any)
+		edge.To("referral_reward", ReferralReward.Type).
+			Unique(),
 	}
 }
 

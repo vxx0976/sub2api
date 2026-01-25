@@ -121,6 +121,9 @@ export interface ValidatePromoCodeResponse {
   bonus_amount?: number
   error_code?: string
   message?: string
+  // Referral code fields
+  is_referral?: boolean
+  referrer_name?: string
 }
 
 /**

@@ -4,7 +4,6 @@ package ent
 
 import (
 	"context"
-	"database/sql/driver"
 	"fmt"
 	"math"
 
@@ -13,64 +12,61 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/order"
 	"github.com/Wei-Shaw/sub2api/ent/predicate"
 	"github.com/Wei-Shaw/sub2api/ent/referralreward"
 	"github.com/Wei-Shaw/sub2api/ent/user"
-	"github.com/Wei-Shaw/sub2api/ent/usersubscription"
 )
 
-// OrderQuery is the builder for querying Order entities.
-type OrderQuery struct {
+// ReferralRewardQuery is the builder for querying ReferralReward entities.
+type ReferralRewardQuery struct {
 	config
-	ctx                *QueryContext
-	order              []order.OrderOption
-	inters             []Interceptor
-	predicates         []predicate.Order
-	withUser           *UserQuery
-	withGroup          *GroupQuery
-	withSubscription   *UserSubscriptionQuery
-	withReferralReward *ReferralRewardQuery
-	modifiers          []func(*sql.Selector)
+	ctx              *QueryContext
+	order            []referralreward.OrderOption
+	inters           []Interceptor
+	predicates       []predicate.ReferralReward
+	withReferrer     *UserQuery
+	withInvitee      *UserQuery
+	withTriggerOrder *OrderQuery
+	modifiers        []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
 }
 
-// Where adds a new predicate for the OrderQuery builder.
-func (_q *OrderQuery) Where(ps ...predicate.Order) *OrderQuery {
+// Where adds a new predicate for the ReferralRewardQuery builder.
+func (_q *ReferralRewardQuery) Where(ps ...predicate.ReferralReward) *ReferralRewardQuery {
 	_q.predicates = append(_q.predicates, ps...)
 	return _q
 }
 
 // Limit the number of records to be returned by this query.
-func (_q *OrderQuery) Limit(limit int) *OrderQuery {
+func (_q *ReferralRewardQuery) Limit(limit int) *ReferralRewardQuery {
 	_q.ctx.Limit = &limit
 	return _q
 }
 
 // Offset to start from.
-func (_q *OrderQuery) Offset(offset int) *OrderQuery {
+func (_q *ReferralRewardQuery) Offset(offset int) *ReferralRewardQuery {
 	_q.ctx.Offset = &offset
 	return _q
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
-func (_q *OrderQuery) Unique(unique bool) *OrderQuery {
+func (_q *ReferralRewardQuery) Unique(unique bool) *ReferralRewardQuery {
 	_q.ctx.Unique = &unique
 	return _q
 }
 
 // Order specifies how the records should be ordered.
-func (_q *OrderQuery) Order(o ...order.OrderOption) *OrderQuery {
+func (_q *ReferralRewardQuery) Order(o ...referralreward.OrderOption) *ReferralRewardQuery {
 	_q.order = append(_q.order, o...)
 	return _q
 }
 
-// QueryUser chains the current query on the "user" edge.
-func (_q *OrderQuery) QueryUser() *UserQuery {
+// QueryReferrer chains the current query on the "referrer" edge.
+func (_q *ReferralRewardQuery) QueryReferrer() *UserQuery {
 	query := (&UserClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := _q.prepareQuery(ctx); err != nil {
@@ -81,9 +77,9 @@ func (_q *OrderQuery) QueryUser() *UserQuery {
 			return nil, err
 		}
 		step := sqlgraph.NewStep(
-			sqlgraph.From(order.Table, order.FieldID, selector),
+			sqlgraph.From(referralreward.Table, referralreward.FieldID, selector),
 			sqlgraph.To(user.Table, user.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, order.UserTable, order.UserColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, referralreward.ReferrerTable, referralreward.ReferrerColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -91,9 +87,9 @@ func (_q *OrderQuery) QueryUser() *UserQuery {
 	return query
 }
 
-// QueryGroup chains the current query on the "group" edge.
-func (_q *OrderQuery) QueryGroup() *GroupQuery {
-	query := (&GroupClient{config: _q.config}).Query()
+// QueryInvitee chains the current query on the "invitee" edge.
+func (_q *ReferralRewardQuery) QueryInvitee() *UserQuery {
+	query := (&UserClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := _q.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -103,9 +99,9 @@ func (_q *OrderQuery) QueryGroup() *GroupQuery {
 			return nil, err
 		}
 		step := sqlgraph.NewStep(
-			sqlgraph.From(order.Table, order.FieldID, selector),
-			sqlgraph.To(group.Table, group.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, order.GroupTable, order.GroupColumn),
+			sqlgraph.From(referralreward.Table, referralreward.FieldID, selector),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, referralreward.InviteeTable, referralreward.InviteeColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -113,9 +109,9 @@ func (_q *OrderQuery) QueryGroup() *GroupQuery {
 	return query
 }
 
-// QuerySubscription chains the current query on the "subscription" edge.
-func (_q *OrderQuery) QuerySubscription() *UserSubscriptionQuery {
-	query := (&UserSubscriptionClient{config: _q.config}).Query()
+// QueryTriggerOrder chains the current query on the "trigger_order" edge.
+func (_q *ReferralRewardQuery) QueryTriggerOrder() *OrderQuery {
+	query := (&OrderClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := _q.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -125,9 +121,9 @@ func (_q *OrderQuery) QuerySubscription() *UserSubscriptionQuery {
 			return nil, err
 		}
 		step := sqlgraph.NewStep(
-			sqlgraph.From(order.Table, order.FieldID, selector),
-			sqlgraph.To(usersubscription.Table, usersubscription.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, order.SubscriptionTable, order.SubscriptionColumn),
+			sqlgraph.From(referralreward.Table, referralreward.FieldID, selector),
+			sqlgraph.To(order.Table, order.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, referralreward.TriggerOrderTable, referralreward.TriggerOrderColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -135,43 +131,21 @@ func (_q *OrderQuery) QuerySubscription() *UserSubscriptionQuery {
 	return query
 }
 
-// QueryReferralReward chains the current query on the "referral_reward" edge.
-func (_q *OrderQuery) QueryReferralReward() *ReferralRewardQuery {
-	query := (&ReferralRewardClient{config: _q.config}).Query()
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := _q.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := _q.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(order.Table, order.FieldID, selector),
-			sqlgraph.To(referralreward.Table, referralreward.FieldID),
-			sqlgraph.Edge(sqlgraph.O2O, false, order.ReferralRewardTable, order.ReferralRewardColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
-// First returns the first Order entity from the query.
-// Returns a *NotFoundError when no Order was found.
-func (_q *OrderQuery) First(ctx context.Context) (*Order, error) {
+// First returns the first ReferralReward entity from the query.
+// Returns a *NotFoundError when no ReferralReward was found.
+func (_q *ReferralRewardQuery) First(ctx context.Context) (*ReferralReward, error) {
 	nodes, err := _q.Limit(1).All(setContextOp(ctx, _q.ctx, ent.OpQueryFirst))
 	if err != nil {
 		return nil, err
 	}
 	if len(nodes) == 0 {
-		return nil, &NotFoundError{order.Label}
+		return nil, &NotFoundError{referralreward.Label}
 	}
 	return nodes[0], nil
 }
 
 // FirstX is like First, but panics if an error occurs.
-func (_q *OrderQuery) FirstX(ctx context.Context) *Order {
+func (_q *ReferralRewardQuery) FirstX(ctx context.Context) *ReferralReward {
 	node, err := _q.First(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -179,22 +153,22 @@ func (_q *OrderQuery) FirstX(ctx context.Context) *Order {
 	return node
 }
 
-// FirstID returns the first Order ID from the query.
-// Returns a *NotFoundError when no Order ID was found.
-func (_q *OrderQuery) FirstID(ctx context.Context) (id int64, err error) {
+// FirstID returns the first ReferralReward ID from the query.
+// Returns a *NotFoundError when no ReferralReward ID was found.
+func (_q *ReferralRewardQuery) FirstID(ctx context.Context) (id int64, err error) {
 	var ids []int64
 	if ids, err = _q.Limit(1).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
 	if len(ids) == 0 {
-		err = &NotFoundError{order.Label}
+		err = &NotFoundError{referralreward.Label}
 		return
 	}
 	return ids[0], nil
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (_q *OrderQuery) FirstIDX(ctx context.Context) int64 {
+func (_q *ReferralRewardQuery) FirstIDX(ctx context.Context) int64 {
 	id, err := _q.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -202,10 +176,10 @@ func (_q *OrderQuery) FirstIDX(ctx context.Context) int64 {
 	return id
 }
 
-// Only returns a single Order entity found by the query, ensuring it only returns one.
-// Returns a *NotSingularError when more than one Order entity is found.
-// Returns a *NotFoundError when no Order entities are found.
-func (_q *OrderQuery) Only(ctx context.Context) (*Order, error) {
+// Only returns a single ReferralReward entity found by the query, ensuring it only returns one.
+// Returns a *NotSingularError when more than one ReferralReward entity is found.
+// Returns a *NotFoundError when no ReferralReward entities are found.
+func (_q *ReferralRewardQuery) Only(ctx context.Context) (*ReferralReward, error) {
 	nodes, err := _q.Limit(2).All(setContextOp(ctx, _q.ctx, ent.OpQueryOnly))
 	if err != nil {
 		return nil, err
@@ -214,14 +188,14 @@ func (_q *OrderQuery) Only(ctx context.Context) (*Order, error) {
 	case 1:
 		return nodes[0], nil
 	case 0:
-		return nil, &NotFoundError{order.Label}
+		return nil, &NotFoundError{referralreward.Label}
 	default:
-		return nil, &NotSingularError{order.Label}
+		return nil, &NotSingularError{referralreward.Label}
 	}
 }
 
 // OnlyX is like Only, but panics if an error occurs.
-func (_q *OrderQuery) OnlyX(ctx context.Context) *Order {
+func (_q *ReferralRewardQuery) OnlyX(ctx context.Context) *ReferralReward {
 	node, err := _q.Only(ctx)
 	if err != nil {
 		panic(err)
@@ -229,10 +203,10 @@ func (_q *OrderQuery) OnlyX(ctx context.Context) *Order {
 	return node
 }
 
-// OnlyID is like Only, but returns the only Order ID in the query.
-// Returns a *NotSingularError when more than one Order ID is found.
+// OnlyID is like Only, but returns the only ReferralReward ID in the query.
+// Returns a *NotSingularError when more than one ReferralReward ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (_q *OrderQuery) OnlyID(ctx context.Context) (id int64, err error) {
+func (_q *ReferralRewardQuery) OnlyID(ctx context.Context) (id int64, err error) {
 	var ids []int64
 	if ids, err = _q.Limit(2).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
@@ -241,15 +215,15 @@ func (_q *OrderQuery) OnlyID(ctx context.Context) (id int64, err error) {
 	case 1:
 		id = ids[0]
 	case 0:
-		err = &NotFoundError{order.Label}
+		err = &NotFoundError{referralreward.Label}
 	default:
-		err = &NotSingularError{order.Label}
+		err = &NotSingularError{referralreward.Label}
 	}
 	return
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (_q *OrderQuery) OnlyIDX(ctx context.Context) int64 {
+func (_q *ReferralRewardQuery) OnlyIDX(ctx context.Context) int64 {
 	id, err := _q.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -257,18 +231,18 @@ func (_q *OrderQuery) OnlyIDX(ctx context.Context) int64 {
 	return id
 }
 
-// All executes the query and returns a list of Orders.
-func (_q *OrderQuery) All(ctx context.Context) ([]*Order, error) {
+// All executes the query and returns a list of ReferralRewards.
+func (_q *ReferralRewardQuery) All(ctx context.Context) ([]*ReferralReward, error) {
 	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryAll)
 	if err := _q.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
-	qr := querierAll[[]*Order, *OrderQuery]()
-	return withInterceptors[[]*Order](ctx, _q, qr, _q.inters)
+	qr := querierAll[[]*ReferralReward, *ReferralRewardQuery]()
+	return withInterceptors[[]*ReferralReward](ctx, _q, qr, _q.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
-func (_q *OrderQuery) AllX(ctx context.Context) []*Order {
+func (_q *ReferralRewardQuery) AllX(ctx context.Context) []*ReferralReward {
 	nodes, err := _q.All(ctx)
 	if err != nil {
 		panic(err)
@@ -276,20 +250,20 @@ func (_q *OrderQuery) AllX(ctx context.Context) []*Order {
 	return nodes
 }
 
-// IDs executes the query and returns a list of Order IDs.
-func (_q *OrderQuery) IDs(ctx context.Context) (ids []int64, err error) {
+// IDs executes the query and returns a list of ReferralReward IDs.
+func (_q *ReferralRewardQuery) IDs(ctx context.Context) (ids []int64, err error) {
 	if _q.ctx.Unique == nil && _q.path != nil {
 		_q.Unique(true)
 	}
 	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryIDs)
-	if err = _q.Select(order.FieldID).Scan(ctx, &ids); err != nil {
+	if err = _q.Select(referralreward.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (_q *OrderQuery) IDsX(ctx context.Context) []int64 {
+func (_q *ReferralRewardQuery) IDsX(ctx context.Context) []int64 {
 	ids, err := _q.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -298,16 +272,16 @@ func (_q *OrderQuery) IDsX(ctx context.Context) []int64 {
 }
 
 // Count returns the count of the given query.
-func (_q *OrderQuery) Count(ctx context.Context) (int, error) {
+func (_q *ReferralRewardQuery) Count(ctx context.Context) (int, error) {
 	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryCount)
 	if err := _q.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return withInterceptors[int](ctx, _q, querierCount[*OrderQuery](), _q.inters)
+	return withInterceptors[int](ctx, _q, querierCount[*ReferralRewardQuery](), _q.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
-func (_q *OrderQuery) CountX(ctx context.Context) int {
+func (_q *ReferralRewardQuery) CountX(ctx context.Context) int {
 	count, err := _q.Count(ctx)
 	if err != nil {
 		panic(err)
@@ -316,7 +290,7 @@ func (_q *OrderQuery) CountX(ctx context.Context) int {
 }
 
 // Exist returns true if the query has elements in the graph.
-func (_q *OrderQuery) Exist(ctx context.Context) (bool, error) {
+func (_q *ReferralRewardQuery) Exist(ctx context.Context) (bool, error) {
 	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryExist)
 	switch _, err := _q.FirstID(ctx); {
 	case IsNotFound(err):
@@ -329,7 +303,7 @@ func (_q *OrderQuery) Exist(ctx context.Context) (bool, error) {
 }
 
 // ExistX is like Exist, but panics if an error occurs.
-func (_q *OrderQuery) ExistX(ctx context.Context) bool {
+func (_q *ReferralRewardQuery) ExistX(ctx context.Context) bool {
 	exist, err := _q.Exist(ctx)
 	if err != nil {
 		panic(err)
@@ -337,69 +311,57 @@ func (_q *OrderQuery) ExistX(ctx context.Context) bool {
 	return exist
 }
 
-// Clone returns a duplicate of the OrderQuery builder, including all associated steps. It can be
+// Clone returns a duplicate of the ReferralRewardQuery builder, including all associated steps. It can be
 // used to prepare common query builders and use them differently after the clone is made.
-func (_q *OrderQuery) Clone() *OrderQuery {
+func (_q *ReferralRewardQuery) Clone() *ReferralRewardQuery {
 	if _q == nil {
 		return nil
 	}
-	return &OrderQuery{
-		config:             _q.config,
-		ctx:                _q.ctx.Clone(),
-		order:              append([]order.OrderOption{}, _q.order...),
-		inters:             append([]Interceptor{}, _q.inters...),
-		predicates:         append([]predicate.Order{}, _q.predicates...),
-		withUser:           _q.withUser.Clone(),
-		withGroup:          _q.withGroup.Clone(),
-		withSubscription:   _q.withSubscription.Clone(),
-		withReferralReward: _q.withReferralReward.Clone(),
+	return &ReferralRewardQuery{
+		config:           _q.config,
+		ctx:              _q.ctx.Clone(),
+		order:            append([]referralreward.OrderOption{}, _q.order...),
+		inters:           append([]Interceptor{}, _q.inters...),
+		predicates:       append([]predicate.ReferralReward{}, _q.predicates...),
+		withReferrer:     _q.withReferrer.Clone(),
+		withInvitee:      _q.withInvitee.Clone(),
+		withTriggerOrder: _q.withTriggerOrder.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
 	}
 }
 
-// WithUser tells the query-builder to eager-load the nodes that are connected to
-// the "user" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *OrderQuery) WithUser(opts ...func(*UserQuery)) *OrderQuery {
+// WithReferrer tells the query-builder to eager-load the nodes that are connected to
+// the "referrer" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *ReferralRewardQuery) WithReferrer(opts ...func(*UserQuery)) *ReferralRewardQuery {
 	query := (&UserClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	_q.withUser = query
+	_q.withReferrer = query
 	return _q
 }
 
-// WithGroup tells the query-builder to eager-load the nodes that are connected to
-// the "group" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *OrderQuery) WithGroup(opts ...func(*GroupQuery)) *OrderQuery {
-	query := (&GroupClient{config: _q.config}).Query()
+// WithInvitee tells the query-builder to eager-load the nodes that are connected to
+// the "invitee" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *ReferralRewardQuery) WithInvitee(opts ...func(*UserQuery)) *ReferralRewardQuery {
+	query := (&UserClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	_q.withGroup = query
+	_q.withInvitee = query
 	return _q
 }
 
-// WithSubscription tells the query-builder to eager-load the nodes that are connected to
-// the "subscription" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *OrderQuery) WithSubscription(opts ...func(*UserSubscriptionQuery)) *OrderQuery {
-	query := (&UserSubscriptionClient{config: _q.config}).Query()
+// WithTriggerOrder tells the query-builder to eager-load the nodes that are connected to
+// the "trigger_order" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *ReferralRewardQuery) WithTriggerOrder(opts ...func(*OrderQuery)) *ReferralRewardQuery {
+	query := (&OrderClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	_q.withSubscription = query
-	return _q
-}
-
-// WithReferralReward tells the query-builder to eager-load the nodes that are connected to
-// the "referral_reward" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *OrderQuery) WithReferralReward(opts ...func(*ReferralRewardQuery)) *OrderQuery {
-	query := (&ReferralRewardClient{config: _q.config}).Query()
-	for _, opt := range opts {
-		opt(query)
-	}
-	_q.withReferralReward = query
+	_q.withTriggerOrder = query
 	return _q
 }
 
@@ -409,19 +371,19 @@ func (_q *OrderQuery) WithReferralReward(opts ...func(*ReferralRewardQuery)) *Or
 // Example:
 //
 //	var v []struct {
-//		OrderNo string `json:"order_no,omitempty"`
+//		CreatedAt time.Time `json:"created_at,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
-//	client.Order.Query().
-//		GroupBy(order.FieldOrderNo).
+//	client.ReferralReward.Query().
+//		GroupBy(referralreward.FieldCreatedAt).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-func (_q *OrderQuery) GroupBy(field string, fields ...string) *OrderGroupBy {
+func (_q *ReferralRewardQuery) GroupBy(field string, fields ...string) *ReferralRewardGroupBy {
 	_q.ctx.Fields = append([]string{field}, fields...)
-	grbuild := &OrderGroupBy{build: _q}
+	grbuild := &ReferralRewardGroupBy{build: _q}
 	grbuild.flds = &_q.ctx.Fields
-	grbuild.label = order.Label
+	grbuild.label = referralreward.Label
 	grbuild.scan = grbuild.Scan
 	return grbuild
 }
@@ -432,26 +394,26 @@ func (_q *OrderQuery) GroupBy(field string, fields ...string) *OrderGroupBy {
 // Example:
 //
 //	var v []struct {
-//		OrderNo string `json:"order_no,omitempty"`
+//		CreatedAt time.Time `json:"created_at,omitempty"`
 //	}
 //
-//	client.Order.Query().
-//		Select(order.FieldOrderNo).
+//	client.ReferralReward.Query().
+//		Select(referralreward.FieldCreatedAt).
 //		Scan(ctx, &v)
-func (_q *OrderQuery) Select(fields ...string) *OrderSelect {
+func (_q *ReferralRewardQuery) Select(fields ...string) *ReferralRewardSelect {
 	_q.ctx.Fields = append(_q.ctx.Fields, fields...)
-	sbuild := &OrderSelect{OrderQuery: _q}
-	sbuild.label = order.Label
+	sbuild := &ReferralRewardSelect{ReferralRewardQuery: _q}
+	sbuild.label = referralreward.Label
 	sbuild.flds, sbuild.scan = &_q.ctx.Fields, sbuild.Scan
 	return sbuild
 }
 
-// Aggregate returns a OrderSelect configured with the given aggregations.
-func (_q *OrderQuery) Aggregate(fns ...AggregateFunc) *OrderSelect {
+// Aggregate returns a ReferralRewardSelect configured with the given aggregations.
+func (_q *ReferralRewardQuery) Aggregate(fns ...AggregateFunc) *ReferralRewardSelect {
 	return _q.Select().Aggregate(fns...)
 }
 
-func (_q *OrderQuery) prepareQuery(ctx context.Context) error {
+func (_q *ReferralRewardQuery) prepareQuery(ctx context.Context) error {
 	for _, inter := range _q.inters {
 		if inter == nil {
 			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
@@ -463,7 +425,7 @@ func (_q *OrderQuery) prepareQuery(ctx context.Context) error {
 		}
 	}
 	for _, f := range _q.ctx.Fields {
-		if !order.ValidColumn(f) {
+		if !referralreward.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
 	}
@@ -477,22 +439,21 @@ func (_q *OrderQuery) prepareQuery(ctx context.Context) error {
 	return nil
 }
 
-func (_q *OrderQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Order, error) {
+func (_q *ReferralRewardQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*ReferralReward, error) {
 	var (
-		nodes       = []*Order{}
+		nodes       = []*ReferralReward{}
 		_spec       = _q.querySpec()
-		loadedTypes = [4]bool{
-			_q.withUser != nil,
-			_q.withGroup != nil,
-			_q.withSubscription != nil,
-			_q.withReferralReward != nil,
+		loadedTypes = [3]bool{
+			_q.withReferrer != nil,
+			_q.withInvitee != nil,
+			_q.withTriggerOrder != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
-		return (*Order).scanValues(nil, columns)
+		return (*ReferralReward).scanValues(nil, columns)
 	}
 	_spec.Assign = func(columns []string, values []any) error {
-		node := &Order{config: _q.config}
+		node := &ReferralReward{config: _q.config}
 		nodes = append(nodes, node)
 		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
@@ -509,38 +470,32 @@ func (_q *OrderQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Order,
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := _q.withUser; query != nil {
-		if err := _q.loadUser(ctx, query, nodes, nil,
-			func(n *Order, e *User) { n.Edges.User = e }); err != nil {
+	if query := _q.withReferrer; query != nil {
+		if err := _q.loadReferrer(ctx, query, nodes, nil,
+			func(n *ReferralReward, e *User) { n.Edges.Referrer = e }); err != nil {
 			return nil, err
 		}
 	}
-	if query := _q.withGroup; query != nil {
-		if err := _q.loadGroup(ctx, query, nodes, nil,
-			func(n *Order, e *Group) { n.Edges.Group = e }); err != nil {
+	if query := _q.withInvitee; query != nil {
+		if err := _q.loadInvitee(ctx, query, nodes, nil,
+			func(n *ReferralReward, e *User) { n.Edges.Invitee = e }); err != nil {
 			return nil, err
 		}
 	}
-	if query := _q.withSubscription; query != nil {
-		if err := _q.loadSubscription(ctx, query, nodes, nil,
-			func(n *Order, e *UserSubscription) { n.Edges.Subscription = e }); err != nil {
-			return nil, err
-		}
-	}
-	if query := _q.withReferralReward; query != nil {
-		if err := _q.loadReferralReward(ctx, query, nodes, nil,
-			func(n *Order, e *ReferralReward) { n.Edges.ReferralReward = e }); err != nil {
+	if query := _q.withTriggerOrder; query != nil {
+		if err := _q.loadTriggerOrder(ctx, query, nodes, nil,
+			func(n *ReferralReward, e *Order) { n.Edges.TriggerOrder = e }); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
 }
 
-func (_q *OrderQuery) loadUser(ctx context.Context, query *UserQuery, nodes []*Order, init func(*Order), assign func(*Order, *User)) error {
+func (_q *ReferralRewardQuery) loadReferrer(ctx context.Context, query *UserQuery, nodes []*ReferralReward, init func(*ReferralReward), assign func(*ReferralReward, *User)) error {
 	ids := make([]int64, 0, len(nodes))
-	nodeids := make(map[int64][]*Order)
+	nodeids := make(map[int64][]*ReferralReward)
 	for i := range nodes {
-		fk := nodes[i].UserID
+		fk := nodes[i].ReferrerID
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
@@ -557,7 +512,7 @@ func (_q *OrderQuery) loadUser(ctx context.Context, query *UserQuery, nodes []*O
 	for _, n := range neighbors {
 		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "user_id" returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "referrer_id" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)
@@ -565,11 +520,11 @@ func (_q *OrderQuery) loadUser(ctx context.Context, query *UserQuery, nodes []*O
 	}
 	return nil
 }
-func (_q *OrderQuery) loadGroup(ctx context.Context, query *GroupQuery, nodes []*Order, init func(*Order), assign func(*Order, *Group)) error {
+func (_q *ReferralRewardQuery) loadInvitee(ctx context.Context, query *UserQuery, nodes []*ReferralReward, init func(*ReferralReward), assign func(*ReferralReward, *User)) error {
 	ids := make([]int64, 0, len(nodes))
-	nodeids := make(map[int64][]*Order)
+	nodeids := make(map[int64][]*ReferralReward)
 	for i := range nodes {
-		fk := nodes[i].GroupID
+		fk := nodes[i].InviteeID
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
@@ -578,7 +533,7 @@ func (_q *OrderQuery) loadGroup(ctx context.Context, query *GroupQuery, nodes []
 	if len(ids) == 0 {
 		return nil
 	}
-	query.Where(group.IDIn(ids...))
+	query.Where(user.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
@@ -586,7 +541,7 @@ func (_q *OrderQuery) loadGroup(ctx context.Context, query *GroupQuery, nodes []
 	for _, n := range neighbors {
 		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "group_id" returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "invitee_id" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)
@@ -594,14 +549,11 @@ func (_q *OrderQuery) loadGroup(ctx context.Context, query *GroupQuery, nodes []
 	}
 	return nil
 }
-func (_q *OrderQuery) loadSubscription(ctx context.Context, query *UserSubscriptionQuery, nodes []*Order, init func(*Order), assign func(*Order, *UserSubscription)) error {
+func (_q *ReferralRewardQuery) loadTriggerOrder(ctx context.Context, query *OrderQuery, nodes []*ReferralReward, init func(*ReferralReward), assign func(*ReferralReward, *Order)) error {
 	ids := make([]int64, 0, len(nodes))
-	nodeids := make(map[int64][]*Order)
+	nodeids := make(map[int64][]*ReferralReward)
 	for i := range nodes {
-		if nodes[i].SubscriptionID == nil {
-			continue
-		}
-		fk := *nodes[i].SubscriptionID
+		fk := nodes[i].TriggerOrderID
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
@@ -610,7 +562,7 @@ func (_q *OrderQuery) loadSubscription(ctx context.Context, query *UserSubscript
 	if len(ids) == 0 {
 		return nil
 	}
-	query.Where(usersubscription.IDIn(ids...))
+	query.Where(order.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
@@ -618,43 +570,16 @@ func (_q *OrderQuery) loadSubscription(ctx context.Context, query *UserSubscript
 	for _, n := range neighbors {
 		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "subscription_id" returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "trigger_order_id" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)
 		}
-	}
-	return nil
-}
-func (_q *OrderQuery) loadReferralReward(ctx context.Context, query *ReferralRewardQuery, nodes []*Order, init func(*Order), assign func(*Order, *ReferralReward)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[int64]*Order)
-	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-	}
-	if len(query.ctx.Fields) > 0 {
-		query.ctx.AppendFieldOnce(referralreward.FieldTriggerOrderID)
-	}
-	query.Where(predicate.ReferralReward(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(order.ReferralRewardColumn), fks...))
-	}))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		fk := n.TriggerOrderID
-		node, ok := nodeids[fk]
-		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "trigger_order_id" returned %v for node %v`, fk, n.ID)
-		}
-		assign(node, n)
 	}
 	return nil
 }
 
-func (_q *OrderQuery) sqlCount(ctx context.Context) (int, error) {
+func (_q *ReferralRewardQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := _q.querySpec()
 	if len(_q.modifiers) > 0 {
 		_spec.Modifiers = _q.modifiers
@@ -666,8 +591,8 @@ func (_q *OrderQuery) sqlCount(ctx context.Context) (int, error) {
 	return sqlgraph.CountNodes(ctx, _q.driver, _spec)
 }
 
-func (_q *OrderQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := sqlgraph.NewQuerySpec(order.Table, order.Columns, sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt64))
+func (_q *ReferralRewardQuery) querySpec() *sqlgraph.QuerySpec {
+	_spec := sqlgraph.NewQuerySpec(referralreward.Table, referralreward.Columns, sqlgraph.NewFieldSpec(referralreward.FieldID, field.TypeInt64))
 	_spec.From = _q.sql
 	if unique := _q.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
@@ -676,20 +601,20 @@ func (_q *OrderQuery) querySpec() *sqlgraph.QuerySpec {
 	}
 	if fields := _q.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
-		_spec.Node.Columns = append(_spec.Node.Columns, order.FieldID)
+		_spec.Node.Columns = append(_spec.Node.Columns, referralreward.FieldID)
 		for i := range fields {
-			if fields[i] != order.FieldID {
+			if fields[i] != referralreward.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
 		}
-		if _q.withUser != nil {
-			_spec.Node.AddColumnOnce(order.FieldUserID)
+		if _q.withReferrer != nil {
+			_spec.Node.AddColumnOnce(referralreward.FieldReferrerID)
 		}
-		if _q.withGroup != nil {
-			_spec.Node.AddColumnOnce(order.FieldGroupID)
+		if _q.withInvitee != nil {
+			_spec.Node.AddColumnOnce(referralreward.FieldInviteeID)
 		}
-		if _q.withSubscription != nil {
-			_spec.Node.AddColumnOnce(order.FieldSubscriptionID)
+		if _q.withTriggerOrder != nil {
+			_spec.Node.AddColumnOnce(referralreward.FieldTriggerOrderID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {
@@ -715,12 +640,12 @@ func (_q *OrderQuery) querySpec() *sqlgraph.QuerySpec {
 	return _spec
 }
 
-func (_q *OrderQuery) sqlQuery(ctx context.Context) *sql.Selector {
+func (_q *ReferralRewardQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(_q.driver.Dialect())
-	t1 := builder.Table(order.Table)
+	t1 := builder.Table(referralreward.Table)
 	columns := _q.ctx.Fields
 	if len(columns) == 0 {
-		columns = order.Columns
+		columns = referralreward.Columns
 	}
 	selector := builder.Select(t1.Columns(columns...)...).From(t1)
 	if _q.sql != nil {
@@ -753,7 +678,7 @@ func (_q *OrderQuery) sqlQuery(ctx context.Context) *sql.Selector {
 // ForUpdate locks the selected rows against concurrent updates, and prevent them from being
 // updated, deleted or "selected ... for update" by other sessions, until the transaction is
 // either committed or rolled-back.
-func (_q *OrderQuery) ForUpdate(opts ...sql.LockOption) *OrderQuery {
+func (_q *ReferralRewardQuery) ForUpdate(opts ...sql.LockOption) *ReferralRewardQuery {
 	if _q.driver.Dialect() == dialect.Postgres {
 		_q.Unique(false)
 	}
@@ -766,7 +691,7 @@ func (_q *OrderQuery) ForUpdate(opts ...sql.LockOption) *OrderQuery {
 // ForShare behaves similarly to ForUpdate, except that it acquires a shared mode lock
 // on any rows that are read. Other sessions can read the rows, but cannot modify them
 // until your transaction commits.
-func (_q *OrderQuery) ForShare(opts ...sql.LockOption) *OrderQuery {
+func (_q *ReferralRewardQuery) ForShare(opts ...sql.LockOption) *ReferralRewardQuery {
 	if _q.driver.Dialect() == dialect.Postgres {
 		_q.Unique(false)
 	}
@@ -776,28 +701,28 @@ func (_q *OrderQuery) ForShare(opts ...sql.LockOption) *OrderQuery {
 	return _q
 }
 
-// OrderGroupBy is the group-by builder for Order entities.
-type OrderGroupBy struct {
+// ReferralRewardGroupBy is the group-by builder for ReferralReward entities.
+type ReferralRewardGroupBy struct {
 	selector
-	build *OrderQuery
+	build *ReferralRewardQuery
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
-func (_g *OrderGroupBy) Aggregate(fns ...AggregateFunc) *OrderGroupBy {
+func (_g *ReferralRewardGroupBy) Aggregate(fns ...AggregateFunc) *ReferralRewardGroupBy {
 	_g.fns = append(_g.fns, fns...)
 	return _g
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (_g *OrderGroupBy) Scan(ctx context.Context, v any) error {
+func (_g *ReferralRewardGroupBy) Scan(ctx context.Context, v any) error {
 	ctx = setContextOp(ctx, _g.build.ctx, ent.OpQueryGroupBy)
 	if err := _g.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	return scanWithInterceptors[*OrderQuery, *OrderGroupBy](ctx, _g.build, _g, _g.build.inters, v)
+	return scanWithInterceptors[*ReferralRewardQuery, *ReferralRewardGroupBy](ctx, _g.build, _g, _g.build.inters, v)
 }
 
-func (_g *OrderGroupBy) sqlScan(ctx context.Context, root *OrderQuery, v any) error {
+func (_g *ReferralRewardGroupBy) sqlScan(ctx context.Context, root *ReferralRewardQuery, v any) error {
 	selector := root.sqlQuery(ctx).Select()
 	aggregation := make([]string, 0, len(_g.fns))
 	for _, fn := range _g.fns {
@@ -824,28 +749,28 @@ func (_g *OrderGroupBy) sqlScan(ctx context.Context, root *OrderQuery, v any) er
 	return sql.ScanSlice(rows, v)
 }
 
-// OrderSelect is the builder for selecting fields of Order entities.
-type OrderSelect struct {
-	*OrderQuery
+// ReferralRewardSelect is the builder for selecting fields of ReferralReward entities.
+type ReferralRewardSelect struct {
+	*ReferralRewardQuery
 	selector
 }
 
 // Aggregate adds the given aggregation functions to the selector query.
-func (_s *OrderSelect) Aggregate(fns ...AggregateFunc) *OrderSelect {
+func (_s *ReferralRewardSelect) Aggregate(fns ...AggregateFunc) *ReferralRewardSelect {
 	_s.fns = append(_s.fns, fns...)
 	return _s
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (_s *OrderSelect) Scan(ctx context.Context, v any) error {
+func (_s *ReferralRewardSelect) Scan(ctx context.Context, v any) error {
 	ctx = setContextOp(ctx, _s.ctx, ent.OpQuerySelect)
 	if err := _s.prepareQuery(ctx); err != nil {
 		return err
 	}
-	return scanWithInterceptors[*OrderQuery, *OrderSelect](ctx, _s.OrderQuery, _s, _s.inters, v)
+	return scanWithInterceptors[*ReferralRewardQuery, *ReferralRewardSelect](ctx, _s.ReferralRewardQuery, _s, _s.inters, v)
 }
 
-func (_s *OrderSelect) sqlScan(ctx context.Context, root *OrderQuery, v any) error {
+func (_s *ReferralRewardSelect) sqlScan(ctx context.Context, root *ReferralRewardQuery, v any) error {
 	selector := root.sqlQuery(ctx)
 	aggregation := make([]string, 0, len(_s.fns))
 	for _, fn := range _s.fns {

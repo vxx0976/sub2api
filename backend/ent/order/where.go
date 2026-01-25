@@ -754,6 +754,29 @@ func HasSubscriptionWith(preds ...predicate.UserSubscription) predicate.Order {
 	})
 }
 
+// HasReferralReward applies the HasEdge predicate on the "referral_reward" edge.
+func HasReferralReward() predicate.Order {
+	return predicate.Order(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, ReferralRewardTable, ReferralRewardColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasReferralRewardWith applies the HasEdge predicate on the "referral_reward" edge with a given conditions (other predicates).
+func HasReferralRewardWith(preds ...predicate.ReferralReward) predicate.Order {
+	return predicate.Order(func(s *sql.Selector) {
+		step := newReferralRewardStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Order) predicate.Order {
 	return predicate.Order(sql.AndPredicates(predicates...))
