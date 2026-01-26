@@ -45,6 +45,14 @@
           <!-- Right: actions -->
           <div class="flex w-full flex-shrink-0 flex-wrap items-center justify-end gap-3 lg:w-auto">
             <button
+              @click="showPlanPreview = true"
+              class="btn btn-secondary"
+              :title="t('admin.groups.planPreview.title')"
+            >
+              <Icon name="eye" size="md" class="mr-2" />
+              {{ t('admin.groups.planPreview.button') }}
+            </button>
+            <button
               @click="loadGroups"
               :disabled="loading"
               class="btn btn-secondary"
@@ -148,6 +156,16 @@
             <span :class="['badge', value ? 'badge-primary' : 'badge-gray']">
               {{ value ? t('admin.groups.exclusive') : t('admin.groups.public') }}
             </span>
+          </template>
+
+          <template #cell-is_purchasable="{ row }">
+            <span
+              v-if="row.subscription_type === 'subscription'"
+              :class="['badge', row.is_purchasable ? 'badge-success' : 'badge-gray']"
+            >
+              {{ row.is_purchasable ? t('common.yes') : t('common.no') }}
+            </span>
+            <span v-else class="text-gray-400 dark:text-gray-500">-</span>
           </template>
 
           <template #cell-account_count="{ value }">
@@ -1302,6 +1320,12 @@
       @confirm="confirmDelete"
       @cancel="showDeleteDialog = false"
     />
+
+    <!-- Plan Preview Modal -->
+    <PlanPreviewModal
+      :show="showPlanPreview"
+      @close="showPlanPreview = false"
+    />
   </AppLayout>
 </template>
 
@@ -1319,6 +1343,7 @@ import DataTable from '@/components/common/DataTable.vue'
 import Pagination from '@/components/common/Pagination.vue'
 import BaseDialog from '@/components/common/BaseDialog.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
+import PlanPreviewModal from '@/components/admin/PlanPreviewModal.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import Select from '@/components/common/Select.vue'
 import PlatformIcon from '@/components/common/PlatformIcon.vue'
@@ -1334,6 +1359,7 @@ const columns = computed<Column[]>(() => [
   { key: 'billing_type', label: t('admin.groups.columns.billingType'), sortable: true },
   { key: 'rate_multiplier', label: t('admin.groups.columns.rateMultiplier'), sortable: true },
   { key: 'is_exclusive', label: t('admin.groups.columns.type'), sortable: true },
+  { key: 'is_purchasable', label: t('admin.groups.columns.purchasable'), sortable: true },
   { key: 'account_count', label: t('admin.groups.columns.accounts'), sortable: true },
   { key: 'status', label: t('admin.groups.columns.status'), sortable: true },
   { key: 'actions', label: t('admin.groups.columns.actions'), sortable: false }
@@ -1426,6 +1452,7 @@ let abortController: AbortController | null = null
 const showCreateModal = ref(false)
 const showEditModal = ref(false)
 const showDeleteDialog = ref(false)
+const showPlanPreview = ref(false)
 const submitting = ref(false)
 const editingGroup = ref<Group | null>(null)
 const deletingGroup = ref<Group | null>(null)

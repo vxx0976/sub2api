@@ -373,15 +373,7 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/admin/promo-codes',
-    name: 'AdminPromoCodes',
-    component: () => import('@/views/admin/PromoCodesView.vue'),
-    meta: {
-      requiresAuth: true,
-      requiresAdmin: true,
-      title: 'Promo Code Management',
-      titleKey: 'admin.promo.title',
-      descriptionKey: 'admin.promo.description'
-    }
+    redirect: '/admin/redeem'
   },
   {
     path: '/admin/settings',
@@ -433,27 +425,11 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/admin/recharge-orders',
-    name: 'AdminRechargeOrders',
-    component: () => import('@/views/admin/RechargeOrdersView.vue'),
-    meta: {
-      requiresAuth: true,
-      requiresAdmin: true,
-      title: 'Recharge Orders',
-      titleKey: 'admin.rechargeOrders.title',
-      descriptionKey: 'admin.rechargeOrders.description'
-    }
+    redirect: '/admin/orders'
   },
   {
     path: '/admin/recharge-settings',
-    name: 'AdminRechargeSettings',
-    component: () => import('@/views/admin/RechargeSettingsView.vue'),
-    meta: {
-      requiresAuth: true,
-      requiresAdmin: true,
-      title: 'Recharge Settings',
-      titleKey: 'admin.settings.recharge.title',
-      descriptionKey: 'admin.settings.recharge.description'
-    }
+    redirect: '/admin/orders'
   },
 
   // ==================== 404 Not Found ====================

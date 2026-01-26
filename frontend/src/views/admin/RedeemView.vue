@@ -1,54 +1,109 @@
 <template>
   <AppLayout>
     <TablePageLayout>
-      <template #actions>
-        <div class="flex justify-end gap-3">
-          <button
-          @click="loadCodes"
-          :disabled="loading"
-          class="btn btn-secondary"
-          :title="t('common.refresh')"
-        >
-          <Icon name="refresh" size="md" :class="loading ? 'animate-spin' : ''" />
-        </button>
-        <button @click="showGenerateDialog = true" class="btn btn-primary">
-          {{ t('admin.redeem.generateCodes') }}
-        </button>
-        </div>
-      </template>
-
       <template #filters>
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div class="max-w-md flex-1">
-          <input
-            v-model="searchQuery"
-            type="text"
-            :placeholder="t('admin.redeem.searchCodes')"
-            class="input"
-            @input="handleSearch"
-          />
+          <div class="flex flex-1 flex-wrap items-center gap-3">
+            <!-- Tabs -->
+            <div class="flex rounded-lg bg-gray-100 p-1 dark:bg-dark-700">
+              <button
+                @click="activeTab = 'redeem'"
+                :class="[
+                  'px-4 py-1.5 text-sm font-medium rounded-md transition-colors',
+                  activeTab === 'redeem'
+                    ? 'bg-white text-primary-600 shadow dark:bg-dark-600 dark:text-primary-400'
+                    : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
+                ]"
+              >
+                {{ t('admin.redeem.tabs.redeem') }}
+              </button>
+              <button
+                @click="activeTab = 'promo'"
+                :class="[
+                  'px-4 py-1.5 text-sm font-medium rounded-md transition-colors',
+                  activeTab === 'promo'
+                    ? 'bg-white text-primary-600 shadow dark:bg-dark-600 dark:text-primary-400'
+                    : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
+                ]"
+              >
+                {{ t('admin.redeem.tabs.promo') }}
+              </button>
+            </div>
+
+            <!-- Search -->
+            <div class="w-full sm:w-64">
+              <input
+                v-model="searchQuery"
+                type="text"
+                :placeholder="activeTab === 'redeem' ? t('admin.redeem.searchCodes') : t('admin.promo.searchCodes')"
+                class="input"
+                @input="handleSearch"
+              />
+            </div>
+
+            <!-- Filters for redeem tab -->
+            <template v-if="activeTab === 'redeem'">
+              <Select
+                v-model="filters.type"
+                :options="filterTypeOptions"
+                class="w-36"
+                @change="loadCodes"
+              />
+              <Select
+                v-model="filters.status"
+                :options="filterStatusOptions"
+                class="w-36"
+                @change="loadCodes"
+              />
+            </template>
+
+            <!-- Filters for promo tab -->
+            <template v-else>
+              <Select
+                v-model="promoFilters.status"
+                :options="promoFilterStatusOptions"
+                class="w-36"
+                @change="loadPromoCodes"
+              />
+            </template>
           </div>
-          <div class="flex gap-2">
-          <Select
-            v-model="filters.type"
-            :options="filterTypeOptions"
-            class="w-36"
-            @change="loadCodes"
-          />
-          <Select
-            v-model="filters.status"
-            :options="filterStatusOptions"
-            class="w-36"
-            @change="loadCodes"
-          />
-          <button @click="handleExportCodes" class="btn btn-secondary">
-            {{ t('admin.redeem.exportCsv') }}
-          </button>
+
+          <!-- Action buttons -->
+          <div class="flex items-center gap-2">
+            <template v-if="activeTab === 'redeem'">
+              <button @click="handleExportCodes" class="btn btn-secondary">
+                {{ t('admin.redeem.exportCsv') }}
+              </button>
+            </template>
+            <button
+              @click="activeTab === 'redeem' ? loadCodes() : loadPromoCodes()"
+              :disabled="activeTab === 'redeem' ? loading : promoLoading"
+              class="btn btn-secondary"
+              :title="t('common.refresh')"
+            >
+              <Icon name="refresh" size="md" :class="(activeTab === 'redeem' ? loading : promoLoading) ? 'animate-spin' : ''" />
+            </button>
+            <button
+              v-if="activeTab === 'redeem'"
+              @click="showGenerateDialog = true"
+              class="btn btn-primary"
+            >
+              {{ t('admin.redeem.generateCodes') }}
+            </button>
+            <button
+              v-else
+              @click="showPromoCreateDialog = true"
+              class="btn btn-primary"
+            >
+              <Icon name="plus" size="md" class="mr-1" />
+              {{ t('admin.promo.createCode') }}
+            </button>
           </div>
         </div>
       </template>
 
-      <template #table>
+      <!-- Redeem Codes Table -->
+      <template #table v-if="activeTab === 'redeem'">
         <DataTable :columns="columns" :data="codes" :loading="loading">
           <template #cell-code="{ value }">
             <div class="flex items-center space-x-2">
@@ -65,28 +120,14 @@
               >
                 <Icon v-if="copiedCode !== value" name="copy" size="sm" :stroke-width="2" />
                 <svg v-else class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M5 13l4 4L19 7"
-                  />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                 </svg>
               </button>
             </div>
           </template>
 
           <template #cell-type="{ value }">
-            <span
-              :class="[
-                'badge',
-                value === 'balance'
-                  ? 'badge-success'
-                  : value === 'subscription'
-                    ? 'badge-warning'
-                    : 'badge-primary'
-              ]"
-            >
+            <span :class="['badge', value === 'balance' ? 'badge-success' : value === 'subscription' ? 'badge-warning' : 'badge-primary']">
               {{ t('admin.redeem.types.' + value) }}
             </span>
           </template>
@@ -96,25 +137,14 @@
               <template v-if="row.type === 'balance'">${{ value.toFixed(2) }}</template>
               <template v-else-if="row.type === 'subscription'">
                 {{ row.validity_days || 30 }} {{ t('admin.redeem.days') }}
-                <span v-if="row.group" class="ml-1 text-xs text-gray-500 dark:text-gray-400"
-                  >({{ row.group.name }})</span
-                >
+                <span v-if="row.group" class="ml-1 text-xs text-gray-500 dark:text-gray-400">({{ row.group.name }})</span>
               </template>
               <template v-else>{{ value }}</template>
             </span>
           </template>
 
           <template #cell-status="{ value }">
-            <span
-              :class="[
-                'badge',
-                value === 'unused'
-                  ? 'badge-success'
-                  : value === 'used'
-                    ? 'badge-gray'
-                    : 'badge-danger'
-              ]"
-            >
+            <span :class="['badge', value === 'unused' ? 'badge-success' : value === 'used' ? 'badge-gray' : 'badge-danger']">
               {{ t('admin.redeem.status.' + value) }}
             </span>
           </template>
@@ -126,9 +156,7 @@
           </template>
 
           <template #cell-used_at="{ value }">
-            <span class="text-sm text-gray-500 dark:text-dark-400">{{
-              value ? formatDateTime(value) : '-'
-            }}</span>
+            <span class="text-sm text-gray-500 dark:text-dark-400">{{ value ? formatDateTime(value) : '-' }}</span>
           </template>
 
           <template #cell-actions="{ row }">
@@ -138,14 +166,7 @@
                 @click="handleDelete(row)"
                 class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400"
               >
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                  />
-                </svg>
+                <Icon name="trash" size="sm" />
                 <span class="text-xs">{{ t('common.delete') }}</span>
               </button>
               <span v-else class="text-gray-400 dark:text-dark-500">-</span>
@@ -154,22 +175,112 @@
         </DataTable>
       </template>
 
-      <template #pagination>
-        <Pagination
-          v-if="pagination.total > 0"
-          :page="pagination.page"
-          :total="pagination.total"
-          :page-size="pagination.page_size"
-          @update:page="handlePageChange"
-          @update:pageSize="handlePageSizeChange"
-        />
+      <!-- Promo Codes Table -->
+      <template #table v-else>
+        <DataTable :columns="promoColumns" :data="promoCodes" :loading="promoLoading">
+          <template #cell-code="{ value }">
+            <div class="flex items-center space-x-2">
+              <code class="font-mono text-sm text-gray-900 dark:text-gray-100">{{ value }}</code>
+              <button
+                @click="copyToClipboard(value)"
+                :class="['flex items-center transition-colors', copiedCode === value ? 'text-green-500' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300']"
+              >
+                <Icon v-if="copiedCode !== value" name="copy" size="sm" :stroke-width="2" />
+                <svg v-else class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+              </button>
+            </div>
+          </template>
 
-        <!-- Batch Actions -->
-        <div v-if="filters.status === 'unused'" class="flex justify-end">
-          <button @click="showDeleteUnusedDialog = true" class="btn btn-danger">
-            {{ t('admin.redeem.deleteAllUnused') }}
-          </button>
-        </div>
+          <template #cell-bonus_amount="{ value }">
+            <span class="text-sm font-medium text-gray-900 dark:text-white">${{ value.toFixed(2) }}</span>
+          </template>
+
+          <template #cell-usage="{ row }">
+            <span class="text-sm text-gray-600 dark:text-gray-300">
+              {{ row.used_count }} / {{ row.max_uses === 0 ? '∞' : row.max_uses }}
+            </span>
+          </template>
+
+          <template #cell-status="{ value, row }">
+            <span :class="['badge', getPromoStatusClass(value, row)]">
+              {{ getPromoStatusLabel(value, row) }}
+            </span>
+          </template>
+
+          <template #cell-expires_at="{ value }">
+            <span class="text-sm text-gray-500 dark:text-dark-400">
+              {{ value ? formatDateTime(value) : t('admin.promo.neverExpires') }}
+            </span>
+          </template>
+
+          <template #cell-created_at="{ value }">
+            <span class="text-sm text-gray-500 dark:text-dark-400">{{ formatDateTime(value) }}</span>
+          </template>
+
+          <template #cell-actions="{ row }">
+            <div class="flex items-center space-x-1">
+              <button
+                @click="copyPromoRegisterLink(row)"
+                class="rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-green-50 hover:text-green-600 dark:hover:bg-green-900/20 dark:hover:text-green-400"
+                :title="t('admin.promo.copyRegisterLink')"
+              >
+                <Icon name="link" size="sm" />
+              </button>
+              <button
+                @click="handleViewPromoUsages(row)"
+                class="rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20 dark:hover:text-blue-400"
+                :title="t('admin.promo.viewUsages')"
+              >
+                <Icon name="eye" size="sm" />
+              </button>
+              <button
+                @click="handleEditPromo(row)"
+                class="rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-dark-600 dark:hover:text-gray-300"
+                :title="t('common.edit')"
+              >
+                <Icon name="edit" size="sm" />
+              </button>
+              <button
+                @click="handleDeletePromo(row)"
+                class="rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+                :title="t('common.delete')"
+              >
+                <Icon name="trash" size="sm" />
+              </button>
+            </div>
+          </template>
+        </DataTable>
+      </template>
+
+      <!-- Pagination -->
+      <template #pagination>
+        <!-- Redeem Pagination -->
+        <template v-if="activeTab === 'redeem'">
+          <Pagination
+            v-if="pagination.total > 0"
+            :page="pagination.page"
+            :total="pagination.total"
+            :page-size="pagination.page_size"
+            @update:page="handlePageChange"
+            @update:pageSize="handlePageSizeChange"
+          />
+          <div v-if="filters.status === 'unused'" class="flex justify-end">
+            <button @click="showDeleteUnusedDialog = true" class="btn btn-danger">
+              {{ t('admin.redeem.deleteAllUnused') }}
+            </button>
+          </div>
+        </template>
+        <!-- Promo Pagination -->
+        <Pagination
+          v-else-if="promoPagination.total > 0"
+          :page="promoPagination.page"
+          :total="promoPagination.total"
+          :page-size="promoPagination.page_size"
+          @update:page="handlePromoPageChange"
+          @update:pageSize="handlePromoPageSizeChange"
+        />
       </template>
     </TablePageLayout>
 
@@ -383,23 +494,253 @@
         </div>
       </div>
     </Teleport>
+
+    <!-- ==================== Promo Code Dialogs ==================== -->
+
+    <!-- Promo Create Dialog -->
+    <BaseDialog
+      :show="showPromoCreateDialog"
+      :title="t('admin.promo.createCode')"
+      width="normal"
+      @close="showPromoCreateDialog = false"
+    >
+      <form id="create-promo-form" @submit.prevent="handlePromoCreate" class="space-y-4">
+        <div>
+          <label class="input-label">
+            {{ t('admin.promo.code') }}
+            <span class="ml-1 text-xs font-normal text-gray-400">({{ t('admin.promo.autoGenerate') }})</span>
+          </label>
+          <input
+            v-model="promoCreateForm.code"
+            type="text"
+            class="input font-mono uppercase"
+            :placeholder="t('admin.promo.codePlaceholder')"
+          />
+        </div>
+        <div>
+          <label class="input-label">{{ t('admin.promo.bonusAmount') }}</label>
+          <input
+            v-model.number="promoCreateForm.bonus_amount"
+            type="number"
+            step="0.01"
+            min="0"
+            required
+            class="input"
+          />
+        </div>
+        <div>
+          <label class="input-label">
+            {{ t('admin.promo.maxUses') }}
+            <span class="ml-1 text-xs font-normal text-gray-400">({{ t('admin.promo.zeroUnlimited') }})</span>
+          </label>
+          <input
+            v-model.number="promoCreateForm.max_uses"
+            type="number"
+            min="0"
+            class="input"
+          />
+        </div>
+        <div>
+          <label class="input-label">
+            {{ t('admin.promo.expiresAt') }}
+            <span class="ml-1 text-xs font-normal text-gray-400">({{ t('common.optional') }})</span>
+          </label>
+          <input
+            v-model="promoCreateForm.expires_at_str"
+            type="datetime-local"
+            class="input"
+          />
+        </div>
+        <div>
+          <label class="input-label">
+            {{ t('admin.promo.notes') }}
+            <span class="ml-1 text-xs font-normal text-gray-400">({{ t('common.optional') }})</span>
+          </label>
+          <textarea
+            v-model="promoCreateForm.notes"
+            rows="2"
+            class="input"
+            :placeholder="t('admin.promo.notesPlaceholder')"
+          ></textarea>
+        </div>
+      </form>
+      <template #footer>
+        <div class="flex justify-end gap-3">
+          <button type="button" @click="showPromoCreateDialog = false" class="btn btn-secondary">
+            {{ t('common.cancel') }}
+          </button>
+          <button type="submit" form="create-promo-form" :disabled="promoCreating" class="btn btn-primary">
+            {{ promoCreating ? t('common.creating') : t('common.create') }}
+          </button>
+        </div>
+      </template>
+    </BaseDialog>
+
+    <!-- Promo Edit Dialog -->
+    <BaseDialog
+      :show="showPromoEditDialog"
+      :title="t('admin.promo.editCode')"
+      width="normal"
+      @close="closePromoEditDialog"
+    >
+      <form id="edit-promo-form" @submit.prevent="handlePromoUpdate" class="space-y-4">
+        <div>
+          <label class="input-label">{{ t('admin.promo.code') }}</label>
+          <input
+            v-model="promoEditForm.code"
+            type="text"
+            class="input font-mono uppercase"
+          />
+        </div>
+        <div>
+          <label class="input-label">{{ t('admin.promo.bonusAmount') }}</label>
+          <input
+            v-model.number="promoEditForm.bonus_amount"
+            type="number"
+            step="0.01"
+            min="0"
+            required
+            class="input"
+          />
+        </div>
+        <div>
+          <label class="input-label">
+            {{ t('admin.promo.maxUses') }}
+            <span class="ml-1 text-xs font-normal text-gray-400">({{ t('admin.promo.zeroUnlimited') }})</span>
+          </label>
+          <input
+            v-model.number="promoEditForm.max_uses"
+            type="number"
+            min="0"
+            class="input"
+          />
+        </div>
+        <div>
+          <label class="input-label">{{ t('admin.promo.status') }}</label>
+          <Select v-model="promoEditForm.status" :options="promoStatusOptions" />
+        </div>
+        <div>
+          <label class="input-label">
+            {{ t('admin.promo.expiresAt') }}
+            <span class="ml-1 text-xs font-normal text-gray-400">({{ t('common.optional') }})</span>
+          </label>
+          <input
+            v-model="promoEditForm.expires_at_str"
+            type="datetime-local"
+            class="input"
+          />
+        </div>
+        <div>
+          <label class="input-label">
+            {{ t('admin.promo.notes') }}
+            <span class="ml-1 text-xs font-normal text-gray-400">({{ t('common.optional') }})</span>
+          </label>
+          <textarea
+            v-model="promoEditForm.notes"
+            rows="2"
+            class="input"
+          ></textarea>
+        </div>
+      </form>
+      <template #footer>
+        <div class="flex justify-end gap-3">
+          <button type="button" @click="closePromoEditDialog" class="btn btn-secondary">
+            {{ t('common.cancel') }}
+          </button>
+          <button type="submit" form="edit-promo-form" :disabled="promoUpdating" class="btn btn-primary">
+            {{ promoUpdating ? t('common.saving') : t('common.save') }}
+          </button>
+        </div>
+      </template>
+    </BaseDialog>
+
+    <!-- Promo Usages Dialog -->
+    <BaseDialog
+      :show="showPromoUsagesDialog"
+      :title="t('admin.promo.usageRecords')"
+      width="wide"
+      @close="showPromoUsagesDialog = false"
+    >
+      <div v-if="promoUsagesLoading" class="flex items-center justify-center py-8">
+        <Icon name="refresh" size="lg" class="animate-spin text-gray-400" />
+      </div>
+      <div v-else-if="promoUsages.length === 0" class="py-8 text-center text-gray-500 dark:text-gray-400">
+        {{ t('admin.promo.noUsages') }}
+      </div>
+      <div v-else class="space-y-3">
+        <div
+          v-for="usage in promoUsages"
+          :key="usage.id"
+          class="flex items-center justify-between rounded-lg border border-gray-200 p-3 dark:border-dark-600"
+        >
+          <div class="flex items-center gap-3">
+            <div class="flex h-8 w-8 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
+              <Icon name="user" size="sm" class="text-green-600 dark:text-green-400" />
+            </div>
+            <div>
+              <p class="text-sm font-medium text-gray-900 dark:text-white">
+                {{ usage.user?.email || t('admin.promo.userPrefix', { id: usage.user_id }) }}
+              </p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                {{ formatDateTime(usage.used_at) }}
+              </p>
+            </div>
+          </div>
+          <div class="text-right">
+            <span class="text-sm font-medium text-green-600 dark:text-green-400">
+              +${{ usage.bonus_amount.toFixed(2) }}
+            </span>
+          </div>
+        </div>
+        <div v-if="promoUsagesTotal > promoUsagesPageSize" class="mt-4">
+          <Pagination
+            :page="promoUsagesPage"
+            :total="promoUsagesTotal"
+            :page-size="promoUsagesPageSize"
+            :page-size-options="[10, 20, 50]"
+            @update:page="handlePromoUsagesPageChange"
+            @update:page-size="(size: number) => { promoUsagesPageSize = size; promoUsagesPage = 1; loadPromoUsages() }"
+          />
+        </div>
+      </div>
+      <template #footer>
+        <div class="flex justify-end">
+          <button type="button" @click="showPromoUsagesDialog = false" class="btn btn-secondary">
+            {{ t('common.close') }}
+          </button>
+        </div>
+      </template>
+    </BaseDialog>
+
+    <!-- Promo Delete Confirmation Dialog -->
+    <ConfirmDialog
+      :show="showPromoDeleteDialog"
+      :title="t('admin.promo.deleteCode')"
+      :message="t('admin.promo.deleteCodeConfirm')"
+      :confirm-text="t('common.delete')"
+      :cancel-text="t('common.cancel')"
+      danger
+      @confirm="confirmPromoDelete"
+      @cancel="showPromoDeleteDialog = false"
+    />
   </AppLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
 import { useClipboard } from '@/composables/useClipboard'
 import { adminAPI } from '@/api/admin'
 import { formatDateTime } from '@/utils/format'
-import type { RedeemCode, RedeemCodeType, Group, GroupPlatform, SubscriptionType } from '@/types'
+import type { RedeemCode, RedeemCodeType, Group, GroupPlatform, SubscriptionType, PromoCode, PromoCodeUsage } from '@/types'
 import type { Column } from '@/components/common/types'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import TablePageLayout from '@/components/layout/TablePageLayout.vue'
 import DataTable from '@/components/common/DataTable.vue'
 import Pagination from '@/components/common/Pagination.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
+import BaseDialog from '@/components/common/BaseDialog.vue'
 import Select from '@/components/common/Select.vue'
 import GroupBadge from '@/components/common/GroupBadge.vue'
 import GroupOptionItem from '@/components/common/GroupOptionItem.vue'
@@ -417,6 +758,16 @@ interface GroupOption {
   subscriptionType: SubscriptionType
   rate: number
 }
+
+const activeTab = ref<'redeem' | 'promo'>('redeem')
+
+// Watch tab changes to load data
+watch(activeTab, (newTab) => {
+  searchQuery.value = ''
+  if (newTab === 'promo' && promoCodes.value.length === 0) {
+    loadPromoCodes()
+  }
+})
 
 const showGenerateDialog = ref(false)
 const showResultDialog = ref(false)
@@ -594,8 +945,13 @@ let searchTimeout: ReturnType<typeof setTimeout>
 const handleSearch = () => {
   clearTimeout(searchTimeout)
   searchTimeout = setTimeout(() => {
-    pagination.page = 1
-    loadCodes()
+    if (activeTab.value === 'redeem') {
+      pagination.page = 1
+      loadCodes()
+    } else {
+      promoPagination.page = 1
+      loadPromoCodes()
+    }
   }, 300)
 }
 
@@ -727,6 +1083,289 @@ const loadSubscriptionGroups = async () => {
   }
 }
 
+// ==================== Promo Codes Section ====================
+const promoCodes = ref<PromoCode[]>([])
+const promoLoading = ref(false)
+const promoCreating = ref(false)
+const promoUpdating = ref(false)
+
+const promoFilters = reactive({
+  status: ''
+})
+
+const promoPagination = reactive({
+  page: 1,
+  page_size: 20,
+  total: 0
+})
+
+// Promo Dialogs
+const showPromoCreateDialog = ref(false)
+const showPromoEditDialog = ref(false)
+const showPromoDeleteDialog = ref(false)
+const showPromoUsagesDialog = ref(false)
+
+const editingPromoCode = ref<PromoCode | null>(null)
+const deletingPromoCode = ref<PromoCode | null>(null)
+
+// Promo Usages
+const promoUsages = ref<PromoCodeUsage[]>([])
+const promoUsagesLoading = ref(false)
+const currentViewingPromoCode = ref<PromoCode | null>(null)
+const promoUsagesPage = ref(1)
+const promoUsagesPageSize = ref(20)
+const promoUsagesTotal = ref(0)
+
+// Promo Forms
+const promoCreateForm = reactive({
+  code: '',
+  bonus_amount: 1,
+  max_uses: 0,
+  expires_at_str: '',
+  notes: ''
+})
+
+const promoEditForm = reactive({
+  code: '',
+  bonus_amount: 0,
+  max_uses: 0,
+  status: 'active' as 'active' | 'disabled',
+  expires_at_str: '',
+  notes: ''
+})
+
+// Promo Options
+const promoFilterStatusOptions = computed(() => [
+  { value: '', label: t('admin.promo.allStatus') },
+  { value: 'active', label: t('admin.promo.statusActive') },
+  { value: 'disabled', label: t('admin.promo.statusDisabled') }
+])
+
+const promoStatusOptions = computed(() => [
+  { value: 'active', label: t('admin.promo.statusActive') },
+  { value: 'disabled', label: t('admin.promo.statusDisabled') }
+])
+
+const promoColumns = computed<Column[]>(() => [
+  { key: 'code', label: t('admin.promo.columns.code') },
+  { key: 'bonus_amount', label: t('admin.promo.columns.bonusAmount'), sortable: true },
+  { key: 'usage', label: t('admin.promo.columns.usage') },
+  { key: 'status', label: t('admin.promo.columns.status'), sortable: true },
+  { key: 'expires_at', label: t('admin.promo.columns.expiresAt'), sortable: true },
+  { key: 'created_at', label: t('admin.promo.columns.createdAt'), sortable: true },
+  { key: 'actions', label: t('admin.promo.columns.actions') }
+])
+
+// Promo Helpers
+const getPromoStatusClass = (status: string, row: PromoCode) => {
+  if (row.expires_at && new Date(row.expires_at) < new Date()) {
+    return 'badge-danger'
+  }
+  if (row.max_uses > 0 && row.used_count >= row.max_uses) {
+    return 'badge-gray'
+  }
+  return status === 'active' ? 'badge-success' : 'badge-gray'
+}
+
+const getPromoStatusLabel = (status: string, row: PromoCode) => {
+  if (row.expires_at && new Date(row.expires_at) < new Date()) {
+    return t('admin.promo.statusExpired')
+  }
+  if (row.max_uses > 0 && row.used_count >= row.max_uses) {
+    return t('admin.promo.statusMaxUsed')
+  }
+  return status === 'active' ? t('admin.promo.statusActive') : t('admin.promo.statusDisabled')
+}
+
+// Promo API calls
+let promoAbortController: AbortController | null = null
+
+const loadPromoCodes = async () => {
+  if (promoAbortController) {
+    promoAbortController.abort()
+  }
+  const currentController = new AbortController()
+  promoAbortController = currentController
+  promoLoading.value = true
+
+  try {
+    const response = await adminAPI.promo.list(
+      promoPagination.page,
+      promoPagination.page_size,
+      {
+        status: promoFilters.status || undefined,
+        search: searchQuery.value || undefined
+      }
+    )
+    if (currentController.signal.aborted) return
+
+    promoCodes.value = response.items
+    promoPagination.total = response.total
+  } catch (error: any) {
+    if (currentController.signal.aborted || error?.name === 'AbortError') return
+    appStore.showError(t('admin.promo.failedToLoad'))
+    console.error('Error loading promo codes:', error)
+  } finally {
+    if (promoAbortController === currentController && !currentController.signal.aborted) {
+      promoLoading.value = false
+      promoAbortController = null
+    }
+  }
+}
+
+const handlePromoPageChange = (page: number) => {
+  promoPagination.page = page
+  loadPromoCodes()
+}
+
+const handlePromoPageSizeChange = (pageSize: number) => {
+  promoPagination.page_size = pageSize
+  promoPagination.page = 1
+  loadPromoCodes()
+}
+
+// Promo Create
+const handlePromoCreate = async () => {
+  promoCreating.value = true
+  try {
+    await adminAPI.promo.create({
+      code: promoCreateForm.code || undefined,
+      bonus_amount: promoCreateForm.bonus_amount,
+      max_uses: promoCreateForm.max_uses,
+      expires_at: promoCreateForm.expires_at_str ? Math.floor(new Date(promoCreateForm.expires_at_str).getTime() / 1000) : undefined,
+      notes: promoCreateForm.notes || undefined
+    })
+    appStore.showSuccess(t('admin.promo.codeCreated'))
+    showPromoCreateDialog.value = false
+    resetPromoCreateForm()
+    loadPromoCodes()
+  } catch (error: any) {
+    appStore.showError(error.response?.data?.detail || t('admin.promo.failedToCreate'))
+  } finally {
+    promoCreating.value = false
+  }
+}
+
+const resetPromoCreateForm = () => {
+  promoCreateForm.code = ''
+  promoCreateForm.bonus_amount = 1
+  promoCreateForm.max_uses = 0
+  promoCreateForm.expires_at_str = ''
+  promoCreateForm.notes = ''
+}
+
+// Promo Edit
+const handleEditPromo = (code: PromoCode) => {
+  editingPromoCode.value = code
+  promoEditForm.code = code.code
+  promoEditForm.bonus_amount = code.bonus_amount
+  promoEditForm.max_uses = code.max_uses
+  promoEditForm.status = code.status
+  promoEditForm.expires_at_str = code.expires_at ? new Date(code.expires_at).toISOString().slice(0, 16) : ''
+  promoEditForm.notes = code.notes || ''
+  showPromoEditDialog.value = true
+}
+
+const closePromoEditDialog = () => {
+  showPromoEditDialog.value = false
+  editingPromoCode.value = null
+}
+
+const handlePromoUpdate = async () => {
+  if (!editingPromoCode.value) return
+
+  promoUpdating.value = true
+  try {
+    await adminAPI.promo.update(editingPromoCode.value.id, {
+      code: promoEditForm.code,
+      bonus_amount: promoEditForm.bonus_amount,
+      max_uses: promoEditForm.max_uses,
+      status: promoEditForm.status,
+      expires_at: promoEditForm.expires_at_str ? Math.floor(new Date(promoEditForm.expires_at_str).getTime() / 1000) : 0,
+      notes: promoEditForm.notes
+    })
+    appStore.showSuccess(t('admin.promo.codeUpdated'))
+    closePromoEditDialog()
+    loadPromoCodes()
+  } catch (error: any) {
+    appStore.showError(error.response?.data?.detail || t('admin.promo.failedToUpdate'))
+  } finally {
+    promoUpdating.value = false
+  }
+}
+
+// Promo Copy Register Link
+const copyPromoRegisterLink = async (code: PromoCode) => {
+  const baseUrl = window.location.origin
+  const registerLink = `${baseUrl}/register?promo=${encodeURIComponent(code.code)}`
+
+  try {
+    await navigator.clipboard.writeText(registerLink)
+    appStore.showSuccess(t('admin.promo.registerLinkCopied'))
+  } catch {
+    const textArea = document.createElement('textarea')
+    textArea.value = registerLink
+    document.body.appendChild(textArea)
+    textArea.select()
+    document.execCommand('copy')
+    document.body.removeChild(textArea)
+    appStore.showSuccess(t('admin.promo.registerLinkCopied'))
+  }
+}
+
+// Promo Delete
+const handleDeletePromo = (code: PromoCode) => {
+  deletingPromoCode.value = code
+  showPromoDeleteDialog.value = true
+}
+
+const confirmPromoDelete = async () => {
+  if (!deletingPromoCode.value) return
+
+  try {
+    await adminAPI.promo.delete(deletingPromoCode.value.id)
+    appStore.showSuccess(t('admin.promo.codeDeleted'))
+    showPromoDeleteDialog.value = false
+    deletingPromoCode.value = null
+    loadPromoCodes()
+  } catch (error: any) {
+    appStore.showError(error.response?.data?.detail || t('admin.promo.failedToDelete'))
+  }
+}
+
+// Promo View Usages
+const handleViewPromoUsages = async (code: PromoCode) => {
+  currentViewingPromoCode.value = code
+  showPromoUsagesDialog.value = true
+  promoUsagesPage.value = 1
+  await loadPromoUsages()
+}
+
+const loadPromoUsages = async () => {
+  if (!currentViewingPromoCode.value) return
+  promoUsagesLoading.value = true
+  promoUsages.value = []
+
+  try {
+    const response = await adminAPI.promo.getUsages(
+      currentViewingPromoCode.value.id,
+      promoUsagesPage.value,
+      promoUsagesPageSize.value
+    )
+    promoUsages.value = response.items
+    promoUsagesTotal.value = response.total
+  } catch (error: any) {
+    appStore.showError(error.response?.data?.detail || t('admin.promo.failedToLoadUsages'))
+  } finally {
+    promoUsagesLoading.value = false
+  }
+}
+
+const handlePromoUsagesPageChange = (page: number) => {
+  promoUsagesPage.value = page
+  loadPromoUsages()
+}
+
 onMounted(() => {
   loadCodes()
   loadSubscriptionGroups()
@@ -735,5 +1374,6 @@ onMounted(() => {
 onUnmounted(() => {
   clearTimeout(searchTimeout)
   abortController?.abort()
+  promoAbortController?.abort()
 })
 </script>

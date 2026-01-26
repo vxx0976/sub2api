@@ -1278,6 +1278,7 @@ export default {
         platform: 'Platform',
         rateMultiplier: 'Rate Multiplier',
         type: 'Type',
+        purchasable: 'Purchasable',
         accounts: 'Accounts',
         status: 'Status',
         actions: 'Actions',
@@ -1392,6 +1393,14 @@ export default {
         sortOrderHint: 'Higher values appear first in the list',
         isRecommended: 'Recommended',
         isRecommendedHint: 'Show recommended badge on the plans page'
+      },
+      planPreview: {
+        title: 'Plan Preview',
+        button: 'Preview Plans',
+        noPlans: 'No plans to display',
+        noPlansDesc: 'Please create subscription-type groups and enable purchasing first.',
+        notPurchasable: 'Not Purchasable',
+        previewOnly: 'Preview Only'
       }
     },
 
@@ -1472,6 +1481,11 @@ export default {
       noOrdersDesc: 'There are no order records yet.',
       failedToLoad: 'Failed to load orders',
       userPrefix: 'User #{id}',
+      rechargeSettings: 'Recharge Settings',
+      tabs: {
+        subscription: 'Subscription Orders',
+        recharge: 'Recharge Orders'
+      },
       columns: {
         orderNo: 'Order No',
         user: 'User',
@@ -2324,6 +2338,10 @@ export default {
       title: 'Redeem Code Management',
       description: 'Generate and manage redeem codes',
       generateCodes: 'Generate Codes',
+      tabs: {
+        redeem: 'Redeem Codes',
+        promo: 'Promo Codes'
+      },
       searchCodes: 'Search codes...',
       allTypes: 'All Types',
       allStatus: 'All Status',

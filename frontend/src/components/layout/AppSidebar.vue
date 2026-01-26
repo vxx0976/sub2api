@@ -54,29 +54,6 @@
           </router-link>
         </div>
 
-        <!-- Personal Section for Admin (hidden in simple mode) -->
-        <div v-if="!authStore.isSimpleMode" class="sidebar-section">
-          <div v-if="!sidebarCollapsed" class="sidebar-section-title">
-            {{ t('nav.myAccount') }}
-          </div>
-          <div v-else class="mx-3 my-3 h-px bg-gray-200 dark:bg-dark-700"></div>
-
-          <router-link
-            v-for="item in personalNavItems"
-            :key="item.path"
-            :to="item.path"
-            class="sidebar-link mb-1"
-            :class="{ 'sidebar-link-active': isActive(item.path) }"
-            :title="sidebarCollapsed ? item.label : undefined"
-            :data-tour="item.path === '/keys' ? 'sidebar-my-keys' : undefined"
-            @click="handleMenuItemClick(item.path)"
-          >
-            <component :is="item.icon" class="h-5 w-5 flex-shrink-0" />
-            <transition name="fade">
-              <span v-if="!sidebarCollapsed">{{ item.label }}</span>
-            </transition>
-          </router-link>
-        </div>
       </template>
 
       <!-- Regular User View -->
@@ -349,21 +326,6 @@ const TicketIcon = {
     )
 }
 
-const WalletIcon = {
-  render: () =>
-    h(
-      'svg',
-      { fill: 'none', viewBox: '0 0 24 24', stroke: 'currentColor', 'stroke-width': '1.5' },
-      [
-        h('path', {
-          'stroke-linecap': 'round',
-          'stroke-linejoin': 'round',
-          d: 'M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 11-6 0H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 9m18 0V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v3'
-        })
-      ]
-    )
-}
-
 const OrdersIcon = {
   render: () =>
     h(
@@ -475,20 +437,6 @@ const userNavItems = computed(() => {
   return authStore.isSimpleMode ? items.filter(item => !item.hideInSimpleMode) : items
 })
 
-// Personal navigation items (for admin's "My Account" section, without Dashboard)
-const personalNavItems = computed(() => {
-  const items = [
-    { path: '/keys', label: t('nav.apiKeys'), icon: KeyIcon },
-    { path: '/usage', label: t('nav.usage'), icon: ChartIcon, hideInSimpleMode: true },
-    { path: '/subscriptions', label: t('nav.mySubscriptions'), icon: CreditCardIcon, hideInSimpleMode: true },
-    { path: '/plans', label: t('nav.plans'), icon: GiftIcon, hideInSimpleMode: true },
-    { path: '/orders', label: t('nav.orders'), icon: OrdersIcon, hideInSimpleMode: true },
-    { path: '/redeem', label: t('nav.redeem'), icon: TicketIcon, hideInSimpleMode: true },
-    { path: '/referral', label: t('nav.referral'), icon: UserPlusIcon, hideInSimpleMode: true }
-  ]
-  return authStore.isSimpleMode ? items.filter(item => !item.hideInSimpleMode) : items
-})
-
 // Admin navigation items
 const adminNavItems = computed(() => {
   const baseItems = [
@@ -502,12 +450,9 @@ const adminNavItems = computed(() => {
     { path: '/admin/accounts', label: t('nav.accounts'), icon: GlobeIcon },
     { path: '/admin/proxies', label: t('nav.proxies'), icon: ServerIcon },
     { path: '/admin/redeem', label: t('nav.redeemCodes'), icon: TicketIcon, hideInSimpleMode: true },
-    { path: '/admin/promo-codes', label: t('nav.promoCodes'), icon: GiftIcon, hideInSimpleMode: true },
     { path: '/admin/usage', label: t('nav.usage'), icon: ChartIcon },
     { path: '/admin/orders', label: t('nav.adminOrders'), icon: OrdersIcon, hideInSimpleMode: true },
     { path: '/admin/referrals', label: t('nav.adminReferrals'), icon: UsersIcon, hideInSimpleMode: true },
-    { path: '/admin/recharge-orders', label: t('nav.adminRechargeOrders'), icon: WalletIcon, hideInSimpleMode: true },
-    { path: '/admin/recharge-settings', label: t('nav.rechargeSettings'), icon: CogIcon, hideInSimpleMode: true },
   ]
 
   // 简单模式下，在系统设置前插入 API密钥

@@ -1325,6 +1325,7 @@ export default {
         rateMultiplier: '费率倍数',
         exclusive: '独占',
         type: '类型',
+        purchasable: '可购买',
         priority: '优先级',
         apiKeys: 'API 密钥数',
         accounts: '账号数',
@@ -1469,6 +1470,14 @@ export default {
         sortOrderHint: '数值越大排序越靠前',
         isRecommended: '推荐套餐',
         isRecommendedHint: '在套餐页面显示推荐标识'
+      },
+      planPreview: {
+        title: '套餐预览',
+        button: '预览套餐',
+        noPlans: '暂无可展示的套餐',
+        noPlansDesc: '请先创建订阅类型的分组并启用购买功能。',
+        notPurchasable: '未开放购买',
+        previewOnly: '仅供预览'
       }
     },
 
@@ -1548,6 +1557,11 @@ export default {
       noOrdersDesc: '还没有任何订单记录。',
       failedToLoad: '加载订单列表失败',
       userPrefix: '用户 #{id}',
+      rechargeSettings: '充值配置',
+      tabs: {
+        subscription: '套餐订单',
+        recharge: '充值订单'
+      },
       columns: {
         orderNo: '订单号',
         user: '用户',
@@ -2441,6 +2455,10 @@ export default {
       title: '兑换码管理',
       description: '生成和管理兑换码',
       generateCodes: '生成兑换码',
+      tabs: {
+        redeem: '兑换码',
+        promo: '优惠码'
+      },
       columns: {
         code: '兑换码',
         type: '类型',
