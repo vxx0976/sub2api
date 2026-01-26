@@ -267,15 +267,7 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/recharge-orders',
-    name: 'RechargeOrders',
-    component: () => import('@/views/user/RechargeOrdersView.vue'),
-    meta: {
-      requiresAuth: true,
-      requiresAdmin: false,
-      title: 'Recharge History',
-      titleKey: 'recharge.myOrders',
-      descriptionKey: 'recharge.myOrders'
-    }
+    redirect: '/orders'
   },
 
   // ==================== Admin Routes ====================

@@ -21,7 +21,7 @@
         </div>
       </div>
 
-      <!-- Right: Docs + Language + Subscriptions + Balance + User Dropdown -->
+      <!-- Right: Docs + Redeem + Language + Subscriptions + Balance + User Dropdown -->
       <div class="flex items-center gap-3">
         <!-- Docs Link -->
         <a
@@ -34,6 +34,16 @@
           <Icon name="book" size="sm" />
           <span class="hidden sm:inline">{{ t('nav.docs') }}</span>
         </a>
+
+        <!-- Redeem Button -->
+        <router-link
+          v-if="user"
+          to="/redeem"
+          class="flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-primary-600 dark:bg-primary-600 dark:hover:bg-primary-700"
+        >
+          <Icon name="gift" size="sm" />
+          <span class="hidden sm:inline">{{ t('nav.redeem') }}</span>
+        </router-link>
 
         <!-- Language Switcher -->
         <LocaleSwitcher />

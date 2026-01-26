@@ -52,7 +52,7 @@
         </div>
         <div class="grid gap-6 sm:grid-cols-2">
           <!-- Recharge Bonus Card -->
-          <div v-if="rechargeConfig?.enabled && rechargeTiers.length > 0" class="card overflow-hidden">
+          <div class="card overflow-hidden">
             <div class="bg-gradient-to-br from-emerald-500 to-teal-600 p-5">
               <div class="flex items-center gap-3">
                 <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur">
@@ -153,7 +153,6 @@
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
-import { rechargeAPI, type RechargeConfig } from '@/api/recharge'
 import { settingsAPI } from '@/api/settings'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import Icon from '@/components/icons/Icon.vue'
@@ -175,16 +174,15 @@ const currentDate = computed(() => {
   })
 })
 
-// Recharge config from API
-const rechargeConfig = ref<RechargeConfig | null>(null)
-
-const rechargeTiers = computed(() => {
-  if (!rechargeConfig.value?.tiers) return []
-  return [...rechargeConfig.value.tiers].sort((a, b) => a.min - b.min)
-})
+// Hardcoded recharge tiers (no API loading needed)
+const rechargeTiers = [
+  { min: 0, max: 50, multiplier: 1.0 },
+  { min: 50, max: 100, multiplier: 1.1 },
+  { min: 100, max: null, multiplier: 1.15 }
+]
 
 // Display top 3 tiers for the card
-const displayTiers = computed(() => rechargeTiers.value.slice(0, 3))
+const displayTiers = rechargeTiers.slice(0, 3)
 
 // Referral plans with 10% reward (minimum $1)
 const referralPlans = [
@@ -195,25 +193,21 @@ const referralPlans = [
   { price: 99.9, reward: 10 }
 ]
 
-// Announcements from API
-const announcements = ref<Announcement[]>([])
+// Default announcements (hardcoded)
+const announcements = ref<Announcement[]>([
+  { title: '新功能上线：邀请奖励系统', date: '2026-01-20' },
+  { title: '春节期间充值享额外优惠', date: '2026-01-15' }
+])
 
-// Load data on mount
+// Optionally load announcements from API to override defaults
 onMounted(async () => {
-  // Load recharge config
-  try {
-    rechargeConfig.value = await rechargeAPI.getConfig()
-  } catch (error) {
-    console.error('Failed to load recharge config:', error)
-  }
-
-  // Load announcements from settings
   try {
     const settings = await settingsAPI.getPublicSettings()
-    if (settings.announcements && Array.isArray(settings.announcements)) {
+    if (settings.announcements && Array.isArray(settings.announcements) && settings.announcements.length > 0) {
       announcements.value = settings.announcements
     }
   } catch (error) {
+    // Keep default announcements on error
     console.error('Failed to load announcements:', error)
   }
 })

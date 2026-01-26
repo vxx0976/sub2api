@@ -3796,7 +3796,9 @@ export default {
     continuePay: '继续支付',
     paying: '支付中...',
     expired: '已过期',
-    repayFailed: '获取支付链接失败'
+    repayFailed: '获取支付链接失败',
+    planOrders: '套餐订单',
+    rechargeOrders: '充值订单'
   },
 
   // Onboarding Tour

@@ -28,8 +28,8 @@
           {{ platformDescription }}
         </p>
 
-        <!-- Client Tabs -->
-        <div v-if="clientTabs.length" class="border-b border-gray-200 dark:border-dark-700">
+        <!-- Client Tabs (only show when multiple options) -->
+        <div v-if="clientTabs.length > 1" class="border-b border-gray-200 dark:border-dark-700">
           <nav class="-mb-px flex space-x-6" aria-label="Client">
             <button
               v-for="tab in clientTabs"
@@ -267,24 +267,20 @@ const clientTabs = computed((): TabConfig[] => {
   switch (props.platform) {
     case 'openai':
       return [
-        { id: 'codex', label: t('keys.useKeyModal.cliTabs.codexCli'), icon: TerminalIcon },
-        { id: 'opencode', label: t('keys.useKeyModal.cliTabs.opencode'), icon: TerminalIcon }
+        { id: 'codex', label: t('keys.useKeyModal.cliTabs.codexCli'), icon: TerminalIcon }
       ]
     case 'gemini':
       return [
-        { id: 'gemini', label: t('keys.useKeyModal.cliTabs.geminiCli'), icon: SparkleIcon },
-        { id: 'opencode', label: t('keys.useKeyModal.cliTabs.opencode'), icon: TerminalIcon }
+        { id: 'gemini', label: t('keys.useKeyModal.cliTabs.geminiCli'), icon: SparkleIcon }
       ]
     case 'antigravity':
       return [
         { id: 'claude', label: t('keys.useKeyModal.cliTabs.claudeCode'), icon: TerminalIcon },
-        { id: 'gemini', label: t('keys.useKeyModal.cliTabs.geminiCli'), icon: SparkleIcon },
-        { id: 'opencode', label: t('keys.useKeyModal.cliTabs.opencode'), icon: TerminalIcon }
+        { id: 'gemini', label: t('keys.useKeyModal.cliTabs.geminiCli'), icon: SparkleIcon }
       ]
     default:
       return [
-        { id: 'claude', label: t('keys.useKeyModal.cliTabs.claudeCode'), icon: TerminalIcon },
-        { id: 'opencode', label: t('keys.useKeyModal.cliTabs.opencode'), icon: TerminalIcon }
+        { id: 'claude', label: t('keys.useKeyModal.cliTabs.claudeCode'), icon: TerminalIcon }
       ]
   }
 })
@@ -302,7 +298,7 @@ const openaiTabs: TabConfig[] = [
   { id: 'windows', label: 'Windows', icon: WindowsIcon }
 ]
 
-const showShellTabs = computed(() => activeClientTab.value !== 'opencode')
+const showShellTabs = computed(() => true)
 
 const currentTabs = computed(() => {
   if (!showShellTabs.value) return []
@@ -342,7 +338,7 @@ const platformNote = computed(() => {
   }
 })
 
-const showPlatformNote = computed(() => activeClientTab.value !== 'opencode')
+const showPlatformNote = computed(() => true)
 
 const escapeHtml = (value: string) => value
   .replace(/&/g, '&amp;')
@@ -365,39 +361,6 @@ const comment = (value: string) => wrapToken('text-slate-500', value)
 const currentFiles = computed((): FileConfig[] => {
   const baseUrl = props.baseUrl || window.location.origin
   const apiKey = props.apiKey
-  const baseRoot = baseUrl.replace(/\/v1\/?$/, '').replace(/\/+$/, '')
-  const ensureV1 = (value: string) => {
-    const trimmed = value.replace(/\/+$/, '')
-    return trimmed.endsWith('/v1') ? trimmed : `${trimmed}/v1`
-  }
-  const apiBase = ensureV1(baseRoot)
-  const antigravityBase = ensureV1(`${baseRoot}/antigravity`)
-  const antigravityGeminiBase = (() => {
-    const trimmed = `${baseRoot}/antigravity`.replace(/\/+$/, '')
-    return trimmed.endsWith('/v1beta') ? trimmed : `${trimmed}/v1beta`
-  })()
-  const geminiBase = (() => {
-    const trimmed = baseRoot.replace(/\/+$/, '')
-    return trimmed.endsWith('/v1beta') ? trimmed : `${trimmed}/v1beta`
-  })()
-
-  if (activeClientTab.value === 'opencode') {
-    switch (props.platform) {
-      case 'anthropic':
-        return [generateOpenCodeConfig('anthropic', apiBase, apiKey)]
-      case 'openai':
-        return [generateOpenCodeConfig('openai', apiBase, apiKey)]
-      case 'gemini':
-        return [generateOpenCodeConfig('gemini', geminiBase, apiKey)]
-      case 'antigravity':
-        return [
-          generateOpenCodeConfig('antigravity-claude', antigravityBase, apiKey, 'opencode.json (Claude)'),
-          generateOpenCodeConfig('antigravity-gemini', antigravityGeminiBase, apiKey, 'opencode.json (Gemini)')
-        ]
-      default:
-        return [generateOpenCodeConfig('openai', apiBase, apiKey)]
-    }
-  }
 
   switch (props.platform) {
     case 'openai':
@@ -522,103 +485,6 @@ requires_openai_auth = true`
       content: authContent
     }
   ]
-}
-
-function generateOpenCodeConfig(platform: string, baseUrl: string, apiKey: string, pathLabel?: string): FileConfig {
-  const provider: Record<string, any> = {
-    [platform]: {
-      options: {
-        baseURL: baseUrl,
-        apiKey
-      }
-    }
-  }
-  const openaiModels = {
-    'gpt-5.2-codex': {
-      name: 'GPT-5.2 Codex',
-      options: {
-        store: false
-      },
-      variants: {
-        low: {},
-        medium: {},
-        high: {},
-        xhigh: {}
-      }
-    }
-  }
-  const geminiModels = {
-    'gemini-2.0-flash': { name: 'Gemini 2.0 Flash' },
-    'gemini-2.5-flash': { name: 'Gemini 2.5 Flash' },
-    'gemini-2.5-pro': { name: 'Gemini 2.5 Pro' },
-    'gemini-3-flash-preview': { name: 'Gemini 3 Flash Preview' },
-    'gemini-3-pro-preview': { name: 'Gemini 3 Pro Preview' }
-  }
-
-  const antigravityGeminiModels = {
-    'gemini-2.5-flash': { name: 'Gemini 2.5 Flash' },
-    'gemini-2.5-flash-lite': { name: 'Gemini 2.5 Flash Lite' },
-    'gemini-2.5-flash-thinking': { name: 'Gemini 2.5 Flash Thinking' },
-    'gemini-3-flash': { name: 'Gemini 3 Flash' },
-    'gemini-3-pro-low': { name: 'Gemini 3 Pro Low' },
-    'gemini-3-pro-high': { name: 'Gemini 3 Pro High' },
-    'gemini-3-pro-preview': { name: 'Gemini 3 Pro Preview' },
-    'gemini-3-pro-image': { name: 'Gemini 3 Pro Image' }
-  }
-  const claudeModels = {
-    'claude-opus-4-5-thinking': { name: 'Claude Opus 4.5 Thinking' },
-    'claude-sonnet-4-5-thinking': { name: 'Claude Sonnet 4.5 Thinking' },
-    'claude-sonnet-4-5': { name: 'Claude Sonnet 4.5' }
-  }
-
-  if (platform === 'gemini') {
-    provider[platform].npm = '@ai-sdk/google'
-    provider[platform].models = geminiModels
-  } else if (platform === 'anthropic') {
-    provider[platform].npm = '@ai-sdk/anthropic'
-  } else if (platform === 'antigravity-claude') {
-    provider[platform].npm = '@ai-sdk/anthropic'
-    provider[platform].name = 'Antigravity (Claude)'
-    provider[platform].models = claudeModels
-  } else if (platform === 'antigravity-gemini') {
-    provider[platform].npm = '@ai-sdk/google'
-    provider[platform].name = 'Antigravity (Gemini)'
-    provider[platform].models = antigravityGeminiModels
-  } else if (platform === 'openai') {
-    provider[platform].models = openaiModels
-  }
-
-  const agent =
-    platform === 'openai'
-      ? {
-          build: {
-            options: {
-              store: false
-            }
-          },
-          plan: {
-            options: {
-              store: false
-            }
-          }
-        }
-      : undefined
-
-  const content = JSON.stringify(
-    {
-      provider,
-      ...(agent ? { agent } : {}),
-      $schema: 'https://opencode.ai/config.json'
-    },
-    null,
-    2
-  )
-
-  return {
-    path: pathLabel ?? 'opencode.json',
-    content,
-    hint: t('keys.useKeyModal.opencode.hint')
-  }
 }
 
 const copyContent = async (content: string, index: number) => {

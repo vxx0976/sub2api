@@ -3645,7 +3645,9 @@ export default {
     continuePay: 'Pay Now',
     paying: 'Processing...',
     expired: 'Expired',
-    repayFailed: 'Failed to get payment link'
+    repayFailed: 'Failed to get payment link',
+    planOrders: 'Plan Orders',
+    rechargeOrders: 'Recharge Orders'
   },
 
   // Onboarding Tour
