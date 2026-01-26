@@ -8,6 +8,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/account"
 	"github.com/Wei-Shaw/sub2api/ent/accountgroup"
 	"github.com/Wei-Shaw/sub2api/ent/apikey"
+	"github.com/Wei-Shaw/sub2api/ent/channel"
 	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/order"
 	"github.com/Wei-Shaw/sub2api/ent/promocode"
@@ -213,6 +214,81 @@ func init() {
 	accountgroupDescCreatedAt := accountgroupFields[3].Descriptor()
 	// accountgroup.DefaultCreatedAt holds the default value on creation for the created_at field.
 	accountgroup.DefaultCreatedAt = accountgroupDescCreatedAt.Default.(func() time.Time)
+	channelMixin := schema.Channel{}.Mixin()
+	channelMixinHooks1 := channelMixin[1].Hooks()
+	channel.Hooks[0] = channelMixinHooks1[0]
+	channelMixinInters1 := channelMixin[1].Interceptors()
+	channel.Interceptors[0] = channelMixinInters1[0]
+	channelMixinFields0 := channelMixin[0].Fields()
+	_ = channelMixinFields0
+	channelFields := schema.Channel{}.Fields()
+	_ = channelFields
+	// channelDescCreatedAt is the schema descriptor for created_at field.
+	channelDescCreatedAt := channelMixinFields0[0].Descriptor()
+	// channel.DefaultCreatedAt holds the default value on creation for the created_at field.
+	channel.DefaultCreatedAt = channelDescCreatedAt.Default.(func() time.Time)
+	// channelDescUpdatedAt is the schema descriptor for updated_at field.
+	channelDescUpdatedAt := channelMixinFields0[1].Descriptor()
+	// channel.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	channel.DefaultUpdatedAt = channelDescUpdatedAt.Default.(func() time.Time)
+	// channel.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	channel.UpdateDefaultUpdatedAt = channelDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// channelDescName is the schema descriptor for name field.
+	channelDescName := channelFields[0].Descriptor()
+	// channel.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	channel.NameValidator = func() func(string) error {
+		validators := channelDescName.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(name string) error {
+			for _, fn := range fns {
+				if err := fn(name); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// channelDescPlatform is the schema descriptor for platform field.
+	channelDescPlatform := channelFields[2].Descriptor()
+	// channel.PlatformValidator is a validator for the "platform" field. It is called by the builders before save.
+	channel.PlatformValidator = channelDescPlatform.Validators[0].(func(string) error)
+	// channelDescStatus is the schema descriptor for status field.
+	channelDescStatus := channelFields[3].Descriptor()
+	// channel.DefaultStatus holds the default value on creation for the status field.
+	channel.DefaultStatus = channelDescStatus.Default.(string)
+	// channel.StatusValidator is a validator for the "status" field. It is called by the builders before save.
+	channel.StatusValidator = channelDescStatus.Validators[0].(func(string) error)
+	// channelDescIconURL is the schema descriptor for icon_url field.
+	channelDescIconURL := channelFields[4].Descriptor()
+	// channel.IconURLValidator is a validator for the "icon_url" field. It is called by the builders before save.
+	channel.IconURLValidator = channelDescIconURL.Validators[0].(func(string) error)
+	// channelDescWebsiteURL is the schema descriptor for website_url field.
+	channelDescWebsiteURL := channelFields[5].Descriptor()
+	// channel.WebsiteURLValidator is a validator for the "website_url" field. It is called by the builders before save.
+	channel.WebsiteURLValidator = channelDescWebsiteURL.Validators[0].(func(string) error)
+	// channelDescBalanceURL is the schema descriptor for balance_url field.
+	channelDescBalanceURL := channelFields[6].Descriptor()
+	// channel.BalanceURLValidator is a validator for the "balance_url" field. It is called by the builders before save.
+	channel.BalanceURLValidator = channelDescBalanceURL.Validators[0].(func(string) error)
+	// channelDescBalanceMethod is the schema descriptor for balance_method field.
+	channelDescBalanceMethod := channelFields[7].Descriptor()
+	// channel.DefaultBalanceMethod holds the default value on creation for the balance_method field.
+	channel.DefaultBalanceMethod = channelDescBalanceMethod.Default.(string)
+	// channel.BalanceMethodValidator is a validator for the "balance_method" field. It is called by the builders before save.
+	channel.BalanceMethodValidator = channelDescBalanceMethod.Validators[0].(func(string) error)
+	// channelDescBalancePath is the schema descriptor for balance_path field.
+	channelDescBalancePath := channelFields[10].Descriptor()
+	// channel.BalancePathValidator is a validator for the "balance_path" field. It is called by the builders before save.
+	channel.BalancePathValidator = channelDescBalancePath.Validators[0].(func(string) error)
+	// channelDescBalanceUnit is the schema descriptor for balance_unit field.
+	channelDescBalanceUnit := channelFields[11].Descriptor()
+	// channel.DefaultBalanceUnit holds the default value on creation for the balance_unit field.
+	channel.DefaultBalanceUnit = channelDescBalanceUnit.Default.(string)
+	// channel.BalanceUnitValidator is a validator for the "balance_unit" field. It is called by the builders before save.
+	channel.BalanceUnitValidator = channelDescBalanceUnit.Validators[0].(func(string) error)
 	groupMixin := schema.Group{}.Mixin()
 	groupMixinHooks1 := groupMixin[1].Hooks()
 	group.Hooks[0] = groupMixinHooks1[0]

@@ -70,6 +70,9 @@ func RegisterAdminRoutes(
 
 		// 邀请管理
 		registerReferralRoutes(admin, h)
+
+		// 渠道管理
+		registerChannelRoutes(admin, h)
 	}
 }
 
@@ -393,5 +396,17 @@ func registerReferralRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 	{
 		referrals.GET("", h.Admin.Referral.List)
 		referrals.GET("/stats", h.Admin.Referral.GetStats)
+	}
+}
+
+func registerChannelRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
+	channels := admin.Group("/channels")
+	{
+		channels.GET("", h.Admin.Channel.List)
+		channels.GET("/:id", h.Admin.Channel.GetByID)
+		channels.POST("", h.Admin.Channel.Create)
+		channels.PUT("/:id", h.Admin.Channel.Update)
+		channels.DELETE("/:id", h.Admin.Channel.Delete)
+		channels.POST("/:id/check-balance", h.Admin.Channel.CheckBalance)
 	}
 }

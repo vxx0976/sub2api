@@ -20,6 +20,8 @@ type Tx struct {
 	Account *AccountClient
 	// AccountGroup is the client for interacting with the AccountGroup builders.
 	AccountGroup *AccountGroupClient
+	// Channel is the client for interacting with the Channel builders.
+	Channel *ChannelClient
 	// Group is the client for interacting with the Group builders.
 	Group *GroupClient
 	// Order is the client for interacting with the Order builders.
@@ -186,6 +188,7 @@ func (tx *Tx) init() {
 	tx.APIKey = NewAPIKeyClient(tx.config)
 	tx.Account = NewAccountClient(tx.config)
 	tx.AccountGroup = NewAccountGroupClient(tx.config)
+	tx.Channel = NewChannelClient(tx.config)
 	tx.Group = NewGroupClient(tx.config)
 	tx.Order = NewOrderClient(tx.config)
 	tx.PromoCode = NewPromoCodeClient(tx.config)

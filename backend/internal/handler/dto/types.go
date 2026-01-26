@@ -387,3 +387,30 @@ type PromoCodeUsage struct {
 
 	User *User `json:"user,omitempty"`
 }
+
+// Channel 渠道管理
+type Channel struct {
+	ID          int64   `json:"id"`
+	Name        string  `json:"name"`
+	Description *string `json:"description,omitempty"`
+	Platform    *string `json:"platform,omitempty"`
+	Status      string  `json:"status"`
+	IconURL     *string `json:"icon_url,omitempty"`
+	WebsiteURL  *string `json:"website_url,omitempty"`
+
+	// 余额查询配置
+	BalanceURL     *string           `json:"balance_url,omitempty"`
+	BalanceMethod  string            `json:"balance_method"`
+	BalanceHeaders map[string]string `json:"balance_headers,omitempty"`
+	BalanceBody    *string           `json:"balance_body,omitempty"`
+	BalancePath    *string           `json:"balance_path,omitempty"`
+	BalanceUnit    string            `json:"balance_unit"`
+
+	// 缓存的余额信息
+	CachedBalance *float64   `json:"cached_balance,omitempty"`
+	LastCheckAt   *time.Time `json:"last_check_at,omitempty"`
+	LastError     *string    `json:"last_error,omitempty"`
+
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}

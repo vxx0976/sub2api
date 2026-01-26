@@ -275,4 +275,5 @@ var ProviderSet = wire.NewSet(
 	NewRechargeOrderService,
 	NewReferralService,
 	NewTotpService,
+	NewChannelService,
 )

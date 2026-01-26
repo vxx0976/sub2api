@@ -1149,3 +1149,64 @@ export interface TotpLogin2FARequest {
   temp_token: string
   totp_code: string
 }
+
+// ==================== Channel Types ====================
+
+export type ChannelPlatform = 'anthropic' | 'openai' | 'gemini' | 'other'
+export type ChannelStatus = 'active' | 'inactive' | 'error'
+
+export interface Channel {
+  id: number
+  name: string
+  description?: string | null
+  platform?: ChannelPlatform | null
+  status: ChannelStatus
+  icon_url?: string | null
+  website_url?: string | null
+
+  // 余额查询配置
+  balance_url?: string | null
+  balance_method: 'GET' | 'POST'
+  balance_headers?: Record<string, string> | null
+  balance_body?: string | null
+  balance_path?: string | null
+  balance_unit: string
+
+  // 缓存的余额信息
+  cached_balance?: number | null
+  last_check_at?: string | null
+  last_error?: string | null
+
+  created_at: string
+  updated_at: string
+}
+
+export interface CreateChannelRequest {
+  name: string
+  description?: string | null
+  platform?: ChannelPlatform | null
+  status?: ChannelStatus
+  icon_url?: string | null
+  website_url?: string | null
+  balance_url?: string | null
+  balance_method?: 'GET' | 'POST'
+  balance_headers?: Record<string, string> | null
+  balance_body?: string | null
+  balance_path?: string | null
+  balance_unit?: string
+}
+
+export interface UpdateChannelRequest {
+  name?: string
+  description?: string | null
+  platform?: ChannelPlatform | null
+  status?: ChannelStatus
+  icon_url?: string | null
+  website_url?: string | null
+  balance_url?: string | null
+  balance_method?: 'GET' | 'POST'
+  balance_headers?: Record<string, string> | null
+  balance_body?: string | null
+  balance_path?: string | null
+  balance_unit?: string
+}

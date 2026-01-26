@@ -20,6 +20,7 @@ import userAttributesAPI from './userAttributes'
 import opsAPI from './ops'
 import ordersAPI from './orders'
 import * as referralsAPI from './referrals'
+import channelsAPI from './channels'
 
 /**
  * Unified admin API object for convenient access
@@ -41,7 +42,8 @@ export const adminAPI = {
   userAttributes: userAttributesAPI,
   ops: opsAPI,
   orders: ordersAPI,
-  referrals: referralsAPI
+  referrals: referralsAPI,
+  channels: channelsAPI
 }
 
 export {
@@ -61,7 +63,8 @@ export {
   userAttributesAPI,
   opsAPI,
   ordersAPI,
-  referralsAPI
+  referralsAPI,
+  channelsAPI
 }
 
 export default adminAPI

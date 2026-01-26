@@ -35,9 +35,9 @@
           <span class="hidden sm:inline">{{ t('nav.docs') }}</span>
         </a>
 
-        <!-- Redeem Button -->
+        <!-- Redeem Button (hide for admin) -->
         <router-link
-          v-if="user"
+          v-if="user && !isAdmin"
           to="/redeem"
           class="flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-primary-600 dark:bg-primary-600 dark:hover:bg-primary-700"
         >
@@ -45,15 +45,33 @@
           <span class="hidden sm:inline">{{ t('nav.redeem') }}</span>
         </router-link>
 
+        <!-- Channel Balances for Admin -->
+        <div v-if="isAdmin && channels.length > 0" class="hidden items-center gap-2 sm:flex">
+          <a
+            v-for="ch in channels"
+            :key="ch.id"
+            :href="ch.website_url || '/admin/channels'"
+            :target="ch.website_url ? '_blank' : '_self'"
+            rel="noopener noreferrer"
+            class="flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium transition-colors"
+            :class="(ch.cached_balance || 0) < 20
+              ? 'bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30'
+              : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-400 dark:hover:bg-emerald-900/30'"
+          >
+            <span class="font-semibold">{{ ch.name }}</span>
+            <span>{{ ch.balance_unit }}{{ (ch.cached_balance || 0).toFixed(2) }}</span>
+          </a>
+        </div>
+
         <!-- Language Switcher -->
         <LocaleSwitcher />
 
-        <!-- Subscription Progress (for users with active subscriptions) -->
-        <SubscriptionProgressMini v-if="user" />
+        <!-- Subscription Progress (for users with active subscriptions, hide for admin) -->
+        <SubscriptionProgressMini v-if="user && !isAdmin" />
 
-        <!-- Balance Display -->
+        <!-- Balance Display (hide for admin) -->
         <div
-          v-if="user"
+          v-if="user && !isAdmin"
           class="hidden items-center gap-2 rounded-xl bg-primary-50 px-3 py-1.5 dark:bg-primary-900/20 sm:flex"
         >
           <svg
@@ -197,13 +215,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAppStore, useAuthStore, useOnboardingStore } from '@/stores'
 import LocaleSwitcher from '@/components/common/LocaleSwitcher.vue'
 import SubscriptionProgressMini from '@/components/common/SubscriptionProgressMini.vue'
 import Icon from '@/components/icons/Icon.vue'
+import { channelsAPI } from '@/api/admin/channels'
+import type { Channel } from '@/types'
 
 const router = useRouter()
 const route = useRoute()
@@ -213,10 +233,49 @@ const authStore = useAuthStore()
 const onboardingStore = useOnboardingStore()
 
 const user = computed(() => authStore.user)
+const isAdmin = computed(() => authStore.isAdmin)
 const dropdownOpen = ref(false)
 const dropdownRef = ref<HTMLElement | null>(null)
 const contactInfo = computed(() => appStore.contactInfo)
 const docUrl = computed(() => appStore.docUrl)
+
+// Channel balance for admin
+const channels = ref<Channel[]>([])
+let channelRefreshTimer: ReturnType<typeof setInterval> | null = null
+
+
+async function loadChannels() {
+  if (!isAdmin.value) return
+  try {
+    const response = await channelsAPI.list(1, 100)
+    channels.value = response.items || []
+  } catch (error) {
+    console.error('Failed to load channels:', error)
+  }
+}
+
+function startChannelRefresh() {
+  if (channelRefreshTimer) clearInterval(channelRefreshTimer)
+  if (isAdmin.value) {
+    loadChannels()
+    channelRefreshTimer = setInterval(loadChannels, 10000) // 每10秒刷新
+  }
+}
+
+function stopChannelRefresh() {
+  if (channelRefreshTimer) {
+    clearInterval(channelRefreshTimer)
+    channelRefreshTimer = null
+  }
+}
+
+watch(isAdmin, (newVal) => {
+  if (newVal) {
+    startChannelRefresh()
+  } else {
+    stopChannelRefresh()
+  }
+}, { immediate: true })
 
 // 只在标准模式的管理员下显示新手引导按钮
 const showOnboardingButton = computed(() => {
@@ -293,6 +352,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   document.removeEventListener('click', handleClickOutside)
+  stopChannelRefresh()
 })
 </script>
 

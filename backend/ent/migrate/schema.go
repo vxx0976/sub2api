@@ -204,6 +204,56 @@ var (
 			},
 		},
 	}
+	// ChannelsColumns holds the columns for the "channels" table.
+	ChannelsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "deleted_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "name", Type: field.TypeString, Size: 100},
+		{Name: "description", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "platform", Type: field.TypeString, Nullable: true, Size: 50},
+		{Name: "status", Type: field.TypeString, Size: 20, Default: "active"},
+		{Name: "icon_url", Type: field.TypeString, Nullable: true, Size: 500},
+		{Name: "website_url", Type: field.TypeString, Nullable: true, Size: 500},
+		{Name: "balance_url", Type: field.TypeString, Nullable: true, Size: 500},
+		{Name: "balance_method", Type: field.TypeString, Size: 10, Default: "GET"},
+		{Name: "balance_headers", Type: field.TypeJSON, Nullable: true},
+		{Name: "balance_body", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "balance_path", Type: field.TypeString, Nullable: true, Size: 200},
+		{Name: "balance_unit", Type: field.TypeString, Size: 20, Default: "$"},
+		{Name: "cached_balance", Type: field.TypeFloat64, Nullable: true, SchemaType: map[string]string{"postgres": "decimal(20,6)"}},
+		{Name: "last_check_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "last_error", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
+	}
+	// ChannelsTable holds the schema information for the "channels" table.
+	ChannelsTable = &schema.Table{
+		Name:       "channels",
+		Columns:    ChannelsColumns,
+		PrimaryKey: []*schema.Column{ChannelsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "channel_name",
+				Unique:  false,
+				Columns: []*schema.Column{ChannelsColumns[4]},
+			},
+			{
+				Name:    "channel_platform",
+				Unique:  false,
+				Columns: []*schema.Column{ChannelsColumns[6]},
+			},
+			{
+				Name:    "channel_status",
+				Unique:  false,
+				Columns: []*schema.Column{ChannelsColumns[7]},
+			},
+			{
+				Name:    "channel_deleted_at",
+				Unique:  false,
+				Columns: []*schema.Column{ChannelsColumns[3]},
+			},
+		},
+	}
 	// GroupsColumns holds the columns for the "groups" table.
 	GroupsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -1023,6 +1073,7 @@ var (
 		APIKeysTable,
 		AccountsTable,
 		AccountGroupsTable,
+		ChannelsTable,
 		GroupsTable,
 		OrdersTable,
 		PromoCodesTable,
@@ -1056,6 +1107,9 @@ func init() {
 	AccountGroupsTable.ForeignKeys[1].RefTable = GroupsTable
 	AccountGroupsTable.Annotation = &entsql.Annotation{
 		Table: "account_groups",
+	}
+	ChannelsTable.Annotation = &entsql.Annotation{
+		Table: "channels",
 	}
 	GroupsTable.Annotation = &entsql.Annotation{
 		Table: "groups",

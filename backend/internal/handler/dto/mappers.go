@@ -550,3 +550,29 @@ func PromoCodeUsageFromService(u *service.PromoCodeUsage) *PromoCodeUsage {
 		User:        UserFromServiceShallow(u.User),
 	}
 }
+
+func ChannelFromService(c *service.Channel) *Channel {
+	if c == nil {
+		return nil
+	}
+	return &Channel{
+		ID:             c.ID,
+		Name:           c.Name,
+		Description:    c.Description,
+		Platform:       c.Platform,
+		Status:         c.Status,
+		IconURL:        c.IconURL,
+		WebsiteURL:     c.WebsiteURL,
+		BalanceURL:     c.BalanceURL,
+		BalanceMethod:  c.BalanceMethod,
+		BalanceHeaders: c.BalanceHeaders,
+		BalanceBody:    c.BalanceBody,
+		BalancePath:    c.BalancePath,
+		BalanceUnit:    c.BalanceUnit,
+		CachedBalance:  c.CachedBalance,
+		LastCheckAt:    c.LastCheckAt,
+		LastError:      c.LastError,
+		CreatedAt:      c.CreatedAt,
+		UpdatedAt:      c.UpdatedAt,
+	}
+}

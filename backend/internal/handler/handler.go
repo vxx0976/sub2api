@@ -25,6 +25,7 @@ type AdminHandlers struct {
 	Usage            *admin.UsageHandler
 	UserAttribute    *admin.UserAttributeHandler
 	Referral         *admin.ReferralHandler
+	Channel          *admin.ChannelHandler
 }
 
 // Handlers contains all HTTP handlers
