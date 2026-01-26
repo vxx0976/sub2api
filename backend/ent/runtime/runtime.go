@@ -864,6 +864,10 @@ func init() {
 	userDescReferralRewarded := userFields[10].Descriptor()
 	// user.DefaultReferralRewarded holds the default value on creation for the referral_rewarded field.
 	user.DefaultReferralRewarded = userDescReferralRewarded.Default.(bool)
+	// userDescTotpEnabled is the schema descriptor for totp_enabled field.
+	userDescTotpEnabled := userFields[12].Descriptor()
+	// user.DefaultTotpEnabled holds the default value on creation for the totp_enabled field.
+	user.DefaultTotpEnabled = userDescTotpEnabled.Default.(bool)
 	userallowedgroupFields := schema.UserAllowedGroup{}.Fields()
 	_ = userallowedgroupFields
 	// userallowedgroupDescCreatedAt is the schema descriptor for created_at field.

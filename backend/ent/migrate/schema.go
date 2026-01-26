@@ -793,6 +793,9 @@ var (
 		{Name: "referral_code", Type: field.TypeString, Unique: true, Nullable: true, Size: 8},
 		{Name: "referred_by", Type: field.TypeInt64, Nullable: true},
 		{Name: "referral_rewarded", Type: field.TypeBool, Default: false},
+		{Name: "totp_secret_encrypted", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "totp_enabled", Type: field.TypeBool, Default: false},
+		{Name: "totp_enabled_at", Type: field.TypeTime, Nullable: true},
 	}
 	// UsersTable holds the schema information for the "users" table.
 	UsersTable = &schema.Table{

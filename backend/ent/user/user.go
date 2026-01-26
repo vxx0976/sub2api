@@ -43,6 +43,12 @@ const (
 	FieldReferredBy = "referred_by"
 	// FieldReferralRewarded holds the string denoting the referral_rewarded field in the database.
 	FieldReferralRewarded = "referral_rewarded"
+	// FieldTotpSecretEncrypted holds the string denoting the totp_secret_encrypted field in the database.
+	FieldTotpSecretEncrypted = "totp_secret_encrypted"
+	// FieldTotpEnabled holds the string denoting the totp_enabled field in the database.
+	FieldTotpEnabled = "totp_enabled"
+	// FieldTotpEnabledAt holds the string denoting the totp_enabled_at field in the database.
+	FieldTotpEnabledAt = "totp_enabled_at"
 	// EdgeAPIKeys holds the string denoting the api_keys edge name in mutations.
 	EdgeAPIKeys = "api_keys"
 	// EdgeRedeemCodes holds the string denoting the redeem_codes edge name in mutations.
@@ -179,6 +185,9 @@ var Columns = []string{
 	FieldReferralCode,
 	FieldReferredBy,
 	FieldReferralRewarded,
+	FieldTotpSecretEncrypted,
+	FieldTotpEnabled,
+	FieldTotpEnabledAt,
 }
 
 var (
@@ -237,6 +246,8 @@ var (
 	ReferralCodeValidator func(string) error
 	// DefaultReferralRewarded holds the default value on creation for the "referral_rewarded" field.
 	DefaultReferralRewarded bool
+	// DefaultTotpEnabled holds the default value on creation for the "totp_enabled" field.
+	DefaultTotpEnabled bool
 )
 
 // OrderOption defines the ordering options for the User queries.
@@ -315,6 +326,21 @@ func ByReferredBy(opts ...sql.OrderTermOption) OrderOption {
 // ByReferralRewarded orders the results by the referral_rewarded field.
 func ByReferralRewarded(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldReferralRewarded, opts...).ToFunc()
+}
+
+// ByTotpSecretEncrypted orders the results by the totp_secret_encrypted field.
+func ByTotpSecretEncrypted(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTotpSecretEncrypted, opts...).ToFunc()
+}
+
+// ByTotpEnabled orders the results by the totp_enabled field.
+func ByTotpEnabled(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTotpEnabled, opts...).ToFunc()
+}
+
+// ByTotpEnabledAt orders the results by the totp_enabled_at field.
+func ByTotpEnabledAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTotpEnabledAt, opts...).ToFunc()
 }
 
 // ByAPIKeysCount orders the results by api_keys count.

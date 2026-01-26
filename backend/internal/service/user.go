@@ -26,6 +26,11 @@ type User struct {
 	ReferredBy       *int64  `json:"-"` // Internal use only
 	ReferralRewarded bool    `json:"-"` // Internal use only
 
+	// TOTP 双因素认证字段
+	TotpSecretEncrypted *string    // AES-256-GCM 加密的 TOTP 密钥
+	TotpEnabled         bool       // 是否启用 TOTP
+	TotpEnabledAt       *time.Time // TOTP 启用时间
+
 	APIKeys       []APIKey           `json:"api_keys,omitempty"`
 	Subscriptions []UserSubscription `json:"subscriptions,omitempty"`
 }
