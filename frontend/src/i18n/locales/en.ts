@@ -9,7 +9,7 @@ export default {
     dashboard: 'Dashboard',
     login: 'Login',
     register: 'Register',
-    getStarted: 'Get Started',
+    getStarted: 'Get API Key',
     goToDashboard: 'Go to Dashboard',
     seo: {
       title: '{siteName} - Affordable AI Coding Relay (Claude Code / Codex CLI / Gemini CLI)',
@@ -26,10 +26,12 @@ export default {
     },
     hero: {
       badge: 'Affordable AI coding relay',
-      title: 'One key for Vibe Coding across models',
-      subtitle: 'Beginner-friendly setup for Claude Code, Codex CLI, Gemini CLI — transparent billing with real-time usage.',
+      title: 'Claude Code Relay Service',
+      subtitle: 'Claude API forwarding based on official Anthropic protocol',
+      subtitleDesc: 'Easy setup, transparent pricing, real-time usage tracking.',
       viewPricing: 'Pricing',
-      supportedToolsLabel: 'Works with',
+      supportedToolsLabel: 'Works with various dev tools & environments',
+      supportedToolsHint: 'Anthropic support may vary across different tools',
       platformsLabel: 'Platforms',
       stats: {
         standard: 'Mainstream tools supported',
@@ -42,6 +44,7 @@ export default {
         title: 'Quickstart',
         copy: 'Copy',
         hint: 'Replace sk-xxx with the API key from your dashboard. Paths/commands may vary by version — check docs/dashboard for details.',
+        compatibility: 'Follows official Anthropic API and environment variable conventions',
         claude: {
           line1: '# Configure Claude Code',
           line2: '# Launch',
@@ -62,15 +65,15 @@ export default {
     steps: {
       oneTitle: 'Sign in',
       oneDesc: 'Create an account and generate an API key',
-      twoTitle: 'Pick your tool',
-      twoDesc: 'One-click config for Claude/Codex/Gemini',
+      twoTitle: 'Configure Claude Code',
+      twoDesc: 'Copy config and connect',
       threeTitle: 'Start Vibe Coding',
       threeDesc: 'Write code, fix bugs, add tests'
     },
     freeTrial: {
-      badge: 'Limited Offer',
-      title: 'Add WeChat for Free Trial',
-      description: 'Scan to add customer service WeChat and get free trial credits for Claude Code'
+      badge: 'New User Trial',
+      title: 'Get Test Credits',
+      description: 'Add customer service WeChat for test credits'
     },
     quickstart: {
       title: 'Quickstart',
@@ -90,10 +93,10 @@ export default {
       realtimeBilling: 'Real-time Billing'
     },
     features: {
-      unifiedGateway: 'One-key tool integration',
-      unifiedGatewayDesc: 'Use Claude Code, Codex CLI, and Gemini CLI with a single API key.',
-      multiAccount: 'More stable relay',
-      multiAccountDesc: 'Multiple upstreams/accounts with automatic fallback to reduce volatility.',
+      unifiedGateway: 'Claude Code native protocol',
+      unifiedGatewayDesc: 'No client behavior changes needed — just copy environment variables.',
+      multiAccount: 'Multi-node relay with auto-failover',
+      multiAccountDesc: 'Reduces request failures, avoids single point of failure.',
       balanceQuota: 'Usage visibility',
       balanceQuotaDesc: 'Token-level records with model/day breakdown and clearer balance.',
       rateLimit: 'Cost guards',
@@ -171,7 +174,7 @@ export default {
     },
     providers: {
       title: 'Supported models & platforms',
-      description: 'Use mainstream models and switch anytime.',
+      description: 'Claude is the primary supported model; other models are optional.',
       supported: 'Supported',
       soon: 'Soon',
       claude: 'Claude',
@@ -182,12 +185,14 @@ export default {
     faq: {
       title: 'FAQ',
       subtitle: 'Common questions for first-time users.',
+      q0: 'Does this support OpenAI / ChatGPT API?',
+      a0: 'This service does not provide OpenAI / ChatGPT API compatibility. We are based on the official Anthropic protocol, primarily for Claude Code and related development scenarios.',
       q1: 'Do I need to learn APIs first?',
       a1: 'No. Pick your tool and copy the config. Read the docs when you want more options.',
       q2: 'Where do I get an API key?',
       a2: 'After signing in, go to Dashboard → API Keys to create/copy one.',
       q3: 'Which tools/clients are supported?',
-      a3: 'Claude Code, Codex CLI, Gemini CLI, OpenCode, and more — see examples/docs for details.',
+      a3: 'Currently Claude Code is supported. Works with Terminal, VS Code, Cursor, Windsurf, etc.',
       q4: 'How does pricing work?',
       a4: 'Billing rules and usage details are shown in the dashboard. You can view by model/day.',
       q5: 'What if a request fails?',

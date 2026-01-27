@@ -58,6 +58,10 @@
                 {{ t('home.hero.subtitle') }}
               </p>
 
+              <p class="mt-2 max-w-2xl text-pretty text-base text-gray-500 dark:text-dark-500">
+                {{ t('home.hero.subtitleDesc') }}
+              </p>
+
               <div class="mt-7 flex flex-col items-center gap-3 sm:flex-row lg:justify-start">
                 <router-link :to="isAuthenticated ? dashboardPath : loginPath" class="btn btn-primary btn-lg px-7">
                   {{ isAuthenticated ? t('home.goToDashboard') : t('home.getStarted') }}
@@ -82,12 +86,15 @@
               </div>
 
               <div class="mt-6 space-y-3">
-                <div class="flex flex-wrap items-center justify-center gap-2 text-xs lg:justify-start">
-                  <span class="font-semibold text-gray-700 dark:text-dark-200">{{ t('home.hero.supportedToolsLabel') }}</span>
-                  <span class="rounded-full border border-gray-200/60 bg-white/70 px-2.5 py-1 text-gray-700 shadow-sm dark:border-dark-700/70 dark:bg-dark-900/40 dark:text-dark-200">Claude Code</span>
-                  <span class="rounded-full border border-gray-200/60 bg-white/70 px-2.5 py-1 text-gray-700 shadow-sm dark:border-dark-700/70 dark:bg-dark-900/40 dark:text-dark-200">Codex CLI</span>
-                  <span class="rounded-full border border-gray-200/60 bg-white/70 px-2.5 py-1 text-gray-700 shadow-sm dark:border-dark-700/70 dark:bg-dark-900/40 dark:text-dark-200">Gemini CLI</span>
-                  <span class="rounded-full border border-gray-200/60 bg-white/70 px-2.5 py-1 text-gray-700 shadow-sm dark:border-dark-700/70 dark:bg-dark-900/40 dark:text-dark-200">OpenCode</span>
+                <div class="space-y-1">
+                  <div class="flex flex-wrap items-center justify-center gap-2 text-xs lg:justify-start">
+                    <span class="font-semibold text-gray-700 dark:text-dark-200">{{ t('home.hero.supportedToolsLabel') }}</span>
+                    <span class="rounded-full border border-gray-200/60 bg-white/70 px-2.5 py-1 text-gray-700 shadow-sm dark:border-dark-700/70 dark:bg-dark-900/40 dark:text-dark-200">Terminal</span>
+                    <span class="rounded-full border border-gray-200/60 bg-white/70 px-2.5 py-1 text-gray-700 shadow-sm dark:border-dark-700/70 dark:bg-dark-900/40 dark:text-dark-200">VS Code</span>
+                    <span class="rounded-full border border-gray-200/60 bg-white/70 px-2.5 py-1 text-gray-700 shadow-sm dark:border-dark-700/70 dark:bg-dark-900/40 dark:text-dark-200">Cursor</span>
+                    <span class="rounded-full border border-gray-200/60 bg-white/70 px-2.5 py-1 text-gray-700 shadow-sm dark:border-dark-700/70 dark:bg-dark-900/40 dark:text-dark-200">Windsurf</span>
+                  </div>
+                  <p class="text-center text-[10px] text-gray-400 dark:text-dark-500 lg:text-left">{{ t('home.hero.supportedToolsHint') }}</p>
                 </div>
 
                 <div class="flex flex-wrap items-center justify-center gap-2 text-xs lg:justify-start">
@@ -104,45 +111,13 @@
               id="quickstart"
               class="w-full rounded-4xl border border-gray-200/60 bg-white/70 p-5 shadow-2xl backdrop-blur dark:border-dark-800/60 dark:bg-dark-900/40 lg:p-6"
             >
-              <div class="flex flex-wrap items-center justify-between gap-3">
-                <div class="flex items-center gap-2">
-                  <span class="h-2.5 w-2.5 rounded-full bg-red-400/80"></span>
-                  <span class="h-2.5 w-2.5 rounded-full bg-amber-400/80"></span>
-                  <span class="h-2.5 w-2.5 rounded-full bg-emerald-400/80"></span>
-                  <span class="ml-2 text-xs font-semibold text-gray-700 dark:text-dark-200">
-                    {{ t('home.hero.terminal.title') }}
-                  </span>
-                </div>
-
-                <div class="flex flex-wrap items-center gap-2">
-                  <div
-                    class="flex items-center gap-1 rounded-full border border-gray-200/60 bg-white/60 p-1 text-[11px] font-semibold text-gray-600 shadow-sm dark:border-dark-700/70 dark:bg-dark-900/50 dark:text-dark-300"
-                    role="tablist"
-                    aria-label="Quickstart examples"
-                  >
-                    <button
-                      v-for="tab in demoTabs"
-                      :key="tab.key"
-                      type="button"
-                      role="tab"
-                      :aria-selected="activeDemo === tab.key"
-                      class="rounded-full px-2.5 py-1 transition-colors"
-                      :class="activeDemo === tab.key ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900' : 'hover:bg-gray-100 dark:hover:bg-dark-800/60'"
-                      @click="activeDemo = tab.key"
-                    >
-                      {{ tab.label }}
-                    </button>
-                  </div>
-
-                  <button
-                    type="button"
-                    class="inline-flex items-center gap-2 rounded-xl border border-gray-200/60 bg-white/60 px-3 py-1.5 text-xs font-semibold text-gray-700 shadow-sm transition-colors hover:bg-white dark:border-dark-700/70 dark:bg-dark-900/50 dark:text-dark-200 dark:hover:bg-dark-900"
-                    @click="copyTerminalExample"
-                  >
-                    <Icon name="copy" size="sm" />
-                    {{ t('home.hero.terminal.copy') }}
-                  </button>
-                </div>
+              <div class="flex items-center gap-2">
+                <span class="h-2.5 w-2.5 rounded-full bg-red-400/80"></span>
+                <span class="h-2.5 w-2.5 rounded-full bg-amber-400/80"></span>
+                <span class="h-2.5 w-2.5 rounded-full bg-emerald-400/80"></span>
+                <span class="ml-2 text-xs font-semibold text-gray-700 dark:text-dark-200">
+                  {{ t('home.hero.terminal.title') }}
+                </span>
               </div>
 
               <div class="mt-4 overflow-x-auto rounded-3xl bg-gray-950 p-4 ring-1 ring-black/10 sm:p-5 dark:ring-white/10">
@@ -152,75 +127,17 @@
               <p class="mt-3 text-xs leading-relaxed text-gray-500 dark:text-dark-400">
                 {{ t('home.hero.terminal.hint') }}
               </p>
-            </div>
-          </div>
 
-          <!-- Quick stats - compact horizontal badges -->
-          <div class="mx-auto mt-10 flex max-w-4xl flex-wrap items-center justify-center gap-3">
-            <div class="inline-flex items-center gap-1.5 rounded-full border border-gray-200/60 bg-white/70 px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm dark:border-dark-700/70 dark:bg-dark-900/40 dark:text-dark-200">
-              <Icon name="bolt" size="xs" class="text-primary-600 dark:text-primary-300" />
-              <span>{{ t('home.hero.stats.standard') }}</span>
-            </div>
-            <div class="inline-flex items-center gap-1.5 rounded-full border border-gray-200/60 bg-white/70 px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm dark:border-dark-700/70 dark:bg-dark-900/40 dark:text-dark-200">
-              <Icon name="copy" size="xs" class="text-primary-600 dark:text-primary-300" />
-              <span>{{ t('home.hero.stats.copy') }}</span>
-            </div>
-            <div class="inline-flex items-center gap-1.5 rounded-full border border-gray-200/60 bg-white/70 px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm dark:border-dark-700/70 dark:bg-dark-900/40 dark:text-dark-200">
-              <Icon name="dollar" size="xs" class="text-primary-600 dark:text-primary-300" />
-              <span>{{ t('home.hero.stats.transparent') }}</span>
-            </div>
-            <div class="inline-flex items-center gap-1.5 rounded-full border border-gray-200/60 bg-white/70 px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm dark:border-dark-700/70 dark:bg-dark-900/40 dark:text-dark-200">
-              <Icon name="shield" size="xs" class="text-primary-600 dark:text-primary-300" />
-              <span>{{ t('home.hero.stats.protect') }}</span>
-            </div>
-            <div class="inline-flex items-center gap-1.5 rounded-full border border-gray-200/60 bg-white/70 px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm dark:border-dark-700/70 dark:bg-dark-900/40 dark:text-dark-200">
-              <Icon name="server" size="xs" class="text-primary-600 dark:text-primary-300" />
-              <span>{{ t('home.hero.stats.stable') }}</span>
-            </div>
-          </div>
-
-          <!-- 3 steps - more compact -->
-          <div class="mx-auto mt-6 max-w-4xl">
-            <div class="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-center">
-              <div class="flex items-center gap-3 rounded-2xl border border-gray-200/60 bg-white/70 px-4 py-3 shadow-sm backdrop-blur dark:border-dark-800/60 dark:bg-dark-900/40">
-                <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300">
-                  <Icon name="login" size="sm" />
-                </div>
-                <div>
-                  <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ t('home.steps.oneTitle') }}</div>
-                  <div class="text-xs text-gray-600 dark:text-dark-400">{{ t('home.steps.oneDesc') }}</div>
-                </div>
-              </div>
-
-              <Icon name="arrowRight" size="sm" class="hidden text-gray-400 dark:text-dark-500 sm:block" />
-
-              <div class="flex items-center gap-3 rounded-2xl border border-gray-200/60 bg-white/70 px-4 py-3 shadow-sm backdrop-blur dark:border-dark-800/60 dark:bg-dark-900/40">
-                <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300">
-                  <Icon name="grid" size="sm" />
-                </div>
-                <div>
-                  <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ t('home.steps.twoTitle') }}</div>
-                  <div class="text-xs text-gray-600 dark:text-dark-400">{{ t('home.steps.twoDesc') }}</div>
-                </div>
-              </div>
-
-              <Icon name="arrowRight" size="sm" class="hidden text-gray-400 dark:text-dark-500 sm:block" />
-
-              <div class="flex items-center gap-3 rounded-2xl border border-gray-200/60 bg-white/70 px-4 py-3 shadow-sm backdrop-blur dark:border-dark-800/60 dark:bg-dark-900/40">
-                <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300">
-                  <Icon name="play" size="sm" />
-                </div>
-                <div>
-                  <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ t('home.steps.threeTitle') }}</div>
-                  <div class="text-xs text-gray-600 dark:text-dark-400">{{ t('home.steps.threeDesc') }}</div>
-                </div>
-              </div>
+              <p class="mt-2 flex items-center gap-1.5 text-xs font-medium text-primary-600 dark:text-primary-400">
+                <Icon name="check" size="sm" />
+                {{ t('home.hero.terminal.compatibility') }}
+              </p>
             </div>
           </div>
 
           <!-- Free Trial Banner -->
           <div class="mx-auto mt-10 max-w-2xl">
-            <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 p-1 shadow-xl shadow-green-500/20">
+            <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-green-500/80 via-emerald-500/80 to-teal-500/80 p-1 shadow-lg shadow-green-500/10">
               <div class="rounded-[22px] bg-white/95 px-6 py-5 backdrop-blur dark:bg-dark-900/95">
                 <div class="flex flex-col items-center gap-5 sm:flex-row">
                   <!-- QR Code -->
@@ -495,80 +412,6 @@
         </div>
       </section>
 
-      <!-- Providers -->
-      <section id="providers" class="mx-auto max-w-7xl px-6 pb-12 pt-2 lg:pb-16">
-        <div class="mx-auto max-w-3xl text-center">
-          <h2 class="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white sm:text-3xl">
-            {{ t('home.providers.title') }}
-          </h2>
-          <p class="mt-2 text-sm leading-relaxed text-gray-600 dark:text-dark-400 sm:text-base">
-            {{ t('home.providers.description') }}
-          </p>
-        </div>
-
-        <div class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          <div class="card card-hover flex items-center justify-between gap-4 p-6">
-            <div class="flex items-center gap-3">
-              <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600">
-                <span class="text-xs font-bold text-white">C</span>
-              </div>
-              <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ t('home.providers.claude') }}</div>
-            </div>
-            <span class="rounded-full bg-primary-100 px-2 py-1 text-[10px] font-semibold text-primary-700 dark:bg-primary-900/40 dark:text-primary-300">
-              {{ t('home.providers.supported') }}
-            </span>
-          </div>
-
-          <div class="card card-hover flex items-center justify-between gap-4 p-6">
-            <div class="flex items-center gap-3">
-              <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600">
-                <span class="text-xs font-bold text-white">G</span>
-              </div>
-              <div class="text-sm font-semibold text-gray-900 dark:text-white">GPT</div>
-            </div>
-            <span class="rounded-full bg-primary-100 px-2 py-1 text-[10px] font-semibold text-primary-700 dark:bg-primary-900/40 dark:text-primary-300">
-              {{ t('home.providers.supported') }}
-            </span>
-          </div>
-
-          <div class="card card-hover flex items-center justify-between gap-4 p-6">
-            <div class="flex items-center gap-3">
-              <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-sky-600">
-                <span class="text-xs font-bold text-white">G</span>
-              </div>
-              <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ t('home.providers.gemini') }}</div>
-            </div>
-            <span class="rounded-full bg-primary-100 px-2 py-1 text-[10px] font-semibold text-primary-700 dark:bg-primary-900/40 dark:text-primary-300">
-              {{ t('home.providers.supported') }}
-            </span>
-          </div>
-
-          <div class="card card-hover flex items-center justify-between gap-4 p-6">
-            <div class="flex items-center gap-3">
-              <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-500 to-pink-600">
-                <span class="text-xs font-bold text-white">A</span>
-              </div>
-              <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ t('home.providers.antigravity') }}</div>
-            </div>
-            <span class="rounded-full bg-primary-100 px-2 py-1 text-[10px] font-semibold text-primary-700 dark:bg-primary-900/40 dark:text-primary-300">
-              {{ t('home.providers.supported') }}
-            </span>
-          </div>
-
-          <div class="card card-hover flex items-center justify-between gap-4 p-6 opacity-80">
-            <div class="flex items-center gap-3">
-              <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-gray-500 to-gray-700 dark:from-dark-600 dark:to-dark-800">
-                <span class="text-xs font-bold text-white">+</span>
-              </div>
-              <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ t('home.providers.more') }}</div>
-            </div>
-            <span class="rounded-full bg-gray-100 px-2 py-1 text-[10px] font-semibold text-gray-600 dark:bg-dark-800 dark:text-dark-300">
-              {{ t('home.providers.soon') }}
-            </span>
-          </div>
-        </div>
-      </section>
-
       <!-- FAQ -->
       <section id="faq" class="mx-auto max-w-7xl px-6 pb-14 pt-2 lg:pb-20">
         <div class="mx-auto max-w-3xl text-center">
@@ -581,6 +424,19 @@
         </div>
 
         <div class="mx-auto mt-8 max-w-3xl space-y-3">
+          <details
+            open
+            class="group rounded-4xl border border-gray-200/60 bg-white/70 p-5 shadow-sm backdrop-blur dark:border-dark-800/60 dark:bg-dark-900/40"
+          >
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-4">
+              <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ t('home.faq.q0') }}</span>
+              <Icon name="chevronDown" size="sm" class="text-gray-500 transition-transform group-open:rotate-180 dark:text-dark-400" />
+            </summary>
+            <p class="mt-3 text-sm leading-relaxed text-gray-600 dark:text-dark-400">
+              {{ t('home.faq.a0') }}
+            </p>
+          </details>
+
           <details
             class="group rounded-4xl border border-gray-200/60 bg-white/70 p-5 shadow-sm backdrop-blur dark:border-dark-800/60 dark:bg-dark-900/40"
           >
@@ -722,11 +578,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import { useAuthStore, useAppStore } from '@/stores'
-import { useClipboard } from '@/composables/useClipboard'
 import TypewriterTerminal, { type TerminalLine } from '@/components/common/TypewriterTerminal.vue'
 import PublicHeader from '@/components/layout/PublicHeader.vue'
 import Icon from '@/components/icons/Icon.vue'
@@ -736,14 +591,11 @@ const route = useRoute()
 
 const authStore = useAuthStore()
 const appStore = useAppStore()
-const { copyToClipboard } = useClipboard()
 
 // Get referral code from URL if present
 const refCode = computed(() => route.query.ref as string | undefined)
 const registerPath = computed(() => refCode.value ? `/register?ref=${refCode.value}` : '/register')
 const loginPath = computed(() => refCode.value ? `/login?redirect=${encodeURIComponent(registerPath.value)}` : '/login')
-
-type DemoKey = 'claude' | 'codex' | 'gemini'
 
 // Site settings - directly from appStore (already initialized from injected config)
 const siteName = computed(() => appStore.cachedPublicSettings?.site_name || appStore.siteName || '码驿站')
@@ -773,61 +625,19 @@ const dashboardPath = computed(() => (isAdmin.value ? '/admin/dashboard' : '/das
 // Current year for footer
 const currentYear = computed(() => new Date().getFullYear())
 
-const demoTabs = computed(() => [
-  { key: 'claude' as const, label: 'Claude Code' },
-  { key: 'codex' as const, label: 'Codex CLI' },
-  { key: 'gemini' as const, label: 'Gemini CLI' }
-])
-
-const activeDemo = ref<DemoKey>('claude')
-
-function buildTerminalLines(baseUrl: string, demo: DemoKey): TerminalLine[] {
+function buildTerminalLines(baseUrl: string): TerminalLine[] {
   const token = 'sk-xxx'
-
-  switch (demo) {
-    case 'codex':
-      return [
-        { kind: 'comment', text: t('home.hero.terminal.codex.line1') },
-        { kind: 'output', text: '[model_providers.sub2api]' },
-        { kind: 'output', text: `base_url = "${baseUrl}"` },
-        { kind: 'output', text: 'requires_openai_auth = true' },
-        { kind: 'comment', text: t('home.hero.terminal.codex.line2') },
-        { kind: 'output', text: '{' },
-        { kind: 'output', text: `  "OPENAI_API_KEY": "${token}"` },
-        { kind: 'output', text: '}' },
-        { kind: 'comment', text: t('home.hero.terminal.codex.line3') },
-        { kind: 'prompt', text: 'codex' }
-      ]
-    case 'gemini':
-      return [
-        { kind: 'comment', text: t('home.hero.terminal.gemini.line1') },
-        { kind: 'prompt', text: `export GOOGLE_GEMINI_BASE_URL="${baseUrl}"` },
-        { kind: 'prompt', text: `export GEMINI_API_KEY="${token}"` },
-        { kind: 'prompt', text: 'export GEMINI_MODEL="gemini-2.0-flash"' },
-        { kind: 'comment', text: t('home.hero.terminal.gemini.line2') },
-        { kind: 'prompt', text: 'gemini' },
-        { kind: 'success', text: t('home.hero.terminal.gemini.success') }
-      ]
-    case 'claude':
-    default:
-      return [
-        { kind: 'comment', text: t('home.hero.terminal.claude.line1') },
-        { kind: 'prompt', text: `export ANTHROPIC_BASE_URL="${baseUrl}"` },
-        { kind: 'prompt', text: `export ANTHROPIC_AUTH_TOKEN="${token}"` },
-        { kind: 'comment', text: t('home.hero.terminal.claude.line2') },
-        { kind: 'prompt', text: 'claude' },
-        { kind: 'success', text: t('home.hero.terminal.claude.success') }
-      ]
-  }
+  return [
+    { kind: 'comment', text: t('home.hero.terminal.claude.line1') },
+    { kind: 'prompt', text: `export ANTHROPIC_BASE_URL="${baseUrl}"` },
+    { kind: 'prompt', text: `export ANTHROPIC_API_KEY="${token}"` },
+    { kind: 'comment', text: t('home.hero.terminal.claude.line2') },
+    { kind: 'prompt', text: 'claude' },
+    { kind: 'success', text: t('home.hero.terminal.claude.success') }
+  ]
 }
 
-const terminalLines = computed<TerminalLine[]>(() => buildTerminalLines(apiBaseRoot.value, activeDemo.value))
-
-const terminalExampleText = computed(() => terminalLines.value.map((l) => l.text).join('\n'))
-
-function copyTerminalExample() {
-  copyToClipboard(terminalExampleText.value)
-}
+const terminalLines = computed<TerminalLine[]>(() => buildTerminalLines(apiBaseRoot.value))
 
 // Handle QR code image error
 function handleQrError(e: Event) {

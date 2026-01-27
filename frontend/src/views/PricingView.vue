@@ -102,8 +102,7 @@
 
               <div class="mt-6">
                 <div class="flex items-baseline gap-1">
-                  <span class="text-sm text-gray-500 dark:text-gray-400">{{ t('pricing.paygo.asLowAs') }}</span>
-                  <span class="text-3xl font-bold text-gray-900 dark:text-white">¥0.40</span>
+                  <span class="text-3xl font-bold text-gray-900 dark:text-white">¥0.50</span>
                   <span class="text-sm text-gray-500 dark:text-gray-400">/刀</span>
                 </div>
                 <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">

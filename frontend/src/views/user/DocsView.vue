@@ -5,6 +5,7 @@
       <div class="mb-8 text-center">
         <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Claude Code 接入指南</h1>
         <p class="mt-3 text-gray-600 dark:text-gray-400">仅需三步，让官方工具连接加速网络</p>
+        <p class="mt-2 text-sm text-gray-400 dark:text-gray-500">本文档适用于 Claude Code（CLI）用户，基于 Anthropic 官方接口协议。</p>
       </div>
 
       <!-- Warning Box -->
@@ -14,11 +15,15 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
           <div>
-            <h3 class="font-semibold text-amber-800 dark:text-amber-200">重要提示：不支持 Web 和 Cursor</h3>
-            <p class="mt-1 text-sm text-amber-700 dark:text-amber-300">
-              本接口为 Anthropic 原生协议，专为 claude-code 命令行工具设计。<br>
-              不支持网页版 (claude.ai) 登录，也不支持 Cursor 等需要 OpenAI 格式的软件。
-            </p>
+            <h3 class="font-semibold text-amber-800 dark:text-amber-200">重要提示</h3>
+            <div class="mt-2 text-sm text-amber-700 dark:text-amber-300">
+              <p>本接口基于 Anthropic 原生协议：</p>
+              <ul class="mt-1 ml-4 list-disc space-y-0.5">
+                <li>仅适用于 claude-code 命令行工具及相关开发场景</li>
+                <li>不支持 claude.ai 网页版</li>
+                <li>不支持依赖 OpenAI API 规范的工具（如 Cursor）</li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>
@@ -113,6 +118,11 @@
           </div>
           <p class="mt-2 text-xs text-green-600 dark:text-green-400">如果显示版本号，说明安装成功</p>
         </div>
+
+        <!-- Network Tip -->
+        <p class="mt-3 text-xs text-gray-400 dark:text-gray-500">
+          若安装过程较慢，请确认本地可正常访问 claude.ai
+        </p>
       </section>
 
       <!-- Step 2: Create API Key and Configure -->
@@ -225,6 +235,34 @@
             建议通过「系统属性 → 环境变量」设置永久环境变量
           </span>
         </p>
+
+        <!-- Verify Config -->
+        <div class="mt-4 rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-900/20">
+          <div class="mb-2 text-sm font-medium text-green-700 dark:text-green-300">验证配置</div>
+
+          <!-- macOS/Linux -->
+          <div v-if="activeConfigTab === 'mac'" class="rounded bg-gray-900 p-3">
+            <pre class="text-sm"><code><span class="text-gray-500"># 验证环境变量是否生效</span>
+<span class="text-green-400">echo</span> <span class="text-white">$ANTHROPIC_BASE_URL</span>
+<span class="text-green-400">echo</span> <span class="text-white">$ANTHROPIC_API_KEY</span></code></pre>
+          </div>
+
+          <!-- PowerShell -->
+          <div v-else-if="activeConfigTab === 'powershell'" class="rounded bg-gray-900 p-3">
+            <pre class="text-sm"><code><span class="text-gray-500"># 验证环境变量是否生效</span>
+<span class="text-green-400">echo</span> <span class="text-white">$env:ANTHROPIC_BASE_URL</span>
+<span class="text-green-400">echo</span> <span class="text-white">$env:ANTHROPIC_API_KEY</span></code></pre>
+          </div>
+
+          <!-- CMD -->
+          <div v-else class="rounded bg-gray-900 p-3">
+            <pre class="text-sm"><code><span class="text-gray-500">:: 验证环境变量是否生效</span>
+<span class="text-green-400">echo</span> <span class="text-white">%ANTHROPIC_BASE_URL%</span>
+<span class="text-green-400">echo</span> <span class="text-white">%ANTHROPIC_API_KEY%</span></code></pre>
+          </div>
+
+          <p class="mt-2 text-xs text-green-600 dark:text-green-400">若无法输出，说明环境变量尚未生效，请检查配置或重启终端</p>
+        </div>
       </section>
 
       <!-- Step 3: Start Claude -->
@@ -250,6 +288,10 @@
           <span class="text-yellow-500">💡</span>
           首次运行可能需要几秒钟初始化，之后即可开始对话
         </p>
+
+        <p class="mt-2 text-xs text-gray-400 dark:text-gray-500">
+          若启动失败，请尝试使用 <code class="rounded bg-gray-100 px-1.5 py-0.5 text-xs dark:bg-dark-700">claude --debug</code> 查看详细错误信息
+        </p>
       </section>
 
       <!-- Tips Box -->
@@ -273,17 +315,54 @@
           </li>
         </ul>
       </section>
+
+      <!-- FAQ Section -->
+      <section class="mt-8 rounded-xl border border-gray-200 bg-white p-6 dark:border-dark-700 dark:bg-dark-800">
+        <h3 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">常见问题</h3>
+        <div class="space-y-4">
+          <div>
+            <p class="font-medium text-gray-800 dark:text-gray-200">Q：提示 401 / Unauthorized？</p>
+            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">请确认 ANTHROPIC_API_KEY 是否正确，且未包含多余空格。</p>
+          </div>
+          <div>
+            <p class="font-medium text-gray-800 dark:text-gray-200">Q：提示连接超时 / 网络错误？</p>
+            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">请确认 ANTHROPIC_BASE_URL 配置正确，且本地网络可访问该地址。</p>
+          </div>
+          <div>
+            <p class="font-medium text-gray-800 dark:text-gray-200">Q：Claude 能启动，但无法正常对话？</p>
+            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">请检查是否使用的是最新版本的 claude-code，并确认未使用 Web 登录模式。</p>
+          </div>
+        </div>
+      </section>
     </div>
   </PublicLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import PublicLayout from '@/components/layout/PublicLayout.vue'
+
+// Detect user's operating system
+function detectOS(): 'mac' | 'powershell' {
+  const platform = navigator.platform.toLowerCase()
+  const userAgent = navigator.userAgent.toLowerCase()
+
+  if (platform.includes('win') || userAgent.includes('windows')) {
+    return 'powershell'
+  }
+  // macOS, Linux, and others default to mac/bash
+  return 'mac'
+}
 
 const copied = ref<string | null>(null)
 const activeInstallTab = ref('mac')
 const activeConfigTab = ref('mac')
+
+onMounted(() => {
+  const detectedOS = detectOS()
+  activeInstallTab.value = detectedOS
+  activeConfigTab.value = detectedOS
+})
 
 const installTabs = [
   { id: 'mac', label: 'macOS / Linux / WSL' },

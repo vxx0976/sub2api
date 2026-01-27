@@ -9,7 +9,7 @@ export default {
     dashboard: '控制台',
     login: '登录',
     register: '注册',
-    getStarted: '开始使用',
+    getStarted: '获取 API Key',
     goToDashboard: '进入控制台',
     seo: {
       title: 'Claude Code API 官方直连 - 满血 Opus 4.5 / Sonnet 4.5 | {siteName}',
@@ -26,10 +26,12 @@ export default {
     },
     hero: {
       badge: '平价 AI 编码中转站',
-      title: '一站式 Vibe Coding：一个 Key 接入多模型',
-      subtitle: '支持 Claude Code / Codex CLI / Gemini CLI 等主流工具，一键配置，明码标价，用量实时可见。',
+      title: 'Claude Code 中转服务',
+      subtitle: '基于 Anthropic 官方协议的 Claude API 转发',
+      subtitleDesc: '一键配置，明码标价，用量实时可见。',
       viewPricing: '查看定价',
-      supportedToolsLabel: '支持工具',
+      supportedToolsLabel: '可用于多种开发工具与环境',
+      supportedToolsHint: '不同工具对 Anthropic 的支持情况可能存在差异',
       platformsLabel: '适用系统',
       stats: {
         standard: '主流工具可用',
@@ -42,6 +44,7 @@ export default {
         title: '快速配置示例',
         copy: '复制',
         hint: '把 sk-xxx 换成你在控制台生成的 API Key；路径/命令可能因版本略有不同，详情以文档/控制台为准。',
+        compatibility: '遵循 Anthropic 官方接口与环境变量规范',
         claude: {
           line1: '# 配置 Claude Code',
           line2: '# 启动',
@@ -62,15 +65,15 @@ export default {
     steps: {
       oneTitle: '登录 / 注册',
       oneDesc: '创建账号，生成 API Key',
-      twoTitle: '选择你的工具',
-      twoDesc: 'Claude/Codex/Gemini 一键配置',
+      twoTitle: '配置 Claude Code',
+      twoDesc: '复制配置，一键接入',
       threeTitle: '开始 Vibe Coding',
       threeDesc: '写代码、改 Bug、补测试'
     },
     freeTrial: {
-      badge: '限时福利',
-      title: '添加客服微信，免费试用',
-      description: '扫码添加客服微信，即可获得免费试用额度，体验满血 Claude Code'
+      badge: '新用户试用',
+      title: '获取测试额度',
+      description: '添加客服微信获取测试额度'
     },
     quickstart: {
       title: '快速上手',
@@ -90,10 +93,10 @@ export default {
       realtimeBilling: '实时计费'
     },
     features: {
-      unifiedGateway: '主流工具一键接入',
-      unifiedGatewayDesc: 'Claude Code、Codex CLI、Gemini CLI 等，用一个 Key 直接跑。',
-      multiAccount: '中转更稳定',
-      multiAccountDesc: '多上游/多账号自动切换，减少临时波动。',
+      unifiedGateway: 'Claude Code 原生协议',
+      unifiedGatewayDesc: '无需修改客户端行为，复制环境变量即可使用。',
+      multiAccount: '多节点转发与自动切换',
+      multiAccountDesc: '降低请求失败率，避免单点异常。',
       balanceQuota: '用量实时可见',
       balanceQuotaDesc: 'Token 级明细，按模型/按天统计，余额更清晰。',
       rateLimit: '限额保护',
@@ -170,7 +173,7 @@ export default {
     },
     providers: {
       title: '支持的模型与平台',
-      description: '常用模型都能用，随时切换。',
+      description: 'Claude 为主要支持模型，其它模型为可选能力。',
       supported: '已支持',
       soon: '即将推出',
       claude: 'Claude',
@@ -181,12 +184,14 @@ export default {
     faq: {
       title: '常见问题',
       subtitle: '第一次用？这里先帮你把坑填平。',
+      q0: '是否支持 OpenAI / ChatGPT API？',
+      a0: '本服务不提供 OpenAI / ChatGPT API 兼容接口。我们基于 Anthropic 官方协议，主要用于 Claude Code 及相关开发场景。',
       q1: '我需要先懂 API 吗？',
       a1: '不需要。选你正在用的工具，复制配置即可；想更深入再看文档。',
       q2: 'API Key 在哪里拿？',
       a2: '登录后进入「控制台 → API Keys」创建/复制。',
       q3: '支持哪些工具/客户端？',
-      a3: 'Claude Code、Codex CLI、Gemini CLI、OpenCode 等；具体以示例/文档为准。',
+      a3: '目前支持 Claude Code，可在 Terminal、VS Code、Cursor、Windsurf 等环境中使用。',
       q4: '价格怎么算？',
       a4: '计费规则与用量明细会在控制台展示；你可以按模型、按天查看记录。',
       q5: '遇到报错怎么办？',
