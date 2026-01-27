@@ -278,18 +278,34 @@
           <template #cell-subscriptions="{ row }">
             <div
               v-if="row.subscriptions && row.subscriptions.length > 0"
-              class="flex flex-wrap gap-1.5"
+              class="space-y-2"
             >
-              <GroupBadge
-                v-for="sub in row.subscriptions"
-                :key="sub.id"
-                :name="sub.group?.name || ''"
-                :platform="sub.group?.platform"
-                :subscription-type="sub.group?.subscription_type"
-                :rate-multiplier="sub.group?.rate_multiplier"
-                :days-remaining="sub.expires_at ? getDaysRemaining(sub.expires_at) : null"
-                :title="sub.expires_at ? formatDateTime(sub.expires_at) : ''"
-              />
+              <div v-for="sub in row.subscriptions" :key="sub.id">
+                <!-- Row 1: GroupBadge -->
+                <GroupBadge
+                  :name="sub.group?.name || ''"
+                  :platform="sub.group?.platform"
+                  :subscription-type="sub.group?.subscription_type"
+                  :rate-multiplier="sub.group?.rate_multiplier"
+                  :days-remaining="sub.expires_at ? getDaysRemaining(sub.expires_at) : null"
+                  :title="sub.expires_at ? formatDateTime(sub.expires_at) : ''"
+                />
+                <!-- Row 2: Progress Bar -->
+                <div
+                  v-if="sub.group?.daily_limit_usd || sub.group?.weekly_limit_usd || sub.group?.monthly_limit_usd"
+                  class="mt-1 flex items-center gap-1.5 pl-0.5"
+                  :title="getUsageTooltip(sub)"
+                >
+                  <div class="h-1.5 w-20 rounded-full bg-gray-200 dark:bg-dark-600">
+                    <div
+                      class="h-1.5 rounded-full transition-all"
+                      :class="getProgressBarClass(sub)"
+                      :style="{ width: getMainProgressWidth(sub) }"
+                    ></div>
+                  </div>
+                  <span class="text-[10px] tabular-nums text-gray-400">{{ getMainProgressPercent(sub) }}%</span>
+                </div>
+              </div>
             </div>
             <span
               v-else
@@ -586,7 +602,7 @@ const toggleableColumns = computed(() =>
 const hiddenColumns = reactive<Set<string>>(new Set())
 
 // Default hidden columns (columns hidden by default on first load)
-const DEFAULT_HIDDEN_COLUMNS = ['notes', 'subscriptions', 'usage', 'concurrency']
+const DEFAULT_HIDDEN_COLUMNS = ['notes', 'usage', 'concurrency']
 
 // localStorage key for column settings
 const HIDDEN_COLUMNS_KEY = 'user-hidden-columns'
@@ -834,6 +850,57 @@ const getDaysRemaining = (expiresAt: string): number => {
   const expires = new Date(expiresAt)
   const diffMs = expires.getTime() - now.getTime()
   return Math.ceil(diffMs / (1000 * 60 * 60 * 24))
+}
+
+// 用量进度条辅助函数
+// 获取主要进度（优先级：月 > 周 > 日）
+const getMainProgress = (sub: any): { used: number; limit: number } => {
+  if (sub.group?.monthly_limit_usd) {
+    return { used: sub.monthly_usage_usd ?? 0, limit: sub.group.monthly_limit_usd }
+  }
+  if (sub.group?.weekly_limit_usd) {
+    return { used: sub.weekly_usage_usd ?? 0, limit: sub.group.weekly_limit_usd }
+  }
+  if (sub.group?.daily_limit_usd) {
+    return { used: sub.daily_usage_usd ?? 0, limit: sub.group.daily_limit_usd }
+  }
+  return { used: 0, limit: 0 }
+}
+
+const getMainProgressWidth = (sub: any): string => {
+  const { used, limit } = getMainProgress(sub)
+  if (!limit) return '0%'
+  return `${Math.min((used / limit) * 100, 100)}%`
+}
+
+const getMainProgressPercent = (sub: any): number => {
+  const { used, limit } = getMainProgress(sub)
+  if (!limit) return 0
+  return Math.round((used / limit) * 100)
+}
+
+const getProgressBarClass = (sub: any): string => {
+  const pct = getMainProgressPercent(sub)
+  if (pct >= 90) return 'bg-red-500'
+  if (pct >= 70) return 'bg-orange-500'
+  return 'bg-green-500'
+}
+
+const getUsageTooltip = (sub: any): string => {
+  const parts: string[] = []
+  if (sub.group?.daily_limit_usd) {
+    const pct = Math.round(((sub.daily_usage_usd ?? 0) / sub.group.daily_limit_usd) * 100)
+    parts.push(`${t('admin.subscriptions.daily')}: ${pct}%`)
+  }
+  if (sub.group?.weekly_limit_usd) {
+    const pct = Math.round(((sub.weekly_usage_usd ?? 0) / sub.group.weekly_limit_usd) * 100)
+    parts.push(`${t('admin.subscriptions.weekly')}: ${pct}%`)
+  }
+  if (sub.group?.monthly_limit_usd) {
+    const pct = Math.round(((sub.monthly_usage_usd ?? 0) / sub.group.monthly_limit_usd) * 100)
+    parts.push(`${t('admin.subscriptions.monthly')}: ${pct}%`)
+  }
+  return parts.join(' | ')
 }
 
 const loadAttributeDefinitions = async () => {

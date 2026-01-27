@@ -194,6 +194,33 @@
             <span v-else class="text-sm text-gray-400 dark:text-dark-500">-</span>
           </template>
 
+          <template #cell-source="{ row }">
+            <div class="flex items-center">
+              <!-- Admin assigned (assigned_by > 0) -->
+              <span
+                v-if="row.assigned_by && row.assigned_by > 0"
+                class="badge badge-purple"
+              >
+                {{ t('admin.subscriptions.source.admin') }}
+              </span>
+              <!-- Has source records (redeem or purchase) -->
+              <div
+                v-else-if="parseSourceRecords(row.notes).length > 0"
+                class="relative"
+                @mouseenter="showSourcePopover(row.id, $event)"
+                @mouseleave="hideSourcePopover"
+              >
+                <span :class="['badge cursor-default', getSourceBadgeClass(row.notes)]">
+                  {{ getSourceLabel(row.notes) }}
+                </span>
+              </div>
+              <!-- Unknown -->
+              <span v-else class="badge badge-secondary">
+                {{ t('admin.subscriptions.source.unknown') }}
+              </span>
+            </div>
+          </template>
+
           <template #cell-usage="{ row }">
             <div class="min-w-[280px] space-y-2">
               <!-- Daily Usage -->
@@ -603,6 +630,38 @@
       @confirm="confirmRevoke"
       @cancel="showRevokeDialog = false"
     />
+
+    <!-- Source Popover (Teleported to body) -->
+    <Teleport to="body">
+      <div
+        v-if="sourcePopover.visible && sourcePopover.subscriptionId"
+        class="fixed z-[9999] rounded-lg bg-white px-4 py-3 text-sm shadow-lg border border-gray-200 dark:bg-gray-800 dark:border-gray-700"
+        :style="{ top: sourcePopover.top + 'px', left: sourcePopover.left + 'px' }"
+        @mouseenter="cancelHideSourcePopover"
+        @mouseleave="hideSourcePopover"
+      >
+        <div class="font-medium text-gray-900 dark:text-white mb-2">
+          {{ t('admin.subscriptions.sourceHistory') }}
+        </div>
+        <div class="space-y-1.5">
+          <div
+            v-for="(record, idx) in sourcePopover.records"
+            :key="idx"
+            class="flex items-center gap-2 text-gray-600 dark:text-gray-300"
+          >
+            <span class="text-xs text-gray-400 w-14 flex-shrink-0">{{ record.label }}</span>
+            <span class="font-mono text-xs">{{ record.value }}</span>
+            <button
+              @click.stop="copyToClipboard(record.value)"
+              class="rounded p-0.5 text-gray-400 hover:text-primary-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              :title="t('common.copy')"
+            >
+              <Icon name="copy" size="sm" />
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </AppLayout>
 </template>
 
@@ -677,6 +736,7 @@ const allColumns = computed<Column[]>(() => [
     sortable: false
   },
   { key: 'group', label: t('admin.subscriptions.columns.group'), sortable: false },
+  { key: 'source', label: t('admin.subscriptions.columns.source'), sortable: false },
   { key: 'usage', label: t('admin.subscriptions.columns.usage'), sortable: false },
   { key: 'expires_at', label: t('admin.subscriptions.columns.expires'), sortable: true },
   { key: 'status', label: t('admin.subscriptions.columns.status'), sortable: true },
@@ -1104,6 +1164,136 @@ const confirmRevoke = async () => {
   } catch (error: any) {
     appStore.showError(error.response?.data?.detail || t('admin.subscriptions.failedToRevoke'))
     console.error('Error revoking subscription:', error)
+  }
+}
+
+// Helper functions for subscription source detection
+interface SourceRecord {
+  type: 'redeem' | 'purchase'
+  label: string
+  value: string
+}
+
+// Source popover state
+const sourcePopover = reactive({
+  visible: false,
+  subscriptionId: null as number | null,
+  top: 0,
+  left: 0,
+  records: [] as SourceRecord[]
+})
+let sourcePopoverHideTimeout: ReturnType<typeof setTimeout> | null = null
+
+const parseSourceRecords = (notes?: string): SourceRecord[] => {
+  if (!notes) return []
+  const records: SourceRecord[] = []
+
+  // Extract all redeem codes
+  // Format 1: with dashes (XXXX-XXXX-XXXX-XXXX)
+  const dashMatches = notes.matchAll(/通过兑换码\s+([A-Z0-9]{8}-[A-Z0-9]{8}-[A-Z0-9]{8}-[A-Z0-9]{8})\s+兑换/gi)
+  for (const match of dashMatches) {
+    records.push({ type: 'redeem', label: t('admin.subscriptions.source.redeem'), value: match[1] })
+  }
+  // Format 2: without dashes (32 hex chars)
+  const hexMatches = notes.matchAll(/通过兑换码\s+([a-f0-9]{32})\s+兑换/gi)
+  for (const match of hexMatches) {
+    records.push({ type: 'redeem', label: t('admin.subscriptions.source.redeem'), value: match[1] })
+  }
+
+  // Extract all order numbers
+  const orderMatches = notes.matchAll(/订单支付:\s*(\S+)/g)
+  for (const match of orderMatches) {
+    records.push({ type: 'purchase', label: t('admin.subscriptions.source.purchase'), value: match[1] })
+  }
+
+  return records
+}
+
+const getSourceBadgeClass = (notes?: string): string => {
+  const records = parseSourceRecords(notes)
+  if (records.length === 0) return 'badge-secondary'
+  // Use the first record's type for badge color
+  const firstType = records[0].type
+  return firstType === 'redeem' ? 'badge-warning' : 'badge-success'
+}
+
+const getSourceLabel = (notes?: string): string => {
+  const records = parseSourceRecords(notes)
+  if (records.length === 0) return t('admin.subscriptions.source.unknown')
+  // Use the first record's type for label
+  const firstType = records[0].type
+  return firstType === 'redeem' ? t('admin.subscriptions.source.redeem') : t('admin.subscriptions.source.purchase')
+}
+
+const showSourcePopover = (subscriptionId: number, event: MouseEvent) => {
+  if (sourcePopoverHideTimeout) {
+    clearTimeout(sourcePopoverHideTimeout)
+    sourcePopoverHideTimeout = null
+  }
+
+  const sub = subscriptions.value.find(s => s.id === subscriptionId)
+  if (!sub) return
+
+  const records = parseSourceRecords(sub.notes)
+  if (records.length === 0) return
+
+  const target = event.currentTarget as HTMLElement
+  const rect = target.getBoundingClientRect()
+
+  // 估算 popover 高度 (标题 + 每行约 28px)
+  const popoverHeight = 50 + records.length * 28
+  const popoverWidth = 300
+  const padding = 8
+
+  // 自动判断显示位置：优先向上，空间不够则向下
+  const spaceAbove = rect.top
+  const spaceBelow = window.innerHeight - rect.bottom
+
+  let top: number
+  if (spaceAbove >= popoverHeight + padding) {
+    // 向上显示
+    top = rect.top - popoverHeight - padding
+  } else if (spaceBelow >= popoverHeight + padding) {
+    // 向下显示
+    top = rect.bottom + padding
+  } else {
+    // 空间都不够，选择空间大的一边
+    top = spaceAbove > spaceBelow
+      ? Math.max(padding, rect.top - popoverHeight - padding)
+      : rect.bottom + padding
+  }
+
+  // 水平居中，但不超出屏幕
+  let left = rect.left + rect.width / 2 - popoverWidth / 2
+  left = Math.max(padding, Math.min(left, window.innerWidth - popoverWidth - padding))
+
+  sourcePopover.subscriptionId = subscriptionId
+  sourcePopover.records = records
+  sourcePopover.top = top
+  sourcePopover.left = left
+  sourcePopover.visible = true
+}
+
+const hideSourcePopover = () => {
+  sourcePopoverHideTimeout = setTimeout(() => {
+    sourcePopover.visible = false
+    sourcePopover.subscriptionId = null
+  }, 100)
+}
+
+const cancelHideSourcePopover = () => {
+  if (sourcePopoverHideTimeout) {
+    clearTimeout(sourcePopoverHideTimeout)
+    sourcePopoverHideTimeout = null
+  }
+}
+
+const copyToClipboard = async (text: string) => {
+  try {
+    await navigator.clipboard.writeText(text)
+    appStore.showSuccess(t('common.copied'))
+  } catch {
+    appStore.showError(t('common.copyFailed'))
   }
 }
 

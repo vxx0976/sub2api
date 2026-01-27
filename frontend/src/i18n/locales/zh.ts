@@ -395,6 +395,7 @@ export default {
     enabled: '已启用',
     disabled: '已禁用',
     total: '总计',
+    days: '天',
     balance: '余额',
     available: '可用',
     copiedToClipboard: '已复制到剪贴板',
@@ -1511,11 +1512,19 @@ export default {
       columns: {
         user: '用户',
         group: '分组',
+        source: '来源',
         usage: '用量',
         expires: '到期时间',
         status: '状态',
         actions: '操作'
       },
+      source: {
+        admin: '管理员分配',
+        purchase: '购买',
+        redeem: '兑换码',
+        unknown: '未知'
+      },
+      sourceHistory: '来源记录',
       form: {
         user: '用户',
         group: '订阅分组',

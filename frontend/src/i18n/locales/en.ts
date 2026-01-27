@@ -396,6 +396,7 @@ export default {
     enabled: 'Enabled',
     disabled: 'Disabled',
     total: 'Total',
+    days: 'd',
     balance: 'Balance',
     available: 'Available',
     copiedToClipboard: 'Copied to clipboard',
@@ -1434,11 +1435,19 @@ export default {
       columns: {
         user: 'User',
         group: 'Group',
+        source: 'Source',
         usage: 'Usage',
         expires: 'Expires',
         status: 'Status',
         actions: 'Actions'
       },
+      source: {
+        admin: 'Admin Assigned',
+        purchase: 'Purchase',
+        redeem: 'Redeem Code',
+        unknown: 'Unknown'
+      },
+      sourceHistory: 'Source History',
       form: {
         user: 'User',
         group: 'Subscription Group',

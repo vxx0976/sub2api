@@ -874,7 +874,15 @@ export interface UserSubscription {
   expires_at: string | null
   user?: User
   group?: Group
+  // Admin fields (only available in admin API)
+  assigned_by?: number | null
+  assigned_at?: string
+  notes?: string
+  assigned_by_user?: User
+  order_id?: number | null
 }
+
+export type SubscriptionSource = 'purchase' | 'redeem' | 'admin' | 'unknown'
 
 export interface SubscriptionProgress {
   subscription_id: number
