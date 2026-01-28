@@ -227,19 +227,21 @@ export default {
     announcements: 'Announcements',
     promotions: 'Promotions',
     quickLinks: 'Quick Links',
-    announcement1: 'New feature: Referral rewards - 10% of plan price for both parties',
-    announcement2: 'Spring Festival bonus - up to 15% extra on recharge',
+    announcement1: 'Limited offer: All plans with bonus credits, up to $40 extra',
+    announcement2: 'Recharge tier upgrade: up to 2.2x multiplier',
     rechargeBonus: {
       title: 'Recharge Bonus',
-      description: 'Recharge and get bonus credits',
-      tier1: 'Recharge $50 get $5 (10%)',
-      tier2: 'Recharge $100 get $15 (15%)',
+      description: 'Tiered multiplier - more you recharge, higher the rate',
+      tier1: '¥10~199.99 = 2.0x',
+      tier2: '¥200~499.99 = 2.1x',
+      tier3: '¥500+ = 2.2x',
       action: 'Recharge Now'
     },
     referralReward: {
       title: 'Referral Reward',
       description: 'Invite friends to make their first purchase, both get 10% of plan price',
       planItem: '¥{price} plan = ${reward} each',
+      moreInfo: 'Contact support for more plans',
       action: 'Invite Friends'
     },
     links: {

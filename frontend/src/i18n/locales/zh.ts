@@ -226,19 +226,21 @@ export default {
     announcements: '系统公告',
     promotions: '优惠活动',
     quickLinks: '快捷入口',
-    announcement1: '新功能上线：邀请奖励系统，奖励按套餐价格 10% 计算',
-    announcement2: '春节期间充值享额外优惠，最高送 15%',
+    announcement1: '限时活动：全套餐加赠额度，最高多送 $40',
+    announcement2: '充值阶梯倍率升级：最高 2.2 倍，充得越多越划算',
     rechargeBonus: {
       title: '充值优惠',
-      description: '充值即送，多充多得',
-      tier1: '充值 $50 送 $5（10%）',
-      tier2: '充值 $100 送 $15（15%）',
+      description: '阶梯倍率，充得越多倍率越高',
+      tier1: '¥10~199.99 享 2.0 倍',
+      tier2: '¥200~499.99 享 2.1 倍',
+      tier3: '¥500+ 享 2.2 倍',
       action: '去充值'
     },
     referralReward: {
       title: '邀请奖励',
       description: '邀请好友首次购买套餐，双方各得套餐价格 10% 额度',
       planItem: '买 ¥{price} 套餐各得 ${reward}',
+      moreInfo: '更多套餐详情请咨询客服',
       action: '去邀请'
     },
     links: {

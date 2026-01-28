@@ -941,15 +941,13 @@ func validateRechargeTiers(tiers []RechargeTier) error {
 
 // getDefaultRechargeTiers 获取默认充值阶梯配置
 func getDefaultRechargeTiers() []RechargeTier {
-	max49 := 49.99
-	max99 := 99.99
+	max199 := 199.99
 	max499 := 499.99
 
 	return []RechargeTier{
-		{Min: 10, Max: &max49, Multiplier: 1.0},
-		{Min: 50, Max: &max99, Multiplier: 1.2},
-		{Min: 100, Max: &max499, Multiplier: 1.5},
-		{Min: 500, Max: nil, Multiplier: 2.0},
+		{Min: 10, Max: &max199, Multiplier: 1.0},
+		{Min: 200, Max: &max499, Multiplier: 1.042},
+		{Min: 500, Max: nil, Multiplier: 1.111},
 	}
 }
 

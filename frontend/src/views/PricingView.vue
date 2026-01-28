@@ -279,9 +279,9 @@ const subscriptionPlans = computed(() => [
     ]
   },
   {
-    key: 'advanced',
-    recommended: false,
-    name: '进阶版',
+    key: 'standard',
+    recommended: true,
+    name: '标准版',
     price: '49.9',
     credit: '$120 月限额',
     unitPrice: '¥0.42/刀',
@@ -290,21 +290,6 @@ const subscriptionPlans = computed(() => [
       '30 天有效期',
       '支持全模型',
       '单价仅 ¥0.42/刀',
-      '适合中度使用'
-    ]
-  },
-  {
-    key: 'standard',
-    recommended: true,
-    name: '标准版',
-    price: '69.9',
-    credit: '$170 月限额',
-    unitPrice: '¥0.41/刀',
-    features: [
-      '月限额 $170（约 2.5 亿 tokens）',
-      '30 天有效期',
-      '支持全模型',
-      '单价仅 ¥0.41/刀',
       '最受欢迎，性价比最高'
     ]
   },
@@ -321,21 +306,6 @@ const subscriptionPlans = computed(() => [
       '支持全模型',
       '单价仅 ¥0.40/刀',
       '适合重度使用'
-    ]
-  },
-  {
-    key: 'pro',
-    recommended: false,
-    name: '专业版',
-    price: '149.9',
-    credit: '$380 月限额',
-    unitPrice: '¥0.39/刀',
-    features: [
-      '月限额 $380（约 5.7 亿 tokens）',
-      '30 天有效期',
-      '支持全模型',
-      '单价低至 ¥0.39/刀',
-      '重度使用首选，单价最低'
     ]
   }
 ])

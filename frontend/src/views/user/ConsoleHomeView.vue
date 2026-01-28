@@ -52,7 +52,7 @@
         </div>
         <div class="grid gap-6 sm:grid-cols-2">
           <!-- Recharge Bonus Card -->
-          <div class="card overflow-hidden">
+          <div class="card overflow-hidden flex flex-col">
             <div class="bg-gradient-to-br from-emerald-500 to-teal-600 p-5">
               <div class="flex items-center gap-3">
                 <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur">
@@ -61,7 +61,7 @@
                 <h3 class="text-lg font-bold text-white">{{ t('consoleHome.rechargeBonus.title') }}</h3>
               </div>
             </div>
-            <div class="p-5">
+            <div class="flex flex-1 flex-col p-5">
               <p class="text-sm text-gray-600 dark:text-dark-400">
                 {{ t('consoleHome.rechargeBonus.description') }}
               </p>
@@ -89,7 +89,7 @@
           </div>
 
           <!-- Referral Reward Card -->
-          <div class="card overflow-hidden">
+          <div class="card overflow-hidden flex flex-col">
             <div class="bg-gradient-to-br from-purple-500 to-indigo-600 p-5">
               <div class="flex items-center gap-3">
                 <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur">
@@ -98,7 +98,7 @@
                 <h3 class="text-lg font-bold text-white">{{ t('consoleHome.referralReward.title') }}</h3>
               </div>
             </div>
-            <div class="p-5">
+            <div class="flex flex-1 flex-col p-5">
               <p class="text-sm text-gray-600 dark:text-dark-400">
                 {{ t('consoleHome.referralReward.description') }}
               </p>
@@ -106,6 +106,10 @@
                 <div v-for="plan in referralPlans" :key="plan.price" class="flex items-center gap-2 text-sm text-gray-700 dark:text-dark-300">
                   <Icon name="check" size="sm" class="text-purple-500 flex-shrink-0" />
                   <span>{{ t('consoleHome.referralReward.planItem', { price: plan.price, reward: plan.reward }) }}</span>
+                </div>
+                <div class="col-span-2 flex items-center gap-2 text-sm text-gray-500 dark:text-dark-400">
+                  <Icon name="chatBubble" size="sm" class="text-purple-400 flex-shrink-0" />
+                  <span>{{ t('consoleHome.referralReward.moreInfo') }}</span>
                 </div>
               </div>
               <router-link
@@ -176,9 +180,9 @@ const currentDate = computed(() => {
 
 // Hardcoded recharge tiers (no API loading needed)
 const rechargeTiers = [
-  { min: 0, max: 50, multiplier: 1.0 },
-  { min: 50, max: 100, multiplier: 1.1 },
-  { min: 100, max: null, multiplier: 1.15 }
+  { min: 10, max: 199.99, multiplier: 2.0 },
+  { min: 200, max: 499.99, multiplier: 2.1 },
+  { min: 500, max: null, multiplier: 2.2 }
 ]
 
 // Display top 3 tiers for the card
@@ -187,16 +191,15 @@ const displayTiers = rechargeTiers.slice(0, 3)
 // Referral plans with 10% reward (minimum $1)
 const referralPlans = [
   { price: 9.9, reward: 1 },
-  { price: 29.9, reward: 3 },
+  { price: 19.9, reward: 2 },
   { price: 49.9, reward: 5 },
-  { price: 69.9, reward: 7 },
   { price: 99.9, reward: 10 }
 ]
 
 // Default announcements (hardcoded)
 const announcements = ref<Announcement[]>([
-  { title: '新功能上线：邀请奖励系统', date: '2026-01-20' },
-  { title: '春节期间充值享额外优惠', date: '2026-01-15' }
+  { title: '限时活动：全套餐加赠额度，最高多送 $40', date: '2026-01-28' },
+  { title: '充值阶梯倍率升级：最高 2.2 倍，充得越多越划算', date: '2026-01-28' }
 ])
 
 // Optionally load announcements from API to override defaults

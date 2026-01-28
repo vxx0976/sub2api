@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>商品详情图</title>
+  <title>商品详情图 - 成交型</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
     * {
@@ -13,8 +13,8 @@
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
-      background: #f0f0f0;
+      font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+      background: #e8e8e8;
       padding: 40px;
     }
 
@@ -32,26 +32,22 @@
       width: 800px;
       background: white;
       position: relative;
+      overflow: hidden;
     }
 
-    /* 防盗水印 */
     .watermark {
       position: absolute;
       bottom: 20px;
       right: 20px;
       font-size: 16px;
       font-weight: 600;
-      color: rgba(0,0,0,0.15);
+      color: rgba(0,0,0,0.1);
       z-index: 100;
       pointer-events: none;
     }
 
     .watermark-light {
-      color: rgba(255,255,255,0.2);
-    }
-
-    .watermark-gold {
-      color: rgba(255,215,0,0.3);
+      color: rgba(255,255,255,0.12);
     }
 
     .download-btn {
@@ -88,524 +84,1072 @@
       box-shadow: 0 4px 20px rgba(238,90,90,0.4);
     }
 
-    /* ========== 第一张：头图 Banner ========== */
-    .section-banner {
-      min-height: 800px;
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    /* ==========================================
+       第1屏：Hero 生死屏
+       ========================================== */
+    .section-hero {
+      min-height: 900px;
+      background: linear-gradient(160deg, #0c1222 0%, #162044 40%, #1a1a3e 70%, #0c1222 100%);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       text-align: center;
       position: relative;
-      overflow: hidden;
+      padding: 70px 60px;
     }
 
-    .section-banner::before {
+    .section-hero::before {
       content: '';
       position: absolute;
-      top: -50%;
-      left: -50%;
-      width: 200%;
-      height: 200%;
-      background: radial-gradient(circle, rgba(255,215,0,0.1) 0%, transparent 50%);
-      animation: pulse 4s ease-in-out infinite;
+      top: -40%;
+      left: -40%;
+      width: 180%;
+      height: 180%;
+      background:
+        radial-gradient(ellipse at 25% 35%, rgba(99,102,241,0.18) 0%, transparent 50%),
+        radial-gradient(ellipse at 75% 65%, rgba(168,85,247,0.12) 0%, transparent 45%),
+        radial-gradient(ellipse at 50% 90%, rgba(59,130,246,0.08) 0%, transparent 40%);
     }
 
-    @keyframes pulse {
-      0%, 100% { transform: scale(1); opacity: 0.5; }
-      50% { transform: scale(1.1); opacity: 0.8; }
-    }
-
-    .banner-top {
-      display: flex;
-      align-items: center;
-      gap: 30px;
-      margin-bottom: 40px;
-      position: relative;
-      z-index: 1;
-    }
-
-    .banner-brand {
-      font-size: 100px;
-      font-weight: 800;
-      color: #ffd700;
-      letter-spacing: 16px;
-      text-shadow: 0 6px 30px rgba(255,215,0,0.5);
-    }
-
-    .banner-logo {
+    /* 装饰性光点 */
+    .section-hero::after {
+      content: '';
+      position: absolute;
+      top: 60px;
+      right: 80px;
       width: 120px;
       height: 120px;
-      background: linear-gradient(135deg, #ff7043, #ff5722);
-      border-radius: 30px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 56px;
-      color: white;
-      font-weight: bold;
-      box-shadow: 0 20px 60px rgba(255,87,34,0.4);
-      flex-shrink: 0;
+      background: radial-gradient(circle, rgba(251,191,36,0.15) 0%, transparent 70%);
+      border-radius: 50%;
     }
 
-    .banner-title {
-      font-size: 72px;
-      font-weight: 800;
-      color: white;
-      margin-bottom: 20px;
+    .hero-badge {
       position: relative;
       z-index: 1;
-    }
-
-    .banner-subtitle {
-      font-size: 32px;
-      color: #ffd700;
-      margin-bottom: 40px;
-      position: relative;
-      z-index: 1;
-    }
-
-    .banner-tags {
-      display: flex;
-      gap: 20px;
-      position: relative;
-      z-index: 1;
-    }
-
-    .banner-tag {
-      background: rgba(255,255,255,0.1);
-      border: 1px solid rgba(255,255,255,0.2);
-      padding: 12px 28px;
-      border-radius: 50px;
-      color: white;
-      font-size: 20px;
-      font-weight: 500;
-    }
-
-    .banner-price-hint {
-      position: absolute;
-      bottom: 60px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
-      padding: 16px 40px;
-      border-radius: 50px;
-      color: white;
-      font-size: 24px;
-      font-weight: 700;
-      box-shadow: 0 10px 30px rgba(238,90,90,0.4);
-      z-index: 1;
-    }
-
-    /* ========== 第二张：核心优势 ========== */
-    .section-features {
-      min-height: 1000px;
-      background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
-      padding: 60px;
-      padding-bottom: 80px;
-    }
-
-    .section-title {
-      text-align: center;
-      font-size: 48px;
-      font-weight: 800;
-      color: #1a1a2e;
-      margin-bottom: 16px;
-    }
-
-    .section-subtitle {
-      text-align: center;
-      font-size: 24px;
-      color: #666;
-      margin-bottom: 50px;
-    }
-
-    .features-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 30px;
-    }
-
-    .feature-card {
-      background: white;
-      border-radius: 24px;
-      padding: 40px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.08);
-      transition: transform 0.3s ease;
-    }
-
-    .feature-icon {
-      width: 80px;
-      height: 80px;
-      border-radius: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 40px;
-      margin-bottom: 24px;
-    }
-
-    .feature-icon-1 { background: linear-gradient(135deg, #667eea, #764ba2); }
-    .feature-icon-2 { background: linear-gradient(135deg, #f093fb, #f5576c); }
-    .feature-icon-3 { background: linear-gradient(135deg, #4facfe, #00f2fe); }
-    .feature-icon-4 { background: linear-gradient(135deg, #43e97b, #38f9d7); }
-
-    .feature-title {
-      font-size: 28px;
-      font-weight: 700;
-      color: #1a1a2e;
-      margin-bottom: 12px;
-    }
-
-    .feature-desc {
-      font-size: 18px;
-      color: #666;
-      line-height: 1.6;
-    }
-
-    /* ========== 第三张：套餐对比 ========== */
-    .section-pricing {
-      min-height: 1100px;
-      background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
-      padding: 60px 40px;
-      padding-bottom: 80px;
-    }
-
-    .pricing-table {
-      width: 100%;
-      border-collapse: separate;
-      border-spacing: 0;
-      background: white;
-      border-radius: 24px;
-      overflow: hidden;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-    }
-
-    .pricing-table th,
-    .pricing-table td {
-      padding: 24px 16px;
-      text-align: center;
-      border-bottom: 1px solid #eee;
-    }
-
-    .pricing-table th {
-      background: #1a1a2e;
-      color: white;
-      font-size: 20px;
-      font-weight: 700;
-    }
-
-    .pricing-table th:first-child {
-      text-align: left;
-      padding-left: 30px;
-    }
-
-    .pricing-table td:first-child {
-      text-align: left;
-      padding-left: 30px;
-      font-weight: 600;
-      color: #333;
-    }
-
-    .pricing-table tr:last-child td {
-      border-bottom: none;
-    }
-
-    .pricing-table .highlight-col {
-      background: #fff8e1;
-    }
-
-    .pricing-table th.highlight-col {
-      background: linear-gradient(135deg, #ff9800, #f57c00);
-    }
-
-    .price-cell {
-      font-size: 28px;
-      font-weight: 800;
-      color: #1a1a2e;
-    }
-
-    .price-cell.highlight {
-      color: #e65100;
-    }
-
-    .recommend-badge-table {
       display: inline-block;
-      background: linear-gradient(135deg, #ff9800, #f57c00);
-      color: white;
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
-      margin-left: 8px;
-    }
-
-    .check-mark {
-      color: #4caf50;
+      background: rgba(99,102,241,0.2);
+      border: 1px solid rgba(99,102,241,0.3);
+      color: #a5b4fc;
+      padding: 12px 36px;
+      border-radius: 30px;
       font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 28px;
+      letter-spacing: 3px;
     }
 
-    /* ========== 第四张：使用流程 ========== */
-    .section-steps {
-      min-height: 1000px;
-      padding: 60px;
-      padding-bottom: 80px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
+    .hero-headline {
+      font-size: 54px;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.35;
+      position: relative;
+      z-index: 1;
+      margin-bottom: 24px;
+      letter-spacing: -1px;
     }
 
-    .section-steps .section-title {
-      color: white;
+    .hero-headline em {
+      font-style: normal;
+      background: linear-gradient(135deg, #fbbf24, #f59e0b);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
 
-    .section-steps .section-subtitle {
-      color: rgba(255,255,255,0.8);
+    .hero-sub {
+      font-size: 24px;
+      color: rgba(255,255,255,0.55);
+      position: relative;
+      z-index: 1;
+      margin-bottom: 44px;
+      letter-spacing: 2px;
     }
 
-    .steps-container {
-      display: flex;
-      flex-direction: column;
-      gap: 30px;
-      margin-top: 40px;
+    .hero-sub span {
+      color: rgba(255,255,255,0.25);
+      margin: 0 6px;
     }
 
-    .step-item {
+    .hero-checks {
+      list-style: none;
+      position: relative;
+      z-index: 1;
+      margin-bottom: 48px;
+    }
+
+    .hero-checks li {
+      font-size: 26px;
+      color: rgba(255,255,255,0.85);
+      margin-bottom: 18px;
       display: flex;
       align-items: center;
-      gap: 30px;
-      background: rgba(255,255,255,0.1);
-      border-radius: 20px;
-      padding: 30px 40px;
-      backdrop-filter: blur(10px);
+      gap: 14px;
     }
 
-    .step-number {
-      width: 70px;
-      height: 70px;
-      background: white;
+    .hero-check-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #34d399, #10b981);
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 32px;
-      font-weight: 800;
-      color: #764ba2;
-      flex-shrink: 0;
-    }
-
-    .step-content {
-      flex: 1;
-    }
-
-    .step-title {
-      font-size: 28px;
-      font-weight: 700;
-      margin-bottom: 8px;
-    }
-
-    .step-desc {
       font-size: 18px;
-      opacity: 0.9;
+      color: white;
+      flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(16,185,129,0.3);
+    }
+
+    .hero-cta {
+      position: relative;
+      z-index: 1;
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 50%, #b91c1c 100%);
+      color: white;
+      padding: 20px 60px;
+      border-radius: 60px;
+      font-size: 30px;
+      font-weight: 800;
+      box-shadow: 0 8px 32px rgba(239,68,68,0.4), 0 0 0 4px rgba(239,68,68,0.1);
+      letter-spacing: 2px;
+    }
+
+    .hero-hint {
+      position: relative;
+      z-index: 1;
+      color: rgba(255,255,255,0.35);
+      font-size: 17px;
+      margin-top: 18px;
+      letter-spacing: 1px;
+    }
+
+    /* ==========================================
+       第2屏：人群筛选
+       ========================================== */
+    .section-audience {
+      min-height: 780px;
+      background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%);
+      padding: 64px 50px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    /* 顶部装饰线 */
+    .section-audience::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80px;
+      height: 4px;
+      background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+      border-radius: 2px;
+    }
+
+    .audience-title {
+      text-align: center;
+      font-size: 42px;
+      font-weight: 800;
+      color: #1e293b;
+      margin-bottom: 12px;
+    }
+
+    .audience-subtitle {
+      text-align: center;
+      font-size: 20px;
+      color: #94a3b8;
+      margin-bottom: 44px;
+    }
+
+    .audience-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+      width: 100%;
+      margin-bottom: 40px;
+    }
+
+    .audience-card {
+      background: #fff;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 20px;
+      padding: 36px 28px;
+      text-align: center;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+      transition: all 0.2s;
+    }
+
+    .audience-icon {
+      width: 60px;
+      height: 60px;
+      margin: 0 auto 16px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .audience-card:nth-child(1) .audience-icon {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      box-shadow: 0 6px 20px rgba(37,99,235,0.25);
+    }
+    .audience-card:nth-child(2) .audience-icon {
+      background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+      box-shadow: 0 6px 20px rgba(124,58,237,0.25);
+    }
+    .audience-card:nth-child(3) .audience-icon {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      box-shadow: 0 6px 20px rgba(217,119,6,0.25);
+    }
+    .audience-card:nth-child(4) .audience-icon {
+      background: linear-gradient(135deg, #10b981, #059669);
+      box-shadow: 0 6px 20px rgba(5,150,105,0.25);
+    }
+
+    .audience-icon svg {
+      width: 30px;
+      height: 30px;
+      fill: none;
+      stroke: white;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .audience-label {
+      font-size: 22px;
+      font-weight: 700;
+      color: #1e293b;
       line-height: 1.5;
     }
 
-    .step-code {
-      background: rgba(0,0,0,0.3);
-      padding: 12px 20px;
-      border-radius: 10px;
-      font-family: 'Monaco', 'Consolas', monospace;
-      font-size: 16px;
-      margin-top: 12px;
-      display: inline-block;
+    .audience-bottom {
+      font-size: 22px;
+      color: #64748b;
+      font-weight: 600;
+      text-align: center;
+      background: #f0f9ff;
+      border: 1.5px solid #bae6fd;
+      border-radius: 14px;
+      padding: 18px 32px;
     }
 
-    /* ========== 第五张：常见问题 ========== */
+    .audience-bottom strong {
+      color: #2563eb;
+    }
+
+    /* ==========================================
+       第3屏：套餐决策
+       ========================================== */
+    .section-pricing {
+      min-height: 1120px;
+      background: linear-gradient(180deg, #f8fafc 0%, #fff 100%);
+      padding: 64px 50px;
+      position: relative;
+    }
+
+    .section-pricing::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80px;
+      height: 4px;
+      background: linear-gradient(90deg, #f59e0b, #ef4444);
+      border-radius: 2px;
+    }
+
+    .pricing-title {
+      text-align: center;
+      font-size: 42px;
+      font-weight: 800;
+      color: #1e293b;
+      margin-bottom: 8px;
+    }
+
+    .pricing-subtitle {
+      text-align: center;
+      font-size: 20px;
+      color: #94a3b8;
+      margin-bottom: 40px;
+    }
+
+    .pricing-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .pricing-card {
+      border-radius: 20px;
+      padding: 26px 32px;
+      border: 1.5px solid #e2e8f0;
+      background: #fff;
+      position: relative;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .pricing-card-left {
+      flex: 1;
+    }
+
+    .pricing-card-name {
+      font-size: 24px;
+      font-weight: 800;
+      color: #1e293b;
+      margin-bottom: 4px;
+    }
+
+    .pricing-card-desc {
+      font-size: 17px;
+      color: #94a3b8;
+      margin-bottom: 4px;
+    }
+
+    .pricing-card-hint {
+      font-size: 17px;
+      color: #3b82f6;
+      font-weight: 600;
+    }
+
+    .pricing-card-right {
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .pricing-card-price {
+      font-size: 40px;
+      font-weight: 800;
+      color: #dc2626;
+      line-height: 1;
+    }
+
+    .pricing-card-price small {
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    /* 推荐卡片 */
+    .pricing-card-recommended {
+      background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+      border: 2.5px solid #f59e0b;
+      box-shadow: 0 6px 28px rgba(245,158,11,0.15);
+      padding: 30px 32px;
+    }
+
+    .pricing-card-recommended::before {
+      content: '推荐';
+      position: absolute;
+      top: -13px;
+      right: 24px;
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: white;
+      padding: 4px 20px;
+      border-radius: 20px;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      box-shadow: 0 4px 12px rgba(245,158,11,0.3);
+    }
+
+    .pricing-card-recommended .pricing-card-hint {
+      color: #d97706;
+    }
+
+    .pricing-bottom-cta {
+      text-align: center;
+      background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+      border: 2px solid #86efac;
+      border-radius: 16px;
+      padding: 22px;
+    }
+
+    .pricing-bottom-cta-text {
+      font-size: 24px;
+      font-weight: 700;
+      color: #16a34a;
+    }
+
+    /* ==========================================
+       第4屏：一眼算清楚（编程开发场景）
+       ========================================== */
+    .section-calc {
+      min-height: 920px;
+      background: linear-gradient(160deg, #0c1222 0%, #162044 40%, #1a1a3e 70%, #0c1222 100%);
+      padding: 64px 50px;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .section-calc::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background:
+        radial-gradient(ellipse at 20% 30%, rgba(99,102,241,0.1) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 70%, rgba(168,85,247,0.08) 0%, transparent 45%);
+    }
+
+    .calc-title {
+      text-align: center;
+      font-size: 42px;
+      font-weight: 800;
+      color: #fbbf24;
+      margin-bottom: 12px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .calc-subtitle {
+      text-align: center;
+      font-size: 20px;
+      color: rgba(255,255,255,0.45);
+      margin-bottom: 44px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .calc-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+      width: 100%;
+      margin-bottom: 32px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .calc-card {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 20px;
+      padding: 32px 24px;
+      text-align: center;
+      backdrop-filter: blur(4px);
+    }
+
+    .calc-card-label {
+      font-size: 18px;
+      color: rgba(255,255,255,0.5);
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .calc-card-amount {
+      font-size: 44px;
+      font-weight: 800;
+      color: #fbbf24;
+      margin-bottom: 16px;
+      line-height: 1;
+    }
+
+    .calc-card-amount small {
+      font-size: 22px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.4);
+    }
+
+    .calc-card-divider {
+      width: 40px;
+      height: 2px;
+      background: rgba(255,255,255,0.15);
+      margin: 0 auto 14px;
+      border-radius: 1px;
+    }
+
+    .calc-card-usage {
+      font-size: 18px;
+      color: rgba(255,255,255,0.65);
+      line-height: 1.7;
+    }
+
+    .calc-card-usage strong {
+      color: white;
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .calc-note {
+      text-align: center;
+      font-size: 17px;
+      color: rgba(255,255,255,0.3);
+      position: relative;
+      z-index: 1;
+      line-height: 1.6;
+    }
+
+    /* ==========================================
+       第5屏：拆雷（FAQ）
+       ========================================== */
     .section-faq {
-      min-height: 950px;
-      background: white;
-      padding: 60px;
-      padding-bottom: 80px;
+      min-height: 850px;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+      padding: 64px 50px;
+      position: relative;
+    }
+
+    .section-faq::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80px;
+      height: 4px;
+      background: linear-gradient(90deg, #ef4444, #3b82f6);
+      border-radius: 2px;
+    }
+
+    .faq-title {
+      text-align: center;
+      font-size: 42px;
+      font-weight: 800;
+      color: #1e293b;
+      margin-bottom: 8px;
+    }
+
+    .faq-subtitle {
+      text-align: center;
+      font-size: 20px;
+      color: #94a3b8;
+      margin-bottom: 44px;
     }
 
     .faq-list {
       display: flex;
       flex-direction: column;
-      gap: 24px;
+      gap: 18px;
     }
 
     .faq-item {
-      background: #f8f9fa;
+      background: #fff;
       border-radius: 20px;
-      padding: 30px;
-      border-left: 4px solid #667eea;
+      padding: 30px 32px;
+      border: 1.5px solid #e2e8f0;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+      position: relative;
+      padding-left: 40px;
+    }
+
+    .faq-item::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 20px;
+      bottom: 20px;
+      width: 4px;
+      background: linear-gradient(180deg, #3b82f6, #8b5cf6);
+      border-radius: 2px;
     }
 
     .faq-question {
-      font-size: 22px;
+      font-size: 24px;
       font-weight: 700;
-      color: #1a1a2e;
+      color: #1e293b;
       margin-bottom: 12px;
       display: flex;
       align-items: center;
       gap: 12px;
     }
 
-    .faq-question::before {
-      content: 'Q';
+    .faq-q-badge {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 32px;
-      height: 32px;
-      background: linear-gradient(135deg, #667eea, #764ba2);
+      width: 34px;
+      height: 34px;
+      background: linear-gradient(135deg, #ef4444, #dc2626);
       color: white;
-      border-radius: 8px;
-      font-size: 18px;
+      border-radius: 10px;
+      font-size: 16px;
       font-weight: 800;
+      flex-shrink: 0;
+      box-shadow: 0 3px 10px rgba(239,68,68,0.25);
     }
 
     .faq-answer {
-      font-size: 18px;
-      color: #555;
+      font-size: 20px;
+      color: #64748b;
       line-height: 1.7;
-      padding-left: 44px;
+      padding-left: 46px;
     }
 
-    /* ========== 第六张：售后保障 ========== */
-    .section-guarantee {
+    /* ==========================================
+       第6屏：使用场景
+       ========================================== */
+    .section-scenes {
       min-height: 800px;
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-      padding: 60px;
-      padding-bottom: 80px;
+      background: linear-gradient(160deg, #4f46e5 0%, #7c3aed 50%, #9333ea 100%);
+      padding: 64px 50px;
       color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
     }
 
-    .section-guarantee .section-title {
-      color: #ffd700;
+    .section-scenes::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background:
+        radial-gradient(ellipse at 15% 25%, rgba(255,255,255,0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 85% 75%, rgba(0,0,0,0.1) 0%, transparent 50%);
     }
 
-    .section-guarantee .section-subtitle {
-      color: rgba(255,255,255,0.7);
-    }
-
-    .guarantee-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 30px;
-      margin-top: 50px;
-    }
-
-    .guarantee-item {
+    .scenes-title {
       text-align: center;
-      padding: 40px 20px;
-      background: rgba(255,255,255,0.05);
-      border-radius: 20px;
-      border: 1px solid rgba(255,215,0,0.2);
-    }
-
-    .guarantee-icon {
-      font-size: 60px;
-      margin-bottom: 20px;
-    }
-
-    .guarantee-title {
-      font-size: 24px;
-      font-weight: 700;
-      color: #ffd700;
-      margin-bottom: 12px;
-    }
-
-    .guarantee-desc {
-      font-size: 16px;
-      color: rgba(255,255,255,0.7);
-      line-height: 1.6;
-    }
-
-    .contact-box {
-      margin-top: 50px;
-      text-align: center;
-      background: linear-gradient(135deg, rgba(255,215,0,0.1), rgba(255,170,0,0.1));
-      border: 1px solid rgba(255,215,0,0.3);
-      border-radius: 20px;
-      padding: 40px;
-    }
-
-    .contact-title {
-      font-size: 28px;
-      font-weight: 700;
-      color: #ffd700;
-      margin-bottom: 16px;
-    }
-
-    .contact-wechat {
-      font-size: 36px;
+      font-size: 42px;
       font-weight: 800;
       color: white;
+      margin-bottom: 44px;
+      position: relative;
+      z-index: 1;
     }
 
-    /* ========== 第七张：用户须知 ========== */
-    .section-notice {
-      min-height: 700px;
-      background: #fff;
-      padding: 60px;
-      padding-bottom: 80px;
+    .scenes-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+      width: 100%;
+      position: relative;
+      z-index: 1;
     }
 
-    .notice-box {
-      background: #fff8e1;
-      border: 2px solid #ffcc80;
+    .scene-card {
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.18);
       border-radius: 20px;
-      padding: 40px;
-      margin-bottom: 30px;
+      padding: 36px 28px;
+      text-align: center;
     }
 
-    .notice-title {
-      font-size: 24px;
-      font-weight: 700;
-      color: #e65100;
-      margin-bottom: 20px;
+    .scene-icon {
+      width: 56px;
+      height: 56px;
+      margin: 0 auto 16px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 16px;
       display: flex;
       align-items: center;
-      gap: 12px;
+      justify-content: center;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
     }
 
-    .notice-list {
+    .scene-icon svg {
+      width: 28px;
+      height: 28px;
+      fill: none;
+      stroke: white;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .scene-name {
+      font-size: 24px;
+      font-weight: 700;
+      color: white;
+      margin-bottom: 6px;
+    }
+
+    .scene-desc {
+      font-size: 17px;
+      color: rgba(255,255,255,0.6);
+      line-height: 1.4;
+    }
+
+    /* ==========================================
+       第7屏：为什么现在买
+       ========================================== */
+    .section-urgency {
+      min-height: 850px;
+      background: linear-gradient(160deg, #0c1222 0%, #162044 40%, #1a1a3e 70%, #0c1222 100%);
+      padding: 64px 50px;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .section-urgency::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background:
+        radial-gradient(ellipse at 75% 20%, rgba(239,68,68,0.1) 0%, transparent 50%),
+        radial-gradient(ellipse at 25% 80%, rgba(251,191,36,0.06) 0%, transparent 50%);
+    }
+
+    .urgency-title {
+      font-size: 42px;
+      font-weight: 800;
+      color: #fbbf24;
+      text-align: center;
+      margin-bottom: 48px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .urgency-reasons {
+      list-style: none;
+      position: relative;
+      z-index: 1;
+      margin-bottom: 48px;
+      width: 100%;
+      max-width: 620px;
+    }
+
+    .urgency-reason {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      margin-bottom: 20px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 18px;
+      padding: 26px 28px;
+      backdrop-filter: blur(4px);
+    }
+
+    .urgency-reason-num {
+      width: 46px;
+      height: 46px;
+      background: linear-gradient(135deg, #fbbf24, #f59e0b);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      font-weight: 800;
+      color: #1e293b;
+      flex-shrink: 0;
+      box-shadow: 0 4px 14px rgba(251,191,36,0.3);
+    }
+
+    .urgency-reason-text {
+      font-size: 22px;
+      color: rgba(255,255,255,0.88);
+      line-height: 1.5;
+      font-weight: 600;
+    }
+
+    .urgency-cta {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+    }
+
+    .urgency-cta-btn {
+      display: inline-block;
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 50%, #b91c1c 100%);
+      padding: 20px 56px;
+      border-radius: 60px;
+      font-size: 28px;
+      font-weight: 800;
+      color: white;
+      box-shadow: 0 8px 32px rgba(239,68,68,0.35), 0 0 0 4px rgba(239,68,68,0.08);
+      margin-bottom: 16px;
+      letter-spacing: 1px;
+    }
+
+    .urgency-cta-hint {
+      font-size: 18px;
+      color: rgba(255,255,255,0.4);
+    }
+
+    /* ==========================================
+       第8屏：买完怎么用
+       ========================================== */
+    .section-howto {
+      min-height: 900px;
+      padding: 64px 50px;
+      background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%);
+      position: relative;
+    }
+
+    .section-howto::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80px;
+      height: 4px;
+      background: linear-gradient(90deg, #3b82f6, #10b981);
+      border-radius: 2px;
+    }
+
+    .howto-title {
+      text-align: center;
+      font-size: 42px;
+      font-weight: 800;
+      color: #1e293b;
+      margin-bottom: 8px;
+    }
+
+    .howto-subtitle {
+      text-align: center;
+      font-size: 20px;
+      color: #94a3b8;
+      margin-bottom: 44px;
+    }
+
+    .howto-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-bottom: 44px;
+    }
+
+    .howto-step {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      background: white;
+      border-radius: 20px;
+      padding: 28px 32px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+      border: 1.5px solid #e2e8f0;
+    }
+
+    .howto-step-num {
+      width: 52px;
+      height: 52px;
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: 800;
+      color: white;
+      flex-shrink: 0;
+      box-shadow: 0 4px 14px rgba(37,99,235,0.3);
+    }
+
+    .howto-step-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 4px;
+    }
+
+    .howto-step-desc {
+      font-size: 17px;
+      color: #64748b;
+    }
+
+    .howto-guarantee {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .howto-g-item {
+      text-align: center;
+      background: white;
+      border-radius: 20px;
+      padding: 28px 16px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+      border: 1.5px solid #e2e8f0;
+    }
+
+    .howto-g-icon {
+      width: 48px;
+      height: 48px;
+      margin: 0 auto 12px;
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 14px rgba(37,99,235,0.25);
+    }
+
+    .howto-g-icon svg {
+      width: 24px;
+      height: 24px;
+      fill: none;
+      stroke: white;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .howto-g-title {
+      font-size: 21px;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 6px;
+    }
+
+    .howto-g-desc {
+      font-size: 15px;
+      color: #94a3b8;
+      line-height: 1.5;
+    }
+
+    /* ==========================================
+       第9屏：底部强CTA + 购买须知
+       ========================================== */
+    .section-final {
+      min-height: 820px;
+      background: linear-gradient(160deg, #0c1222 0%, #162044 40%, #1a1a3e 70%, #0c1222 100%);
+      padding: 64px 50px;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .section-final::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background:
+        radial-gradient(ellipse at 30% 40%, rgba(59,130,246,0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 70% 70%, rgba(168,85,247,0.06) 0%, transparent 45%);
+    }
+
+    .final-headline {
+      font-size: 44px;
+      font-weight: 800;
+      color: white;
+      text-align: center;
+      margin-bottom: 14px;
+      position: relative;
+      z-index: 1;
+      line-height: 1.4;
+    }
+
+    .final-sub {
+      font-size: 24px;
+      color: rgba(255,255,255,0.45);
+      text-align: center;
+      margin-bottom: 44px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .final-cta {
+      position: relative;
+      z-index: 1;
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 50%, #b91c1c 100%);
+      color: white;
+      padding: 22px 80px;
+      border-radius: 60px;
+      font-size: 34px;
+      font-weight: 800;
+      box-shadow: 0 8px 32px rgba(239,68,68,0.35), 0 0 0 4px rgba(239,68,68,0.08);
+      margin-bottom: 20px;
+      letter-spacing: 3px;
+    }
+
+    .final-hint {
+      position: relative;
+      z-index: 1;
+      color: rgba(255,255,255,0.35);
+      font-size: 17px;
+      margin-bottom: 44px;
+    }
+
+    .final-notice {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 620px;
+    }
+
+    .final-notice-box {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      padding: 26px 32px;
+      margin-bottom: 14px;
+      backdrop-filter: blur(4px);
+    }
+
+    .final-notice-title {
+      font-size: 19px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.6);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .final-notice-title svg {
+      width: 18px;
+      height: 18px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .final-notice-list {
       list-style: none;
     }
 
-    .notice-list li {
-      font-size: 18px;
-      color: #555;
-      padding: 12px 0;
-      border-bottom: 1px dashed #ddd;
+    .final-notice-list li {
+      font-size: 16px;
+      color: rgba(255,255,255,0.4);
+      padding: 5px 0;
       display: flex;
       align-items: flex-start;
-      gap: 12px;
+      gap: 10px;
+      line-height: 1.5;
     }
 
-    .notice-list li:last-child {
-      border-bottom: none;
+    .final-notice-list li::before {
+      content: '·';
+      color: rgba(255,255,255,0.25);
+      font-size: 20px;
+      flex-shrink: 0;
+      line-height: 1.2;
     }
 
-    .notice-list li::before {
-      content: '•';
-      color: #ff9800;
-      font-size: 24px;
-      line-height: 1;
+    .final-notice-warn {
+      border-color: rgba(239,68,68,0.15);
     }
 
-    .important-notice {
-      background: #ffebee;
-      border-color: #ef9a9a;
-    }
-
-    .important-notice .notice-title {
-      color: #c62828;
-    }
-
-    .important-notice li::before {
-      color: #f44336;
+    .final-notice-warn .final-notice-title {
+      color: rgba(252,165,165,0.6);
     }
   </style>
 </head>
@@ -614,275 +1158,412 @@
 
   <div class="container">
 
-    <!-- 第一张：头图 Banner -->
+    <!-- ============ 第1屏：Hero 生死屏 ============ -->
     <div class="section-wrapper">
-      <div class="section section-banner" id="section-1">
-        <div class="banner-top">
-          <div class="banner-logo">&lt;/&gt;</div>
-          <div class="banner-brand">码驿站</div>
+      <div class="section section-hero" id="section-1">
+        <div class="hero-badge">码驿站 · CLAUDE CODE API</div>
+        <div class="hero-headline">
+          不用折腾、不怕被坑的<br><em>Claude Code API</em>
         </div>
-        <div class="banner-title">Claude Code API</div>
-        <div class="banner-subtitle">官方直连 · 稳定高速 · 按量计费</div>
-        <div class="banner-tags">
-          <span class="banner-tag">🚀 毫秒级响应</span>
-          <span class="banner-tag">🔒 数据安全</span>
-          <span class="banner-tag">💯 99.9% 可用</span>
+        <div style="color:rgba(165,180,252,0.7);font-size:18px;letter-spacing:4px;margin-top:-12px;margin-bottom:22px;position:relative;z-index:1;">—— 码驿站 出品 ——</div>
+        <div class="hero-sub">
+          9.9 起直接用<span>｜</span>按量清楚<span>｜</span>适合日常 & 项目开发
         </div>
-        <div class="banner-price-hint">低至 ¥0.39/刀 · 新人专享 ¥9.9 起</div>
-        <div class="watermark watermark-light">© 码驿站 · 盗图必究</div>
+
+        <ul class="hero-checks">
+          <li>
+            <span class="hero-check-icon">✓</span>
+            拍下即可用，不需要复杂配置
+          </li>
+          <li>
+            <span class="hero-check-icon">✓</span>
+            官方模型不掺水，用多少算多少
+          </li>
+          <li>
+            <span class="hero-check-icon">✓</span>
+            新人 9.9 就能完整体验
+          </li>
+        </ul>
+
+        <div class="hero-cta">立即体验｜9.9 起</div>
+        <div class="hero-hint">虚拟商品自动发货 · 30秒内到账</div>
+        <div class="watermark watermark-light">码驿站</div>
       </div>
-      <button class="download-btn" onclick="downloadImage('section-1', '01-头图Banner')">下载图片</button>
+      <button class="download-btn" onclick="downloadImage('section-1', '01-首屏Hero')">下载图片</button>
     </div>
 
-    <!-- 第二张：核心优势 -->
+    <!-- ============ 第2屏：人群筛选 ============ -->
     <div class="section-wrapper">
-      <div class="section section-features" id="section-2">
-        <div class="section-title">为什么选择我们？</div>
-        <div class="section-subtitle">四大核心优势，让您的 AI 开发更高效</div>
+      <div class="section section-audience" id="section-2">
+        <div class="audience-title">你适合吗？看这里</div>
+        <div class="audience-subtitle">不管你是哪种用户，都有对应方案</div>
 
-        <div class="features-grid">
-          <div class="feature-card">
-            <div class="feature-icon feature-icon-1">🚀</div>
-            <div class="feature-title">官方直连通道</div>
-            <div class="feature-desc">直连 Anthropic 官方 API，无中转无延迟，响应速度快人一步，代码生成更流畅</div>
+        <div class="audience-grid">
+          <div class="audience-card">
+            <div class="audience-icon">
+              <svg viewBox="0 0 24 24"><path d="M12 2a5 5 0 015 5v1a5 5 0 01-10 0V7a5 5 0 015-5zM2 21v-1a7 7 0 017-7h6a7 7 0 017 7v1"/></svg>
+            </div>
+            <div class="audience-label">第一次用 API<br>想先试试</div>
           </div>
-          <div class="feature-card">
-            <div class="feature-icon feature-icon-2">💰</div>
-            <div class="feature-title">超高性价比</div>
-            <div class="feature-desc">低至 ¥0.39/刀，相比官方价格节省 70%+，大量使用更划算，企业首选方案</div>
+          <div class="audience-card">
+            <div class="audience-icon">
+              <svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            </div>
+            <div class="audience-label">日常对话<br>写代码 / 调接口</div>
           </div>
-          <div class="feature-card">
-            <div class="feature-icon feature-icon-3">🛡️</div>
-            <div class="feature-title">稳定可靠保障</div>
-            <div class="feature-desc">99.9% SLA 服务保障，7×24 小时监控，多节点容灾备份，业务永不中断</div>
+          <div class="audience-card">
+            <div class="audience-icon">
+              <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            </div>
+            <div class="audience-label">项目期<br>高频调用</div>
           </div>
-          <div class="feature-card">
-            <div class="feature-icon feature-icon-4">🎯</div>
-            <div class="feature-title">全模型支持</div>
-            <div class="feature-desc">支持 Claude 全系列模型，包括最新 Opus/Sonnet/Haiku，一个 Key 畅享所有</div>
+          <div class="audience-card">
+            <div class="audience-icon">
+              <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a4 4 0 00-8 0v2"/></svg>
+            </div>
+            <div class="audience-label">需要长期<br>大量使用</div>
           </div>
         </div>
-        <div class="watermark">© 码驿站 · 盗图必究</div>
+
+        <div class="audience-bottom">
+          都有对应套餐，<strong>不需要一次买大</strong>
+        </div>
+
+        <div class="watermark">码驿站</div>
       </div>
-      <button class="download-btn" onclick="downloadImage('section-2', '02-核心优势')">下载图片</button>
+      <button class="download-btn" onclick="downloadImage('section-2', '02-人群筛选')">下载图片</button>
     </div>
 
-    <!-- 第三张：套餐对比 -->
+    <!-- ============ 第3屏：套餐决策 ============ -->
     <div class="section-wrapper">
       <div class="section section-pricing" id="section-3">
-        <div class="section-title">套餐价格一览</div>
-        <div class="section-subtitle">多种套餐任选，总有一款适合你</div>
+        <div class="pricing-title">不知道选哪个？</div>
+        <div class="pricing-subtitle">直接按用途选，不用纠结</div>
 
-        <table class="pricing-table">
-          <tr>
-            <th>套餐</th>
-            <th>体验版</th>
-            <th>基础版</th>
-            <th class="highlight-col">标准版 <span class="recommend-badge-table">推荐</span></th>
-            <th>专业版</th>
-          </tr>
-          <tr>
-            <td>价格</td>
-            <td class="price-cell">¥9.9</td>
-            <td class="price-cell">¥29.9</td>
-            <td class="price-cell highlight highlight-col">¥69.9</td>
-            <td class="price-cell">¥149.9</td>
-          </tr>
-          <tr>
-            <td>月限额</td>
-            <td>$22</td>
-            <td>$70</td>
-            <td class="highlight-col"><strong>$170</strong></td>
-            <td>$380</td>
-          </tr>
-          <tr>
-            <td>Tokens 额度</td>
-            <td>3300万</td>
-            <td>1亿+</td>
-            <td class="highlight-col"><strong>2.5亿+</strong></td>
-            <td>5.7亿+</td>
-          </tr>
-          <tr>
-            <td>单价 (¥/刀)</td>
-            <td>0.45</td>
-            <td>0.43</td>
-            <td class="highlight-col"><strong>0.41</strong></td>
-            <td>0.39</td>
-          </tr>
-          <tr>
-            <td>有效期</td>
-            <td>30天</td>
-            <td>30天</td>
-            <td class="highlight-col">30天</td>
-            <td>30天</td>
-          </tr>
-          <tr>
-            <td>全模型支持</td>
-            <td><span class="check-mark">✓</span></td>
-            <td><span class="check-mark">✓</span></td>
-            <td class="highlight-col"><span class="check-mark">✓</span></td>
-            <td><span class="check-mark">✓</span></td>
-          </tr>
-          <tr>
-            <td>官方直连</td>
-            <td><span class="check-mark">✓</span></td>
-            <td><span class="check-mark">✓</span></td>
-            <td class="highlight-col"><span class="check-mark">✓</span></td>
-            <td><span class="check-mark">✓</span></td>
-          </tr>
-          <tr>
-            <td>适合人群</td>
-            <td>新人体验</td>
-            <td>轻度使用</td>
-            <td class="highlight-col"><strong>日常开发</strong></td>
-            <td>重度用户</td>
-          </tr>
-        </table>
-        <div class="watermark">© 码驿站 · 盗图必究</div>
-      </div>
-      <button class="download-btn" onclick="downloadImage('section-3', '03-套餐对比')">下载图片</button>
-    </div>
-
-    <!-- 第四张：使用流程 -->
-    <div class="section-wrapper">
-      <div class="section section-steps" id="section-4">
-        <div class="section-title">三步开始使用</div>
-        <div class="section-subtitle">简单配置，即刻体验 AI 编程助手</div>
-
-        <div class="steps-container">
-          <div class="step-item">
-            <div class="step-number">1</div>
-            <div class="step-content">
-              <div class="step-title">安装 Claude CLI</div>
-              <div class="step-desc">使用 npm 全局安装 Claude Code 命令行工具</div>
-              <div class="step-code">npm install -g @anthropic-ai/claude-code</div>
+        <div class="pricing-cards">
+          <div class="pricing-card">
+            <div class="pricing-card-left">
+              <div class="pricing-card-name">体验版</div>
+              <div class="pricing-card-desc">新人体验 / 轻度使用</div>
+              <div class="pricing-card-hint">先试试，不亏</div>
+            </div>
+            <div class="pricing-card-right">
+              <div class="pricing-card-price"><small>¥</small>9.9</div>
             </div>
           </div>
-          <div class="step-item">
-            <div class="step-number">2</div>
-            <div class="step-content">
-              <div class="step-title">配置 API Key</div>
-              <div class="step-desc">设置环境变量，填入购买后获得的 API Key</div>
-              <div class="step-code">export ANTHROPIC_API_KEY=sk-xxx</div>
+
+          <div class="pricing-card">
+            <div class="pricing-card-left">
+              <div class="pricing-card-name">基础版</div>
+              <div class="pricing-card-desc">日常使用 / 中等频率</div>
+              <div class="pricing-card-hint">长期用更合适</div>
+            </div>
+            <div class="pricing-card-right">
+              <div class="pricing-card-price"><small>¥</small>19.9</div>
             </div>
           </div>
-          <div class="step-item">
-            <div class="step-number">3</div>
-            <div class="step-content">
-              <div class="step-title">配置 API 地址</div>
-              <div class="step-desc">将 API 地址指向我们的服务端点</div>
-              <div class="step-code">export ANTHROPIC_BASE_URL=https://api.xxx.com</div>
+
+          <div class="pricing-card pricing-card-recommended">
+            <div class="pricing-card-left">
+              <div class="pricing-card-name">标准版（推荐）</div>
+              <div class="pricing-card-desc">高频使用 / 项目期首选</div>
+              <div class="pricing-card-hint">大多数用户选这个</div>
+            </div>
+            <div class="pricing-card-right">
+              <div class="pricing-card-price"><small>¥</small>49.9</div>
             </div>
           </div>
-          <div class="step-item">
-            <div class="step-number">✓</div>
-            <div class="step-content">
-              <div class="step-title">开始使用</div>
-              <div class="step-desc">在终端运行 claude 命令，开启 AI 编程之旅！</div>
-              <div class="step-code">claude</div>
+
+          <div class="pricing-card">
+            <div class="pricing-card-left">
+              <div class="pricing-card-name">专业版</div>
+              <div class="pricing-card-desc">重度使用 / 大量调用</div>
+              <div class="pricing-card-hint">长时间跑任务</div>
+            </div>
+            <div class="pricing-card-right">
+              <div class="pricing-card-price"><small>¥</small>99.9</div>
             </div>
           </div>
         </div>
-        <div class="watermark watermark-light">© 码驿站 · 盗图必究</div>
+
+        <div class="pricing-bottom-cta">
+          <div class="pricing-bottom-cta-text">先买 9.9 体验，满意再升级</div>
+        </div>
+
+        <div class="watermark">码驿站</div>
       </div>
-      <button class="download-btn" onclick="downloadImage('section-4', '04-使用流程')">下载图片</button>
+      <button class="download-btn" onclick="downloadImage('section-3', '03-套餐决策')">下载图片</button>
     </div>
 
-    <!-- 第五张：常见问题 -->
+    <!-- ============ 第4屏：一眼算清楚（编程开发场景） ============ -->
+    <div class="section-wrapper">
+      <div class="section section-calc" id="section-4">
+        <div class="calc-title">一眼算清楚，大概能用多久</div>
+        <div class="calc-subtitle">以 Claude Code 编程开发为例</div>
+
+        <div class="calc-grid">
+          <div class="calc-card">
+            <div class="calc-card-label">体验版 · ¥9.9</div>
+            <div class="calc-card-amount">22 <small>刀</small></div>
+            <div class="calc-card-divider"></div>
+            <div class="calc-card-usage">
+              约 <strong>50+</strong> 次代码任务<br>
+              或 <strong>100+</strong> 次代码问答
+            </div>
+          </div>
+          <div class="calc-card">
+            <div class="calc-card-label">基础版 · ¥19.9</div>
+            <div class="calc-card-amount">45 <small>刀</small></div>
+            <div class="calc-card-divider"></div>
+            <div class="calc-card-usage">
+              约 <strong>120+</strong> 次代码任务<br>
+              或 <strong>250+</strong> 次代码问答
+            </div>
+          </div>
+          <div class="calc-card">
+            <div class="calc-card-label">标准版 · ¥49.9</div>
+            <div class="calc-card-amount">120 <small>刀</small></div>
+            <div class="calc-card-divider"></div>
+            <div class="calc-card-usage">
+              约 <strong>300+</strong> 次代码任务<br>
+              或 <strong>600+</strong> 次代码问答
+            </div>
+          </div>
+          <div class="calc-card">
+            <div class="calc-card-label">专业版 · ¥99.9</div>
+            <div class="calc-card-amount">240 <small>刀</small></div>
+            <div class="calc-card-divider"></div>
+            <div class="calc-card-usage">
+              约 <strong>600+</strong> 次代码任务<br>
+              或 <strong>1200+</strong> 次代码问答
+            </div>
+          </div>
+        </div>
+
+        <div class="calc-note">
+          代码任务 = 写功能 / 改 Bug / 重构等中等复杂度操作<br>
+          代码问答 = 解释代码 / 问语法 / 查错等轻量操作<br>
+          实际用量取决于代码长度和上下文大小
+        </div>
+        <div class="watermark watermark-light">码驿站</div>
+      </div>
+      <button class="download-btn" onclick="downloadImage('section-4', '04-算账')">下载图片</button>
+    </div>
+
+    <!-- ============ 第5屏：拆雷（FAQ） ============ -->
     <div class="section-wrapper">
       <div class="section section-faq" id="section-5">
-        <div class="section-title">常见问题解答</div>
-        <div class="section-subtitle">您关心的问题，这里都有答案</div>
+        <div class="faq-title">你可能担心的问题</div>
+        <div class="faq-subtitle">我们直接说清楚</div>
 
         <div class="faq-list">
           <div class="faq-item">
-            <div class="faq-question">API Key 可以用多久？</div>
-            <div class="faq-answer">所有套餐有效期均为 30 天，从激活之日起计算。额度用完或到期后需要续费。</div>
+            <div class="faq-question">
+              <span class="faq-q-badge">Q</span>
+              会不会用着用着就慢？
+            </div>
+            <div class="faq-answer">
+              日常和项目使用都没问题，系统会自动保障整体可用性。
+            </div>
           </div>
           <div class="faq-item">
-            <div class="faq-question">支持哪些 Claude 模型？</div>
-            <div class="faq-answer">支持 Claude 全系列模型，包括 Claude Opus、Sonnet、Haiku 等，一个 Key 即可使用所有模型。</div>
+            <div class="faq-question">
+              <span class="faq-q-badge">Q</span>
+              会不会突然限速？
+            </div>
+            <div class="faq-answer">
+              合理使用范围内不限速，异常调用会有保护机制。
+            </div>
           </div>
           <div class="faq-item">
-            <div class="faq-question">响应速度怎么样？</div>
-            <div class="faq-answer">官方直连通道，毫秒级响应，与官方 API 速度一致，无额外延迟。</div>
-          </div>
-          <div class="faq-item">
-            <div class="faq-question">可以用于商业项目吗？</div>
-            <div class="faq-answer">可以！我们的 API 可用于个人学习、商业开发等各种场景，无使用限制。</div>
-          </div>
-          <div class="faq-item">
-            <div class="faq-question">额度不够用怎么办？</div>
-            <div class="faq-answer">可随时购买新套餐叠加使用，或联系客服定制大额套餐，享受更优惠价格。</div>
+            <div class="faq-question">
+              <span class="faq-q-badge">Q</span>
+              和那些几毛钱的有什么区别？
+            </div>
+            <div class="faq-answer">
+              这里价格清楚、用量透明，适合长期用。
+            </div>
           </div>
         </div>
-        <div class="watermark">© 码驿站 · 盗图必究</div>
+
+        <div class="watermark">码驿站</div>
       </div>
-      <button class="download-btn" onclick="downloadImage('section-5', '05-常见问题')">下载图片</button>
+      <button class="download-btn" onclick="downloadImage('section-5', '05-拆雷FAQ')">下载图片</button>
     </div>
 
-    <!-- 第六张：售后保障 -->
+    <!-- ============ 第6屏：使用场景 ============ -->
     <div class="section-wrapper">
-      <div class="section section-guarantee" id="section-6">
-        <div class="section-title">售后服务保障</div>
-        <div class="section-subtitle">专业团队支持，让您用得放心</div>
+      <div class="section section-scenes" id="section-6">
+        <div class="scenes-title">大家一般用它来做什么？</div>
 
-        <div class="guarantee-grid">
-          <div class="guarantee-item">
-            <div class="guarantee-icon">💬</div>
-            <div class="guarantee-title">7×24 客服</div>
-            <div class="guarantee-desc">专业客服团队全天候在线，随时解答您的疑问</div>
+        <div class="scenes-grid">
+          <div class="scene-card">
+            <div class="scene-icon">
+              <svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            </div>
+            <div class="scene-name">写代码 / 辅助开发</div>
+            <div class="scene-desc">帮你写代码、排查问题</div>
           </div>
-          <div class="guarantee-item">
-            <div class="guarantee-icon">📖</div>
-            <div class="guarantee-title">详细文档</div>
-            <div class="guarantee-desc">完善的接入文档和使用教程，小白也能轻松上手</div>
+          <div class="scene-card">
+            <div class="scene-icon">
+              <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+            </div>
+            <div class="scene-name">对话问答 / 内容生成</div>
+            <div class="scene-desc">文案、文档、翻译搞定</div>
           </div>
-          <div class="guarantee-item">
-            <div class="guarantee-icon">🔄</div>
-            <div class="guarantee-title">售后无忧</div>
-            <div class="guarantee-desc">使用问题及时响应，确保您的使用体验</div>
+          <div class="scene-card">
+            <div class="scene-icon">
+              <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            </div>
+            <div class="scene-name">项目测试 / 接口调用</div>
+            <div class="scene-desc">自动化、对接接口</div>
+          </div>
+          <div class="scene-card">
+            <div class="scene-icon">
+              <svg viewBox="0 0 24 24"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+            </div>
+            <div class="scene-name">自动化脚本 / 工具集成</div>
+            <div class="scene-desc">跑脚本、做工具</div>
           </div>
         </div>
 
-        <div class="contact-box">
-          <div class="contact-title">联系客服，获取专属支持</div>
-          <div class="contact-wechat">码驿站 · 店铺内咨询</div>
-        </div>
-        <div class="watermark watermark-gold">© 码驿站 · 盗图必究</div>
+        <div class="watermark watermark-light">码驿站</div>
       </div>
-      <button class="download-btn" onclick="downloadImage('section-6', '06-售后保障')">下载图片</button>
+      <button class="download-btn" onclick="downloadImage('section-6', '06-使用场景')">下载图片</button>
     </div>
 
-    <!-- 第七张：用户须知 -->
+    <!-- ============ 第7屏：为什么现在买 ============ -->
     <div class="section-wrapper">
-      <div class="section section-notice" id="section-7">
-        <div class="section-title">购买须知</div>
-        <div class="section-subtitle">购买前请仔细阅读以下说明</div>
+      <div class="section section-urgency" id="section-7">
+        <div class="urgency-title">为什么建议现在买？</div>
 
-        <div class="notice-box">
-          <div class="notice-title">⚠️ 使用说明</div>
-          <ul class="notice-list">
-            <li>本商品为虚拟服务商品，购买后自动发货 API Key</li>
-            <li>套餐有效期 30 天，从首次使用开始计算</li>
-            <li>额度为月限额，按实际 API 调用消耗扣减</li>
-            <li>支持 Claude Code CLI 工具，暂不支持 Web/Cursor</li>
-            <li>如有使用问题，请及时联系客服处理</li>
-          </ul>
+        <ul class="urgency-reasons">
+          <li class="urgency-reason">
+            <div class="urgency-reason-num">1</div>
+            <div class="urgency-reason-text">当前套餐包含限时加赠额度</div>
+          </li>
+          <li class="urgency-reason">
+            <div class="urgency-reason-num">2</div>
+            <div class="urgency-reason-text">后续可能恢复基础配置</div>
+          </li>
+          <li class="urgency-reason">
+            <div class="urgency-reason-num">3</div>
+            <div class="urgency-reason-text">早买用得更久</div>
+          </li>
+        </ul>
+
+        <div class="urgency-cta">
+          <div class="urgency-cta-btn">先 9.9 试用，满意再升级</div>
+          <div class="urgency-cta-hint">拍下后自动发送 API Key + 配置教程</div>
         </div>
 
-        <div class="notice-box important-notice">
-          <div class="notice-title">🚫 重要提醒</div>
-          <ul class="notice-list">
-            <li>虚拟商品一经售出，非质量问题不支持退款</li>
-            <li>请勿将 API Key 分享给他人使用</li>
-            <li>禁止用于违法违规用途</li>
-            <li>购买即表示同意以上条款</li>
-          </ul>
-        </div>
-        <div class="watermark">© 码驿站 · 盗图必究</div>
+        <div class="watermark watermark-light">码驿站</div>
       </div>
-      <button class="download-btn" onclick="downloadImage('section-7', '07-购买须知')">下载图片</button>
+      <button class="download-btn" onclick="downloadImage('section-7', '07-为什么现在买')">下载图片</button>
+    </div>
+
+    <!-- ============ 第8屏：买完怎么用 ============ -->
+    <div class="section-wrapper">
+      <div class="section section-howto" id="section-8">
+        <div class="howto-title">买完怎么用？</div>
+        <div class="howto-subtitle">3 步搞定，小白也能上手</div>
+
+        <div class="howto-steps">
+          <div class="howto-step">
+            <div class="howto-step-num">1</div>
+            <div>
+              <div class="howto-step-title">收到 API Key</div>
+              <div class="howto-step-desc">下单后自动发货，包含 Key 和配置说明</div>
+            </div>
+          </div>
+          <div class="howto-step">
+            <div class="howto-step-num">2</div>
+            <div>
+              <div class="howto-step-title">按说明配置</div>
+              <div class="howto-step-desc">复制两行环境变量到终端，设置完成</div>
+            </div>
+          </div>
+          <div class="howto-step">
+            <div class="howto-step-num">3</div>
+            <div>
+              <div class="howto-step-title">开始使用</div>
+              <div class="howto-step-desc">运行 claude 命令，直接开始 AI 编程</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="howto-guarantee">
+          <div class="howto-g-item">
+            <div class="howto-g-icon">
+              <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+            </div>
+            <div class="howto-g-title">客服在线</div>
+            <div class="howto-g-desc">不会用？直接问客服</div>
+          </div>
+          <div class="howto-g-item">
+            <div class="howto-g-icon">
+              <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+            </div>
+            <div class="howto-g-title">配套教程</div>
+            <div class="howto-g-desc">图文教程跟着做</div>
+          </div>
+          <div class="howto-g-item">
+            <div class="howto-g-icon">
+              <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <div class="howto-g-title">售后保障</div>
+            <div class="howto-g-desc">问题及时响应</div>
+          </div>
+        </div>
+
+        <div class="watermark">码驿站</div>
+      </div>
+      <button class="download-btn" onclick="downloadImage('section-8', '08-买完怎么用')">下载图片</button>
+    </div>
+
+    <!-- ============ 第9屏：底部强CTA + 购买须知 ============ -->
+    <div class="section-wrapper">
+      <div class="section section-final" id="section-9">
+        <div class="final-headline">已经想好买哪个了？</div>
+        <div class="final-sub">从 9.9 开始，不用纠结</div>
+
+        <div class="final-cta">立即下单</div>
+        <div class="final-hint">拍下后自动发送 API Key + 配置教程</div>
+
+        <div class="final-notice">
+          <div class="final-notice-box">
+            <div class="final-notice-title">
+              <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              使用说明
+            </div>
+            <ul class="final-notice-list">
+              <li>本商品为虚拟服务，购买后自动发货 API Key</li>
+              <li>套餐有效期 30 天，从首次使用开始计算</li>
+              <li>额度为月限额，按实际 API 调用消耗扣减</li>
+              <li>支持 Claude Code CLI 工具使用</li>
+            </ul>
+          </div>
+          <div class="final-notice-box final-notice-warn">
+            <div class="final-notice-title">
+              <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              重要提醒
+            </div>
+            <ul class="final-notice-list">
+              <li>虚拟商品一经售出，非质量问题不支持退款</li>
+              <li>请勿将 API Key 分享给他人使用</li>
+              <li>禁止用于违法违规用途</li>
+              <li>购买即表示同意以上条款</li>
+            </ul>
+          </div>
+        </div>
+
+        <div style="margin-top:40px;padding-top:30px;border-top:1px solid rgba(255,255,255,0.1);text-align:center;">
+          <div style="font-size:20px;font-weight:700;color:#a5b4fc;letter-spacing:4px;">码驿站</div>
+          <div style="font-size:13px;color:rgba(255,255,255,0.35);margin-top:6px;letter-spacing:1px;">淘宝搜索「码驿站」· 专注 AI API 服务</div>
+        </div>
+        <div class="watermark watermark-light">码驿站</div>
+      </div>
+      <button class="download-btn" onclick="downloadImage('section-9', '09-底部CTA')">下载图片</button>
     </div>
 
   </div>
@@ -892,16 +1573,12 @@
   <script>
     async function downloadImage(elementId, filename) {
       const element = document.getElementById(elementId);
-      const buttons = document.querySelectorAll('.download-btn, .download-all-btn');
-
-      // 找到对应的按钮
       const button = element.parentElement.querySelector('.download-btn');
       const originalText = button.textContent;
       button.textContent = '生成中...';
       button.disabled = true;
 
       try {
-        // 获取元素实际高度
         const rect = element.getBoundingClientRect();
         const canvas = await html2canvas(element, {
           scale: 2,
@@ -930,13 +1607,15 @@
 
     async function downloadAll() {
       const sections = [
-        { id: 'section-1', name: '01-头图Banner' },
-        { id: 'section-2', name: '02-核心优势' },
-        { id: 'section-3', name: '03-套餐对比' },
-        { id: 'section-4', name: '04-使用流程' },
-        { id: 'section-5', name: '05-常见问题' },
-        { id: 'section-6', name: '06-售后保障' },
-        { id: 'section-7', name: '07-购买须知' }
+        { id: 'section-1', name: '01-首屏Hero' },
+        { id: 'section-2', name: '02-人群筛选' },
+        { id: 'section-3', name: '03-套餐决策' },
+        { id: 'section-4', name: '04-算账' },
+        { id: 'section-5', name: '05-拆雷FAQ' },
+        { id: 'section-6', name: '06-使用场景' },
+        { id: 'section-7', name: '07-为什么现在买' },
+        { id: 'section-8', name: '08-买完怎么用' },
+        { id: 'section-9', name: '09-底部CTA' }
       ];
 
       const allButtons = document.querySelectorAll('.download-all-btn');
@@ -971,7 +1650,6 @@
           link.href = canvas.toDataURL('image/png');
           link.click();
 
-          // 等待一下避免浏览器阻止多次下载
           await new Promise(resolve => setTimeout(resolve, 500));
         } catch (error) {
           console.error(`下载 ${section.name} 失败:`, error);
