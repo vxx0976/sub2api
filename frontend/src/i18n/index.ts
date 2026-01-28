@@ -1,23 +1,36 @@
 import { createI18n } from 'vue-i18n'
 import en from './locales/en'
 import zh from './locales/zh'
+import ja from './locales/ja'
+import ko from './locales/ko'
+import zhTW from './locales/zhTW'
 
 const LOCALE_KEY = 'sub2api_locale'
+const SUPPORTED_LOCALES = ['en', 'zh', 'ja', 'ko', 'zh-TW']
 
 function getDefaultLocale(): string {
   // Check localStorage first
   const saved = localStorage.getItem(LOCALE_KEY)
-  if (saved && ['en', 'zh'].includes(saved)) {
+  if (saved && SUPPORTED_LOCALES.includes(saved)) {
     return saved
   }
 
-  // Check browser language - 只有明确是英文才用英文，否则默认中文
+  // Check browser language
   const browserLang = navigator.language.toLowerCase()
   if (browserLang.startsWith('en')) {
     return 'en'
   }
+  if (browserLang.startsWith('ja')) {
+    return 'ja'
+  }
+  if (browserLang.startsWith('ko')) {
+    return 'ko'
+  }
+  if (browserLang === 'zh-tw' || browserLang === 'zh-hant') {
+    return 'zh-TW'
+  }
 
-  // 默认中文，对中国用户和搜索引擎更友好
+  // 默认中文
   return 'zh'
 }
 
@@ -27,7 +40,10 @@ export const i18n = createI18n({
   fallbackLocale: 'zh',
   messages: {
     en,
-    zh
+    zh,
+    ja,
+    ko,
+    'zh-TW': zhTW
   },
   // 禁用 HTML 消息警告 - 引导步骤使用富文本内容（driver.js 支持 HTML）
   // 这些内容是内部定义的，不存在 XSS 风险
@@ -35,10 +51,17 @@ export const i18n = createI18n({
 })
 
 export function setLocale(locale: string) {
-  if (['en', 'zh'].includes(locale)) {
-    i18n.global.locale.value = locale as 'en' | 'zh'
+  if (SUPPORTED_LOCALES.includes(locale)) {
+    i18n.global.locale.value = locale as 'en' | 'zh' | 'ja' | 'ko' | 'zh-TW'
     localStorage.setItem(LOCALE_KEY, locale)
-    document.documentElement.setAttribute('lang', locale === 'zh' ? 'zh-CN' : 'en')
+    const langMap: Record<string, string> = {
+      zh: 'zh-CN',
+      en: 'en',
+      ja: 'ja',
+      ko: 'ko',
+      'zh-TW': 'zh-TW'
+    }
+    document.documentElement.setAttribute('lang', langMap[locale] || locale)
   }
 }
 
@@ -47,8 +70,11 @@ export function getLocale(): string {
 }
 
 export const availableLocales = [
-  { code: 'en', name: 'English', flag: '🇺🇸' },
-  { code: 'zh', name: '中文', flag: '🇨🇳' }
+  { code: 'en', name: 'English' },
+  { code: 'zh', name: '中文' },
+  { code: 'zh-TW', name: '繁體中文' },
+  { code: 'ja', name: '日本語' },
+  { code: 'ko', name: '한국어' }
 ]
 
 export default i18n

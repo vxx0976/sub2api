@@ -72,7 +72,7 @@
                     <span>¥{{ tier.min }}{{ tier.max ? `-${tier.max}` : '+' }}</span>
                   </span>
                   <span class="flex items-center gap-2">
-                    <span class="text-xs text-gray-500">¥{{ (1 / tier.multiplier).toFixed(2) }}/刀</span>
+                    <span class="text-xs text-gray-500">¥{{ (1 / tier.multiplier).toFixed(2) }}{{ t('consoleHome.rechargeBonus.perDollar') }}</span>
                     <span class="font-medium text-emerald-600 dark:text-emerald-400">{{ tier.multiplier }}×</span>
                     <span v-if="tier.multiplier > 1" class="text-xs font-medium text-orange-500">+{{ ((tier.multiplier - 1) * 100).toFixed(0) }}%</span>
                   </span>
@@ -198,8 +198,8 @@ const referralPlans = [
 
 // Default announcements (hardcoded)
 const announcements = ref<Announcement[]>([
-  { title: '限时活动：全套餐加赠额度，最高多送 $40', date: '2026-01-28' },
-  { title: '充值阶梯倍率升级：最高 2.2 倍，充得越多越划算', date: '2026-01-28' }
+  { title: t('consoleHome.announcement1'), date: '2026-01-28' },
+  { title: t('consoleHome.announcement2'), date: '2026-01-28' }
 ])
 
 // Optionally load announcements from API to override defaults

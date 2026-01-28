@@ -135,41 +135,6 @@ export default {
         monthlyLimit: 'Monthly limit ${limit}',
         validity: '{days} days validity',
         unitPrice: 'Only ¥{price}/dollar'
-      },
-      plans: {
-        starter: {
-          name: 'Starter',
-          price: '9.9',
-          credit: 'Includes $20 credits: ~10M tokens',
-          f1: 'Valid for 30 days',
-          f2: 'Basic concurrency: 2 RPM',
-          f3: 'All models supported'
-        },
-        lite: {
-          name: 'Lite',
-          price: '19.9',
-          credit: 'Includes $40 credits: ~20M tokens',
-          f1: 'Valid for 30 days',
-          f2: 'Standard concurrency: 10 RPM',
-          f3: 'All models supported'
-        },
-        standard: {
-          name: 'Standard',
-          price: '49.9',
-          credit: 'Includes $100 credits: ~50M tokens',
-          f1: 'Valid for 30 days',
-          f2: 'High concurrency: 30 RPM',
-          f3: 'All models supported'
-        },
-        pro: {
-          name: 'Pro',
-          price: '99.9',
-          credit: 'Includes $200 credits: ~100M tokens',
-          f1: 'Valid for 30 days',
-          f2: 'Enterprise concurrency: 60 RPM',
-          f3: 'CN2 dedicated route (HK/JP)',
-          f4: '1-on-1 technical support'
-        }
       }
     },
     providers: {
@@ -235,7 +200,8 @@ export default {
       tier1: '¥10~199.99 = 2.0x',
       tier2: '¥200~499.99 = 2.1x',
       tier3: '¥500+ = 2.2x',
-      action: 'Recharge Now'
+      action: 'Recharge Now',
+      perDollar: '/dollar'
     },
     referralReward: {
       title: 'Referral Reward',
@@ -256,6 +222,45 @@ export default {
   pricing: {
     subscriptionPlans: 'Subscription Plans',
     otherPlans: 'Other Options',
+    perDollar: '/dollar',
+    plans: {
+      starter: {
+        name: 'Starter',
+        credit: '$22 credits',
+        unitPrice: '¥0.45/dollar',
+        f1: '~50+ coding tasks',
+        f2: '30-day validity',
+        f3: 'All models supported',
+        f4: 'Perfect for light usage'
+      },
+      lite: {
+        name: 'Lite',
+        credit: '$45 credits',
+        unitPrice: '¥0.44/dollar',
+        f1: '~120+ coding tasks',
+        f2: '30-day validity',
+        f3: 'All models supported',
+        f4: 'For daily development needs'
+      },
+      standard: {
+        name: 'Standard',
+        credit: '$120 credits',
+        unitPrice: '¥0.42/dollar',
+        f1: '~300+ coding tasks',
+        f2: '30-day validity',
+        f3: 'All models supported',
+        f4: 'Most popular, best value'
+      },
+      pro: {
+        name: 'Pro',
+        credit: '$240 credits',
+        unitPrice: '¥0.42/dollar',
+        f1: '~600+ coding tasks',
+        f2: '30-day validity',
+        f3: 'All models supported',
+        f4: 'For heavy usage'
+      }
+    },
     paygo: {
       name: 'Pay As You Go',
       tagline: 'Flexible Usage',
@@ -530,6 +535,81 @@ export default {
     contact: {
       title: 'Need Help?',
       desc: 'If you have any questions, please contact support or submit a ticket in the dashboard.'
+    },
+    guide: {
+      title: 'Claude Code Setup Guide',
+      subtitle: 'Three simple steps to connect to the accelerated network',
+      note: 'This guide is for Claude Code (CLI) users, based on the Anthropic native API protocol.',
+      warning: {
+        title: 'Important',
+        intro: 'This API uses the Anthropic native protocol:',
+        item1: 'Only works with claude-code CLI and related development tools',
+        item2: 'Does not support claude.ai web interface',
+        item3: 'Does not support tools that rely on OpenAI API (e.g., Cursor)'
+      },
+      step1: {
+        title: 'Install Claude CLI',
+        description: 'Choose the installation method for your operating system:',
+        commentBash: '# Download and install Claude CLI',
+        commentPS: '# Download and install Claude CLI',
+        commentCMD: ':: Install Claude CLI via npm',
+        tipMac: 'You may need to restart your terminal or run',
+        tipPS: 'You may need to restart PowerShell after installation',
+        tipCMD: 'Make sure Node.js is installed, then restart CMD',
+        verify: 'Verify Installation',
+        verifySuccess: 'If a version number is displayed, installation was successful',
+        networkTip: 'If installation is slow, verify you can access claude.ai'
+      },
+      step2: {
+        title: 'Create API Key and Configure',
+        instruction1: 'Log in and go to',
+        instruction1Link: 'Dashboard → API Keys',
+        instruction2: 'Click "Create Key" in the top right, enter a name and confirm',
+        instruction3Pre: 'Click the',
+        instruction3Button: 'Use Key',
+        instruction3Post: 'button next to the new key',
+        instruction4: 'Select your operating system and copy the environment variable commands',
+        instruction5: 'Paste and run the commands in your terminal',
+        exampleTitle: '"Use Key" dialog example:',
+        commentBash: '# Copy and run in terminal',
+        commentPS: '# Copy and run in PowerShell',
+        commentCMD: ':: Copy and run in CMD',
+        yourKey: 'sk-your-key',
+        tipMac: 'We recommend adding these to',
+        tipMacSuffix: 'for permanent configuration',
+        tipMacOr: 'or',
+        tipPS: 'We recommend adding these to your PowerShell profile',
+        tipPSSuffix: 'for permanent configuration',
+        tipCMD: 'We recommend setting permanent environment variables via System Properties → Environment Variables',
+        verify: 'Verify Configuration',
+        verifyComment: '# Verify environment variables are set',
+        verifyCMDComment: ':: Verify environment variables are set',
+        verifyFail: 'If no output, the environment variables are not set. Check configuration or restart terminal.'
+      },
+      step3: {
+        title: 'Start Claude',
+        description: 'After configuration, run the following command to start Claude:',
+        tip: 'First run may take a few seconds to initialize',
+        debugTip: 'If startup fails, try using',
+        debugTipSuffix: 'to see detailed error info'
+      },
+      tips: {
+        title: 'Tips',
+        tip1: 'Environment variables take effect immediately, no terminal restart needed',
+        tip2: 'We recommend setting permanent environment variables to avoid reconfiguration',
+        tip3Pre: 'Having issues? Check the',
+        tip3Link: 'System Status',
+        tip3Post: 'or contact support'
+      },
+      faq: {
+        title: 'FAQ',
+        q1: 'Q: Getting 401 / Unauthorized?',
+        a1: 'Verify that ANTHROPIC_API_KEY is correct and has no extra spaces.',
+        q2: 'Q: Connection timeout / network error?',
+        a2: 'Verify that ANTHROPIC_BASE_URL is correct and accessible from your network.',
+        q3: 'Q: Claude starts but conversations fail?',
+        a3: 'Make sure you have the latest version of claude-code and are not using Web login mode.'
+      }
     }
   },
 
@@ -1061,20 +1141,28 @@ export default {
       title: 'Admin Dashboard',
       description: 'System overview and real-time statistics',
       apiKeys: 'API Keys',
-      accounts: 'Accounts',
+      totalApiKeys: 'Total API Keys',
+      activeApiKeys: 'Active Keys',
       users: 'Users',
+      totalUsers: 'Total Users',
+      activeUsers: 'active users',
+      accounts: 'Accounts',
+      totalAccounts: 'Total Accounts',
+      activeAccounts: 'Active Accounts',
       todayRequests: 'Today Requests',
-      newUsersToday: 'New Users Today',
+      totalRequests: 'Total Requests',
+      todayCost: 'Today Cost',
+      totalCost: 'Total Cost',
+      actual: 'Actual',
+      standard: 'Standard',
       todayTokens: 'Today Tokens',
       totalTokens: 'Total Tokens',
+      input: 'Input',
+      output: 'Output',
       cacheToday: 'Cache (Today)',
       performance: 'Performance',
       avgResponse: 'Avg Response',
-      active: 'active',
-      ok: 'ok',
-      err: 'err',
-      activeUsers: 'active users',
-      create: 'Create',
+      averageTime: 'Avg Time',
       timeRange: 'Time Range',
       granularity: 'Granularity',
       day: 'Day',
@@ -1082,13 +1170,28 @@ export default {
       modelDistribution: 'Model Distribution',
       tokenUsageTrend: 'Token Usage Trend',
       userUsageTrend: 'User Usage Trend (Top 12)',
+      noDataAvailable: 'No data available',
       model: 'Model',
       requests: 'Requests',
       tokens: 'Tokens',
-      actual: 'Actual',
-      standard: 'Standard',
-      noDataAvailable: 'No data available',
+      cache: 'Cache',
       recentUsage: 'Recent Usage',
+      last7Days: 'Last 7 Days',
+      noUsageRecords: 'No usage records',
+      startUsingApi: 'Usage history will appear here once you start using the API.',
+      viewAllUsage: 'View All',
+      quickActions: 'Quick Actions',
+      manageUsers: 'Manage Users',
+      viewUserAccounts: 'View and manage user accounts',
+      manageAccounts: 'Manage Accounts',
+      configureAiAccounts: 'Configure AI platform accounts',
+      systemSettings: 'System Settings',
+      configureSystem: 'Configure system settings',
+      newUsersToday: 'New Users Today',
+      active: 'active',
+      ok: 'ok',
+      err: 'err',
+      create: 'Create',
       failedToLoad: 'Failed to load dashboard statistics'
     },
 
@@ -1199,6 +1302,43 @@ export default {
       failedToDeposit: 'Failed to deposit',
       failedToWithdraw: 'Failed to withdraw',
       useDepositWithdrawButtons: 'Please use deposit/withdraw buttons to adjust balance',
+      deleteConfirmMessage: "Are you sure you want to delete user '{email}'? This action cannot be undone.",
+      searchPlaceholder: 'Search users...',
+      roleFilter: 'Role Filter',
+      statusFilter: 'Status Filter',
+      allStatuses: 'All Statuses',
+      form: {
+        emailLabel: 'Email',
+        emailPlaceholder: 'Enter email',
+        usernameLabel: 'Username',
+        usernamePlaceholder: 'Enter username (optional)',
+        notesLabel: 'Notes',
+        notesPlaceholder: 'Enter notes (admin only)',
+        notesHint: 'This note is only visible to administrators',
+        passwordLabel: 'Password',
+        passwordPlaceholder: 'Enter password (leave empty to keep)',
+        roleLabel: 'Role',
+        selectRole: 'Select role',
+        balanceLabel: 'Balance',
+        concurrencyLabel: 'Concurrency',
+        statusLabel: 'Status',
+        selectStatus: 'Select status'
+      },
+      adjustBalance: 'Adjust Balance',
+      adjustConcurrency: 'Adjust Concurrency',
+      adjustmentAmount: 'Adjustment Amount',
+      adjustmentAmountHint: 'Positive to add, negative to subtract',
+      currentConcurrency: 'Current Concurrency',
+      saving: 'Saving...',
+      noUsers: 'No users',
+      noUsersDescription: 'Create your first user to get started.',
+      userCreatedSuccess: 'User created successfully',
+      userUpdatedSuccess: 'User updated successfully',
+      userDeletedSuccess: 'User deleted successfully',
+      balanceAdjustedSuccess: 'Balance adjusted successfully',
+      concurrencyAdjustedSuccess: 'Concurrency adjusted successfully',
+      failedToSave: 'Failed to save user',
+      failedToAdjust: 'Failed to adjust',
       roles: {
         admin: 'Admin',
         user: 'User'
@@ -1290,8 +1430,11 @@ export default {
         name: 'Name',
         platform: 'Platform',
         rateMultiplier: 'Rate Multiplier',
+        exclusive: 'Exclusive',
         type: 'Type',
         purchasable: 'Purchasable',
+        priority: 'Priority',
+        apiKeys: 'API Keys',
         accounts: 'Accounts',
         status: 'Status',
         actions: 'Actions',
@@ -1305,8 +1448,35 @@ export default {
         platform: 'Platform',
         rateMultiplier: 'Rate Multiplier',
         status: 'Status',
-        exclusive: 'Exclusive Group'
+        exclusive: 'Exclusive Group',
+        nameLabel: 'Group Name',
+        namePlaceholder: 'Enter group name',
+        descriptionLabel: 'Description',
+        descriptionPlaceholder: 'Enter description (optional)',
+        rateMultiplierLabel: 'Rate Multiplier',
+        rateMultiplierHint: '1.0 = standard rate, 0.5 = half price, 2.0 = double',
+        exclusiveLabel: 'Exclusive Group',
+        exclusiveHint: 'Exclusive group, manually assign to users',
+        platformLabel: 'Platform Restriction',
+        platformPlaceholder: 'Select platform (leave empty for no restriction)',
+        accountsLabel: 'Assigned Accounts',
+        accountsPlaceholder: 'Select accounts (leave empty for no restriction)',
+        priorityLabel: 'Priority',
+        priorityHint: 'Lower value = higher priority, used for account scheduling',
+        statusLabel: 'Status'
       },
+      exclusiveObj: {
+        yes: 'Yes',
+        no: 'No'
+      },
+      saving: 'Saving...',
+      noGroups: 'No groups',
+      noGroupsDescription: 'Create groups to better manage API keys and rates.',
+      groupCreatedSuccess: 'Group created successfully',
+      groupUpdatedSuccess: 'Group updated successfully',
+      groupDeletedSuccess: 'Group deleted successfully',
+      failedToSave: 'Failed to save group',
+      exclusiveFilter: 'Exclusive',
       enterGroupName: 'Enter group name',
       optionalDescription: 'Optional description',
       platformHint: 'Select the platform this group is associated with',
@@ -1636,7 +1806,9 @@ export default {
         responsesApi: 'Responses API',
         googleOauth: 'Google OAuth',
         codeAssist: 'Code Assist',
-        antigravityOauth: 'Antigravity OAuth'
+        antigravityOauth: 'Antigravity OAuth',
+        api_key: 'API Key',
+        cookie: 'Cookie'
       },
       status: {
         active: 'Active',
@@ -1776,6 +1948,42 @@ export default {
       failedToDelete: 'Failed to delete account',
       failedToClearRateLimit: 'Failed to clear rate limit',
       deleteConfirm: "Are you sure you want to delete '{name}'? This action cannot be undone.",
+      deleteConfirmMessage: "Are you sure you want to delete account '{name}'?",
+      refreshCookie: 'Refresh Cookie',
+      testAccount: 'Test Account',
+      form: {
+        nameLabel: 'Account Name',
+        namePlaceholder: 'Enter account name',
+        platformLabel: 'Platform',
+        selectPlatform: 'Select platform',
+        typeLabel: 'Type',
+        selectType: 'Select type',
+        credentialsLabel: 'Credentials',
+        credentialsPlaceholder: 'Enter Cookie or API Key',
+        priorityLabel: 'Priority',
+        priorityHint: 'Lower value = higher priority',
+        weightLabel: 'Weight',
+        weightHint: 'Weight value for load balancing',
+        statusLabel: 'Status'
+      },
+      filters: {
+        platform: 'Platform',
+        allPlatforms: 'All Platforms',
+        type: 'Type',
+        allTypes: 'All Types',
+        status: 'Status',
+        allStatuses: 'All Statuses'
+      },
+      saving: 'Saving...',
+      refreshing: 'Refreshing...',
+      noAccounts: 'No accounts',
+      noAccountsDescription: 'Add AI platform accounts to start using the API gateway.',
+      accountCreatedSuccess: 'Account added successfully',
+      accountUpdatedSuccess: 'Account updated successfully',
+      accountDeletedSuccess: 'Account deleted successfully',
+      cookieRefreshedSuccess: 'Cookie refreshed successfully',
+      testSuccess: 'Account test passed',
+      failedToSave: 'Failed to save account',
       // Create/Edit Account Modal
       platform: 'Platform',
       accountName: 'Account Name',
@@ -2279,7 +2487,21 @@ export default {
         status: 'Status',
         accounts: 'Accounts',
         latency: 'Latency',
-        actions: 'Actions'
+        actions: 'Actions',
+        nameLabel: 'Name',
+        namePlaceholder: 'Enter proxy name',
+        protocolLabel: 'Protocol',
+        selectProtocol: 'Select protocol',
+        hostLabel: 'Host',
+        hostPlaceholder: 'Enter host address',
+        portLabel: 'Port',
+        portPlaceholder: 'Enter port',
+        usernameLabel: 'Username (Optional)',
+        usernamePlaceholder: 'Enter username',
+        passwordLabel: 'Password (Optional)',
+        passwordPlaceholder: 'Enter password',
+        priorityLabel: 'Priority',
+        statusLabel: 'Status'
       },
       testConnection: 'Test Connection',
       batchTest: 'Test All Proxies',
@@ -2351,7 +2573,24 @@ export default {
       hostRequired: 'Please enter host address',
       portInvalid: 'Port must be between 1-65535',
       deleteConfirm:
-        "Are you sure you want to delete '{name}'? Accounts using this proxy will have their proxy removed."
+        "Are you sure you want to delete '{name}'? Accounts using this proxy will have their proxy removed.",
+      deleteConfirmMessage: "Are you sure you want to delete proxy '{name}'?",
+      testProxy: 'Test Proxy',
+      filters: {
+        protocol: 'Protocol',
+        allProtocols: 'All Protocols',
+        status: 'Status',
+        allStatuses: 'All Statuses'
+      },
+      saving: 'Saving...',
+      testing: 'Testing...',
+      noProxies: 'No proxies',
+      noProxiesDescription: 'Add proxy servers to enhance API access stability.',
+      proxyCreatedSuccess: 'Proxy added successfully',
+      proxyUpdatedSuccess: 'Proxy updated successfully',
+      proxyDeletedSuccess: 'Proxy deleted successfully',
+      testSuccess: 'Proxy test passed',
+      failedToSave: 'Failed to save proxy'
     },
 
     // Channel Management
@@ -2447,8 +2686,41 @@ export default {
         status: 'Status',
         usedBy: 'Used By',
         usedAt: 'Used At',
+        createdAt: 'Created At',
         actions: 'Actions'
       },
+      form: {
+        typeLabel: 'Type',
+        selectType: 'Select type',
+        valueLabel: 'Value',
+        valuePlaceholder: 'Enter value',
+        balanceHint: 'Balance amount (USD)',
+        concurrencyHint: 'Concurrency increment',
+        countLabel: 'Count',
+        countPlaceholder: 'Enter count',
+        countHint: 'Number of redeem codes to generate',
+        prefixLabel: 'Prefix (Optional)',
+        prefixPlaceholder: 'e.g. GIFT',
+        expiresLabel: 'Expires At (Optional)'
+      },
+      filters: {
+        type: 'Type',
+        allTypes: 'All Types',
+        status: 'Status',
+        allStatuses: 'All Statuses',
+        search: 'Search codes'
+      },
+      copyCode: 'Copy',
+      disableCode: 'Disable',
+      enableCode: 'Enable',
+      deleteConfirmMessage: 'Are you sure you want to delete this redeem code?',
+      noCodes: 'No redeem codes',
+      noCodesDescription: 'Generate redeem codes to distribute balance or concurrency to users.',
+      codesGeneratedSuccess: 'Generated {count} redeem code(s) successfully',
+      codeDisabledSuccess: 'Redeem code disabled',
+      codeEnabledSuccess: 'Redeem code enabled',
+      codeDeletedSuccess: 'Redeem code deleted successfully',
+      failedToUpdate: 'Failed to update redeem code',
       userPrefix: 'User #{id}',
       exportCsv: 'Export CSV',
       deleteAllUnused: 'Delete All Unused Codes',
@@ -2712,6 +2984,7 @@ export default {
       healthyStatus: 'Healthy',
       riskyStatus: 'At Risk',
       idleStatus: 'Idle',
+      result: 'Result',
       timeRange: {
         '5m': 'Last 5 minutes',
         '30m': 'Last 30 minutes',
@@ -2719,7 +2992,12 @@ export default {
         '6h': 'Last 6 hours',
         '24h': 'Last 24 hours',
         '7d': 'Last 7 days',
-        '30d': 'Last 30 days'
+        '30d': 'Last 30 days',
+        custom: 'Custom'
+      },
+      customTimeRange: {
+        startTime: 'Start Time',
+        endTime: 'End Time'
       },
       fullscreen: {
         enter: 'Enter Fullscreen'

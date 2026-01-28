@@ -135,14 +135,9 @@
                   <div class="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/30">
                     <Icon name="check" size="xs" class="text-emerald-600 dark:text-emerald-400" />
                   </div>
-                  <div class="flex-1">
-                    <div class="text-gray-600 dark:text-gray-300">
-                      {{ t('plans.monthlyLimit', { amount: plan.monthly_limit_usd.toFixed(0) }) }}
-                    </div>
-                    <div class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                      {{ t('plans.estimatedTokens', { tokens: formatTokens(plan.monthly_limit_usd) }) }}
-                    </div>
-                  </div>
+                  <span class="text-gray-600 dark:text-gray-300">
+                    {{ t('plans.monthlyLimit', { amount: plan.monthly_limit_usd.toFixed(0) }) }}
+                  </span>
                 </li>
                 <li v-if="!plan.daily_limit_usd && !plan.weekly_limit_usd && !plan.monthly_limit_usd" class="flex items-start gap-3 text-sm">
                   <div class="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/30">
@@ -313,16 +308,6 @@ const recommendedPlanId = computed(() => {
   const recommended = plans.value.find(p => p.is_recommended)
   return recommended?.id ?? null
 })
-
-// Format tokens display (1.5M tokens per dollar)
-function formatTokens(usd: number): string {
-  const tokens = usd * 1.5 // 1 USD = 1.5M tokens
-  if (tokens >= 100) {
-    return `${(tokens / 100).toFixed(1)} 亿`
-  } else {
-    return `${tokens.toFixed(0)} 万`
-  }
-}
 
 async function loadPlans() {
   try {

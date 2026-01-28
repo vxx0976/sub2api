@@ -5,8 +5,7 @@
       class="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-dark-700"
       :title="currentLocale?.name"
     >
-      <span class="text-base">{{ currentLocale?.flag }}</span>
-      <span class="hidden sm:inline">{{ currentLocale?.name }}</span>
+      <span>{{ currentLocale?.name }}</span>
       <Icon
         name="chevronDown"
         size="xs"
@@ -30,7 +29,6 @@
               locale.code === currentLocaleCode
           }"
         >
-          <span class="text-base">{{ locale.flag }}</span>
           <span>{{ locale.name }}</span>
           <Icon v-if="locale.code === currentLocaleCode" name="check" size="sm" class="ml-auto text-primary-500" />
         </button>

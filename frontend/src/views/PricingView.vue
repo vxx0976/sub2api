@@ -103,7 +103,7 @@
               <div class="mt-6">
                 <div class="flex items-baseline gap-1">
                   <span class="text-3xl font-bold text-gray-900 dark:text-white">¥0.50</span>
-                  <span class="text-sm text-gray-500 dark:text-gray-400">/刀</span>
+                  <span class="text-sm text-gray-500 dark:text-gray-400">{{ t('pricing.perDollar') }}</span>
                 </div>
                 <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
                   {{ t('pricing.paygo.description') }}
@@ -247,68 +247,29 @@ const isAuthenticated = computed(() => authStore.isAuthenticated)
 const showWechatModal = ref(false)
 
 // Subscription plans
-const subscriptionPlans = computed(() => [
-  {
-    key: 'starter',
-    recommended: false,
-    name: '体验版',
-    price: '9.9',
-    credit: '$22 月限额',
-    unitPrice: '¥0.45/刀',
+const planConfig = [
+  { key: 'starter', price: '9.9', recommended: false },
+  { key: 'lite', price: '19.9', recommended: false },
+  { key: 'standard', price: '49.9', recommended: true },
+  { key: 'pro', price: '99.9', recommended: false }
+]
+
+const subscriptionPlans = computed(() =>
+  planConfig.map(({ key, price, recommended }) => ({
+    key,
+    recommended,
+    price,
+    name: t(`pricing.plans.${key}.name`),
+    credit: t(`pricing.plans.${key}.credit`),
+    unitPrice: t(`pricing.plans.${key}.unitPrice`),
     features: [
-      '月限额 $22（约 3300 万 tokens）',
-      '30 天有效期',
-      '支持全模型',
-      '单价仅 ¥0.45/刀',
-      '适合轻度使用、快速体验'
+      t(`pricing.plans.${key}.f1`),
+      t(`pricing.plans.${key}.f2`),
+      t(`pricing.plans.${key}.f3`),
+      t(`pricing.plans.${key}.f4`)
     ]
-  },
-  {
-    key: 'lite',
-    recommended: false,
-    name: '基础版',
-    price: '29.9',
-    credit: '$70 月限额',
-    unitPrice: '¥0.43/刀',
-    features: [
-      '月限额 $70（约 1 亿 tokens）',
-      '30 天有效期',
-      '支持全模型',
-      '单价仅 ¥0.43/刀',
-      '满足日常开发需求'
-    ]
-  },
-  {
-    key: 'standard',
-    recommended: true,
-    name: '标准版',
-    price: '49.9',
-    credit: '$120 月限额',
-    unitPrice: '¥0.42/刀',
-    features: [
-      '月限额 $120（约 1.8 亿 tokens）',
-      '30 天有效期',
-      '支持全模型',
-      '单价仅 ¥0.42/刀',
-      '最受欢迎，性价比最高'
-    ]
-  },
-  {
-    key: 'premium',
-    recommended: false,
-    name: '高级版',
-    price: '99.9',
-    credit: '$250 月限额',
-    unitPrice: '¥0.40/刀',
-    features: [
-      '月限额 $250（约 3.7 亿 tokens）',
-      '30 天有效期',
-      '支持全模型',
-      '单价仅 ¥0.40/刀',
-      '适合重度使用'
-    ]
-  }
-])
+  }))
+)
 </script>
 
 <style scoped>

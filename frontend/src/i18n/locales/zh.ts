@@ -134,41 +134,6 @@ export default {
         monthlyLimit: '月限额 ${limit}',
         validity: '{days} 天有效期',
         unitPrice: '单价仅 ¥{price}/刀'
-      },
-      plans: {
-        starter: {
-          name: '入门体验',
-          price: '9.9',
-          credit: '含 $20 额度：约 1 千万 tokens',
-          f1: '30 天有效期',
-          f2: '基础并发 2 RPM',
-          f3: '全模型支持'
-        },
-        lite: {
-          name: '轻量版',
-          price: '19.9',
-          credit: '含 $40 额度：约 2 千万 tokens',
-          f1: '30 天有效期',
-          f2: '标准并发 10 RPM',
-          f3: '全模型支持'
-        },
-        standard: {
-          name: '标准版',
-          price: '49.9',
-          credit: '含 $100 额度：约 5 千万 tokens',
-          f1: '30 天有效期',
-          f2: '高并发 30 RPM',
-          f3: '全模型支持'
-        },
-        pro: {
-          name: '专业版',
-          price: '99.9',
-          credit: '含 $200 额度：约 1 亿 tokens',
-          f1: '30 天有效期',
-          f2: '企业级 60 RPM',
-          f3: '香港/日本 CN2 专线',
-          f4: '1 对 1 技术支持'
-        }
       }
     },
     providers: {
@@ -234,7 +199,8 @@ export default {
       tier1: '¥10~199.99 享 2.0 倍',
       tier2: '¥200~499.99 享 2.1 倍',
       tier3: '¥500+ 享 2.2 倍',
-      action: '去充值'
+      action: '去充值',
+      perDollar: '/刀'
     },
     referralReward: {
       title: '邀请奖励',
@@ -255,6 +221,45 @@ export default {
   pricing: {
     subscriptionPlans: '订阅套餐',
     otherPlans: '其他方案',
+    perDollar: '/刀',
+    plans: {
+      starter: {
+        name: '体验版',
+        credit: '$22 额度',
+        unitPrice: '¥0.45/刀',
+        f1: '约 50+ 次代码任务',
+        f2: '30 天有效期',
+        f3: '支持全模型',
+        f4: '适合轻度使用、快速体验'
+      },
+      lite: {
+        name: '基础版',
+        credit: '$45 额度',
+        unitPrice: '¥0.44/刀',
+        f1: '约 120+ 次代码任务',
+        f2: '30 天有效期',
+        f3: '支持全模型',
+        f4: '满足日常开发需求'
+      },
+      standard: {
+        name: '标准版',
+        credit: '$120 额度',
+        unitPrice: '¥0.42/刀',
+        f1: '约 300+ 次代码任务',
+        f2: '30 天有效期',
+        f3: '支持全模型',
+        f4: '最受欢迎，性价比最高'
+      },
+      pro: {
+        name: '专业版',
+        credit: '$240 额度',
+        unitPrice: '¥0.42/刀',
+        f1: '约 600+ 次代码任务',
+        f2: '30 天有效期',
+        f3: '支持全模型',
+        f4: '适合重度使用'
+      }
+    },
     paygo: {
       name: '按量付费',
       tagline: 'Pay As You Go',
@@ -529,6 +534,81 @@ export default {
     contact: {
       title: '需要帮助？',
       desc: '如有任何问题，请联系客服或在控制台提交工单。'
+    },
+    guide: {
+      title: 'Claude Code 接入指南',
+      subtitle: '仅需三步，让官方工具连接加速网络',
+      note: '本文档适用于 Claude Code（CLI）用户，基于 Anthropic 官方接口协议。',
+      warning: {
+        title: '重要提示',
+        intro: '本接口基于 Anthropic 原生协议：',
+        item1: '仅适用于 claude-code 命令行工具及相关开发场景',
+        item2: '不支持 claude.ai 网页版',
+        item3: '不支持依赖 OpenAI API 规范的工具（如 Cursor）'
+      },
+      step1: {
+        title: '安装 Claude CLI',
+        description: '根据您的操作系统选择对应的安装方式：',
+        commentBash: '# 下载并安装 Claude CLI',
+        commentPS: '# 下载并安装 Claude CLI',
+        commentCMD: ':: 使用 npm 安装 Claude CLI',
+        tipMac: '安装完成后可能需要重启终端或运行',
+        tipPS: '安装完成后可能需要重启 PowerShell 终端',
+        tipCMD: '请确保已安装 Node.js，安装完成后重启 CMD 窗口',
+        verify: '验证安装',
+        verifySuccess: '如果显示版本号，说明安装成功',
+        networkTip: '若安装过程较慢，请确认本地可正常访问 claude.ai'
+      },
+      step2: {
+        title: '创建密钥并配置环境变量',
+        instruction1: '登录后进入',
+        instruction1Link: '后台 → API 密钥',
+        instruction2: '点击右上角「创建密钥」，输入名称后确认',
+        instruction3Pre: '点击新密钥右侧的',
+        instruction3Button: '使用密钥',
+        instruction3Post: '按钮',
+        instruction4: '选择您的操作系统，复制环境变量命令',
+        instruction5: '在终端中粘贴并执行命令',
+        exampleTitle: '「使用密钥」弹窗示例：',
+        commentBash: '# 复制以下命令到终端执行',
+        commentPS: '# 复制以下命令到 PowerShell 执行',
+        commentCMD: ':: 复制以下命令到 CMD 执行',
+        yourKey: 'sk-您的密钥',
+        tipMac: '建议将命令添加到',
+        tipMacSuffix: '实现永久配置',
+        tipMacOr: '或',
+        tipPS: '建议将命令添加到 PowerShell 配置文件',
+        tipPSSuffix: '实现永久配置',
+        tipCMD: '建议通过「系统属性 → 环境变量」设置永久环境变量',
+        verify: '验证配置',
+        verifyComment: '# 验证环境变量是否生效',
+        verifyCMDComment: ':: 验证环境变量是否生效',
+        verifyFail: '若无法输出，说明环境变量尚未生效，请检查配置或重启终端'
+      },
+      step3: {
+        title: '启动 Claude',
+        description: '配置完成后，在终端中运行以下命令启动 Claude：',
+        tip: '首次运行可能需要几秒钟初始化，之后即可开始对话',
+        debugTip: '若启动失败，请尝试使用',
+        debugTipSuffix: '查看详细错误信息'
+      },
+      tips: {
+        title: '提示',
+        tip1: '环境变量配置后立即生效，无需重启终端',
+        tip2: '建议配置永久环境变量，避免每次都要重新设置',
+        tip3Pre: '遇到问题？查看',
+        tip3Link: '系统状态',
+        tip3Post: '或联系技术支持'
+      },
+      faq: {
+        title: '常见问题',
+        q1: 'Q：提示 401 / Unauthorized？',
+        a1: '请确认 ANTHROPIC_API_KEY 是否正确，且未包含多余空格。',
+        q2: 'Q：提示连接超时 / 网络错误？',
+        a2: '请确认 ANTHROPIC_BASE_URL 配置正确，且本地网络可访问该地址。',
+        q3: 'Q：Claude 能启动，但无法正常对话？',
+        a3: '请检查是否使用的是最新版本的 claude-code，并确认未使用 Web 登录模式。'
+      }
     }
   },
 
@@ -1087,6 +1167,12 @@ export default {
       hour: '按小时',
       modelDistribution: '模型分布',
       tokenUsageTrend: 'Token 使用趋势',
+      userUsageTrend: '用户使用趋势 (Top 12)',
+      newUsersToday: '今日新用户',
+      active: '活跃',
+      ok: '正常',
+      err: '错误',
+      create: '创建',
       noDataAvailable: '暂无数据',
       model: '模型',
       requests: '请求',
@@ -2380,6 +2466,12 @@ export default {
         passwordPlaceholder: '请输入密码',
         priorityLabel: '优先级',
         statusLabel: '状态'
+      },
+      protocols: {
+        http: 'HTTP',
+        https: 'HTTPS',
+        socks5: 'SOCKS5',
+        socks5h: 'SOCKS5H（远程 DNS）'
       },
       filters: {
         protocol: '协议',
