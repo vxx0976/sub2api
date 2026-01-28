@@ -50,6 +50,7 @@
 
         <!-- Actions -->
         <div class="flex items-center gap-2.5">
+          <LocaleSwitcher />
           <button
             @click="toggleTheme"
             class="rounded-xl p-2 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-dark-300 dark:hover:bg-dark-900 dark:hover:text-white"
@@ -99,6 +100,7 @@ import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAppStore, useAuthStore } from '@/stores'
 import Icon from '@/components/icons/Icon.vue'
+import LocaleSwitcher from '@/components/common/LocaleSwitcher.vue'
 
 const { t } = useI18n()
 const route = useRoute()

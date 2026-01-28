@@ -100,7 +100,14 @@ func (h *GroupHandler) List(c *gin.Context) {
 		isExclusive = &val
 	}
 
-	groups, total, err := h.adminService.ListGroups(c.Request.Context(), page, pageSize, platform, status, search, isExclusive)
+	isPurchasableStr := c.Query("is_purchasable")
+	var isPurchasable *bool
+	if isPurchasableStr != "" {
+		val := isPurchasableStr == "true"
+		isPurchasable = &val
+	}
+
+	groups, total, err := h.adminService.ListGroups(c.Request.Context(), page, pageSize, platform, status, search, isExclusive, isPurchasable)
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return

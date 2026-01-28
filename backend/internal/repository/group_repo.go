@@ -155,10 +155,10 @@ func (r *groupRepository) Delete(ctx context.Context, id int64) error {
 }
 
 func (r *groupRepository) List(ctx context.Context, params pagination.PaginationParams) ([]service.Group, *pagination.PaginationResult, error) {
-	return r.ListWithFilters(ctx, params, "", "", "", nil)
+	return r.ListWithFilters(ctx, params, "", "", "", nil, nil)
 }
 
-func (r *groupRepository) ListWithFilters(ctx context.Context, params pagination.PaginationParams, platform, status, search string, isExclusive *bool) ([]service.Group, *pagination.PaginationResult, error) {
+func (r *groupRepository) ListWithFilters(ctx context.Context, params pagination.PaginationParams, platform, status, search string, isExclusive *bool, isPurchasable *bool) ([]service.Group, *pagination.PaginationResult, error) {
 	q := r.client.Group.Query()
 
 	if platform != "" {
@@ -176,6 +176,9 @@ func (r *groupRepository) ListWithFilters(ctx context.Context, params pagination
 	if isExclusive != nil {
 		q = q.Where(group.IsExclusiveEQ(*isExclusive))
 	}
+	if isPurchasable != nil {
+		q = q.Where(group.IsPurchasableEQ(*isPurchasable))
+	}
 
 	total, err := q.Count(ctx)
 	if err != nil {
@@ -185,7 +188,7 @@ func (r *groupRepository) ListWithFilters(ctx context.Context, params pagination
 	groups, err := q.
 		Offset(params.Offset()).
 		Limit(params.Limit()).
-		Order(dbent.Asc(group.FieldID)).
+		Order(dbent.Desc(group.FieldSortOrder), dbent.Asc(group.FieldID)).
 		All(ctx)
 	if err != nil {
 		return nil, nil, err
@@ -212,7 +215,7 @@ func (r *groupRepository) ListWithFilters(ctx context.Context, params pagination
 func (r *groupRepository) ListActive(ctx context.Context) ([]service.Group, error) {
 	groups, err := r.client.Group.Query().
 		Where(group.StatusEQ(service.StatusActive)).
-		Order(dbent.Asc(group.FieldID)).
+		Order(dbent.Desc(group.FieldSortOrder), dbent.Asc(group.FieldID)).
 		All(ctx)
 	if err != nil {
 		return nil, err
@@ -239,7 +242,7 @@ func (r *groupRepository) ListActive(ctx context.Context) ([]service.Group, erro
 func (r *groupRepository) ListActiveByPlatform(ctx context.Context, platform string) ([]service.Group, error) {
 	groups, err := r.client.Group.Query().
 		Where(group.StatusEQ(service.StatusActive), group.PlatformEQ(platform)).
-		Order(dbent.Asc(group.FieldID)).
+		Order(dbent.Desc(group.FieldSortOrder), dbent.Asc(group.FieldID)).
 		All(ctx)
 	if err != nil {
 		return nil, err

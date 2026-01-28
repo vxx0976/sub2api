@@ -26,6 +26,7 @@ export async function list(
     platform?: GroupPlatform
     status?: 'active' | 'inactive'
     is_exclusive?: boolean
+    is_purchasable?: boolean
     search?: string
   },
   options?: {

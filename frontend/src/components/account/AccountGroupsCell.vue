@@ -54,7 +54,7 @@
           </div>
           <div class="flex flex-wrap gap-1.5 max-h-64 overflow-y-auto">
             <GroupBadge
-              v-for="group in groups"
+              v-for="group in sortedGroups"
               :key="group.id"
               :name="group.name"
               :platform="group.platform"
@@ -98,14 +98,19 @@ const moreButtonRef = ref<HTMLElement | null>(null)
 const popoverRef = ref<HTMLElement | null>(null)
 const showPopover = ref(false)
 
+// 按 sort_order 降序排序的分组
+const sortedGroups = computed(() => {
+  if (!props.groups) return []
+  return [...props.groups].sort((a, b) => (b.sort_order || 0) - (a.sort_order || 0))
+})
+
 // 显示的分组（最多显示 maxDisplay 个）
 const displayGroups = computed(() => {
-  if (!props.groups) return []
-  if (props.groups.length <= props.maxDisplay) {
-    return props.groups
+  if (sortedGroups.value.length <= props.maxDisplay) {
+    return sortedGroups.value
   }
   // 留一个位置给 +N 按钮
-  return props.groups.slice(0, props.maxDisplay - 1)
+  return sortedGroups.value.slice(0, props.maxDisplay - 1)
 })
 
 // 隐藏的数量

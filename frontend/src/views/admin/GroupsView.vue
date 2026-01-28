@@ -20,9 +20,9 @@
               />
             </div>
           <Select
-            v-model="filters.platform"
-            :options="platformFilterOptions"
-            :placeholder="t('admin.groups.allPlatforms')"
+            v-model="filters.is_purchasable"
+            :options="purchasableFilterOptions"
+            :placeholder="t('admin.groups.allPurchasable')"
             class="w-44"
             @change="loadGroups"
           />
@@ -377,6 +377,24 @@
           </div>
         </div>
 
+        <!-- Sort Order (always visible) -->
+        <div class="border-t pt-4">
+          <div class="space-y-4">
+            <div>
+              <label class="input-label">{{ t('admin.groups.payment.sortOrder') }}</label>
+              <input
+                v-model.number="createForm.sort_order"
+                type="number"
+                step="1"
+                min="0"
+                class="input"
+                placeholder="0"
+              />
+              <p class="input-hint">{{ t('admin.groups.payment.sortOrderHint') }}</p>
+            </div>
+          </div>
+        </div>
+
         <!-- Payment Settings (only show when subscription type is selected) -->
         <div v-if="createForm.subscription_type === 'subscription'" class="border-t pt-4">
           <label class="block mb-2 font-medium text-gray-700 dark:text-gray-300">
@@ -409,18 +427,6 @@
                 placeholder="0.00"
               />
               <p class="input-hint">{{ t('admin.groups.payment.priceHint') }}</p>
-            </div>
-            <div>
-              <label class="input-label">{{ t('admin.groups.payment.sortOrder') }}</label>
-              <input
-                v-model.number="createForm.sort_order"
-                type="number"
-                step="1"
-                min="0"
-                class="input"
-                placeholder="0"
-              />
-              <p class="input-hint">{{ t('admin.groups.payment.sortOrderHint') }}</p>
             </div>
             <div>
               <div class="mb-1.5 flex items-center gap-1">
@@ -923,6 +929,24 @@
           </div>
         </div>
 
+        <!-- Sort Order (always visible) -->
+        <div class="border-t pt-4">
+          <div class="space-y-4">
+            <div>
+              <label class="input-label">{{ t('admin.groups.payment.sortOrder') }}</label>
+              <input
+                v-model.number="editForm.sort_order"
+                type="number"
+                step="1"
+                min="0"
+                class="input"
+                placeholder="0"
+              />
+              <p class="input-hint">{{ t('admin.groups.payment.sortOrderHint') }}</p>
+            </div>
+          </div>
+        </div>
+
         <!-- Payment Settings (only show when subscription type is selected) -->
         <div v-if="editForm.subscription_type === 'subscription'" class="border-t pt-4">
           <label class="block mb-2 font-medium text-gray-700 dark:text-gray-300">
@@ -955,18 +979,6 @@
                 placeholder="0.00"
               />
               <p class="input-hint">{{ t('admin.groups.payment.priceHint') }}</p>
-            </div>
-            <div>
-              <label class="input-label">{{ t('admin.groups.payment.sortOrder') }}</label>
-              <input
-                v-model.number="editForm.sort_order"
-                type="number"
-                step="1"
-                min="0"
-                class="input"
-                placeholder="0"
-              />
-              <p class="input-hint">{{ t('admin.groups.payment.sortOrderHint') }}</p>
             </div>
             <div>
               <div class="mb-1.5 flex items-center gap-1">
@@ -1385,12 +1397,11 @@ const platformOptions = computed(() => [
   { value: 'antigravity', label: 'Antigravity' }
 ])
 
-const platformFilterOptions = computed(() => [
-  { value: '', label: t('admin.groups.allPlatforms') },
-  { value: 'anthropic', label: 'Anthropic' },
-  { value: 'openai', label: 'OpenAI' },
-  { value: 'gemini', label: 'Gemini' },
-  { value: 'antigravity', label: 'Antigravity' }
+const purchasableFilterOptions = computed(() => [
+  { value: 'active', label: t('admin.groups.activePlans') },
+  { value: '', label: t('admin.groups.allPurchasable') },
+  { value: 'true', label: t('admin.groups.purchasable') },
+  { value: 'false', label: t('admin.groups.notPurchasable') }
 ])
 
 const editStatusOptions = computed(() => [
@@ -1436,7 +1447,7 @@ const groups = ref<Group[]>([])
 const loading = ref(false)
 const searchQuery = ref('')
 const filters = reactive({
-  platform: '',
+  is_purchasable: 'active',
   status: '',
   is_exclusive: ''
 })
@@ -1681,14 +1692,20 @@ const loadGroups = async () => {
   const { signal } = currentController
   loading.value = true
   try {
+    const isActiveFilter = filters.is_purchasable === 'active'
     const response = await adminAPI.groups.list(pagination.page, pagination.page_size, {
-      platform: (filters.platform as GroupPlatform) || undefined,
       status: filters.status as any,
       is_exclusive: filters.is_exclusive ? filters.is_exclusive === 'true' : undefined,
+      is_purchasable: (!isActiveFilter && filters.is_purchasable) ? filters.is_purchasable === 'true' : undefined,
       search: searchQuery.value.trim() || undefined
     }, { signal })
     if (signal.aborted) return
-    groups.value = response.items
+    // 默认模式：隐藏不可购买的订阅类型，保留余额类型和可购买的
+    if (isActiveFilter) {
+      groups.value = response.items.filter(g => g.is_purchasable || g.subscription_type === 'standard')
+    } else {
+      groups.value = response.items
+    }
     pagination.total = response.total
     pagination.pages = response.pages
   } catch (error: any) {

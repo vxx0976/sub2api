@@ -54,12 +54,6 @@
         </div>
 
         <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          <!-- PayGo Card (First Position) -->
-          <PayGoCard
-            :config="rechargeConfig"
-            :current-balance="userBalance"
-            @recharge="showRechargeDialog = true"
-          />
           <div
             v-for="plan in plans"
             :key="plan.id"
@@ -179,6 +173,13 @@
               </button>
             </div>
           </div>
+
+          <!-- PayGo Card (Before Enterprise) -->
+          <PayGoCard
+            :config="rechargeConfig"
+            :current-balance="userBalance"
+            @recharge="showRechargeDialog = true"
+          />
 
           <!-- Custom Enterprise Card -->
           <div
