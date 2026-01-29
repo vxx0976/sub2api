@@ -603,7 +603,7 @@ export default {
       faq: {
         title: '常见問題',
         q1: 'Q：提示 401 / Unauthorized？',
-        a1: '請確認 ANTHROPIC_API_KEY 是否正確，且未包含多餘空格。',
+        a1: '請確認 ANTHROPIC_AUTH_TOKEN 是否正確，且未包含多餘空格。',
         q2: 'Q：提示連接超時 / 網路錯誤？',
         a2: '請確認 ANTHROPIC_BASE_URL 配置正確，且本地網路可訪問該地址。',
         q3: 'Q：Claude 能啟動，但无法正常对話？',

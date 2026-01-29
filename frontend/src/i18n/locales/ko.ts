@@ -603,7 +603,7 @@ export default {
       faq: {
         title: '자주 묻는 질문',
         q1: 'Q: 401 / Unauthorized 오류가 표시되나요?',
-        a1: 'ANTHROPIC_API_KEY가 올바른지, 불필요한 공백이 포함되어 있지 않은지 확인하세요.',
+        a1: 'ANTHROPIC_AUTH_TOKEN가 올바른지, 불필요한 공백이 포함되어 있지 않은지 확인하세요.',
         q2: 'Q: 연결 시간 초과 / 네트워크 오류가 표시되나요?',
         a2: 'ANTHROPIC_BASE_URL이 올바르게 설정되어 있고, 로컬 네트워크에서 해당 주소에 접근할 수 있는지 확인하세요.',
         q3: 'Q: Claude는 시작되지만 정상적으로 대화할 수 없나요?',

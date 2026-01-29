@@ -604,11 +604,226 @@ export default {
       faq: {
         title: 'FAQ',
         q1: 'Q: Getting 401 / Unauthorized?',
-        a1: 'Verify that ANTHROPIC_API_KEY is correct and has no extra spaces.',
+        a1: 'Verify that ANTHROPIC_AUTH_TOKEN is correct and has no extra spaces.',
         q2: 'Q: Connection timeout / network error?',
         a2: 'Verify that ANTHROPIC_BASE_URL is correct and accessible from your network.',
         q3: 'Q: Claude starts but conversations fail?',
         a3: 'Make sure you have the latest version of claude-code and are not using Web login mode.'
+      }
+    },
+    // Back button
+    backToList: 'Back to docs',
+    // Entry page
+    entry: {
+      title: 'Choose Your Setup Method',
+      subtitle: 'Select the configuration guide for your preferred tool',
+      recommended: 'Recommended',
+      advanced: 'Advanced',
+      viewGuide: 'View Guide',
+      windsurfDesc: 'AI IDE by Codeium, supports custom API endpoints, feature-rich',
+      vscodeDesc: 'Use Claude for coding in VSCode with plugins',
+      cliDesc: 'Use Claude Code command-line tool in your terminal',
+      tipsTitle: 'Tips & Tricks',
+      tipsDesc: 'Common commands, shortcuts, and best practices',
+      quickInfo: {
+        title: 'Get Started in 3 Steps',
+        step1Title: 'Get API Key',
+        step1Desc: 'Create your API key in the dashboard',
+        step2Title: 'Configure Tool',
+        step2Desc: 'Set up Base URL and API Key',
+        step3Title: 'Start Coding',
+        step3Desc: 'Launch your tool and enjoy AI coding'
+      },
+      faq: {
+        title: 'FAQ',
+        q1: 'Not sure which tool to choose?',
+        a1: 'If you are a beginner, we recommend Cursor as it provides a graphical interface and is easy to get started. If you prefer command-line, try Claude Code CLI.',
+        q2: 'Is it paid?',
+        a2: 'This service uses pay-as-you-go pricing with different rates for different models. Check the "Plans" page for specific pricing.',
+        q3: 'Which models are supported?',
+        a3: 'We support Claude Opus 4.5, Sonnet 4.5 and other mainstream models. You can switch models using the /model command.',
+        q4: 'What if I encounter problems?',
+        a4: 'First check if your API Key and Base URL are correctly configured. If issues persist, check the "System Status" page or contact support.'
+      }
+    },
+    // Windsurf setup guide
+    windsurf: {
+      title: 'Windsurf Setup Guide',
+      subtitle: 'AI IDE by Codeium, supports custom API endpoints',
+      whatIs: {
+        title: 'What is Windsurf?',
+        desc: 'Windsurf is an AI coding IDE by Codeium, built on VSCode. It supports custom API endpoints, allowing flexible integration with various Claude API services. It is one of the best AI IDEs for custom endpoint support.'
+      },
+      step1: {
+        title: 'Download and Install Windsurf',
+        desc: 'Visit the Windsurf website to download the version for your operating system, then follow the prompts to complete installation.',
+        download: 'Go to Official Website',
+        tip: 'After installation, Windsurf will automatically detect your installed VSCode extensions and offer to import them'
+      },
+      step2: {
+        title: 'Get API Key',
+        instruction1: 'Log in and go to',
+        instruction1Link: 'API Key Management',
+        instruction2: 'Click the "Create Key" button',
+        instruction3: 'Copy the generated API Key (only shown once, keep it safe)',
+        infoTitle: 'You need to note the following:',
+        yourKey: 'sk-your-key'
+      },
+      step3: {
+        title: 'Configure Windsurf',
+        instruction1: 'Open Windsurf Settings',
+        instruction1Detail: 'Click the gear icon in the bottom left, select "Windsurf Settings"',
+        instruction2: 'Go to Cascade Settings',
+        instruction2Detail: 'Find the "Cascade" section in the settings page',
+        instruction3: 'Select Remote Models',
+        instruction3Detail: 'Click the "Add Remote Model Provider" button',
+        instruction4: 'Enter API Configuration',
+        instruction5: 'Select model and save'
+      },
+      step4: {
+        title: 'Verify Configuration',
+        desc: 'Open the Windsurf Cascade chat window (Cmd/Ctrl + L) and enter a message to test if it responds correctly.',
+        success: 'If you receive a response, the configuration is successful! You can now start using AI-assisted programming.'
+      },
+      faq: {
+        title: 'FAQ',
+        q1: 'Windsurf cannot connect?',
+        a1: 'Check if the Base URL is correct (no trailing slashes), and verify the API Key is correct and not expired.',
+        q2: 'How to switch models?',
+        a2: 'In the Cascade chat window, you can select different models at the top, like claude-sonnet-4, claude-opus-4, etc.',
+        q3: 'Getting 401 error?',
+        a3: 'This usually means the API Key is wrong or expired. Please generate a new key in the dashboard.'
+      }
+    },
+    // VSCode setup guide
+    vscode: {
+      title: 'VSCode Setup Guide',
+      subtitle: 'Use plugins to integrate Claude in Visual Studio Code',
+      plugins: {
+        title: 'Recommended Plugins',
+        desc: 'Here are two popular Claude plugins, install one of them:',
+        cline: 'Powerful AI coding assistant with autonomous coding, file operations, etc.',
+        claudeCode: 'Official Anthropic VSCode plugin, consistent with CLI experience',
+        official: 'Official',
+        install: 'Install'
+      },
+      step1: {
+        title: 'Install Plugin',
+        instruction1: 'Open VSCode Extensions (Ctrl+Shift+X)',
+        instruction2: 'Search for "Cline" or "Claude Code"',
+        instruction3: 'Click the Install button',
+        tip: 'Both plugins are similar. Cline has active community and rich features, Claude Code is official with unified experience'
+      },
+      step2: {
+        title: 'Get API Key',
+        instruction1: 'Log in and go to',
+        instruction1Link: 'API Key Management',
+        instruction2: 'Create and copy your API Key',
+        infoTitle: 'You need to note the following:',
+        yourKey: 'sk-your-key'
+      },
+      step3: {
+        title: 'Configure Plugin',
+        selectPlugin: 'Choose the configuration for your installed plugin:',
+        clineTitle: 'Cline Configuration:',
+        cline1: 'Click the Cline icon in the sidebar, select "Bring my own API key", then click Continue',
+        cline2: 'Configure API Provider with the following settings, then click Continue:',
+        cline3: 'Configuration complete! You can now start using it',
+        claudeCodeTitle: 'Claude Code Configuration:',
+        claudeCodeDesc: 'Claude Code plugin uses environment variables, same as CLI configuration:',
+        claudeCode1: 'Set environment variable ANTHROPIC_BASE_URL to this site address',
+        claudeCode2: 'Set environment variable ANTHROPIC_AUTH_TOKEN to your key',
+        claudeCode3: 'Restart VSCode for environment variables to take effect',
+        claudeCodeTipTitle: 'Tip: ',
+        claudeCodeTip: 'See CLI setup guide for environment variable configuration. The VSCode plugin will automatically read them'
+      },
+      step4: {
+        title: 'Verify Configuration',
+        desc: 'Enter a message in the plugin chat window to test if it responds correctly.',
+        success: 'If you receive a response, the configuration is successful!'
+      },
+      faq: {
+        title: 'FAQ',
+        q1: 'Plugin cannot connect?',
+        a1: 'Check if the Base URL format is correct (no trailing slashes), and verify the API Key is valid.',
+        q2: 'How to use different models?',
+        a2: 'Modify the model field in the plugin configuration. Options include claude-sonnet-4-20250514, claude-opus-4-20250514, etc.'
+      }
+    },
+    // CLI setup guide
+    cli: {
+      title: 'Claude Code CLI Setup',
+      subtitle: 'Use the official Claude Code command-line tool in your terminal',
+      note: 'This guide is for claude-code CLI users, based on the Anthropic native API protocol.',
+      prereq: {
+        title: 'Prerequisites',
+        windows: 'Windows Users:',
+        windowsNode: 'Need to install Node.js first:',
+        windowsTerminal: 'Recommend using PowerShell or Windows Terminal',
+        mac: 'macOS / Linux Users:',
+        macTerminal: 'Open Terminal (Spotlight search "Terminal")'
+      }
+    },
+    // Tips page
+    tips: {
+      title: 'Tips & Tricks',
+      subtitle: 'Master these commands and tips for more efficient AI coding',
+      commands: {
+        title: 'Command Reference',
+        command: 'Command',
+        function: 'Function',
+        usage: 'When to Use',
+        modelFunc: 'Switch model',
+        modelUsage: 'Use Opus for complex tasks, Sonnet for daily use',
+        compactFunc: 'Compress context',
+        compactUsage: 'When conversation is too long, saves tokens',
+        clearFunc: 'Clear conversation',
+        clearUsage: 'When starting a new topic',
+        costFunc: 'View cost',
+        costUsage: 'Check token usage for current session',
+        helpFunc: 'Show help',
+        helpUsage: 'View all available commands'
+      },
+      shortcuts: {
+        title: 'Keyboard Shortcuts',
+        shortcut: 'Shortcut',
+        function: 'Function',
+        escFunc: 'Interrupt current operation',
+        shiftTabFunc: 'Exit Plan Mode',
+        ctrlCFunc: 'Force terminate'
+      },
+      models: {
+        title: 'Model Selection Tips',
+        desc: 'Choose the right model based on task complexity to balance performance and cost:',
+        sonnetLabel: 'Daily Choice',
+        sonnetDesc: 'Fast response, cost-effective, suitable for most coding tasks',
+        sonnetUse1: 'Daily code writing',
+        sonnetUse2: 'Code review and refactoring',
+        sonnetUse3: 'Quick Q&A and debugging',
+        opusLabel: 'Premium Choice',
+        opusDesc: 'Stronger reasoning, suitable for complex tasks',
+        opusUse1: 'Complex architecture design',
+        opusUse2: 'Difficult problem solving',
+        opusUse3: 'Long text analysis',
+        switchTip: 'Tip:',
+        switchDesc: 'Use command to quickly switch models'
+      },
+      practices: {
+        title: 'Best Practices',
+        tip1Title: 'Provide Clear Context',
+        tip1Desc: 'Before asking, explain your project background, tech stack, and specific needs. The AI will give more accurate answers.',
+        tip2Title: 'Use /compact Wisely',
+        tip2Desc: 'When conversations get long, use /compact to compress history. This saves tokens and maintains response speed.',
+        tip3Title: 'Share Code Snippets',
+        tip3Desc: 'Pasting relevant code snippets for the AI to reference is more effective than just describing the problem.',
+        tip4Title: 'Iterative Development',
+        tip4Desc: 'Break large tasks into smaller steps and collaborate with the AI gradually. This works better than requesting complex features all at once.'
+      },
+      links: {
+        title: 'Quick Links',
+        keys: 'API Key Management',
+        usage: 'View Usage',
+        status: 'System Status'
       }
     }
   },

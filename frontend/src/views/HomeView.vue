@@ -630,7 +630,7 @@ function buildTerminalLines(baseUrl: string): TerminalLine[] {
   return [
     { kind: 'comment', text: t('home.hero.terminal.claude.line1') },
     { kind: 'prompt', text: `export ANTHROPIC_BASE_URL="${baseUrl}"` },
-    { kind: 'prompt', text: `export ANTHROPIC_API_KEY="${token}"` },
+    { kind: 'prompt', text: `export ANTHROPIC_AUTH_TOKEN="${token}"` },
     { kind: 'comment', text: t('home.hero.terminal.claude.line2') },
     { kind: 'prompt', text: 'claude' },
     { kind: 'success', text: t('home.hero.terminal.claude.success') }

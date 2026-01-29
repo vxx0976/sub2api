@@ -159,6 +159,50 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/docs/windsurf',
+    name: 'DocsWindsurf',
+    component: () => import('@/views/user/DocsWindsurfView.vue'),
+    meta: {
+      requiresAuth: false,
+      title: 'Windsurf Setup',
+      titleKey: 'docs.windsurf.title',
+      descriptionKey: 'docs.windsurf.subtitle'
+    }
+  },
+  {
+    path: '/docs/vscode',
+    name: 'DocsVscode',
+    component: () => import('@/views/user/DocsVscodeView.vue'),
+    meta: {
+      requiresAuth: false,
+      title: 'VSCode Setup',
+      titleKey: 'docs.vscode.title',
+      descriptionKey: 'docs.vscode.subtitle'
+    }
+  },
+  {
+    path: '/docs/cli',
+    name: 'DocsCli',
+    component: () => import('@/views/user/DocsCliView.vue'),
+    meta: {
+      requiresAuth: false,
+      title: 'Claude Code CLI',
+      titleKey: 'docs.cli.title',
+      descriptionKey: 'docs.cli.subtitle'
+    }
+  },
+  {
+    path: '/docs/tips',
+    name: 'DocsTips',
+    component: () => import('@/views/user/DocsTipsView.vue'),
+    meta: {
+      requiresAuth: false,
+      title: 'Tips & Tricks',
+      titleKey: 'docs.tips.title',
+      descriptionKey: 'docs.tips.subtitle'
+    }
+  },
+  {
     path: '/status',
     name: 'Status',
     component: () => import('@/views/StatusView.vue'),

@@ -603,11 +603,226 @@ export default {
       faq: {
         title: '常见问题',
         q1: 'Q：提示 401 / Unauthorized？',
-        a1: '请确认 ANTHROPIC_API_KEY 是否正确，且未包含多余空格。',
+        a1: '请确认 ANTHROPIC_AUTH_TOKEN 是否正确，且未包含多余空格。',
         q2: 'Q：提示连接超时 / 网络错误？',
         a2: '请确认 ANTHROPIC_BASE_URL 配置正确，且本地网络可访问该地址。',
         q3: 'Q：Claude 能启动，但无法正常对话？',
         a3: '请检查是否使用的是最新版本的 claude-code，并确认未使用 Web 登录模式。'
+      }
+    },
+    // 返回按钮
+    backToList: '返回文档列表',
+    // 入口页
+    entry: {
+      title: '选择你的使用方式',
+      subtitle: '根据你使用的工具，选择对应的配置教程',
+      recommended: '新手推荐',
+      advanced: '进阶用户',
+      viewGuide: '查看教程',
+      windsurfDesc: 'Codeium 出品的 AI IDE，支持自定义 API 端点，功能强大',
+      vscodeDesc: '通过插件在 VSCode 中使用 Claude 进行编程',
+      cliDesc: '在终端中使用 Claude Code 命令行工具',
+      tipsTitle: '使用技巧',
+      tipsDesc: '常用命令、快捷键和最佳实践',
+      quickInfo: {
+        title: '快速上手只需三步',
+        step1Title: '获取 API 密钥',
+        step1Desc: '在后台创建你的专属密钥',
+        step2Title: '配置工具',
+        step2Desc: '按照教程设置 Base URL 和密钥',
+        step3Title: '开始使用',
+        step3Desc: '启动工具，享受 AI 编程'
+      },
+      faq: {
+        title: '常见问题',
+        q1: '不知道选哪个工具？',
+        a1: '如果你是新手，推荐使用 Cursor，它提供了图形化界面，上手简单。如果你习惯命令行操作，可以尝试 Claude Code CLI。',
+        q2: '需要付费吗？',
+        a2: '本服务采用按量计费模式，不同模型有不同的价格。你可以在「套餐计划」页面查看具体价格。',
+        q3: '支持哪些模型？',
+        a3: '支持 Claude Opus 4.5、Sonnet 4.5 等主流模型，可以在使用时通过 /model 命令切换。',
+        q4: '遇到问题怎么办？',
+        a4: '请先检查 API Key 和 Base URL 是否正确配置。如果问题持续，可以查看「系统状态」页面或联系客服。'
+      }
+    },
+    // Windsurf 配置教程
+    windsurf: {
+      title: 'Windsurf 配置教程',
+      subtitle: 'Codeium 出品的 AI IDE，支持自定义 API 端点',
+      whatIs: {
+        title: '什么是 Windsurf？',
+        desc: 'Windsurf 是 Codeium 公司推出的 AI 编程 IDE，基于 VSCode 打造。它支持自定义 API 端点，可以灵活接入各种 Claude API 服务，是目前支持自定义端点体验最好的 AI IDE 之一。'
+      },
+      step1: {
+        title: '下载安装 Windsurf',
+        desc: '访问 Windsurf 官网下载适合你操作系统的版本，然后按照提示完成安装。',
+        download: '前往官网下载',
+        tip: '安装完成后，Windsurf 会自动检测你已安装的 VSCode 扩展并提示导入'
+      },
+      step2: {
+        title: '获取 API 密钥',
+        instruction1: '登录后进入',
+        instruction1Link: 'API 密钥管理',
+        instruction2: '点击「创建密钥」按钮',
+        instruction3: '复制生成的 API Key（只显示一次，请妥善保管）',
+        infoTitle: '你需要记录以下信息：',
+        yourKey: 'sk-你的密钥'
+      },
+      step3: {
+        title: '配置 Windsurf',
+        instruction1: '打开 Windsurf 设置',
+        instruction1Detail: '点击左下角齿轮图标，选择「Windsurf Settings」',
+        instruction2: '进入 Cascade 设置',
+        instruction2Detail: '在设置页面找到「Cascade」部分',
+        instruction3: '选择 Remote Models',
+        instruction3Detail: '点击「Add Remote Model Provider」按钮',
+        instruction4: '填入 API 配置',
+        instruction5: '选择模型并保存'
+      },
+      step4: {
+        title: '验证配置',
+        desc: '打开 Windsurf 的 Cascade 对话窗口（Cmd/Ctrl + L），输入一条消息测试是否能正常响应。',
+        success: '如果收到回复，说明配置成功！现在你可以开始使用 AI 辅助编程了。'
+      },
+      faq: {
+        title: '常见问题',
+        q1: 'Windsurf 连接不上怎么办？',
+        a1: '请检查 Base URL 是否正确填写（不要有多余的斜杠），API Key 是否正确且未过期。',
+        q2: '如何切换模型？',
+        a2: '在 Cascade 对话窗口顶部可以选择不同的模型，如 claude-sonnet-4、claude-opus-4 等。',
+        q3: '使用时报错 401？',
+        a3: '这通常是 API Key 错误或已失效。请到后台重新生成一个新的密钥。'
+      }
+    },
+    // VSCode 配置教程
+    vscode: {
+      title: 'VSCode 配置教程',
+      subtitle: '使用插件在 Visual Studio Code 中接入 Claude',
+      plugins: {
+        title: '推荐插件',
+        desc: '以下是两款常用的 Claude 插件，选择其中一款安装即可：',
+        cline: '功能强大的 AI 编程助手，支持自主编码、文件操作等',
+        claudeCode: 'Anthropic 官方 VSCode 插件，与 CLI 体验一致',
+        official: '官方',
+        install: '前往安装'
+      },
+      step1: {
+        title: '安装插件',
+        instruction1: '打开 VSCode 扩展市场（Ctrl+Shift+X）',
+        instruction2: '搜索 "Cline" 或 "Claude Code"',
+        instruction3: '点击安装按钮',
+        tip: '两款插件功能类似，Cline 社区活跃功能丰富，Claude Code 是官方出品体验统一'
+      },
+      step2: {
+        title: '获取 API 密钥',
+        instruction1: '登录后进入',
+        instruction1Link: 'API 密钥管理',
+        instruction2: '创建并复制你的 API Key',
+        infoTitle: '你需要记录以下信息：',
+        yourKey: 'sk-你的密钥'
+      },
+      step3: {
+        title: '配置插件',
+        selectPlugin: '根据你安装的插件，选择对应的配置方式：',
+        clineTitle: 'Cline 配置：',
+        cline1: '点击侧边栏的 Cline 图标，选择「Bring my own API key」，点击 Continue',
+        cline2: '配置 API Provider，填入以下信息后点击 Continue：',
+        cline3: '配置成功！现在可以开始使用了',
+        claudeCodeTitle: 'Claude Code 配置：',
+        claudeCodeDesc: 'Claude Code 插件使用环境变量配置，与 CLI 配置方式相同：',
+        claudeCode1: '设置环境变量 ANTHROPIC_BASE_URL 为本站地址',
+        claudeCode2: '设置环境变量 ANTHROPIC_AUTH_TOKEN 为你的密钥',
+        claudeCode3: '重启 VSCode 使环境变量生效',
+        claudeCodeTipTitle: '提示：',
+        claudeCodeTip: '环境变量配置方法请参考 CLI 配置教程，配置完成后 VSCode 插件会自动读取'
+      },
+      step4: {
+        title: '验证配置',
+        desc: '在插件对话窗口中输入消息，测试是否能正常响应。',
+        success: '如果收到回复，说明配置成功！'
+      },
+      faq: {
+        title: '常见问题',
+        q1: '插件无法连接？',
+        a1: '请检查 Base URL 格式是否正确（不要有尾部斜杠），确认 API Key 有效。',
+        q2: '如何使用不同的模型？',
+        a2: '在插件配置中修改 model 字段，可选值有 claude-sonnet-4-20250514、claude-opus-4-20250514 等。'
+      }
+    },
+    // CLI 配置教程
+    cli: {
+      title: 'Claude Code CLI 配置',
+      subtitle: '在终端中使用官方 Claude Code 命令行工具',
+      note: '本教程适用于 claude-code CLI 用户，基于 Anthropic 官方接口协议。',
+      prereq: {
+        title: '前置准备',
+        windows: 'Windows 用户：',
+        windowsNode: '需要先安装 Node.js：',
+        windowsTerminal: '推荐使用 PowerShell 或 Windows Terminal',
+        mac: 'macOS / Linux 用户：',
+        macTerminal: '打开终端（Spotlight 搜索 "终端" 或 "Terminal"）'
+      }
+    },
+    // 使用技巧
+    tips: {
+      title: '使用技巧',
+      subtitle: '掌握这些命令和技巧，让你的 AI 编程更高效',
+      commands: {
+        title: '常用命令速查',
+        command: '命令',
+        function: '功能',
+        usage: '使用场景',
+        modelFunc: '切换模型',
+        modelUsage: '复杂任务用 Opus，日常用 Sonnet',
+        compactFunc: '压缩上下文',
+        compactUsage: '对话太长时使用，节省 Token',
+        clearFunc: '清空对话',
+        clearUsage: '开始新话题时使用',
+        costFunc: '查看消耗',
+        costUsage: '了解当前对话的 Token 消耗',
+        helpFunc: '查看帮助',
+        helpUsage: '查看所有可用命令'
+      },
+      shortcuts: {
+        title: '快捷键',
+        shortcut: '快捷键',
+        function: '功能',
+        escFunc: '中断当前操作',
+        shiftTabFunc: '退出 Plan Mode',
+        ctrlCFunc: '强制终止'
+      },
+      models: {
+        title: '模型选择建议',
+        desc: '根据任务复杂度选择合适的模型，可以在性能和成本之间取得平衡：',
+        sonnetLabel: '日常首选',
+        sonnetDesc: '响应快速，性价比高，适合大多数编程任务',
+        sonnetUse1: '日常代码编写',
+        sonnetUse2: '代码审查和重构',
+        sonnetUse3: '快速问答和调试',
+        opusLabel: '高端选择',
+        opusDesc: '推理能力更强，适合复杂任务',
+        opusUse1: '复杂架构设计',
+        opusUse2: '难题攻坚',
+        opusUse3: '长文本分析',
+        switchTip: '小技巧：',
+        switchDesc: '使用命令快速切换模型'
+      },
+      practices: {
+        title: '最佳实践',
+        tip1Title: '给出清晰的上下文',
+        tip1Desc: '在提问前先说明你的项目背景、技术栈和具体需求，AI 会给出更精准的回答。',
+        tip2Title: '合理使用 /compact',
+        tip2Desc: '当对话变长时，使用 /compact 压缩历史记录，可以节省 Token 消耗并保持响应速度。',
+        tip3Title: '善用代码片段',
+        tip3Desc: '粘贴相关代码片段给 AI 参考，比只描述问题更容易得到准确的解答。',
+        tip4Title: '迭代式开发',
+        tip4Desc: '将大任务拆分成小步骤，逐步与 AI 协作完成，比一次性要求完成复杂功能效果更好。'
+      },
+      links: {
+        title: '快捷入口',
+        keys: 'API 密钥管理',
+        usage: '查看用量',
+        status: '系统状态'
       }
     }
   },

@@ -3,334 +3,153 @@
     <div class="mx-auto max-w-4xl">
       <!-- Header -->
       <div class="mb-8 text-center">
-        <h1 class="text-3xl font-bold text-gray-900 dark:text-white">{{ t('docs.guide.title') }}</h1>
-        <p class="mt-3 text-gray-600 dark:text-gray-400">{{ t('docs.guide.subtitle') }}</p>
-        <p class="mt-2 text-sm text-gray-400 dark:text-gray-500">{{ t('docs.guide.note') }}</p>
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-white">{{ t('docs.entry.title') }}</h1>
+        <p class="mt-3 text-gray-600 dark:text-gray-400">{{ t('docs.entry.subtitle') }}</p>
       </div>
 
-      <!-- Warning Box -->
-      <div class="mb-8 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/20">
-        <div class="flex items-start gap-3">
-          <svg class="h-6 w-6 flex-shrink-0 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          </svg>
-          <div>
-            <h3 class="font-semibold text-amber-800 dark:text-amber-200">{{ t('docs.guide.warning.title') }}</h3>
-            <div class="mt-2 text-sm text-amber-700 dark:text-amber-300">
-              <p>{{ t('docs.guide.warning.intro') }}</p>
-              <ul class="mt-1 ml-4 list-disc space-y-0.5">
-                <li>{{ t('docs.guide.warning.item1') }}</li>
-                <li>{{ t('docs.guide.warning.item2') }}</li>
-                <li>{{ t('docs.guide.warning.item3') }}</li>
-              </ul>
+      <!-- Method Selection Cards -->
+      <div class="mb-8 grid gap-4 sm:grid-cols-2">
+        <!-- VSCode Card -->
+        <router-link
+          to="/docs/vscode"
+          class="group relative rounded-xl border border-gray-200 bg-white p-6 transition-all hover:border-primary-300 hover:shadow-lg dark:border-dark-700 dark:bg-dark-800 dark:hover:border-primary-600"
+        >
+          <div class="mb-4 flex items-center gap-3">
+            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+              <svg class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M17.583 2L6.25 11.042 2.833 8.375.5 9.75l4.917 4.25L.5 18.25l2.333 1.375 3.417-2.667L17.583 26 21.5 24.25V3.75L17.583 2zm-.833 3.958v16.084l-8.917-8.042 8.917-8.042z"/>
+              </svg>
+            </div>
+            <div>
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">VSCode</h3>
+              <span class="inline-block rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">{{ t('docs.entry.recommended') }}</span>
             </div>
           </div>
+          <p class="text-sm text-gray-600 dark:text-gray-400">{{ t('docs.entry.vscodeDesc') }}</p>
+          <div class="mt-4 flex items-center text-sm font-medium text-primary-600 dark:text-primary-400">
+            {{ t('docs.entry.viewGuide') }}
+            <svg class="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+        </router-link>
+
+        <!-- Windsurf Card -->
+        <router-link
+          to="/docs/windsurf"
+          class="group relative rounded-xl border border-gray-200 bg-white p-6 transition-all hover:border-primary-300 hover:shadow-lg dark:border-dark-700 dark:bg-dark-800 dark:hover:border-primary-600"
+        >
+          <div class="mb-4 flex items-center gap-3">
+            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-teal-500 to-cyan-600 text-white">
+              <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5" />
+              </svg>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Windsurf</h3>
+          </div>
+          <p class="text-sm text-gray-600 dark:text-gray-400">{{ t('docs.entry.windsurfDesc') }}</p>
+          <div class="mt-4 flex items-center text-sm font-medium text-primary-600 dark:text-primary-400">
+            {{ t('docs.entry.viewGuide') }}
+            <svg class="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+        </router-link>
+
+        <!-- CLI Card -->
+        <router-link
+          to="/docs/cli"
+          class="group relative rounded-xl border border-gray-200 bg-white p-6 transition-all hover:border-primary-300 hover:shadow-lg dark:border-dark-700 dark:bg-dark-800 dark:hover:border-primary-600"
+        >
+          <div class="mb-4 flex items-center gap-3">
+            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-gray-700 to-gray-900 text-white dark:from-gray-600 dark:to-gray-800">
+              <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <div>
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Claude Code CLI</h3>
+              <span class="inline-block rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">{{ t('docs.entry.advanced') }}</span>
+            </div>
+          </div>
+          <p class="text-sm text-gray-600 dark:text-gray-400">{{ t('docs.entry.cliDesc') }}</p>
+          <div class="mt-4 flex items-center text-sm font-medium text-primary-600 dark:text-primary-400">
+            {{ t('docs.entry.viewGuide') }}
+            <svg class="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+        </router-link>
+
+        <!-- Tips Card -->
+        <router-link
+          to="/docs/tips"
+          class="group relative rounded-xl border border-gray-200 bg-white p-6 transition-all hover:border-primary-300 hover:shadow-lg dark:border-dark-700 dark:bg-dark-800 dark:hover:border-primary-600"
+        >
+          <div class="mb-4 flex items-center gap-3">
+            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 text-white">
+              <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+              </svg>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('docs.entry.tipsTitle') }}</h3>
+          </div>
+          <p class="text-sm text-gray-600 dark:text-gray-400">{{ t('docs.entry.tipsDesc') }}</p>
+          <div class="mt-4 flex items-center text-sm font-medium text-primary-600 dark:text-primary-400">
+            {{ t('docs.entry.viewGuide') }}
+            <svg class="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+        </router-link>
+      </div>
+
+      <!-- Quick Info Box -->
+      <div class="mb-8 rounded-xl border border-blue-200 bg-blue-50 p-6 dark:border-blue-800 dark:bg-blue-900/20">
+        <h3 class="mb-4 flex items-center gap-2 font-semibold text-blue-800 dark:text-blue-200">
+          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          {{ t('docs.entry.quickInfo.title') }}
+        </h3>
+        <div class="grid gap-4 sm:grid-cols-3">
+          <div class="rounded-lg bg-white p-4 dark:bg-dark-800">
+            <div class="mb-2 text-2xl font-bold text-blue-600 dark:text-blue-400">1</div>
+            <div class="text-sm font-medium text-gray-900 dark:text-white">{{ t('docs.entry.quickInfo.step1Title') }}</div>
+            <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('docs.entry.quickInfo.step1Desc') }}</div>
+          </div>
+          <div class="rounded-lg bg-white p-4 dark:bg-dark-800">
+            <div class="mb-2 text-2xl font-bold text-blue-600 dark:text-blue-400">2</div>
+            <div class="text-sm font-medium text-gray-900 dark:text-white">{{ t('docs.entry.quickInfo.step2Title') }}</div>
+            <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('docs.entry.quickInfo.step2Desc') }}</div>
+          </div>
+          <div class="rounded-lg bg-white p-4 dark:bg-dark-800">
+            <div class="mb-2 text-2xl font-bold text-blue-600 dark:text-blue-400">3</div>
+            <div class="text-sm font-medium text-gray-900 dark:text-white">{{ t('docs.entry.quickInfo.step3Title') }}</div>
+            <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('docs.entry.quickInfo.step3Desc') }}</div>
+          </div>
         </div>
       </div>
 
-      <!-- Step 1: Install Claude CLI -->
-      <section class="mb-8 rounded-xl border border-gray-200 bg-white p-6 dark:border-dark-700 dark:bg-dark-800">
-        <div class="mb-4 flex items-center gap-3">
-          <span class="flex h-8 w-8 items-center justify-center rounded-full bg-primary-500 text-sm font-bold text-white">1</span>
-          <h2 class="text-xl font-semibold text-gray-900 dark:text-white">{{ t('docs.guide.step1.title') }}</h2>
-        </div>
-
-        <p class="mb-4 text-gray-600 dark:text-gray-400">{{ t('docs.guide.step1.description') }}</p>
-
-        <!-- OS Tabs -->
-        <div class="mb-4 border-b border-gray-200 dark:border-dark-600">
-          <div class="flex gap-0">
-            <button
-              v-for="tab in installTabs"
-              :key="tab.id"
-              @click="activeInstallTab = tab.id"
-              :class="[
-                'px-4 py-2 text-sm font-medium border-b-2 transition-colors',
-                activeInstallTab === tab.id
-                  ? 'border-primary-500 text-primary-600 dark:text-primary-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-              ]"
-            >
-              {{ tab.label }}
-            </button>
-          </div>
-        </div>
-
-        <!-- Install Code Block - macOS/Linux -->
-        <div v-if="activeInstallTab === 'mac'" class="relative rounded-lg bg-gray-900 p-4">
-          <div class="mb-2 text-xs text-gray-500">bash</div>
-          <pre class="overflow-x-auto text-sm leading-relaxed"><code><span class="text-gray-500">{{ t('docs.guide.step1.commentBash') }}</span>
-<span class="text-green-400">curl</span> <span class="text-white">-fsSL</span> <span class="text-yellow-300">https://claude.ai/install.sh</span> <span class="text-white">|</span> <span class="text-green-400">bash</span></code></pre>
-          <button
-            @click="copyCode('install')"
-            class="absolute right-2 top-2 rounded bg-gray-700 px-2 py-1 text-xs text-gray-300 hover:bg-gray-600"
-          >
-            {{ copied === 'install' ? t('docs.copied') : t('docs.copy') }}
-          </button>
-        </div>
-
-        <!-- Install Code Block - Windows PowerShell -->
-        <div v-else-if="activeInstallTab === 'powershell'" class="relative rounded-lg bg-gray-900 p-4">
-          <div class="mb-2 text-xs text-gray-500">powershell</div>
-          <pre class="overflow-x-auto text-sm leading-relaxed"><code><span class="text-gray-500">{{ t('docs.guide.step1.commentPS') }}</span>
-<span class="text-green-400">irm</span> <span class="text-yellow-300">https://claude.ai/install.ps1</span> <span class="text-white">|</span> <span class="text-green-400">iex</span></code></pre>
-          <button
-            @click="copyCode('install')"
-            class="absolute right-2 top-2 rounded bg-gray-700 px-2 py-1 text-xs text-gray-300 hover:bg-gray-600"
-          >
-            {{ copied === 'install' ? t('docs.copied') : t('docs.copy') }}
-          </button>
-        </div>
-
-        <!-- Install Code Block - Windows CMD -->
-        <div v-else class="relative rounded-lg bg-gray-900 p-4">
-          <div class="mb-2 text-xs text-gray-500">cmd</div>
-          <pre class="overflow-x-auto text-sm leading-relaxed"><code><span class="text-gray-500">{{ t('docs.guide.step1.commentCMD') }}</span>
-<span class="text-green-400">npm</span> <span class="text-white">install -g</span> <span class="text-yellow-300">@anthropic-ai/claude-code</span></code></pre>
-          <button
-            @click="copyCode('install')"
-            class="absolute right-2 top-2 rounded bg-gray-700 px-2 py-1 text-xs text-gray-300 hover:bg-gray-600"
-          >
-            {{ copied === 'install' ? t('docs.copied') : t('docs.copy') }}
-          </button>
-        </div>
-
-        <!-- Install Tip -->
-        <p class="mt-3 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-          <span class="text-yellow-500">💡</span>
-          <span v-if="activeInstallTab === 'mac'">
-            {{ t('docs.guide.step1.tipMac') }}
-            <code class="rounded bg-gray-100 px-1.5 py-0.5 text-xs dark:bg-dark-700">source ~/.bashrc</code>
-          </span>
-          <span v-else-if="activeInstallTab === 'powershell'">
-            {{ t('docs.guide.step1.tipPS') }}
-          </span>
-          <span v-else>
-            {{ t('docs.guide.step1.tipCMD') }}
-          </span>
-        </p>
-
-        <!-- Verify Installation -->
-        <div class="mt-4 rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-900/20">
-          <div class="mb-2 text-sm font-medium text-green-700 dark:text-green-300">{{ t('docs.guide.step1.verify') }}</div>
-          <div class="rounded bg-gray-900 p-3">
-            <code class="text-sm text-green-400">claude --version</code>
-          </div>
-          <p class="mt-2 text-xs text-green-600 dark:text-green-400">{{ t('docs.guide.step1.verifySuccess') }}</p>
-        </div>
-
-        <!-- Network Tip -->
-        <p class="mt-3 text-xs text-gray-400 dark:text-gray-500">
-          {{ t('docs.guide.step1.networkTip') }}
-        </p>
-      </section>
-
-      <!-- Step 2: Create API Key and Configure -->
-      <section class="mb-8 rounded-xl border border-gray-200 bg-white p-6 dark:border-dark-700 dark:bg-dark-800">
-        <div class="mb-4 flex items-center gap-3">
-          <span class="flex h-8 w-8 items-center justify-center rounded-full bg-primary-500 text-sm font-bold text-white">2</span>
-          <h2 class="text-xl font-semibold text-gray-900 dark:text-white">{{ t('docs.guide.step2.title') }}</h2>
-        </div>
-
-        <ol class="mb-6 space-y-3 text-gray-700 dark:text-gray-300">
-          <li class="flex items-start gap-2">
-            <span class="font-medium text-gray-500">1.</span>
-            <span>{{ t('docs.guide.step2.instruction1') }} <router-link to="/keys" class="text-primary-500 hover:underline">{{ t('docs.guide.step2.instruction1Link') }}</router-link></span>
-          </li>
-          <li class="flex items-start gap-2">
-            <span class="font-medium text-gray-500">2.</span>
-            <span>{{ t('docs.guide.step2.instruction2') }}</span>
-          </li>
-          <li class="flex items-start gap-2">
-            <span class="font-medium text-gray-500">3.</span>
-            <span>{{ t('docs.guide.step2.instruction3Pre') }} <span class="inline-block rounded bg-primary-500 px-2 py-0.5 text-xs text-white">{{ t('docs.guide.step2.instruction3Button') }}</span> {{ t('docs.guide.step2.instruction3Post') }}</span>
-          </li>
-          <li class="flex items-start gap-2">
-            <span class="font-medium text-gray-500">4.</span>
-            <span>{{ t('docs.guide.step2.instruction4') }}</span>
-          </li>
-          <li class="flex items-start gap-2">
-            <span class="font-medium text-gray-500">5.</span>
-            <span>{{ t('docs.guide.step2.instruction5') }}</span>
-          </li>
-        </ol>
-
-        <!-- Example Code Section -->
-        <div class="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-dark-600 dark:bg-dark-700/50">
-          <p class="mb-3 text-sm text-gray-600 dark:text-gray-400">{{ t('docs.guide.step2.exampleTitle') }}</p>
-
-          <!-- OS Tabs for Config -->
-          <div class="mb-3 flex flex-wrap gap-2">
-            <button
-              v-for="tab in configTabs"
-              :key="tab.id"
-              @click="activeConfigTab = tab.id"
-              :class="[
-                'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
-                activeConfigTab === tab.id
-                  ? 'bg-primary-500 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-dark-600 dark:text-gray-300 dark:hover:bg-dark-500'
-              ]"
-            >
-              {{ tab.label }}
-            </button>
-          </div>
-
-          <!-- Config Code Block - macOS/Linux -->
-          <div v-if="activeConfigTab === 'mac'" class="relative rounded-lg bg-gray-900 p-4">
-            <pre class="overflow-x-auto text-sm leading-relaxed"><code><span class="text-gray-500">{{ t('docs.guide.step2.commentBash') }}</span>
-<span class="text-blue-400">export</span> <span class="text-white">ANTHROPIC_BASE_URL=</span><span class="text-yellow-300">"{{ baseUrl }}"</span>
-<span class="text-blue-400">export</span> <span class="text-white">ANTHROPIC_API_KEY=</span><span class="text-yellow-300">"{{ t('docs.guide.step2.yourKey') }}"</span></code></pre>
-            <button
-              @click="copyCode('config')"
-              class="absolute right-2 top-2 rounded bg-gray-700 px-2 py-1 text-xs text-gray-300 hover:bg-gray-600"
-            >
-              {{ copied === 'config' ? t('docs.copied') : t('docs.copy') }}
-            </button>
-          </div>
-
-          <!-- Config Code Block - Windows PowerShell -->
-          <div v-else-if="activeConfigTab === 'powershell'" class="relative rounded-lg bg-gray-900 p-4">
-            <pre class="overflow-x-auto text-sm leading-relaxed"><code><span class="text-gray-500">{{ t('docs.guide.step2.commentPS') }}</span>
-<span class="text-blue-400">$env:</span><span class="text-white">ANTHROPIC_BASE_URL</span> <span class="text-white">=</span> <span class="text-yellow-300">"{{ baseUrl }}"</span>
-<span class="text-blue-400">$env:</span><span class="text-white">ANTHROPIC_API_KEY</span> <span class="text-white">=</span> <span class="text-yellow-300">"{{ t('docs.guide.step2.yourKey') }}"</span></code></pre>
-            <button
-              @click="copyCode('config')"
-              class="absolute right-2 top-2 rounded bg-gray-700 px-2 py-1 text-xs text-gray-300 hover:bg-gray-600"
-            >
-              {{ copied === 'config' ? t('docs.copied') : t('docs.copy') }}
-            </button>
-          </div>
-
-          <!-- Config Code Block - Windows CMD -->
-          <div v-else class="relative rounded-lg bg-gray-900 p-4">
-            <pre class="overflow-x-auto text-sm leading-relaxed"><code><span class="text-gray-500">{{ t('docs.guide.step2.commentCMD') }}</span>
-<span class="text-blue-400">set</span> <span class="text-white">ANTHROPIC_BASE_URL=</span><span class="text-yellow-300">{{ baseUrl }}</span>
-<span class="text-blue-400">set</span> <span class="text-white">ANTHROPIC_API_KEY=</span><span class="text-yellow-300">{{ t('docs.guide.step2.yourKey') }}</span></code></pre>
-            <button
-              @click="copyCode('config')"
-              class="absolute right-2 top-2 rounded bg-gray-700 px-2 py-1 text-xs text-gray-300 hover:bg-gray-600"
-            >
-              {{ copied === 'config' ? t('docs.copied') : t('docs.copy') }}
-            </button>
-          </div>
-        </div>
-
-        <!-- Config Tip -->
-        <p class="mt-3 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-          <span class="text-yellow-500">💡</span>
-          <span v-if="activeConfigTab === 'mac'">
-            {{ t('docs.guide.step2.tipMac') }}
-            <code class="rounded bg-gray-100 px-1.5 py-0.5 text-xs dark:bg-dark-700">~/.zshrc</code>
-            {{ t('docs.guide.step2.tipMacOr') }}
-            <code class="rounded bg-gray-100 px-1.5 py-0.5 text-xs dark:bg-dark-700">~/.bashrc</code>
-            {{ t('docs.guide.step2.tipMacSuffix') }}
-          </span>
-          <span v-else-if="activeConfigTab === 'powershell'">
-            {{ t('docs.guide.step2.tipPS') }}
-            <code class="rounded bg-gray-100 px-1.5 py-0.5 text-xs dark:bg-dark-700">$PROFILE</code>
-            {{ t('docs.guide.step2.tipPSSuffix') }}
-          </span>
-          <span v-else>
-            {{ t('docs.guide.step2.tipCMD') }}
-          </span>
-        </p>
-
-        <!-- Verify Config -->
-        <div class="mt-4 rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-900/20">
-          <div class="mb-2 text-sm font-medium text-green-700 dark:text-green-300">{{ t('docs.guide.step2.verify') }}</div>
-
-          <!-- macOS/Linux -->
-          <div v-if="activeConfigTab === 'mac'" class="rounded bg-gray-900 p-3">
-            <pre class="text-sm"><code><span class="text-gray-500">{{ t('docs.guide.step2.verifyComment') }}</span>
-<span class="text-green-400">echo</span> <span class="text-white">$ANTHROPIC_BASE_URL</span>
-<span class="text-green-400">echo</span> <span class="text-white">$ANTHROPIC_API_KEY</span></code></pre>
-          </div>
-
-          <!-- PowerShell -->
-          <div v-else-if="activeConfigTab === 'powershell'" class="rounded bg-gray-900 p-3">
-            <pre class="text-sm"><code><span class="text-gray-500">{{ t('docs.guide.step2.verifyComment') }}</span>
-<span class="text-green-400">echo</span> <span class="text-white">$env:ANTHROPIC_BASE_URL</span>
-<span class="text-green-400">echo</span> <span class="text-white">$env:ANTHROPIC_API_KEY</span></code></pre>
-          </div>
-
-          <!-- CMD -->
-          <div v-else class="rounded bg-gray-900 p-3">
-            <pre class="text-sm"><code><span class="text-gray-500">{{ t('docs.guide.step2.verifyCMDComment') }}</span>
-<span class="text-green-400">echo</span> <span class="text-white">%ANTHROPIC_BASE_URL%</span>
-<span class="text-green-400">echo</span> <span class="text-white">%ANTHROPIC_API_KEY%</span></code></pre>
-          </div>
-
-          <p class="mt-2 text-xs text-green-600 dark:text-green-400">{{ t('docs.guide.step2.verifyFail') }}</p>
-        </div>
-      </section>
-
-      <!-- Step 3: Start Claude -->
-      <section class="mb-8 rounded-xl border border-gray-200 bg-white p-6 dark:border-dark-700 dark:bg-dark-800">
-        <div class="mb-4 flex items-center gap-3">
-          <span class="flex h-8 w-8 items-center justify-center rounded-full bg-primary-500 text-sm font-bold text-white">3</span>
-          <h2 class="text-xl font-semibold text-gray-900 dark:text-white">{{ t('docs.guide.step3.title') }}</h2>
-        </div>
-
-        <p class="mb-4 text-gray-600 dark:text-gray-400">{{ t('docs.guide.step3.description') }}</p>
-
-        <div class="relative rounded-lg border border-gray-200 bg-gray-900 p-4 dark:border-dark-600">
-          <code class="text-lg text-green-400">claude</code>
-          <button
-            @click="copyCode('start')"
-            class="absolute right-2 top-2 rounded bg-gray-700 px-2 py-1 text-xs text-gray-300 hover:bg-gray-600"
-          >
-            {{ copied === 'start' ? t('docs.copied') : t('docs.copy') }}
-          </button>
-        </div>
-
-        <p class="mt-3 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-          <span class="text-yellow-500">💡</span>
-          {{ t('docs.guide.step3.tip') }}
-        </p>
-
-        <p class="mt-2 text-xs text-gray-400 dark:text-gray-500">
-          {{ t('docs.guide.step3.debugTip') }} <code class="rounded bg-gray-100 px-1.5 py-0.5 text-xs dark:bg-dark-700">claude --debug</code> {{ t('docs.guide.step3.debugTipSuffix') }}
-        </p>
-      </section>
-
-      <!-- Tips Box -->
-      <section class="rounded-xl border border-blue-200 bg-blue-50 p-6 dark:border-blue-800 dark:bg-blue-900/20">
-        <h3 class="mb-4 flex items-center gap-2 font-semibold text-blue-800 dark:text-blue-200">
-          <span class="text-yellow-500">💡</span>
-          {{ t('docs.guide.tips.title') }}
-        </h3>
-        <ul class="space-y-2 text-sm text-blue-700 dark:text-blue-300">
-          <li class="flex items-start gap-2">
-            <span>•</span>
-            <span>{{ t('docs.guide.tips.tip1') }}</span>
-          </li>
-          <li class="flex items-start gap-2">
-            <span>•</span>
-            <span>{{ t('docs.guide.tips.tip2') }}</span>
-          </li>
-          <li class="flex items-start gap-2">
-            <span>•</span>
-            <span>{{ t('docs.guide.tips.tip3Pre') }} <router-link to="/dashboard" class="font-medium underline">{{ t('docs.guide.tips.tip3Link') }}</router-link> {{ t('docs.guide.tips.tip3Post') }}</span>
-          </li>
-        </ul>
-      </section>
-
       <!-- FAQ Section -->
-      <section class="mt-8 rounded-xl border border-gray-200 bg-white p-6 dark:border-dark-700 dark:bg-dark-800">
-        <h3 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">{{ t('docs.guide.faq.title') }}</h3>
+      <section class="rounded-xl border border-gray-200 bg-white p-6 dark:border-dark-700 dark:bg-dark-800">
+        <h3 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">{{ t('docs.entry.faq.title') }}</h3>
         <div class="space-y-4">
           <div>
-            <p class="font-medium text-gray-800 dark:text-gray-200">{{ t('docs.guide.faq.q1') }}</p>
-            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">{{ t('docs.guide.faq.a1') }}</p>
+            <p class="font-medium text-gray-800 dark:text-gray-200">{{ t('docs.entry.faq.q1') }}</p>
+            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">{{ t('docs.entry.faq.a1') }}</p>
           </div>
           <div>
-            <p class="font-medium text-gray-800 dark:text-gray-200">{{ t('docs.guide.faq.q2') }}</p>
-            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">{{ t('docs.guide.faq.a2') }}</p>
+            <p class="font-medium text-gray-800 dark:text-gray-200">{{ t('docs.entry.faq.q2') }}</p>
+            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">{{ t('docs.entry.faq.a2') }}</p>
           </div>
           <div>
-            <p class="font-medium text-gray-800 dark:text-gray-200">{{ t('docs.guide.faq.q3') }}</p>
-            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">{{ t('docs.guide.faq.a3') }}</p>
+            <p class="font-medium text-gray-800 dark:text-gray-200">{{ t('docs.entry.faq.q3') }}</p>
+            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">{{ t('docs.entry.faq.a3') }}</p>
+          </div>
+          <div>
+            <p class="font-medium text-gray-800 dark:text-gray-200">{{ t('docs.entry.faq.q4') }}</p>
+            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">{{ t('docs.entry.faq.a4') }}</p>
           </div>
         </div>
       </section>
@@ -339,94 +158,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import PublicLayout from '@/components/layout/PublicLayout.vue'
 
 const { t } = useI18n()
-
-// Detect user's operating system
-function detectOS(): 'mac' | 'powershell' {
-  const platform = navigator.platform.toLowerCase()
-  const userAgent = navigator.userAgent.toLowerCase()
-
-  if (platform.includes('win') || userAgent.includes('windows')) {
-    return 'powershell'
-  }
-  // macOS, Linux, and others default to mac/bash
-  return 'mac'
-}
-
-const copied = ref<string | null>(null)
-const activeInstallTab = ref('mac')
-const activeConfigTab = ref('mac')
-
-onMounted(() => {
-  const detectedOS = detectOS()
-  activeInstallTab.value = detectedOS
-  activeConfigTab.value = detectedOS
-})
-
-const installTabs = [
-  { id: 'mac', label: 'macOS / Linux / WSL' },
-  { id: 'powershell', label: 'Windows PowerShell' },
-  { id: 'cmd', label: 'Windows CMD' }
-]
-
-const configTabs = [
-  { id: 'mac', label: 'macOS / Linux' },
-  { id: 'powershell', label: 'Windows PowerShell' },
-  { id: 'cmd', label: 'Windows CMD' }
-]
-
-const baseUrl = computed(() => {
-  return window.location.origin
-})
-
-const getInstallCode = () => {
-  switch (activeInstallTab.value) {
-    case 'mac':
-      return 'curl -fsSL https://claude.ai/install.sh | bash'
-    case 'powershell':
-      return 'irm https://claude.ai/install.ps1 | iex'
-    case 'cmd':
-      return 'npm install -g @anthropic-ai/claude-code'
-    default:
-      return ''
-  }
-}
-
-const getConfigCode = () => {
-  const yourKey = t('docs.guide.step2.yourKey')
-  switch (activeConfigTab.value) {
-    case 'mac':
-      return `export ANTHROPIC_BASE_URL="${baseUrl.value}"
-export ANTHROPIC_API_KEY="${yourKey}"`
-    case 'powershell':
-      return `$env:ANTHROPIC_BASE_URL = "${baseUrl.value}"
-$env:ANTHROPIC_API_KEY = "${yourKey}"`
-    case 'cmd':
-      return `set ANTHROPIC_BASE_URL=${baseUrl.value}
-set ANTHROPIC_API_KEY=${yourKey}`
-    default:
-      return ''
-  }
-}
-
-const copyCode = (type: string) => {
-  let code = ''
-  if (type === 'install') {
-    code = getInstallCode()
-  } else if (type === 'config') {
-    code = getConfigCode()
-  } else if (type === 'start') {
-    code = 'claude'
-  }
-
-  navigator.clipboard.writeText(code)
-  copied.value = type
-  setTimeout(() => {
-    copied.value = null
-  }, 2000)
-}
 </script>
