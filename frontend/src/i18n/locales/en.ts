@@ -157,7 +157,7 @@ export default {
       q2: 'Where do I get an API key?',
       a2: 'After signing in, go to Dashboard → API Keys to create/copy one.',
       q3: 'Which tools/clients are supported?',
-      a3: 'Currently Claude Code is supported. Works with Terminal, VS Code, Cursor, Windsurf, etc.',
+      a3: 'Currently Claude Code is supported. Works with Terminal, VS Code, etc.',
       q4: 'How does pricing work?',
       a4: 'Billing rules and usage details are shown in the dashboard. You can view by model/day.',
       q5: 'What if a request fails?',
@@ -620,7 +620,6 @@ export default {
       recommended: 'Recommended',
       advanced: 'Advanced',
       viewGuide: 'View Guide',
-      windsurfDesc: 'AI IDE by Codeium, supports custom API endpoints, feature-rich',
       vscodeDesc: 'Use Claude for coding in VSCode with plugins',
       cliDesc: 'Use Claude Code command-line tool in your terminal',
       tipsTitle: 'Tips & Tricks',
@@ -644,55 +643,6 @@ export default {
         a3: 'We support Claude Opus 4.5, Sonnet 4.5 and other mainstream models. You can switch models using the /model command.',
         q4: 'What if I encounter problems?',
         a4: 'First check if your API Key and Base URL are correctly configured. If issues persist, check the "System Status" page or contact support.'
-      }
-    },
-    // Windsurf setup guide
-    windsurf: {
-      title: 'Windsurf Setup Guide',
-      subtitle: 'AI IDE by Codeium, supports custom API endpoints',
-      whatIs: {
-        title: 'What is Windsurf?',
-        desc: 'Windsurf is an AI coding IDE by Codeium, built on VSCode. It supports custom API endpoints, allowing flexible integration with various Claude API services. It is one of the best AI IDEs for custom endpoint support.'
-      },
-      step1: {
-        title: 'Download and Install Windsurf',
-        desc: 'Visit the Windsurf website to download the version for your operating system, then follow the prompts to complete installation.',
-        download: 'Go to Official Website',
-        tip: 'After installation, Windsurf will automatically detect your installed VSCode extensions and offer to import them'
-      },
-      step2: {
-        title: 'Get API Key',
-        instruction1: 'Log in and go to',
-        instruction1Link: 'API Key Management',
-        instruction2: 'Click the "Create Key" button',
-        instruction3: 'Copy the generated API Key (only shown once, keep it safe)',
-        infoTitle: 'You need to note the following:',
-        yourKey: 'sk-your-key'
-      },
-      step3: {
-        title: 'Configure Windsurf',
-        instruction1: 'Open Windsurf Settings',
-        instruction1Detail: 'Click the gear icon in the bottom left, select "Windsurf Settings"',
-        instruction2: 'Go to Cascade Settings',
-        instruction2Detail: 'Find the "Cascade" section in the settings page',
-        instruction3: 'Select Remote Models',
-        instruction3Detail: 'Click the "Add Remote Model Provider" button',
-        instruction4: 'Enter API Configuration',
-        instruction5: 'Select model and save'
-      },
-      step4: {
-        title: 'Verify Configuration',
-        desc: 'Open the Windsurf Cascade chat window (Cmd/Ctrl + L) and enter a message to test if it responds correctly.',
-        success: 'If you receive a response, the configuration is successful! You can now start using AI-assisted programming.'
-      },
-      faq: {
-        title: 'FAQ',
-        q1: 'Windsurf cannot connect?',
-        a1: 'Check if the Base URL is correct (no trailing slashes), and verify the API Key is correct and not expired.',
-        q2: 'How to switch models?',
-        a2: 'In the Cascade chat window, you can select different models at the top, like claude-sonnet-4, claude-opus-4, etc.',
-        q3: 'Getting 401 error?',
-        a3: 'This usually means the API Key is wrong or expired. Please generate a new key in the dashboard.'
       }
     },
     // VSCode setup guide

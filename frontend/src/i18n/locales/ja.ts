@@ -156,7 +156,7 @@ export default {
       q2: 'API Key はどこで取得できますか？',
       a2: 'ログイン後「コンソール → API Keys」で作成/コピーできます。',
       q3: 'どのツール/クライアントに対応していますか？',
-      a3: '現在 Claude Code に対応しており、Terminal、VS Code、Cursor、Windsurf などの環境で使用できます。',
+      a3: '現在 Claude Code に対応しており、Terminal、VS Code などの環境で使用できます。',
       q4: '料金の計算方法は？',
       a4: '課金ルールと使用量明細はコンソールに表示されます。モデル別、日別で記録を確認できます。',
       q5: 'エラーが出たらどうすればいいですか？',
@@ -489,6 +489,171 @@ export default {
     subtitle: 'サービスの設定と利用方法をすばやく理解',
     copy: 'コピー',
     copied: 'コピー済み',
+    // 戻るボタン
+    backToList: 'ドキュメント一覧に戻る',
+    // エントリーページ
+    entry: {
+      title: '使用方法を選択',
+      subtitle: '使用するツールに応じた設定ガイドを選択してください',
+      recommended: '初心者推奨',
+      advanced: '上級者向け',
+      viewGuide: 'ガイドを見る',
+      vscodeDesc: 'プラグインでVSCodeでClaudeを使用',
+      cliDesc: 'ターミナルでClaude Code CLIを使用',
+      tipsTitle: '使用Tips',
+      tipsDesc: 'よく使うコマンド、ショートカット、ベストプラクティス',
+      quickInfo: {
+        title: '3ステップで始める',
+        step1Title: 'API キーを取得',
+        step1Desc: '管理画面で専用キーを作成',
+        step2Title: 'ツールを設定',
+        step2Desc: 'ガイドに従ってBase URLとキーを設定',
+        step3Title: '利用開始',
+        step3Desc: 'ツールを起動してAIプログラミングを楽しもう'
+      },
+      faq: {
+        title: 'よくある質問',
+        q1: 'どのツールを選べばいい？',
+        a1: '初心者の方はCursorがおすすめです。GUIがあり、簡単に使い始められます。コマンドライン操作に慣れている方はClaude Code CLIをお試しください。',
+        q2: '有料ですか？',
+        a2: '従量課金制で、モデルごとに異なる価格があります。「プラン一覧」ページで詳細をご確認ください。',
+        q3: 'どのモデルに対応していますか？',
+        a3: 'Claude Opus 4.5、Sonnet 4.5などの主要モデルに対応。使用中に /model コマンドで切り替え可能です。',
+        q4: '問題が発生したら？',
+        a4: 'まずAPI KeyとBase URLが正しく設定されているか確認してください。問題が続く場合は「システムステータス」ページを確認するか、サポートにお問い合わせください。'
+      }
+    },
+    // VSCode設定ガイド
+    vscode: {
+      title: 'VSCode設定ガイド',
+      subtitle: 'プラグインでVisual Studio CodeにClaudeを統合',
+      plugins: {
+        title: 'おすすめプラグイン',
+        desc: '以下の2つのClaudeプラグインからお好みのものを選んでインストール：',
+        cline: '強力なAIコーディングアシスタント、自律コーディング、ファイル操作などをサポート',
+        claudeCode: 'Anthropic公式VSCodeプラグイン、CLIと一貫した体験',
+        official: '公式',
+        install: 'インストール'
+      },
+      step1: {
+        title: 'プラグインをインストール',
+        instruction1: 'VSCode拡張機能マーケットを開く（Ctrl+Shift+X）',
+        instruction2: '「Cline」または「Claude Code」を検索',
+        instruction3: 'インストールボタンをクリック',
+        tip: '両プラグインは機能が似ています。Clineはコミュニティが活発で機能豊富、Claude Codeは公式で統一された体験を提供'
+      },
+      step2: {
+        title: 'API キーを取得',
+        instruction1: 'ログイン後、',
+        instruction1Link: 'APIキー管理',
+        instruction2: 'API Keyを作成してコピー',
+        infoTitle: '以下の情報をメモしてください：',
+        yourKey: 'sk-あなたのキー'
+      },
+      step3: {
+        title: 'プラグインを設定',
+        selectPlugin: 'インストールしたプラグインに応じて設定方法を選択：',
+        clineTitle: 'Cline設定：',
+        cline1: 'サイドバーのClineアイコンをクリック、「Bring my own API key」を選択、Continueをクリック',
+        cline2: 'API Providerを設定、以下の情報を入力してContinueをクリック：',
+        cline3: '設定完了！使用を開始できます',
+        claudeCodeTitle: 'Claude Code設定：',
+        claudeCodeDesc: 'Claude Codeプラグインは環境変数で設定、CLI設定と同じ方法：',
+        claudeCode1: '環境変数 ANTHROPIC_BASE_URL を本サイトのアドレスに設定',
+        claudeCode2: '環境変数 ANTHROPIC_AUTH_TOKEN をあなたのキーに設定',
+        claudeCode3: 'VSCodeを再起動して環境変数を有効化',
+        claudeCodeTipTitle: 'ヒント：',
+        claudeCodeTip: '環境変数の設定方法はCLI設定ガイドを参照。設定完了後、VSCodeプラグインが自動的に読み取ります'
+      },
+      step4: {
+        title: '設定を確認',
+        desc: 'プラグインのチャットウィンドウでメッセージを入力し、正常に応答するか確認してください。',
+        success: '応答があれば設定成功です！'
+      },
+      faq: {
+        title: 'よくある質問',
+        q1: 'プラグインが接続できない？',
+        a1: 'Base URLの形式が正しいか（末尾にスラッシュがないか）、API Keyが有効か確認してください。',
+        q2: '別のモデルを使うには？',
+        a2: 'プラグイン設定でmodelフィールドを変更。選択肢はclaude-sonnet-4-20250514、claude-opus-4-20250514など。'
+      }
+    },
+    // CLI設定ガイド
+    cli: {
+      title: 'Claude Code CLI設定',
+      subtitle: 'ターミナルで公式Claude Codeコマンドラインツールを使用',
+      note: '本ガイドはclaude-code CLIユーザー向け、Anthropic公式プロトコルに基づいています。',
+      prereq: {
+        title: '前提条件',
+        windows: 'Windowsユーザー：',
+        windowsNode: 'Node.jsをインストールする必要があります：',
+        windowsTerminal: 'PowerShellまたはWindows Terminalの使用を推奨',
+        mac: 'macOS / Linuxユーザー：',
+        macTerminal: 'ターミナルを開く（Spotlightで「ターミナル」または「Terminal」を検索）'
+      }
+    },
+    // 使用Tips
+    tips: {
+      title: '使用Tips',
+      subtitle: 'これらのコマンドとTipsを使ってAIプログラミングをより効率的に',
+      commands: {
+        title: 'コマンド早見表',
+        command: 'コマンド',
+        function: '機能',
+        usage: '使用シーン',
+        modelFunc: 'モデル切替',
+        modelUsage: '複雑なタスクはOpus、日常はSonnet',
+        compactFunc: 'コンテキスト圧縮',
+        compactUsage: '会話が長くなったら使用、Token節約',
+        clearFunc: '会話クリア',
+        clearUsage: '新しいトピック開始時',
+        costFunc: '消費確認',
+        costUsage: '現在の会話のToken消費を確認',
+        helpFunc: 'ヘルプ表示',
+        helpUsage: '利用可能なコマンドを表示'
+      },
+      shortcuts: {
+        title: 'ショートカット',
+        shortcut: 'ショートカット',
+        function: '機能',
+        escFunc: '現在の操作を中断',
+        shiftTabFunc: 'Plan Modeを終了',
+        ctrlCFunc: '強制終了'
+      },
+      models: {
+        title: 'モデル選択の提案',
+        desc: 'タスクの複雑さに応じて適切なモデルを選択し、性能とコストのバランスを取りましょう：',
+        sonnetLabel: '日常使い',
+        sonnetDesc: '高速レスポンス、コスパ良好、大半のコーディングタスクに最適',
+        sonnetUse1: '日常のコード作成',
+        sonnetUse2: 'コードレビューとリファクタリング',
+        sonnetUse3: '素早いQ&Aとデバッグ',
+        opusLabel: 'ハイエンド',
+        opusDesc: '推論能力が高く、複雑なタスクに最適',
+        opusUse1: '複雑なアーキテクチャ設計',
+        opusUse2: '難問解決',
+        opusUse3: '長文分析',
+        switchTip: 'Tips：',
+        switchDesc: 'コマンドで素早くモデル切替'
+      },
+      practices: {
+        title: 'ベストプラクティス',
+        tip1Title: '明確なコンテキストを提供',
+        tip1Desc: '質問前にプロジェクトの背景、技術スタック、具体的な要件を説明すると、AIはより正確な回答を提供します。',
+        tip2Title: '/compactを適切に使用',
+        tip2Desc: '会話が長くなったら /compact で履歴を圧縮。Token消費を節約し、レスポンス速度を維持。',
+        tip3Title: 'コードスニペットを活用',
+        tip3Desc: '関連するコードスニペットを貼り付けてAIに参照させると、問題を説明するだけより正確な回答が得られます。',
+        tip4Title: '反復的な開発',
+        tip4Desc: '大きなタスクを小さなステップに分割し、AIと段階的に協力して完成させると、一度に複雑な機能を要求するより効果的です。'
+      },
+      links: {
+        title: 'クイックリンク',
+        keys: 'APIキー管理',
+        usage: '使用量確認',
+        status: 'システムステータス'
+      }
+    },
     quickStart: {
       title: 'クイックスタート',
       step1: {

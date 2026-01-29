@@ -34,28 +34,6 @@
           </div>
         </router-link>
 
-        <!-- Windsurf Card -->
-        <router-link
-          to="/docs/windsurf"
-          class="group relative rounded-xl border border-gray-200 bg-white p-6 transition-all hover:border-primary-300 hover:shadow-lg dark:border-dark-700 dark:bg-dark-800 dark:hover:border-primary-600"
-        >
-          <div class="mb-4 flex items-center gap-3">
-            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-teal-500 to-cyan-600 text-white">
-              <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5" />
-              </svg>
-            </div>
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Windsurf</h3>
-          </div>
-          <p class="text-sm text-gray-600 dark:text-gray-400">{{ t('docs.entry.windsurfDesc') }}</p>
-          <div class="mt-4 flex items-center text-sm font-medium text-primary-600 dark:text-primary-400">
-            {{ t('docs.entry.viewGuide') }}
-            <svg class="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-            </svg>
-          </div>
-        </router-link>
-
         <!-- CLI Card -->
         <router-link
           to="/docs/cli"

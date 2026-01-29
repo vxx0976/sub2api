@@ -159,17 +159,6 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
-    path: '/docs/windsurf',
-    name: 'DocsWindsurf',
-    component: () => import('@/views/user/DocsWindsurfView.vue'),
-    meta: {
-      requiresAuth: false,
-      title: 'Windsurf Setup',
-      titleKey: 'docs.windsurf.title',
-      descriptionKey: 'docs.windsurf.subtitle'
-    }
-  },
-  {
     path: '/docs/vscode',
     name: 'DocsVscode',
     component: () => import('@/views/user/DocsVscodeView.vue'),

@@ -156,7 +156,7 @@ export default {
       q2: 'API Key 在哪里拿？',
       a2: '登录后进入「控制台 → API Keys」创建/复制。',
       q3: '支持哪些工具/客户端？',
-      a3: '目前支持 Claude Code，可在 Terminal、VS Code、Cursor、Windsurf 等环境中使用。',
+      a3: '目前支持 Claude Code，可在 Terminal、VS Code 等环境中使用。',
       q4: '价格怎么算？',
       a4: '计费规则与用量明细会在控制台展示；你可以按模型、按天查看记录。',
       q5: '遇到报错怎么办？',
@@ -619,7 +619,6 @@ export default {
       recommended: '新手推荐',
       advanced: '进阶用户',
       viewGuide: '查看教程',
-      windsurfDesc: 'Codeium 出品的 AI IDE，支持自定义 API 端点，功能强大',
       vscodeDesc: '通过插件在 VSCode 中使用 Claude 进行编程',
       cliDesc: '在终端中使用 Claude Code 命令行工具',
       tipsTitle: '使用技巧',
@@ -643,55 +642,6 @@ export default {
         a3: '支持 Claude Opus 4.5、Sonnet 4.5 等主流模型，可以在使用时通过 /model 命令切换。',
         q4: '遇到问题怎么办？',
         a4: '请先检查 API Key 和 Base URL 是否正确配置。如果问题持续，可以查看「系统状态」页面或联系客服。'
-      }
-    },
-    // Windsurf 配置教程
-    windsurf: {
-      title: 'Windsurf 配置教程',
-      subtitle: 'Codeium 出品的 AI IDE，支持自定义 API 端点',
-      whatIs: {
-        title: '什么是 Windsurf？',
-        desc: 'Windsurf 是 Codeium 公司推出的 AI 编程 IDE，基于 VSCode 打造。它支持自定义 API 端点，可以灵活接入各种 Claude API 服务，是目前支持自定义端点体验最好的 AI IDE 之一。'
-      },
-      step1: {
-        title: '下载安装 Windsurf',
-        desc: '访问 Windsurf 官网下载适合你操作系统的版本，然后按照提示完成安装。',
-        download: '前往官网下载',
-        tip: '安装完成后，Windsurf 会自动检测你已安装的 VSCode 扩展并提示导入'
-      },
-      step2: {
-        title: '获取 API 密钥',
-        instruction1: '登录后进入',
-        instruction1Link: 'API 密钥管理',
-        instruction2: '点击「创建密钥」按钮',
-        instruction3: '复制生成的 API Key（只显示一次，请妥善保管）',
-        infoTitle: '你需要记录以下信息：',
-        yourKey: 'sk-你的密钥'
-      },
-      step3: {
-        title: '配置 Windsurf',
-        instruction1: '打开 Windsurf 设置',
-        instruction1Detail: '点击左下角齿轮图标，选择「Windsurf Settings」',
-        instruction2: '进入 Cascade 设置',
-        instruction2Detail: '在设置页面找到「Cascade」部分',
-        instruction3: '选择 Remote Models',
-        instruction3Detail: '点击「Add Remote Model Provider」按钮',
-        instruction4: '填入 API 配置',
-        instruction5: '选择模型并保存'
-      },
-      step4: {
-        title: '验证配置',
-        desc: '打开 Windsurf 的 Cascade 对话窗口（Cmd/Ctrl + L），输入一条消息测试是否能正常响应。',
-        success: '如果收到回复，说明配置成功！现在你可以开始使用 AI 辅助编程了。'
-      },
-      faq: {
-        title: '常见问题',
-        q1: 'Windsurf 连接不上怎么办？',
-        a1: '请检查 Base URL 是否正确填写（不要有多余的斜杠），API Key 是否正确且未过期。',
-        q2: '如何切换模型？',
-        a2: '在 Cascade 对话窗口顶部可以选择不同的模型，如 claude-sonnet-4、claude-opus-4 等。',
-        q3: '使用时报错 401？',
-        a3: '这通常是 API Key 错误或已失效。请到后台重新生成一个新的密钥。'
       }
     },
     // VSCode 配置教程

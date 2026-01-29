@@ -156,7 +156,7 @@ export default {
       q2: 'API Key는 어디서 받나요?',
       a2: '로그인 후 "콘솔 → API Keys"에서 생성/복사하세요.',
       q3: '어떤 도구/클라이언트를 지원하나요?',
-      a3: '현재 Claude Code를 지원하며, Terminal, VS Code, Cursor, Windsurf 등의 환경에서 사용할 수 있습니다.',
+      a3: '현재 Claude Code를 지원하며, Terminal, VS Code 등의 환경에서 사용할 수 있습니다.',
       q4: '가격은 어떻게 계산되나요?',
       a4: '과금 규칙 및 사용량 내역은 콘솔에서 확인할 수 있으며, 모델별, 일별로 기록을 조회할 수 있습니다.',
       q5: '오류가 발생하면 어떻게 하나요?',
@@ -489,6 +489,171 @@ export default {
     subtitle: '서비스 설정 및 사용 방법을 빠르게 알아보세요',
     copy: '복사',
     copied: '복사됨',
+    // 뒤로가기 버튼
+    backToList: '문서 목록으로 돌아가기',
+    // 입구 페이지
+    entry: {
+      title: '사용 방법 선택',
+      subtitle: '사용하는 도구에 맞는 설정 가이드를 선택하세요',
+      recommended: '초보자 추천',
+      advanced: '고급 사용자',
+      viewGuide: '가이드 보기',
+      vscodeDesc: '플러그인으로 VSCode에서 Claude 사용',
+      cliDesc: '터미널에서 Claude Code CLI 사용',
+      tipsTitle: '사용 팁',
+      tipsDesc: '자주 사용하는 명령어, 단축키 및 모범 사례',
+      quickInfo: {
+        title: '3단계로 시작하기',
+        step1Title: 'API 키 받기',
+        step1Desc: '관리 페이지에서 전용 키 생성',
+        step2Title: '도구 설정',
+        step2Desc: '가이드에 따라 Base URL과 키 설정',
+        step3Title: '사용 시작',
+        step3Desc: '도구를 실행하고 AI 프로그래밍을 즐기세요'
+      },
+      faq: {
+        title: '자주 묻는 질문',
+        q1: '어떤 도구를 선택해야 하나요?',
+        a1: '초보자라면 Cursor를 추천합니다. GUI가 있어 쉽게 시작할 수 있습니다. 명령줄에 익숙하다면 Claude Code CLI를 사용해 보세요.',
+        q2: '유료인가요?',
+        a2: '종량제 과금 방식이며, 모델마다 가격이 다릅니다. "요금제" 페이지에서 자세한 내용을 확인하세요.',
+        q3: '어떤 모델을 지원하나요?',
+        a3: 'Claude Opus 4.5, Sonnet 4.5 등 주요 모델을 지원합니다. 사용 중 /model 명령어로 전환할 수 있습니다.',
+        q4: '문제가 발생하면?',
+        a4: '먼저 API Key와 Base URL이 올바르게 설정되었는지 확인하세요. 문제가 지속되면 "시스템 상태" 페이지를 확인하거나 고객 지원에 문의하세요.'
+      }
+    },
+    // VSCode 설정 가이드
+    vscode: {
+      title: 'VSCode 설정 가이드',
+      subtitle: '플러그인으로 Visual Studio Code에서 Claude 사용',
+      plugins: {
+        title: '추천 플러그인',
+        desc: '다음 두 Claude 플러그인 중 하나를 선택하여 설치하세요:',
+        cline: '강력한 AI 코딩 어시스턴트, 자율 코딩, 파일 작업 등 지원',
+        claudeCode: 'Anthropic 공식 VSCode 플러그인, CLI와 일관된 경험',
+        official: '공식',
+        install: '설치'
+      },
+      step1: {
+        title: '플러그인 설치',
+        instruction1: 'VSCode 확장 마켓플레이스 열기 (Ctrl+Shift+X)',
+        instruction2: '"Cline" 또는 "Claude Code" 검색',
+        instruction3: '설치 버튼 클릭',
+        tip: '두 플러그인은 기능이 비슷합니다. Cline은 커뮤니티가 활발하고 기능이 풍부하며, Claude Code는 공식이며 통일된 경험을 제공합니다'
+      },
+      step2: {
+        title: 'API 키 받기',
+        instruction1: '로그인 후 ',
+        instruction1Link: 'API 키 관리',
+        instruction2: 'API Key를 생성하고 복사',
+        infoTitle: '다음 정보를 기록하세요:',
+        yourKey: 'sk-your-key'
+      },
+      step3: {
+        title: '플러그인 설정',
+        selectPlugin: '설치한 플러그인에 따라 설정 방법을 선택하세요:',
+        clineTitle: 'Cline 설정:',
+        cline1: '사이드바의 Cline 아이콘 클릭, "Bring my own API key" 선택, Continue 클릭',
+        cline2: 'API Provider 설정, 다음 정보를 입력 후 Continue 클릭:',
+        cline3: '설정 완료! 사용을 시작할 수 있습니다',
+        claudeCodeTitle: 'Claude Code 설정:',
+        claudeCodeDesc: 'Claude Code 플러그인은 환경 변수로 설정, CLI 설정과 동일한 방법:',
+        claudeCode1: '환경 변수 ANTHROPIC_BASE_URL을 이 사이트 주소로 설정',
+        claudeCode2: '환경 변수 ANTHROPIC_AUTH_TOKEN을 키로 설정',
+        claudeCode3: 'VSCode를 재시작하여 환경 변수 적용',
+        claudeCodeTipTitle: '팁:',
+        claudeCodeTip: '환경 변수 설정 방법은 CLI 설정 가이드를 참조하세요. 설정 완료 후 VSCode 플러그인이 자동으로 읽습니다'
+      },
+      step4: {
+        title: '설정 확인',
+        desc: '플러그인 채팅 창에서 메시지를 입력하여 정상 응답하는지 테스트하세요.',
+        success: '응답이 오면 설정 성공입니다!'
+      },
+      faq: {
+        title: '자주 묻는 질문',
+        q1: '플러그인이 연결되지 않나요?',
+        a1: 'Base URL 형식이 올바른지(끝에 슬래시가 없는지), API Key가 유효한지 확인하세요.',
+        q2: '다른 모델을 사용하려면?',
+        a2: '플러그인 설정에서 model 필드를 변경하세요. 옵션: claude-sonnet-4-20250514, claude-opus-4-20250514 등.'
+      }
+    },
+    // CLI 설정 가이드
+    cli: {
+      title: 'Claude Code CLI 설정',
+      subtitle: '터미널에서 공식 Claude Code 명령줄 도구 사용',
+      note: '이 가이드는 claude-code CLI 사용자를 위한 것이며, Anthropic 공식 프로토콜을 기반으로 합니다.',
+      prereq: {
+        title: '전제 조건',
+        windows: 'Windows 사용자:',
+        windowsNode: 'Node.js를 먼저 설치해야 합니다:',
+        windowsTerminal: 'PowerShell 또는 Windows Terminal 사용 권장',
+        mac: 'macOS / Linux 사용자:',
+        macTerminal: '터미널 열기 (Spotlight에서 "터미널" 또는 "Terminal" 검색)'
+      }
+    },
+    // 사용 팁
+    tips: {
+      title: '사용 팁',
+      subtitle: '이 명령어와 팁을 사용하여 AI 프로그래밍을 더 효율적으로',
+      commands: {
+        title: '명령어 빠른 참조',
+        command: '명령어',
+        function: '기능',
+        usage: '사용 시나리오',
+        modelFunc: '모델 전환',
+        modelUsage: '복잡한 작업은 Opus, 일상은 Sonnet',
+        compactFunc: '컨텍스트 압축',
+        compactUsage: '대화가 길어지면 사용, 토큰 절약',
+        clearFunc: '대화 지우기',
+        clearUsage: '새 주제 시작 시',
+        costFunc: '사용량 확인',
+        costUsage: '현재 대화의 토큰 사용량 확인',
+        helpFunc: '도움말 보기',
+        helpUsage: '사용 가능한 명령어 보기'
+      },
+      shortcuts: {
+        title: '단축키',
+        shortcut: '단축키',
+        function: '기능',
+        escFunc: '현재 작업 중단',
+        shiftTabFunc: 'Plan Mode 종료',
+        ctrlCFunc: '강제 종료'
+      },
+      models: {
+        title: '모델 선택 제안',
+        desc: '작업 복잡도에 따라 적절한 모델을 선택하여 성능과 비용의 균형을 맞추세요:',
+        sonnetLabel: '일상 사용',
+        sonnetDesc: '빠른 응답, 가성비 좋음, 대부분의 코딩 작업에 적합',
+        sonnetUse1: '일상 코드 작성',
+        sonnetUse2: '코드 리뷰 및 리팩토링',
+        sonnetUse3: '빠른 Q&A 및 디버깅',
+        opusLabel: '하이엔드',
+        opusDesc: '추론 능력이 강하고 복잡한 작업에 적합',
+        opusUse1: '복잡한 아키텍처 설계',
+        opusUse2: '어려운 문제 해결',
+        opusUse3: '긴 텍스트 분석',
+        switchTip: '팁:',
+        switchDesc: '명령어로 빠르게 모델 전환'
+      },
+      practices: {
+        title: '모범 사례',
+        tip1Title: '명확한 컨텍스트 제공',
+        tip1Desc: '질문 전에 프로젝트 배경, 기술 스택, 구체적인 요구 사항을 설명하면 AI가 더 정확한 답변을 제공합니다.',
+        tip2Title: '/compact 적절히 사용',
+        tip2Desc: '대화가 길어지면 /compact로 히스토리를 압축하세요. 토큰 소비를 절약하고 응답 속도를 유지합니다.',
+        tip3Title: '코드 스니펫 활용',
+        tip3Desc: '관련 코드 스니펫을 붙여넣어 AI에게 참조하게 하면, 문제만 설명하는 것보다 정확한 답변을 얻을 수 있습니다.',
+        tip4Title: '반복적 개발',
+        tip4Desc: '큰 작업을 작은 단계로 나누어 AI와 단계적으로 협력하면, 한 번에 복잡한 기능을 요청하는 것보다 효과적입니다.'
+      },
+      links: {
+        title: '빠른 링크',
+        keys: 'API 키 관리',
+        usage: '사용량 보기',
+        status: '시스템 상태'
+      }
+    },
     quickStart: {
       title: '빠른 시작',
       step1: {

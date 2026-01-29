@@ -156,7 +156,7 @@ export default {
       q2: 'API Key 在哪里拿？',
       a2: '登入後進入「主控台 → API Keys」創建/複製。',
       q3: '支援哪些工具/客戶端？',
-      a3: '目前支援 Claude Code，可在 Terminal、VS Code、Cursor、Windsurf 等環境中使用。',
+      a3: '目前支援 Claude Code，可在 Terminal、VS Code 等環境中使用。',
       q4: '價格怎么算？',
       a4: '計費規則與用量明細會在主控台展示；你可以按模型、按天查看記錄。',
       q5: '遇到報錯怎么辦？',
@@ -489,6 +489,171 @@ export default {
     subtitle: '快速了解如何配置和使用服務',
     copy: '複製',
     copied: '已複製',
+    // 返回按鈕
+    backToList: '返回文檔列表',
+    // 入口頁
+    entry: {
+      title: '選擇你的使用方式',
+      subtitle: '根據你使用的工具，選擇對應的配置教程',
+      recommended: '新手推薦',
+      advanced: '進階用戶',
+      viewGuide: '查看教程',
+      vscodeDesc: '透過外掛在 VSCode 中使用 Claude 進行程式設計',
+      cliDesc: '在終端機中使用 Claude Code 命令列工具',
+      tipsTitle: '使用技巧',
+      tipsDesc: '常用命令、快捷鍵和最佳實踐',
+      quickInfo: {
+        title: '快速上手只需三步',
+        step1Title: '獲取 API 金鑰',
+        step1Desc: '在後台創建你的專屬金鑰',
+        step2Title: '配置工具',
+        step2Desc: '按照教程設置 Base URL 和金鑰',
+        step3Title: '開始使用',
+        step3Desc: '啟動工具，享受 AI 程式設計'
+      },
+      faq: {
+        title: '常見問題',
+        q1: '不知道選哪個工具？',
+        a1: '如果你是新手，推薦使用 Cursor，它提供了圖形化介面，上手簡單。如果你習慣命令列操作，可以嘗試 Claude Code CLI。',
+        q2: '需要付費嗎？',
+        a2: '本服務採用按量計費模式，不同模型有不同的價格。你可以在「方案計劃」頁面查看具體價格。',
+        q3: '支援哪些模型？',
+        a3: '支援 Claude Opus 4.5、Sonnet 4.5 等主流模型，可以在使用時透過 /model 命令切換。',
+        q4: '遇到問題怎麼辦？',
+        a4: '請先檢查 API Key 和 Base URL 是否正確配置。如果問題持續，可以查看「系統狀態」頁面或聯繫客服。'
+      }
+    },
+    // VSCode 配置教程
+    vscode: {
+      title: 'VSCode 配置教程',
+      subtitle: '使用外掛在 Visual Studio Code 中接入 Claude',
+      plugins: {
+        title: '推薦外掛',
+        desc: '以下是兩款常用的 Claude 外掛，選擇其中一款安裝即可：',
+        cline: '功能強大的 AI 程式設計助手，支援自主編碼、檔案操作等',
+        claudeCode: 'Anthropic 官方 VSCode 外掛，與 CLI 體驗一致',
+        official: '官方',
+        install: '前往安裝'
+      },
+      step1: {
+        title: '安裝外掛',
+        instruction1: '開啟 VSCode 擴充功能市場（Ctrl+Shift+X）',
+        instruction2: '搜尋 "Cline" 或 "Claude Code"',
+        instruction3: '點擊安裝按鈕',
+        tip: '兩款外掛功能類似，Cline 社群活躍功能豐富，Claude Code 是官方出品體驗統一'
+      },
+      step2: {
+        title: '獲取 API 金鑰',
+        instruction1: '登入後進入',
+        instruction1Link: 'API 金鑰管理',
+        instruction2: '創建並複製你的 API Key',
+        infoTitle: '你需要記錄以下資訊：',
+        yourKey: 'sk-你的金鑰'
+      },
+      step3: {
+        title: '配置外掛',
+        selectPlugin: '根據你安裝的外掛，選擇對應的配置方式：',
+        clineTitle: 'Cline 配置：',
+        cline1: '點擊側邊欄的 Cline 圖示，選擇「Bring my own API key」，點擊 Continue',
+        cline2: '配置 API Provider，填入以下資訊後點擊 Continue：',
+        cline3: '配置成功！現在可以開始使用了',
+        claudeCodeTitle: 'Claude Code 配置：',
+        claudeCodeDesc: 'Claude Code 外掛使用環境變數配置，與 CLI 配置方式相同：',
+        claudeCode1: '設定環境變數 ANTHROPIC_BASE_URL 為本站地址',
+        claudeCode2: '設定環境變數 ANTHROPIC_AUTH_TOKEN 為你的金鑰',
+        claudeCode3: '重新啟動 VSCode 使環境變數生效',
+        claudeCodeTipTitle: '提示：',
+        claudeCodeTip: '環境變數配置方法請參考 CLI 配置教程，配置完成後 VSCode 外掛會自動讀取'
+      },
+      step4: {
+        title: '驗證配置',
+        desc: '在外掛對話視窗中輸入訊息，測試是否能正常回應。',
+        success: '如果收到回覆，說明配置成功！'
+      },
+      faq: {
+        title: '常見問題',
+        q1: '外掛無法連接？',
+        a1: '請檢查 Base URL 格式是否正確（不要有尾部斜線），確認 API Key 有效。',
+        q2: '如何使用不同的模型？',
+        a2: '在外掛配置中修改 model 欄位，可選值有 claude-sonnet-4-20250514、claude-opus-4-20250514 等。'
+      }
+    },
+    // CLI 配置教程
+    cli: {
+      title: 'Claude Code CLI 配置',
+      subtitle: '在終端機中使用官方 Claude Code 命令列工具',
+      note: '本教程適用於 claude-code CLI 用戶，基於 Anthropic 官方介面協定。',
+      prereq: {
+        title: '前置準備',
+        windows: 'Windows 用戶：',
+        windowsNode: '需要先安裝 Node.js：',
+        windowsTerminal: '推薦使用 PowerShell 或 Windows Terminal',
+        mac: 'macOS / Linux 用戶：',
+        macTerminal: '開啟終端機（Spotlight 搜尋 "終端機" 或 "Terminal"）'
+      }
+    },
+    // 使用技巧
+    tips: {
+      title: '使用技巧',
+      subtitle: '掌握這些命令和技巧，讓你的 AI 程式設計更高效',
+      commands: {
+        title: '常用命令速查',
+        command: '命令',
+        function: '功能',
+        usage: '使用場景',
+        modelFunc: '切換模型',
+        modelUsage: '複雜任務用 Opus，日常用 Sonnet',
+        compactFunc: '壓縮上下文',
+        compactUsage: '對話太長時使用，節省 Token',
+        clearFunc: '清空對話',
+        clearUsage: '開始新話題時使用',
+        costFunc: '查看消耗',
+        costUsage: '了解當前對話的 Token 消耗',
+        helpFunc: '查看幫助',
+        helpUsage: '查看所有可用命令'
+      },
+      shortcuts: {
+        title: '快捷鍵',
+        shortcut: '快捷鍵',
+        function: '功能',
+        escFunc: '中斷當前操作',
+        shiftTabFunc: '退出 Plan Mode',
+        ctrlCFunc: '強制終止'
+      },
+      models: {
+        title: '模型選擇建議',
+        desc: '根據任務複雜度選擇合適的模型，可以在效能和成本之間取得平衡：',
+        sonnetLabel: '日常首選',
+        sonnetDesc: '回應快速，性價比高，適合大多數程式設計任務',
+        sonnetUse1: '日常程式碼編寫',
+        sonnetUse2: '程式碼審查和重構',
+        sonnetUse3: '快速問答和除錯',
+        opusLabel: '高端選擇',
+        opusDesc: '推理能力更強，適合複雜任務',
+        opusUse1: '複雜架構設計',
+        opusUse2: '難題攻堅',
+        opusUse3: '長文本分析',
+        switchTip: '小技巧：',
+        switchDesc: '使用命令快速切換模型'
+      },
+      practices: {
+        title: '最佳實踐',
+        tip1Title: '給出清晰的上下文',
+        tip1Desc: '在提問前先說明你的專案背景、技術棧和具體需求，AI 會給出更精準的回答。',
+        tip2Title: '合理使用 /compact',
+        tip2Desc: '當對話變長時，使用 /compact 壓縮歷史記錄，可以節省 Token 消耗並保持回應速度。',
+        tip3Title: '善用程式碼片段',
+        tip3Desc: '貼上相關程式碼片段給 AI 參考，比只描述問題更容易得到準確的解答。',
+        tip4Title: '迭代式開發',
+        tip4Desc: '將大任務拆分成小步驟，逐步與 AI 協作完成，比一次性要求完成複雜功能效果更好。'
+      },
+      links: {
+        title: '快捷入口',
+        keys: 'API 金鑰管理',
+        usage: '查看用量',
+        status: '系統狀態'
+      }
+    },
     quickStart: {
       title: '快速開始',
       step1: {
