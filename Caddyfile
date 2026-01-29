@@ -1,0 +1,15 @@
+# 主域名（支持 HTTPS 自动证书）
+dsrrr.com, mayi.one {
+	reverse_proxy localhost:21930 {
+		flush_interval -1
+	}
+}
+
+# www 重定向到主域名
+www.dsrrr.com {
+	redir https://dsrrr.com{uri} permanent
+}
+
+www.mayi.one {
+	redir https://mayi.one{uri} permanent
+}

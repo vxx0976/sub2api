@@ -36,7 +36,7 @@ func NewRechargeOrderService(
 }
 
 // CreateRechargeOrder 创建充值订单
-func (s *RechargeOrderService) CreateRechargeOrder(ctx context.Context, userID int64, amount float64) (*CreateOrderOutput, error) {
+func (s *RechargeOrderService) CreateRechargeOrder(ctx context.Context, userID int64, amount float64, baseURL string) (*CreateOrderOutput, error) {
 	// 1. 获取充值配置
 	config, err := s.settingService.GetRechargeConfig(ctx)
 	if err != nil {
@@ -77,12 +77,17 @@ func (s *RechargeOrderService) CreateRechargeOrder(ctx context.Context, userID i
 		return nil, fmt.Errorf("create recharge order: %w", err)
 	}
 
-	// 7. 生成支付URL
-	payURL := s.musePayment.PaymentURL(payment.CreatePayParams{
+	// 7. 生成支付URL（动态回调地址）
+	payParams := payment.CreatePayParams{
 		OrderNo: orderNo,
 		Money:   amount, // 用户实际支付金额
 		Name:    "账户充值",
-	})
+	}
+	if baseURL != "" {
+		payParams.NotifyURL = baseURL + "/api/v1/payment/notify"
+		payParams.ReturnURL = baseURL + "/recharge-orders"
+	}
+	payURL := s.musePayment.PaymentURL(payParams)
 
 	return &CreateOrderOutput{
 		OrderNo:      orderNo,
@@ -136,7 +141,7 @@ func (s *RechargeOrderService) HandleRechargeNotify(ctx context.Context, orderNo
 }
 
 // RepayRechargeOrder 继续支付
-func (s *RechargeOrderService) RepayRechargeOrder(ctx context.Context, userID int64, orderNo string) (*CreateOrderOutput, error) {
+func (s *RechargeOrderService) RepayRechargeOrder(ctx context.Context, userID int64, orderNo string, baseURL string) (*CreateOrderOutput, error) {
 	// 验证功能是否启用
 	config, err := s.settingService.GetRechargeConfig(ctx)
 	if err != nil {
@@ -171,12 +176,17 @@ func (s *RechargeOrderService) RepayRechargeOrder(ctx context.Context, userID in
 		return nil, ErrRechargeOrderExpired
 	}
 
-	// 生成新的支付URL
-	payURL := s.musePayment.PaymentURL(payment.CreatePayParams{
+	// 生成新的支付URL（动态回调地址）
+	payParams := payment.CreatePayParams{
 		OrderNo: order.OrderNo,
 		Money:   order.Amount,
 		Name:    "账户充值",
-	})
+	}
+	if baseURL != "" {
+		payParams.NotifyURL = baseURL + "/api/v1/payment/notify"
+		payParams.ReturnURL = baseURL + "/recharge-orders"
+	}
+	payURL := s.musePayment.PaymentURL(payParams)
 
 	return &CreateOrderOutput{
 		OrderNo:      order.OrderNo,

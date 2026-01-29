@@ -55,6 +55,7 @@ func (h *RechargeHandler) CreateRechargeOrder(c *gin.Context) {
 		c.Request.Context(),
 		subject.UserID,
 		req.Amount,
+		getBaseURL(c),
 	)
 	if err != nil {
 		response.ErrorFrom(c, err)
@@ -118,6 +119,7 @@ func (h *RechargeHandler) RepayRechargeOrder(c *gin.Context) {
 		c.Request.Context(),
 		subject.UserID,
 		orderNo,
+		getBaseURL(c),
 	)
 	if err != nil {
 		response.ErrorFrom(c, err)

@@ -24,19 +24,31 @@ func NewMusePayment(cfg config.MusePaymentConfig) *MusePayment {
 
 // CreatePayParams 创建支付参数
 type CreatePayParams struct {
-	OrderNo string  // 商户订单号
-	Money   float64 // 金额
-	Name    string  // 商品名称
-	Type    string  // 支付类型: alipay/wxpay，空则跳转收银台
+	OrderNo   string  // 商户订单号
+	Money     float64 // 金额
+	Name      string  // 商品名称
+	Type      string  // 支付类型: alipay/wxpay，空则跳转收银台
+	NotifyURL string  // 回调通知地址（可选，为空则使用配置）
+	ReturnURL string  // 支付完成跳转地址（可选，为空则使用配置）
 }
 
 // PaymentURL 生成支付跳转URL
 func (m *MusePayment) PaymentURL(params CreatePayParams) string {
+	// 优先使用传入的 URL，否则使用配置
+	notifyURL := params.NotifyURL
+	if notifyURL == "" {
+		notifyURL = m.cfg.NotifyURL
+	}
+	returnURL := params.ReturnURL
+	if returnURL == "" {
+		returnURL = m.cfg.ReturnURL
+	}
+
 	data := map[string]string{
 		"pid":          m.cfg.PID,
 		"out_trade_no": params.OrderNo,
-		"notify_url":   m.cfg.NotifyURL,
-		"return_url":   m.cfg.ReturnURL,
+		"notify_url":   notifyURL,
+		"return_url":   returnURL,
 		"name":         params.Name,
 		"money":        fmt.Sprintf("%.2f", params.Money),
 		"sign_type":    "MD5",

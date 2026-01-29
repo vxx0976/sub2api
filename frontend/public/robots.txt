@@ -17,4 +17,4 @@ Disallow: /orders
 Disallow: /recharge-orders
 Disallow: /admin
 
-Sitemap: https://dsrrr.com/sitemap.xml
+Sitemap: https://mayi.one/sitemap.xml

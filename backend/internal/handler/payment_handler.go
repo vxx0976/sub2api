@@ -12,6 +12,20 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// getBaseURL 从请求中获取基础 URL
+func getBaseURL(c *gin.Context) string {
+	scheme := "https"
+	if c.Request.TLS == nil {
+		// 检查 X-Forwarded-Proto header（反向代理场景）
+		if proto := c.GetHeader("X-Forwarded-Proto"); proto != "" {
+			scheme = proto
+		} else {
+			scheme = "http"
+		}
+	}
+	return scheme + "://" + c.Request.Host
+}
+
 // PurchasablePlan represents a plan available for purchase
 type PurchasablePlan struct {
 	ID              int64    `json:"id"`
@@ -110,6 +124,7 @@ func (h *PaymentHandler) CreateOrder(c *gin.Context) {
 	result, err := h.orderService.CreateOrder(c.Request.Context(), &service.CreateOrderInput{
 		UserID:  subject.UserID,
 		GroupID: req.GroupID,
+		BaseURL: getBaseURL(c),
 	})
 	if err != nil {
 		response.ErrorFrom(c, err)
@@ -164,17 +179,26 @@ func (h *PaymentHandler) PaymentNotify(c *gin.Context) {
 // PaymentReturn handles payment completion redirect
 // GET /api/v1/payment/return
 func (h *PaymentHandler) PaymentReturn(c *gin.Context) {
+	baseURL := getBaseURL(c)
+
 	// Get order number from query
 	orderNo := c.Query("out_trade_no")
 	if orderNo == "" {
-		c.Redirect(http.StatusFound, h.cfg.Payment.Muse.ReturnURL+"?status=error")
+		c.Redirect(http.StatusFound, baseURL+"/subscriptions?status=error")
 		return
+	}
+
+	// 判断是充值订单还是套餐订单
+	isRechargeOrder := len(orderNo) > 0 && orderNo[0] == 'R'
+	returnPath := "/subscriptions"
+	if isRechargeOrder {
+		returnPath = "/recharge-orders"
 	}
 
 	// Check order status
 	order, err := h.orderService.GetOrderByNo(c.Request.Context(), orderNo)
 	if err != nil {
-		c.Redirect(http.StatusFound, h.cfg.Payment.Muse.ReturnURL+"?status=error")
+		c.Redirect(http.StatusFound, baseURL+returnPath+"?status=error")
 		return
 	}
 
@@ -186,7 +210,7 @@ func (h *PaymentHandler) PaymentReturn(c *gin.Context) {
 		status = "expired"
 	}
 
-	c.Redirect(http.StatusFound, h.cfg.Payment.Muse.ReturnURL+"?status="+status+"&order_no="+orderNo)
+	c.Redirect(http.StatusFound, baseURL+returnPath+"?status="+status+"&order_no="+orderNo)
 }
 
 // VerifyPaymentReturn handles verification of payment return parameters
@@ -280,7 +304,7 @@ func (h *PaymentHandler) RepayOrder(c *gin.Context) {
 		return
 	}
 
-	result, err := h.orderService.RepayOrder(c.Request.Context(), subject.UserID, orderNo)
+	result, err := h.orderService.RepayOrder(c.Request.Context(), subject.UserID, orderNo, getBaseURL(c))
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return

@@ -44,6 +44,7 @@ func NewOrderService(
 type CreateOrderInput struct {
 	UserID  int64
 	GroupID int64
+	BaseURL string // 请求来源的基础 URL，用于动态生成回调地址
 }
 
 // CreateOrderOutput output for creating an order
@@ -92,12 +93,18 @@ func (s *OrderService) CreateOrder(ctx context.Context, input *CreateOrderInput)
 		return nil, fmt.Errorf("create order: %w", err)
 	}
 
-	// Generate payment URL
-	payURL := s.musePayment.PaymentURL(payment.CreatePayParams{
+	// Generate payment URL with dynamic callback URLs
+	payParams := payment.CreatePayParams{
 		OrderNo: orderNo,
 		Money:   *group.Price,
 		Name:    fmt.Sprintf("%s 订阅套餐", group.Name),
-	})
+	}
+	// 如果提供了 BaseURL，动态生成回调地址
+	if input.BaseURL != "" {
+		payParams.NotifyURL = input.BaseURL + "/api/v1/payment/notify"
+		payParams.ReturnURL = input.BaseURL + "/subscriptions"
+	}
+	payURL := s.musePayment.PaymentURL(payParams)
 
 	return &CreateOrderOutput{
 		OrderNo: orderNo,
@@ -207,7 +214,7 @@ func (s *OrderService) GetPurchasablePlans(ctx context.Context) ([]Group, error)
 }
 
 // RepayOrder generates a new payment URL for an existing pending order
-func (s *OrderService) RepayOrder(ctx context.Context, userID int64, orderNo string) (*CreateOrderOutput, error) {
+func (s *OrderService) RepayOrder(ctx context.Context, userID int64, orderNo string, baseURL string) (*CreateOrderOutput, error) {
 	// Check if payment is enabled
 	if !s.cfg.Payment.Enabled {
 		return nil, ErrPaymentDisabled
@@ -245,12 +252,18 @@ func (s *OrderService) RepayOrder(ctx context.Context, userID int64, orderNo str
 		return nil, fmt.Errorf("get group: %w", err)
 	}
 
-	// Generate payment URL
-	payURL := s.musePayment.PaymentURL(payment.CreatePayParams{
+	// Generate payment URL with dynamic callback URLs
+	payParams := payment.CreatePayParams{
 		OrderNo: order.OrderNo,
 		Money:   order.Amount,
 		Name:    fmt.Sprintf("%s 订阅套餐", group.Name),
-	})
+	}
+	// 如果提供了 BaseURL，动态生成回调地址
+	if baseURL != "" {
+		payParams.NotifyURL = baseURL + "/api/v1/payment/notify"
+		payParams.ReturnURL = baseURL + "/subscriptions"
+	}
+	payURL := s.musePayment.PaymentURL(payParams)
 
 	return &CreateOrderOutput{
 		OrderNo: order.OrderNo,
