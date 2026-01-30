@@ -82,6 +82,9 @@ export interface PublicSettings {
   contact_info: string
   doc_url: string
   home_content: string
+  hide_ccs_import_button: boolean
+  purchase_subscription_enabled: boolean
+  purchase_subscription_url: string
   linuxdo_oauth_enabled: boolean
   version: string
   announcements?: Announcement[]

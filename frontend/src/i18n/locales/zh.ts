@@ -479,6 +479,7 @@ export default {
     adminReferrals: '邀请管理',
     adminRechargeOrders: '充值管理',
     rechargeSettings: '充值配置',
+    buySubscription: '购买订阅',
     docs: '接入文档',
     referral: '邀请好友'
   },
@@ -3853,6 +3854,17 @@ export default {
         homeContentHint: '自定义首页内容，支持 Markdown/HTML。如果输入的是链接（以 http:// 或 https:// 开头），则会使用该链接作为 iframe 的 src 属性，这允许你设置任意网页作为首页。设置后首页的状态信息将不再显示。',
         homeContentIframeWarning: '⚠️ iframe 模式提示：部分网站设置了 X-Frame-Options 或 CSP 安全策略，禁止被嵌入到 iframe 中。如果页面显示空白或报错，请确认目标网站允许被嵌入，或考虑使用 HTML 模式自行构建页面内容。'
       },
+      purchase: {
+        title: '购买订阅页面',
+        description: '在侧边栏展示“购买订阅”入口，并在页面内通过 iframe 打开指定链接',
+        enabled: '显示购买订阅入口',
+        enabledHint: '仅在标准模式（非简单模式）下展示',
+        url: '购买页面 URL',
+        urlPlaceholder: 'https://example.com/purchase',
+        urlHint: '必须是完整的 http(s) 链接',
+        iframeWarning:
+          '⚠️ iframe 提示：部分网站会通过 X-Frame-Options 或 CSP（frame-ancestors）禁止被 iframe 嵌入，出现空白时可引导用户使用“新窗口打开”。'
+      },
       smtp: {
         title: 'SMTP 设置',
         description: '配置用于发送验证码的邮件服务',
@@ -4038,6 +4050,17 @@ export default {
     restartNow: '立即重启',
     restarting: '正在重启...',
     retry: '重试'
+  },
+
+  // Purchase Subscription Page
+  purchase: {
+    title: '购买订阅',
+    description: '通过内嵌页面完成订阅购买',
+    openInNewTab: '新窗口打开',
+    notEnabledTitle: '该功能未开启',
+    notEnabledDesc: '管理员暂未开启购买订阅入口，请联系管理员。',
+    notConfiguredTitle: '购买链接未配置',
+    notConfiguredDesc: '管理员已开启入口，但尚未配置购买订阅链接，请联系管理员。'
   },
 
   // User Subscriptions Page

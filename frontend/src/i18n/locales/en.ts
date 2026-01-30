@@ -480,6 +480,7 @@ export default {
     adminReferrals: 'Referral Management',
     adminRechargeOrders: 'Recharge Management',
     rechargeSettings: 'Recharge Settings',
+    buySubscription: 'Purchase Subscription',
     docs: 'Docs',
     referral: 'Invite Friends'
   },
@@ -3886,6 +3887,17 @@ export default {
         homeContentHint: 'Customize the home page content. Supports Markdown/HTML. If you enter a URL (starting with http:// or https://), it will be used as an iframe src to embed an external page. When set, the default status information will no longer be displayed.',
         homeContentIframeWarning: '⚠️ iframe mode note: Some websites have X-Frame-Options or CSP security policies that prevent embedding in iframes. If the page appears blank or shows an error, please verify the target website allows embedding, or consider using HTML mode to build your own content.'
       },
+      purchase: {
+        title: 'Purchase Page',
+        description: 'Show a "Purchase Subscription" entry in the sidebar and open the configured URL in an iframe',
+        enabled: 'Show Purchase Entry',
+        enabledHint: 'Only shown in standard mode (not simple mode)',
+        url: 'Purchase URL',
+        urlPlaceholder: 'https://example.com/purchase',
+        urlHint: 'Must be an absolute http(s) URL',
+        iframeWarning:
+          '⚠️ iframe note: Some websites block embedding via X-Frame-Options or CSP (frame-ancestors). If the page is blank, provide an "Open in new tab" alternative.'
+      },
       smtp: {
         title: 'SMTP Settings',
         description: 'Configure email sending for verification codes',
@@ -4072,6 +4084,18 @@ export default {
     restartNow: 'Restart Now',
     restarting: 'Restarting...',
     retry: 'Retry'
+  },
+
+  // Purchase Subscription Page
+  purchase: {
+    title: 'Purchase Subscription',
+    description: 'Purchase a subscription via the embedded page',
+    openInNewTab: 'Open in new tab',
+    notEnabledTitle: 'Feature not enabled',
+    notEnabledDesc: 'The administrator has not enabled the purchase page. Please contact admin.',
+    notConfiguredTitle: 'Purchase URL not configured',
+    notConfiguredDesc:
+      'The administrator enabled the entry but has not configured a purchase URL. Please contact admin.'
   },
 
   // User Subscriptions Page

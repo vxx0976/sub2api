@@ -447,6 +447,16 @@ const userNavItems = computed(() => {
     { path: '/subscriptions', label: t('nav.mySubscriptions'), icon: CreditCardIcon, hideInSimpleMode: true },
     { path: '/plans', label: t('nav.plans'), icon: GiftIcon, hideInSimpleMode: true },
     { path: '/orders', label: t('nav.orders'), icon: OrdersIcon, hideInSimpleMode: true },
+    ...(appStore.cachedPublicSettings?.purchase_subscription_enabled
+      ? [
+          {
+            path: '/purchase',
+            label: t('nav.buySubscription'),
+            icon: CreditCardIcon,
+            hideInSimpleMode: true
+          }
+        ]
+      : []),
     { path: '/redeem', label: t('nav.redeem'), icon: TicketIcon, hideInSimpleMode: true },
     { path: '/referral', label: t('nav.referral'), icon: UserPlusIcon, hideInSimpleMode: true }
   ]
