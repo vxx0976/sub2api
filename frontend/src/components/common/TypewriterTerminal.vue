@@ -10,7 +10,7 @@
           >{{ line.prompt ?? '$' }}</span
         >
         <span
-          class="min-w-0 flex-1 whitespace-pre-wrap break-words"
+          class="min-w-0 flex-1 whitespace-pre-wrap break-all"
           :class="lineClass(line.kind)"
           >{{ renderedLine(index) }}<span v-if="shouldShowCursor(index)" class="tw-cursor"> </span
         ></span>
