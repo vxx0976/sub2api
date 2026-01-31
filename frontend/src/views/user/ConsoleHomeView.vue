@@ -17,6 +17,33 @@
         </div>
       </div>
 
+      <!-- Getting Started Guide -->
+      <a
+        v-if="docUrl"
+        :href="docUrl"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="group card flex items-center gap-4 p-5 transition-all hover:shadow-lg hover:ring-2 hover:ring-primary-500/50"
+      >
+        <div class="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 to-blue-600 shadow-lg shadow-blue-500/30 transition-transform group-hover:scale-105">
+          <Icon name="book" size="lg" class="text-white" />
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2">
+            <h3 class="text-base font-semibold text-gray-900 dark:text-white">
+              {{ t('consoleHome.gettingStarted.title') }}
+            </h3>
+            <span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+              {{ t('consoleHome.gettingStarted.badge') }}
+            </span>
+          </div>
+          <p class="mt-1 text-sm text-gray-500 dark:text-dark-400 truncate">
+            {{ t('consoleHome.gettingStarted.description') }}
+          </p>
+        </div>
+        <Icon name="externalLink" size="md" class="flex-shrink-0 text-gray-400 transition-colors group-hover:text-primary-500 dark:text-dark-500" />
+      </a>
+
       <!-- Announcements -->
       <div v-if="announcements.length > 0" class="card p-6">
         <div class="mb-4 flex items-center gap-2">
@@ -156,7 +183,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useAuthStore } from '@/stores/auth'
+import { useAuthStore, useAppStore } from '@/stores'
 import { settingsAPI } from '@/api/settings'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import Icon from '@/components/icons/Icon.vue'
@@ -164,6 +191,10 @@ import type { Announcement } from '@/types'
 
 const { t, locale } = useI18n()
 const authStore = useAuthStore()
+const appStore = useAppStore()
+
+// Doc URL from settings
+const docUrl = computed(() => appStore.cachedPublicSettings?.doc_url || '')
 
 const userName = computed(() => authStore.user?.username || authStore.user?.email?.split('@')[0] || '')
 const balance = computed(() => authStore.user?.balance || 0)

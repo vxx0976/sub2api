@@ -188,6 +188,11 @@ export default {
     description: '控制台首页',
     welcome: '欢迎回来',
     balance: '余额',
+    gettingStarted: {
+      title: '新手教程',
+      badge: '推荐',
+      description: '快速了解如何使用本平台，3 分钟上手'
+    },
     announcements: '系统公告',
     promotions: '优惠活动',
     quickLinks: '快捷入口',

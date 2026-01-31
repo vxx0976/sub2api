@@ -95,8 +95,8 @@
           </p>
         </div>
 
-        <!-- Promo Code Input (Optional) -->
-        <div v-if="promoCodeEnabled">
+        <!-- Promo Code Input (Optional) - Only show when coming from referral/promo link -->
+        <div v-if="promoCodeEnabled && hasPromoParam">
           <label for="promo_code" class="input-label">
             {{ t('auth.promoCodeLabel') }}
             <span class="ml-1 text-xs font-normal text-gray-400 dark:text-dark-500">({{ t('common.optional') }})</span>
@@ -242,7 +242,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { AuthLayout } from '@/components/layout'
@@ -276,6 +276,9 @@ const turnstileEnabled = ref<boolean>(false)
 const turnstileSiteKey = ref<string>('')
 const siteName = ref<string>('码驿站')
 const linuxdoOAuthEnabled = ref<boolean>(false)
+
+// Only show promo code field when coming from a referral/promo link
+const hasPromoParam = computed(() => !!(route.query.ref || route.query.promo))
 
 // Turnstile
 const turnstileRef = ref<InstanceType<typeof TurnstileWidget> | null>(null)

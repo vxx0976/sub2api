@@ -189,6 +189,11 @@ export default {
     description: 'Console Home',
     welcome: 'Welcome back',
     balance: 'Balance',
+    gettingStarted: {
+      title: 'Getting Started',
+      badge: 'Recommended',
+      description: 'Learn how to use this platform in 3 minutes'
+    },
     announcements: 'Announcements',
     promotions: 'Promotions',
     quickLinks: 'Quick Links',
