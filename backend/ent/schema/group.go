@@ -122,6 +122,11 @@ func (Group) Fields() []ent.Field {
 		field.Bool("is_recommended").
 			Default(false).
 			Comment("是否推荐套餐"),
+		field.String("external_buy_url").
+			Optional().
+			Nillable().
+			SchemaType(map[string]string{dialect.Postgres: "text"}).
+			Comment("外部购买链接（如淘宝）"),
 	}
 }
 

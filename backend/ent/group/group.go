@@ -65,6 +65,8 @@ const (
 	FieldSortOrder = "sort_order"
 	// FieldIsRecommended holds the string denoting the is_recommended field in the database.
 	FieldIsRecommended = "is_recommended"
+	// FieldExternalBuyURL holds the string denoting the external_buy_url field in the database.
+	FieldExternalBuyURL = "external_buy_url"
 	// EdgeAPIKeys holds the string denoting the api_keys edge name in mutations.
 	EdgeAPIKeys = "api_keys"
 	// EdgeRedeemCodes holds the string denoting the redeem_codes edge name in mutations.
@@ -174,6 +176,7 @@ var Columns = []string{
 	FieldIsPurchasable,
 	FieldSortOrder,
 	FieldIsRecommended,
+	FieldExternalBuyURL,
 }
 
 var (
@@ -367,6 +370,11 @@ func BySortOrder(opts ...sql.OrderTermOption) OrderOption {
 // ByIsRecommended orders the results by the is_recommended field.
 func ByIsRecommended(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldIsRecommended, opts...).ToFunc()
+}
+
+// ByExternalBuyURL orders the results by the external_buy_url field.
+func ByExternalBuyURL(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldExternalBuyURL, opts...).ToFunc()
 }
 
 // ByAPIKeysCount orders the results by api_keys count.

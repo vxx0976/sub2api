@@ -37,10 +37,11 @@ type Group struct {
 	ModelRoutingEnabled bool               `json:"model_routing_enabled"`
 
 	// 支付相关
-	Price         *float64 `json:"price"`
-	IsPurchasable bool     `json:"is_purchasable"`
-	SortOrder     int      `json:"sort_order"`
-	IsRecommended bool     `json:"is_recommended"`
+	Price          *float64 `json:"price"`
+	IsPurchasable  bool     `json:"is_purchasable"`
+	SortOrder      int      `json:"sort_order"`
+	IsRecommended  bool     `json:"is_recommended"`
+	ExternalBuyURL *string  `json:"external_buy_url"`
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`

@@ -19,6 +19,7 @@ export interface PurchasablePlan {
   monthly_limit_usd?: number
   sort_order: number
   is_recommended: boolean
+  external_buy_url?: string
 }
 
 /**

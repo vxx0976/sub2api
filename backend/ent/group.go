@@ -68,6 +68,8 @@ type Group struct {
 	SortOrder int `json:"sort_order,omitempty"`
 	// 是否推荐套餐
 	IsRecommended bool `json:"is_recommended,omitempty"`
+	// 外部购买链接（如淘宝）
+	ExternalBuyURL *string `json:"external_buy_url,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the GroupQuery when eager-loading is set.
 	Edges        GroupEdges `json:"edges"`
@@ -193,7 +195,7 @@ func (*Group) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullFloat64)
 		case group.FieldID, group.FieldDefaultValidityDays, group.FieldFallbackGroupID, group.FieldSortOrder:
 			values[i] = new(sql.NullInt64)
-		case group.FieldName, group.FieldDescription, group.FieldStatus, group.FieldPlatform, group.FieldSubscriptionType:
+		case group.FieldName, group.FieldDescription, group.FieldStatus, group.FieldPlatform, group.FieldSubscriptionType, group.FieldExternalBuyURL:
 			values[i] = new(sql.NullString)
 		case group.FieldCreatedAt, group.FieldUpdatedAt, group.FieldDeletedAt:
 			values[i] = new(sql.NullTime)
@@ -380,6 +382,13 @@ func (_m *Group) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.IsRecommended = value.Bool
 			}
+		case group.FieldExternalBuyURL:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field external_buy_url", values[i])
+			} else if value.Valid {
+				_m.ExternalBuyURL = new(string)
+				*_m.ExternalBuyURL = value.String
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -555,6 +564,11 @@ func (_m *Group) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("is_recommended=")
 	builder.WriteString(fmt.Sprintf("%v", _m.IsRecommended))
+	builder.WriteString(", ")
+	if v := _m.ExternalBuyURL; v != nil {
+		builder.WriteString("external_buy_url=")
+		builder.WriteString(*v)
+	}
 	builder.WriteByte(')')
 	return builder.String()
 }

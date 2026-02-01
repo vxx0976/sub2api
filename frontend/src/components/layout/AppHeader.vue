@@ -61,6 +61,19 @@
             <span class="font-semibold">{{ ch.name }}</span>
             <span>{{ ch.balance_unit }}{{ (ch.cached_balance || 0).toFixed(2) }}</span>
           </a>
+          <!-- Refresh Button -->
+          <button
+            @click="handleRefreshChannels"
+            :disabled="channelsRefreshing"
+            class="flex h-6 w-6 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 disabled:opacity-50 dark:hover:bg-dark-700 dark:hover:text-gray-300"
+            :title="t('common.refresh')"
+          >
+            <Icon
+              name="refresh"
+              size="sm"
+              :class="{ 'animate-spin': channelsRefreshing }"
+            />
+          </button>
         </div>
 
         <!-- Language Switcher -->
@@ -241,8 +254,7 @@ const docUrl = computed(() => appStore.docUrl)
 
 // Channel balance for admin
 const channels = ref<Channel[]>([])
-let channelRefreshTimer: ReturnType<typeof setInterval> | null = null
-
+const channelsRefreshing = ref(false)
 
 async function loadChannels() {
   if (!isAdmin.value) return
@@ -254,26 +266,28 @@ async function loadChannels() {
   }
 }
 
-function startChannelRefresh() {
-  if (channelRefreshTimer) clearInterval(channelRefreshTimer)
-  if (isAdmin.value) {
-    loadChannels()
-    channelRefreshTimer = setInterval(loadChannels, 10000) // 每10秒刷新
+async function handleRefreshChannels() {
+  if (!isAdmin.value || channels.value.length === 0) return
+  channelsRefreshing.value = true
+  try {
+    // Call check-balance for each channel to get real-time balance
+    const results = await Promise.all(
+      channels.value.map(ch => channelsAPI.checkBalance(ch.id).catch(() => ch))
+    )
+    channels.value = results
+  } catch (error) {
+    console.error('Failed to refresh channel balances:', error)
+  } finally {
+    channelsRefreshing.value = false
   }
 }
 
-function stopChannelRefresh() {
-  if (channelRefreshTimer) {
-    clearInterval(channelRefreshTimer)
-    channelRefreshTimer = null
-  }
-}
-
+// Load channels once on admin login
 watch(isAdmin, (newVal) => {
   if (newVal) {
-    startChannelRefresh()
+    loadChannels()
   } else {
-    stopChannelRefresh()
+    channels.value = []
   }
 }, { immediate: true })
 
@@ -352,7 +366,6 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   document.removeEventListener('click', handleClickOutside)
-  stopChannelRefresh()
 })
 </script>
 

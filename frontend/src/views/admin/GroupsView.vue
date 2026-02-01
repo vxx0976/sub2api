@@ -168,11 +168,28 @@
             <span v-else class="text-gray-400 dark:text-gray-500">-</span>
           </template>
 
-          <template #cell-account_count="{ value }">
+          <template #cell-account_count="{ row }">
+            <div v-if="row.account_groups && row.account_groups.length > 0" class="flex flex-wrap gap-1 max-w-xs">
+              <span
+                v-for="ag in row.account_groups.slice(0, 5)"
+                :key="ag.account_id"
+                class="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                :title="ag.account?.name"
+              >
+                {{ ag.account?.name || `#${ag.account_id}` }}
+              </span>
+              <span
+                v-if="row.account_groups.length > 5"
+                class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 dark:bg-dark-600 dark:text-gray-400"
+              >
+                +{{ row.account_groups.length - 5 }}
+              </span>
+            </div>
             <span
-              class="inline-flex items-center rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-800 dark:bg-dark-600 dark:text-gray-300"
+              v-else
+              class="text-gray-400 dark:text-gray-500 text-xs"
             >
-              {{ t('admin.groups.accountsCount', { count: value || 0 }) }}
+              {{ t('admin.groups.noAccounts') }}
             </span>
           </template>
 
@@ -481,6 +498,16 @@
                   {{ t('admin.groups.payment.isRecommendedHint') }}
                 </span>
               </div>
+            </div>
+            <div>
+              <label class="input-label">{{ t('admin.groups.payment.externalBuyUrl') }}</label>
+              <input
+                v-model="createForm.external_buy_url"
+                type="url"
+                class="input"
+                :placeholder="t('admin.groups.payment.externalBuyUrlPlaceholder')"
+              />
+              <p class="input-hint">{{ t('admin.groups.payment.externalBuyUrlHint') }}</p>
             </div>
           </div>
         </div>
@@ -1034,6 +1061,16 @@
                 </span>
               </div>
             </div>
+            <div>
+              <label class="input-label">{{ t('admin.groups.payment.externalBuyUrl') }}</label>
+              <input
+                v-model="editForm.external_buy_url"
+                type="url"
+                class="input"
+                :placeholder="t('admin.groups.payment.externalBuyUrlPlaceholder')"
+              />
+              <p class="input-hint">{{ t('admin.groups.payment.externalBuyUrlHint') }}</p>
+            </div>
           </div>
         </div>
 
@@ -1492,7 +1529,8 @@ const createForm = reactive({
   price: null as number | null,
   is_purchasable: false,
   sort_order: 0,
-  is_recommended: false
+  is_recommended: false,
+  external_buy_url: '' as string
 })
 
 // 简单账号类型（用于模型路由选择）
@@ -1669,7 +1707,8 @@ const editForm = reactive({
   price: null as number | null,
   is_purchasable: false,
   sort_order: 0,
-  is_recommended: false
+  is_recommended: false,
+  external_buy_url: '' as string
 })
 
 // 根据分组类型返回不同的删除确认消息
@@ -1762,6 +1801,7 @@ const closeCreateModal = () => {
   createForm.is_purchasable = false
   createForm.sort_order = 0
   createForm.is_recommended = false
+  createForm.external_buy_url = ''
   createModelRoutingRules.value = []
 }
 
@@ -1817,6 +1857,7 @@ const handleEdit = async (group: Group) => {
   editForm.is_purchasable = group.is_purchasable || false
   editForm.sort_order = group.sort_order || 0
   editForm.is_recommended = group.is_recommended || false
+  editForm.external_buy_url = group.external_buy_url || ''
   // 加载模型路由规则（异步加载账号名称）
   editModelRoutingRules.value = await convertApiFormatToRoutingRules(group.model_routing)
   showEditModal.value = true

@@ -116,6 +116,7 @@ type CreateGroupInput struct {
 	IsPurchasable       bool
 	SortOrder           int
 	IsRecommended       bool
+	ExternalBuyURL      *string
 }
 
 type UpdateGroupInput struct {
@@ -144,6 +145,7 @@ type UpdateGroupInput struct {
 	IsPurchasable       *bool
 	SortOrder           *int
 	IsRecommended       *bool
+	ExternalBuyURL      *string
 }
 
 type CreateAccountInput struct {
@@ -613,6 +615,7 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 		IsPurchasable:       input.IsPurchasable,
 		SortOrder:           input.SortOrder,
 		IsRecommended:       input.IsRecommended,
+		ExternalBuyURL:      input.ExternalBuyURL,
 	}
 	if err := s.groupRepo.Create(ctx, group); err != nil {
 		return nil, err
@@ -764,6 +767,13 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 	}
 	if input.IsRecommended != nil {
 		group.IsRecommended = *input.IsRecommended
+	}
+	if input.ExternalBuyURL != nil {
+		if *input.ExternalBuyURL == "" {
+			group.ExternalBuyURL = nil
+		} else {
+			group.ExternalBuyURL = input.ExternalBuyURL
+		}
 	}
 
 	if err := s.groupRepo.Update(ctx, group); err != nil {

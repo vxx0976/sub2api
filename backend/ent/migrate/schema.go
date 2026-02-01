@@ -282,6 +282,7 @@ var (
 		{Name: "is_purchasable", Type: field.TypeBool, Default: false},
 		{Name: "sort_order", Type: field.TypeInt, Default: 0},
 		{Name: "is_recommended", Type: field.TypeBool, Default: false},
+		{Name: "external_buy_url", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
 	}
 	// GroupsTable holds the schema information for the "groups" table.
 	GroupsTable = &schema.Table{

@@ -258,6 +258,28 @@
                 </div>
               </div>
             </div>
+
+            <!-- Renewal Button -->
+            <div
+              v-if="subscription.group?.price && subscription.group?.is_purchasable"
+              class="mt-4 border-t border-gray-100 pt-4 dark:border-dark-700"
+            >
+              <div class="flex items-center justify-between">
+                <p class="text-xs text-gray-500 dark:text-dark-400">
+                  {{ t('userSubscriptions.renewPrice', { price: subscription.group.price, days: subscription.group.default_validity_days }) }}
+                </p>
+                <button
+                  @click="handleRenew(subscription)"
+                  :disabled="renewingId === subscription.id"
+                  class="btn btn-primary btn-sm"
+                >
+                  <span v-if="renewingId === subscription.id" class="flex items-center gap-2">
+                    <div class="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                  </span>
+                  <span v-else>{{ t('userSubscriptions.renew') }}</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
         </div>
@@ -286,6 +308,7 @@ const appStore = useAppStore()
 const subscriptions = ref<UserSubscription[]>([])
 const loading = ref(true)
 const verifyingPayment = ref(false)
+const renewingId = ref<number | null>(null)
 
 async function loadSubscriptions() {
   try {
@@ -454,6 +477,22 @@ function formatResetTime(windowStart: string | null, windowHours: number): strin
   }
 
   return `${minutes}m`
+}
+
+async function handleRenew(subscription: UserSubscription) {
+  if (!subscription.group || !subscription.group.price) return
+
+  try {
+    renewingId.value = subscription.id
+    const result = await plansAPI.createOrder(subscription.group_id)
+    // Redirect to payment URL
+    window.location.href = result.pay_url
+  } catch (error) {
+    console.error('Failed to renew subscription:', error)
+    appStore.showError(t('userSubscriptions.renewError'))
+  } finally {
+    renewingId.value = null
+  }
 }
 
 onMounted(async () => {

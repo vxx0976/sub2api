@@ -143,6 +143,7 @@ func groupFromServiceBase(g *service.Group) Group {
 		IsPurchasable:       g.IsPurchasable,
 		SortOrder:           g.SortOrder,
 		IsRecommended:       g.IsRecommended,
+		ExternalBuyURL:      g.ExternalBuyURL,
 		CreatedAt:           g.CreatedAt,
 		UpdatedAt:           g.UpdatedAt,
 	}

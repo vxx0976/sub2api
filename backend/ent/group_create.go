@@ -363,6 +363,20 @@ func (_c *GroupCreate) SetNillableIsRecommended(v *bool) *GroupCreate {
 	return _c
 }
 
+// SetExternalBuyURL sets the "external_buy_url" field.
+func (_c *GroupCreate) SetExternalBuyURL(v string) *GroupCreate {
+	_c.mutation.SetExternalBuyURL(v)
+	return _c
+}
+
+// SetNillableExternalBuyURL sets the "external_buy_url" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableExternalBuyURL(v *string) *GroupCreate {
+	if v != nil {
+		_c.SetExternalBuyURL(*v)
+	}
+	return _c
+}
+
 // AddAPIKeyIDs adds the "api_keys" edge to the APIKey entity by IDs.
 func (_c *GroupCreate) AddAPIKeyIDs(ids ...int64) *GroupCreate {
 	_c.mutation.AddAPIKeyIDs(ids...)
@@ -756,6 +770,10 @@ func (_c *GroupCreate) createSpec() (*Group, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.IsRecommended(); ok {
 		_spec.SetField(group.FieldIsRecommended, field.TypeBool, value)
 		_node.IsRecommended = value
+	}
+	if value, ok := _c.mutation.ExternalBuyURL(); ok {
+		_spec.SetField(group.FieldExternalBuyURL, field.TypeString, value)
+		_node.ExternalBuyURL = &value
 	}
 	if nodes := _c.mutation.APIKeysIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -1349,6 +1367,24 @@ func (u *GroupUpsert) UpdateIsRecommended() *GroupUpsert {
 	return u
 }
 
+// SetExternalBuyURL sets the "external_buy_url" field.
+func (u *GroupUpsert) SetExternalBuyURL(v string) *GroupUpsert {
+	u.Set(group.FieldExternalBuyURL, v)
+	return u
+}
+
+// UpdateExternalBuyURL sets the "external_buy_url" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateExternalBuyURL() *GroupUpsert {
+	u.SetExcluded(group.FieldExternalBuyURL)
+	return u
+}
+
+// ClearExternalBuyURL clears the value of the "external_buy_url" field.
+func (u *GroupUpsert) ClearExternalBuyURL() *GroupUpsert {
+	u.SetNull(group.FieldExternalBuyURL)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create.
 // Using this option is equivalent to using:
 //
@@ -1881,6 +1917,27 @@ func (u *GroupUpsertOne) SetIsRecommended(v bool) *GroupUpsertOne {
 func (u *GroupUpsertOne) UpdateIsRecommended() *GroupUpsertOne {
 	return u.Update(func(s *GroupUpsert) {
 		s.UpdateIsRecommended()
+	})
+}
+
+// SetExternalBuyURL sets the "external_buy_url" field.
+func (u *GroupUpsertOne) SetExternalBuyURL(v string) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetExternalBuyURL(v)
+	})
+}
+
+// UpdateExternalBuyURL sets the "external_buy_url" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateExternalBuyURL() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateExternalBuyURL()
+	})
+}
+
+// ClearExternalBuyURL clears the value of the "external_buy_url" field.
+func (u *GroupUpsertOne) ClearExternalBuyURL() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.ClearExternalBuyURL()
 	})
 }
 
@@ -2582,6 +2639,27 @@ func (u *GroupUpsertBulk) SetIsRecommended(v bool) *GroupUpsertBulk {
 func (u *GroupUpsertBulk) UpdateIsRecommended() *GroupUpsertBulk {
 	return u.Update(func(s *GroupUpsert) {
 		s.UpdateIsRecommended()
+	})
+}
+
+// SetExternalBuyURL sets the "external_buy_url" field.
+func (u *GroupUpsertBulk) SetExternalBuyURL(v string) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetExternalBuyURL(v)
+	})
+}
+
+// UpdateExternalBuyURL sets the "external_buy_url" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateExternalBuyURL() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateExternalBuyURL()
+	})
+}
+
+// ClearExternalBuyURL clears the value of the "external_buy_url" field.
+func (u *GroupUpsertBulk) ClearExternalBuyURL() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.ClearExternalBuyURL()
 	})
 }
 

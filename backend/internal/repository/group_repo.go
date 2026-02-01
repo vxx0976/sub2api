@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"log"
+	"sort"
+	"time"
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/ent/apikey"
@@ -54,7 +56,8 @@ func (r *groupRepository) Create(ctx context.Context, groupIn *service.Group) er
 		SetNillablePrice(groupIn.Price).
 		SetIsPurchasable(groupIn.IsPurchasable).
 		SetSortOrder(groupIn.SortOrder).
-		SetIsRecommended(groupIn.IsRecommended)
+		SetIsRecommended(groupIn.IsRecommended).
+		SetNillableExternalBuyURL(groupIn.ExternalBuyURL)
 
 	// 设置模型路由配置
 	if groupIn.ModelRouting != nil {
@@ -116,7 +119,8 @@ func (r *groupRepository) Update(ctx context.Context, groupIn *service.Group) er
 		SetNillablePrice(groupIn.Price).
 		SetIsPurchasable(groupIn.IsPurchasable).
 		SetSortOrder(groupIn.SortOrder).
-		SetIsRecommended(groupIn.IsRecommended)
+		SetIsRecommended(groupIn.IsRecommended).
+		SetNillableExternalBuyURL(groupIn.ExternalBuyURL)
 
 	// 处理 FallbackGroupID：nil 时清除，否则设置
 	if groupIn.FallbackGroupID != nil {
@@ -208,6 +212,35 @@ func (r *groupRepository) ListWithFilters(ctx context.Context, params pagination
 			outGroups[i].AccountCount = counts[outGroups[i].ID]
 		}
 	}
+
+	// Load account names for display in groups list
+	accountsMap, err := r.loadAccountsForGroups(ctx, groupIDs)
+	if err == nil {
+		for i := range outGroups {
+			outGroups[i].AccountGroups = accountsMap[outGroups[i].ID]
+		}
+	}
+
+	// Sort groups by the minimum account priority (ascending)
+	// Groups without accounts go to the end
+	sort.Slice(outGroups, func(i, j int) bool {
+		iAccounts := outGroups[i].AccountGroups
+		jAccounts := outGroups[j].AccountGroups
+
+		// Groups without accounts go to the end
+		if len(iAccounts) == 0 && len(jAccounts) == 0 {
+			return outGroups[i].ID < outGroups[j].ID
+		}
+		if len(iAccounts) == 0 {
+			return false
+		}
+		if len(jAccounts) == 0 {
+			return true
+		}
+
+		// Both have accounts, compare first account's priority (already sorted by priority ASC)
+		return iAccounts[0].Priority < jAccounts[0].Priority
+	})
 
 	return outGroups, paginationResultFromTotal(int64(total), params), nil
 }
@@ -455,4 +488,52 @@ func (r *groupRepository) loadAccountCounts(ctx context.Context, groupIDs []int6
 	}
 
 	return counts, nil
+}
+
+// loadAccountsForGroups loads account info (id, name) for the given group IDs.
+// Returns a map of group_id -> []AccountGroup (with Account containing only id and name)
+func (r *groupRepository) loadAccountsForGroups(ctx context.Context, groupIDs []int64) (map[int64][]service.AccountGroup, error) {
+	result := make(map[int64][]service.AccountGroup, len(groupIDs))
+	if len(groupIDs) == 0 {
+		return result, nil
+	}
+
+	rows, err := r.sql.QueryContext(
+		ctx,
+		`SELECT ag.group_id, ag.account_id, ag.priority, ag.created_at, a.name
+		FROM account_groups ag
+		JOIN accounts a ON ag.account_id = a.id
+		WHERE ag.group_id = ANY($1) AND a.deleted_at IS NULL
+		ORDER BY ag.group_id, ag.priority ASC, ag.account_id`,
+		pq.Array(groupIDs),
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var groupID, accountID int64
+		var priority int
+		var createdAt time.Time
+		var accountName string
+		if err := rows.Scan(&groupID, &accountID, &priority, &createdAt, &accountName); err != nil {
+			return nil, err
+		}
+		result[groupID] = append(result[groupID], service.AccountGroup{
+			AccountID: accountID,
+			GroupID:   groupID,
+			Priority:  priority,
+			CreatedAt: createdAt,
+			Account: &service.Account{
+				ID:   accountID,
+				Name: accountName,
+			},
+		})
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }

@@ -5395,6 +5395,7 @@ type GroupMutation struct {
 	sort_order               *int
 	addsort_order            *int
 	is_recommended           *bool
+	external_buy_url         *string
 	clearedFields            map[string]struct{}
 	api_keys                 map[int64]struct{}
 	removedapi_keys          map[int64]struct{}
@@ -6791,6 +6792,55 @@ func (m *GroupMutation) ResetIsRecommended() {
 	m.is_recommended = nil
 }
 
+// SetExternalBuyURL sets the "external_buy_url" field.
+func (m *GroupMutation) SetExternalBuyURL(s string) {
+	m.external_buy_url = &s
+}
+
+// ExternalBuyURL returns the value of the "external_buy_url" field in the mutation.
+func (m *GroupMutation) ExternalBuyURL() (r string, exists bool) {
+	v := m.external_buy_url
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExternalBuyURL returns the old "external_buy_url" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldExternalBuyURL(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExternalBuyURL is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExternalBuyURL requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExternalBuyURL: %w", err)
+	}
+	return oldValue.ExternalBuyURL, nil
+}
+
+// ClearExternalBuyURL clears the value of the "external_buy_url" field.
+func (m *GroupMutation) ClearExternalBuyURL() {
+	m.external_buy_url = nil
+	m.clearedFields[group.FieldExternalBuyURL] = struct{}{}
+}
+
+// ExternalBuyURLCleared returns if the "external_buy_url" field was cleared in this mutation.
+func (m *GroupMutation) ExternalBuyURLCleared() bool {
+	_, ok := m.clearedFields[group.FieldExternalBuyURL]
+	return ok
+}
+
+// ResetExternalBuyURL resets all changes to the "external_buy_url" field.
+func (m *GroupMutation) ResetExternalBuyURL() {
+	m.external_buy_url = nil
+	delete(m.clearedFields, group.FieldExternalBuyURL)
+}
+
 // AddAPIKeyIDs adds the "api_keys" edge to the APIKey entity by ids.
 func (m *GroupMutation) AddAPIKeyIDs(ids ...int64) {
 	if m.api_keys == nil {
@@ -7203,7 +7253,7 @@ func (m *GroupMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *GroupMutation) Fields() []string {
-	fields := make([]string, 0, 25)
+	fields := make([]string, 0, 26)
 	if m.created_at != nil {
 		fields = append(fields, group.FieldCreatedAt)
 	}
@@ -7279,6 +7329,9 @@ func (m *GroupMutation) Fields() []string {
 	if m.is_recommended != nil {
 		fields = append(fields, group.FieldIsRecommended)
 	}
+	if m.external_buy_url != nil {
+		fields = append(fields, group.FieldExternalBuyURL)
+	}
 	return fields
 }
 
@@ -7337,6 +7390,8 @@ func (m *GroupMutation) Field(name string) (ent.Value, bool) {
 		return m.SortOrder()
 	case group.FieldIsRecommended:
 		return m.IsRecommended()
+	case group.FieldExternalBuyURL:
+		return m.ExternalBuyURL()
 	}
 	return nil, false
 }
@@ -7396,6 +7451,8 @@ func (m *GroupMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldSortOrder(ctx)
 	case group.FieldIsRecommended:
 		return m.OldIsRecommended(ctx)
+	case group.FieldExternalBuyURL:
+		return m.OldExternalBuyURL(ctx)
 	}
 	return nil, fmt.Errorf("unknown Group field %s", name)
 }
@@ -7579,6 +7636,13 @@ func (m *GroupMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetIsRecommended(v)
+		return nil
+	case group.FieldExternalBuyURL:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExternalBuyURL(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Group field %s", name)
@@ -7778,6 +7842,9 @@ func (m *GroupMutation) ClearedFields() []string {
 	if m.FieldCleared(group.FieldPrice) {
 		fields = append(fields, group.FieldPrice)
 	}
+	if m.FieldCleared(group.FieldExternalBuyURL) {
+		fields = append(fields, group.FieldExternalBuyURL)
+	}
 	return fields
 }
 
@@ -7824,6 +7891,9 @@ func (m *GroupMutation) ClearField(name string) error {
 		return nil
 	case group.FieldPrice:
 		m.ClearPrice()
+		return nil
+	case group.FieldExternalBuyURL:
+		m.ClearExternalBuyURL()
 		return nil
 	}
 	return fmt.Errorf("unknown Group nullable field %s", name)
@@ -7907,6 +7977,9 @@ func (m *GroupMutation) ResetField(name string) error {
 		return nil
 	case group.FieldIsRecommended:
 		m.ResetIsRecommended()
+		return nil
+	case group.FieldExternalBuyURL:
+		m.ResetExternalBuyURL()
 		return nil
 	}
 	return fmt.Errorf("unknown Group field %s", name)

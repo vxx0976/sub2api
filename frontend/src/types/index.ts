@@ -261,6 +261,18 @@ export type GroupPlatform = 'anthropic' | 'openai' | 'gemini' | 'antigravity'
 
 export type SubscriptionType = 'standard' | 'subscription'
 
+// Simple account info for group display
+export interface GroupAccountInfo {
+  account_id: number
+  group_id: number
+  priority: number
+  created_at: string
+  account?: {
+    id: number
+    name: string
+  }
+}
+
 export interface Group {
   id: number
   name: string
@@ -290,7 +302,9 @@ export interface Group {
   is_purchasable: boolean
   sort_order: number
   is_recommended: boolean
+  external_buy_url?: string | null
   account_count?: number
+  account_groups?: GroupAccountInfo[]
   created_at: string
   updated_at: string
 }

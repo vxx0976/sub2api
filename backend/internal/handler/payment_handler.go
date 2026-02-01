@@ -38,6 +38,7 @@ type PurchasablePlan struct {
 	MonthlyLimitUSD *float64 `json:"monthly_limit_usd,omitempty"`
 	SortOrder       int      `json:"sort_order"`
 	IsRecommended   bool     `json:"is_recommended"`
+	ExternalBuyURL  *string  `json:"external_buy_url,omitempty"`
 }
 
 // CreateOrderRequest represents a request to create an order
@@ -100,6 +101,7 @@ func (h *PaymentHandler) GetPlans(c *gin.Context) {
 		plan.DailyLimitUSD = p.DailyLimitUSD
 		plan.WeeklyLimitUSD = p.WeeklyLimitUSD
 		plan.MonthlyLimitUSD = p.MonthlyLimitUSD
+		plan.ExternalBuyURL = p.ExternalBuyURL
 		result = append(result, plan)
 	}
 

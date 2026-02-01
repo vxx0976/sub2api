@@ -1594,7 +1594,7 @@ export default {
         purchasable: '可购买',
         priority: '优先级',
         apiKeys: 'API 密钥数',
-        accounts: '账号数',
+        accounts: '账号',
         status: '状态',
         actions: '操作',
         billingType: '计费类型'
@@ -1663,6 +1663,7 @@ export default {
       public: '公开',
       rateAndAccounts: '{rate}x 费率 · {count} 个账号',
       accountsCount: '{count} 个账号',
+      noAccounts: '暂无账号',
       enterGroupName: '请输入分组名称',
       optionalDescription: '可选描述',
       platformHint: '选择此分组关联的平台',
@@ -1739,7 +1740,10 @@ export default {
         sortOrder: '排序权重',
         sortOrderHint: '数值越大排序越靠前',
         isRecommended: '推荐套餐',
-        isRecommendedHint: '在套餐页面显示推荐标识'
+        isRecommendedHint: '在套餐页面显示推荐标识',
+        externalBuyUrl: '外部购买链接',
+        externalBuyUrlPlaceholder: 'https://item.taobao.com/item.htm?id=...',
+        externalBuyUrlHint: '可选，配置后用户可通过此链接跳转到外部平台购买'
       },
       planPreview: {
         title: '套餐预览',
@@ -4099,7 +4103,10 @@ export default {
     expiresOn: '{date} 到期',
     resetIn: '{time} 后重置',
     windowNotActive: '等待首次使用',
-    usageOf: '已用 {used} / {limit}'
+    usageOf: '已用 {used} / {limit}',
+    renew: '续费',
+    renewPrice: '续费价格：¥{price} / {days}天',
+    renewError: '续费失败，请稍后重试'
   },
 
   // Plans (user purchase page)
@@ -4120,6 +4127,7 @@ export default {
     processing: '处理中...',
     purchase: '立即购买',
     purchaseError: '创建订单失败，请稍后重试',
+    buyOnTaobao: '去淘宝购买',
     pricePerDollar: '仅 ¥{price}/刀',
     estimatedUsage: '约可调用 {count} 次（混合使用）',
     estimatedTokens: '约 {tokens} tokens',

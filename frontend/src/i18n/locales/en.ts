@@ -1613,6 +1613,7 @@ export default {
       },
       rateAndAccounts: '{rate}x rate · {count} accounts',
       accountsCount: '{count} accounts',
+      noAccounts: 'No accounts',
       form: {
         name: 'Name',
         description: 'Description',
@@ -1746,7 +1747,10 @@ export default {
         sortOrder: 'Sort Weight',
         sortOrderHint: 'Higher values appear first in the list',
         isRecommended: 'Recommended',
-        isRecommendedHint: 'Show recommended badge on the plans page'
+        isRecommendedHint: 'Show recommended badge on the plans page',
+        externalBuyUrl: 'External Buy URL',
+        externalBuyUrlPlaceholder: 'https://item.taobao.com/item.htm?id=...',
+        externalBuyUrlHint: 'Optional. When configured, users can click to purchase on external platforms'
       },
       planPreview: {
         title: 'Plan Preview',
@@ -4135,7 +4139,10 @@ export default {
     expiresOn: 'Expires on {date}',
     resetIn: 'Resets in {time}',
     windowNotActive: 'Awaiting first use',
-    usageOf: '{used} of {limit}'
+    usageOf: '{used} of {limit}',
+    renew: 'Renew',
+    renewPrice: 'Renew: ¥{price} / {days} days',
+    renewError: 'Failed to renew, please try again'
   },
 
   // Plans (user purchase page)
@@ -4156,6 +4163,7 @@ export default {
     processing: 'Processing...',
     purchase: 'Purchase Now',
     purchaseError: 'Failed to create order. Please try again.',
+    buyOnTaobao: 'Buy on Taobao',
     pricePerDollar: 'Only ¥{price}/dollar',
     estimatedUsage: '~{count} calls (mixed usage)',
     estimatedTokens: '~{tokens} tokens',

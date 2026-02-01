@@ -175,6 +175,11 @@ func IsRecommended(v bool) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldIsRecommended, v))
 }
 
+// ExternalBuyURL applies equality check predicate on the "external_buy_url" field. It's identical to ExternalBuyURLEQ.
+func ExternalBuyURL(v string) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldExternalBuyURL, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldCreatedAt, v))
@@ -1218,6 +1223,81 @@ func IsRecommendedEQ(v bool) predicate.Group {
 // IsRecommendedNEQ applies the NEQ predicate on the "is_recommended" field.
 func IsRecommendedNEQ(v bool) predicate.Group {
 	return predicate.Group(sql.FieldNEQ(FieldIsRecommended, v))
+}
+
+// ExternalBuyURLEQ applies the EQ predicate on the "external_buy_url" field.
+func ExternalBuyURLEQ(v string) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldExternalBuyURL, v))
+}
+
+// ExternalBuyURLNEQ applies the NEQ predicate on the "external_buy_url" field.
+func ExternalBuyURLNEQ(v string) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldExternalBuyURL, v))
+}
+
+// ExternalBuyURLIn applies the In predicate on the "external_buy_url" field.
+func ExternalBuyURLIn(vs ...string) predicate.Group {
+	return predicate.Group(sql.FieldIn(FieldExternalBuyURL, vs...))
+}
+
+// ExternalBuyURLNotIn applies the NotIn predicate on the "external_buy_url" field.
+func ExternalBuyURLNotIn(vs ...string) predicate.Group {
+	return predicate.Group(sql.FieldNotIn(FieldExternalBuyURL, vs...))
+}
+
+// ExternalBuyURLGT applies the GT predicate on the "external_buy_url" field.
+func ExternalBuyURLGT(v string) predicate.Group {
+	return predicate.Group(sql.FieldGT(FieldExternalBuyURL, v))
+}
+
+// ExternalBuyURLGTE applies the GTE predicate on the "external_buy_url" field.
+func ExternalBuyURLGTE(v string) predicate.Group {
+	return predicate.Group(sql.FieldGTE(FieldExternalBuyURL, v))
+}
+
+// ExternalBuyURLLT applies the LT predicate on the "external_buy_url" field.
+func ExternalBuyURLLT(v string) predicate.Group {
+	return predicate.Group(sql.FieldLT(FieldExternalBuyURL, v))
+}
+
+// ExternalBuyURLLTE applies the LTE predicate on the "external_buy_url" field.
+func ExternalBuyURLLTE(v string) predicate.Group {
+	return predicate.Group(sql.FieldLTE(FieldExternalBuyURL, v))
+}
+
+// ExternalBuyURLContains applies the Contains predicate on the "external_buy_url" field.
+func ExternalBuyURLContains(v string) predicate.Group {
+	return predicate.Group(sql.FieldContains(FieldExternalBuyURL, v))
+}
+
+// ExternalBuyURLHasPrefix applies the HasPrefix predicate on the "external_buy_url" field.
+func ExternalBuyURLHasPrefix(v string) predicate.Group {
+	return predicate.Group(sql.FieldHasPrefix(FieldExternalBuyURL, v))
+}
+
+// ExternalBuyURLHasSuffix applies the HasSuffix predicate on the "external_buy_url" field.
+func ExternalBuyURLHasSuffix(v string) predicate.Group {
+	return predicate.Group(sql.FieldHasSuffix(FieldExternalBuyURL, v))
+}
+
+// ExternalBuyURLIsNil applies the IsNil predicate on the "external_buy_url" field.
+func ExternalBuyURLIsNil() predicate.Group {
+	return predicate.Group(sql.FieldIsNull(FieldExternalBuyURL))
+}
+
+// ExternalBuyURLNotNil applies the NotNil predicate on the "external_buy_url" field.
+func ExternalBuyURLNotNil() predicate.Group {
+	return predicate.Group(sql.FieldNotNull(FieldExternalBuyURL))
+}
+
+// ExternalBuyURLEqualFold applies the EqualFold predicate on the "external_buy_url" field.
+func ExternalBuyURLEqualFold(v string) predicate.Group {
+	return predicate.Group(sql.FieldEqualFold(FieldExternalBuyURL, v))
+}
+
+// ExternalBuyURLContainsFold applies the ContainsFold predicate on the "external_buy_url" field.
+func ExternalBuyURLContainsFold(v string) predicate.Group {
+	return predicate.Group(sql.FieldContainsFold(FieldExternalBuyURL, v))
 }
 
 // HasAPIKeys applies the HasEdge predicate on the "api_keys" edge.

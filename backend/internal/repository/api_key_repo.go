@@ -433,12 +433,13 @@ func groupEntityToService(g *dbent.Group) *service.Group {
 		ModelRouting:        g.ModelRouting,
 		ModelRoutingEnabled: g.ModelRoutingEnabled,
 		// 支付相关字段
-		Price:         g.Price,
-		IsPurchasable: g.IsPurchasable,
-		SortOrder:     g.SortOrder,
-		IsRecommended: g.IsRecommended,
-		CreatedAt:     g.CreatedAt,
-		UpdatedAt:     g.UpdatedAt,
+		Price:          g.Price,
+		IsPurchasable:  g.IsPurchasable,
+		SortOrder:      g.SortOrder,
+		IsRecommended:  g.IsRecommended,
+		ExternalBuyURL: g.ExternalBuyURL,
+		CreatedAt:      g.CreatedAt,
+		UpdatedAt:      g.UpdatedAt,
 	}
 }
 

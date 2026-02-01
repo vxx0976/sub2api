@@ -498,6 +498,26 @@ func (_u *GroupUpdate) SetNillableIsRecommended(v *bool) *GroupUpdate {
 	return _u
 }
 
+// SetExternalBuyURL sets the "external_buy_url" field.
+func (_u *GroupUpdate) SetExternalBuyURL(v string) *GroupUpdate {
+	_u.mutation.SetExternalBuyURL(v)
+	return _u
+}
+
+// SetNillableExternalBuyURL sets the "external_buy_url" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillableExternalBuyURL(v *string) *GroupUpdate {
+	if v != nil {
+		_u.SetExternalBuyURL(*v)
+	}
+	return _u
+}
+
+// ClearExternalBuyURL clears the value of the "external_buy_url" field.
+func (_u *GroupUpdate) ClearExternalBuyURL() *GroupUpdate {
+	_u.mutation.ClearExternalBuyURL()
+	return _u
+}
+
 // AddAPIKeyIDs adds the "api_keys" edge to the APIKey entity by IDs.
 func (_u *GroupUpdate) AddAPIKeyIDs(ids ...int64) *GroupUpdate {
 	_u.mutation.AddAPIKeyIDs(ids...)
@@ -971,6 +991,12 @@ func (_u *GroupUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.IsRecommended(); ok {
 		_spec.SetField(group.FieldIsRecommended, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.ExternalBuyURL(); ok {
+		_spec.SetField(group.FieldExternalBuyURL, field.TypeString, value)
+	}
+	if _u.mutation.ExternalBuyURLCleared() {
+		_spec.ClearField(group.FieldExternalBuyURL, field.TypeString)
 	}
 	if _u.mutation.APIKeysCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -1794,6 +1820,26 @@ func (_u *GroupUpdateOne) SetNillableIsRecommended(v *bool) *GroupUpdateOne {
 	return _u
 }
 
+// SetExternalBuyURL sets the "external_buy_url" field.
+func (_u *GroupUpdateOne) SetExternalBuyURL(v string) *GroupUpdateOne {
+	_u.mutation.SetExternalBuyURL(v)
+	return _u
+}
+
+// SetNillableExternalBuyURL sets the "external_buy_url" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillableExternalBuyURL(v *string) *GroupUpdateOne {
+	if v != nil {
+		_u.SetExternalBuyURL(*v)
+	}
+	return _u
+}
+
+// ClearExternalBuyURL clears the value of the "external_buy_url" field.
+func (_u *GroupUpdateOne) ClearExternalBuyURL() *GroupUpdateOne {
+	_u.mutation.ClearExternalBuyURL()
+	return _u
+}
+
 // AddAPIKeyIDs adds the "api_keys" edge to the APIKey entity by IDs.
 func (_u *GroupUpdateOne) AddAPIKeyIDs(ids ...int64) *GroupUpdateOne {
 	_u.mutation.AddAPIKeyIDs(ids...)
@@ -2297,6 +2343,12 @@ func (_u *GroupUpdateOne) sqlSave(ctx context.Context) (_node *Group, err error)
 	}
 	if value, ok := _u.mutation.IsRecommended(); ok {
 		_spec.SetField(group.FieldIsRecommended, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.ExternalBuyURL(); ok {
+		_spec.SetField(group.FieldExternalBuyURL, field.TypeString, value)
+	}
+	if _u.mutation.ExternalBuyURLCleared() {
+		_spec.ClearField(group.FieldExternalBuyURL, field.TypeString)
 	}
 	if _u.mutation.APIKeysCleared() {
 		edge := &sqlgraph.EdgeSpec{
