@@ -154,6 +154,14 @@ func (s *SubscriptionService) AssignOrExtendSubscription(ctx context.Context, in
 			}
 		}
 
+		// 检查是否需要重置额度窗口（额度用完后续期立即可用）
+		if s.shouldResetQuotaOnRenewal(ctx, existingSub, group) {
+			windowStart := startOfDay(time.Now())
+			if err := s.userSubRepo.ResetAllUsageWindows(ctx, existingSub.ID, windowStart); err != nil {
+				return nil, false, fmt.Errorf("reset usage windows: %w", err)
+			}
+		}
+
 		// 追加备注
 		if input.Notes != "" {
 			newNotes := existingSub.Notes
@@ -472,6 +480,32 @@ func normalizeSubscriptionStatus(subs []UserSubscription) {
 // startOfDay 返回给定时间所在日期的零点（保持原时区）
 func startOfDay(t time.Time) time.Time {
 	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
+}
+
+// shouldResetQuotaOnRenewal 判断续期时是否需要重置额度
+// 当用户的任一限额维度已用完时，返回 true
+func (s *SubscriptionService) shouldResetQuotaOnRenewal(ctx context.Context, sub *UserSubscription, group *Group) bool {
+	if group == nil {
+		var err error
+		group, err = s.groupRepo.GetByID(ctx, sub.GroupID)
+		if err != nil {
+			return false
+		}
+	}
+
+	// 检查日限额是否用完
+	if group.HasDailyLimit() && sub.DailyUsageUSD >= *group.DailyLimitUSD {
+		return true
+	}
+	// 检查周限额是否用完
+	if group.HasWeeklyLimit() && sub.WeeklyUsageUSD >= *group.WeeklyLimitUSD {
+		return true
+	}
+	// 检查月限额是否用完
+	if group.HasMonthlyLimit() && sub.MonthlyUsageUSD >= *group.MonthlyLimitUSD {
+		return true
+	}
+	return false
 }
 
 // CheckAndActivateWindow 检查并激活窗口（首次使用时）
