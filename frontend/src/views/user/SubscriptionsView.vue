@@ -203,9 +203,7 @@
                   {{ t('userSubscriptions.monthly') }}
                 </span>
                 <span class="text-sm text-gray-500 dark:text-dark-400">
-                  ${{ (subscription.monthly_usage_usd || 0).toFixed(2) }} / ${{
-                    subscription.group.monthly_limit_usd.toFixed(2)
-                  }}
+                  {{ t('userSubscriptions.remaining') }}: ${{ getMonthlyRemaining(subscription).toFixed(2) }}
                 </span>
               </div>
               <div class="relative h-2 overflow-hidden rounded-full bg-gray-200 dark:bg-dark-600">
@@ -214,26 +212,23 @@
                   :class="
                     getProgressBarClass(
                       subscription.monthly_usage_usd,
-                      subscription.group.monthly_limit_usd
+                      getEffectiveMonthlyLimit(subscription)
                     )
                   "
                   :style="{
                     width: getProgressWidth(
                       subscription.monthly_usage_usd,
-                      subscription.group.monthly_limit_usd
+                      getEffectiveMonthlyLimit(subscription)
                     )
                   }"
                 ></div>
               </div>
-              <p
-                v-if="subscription.monthly_window_start"
-                class="text-xs text-gray-500 dark:text-dark-400"
-              >
-                {{
-                  t('userSubscriptions.resetIn', {
-                    time: formatResetTime(subscription.monthly_window_start, 720)
-                  })
-                }}
+              <p class="text-xs text-gray-500 dark:text-dark-400">
+                {{ t('userSubscriptions.usedOfTotal', {
+                  used: (subscription.monthly_usage_usd || 0).toFixed(2),
+                  total: getEffectiveMonthlyLimit(subscription).toFixed(2),
+                  cycles: getRemainingCycles(subscription)
+                }) }}
               </p>
             </div>
 
@@ -417,6 +412,31 @@ function getProgressBarClass(used: number | undefined, limit: number | null | un
   if (percentage >= 90) return 'bg-red-500'
   if (percentage >= 70) return 'bg-orange-500'
   return 'bg-green-500'
+}
+
+// 计算剩余周期数（向上取整，每30天为一个周期）
+function getRemainingCycles(subscription: UserSubscription): number {
+  if (!subscription.expires_at) return 1
+  const now = new Date()
+  const expires = new Date(subscription.expires_at)
+  const diff = expires.getTime() - now.getTime()
+  const daysRemaining = Math.ceil(diff / (1000 * 60 * 60 * 24))
+  if (daysRemaining <= 0) return 0
+  return Math.ceil(daysRemaining / 30)
+}
+
+// 计算有效月额度（单周期额度 × 剩余周期数）
+function getEffectiveMonthlyLimit(subscription: UserSubscription): number {
+  const monthlyLimit = subscription.group?.monthly_limit_usd || 0
+  const cycles = getRemainingCycles(subscription)
+  return monthlyLimit * cycles
+}
+
+// 计算月剩余额度
+function getMonthlyRemaining(subscription: UserSubscription): number {
+  const effectiveLimit = getEffectiveMonthlyLimit(subscription)
+  const used = subscription.monthly_usage_usd || 0
+  return Math.max(0, effectiveLimit - used)
 }
 
 function formatExpirationDate(expiresAt: string): string {

@@ -29,6 +29,9 @@ type UserSubscriptionRepository interface {
 	ResetDailyUsage(ctx context.Context, id int64, newWindowStart time.Time) error
 	ResetWeeklyUsage(ctx context.Context, id int64, newWindowStart time.Time) error
 	ResetMonthlyUsage(ctx context.Context, id int64, newWindowStart time.Time) error
+	// DeductAndResetMonthlyUsage 减去单周期额度并重置窗口（用于多周期订阅）
+	// newUsage = max(0, currentUsage - deductAmount)
+	DeductAndResetMonthlyUsage(ctx context.Context, id int64, currentUsage, deductAmount float64, newWindowStart time.Time) error
 	ResetAllUsageWindows(ctx context.Context, id int64, newWindowStart time.Time) error
 	IncrementUsage(ctx context.Context, id int64, costUSD float64) error
 

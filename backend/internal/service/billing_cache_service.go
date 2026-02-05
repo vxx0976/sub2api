@@ -522,8 +522,12 @@ func (s *BillingCacheService) checkSubscriptionEligibility(ctx context.Context, 
 		return ErrWeeklyLimitExceeded
 	}
 
-	if group.HasMonthlyLimit() && subData.MonthlyUsage >= *group.MonthlyLimitUSD {
-		return ErrMonthlyLimitExceeded
+	// 月限额使用动态有效额度：单周期额度 × 剩余周期数
+	if group.HasMonthlyLimit() {
+		effectiveLimit := subscription.GetEffectiveMonthlyLimit(group)
+		if effectiveLimit <= 0 || subData.MonthlyUsage >= effectiveLimit {
+			return ErrMonthlyLimitExceeded
+		}
 	}
 
 	return nil

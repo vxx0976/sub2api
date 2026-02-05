@@ -46,6 +46,30 @@ func (s *UserSubscription) DaysRemaining() int {
 	return int(time.Until(s.ExpiresAt).Hours() / 24)
 }
 
+// RemainingCycles 计算剩余周期数（向上取整）
+// 每30天为一个周期
+func (s *UserSubscription) RemainingCycles() int {
+	daysRemaining := s.DaysRemaining()
+	if daysRemaining <= 0 {
+		return 0
+	}
+	// 向上取整：ceil(daysRemaining / 30)
+	return (daysRemaining + 29) / 30
+}
+
+// GetEffectiveMonthlyLimit 计算有效月额度
+// 有效额度 = 单周期额度 × 剩余周期数
+func (s *UserSubscription) GetEffectiveMonthlyLimit(group *Group) float64 {
+	if group == nil || !group.HasMonthlyLimit() {
+		return 0
+	}
+	remainingCycles := s.RemainingCycles()
+	if remainingCycles <= 0 {
+		return 0
+	}
+	return *group.MonthlyLimitUSD * float64(remainingCycles)
+}
+
 func (s *UserSubscription) IsWindowActivated() bool {
 	return s.DailyWindowStart != nil || s.WeeklyWindowStart != nil || s.MonthlyWindowStart != nil
 }
@@ -113,7 +137,12 @@ func (s *UserSubscription) CheckMonthlyLimit(group *Group, additionalCost float6
 	if !group.HasMonthlyLimit() {
 		return true
 	}
-	return s.MonthlyUsageUSD+additionalCost <= *group.MonthlyLimitUSD
+	// 使用动态有效额度：单周期额度 × 剩余周期数
+	effectiveLimit := s.GetEffectiveMonthlyLimit(group)
+	if effectiveLimit <= 0 {
+		return false
+	}
+	return s.MonthlyUsageUSD+additionalCost <= effectiveLimit
 }
 
 func (s *UserSubscription) CheckAllLimits(group *Group, additionalCost float64) (daily, weekly, monthly bool) {

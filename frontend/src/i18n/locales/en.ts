@@ -4140,6 +4140,8 @@ export default {
     resetIn: 'Resets in {time}',
     windowNotActive: 'Awaiting first use',
     usageOf: '{used} of {limit}',
+    remaining: 'Remaining',
+    usedOfTotal: 'Used ${used} / Total ${total} ({cycles} cycles)',
     renew: 'Renew',
     renewPrice: 'Renew: ¥{price} / {days} days',
     renewError: 'Failed to renew, please try again'

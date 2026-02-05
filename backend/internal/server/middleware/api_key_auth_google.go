@@ -84,7 +84,7 @@ func APIKeyAuthWithSubscriptionGoogle(apiKeyService *service.APIKeyService, subs
 				return
 			}
 			_ = subscriptionService.CheckAndActivateWindow(c.Request.Context(), subscription)
-			_ = subscriptionService.CheckAndResetWindows(c.Request.Context(), subscription)
+			_ = subscriptionService.CheckAndResetWindows(c.Request.Context(), subscription, apiKey.Group)
 			if err := subscriptionService.CheckUsageLimits(c.Request.Context(), subscription, apiKey.Group, 0); err != nil {
 				abortWithGoogleError(c, 429, err.Error())
 				return

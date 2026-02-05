@@ -4104,6 +4104,8 @@ export default {
     resetIn: '{time} 后重置',
     windowNotActive: '等待首次使用',
     usageOf: '已用 {used} / {limit}',
+    remaining: '剩余',
+    usedOfTotal: '已用 ${used} / 总额度 ${total}（{cycles}个周期）',
     renew: '续费',
     renewPrice: '续费价格：¥{price} / {days}天',
     renewError: '续费失败，请稍后重试'

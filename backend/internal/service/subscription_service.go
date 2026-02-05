@@ -154,13 +154,9 @@ func (s *SubscriptionService) AssignOrExtendSubscription(ctx context.Context, in
 			}
 		}
 
-		// 检查是否需要重置额度窗口（额度用完后续期立即可用）
-		if s.shouldResetQuotaOnRenewal(ctx, existingSub, group) {
-			windowStart := startOfDay(time.Now())
-			if err := s.userSubRepo.ResetAllUsageWindows(ctx, existingSub.ID, windowStart); err != nil {
-				return nil, false, fmt.Errorf("reset usage windows: %w", err)
-			}
-		}
+		// 注意：不再需要在续期时重置额度窗口
+		// 因为有效额度是根据剩余周期数动态计算的：有效额度 = 单周期额度 × 剩余周期数
+		// 续期后剩余天数增加，有效额度会自动增加，用户可以立即使用
 
 		// 追加备注
 		if input.Notes != "" {
@@ -482,32 +478,6 @@ func startOfDay(t time.Time) time.Time {
 	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
 }
 
-// shouldResetQuotaOnRenewal 判断续期时是否需要重置额度
-// 当用户的任一限额维度已用完时，返回 true
-func (s *SubscriptionService) shouldResetQuotaOnRenewal(ctx context.Context, sub *UserSubscription, group *Group) bool {
-	if group == nil {
-		var err error
-		group, err = s.groupRepo.GetByID(ctx, sub.GroupID)
-		if err != nil {
-			return false
-		}
-	}
-
-	// 检查日限额是否用完
-	if group.HasDailyLimit() && sub.DailyUsageUSD >= *group.DailyLimitUSD {
-		return true
-	}
-	// 检查周限额是否用完
-	if group.HasWeeklyLimit() && sub.WeeklyUsageUSD >= *group.WeeklyLimitUSD {
-		return true
-	}
-	// 检查月限额是否用完
-	if group.HasMonthlyLimit() && sub.MonthlyUsageUSD >= *group.MonthlyLimitUSD {
-		return true
-	}
-	return false
-}
-
 // CheckAndActivateWindow 检查并激活窗口（首次使用时）
 func (s *SubscriptionService) CheckAndActivateWindow(ctx context.Context, sub *UserSubscription) error {
 	if sub.IsWindowActivated() {
@@ -520,7 +490,8 @@ func (s *SubscriptionService) CheckAndActivateWindow(ctx context.Context, sub *U
 }
 
 // CheckAndResetWindows 检查并重置过期的窗口
-func (s *SubscriptionService) CheckAndResetWindows(ctx context.Context, sub *UserSubscription) error {
+// group 参数用于获取月限额，以便在重置时减去单周期额度而非清零
+func (s *SubscriptionService) CheckAndResetWindows(ctx context.Context, sub *UserSubscription, group *Group) error {
 	// 使用当天零点作为新窗口起始时间
 	windowStart := startOfDay(time.Now())
 	needsInvalidateCache := false
@@ -545,13 +516,26 @@ func (s *SubscriptionService) CheckAndResetWindows(ctx context.Context, sub *Use
 		needsInvalidateCache = true
 	}
 
-	// 月窗口重置（30天）
+	// 月窗口重置（30天）- 使用减额逻辑防止多周期订阅额度超发
 	if sub.NeedsMonthlyReset() {
-		if err := s.userSubRepo.ResetMonthlyUsage(ctx, sub.ID, windowStart); err != nil {
-			return err
+		if group != nil && group.HasMonthlyLimit() {
+			// 减去单周期额度而非清零
+			newUsage := sub.MonthlyUsageUSD - *group.MonthlyLimitUSD
+			if newUsage < 0 {
+				newUsage = 0
+			}
+			if err := s.userSubRepo.DeductAndResetMonthlyUsage(ctx, sub.ID, sub.MonthlyUsageUSD, *group.MonthlyLimitUSD, windowStart); err != nil {
+				return err
+			}
+			sub.MonthlyUsageUSD = newUsage
+		} else {
+			// 没有 group 信息时，使用原来的清零逻辑
+			if err := s.userSubRepo.ResetMonthlyUsage(ctx, sub.ID, windowStart); err != nil {
+				return err
+			}
+			sub.MonthlyUsageUSD = 0
 		}
 		sub.MonthlyWindowStart = &windowStart
-		sub.MonthlyUsageUSD = 0
 		needsInvalidateCache = true
 	}
 

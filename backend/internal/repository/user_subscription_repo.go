@@ -332,6 +332,21 @@ func (r *userSubscriptionRepository) ResetMonthlyUsage(ctx context.Context, id i
 	return translatePersistenceError(err, service.ErrSubscriptionNotFound, nil)
 }
 
+// DeductAndResetMonthlyUsage 减去单周期额度并重置窗口
+// newUsage = max(0, currentUsage - deductAmount)
+func (r *userSubscriptionRepository) DeductAndResetMonthlyUsage(ctx context.Context, id int64, currentUsage, deductAmount float64, newWindowStart time.Time) error {
+	newUsage := currentUsage - deductAmount
+	if newUsage < 0 {
+		newUsage = 0
+	}
+	client := clientFromContext(ctx, r.client)
+	_, err := client.UserSubscription.UpdateOneID(id).
+		SetMonthlyUsageUsd(newUsage).
+		SetMonthlyWindowStart(newWindowStart).
+		Save(ctx)
+	return translatePersistenceError(err, service.ErrSubscriptionNotFound, nil)
+}
+
 func (r *userSubscriptionRepository) ResetAllUsageWindows(ctx context.Context, id int64, newWindowStart time.Time) error {
 	client := clientFromContext(ctx, r.client)
 	_, err := client.UserSubscription.UpdateOneID(id).

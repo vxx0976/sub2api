@@ -149,6 +149,19 @@
                 </li>
               </ul>
 
+              <!-- External Buy Link (Taobao) -->
+              <div v-if="plan.external_buy_url" class="mb-2 text-right">
+                <a
+                  :href="plan.external_buy_url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-primary-500 dark:text-dark-400 dark:hover:text-primary-400 transition-colors"
+                >
+                  {{ t('plans.buyOnTaobao') }}
+                  <Icon name="externalLink" size="xs" />
+                </a>
+              </div>
+
               <!-- Buy Button -->
               <button
                 @click="purchasePlan(plan)"
@@ -166,18 +179,6 @@
                 </span>
                 <span v-else>{{ t('plans.purchase') }}</span>
               </button>
-
-              <!-- External Buy Button (Taobao) -->
-              <a
-                v-if="plan.external_buy_url"
-                :href="plan.external_buy_url"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-orange-300 bg-gradient-to-r from-orange-50 to-red-50 px-4 py-3 text-sm font-semibold text-orange-600 transition-all duration-200 hover:border-orange-400 hover:from-orange-100 hover:to-red-100 dark:border-orange-600/50 dark:from-orange-900/20 dark:to-red-900/20 dark:text-orange-400 dark:hover:from-orange-900/30 dark:hover:to-red-900/30"
-              >
-                <Icon name="externalLink" size="sm" />
-                {{ t('plans.buyOnTaobao') }}
-              </a>
             </div>
           </div>
 

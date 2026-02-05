@@ -576,6 +576,7 @@ func (h *GatewayHandler) Usage(c *gin.Context) {
 // 逻辑：
 // 1. 如果日/周/月任一限额达到100%，返回0
 // 2. 否则返回所有已配置周期中剩余额度的最小值
+// 注意：月限额使用动态有效额度（单周期额度 × 剩余周期数）
 func (h *GatewayHandler) calculateSubscriptionRemaining(group *service.Group, sub *service.UserSubscription) float64 {
 	var remainingValues []float64
 
@@ -597,9 +598,10 @@ func (h *GatewayHandler) calculateSubscriptionRemaining(group *service.Group, su
 		remainingValues = append(remainingValues, remaining)
 	}
 
-	// 检查月限额
+	// 检查月限额（使用动态有效额度）
 	if group.HasMonthlyLimit() {
-		remaining := *group.MonthlyLimitUSD - sub.MonthlyUsageUSD
+		effectiveLimit := sub.GetEffectiveMonthlyLimit(group)
+		remaining := effectiveLimit - sub.MonthlyUsageUSD
 		if remaining <= 0 {
 			return 0
 		}

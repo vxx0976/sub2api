@@ -136,8 +136,8 @@ func apiKeyAuthWithSubscription(apiKeyService *service.APIKeyService, subscripti
 				log.Printf("Failed to activate subscription windows: %v", err)
 			}
 
-			// 检查并重置过期窗口
-			if err := subscriptionService.CheckAndResetWindows(c.Request.Context(), subscription); err != nil {
+			// 检查并重置过期窗口（传入 group 以支持多周期订阅的减额逻辑）
+			if err := subscriptionService.CheckAndResetWindows(c.Request.Context(), subscription, apiKey.Group); err != nil {
 				log.Printf("Failed to reset subscription windows: %v", err)
 			}
 
