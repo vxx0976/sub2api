@@ -296,7 +296,15 @@ function getStatusClass(status: string): string {
 }
 
 function formatDate(dateStr: string): string {
-  const date = new Date(dateStr)
+  if (!dateStr) return '-'
+  // 后端返回的时间可能是本地时间但被标记为 UTC
+  // 如果时间字符串以 Z 结尾，移除它让 JavaScript 将其解析为本地时间
+  let adjustedDateStr = dateStr
+  if (dateStr.endsWith('Z')) {
+    adjustedDateStr = dateStr.slice(0, -1)
+  }
+  const date = new Date(adjustedDateStr)
+  if (isNaN(date.getTime())) return '-'
   return date.toLocaleString()
 }
 
