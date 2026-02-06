@@ -187,7 +187,7 @@ import { useAuthStore, useAppStore } from '@/stores'
 import { settingsAPI } from '@/api/settings'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import Icon from '@/components/icons/Icon.vue'
-import type { Announcement } from '@/types'
+import type { SimpleAnnouncement } from '@/types'
 
 const { t, locale } = useI18n()
 const authStore = useAuthStore()
@@ -228,7 +228,7 @@ const referralPlans = [
 ]
 
 // Default announcements (hardcoded)
-const announcements = ref<Announcement[]>([
+const announcements = ref<SimpleAnnouncement[]>([
   { title: t('consoleHome.announcement1'), date: '2026-01-28' },
   { title: t('consoleHome.announcement2'), date: '2026-01-28' }
 ])

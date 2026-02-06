@@ -13,6 +13,7 @@ func ProvideAdminHandlers(
 	userHandler *admin.UserHandler,
 	groupHandler *admin.GroupHandler,
 	accountHandler *admin.AccountHandler,
+	announcementHandler *admin.AnnouncementHandler,
 	oauthHandler *admin.OAuthHandler,
 	openaiOAuthHandler *admin.OpenAIOAuthHandler,
 	geminiOAuthHandler *admin.GeminiOAuthHandler,
@@ -29,12 +30,14 @@ func ProvideAdminHandlers(
 	userAttributeHandler *admin.UserAttributeHandler,
 	referralHandler *admin.ReferralHandler,
 	channelHandler *admin.ChannelHandler,
+	errorPassthroughHandler *admin.ErrorPassthroughHandler,
 ) *AdminHandlers {
 	return &AdminHandlers{
 		Dashboard:        dashboardHandler,
 		User:             userHandler,
 		Group:            groupHandler,
 		Account:          accountHandler,
+		Announcement:     announcementHandler,
 		OAuth:            oauthHandler,
 		OpenAIOAuth:      openaiOAuthHandler,
 		GeminiOAuth:      geminiOAuthHandler,
@@ -51,6 +54,7 @@ func ProvideAdminHandlers(
 		UserAttribute:    userAttributeHandler,
 		Referral:         referralHandler,
 		Channel:          channelHandler,
+		ErrorPassthrough: errorPassthroughHandler,
 	}
 }
 
@@ -74,6 +78,7 @@ func ProvideHandlers(
 	subscriptionHandler *SubscriptionHandler,
 	paymentHandler *PaymentHandler,
 	rechargeHandler *RechargeHandler,
+	announcementHandler *AnnouncementHandler,
 	adminHandlers *AdminHandlers,
 	gatewayHandler *GatewayHandler,
 	openaiGatewayHandler *OpenAIGatewayHandler,
@@ -90,6 +95,7 @@ func ProvideHandlers(
 		Subscription:  subscriptionHandler,
 		Payment:       paymentHandler,
 		Recharge:      rechargeHandler,
+		Announcement:  announcementHandler,
 		Admin:         adminHandlers,
 		Gateway:       gatewayHandler,
 		OpenAIGateway: openaiGatewayHandler,
@@ -110,6 +116,7 @@ var ProviderSet = wire.NewSet(
 	NewSubscriptionHandler,
 	NewPaymentHandler,
 	NewRechargeHandler,
+	NewAnnouncementHandler,
 	NewGatewayHandler,
 	NewOpenAIGatewayHandler,
 	NewTotpHandler,
@@ -121,6 +128,7 @@ var ProviderSet = wire.NewSet(
 	admin.NewUserHandler,
 	admin.NewGroupHandler,
 	admin.NewAccountHandler,
+	admin.NewAnnouncementHandler,
 	admin.NewOAuthHandler,
 	admin.NewOpenAIOAuthHandler,
 	admin.NewGeminiOAuthHandler,
@@ -137,6 +145,7 @@ var ProviderSet = wire.NewSet(
 	admin.NewUserAttributeHandler,
 	admin.NewReferralHandler,
 	admin.NewChannelHandler,
+	admin.NewErrorPassthroughHandler,
 
 	// AdminHandlers and Handlers constructors
 	ProvideAdminHandlers,

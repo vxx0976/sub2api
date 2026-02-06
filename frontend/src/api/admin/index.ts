@@ -10,6 +10,7 @@ import accountsAPI from './accounts'
 import proxiesAPI from './proxies'
 import redeemAPI from './redeem'
 import promoAPI from './promo'
+import announcementsAPI from './announcements'
 import settingsAPI from './settings'
 import systemAPI from './system'
 import subscriptionsAPI from './subscriptions'
@@ -21,6 +22,7 @@ import opsAPI from './ops'
 import ordersAPI from './orders'
 import * as referralsAPI from './referrals'
 import channelsAPI from './channels'
+import errorPassthroughAPI from './errorPassthrough'
 
 /**
  * Unified admin API object for convenient access
@@ -33,6 +35,7 @@ export const adminAPI = {
   proxies: proxiesAPI,
   redeem: redeemAPI,
   promo: promoAPI,
+  announcements: announcementsAPI,
   settings: settingsAPI,
   system: systemAPI,
   subscriptions: subscriptionsAPI,
@@ -43,7 +46,8 @@ export const adminAPI = {
   ops: opsAPI,
   orders: ordersAPI,
   referrals: referralsAPI,
-  channels: channelsAPI
+  channels: channelsAPI,
+  errorPassthrough: errorPassthroughAPI
 }
 
 export {
@@ -54,6 +58,7 @@ export {
   proxiesAPI,
   redeemAPI,
   promoAPI,
+  announcementsAPI,
   settingsAPI,
   systemAPI,
   subscriptionsAPI,
@@ -64,7 +69,12 @@ export {
   opsAPI,
   ordersAPI,
   referralsAPI,
-  channelsAPI
+  channelsAPI,
+  errorPassthroughAPI
 }
 
 export default adminAPI
+
+// Re-export types used by components
+export type { BalanceHistoryItem } from './users'
+export type { ErrorPassthroughRule, CreateRuleRequest, UpdateRuleRequest } from './errorPassthrough'

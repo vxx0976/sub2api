@@ -18,6 +18,7 @@ export { userGroupsAPI } from './groups'
 export { default as referralAPI } from './referral'
 export type { ReferralStats, InviteeInfo, InviteesListResponse } from './referral'
 export { totpAPI } from './totp'
+export { default as announcementsAPI } from './announcements'
 
 // Admin APIs
 export { adminAPI } from './admin'

@@ -32,9 +32,9 @@ func (h *SettingHandler) GetPublicSettings(c *gin.Context) {
 	}
 
 	// Convert service announcements to DTO announcements
-	announcements := make([]dto.Announcement, 0, len(settings.Announcements))
+	announcements := make([]dto.SimpleAnnouncement, 0, len(settings.Announcements))
 	for _, a := range settings.Announcements {
-		announcements = append(announcements, dto.Announcement{
+		announcements = append(announcements, dto.SimpleAnnouncement{
 			Title: a.Title,
 			Date:  a.Date,
 		})
@@ -45,6 +45,7 @@ func (h *SettingHandler) GetPublicSettings(c *gin.Context) {
 		EmailVerifyEnabled:          settings.EmailVerifyEnabled,
 		PromoCodeEnabled:            settings.PromoCodeEnabled,
 		PasswordResetEnabled:        settings.PasswordResetEnabled,
+		InvitationCodeEnabled:       settings.InvitationCodeEnabled,
 		TotpEnabled:                 settings.TotpEnabled,
 		TurnstileEnabled:            settings.TurnstileEnabled,
 		TurnstileSiteKey:            settings.TurnstileSiteKey,

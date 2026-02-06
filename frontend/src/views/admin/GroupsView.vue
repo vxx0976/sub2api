@@ -275,8 +275,72 @@
             v-model="createForm.platform"
             :options="platformOptions"
             data-tour="group-form-platform"
+            @change="createForm.copy_accounts_from_group_ids = []"
           />
           <p class="input-hint">{{ t('admin.groups.platformHint') }}</p>
+        </div>
+        <!-- 从分组复制账号 -->
+        <div v-if="copyAccountsGroupOptions.length > 0">
+          <div class="mb-1.5 flex items-center gap-1">
+            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+              {{ t('admin.groups.copyAccounts.title') }}
+            </label>
+            <div class="group relative inline-flex">
+              <Icon
+                name="questionCircle"
+                size="sm"
+                :stroke-width="2"
+                class="cursor-help text-gray-400 transition-colors hover:text-primary-500 dark:text-gray-500 dark:hover:text-primary-400"
+              />
+              <div class="pointer-events-none absolute bottom-full left-0 z-50 mb-2 w-72 opacity-0 transition-all duration-200 group-hover:pointer-events-auto group-hover:opacity-100">
+                <div class="rounded-lg bg-gray-900 p-3 text-white shadow-lg dark:bg-gray-800">
+                  <p class="text-xs leading-relaxed text-gray-300">
+                    {{ t('admin.groups.copyAccounts.tooltip') }}
+                  </p>
+                  <div class="absolute -bottom-1.5 left-3 h-3 w-3 rotate-45 bg-gray-900 dark:bg-gray-800"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- 已选分组标签 -->
+          <div v-if="createForm.copy_accounts_from_group_ids.length > 0" class="flex flex-wrap gap-1.5 mb-2">
+            <span
+              v-for="groupId in createForm.copy_accounts_from_group_ids"
+              :key="groupId"
+              class="inline-flex items-center gap-1 rounded-full bg-primary-100 px-2.5 py-1 text-xs font-medium text-primary-700 dark:bg-primary-900/30 dark:text-primary-300"
+            >
+              {{ copyAccountsGroupOptions.find(o => o.value === groupId)?.label || `#${groupId}` }}
+              <button
+                type="button"
+                @click="createForm.copy_accounts_from_group_ids = createForm.copy_accounts_from_group_ids.filter(id => id !== groupId)"
+                class="ml-0.5 text-primary-500 hover:text-primary-700 dark:hover:text-primary-200"
+              >
+                <Icon name="x" size="xs" />
+              </button>
+            </span>
+          </div>
+          <!-- 分组选择下拉 -->
+          <select
+            class="input"
+            @change="(e) => {
+              const val = Number((e.target as HTMLSelectElement).value)
+              if (val && !createForm.copy_accounts_from_group_ids.includes(val)) {
+                createForm.copy_accounts_from_group_ids.push(val)
+              }
+              (e.target as HTMLSelectElement).value = ''
+            }"
+          >
+            <option value="">{{ t('admin.groups.copyAccounts.selectPlaceholder') }}</option>
+            <option
+              v-for="opt in copyAccountsGroupOptions"
+              :key="opt.value"
+              :value="opt.value"
+              :disabled="createForm.copy_accounts_from_group_ids.includes(opt.value)"
+            >
+              {{ opt.label }}
+            </option>
+          </select>
+          <p class="input-hint">{{ t('admin.groups.copyAccounts.hint') }}</p>
         </div>
         <div>
           <label class="input-label">{{ t('admin.groups.form.rateMultiplier') }}</label>
@@ -557,6 +621,107 @@
           </div>
         </div>
 
+        <!-- 支持的模型系列（仅 antigravity 平台） -->
+        <div v-if="createForm.platform === 'antigravity'" class="border-t pt-4">
+          <div class="mb-1.5 flex items-center gap-1">
+            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+              {{ t('admin.groups.supportedScopes.title') }}
+            </label>
+            <!-- Help Tooltip -->
+            <div class="group relative inline-flex">
+              <Icon
+                name="questionCircle"
+                size="sm"
+                :stroke-width="2"
+                class="cursor-help text-gray-400 transition-colors hover:text-primary-500 dark:text-gray-500 dark:hover:text-primary-400"
+              />
+              <div class="pointer-events-none absolute bottom-full left-0 z-50 mb-2 w-72 opacity-0 transition-all duration-200 group-hover:pointer-events-auto group-hover:opacity-100">
+                <div class="rounded-lg bg-gray-900 p-3 text-white shadow-lg dark:bg-gray-800">
+                  <p class="text-xs leading-relaxed text-gray-300">
+                    {{ t('admin.groups.supportedScopes.tooltip') }}
+                  </p>
+                  <div class="absolute -bottom-1.5 left-3 h-3 w-3 rotate-45 bg-gray-900 dark:bg-gray-800"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="space-y-2">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                :checked="createForm.supported_model_scopes.includes('claude')"
+                @change="toggleCreateScope('claude')"
+                class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-dark-600 dark:bg-dark-700"
+              />
+              <span class="text-sm text-gray-700 dark:text-gray-300">{{ t('admin.groups.supportedScopes.claude') }}</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                :checked="createForm.supported_model_scopes.includes('gemini_text')"
+                @change="toggleCreateScope('gemini_text')"
+                class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-dark-600 dark:bg-dark-700"
+              />
+              <span class="text-sm text-gray-700 dark:text-gray-300">{{ t('admin.groups.supportedScopes.geminiText') }}</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                :checked="createForm.supported_model_scopes.includes('gemini_image')"
+                @change="toggleCreateScope('gemini_image')"
+                class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-dark-600 dark:bg-dark-700"
+              />
+              <span class="text-sm text-gray-700 dark:text-gray-300">{{ t('admin.groups.supportedScopes.geminiImage') }}</span>
+            </label>
+          </div>
+          <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">{{ t('admin.groups.supportedScopes.hint') }}</p>
+        </div>
+
+        <!-- MCP XML 协议注入（仅 antigravity 平台） -->
+        <div v-if="createForm.platform === 'antigravity'" class="border-t pt-4">
+          <div class="mb-1.5 flex items-center gap-1">
+            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+              {{ t('admin.groups.mcpXml.title') }}
+            </label>
+            <div class="group relative inline-flex">
+              <Icon
+                name="questionCircle"
+                size="sm"
+                :stroke-width="2"
+                class="cursor-help text-gray-400 transition-colors hover:text-primary-500 dark:text-gray-500 dark:hover:text-primary-400"
+              />
+              <div class="pointer-events-none absolute bottom-full left-0 z-50 mb-2 w-72 opacity-0 transition-all duration-200 group-hover:pointer-events-auto group-hover:opacity-100">
+                <div class="rounded-lg bg-gray-900 p-3 text-white shadow-lg dark:bg-gray-800">
+                  <p class="text-xs leading-relaxed text-gray-300">
+                    {{ t('admin.groups.mcpXml.tooltip') }}
+                  </p>
+                  <div class="absolute -bottom-1.5 left-3 h-3 w-3 rotate-45 bg-gray-900 dark:bg-gray-800"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <button
+              type="button"
+              @click="createForm.mcp_xml_inject = !createForm.mcp_xml_inject"
+              :class="[
+                'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
+                createForm.mcp_xml_inject ? 'bg-primary-500' : 'bg-gray-300 dark:bg-dark-600'
+              ]"
+            >
+              <span
+                :class="[
+                  'inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform',
+                  createForm.mcp_xml_inject ? 'translate-x-6' : 'translate-x-1'
+                ]"
+              />
+            </button>
+            <span class="text-sm text-gray-500 dark:text-gray-400">
+              {{ createForm.mcp_xml_inject ? t('admin.groups.mcpXml.enabled') : t('admin.groups.mcpXml.disabled') }}
+            </span>
+          </div>
+        </div>
+
         <!-- Claude Code 客户端限制（仅 anthropic 平台） -->
         <div v-if="createForm.platform === 'anthropic'" class="border-t pt-4">
           <div class="mb-1.5 flex items-center gap-1">
@@ -611,6 +776,20 @@
             />
             <p class="input-hint">{{ t('admin.groups.claudeCode.fallbackHint') }}</p>
           </div>
+        </div>
+
+        <!-- 无效请求兜底（仅 anthropic/antigravity 平台，且非订阅分组） -->
+        <div
+          v-if="['anthropic', 'antigravity'].includes(createForm.platform) && createForm.subscription_type !== 'subscription'"
+          class="border-t pt-4"
+        >
+          <label class="input-label">{{ t('admin.groups.invalidRequestFallback.title') }}</label>
+          <Select
+            v-model="createForm.fallback_group_id_on_invalid_request"
+            :options="invalidRequestFallbackOptions"
+            :placeholder="t('admin.groups.invalidRequestFallback.noFallback')"
+          />
+          <p class="input-hint">{{ t('admin.groups.invalidRequestFallback.hint') }}</p>
         </div>
 
         <!-- 模型路由配置（仅 anthropic 平台） -->
@@ -832,6 +1011,69 @@
             data-tour="group-form-platform"
           />
           <p class="input-hint">{{ t('admin.groups.platformNotEditable') }}</p>
+        </div>
+        <!-- 从分组复制账号（编辑时） -->
+        <div v-if="copyAccountsGroupOptionsForEdit.length > 0">
+          <div class="mb-1.5 flex items-center gap-1">
+            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+              {{ t('admin.groups.copyAccounts.title') }}
+            </label>
+            <div class="group relative inline-flex">
+              <Icon
+                name="questionCircle"
+                size="sm"
+                :stroke-width="2"
+                class="cursor-help text-gray-400 transition-colors hover:text-primary-500 dark:text-gray-500 dark:hover:text-primary-400"
+              />
+              <div class="pointer-events-none absolute bottom-full left-0 z-50 mb-2 w-72 opacity-0 transition-all duration-200 group-hover:pointer-events-auto group-hover:opacity-100">
+                <div class="rounded-lg bg-gray-900 p-3 text-white shadow-lg dark:bg-gray-800">
+                  <p class="text-xs leading-relaxed text-gray-300">
+                    {{ t('admin.groups.copyAccounts.tooltipEdit') }}
+                  </p>
+                  <div class="absolute -bottom-1.5 left-3 h-3 w-3 rotate-45 bg-gray-900 dark:bg-gray-800"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- 已选分组标签 -->
+          <div v-if="editForm.copy_accounts_from_group_ids.length > 0" class="flex flex-wrap gap-1.5 mb-2">
+            <span
+              v-for="groupId in editForm.copy_accounts_from_group_ids"
+              :key="groupId"
+              class="inline-flex items-center gap-1 rounded-full bg-primary-100 px-2.5 py-1 text-xs font-medium text-primary-700 dark:bg-primary-900/30 dark:text-primary-300"
+            >
+              {{ copyAccountsGroupOptionsForEdit.find(o => o.value === groupId)?.label || `#${groupId}` }}
+              <button
+                type="button"
+                @click="editForm.copy_accounts_from_group_ids = editForm.copy_accounts_from_group_ids.filter(id => id !== groupId)"
+                class="ml-0.5 text-primary-500 hover:text-primary-700 dark:hover:text-primary-200"
+              >
+                <Icon name="x" size="xs" />
+              </button>
+            </span>
+          </div>
+          <!-- 分组选择下拉 -->
+          <select
+            class="input"
+            @change="(e) => {
+              const val = Number((e.target as HTMLSelectElement).value)
+              if (val && !editForm.copy_accounts_from_group_ids.includes(val)) {
+                editForm.copy_accounts_from_group_ids.push(val)
+              }
+              (e.target as HTMLSelectElement).value = ''
+            }"
+          >
+            <option value="">{{ t('admin.groups.copyAccounts.selectPlaceholder') }}</option>
+            <option
+              v-for="opt in copyAccountsGroupOptionsForEdit"
+              :key="opt.value"
+              :value="opt.value"
+              :disabled="editForm.copy_accounts_from_group_ids.includes(opt.value)"
+            >
+              {{ opt.label }}
+            </option>
+          </select>
+          <p class="input-hint">{{ t('admin.groups.copyAccounts.hintEdit') }}</p>
         </div>
         <div>
           <label class="input-label">{{ t('admin.groups.form.rateMultiplier') }}</label>
@@ -1119,6 +1361,107 @@
           </div>
         </div>
 
+        <!-- 支持的模型系列（仅 antigravity 平台） -->
+        <div v-if="editForm.platform === 'antigravity'" class="border-t pt-4">
+          <div class="mb-1.5 flex items-center gap-1">
+            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+              {{ t('admin.groups.supportedScopes.title') }}
+            </label>
+            <!-- Help Tooltip -->
+            <div class="group relative inline-flex">
+              <Icon
+                name="questionCircle"
+                size="sm"
+                :stroke-width="2"
+                class="cursor-help text-gray-400 transition-colors hover:text-primary-500 dark:text-gray-500 dark:hover:text-primary-400"
+              />
+              <div class="pointer-events-none absolute bottom-full left-0 z-50 mb-2 w-72 opacity-0 transition-all duration-200 group-hover:pointer-events-auto group-hover:opacity-100">
+                <div class="rounded-lg bg-gray-900 p-3 text-white shadow-lg dark:bg-gray-800">
+                  <p class="text-xs leading-relaxed text-gray-300">
+                    {{ t('admin.groups.supportedScopes.tooltip') }}
+                  </p>
+                  <div class="absolute -bottom-1.5 left-3 h-3 w-3 rotate-45 bg-gray-900 dark:bg-gray-800"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="space-y-2">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                :checked="editForm.supported_model_scopes.includes('claude')"
+                @change="toggleEditScope('claude')"
+                class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-dark-600 dark:bg-dark-700"
+              />
+              <span class="text-sm text-gray-700 dark:text-gray-300">{{ t('admin.groups.supportedScopes.claude') }}</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                :checked="editForm.supported_model_scopes.includes('gemini_text')"
+                @change="toggleEditScope('gemini_text')"
+                class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-dark-600 dark:bg-dark-700"
+              />
+              <span class="text-sm text-gray-700 dark:text-gray-300">{{ t('admin.groups.supportedScopes.geminiText') }}</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                :checked="editForm.supported_model_scopes.includes('gemini_image')"
+                @change="toggleEditScope('gemini_image')"
+                class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-dark-600 dark:bg-dark-700"
+              />
+              <span class="text-sm text-gray-700 dark:text-gray-300">{{ t('admin.groups.supportedScopes.geminiImage') }}</span>
+            </label>
+          </div>
+          <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">{{ t('admin.groups.supportedScopes.hint') }}</p>
+        </div>
+
+        <!-- MCP XML 协议注入（仅 antigravity 平台） -->
+        <div v-if="editForm.platform === 'antigravity'" class="border-t pt-4">
+          <div class="mb-1.5 flex items-center gap-1">
+            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+              {{ t('admin.groups.mcpXml.title') }}
+            </label>
+            <div class="group relative inline-flex">
+              <Icon
+                name="questionCircle"
+                size="sm"
+                :stroke-width="2"
+                class="cursor-help text-gray-400 transition-colors hover:text-primary-500 dark:text-gray-500 dark:hover:text-primary-400"
+              />
+              <div class="pointer-events-none absolute bottom-full left-0 z-50 mb-2 w-72 opacity-0 transition-all duration-200 group-hover:pointer-events-auto group-hover:opacity-100">
+                <div class="rounded-lg bg-gray-900 p-3 text-white shadow-lg dark:bg-gray-800">
+                  <p class="text-xs leading-relaxed text-gray-300">
+                    {{ t('admin.groups.mcpXml.tooltip') }}
+                  </p>
+                  <div class="absolute -bottom-1.5 left-3 h-3 w-3 rotate-45 bg-gray-900 dark:bg-gray-800"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <button
+              type="button"
+              @click="editForm.mcp_xml_inject = !editForm.mcp_xml_inject"
+              :class="[
+                'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
+                editForm.mcp_xml_inject ? 'bg-primary-500' : 'bg-gray-300 dark:bg-dark-600'
+              ]"
+            >
+              <span
+                :class="[
+                  'inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform',
+                  editForm.mcp_xml_inject ? 'translate-x-6' : 'translate-x-1'
+                ]"
+              />
+            </button>
+            <span class="text-sm text-gray-500 dark:text-gray-400">
+              {{ editForm.mcp_xml_inject ? t('admin.groups.mcpXml.enabled') : t('admin.groups.mcpXml.disabled') }}
+            </span>
+          </div>
+        </div>
+
         <!-- Claude Code 客户端限制（仅 anthropic 平台） -->
         <div v-if="editForm.platform === 'anthropic'" class="border-t pt-4">
           <div class="mb-1.5 flex items-center gap-1">
@@ -1173,6 +1516,20 @@
             />
             <p class="input-hint">{{ t('admin.groups.claudeCode.fallbackHint') }}</p>
           </div>
+        </div>
+
+        <!-- 无效请求兜底（仅 anthropic/antigravity 平台，且非订阅分组） -->
+        <div
+          v-if="['anthropic', 'antigravity'].includes(editForm.platform) && editForm.subscription_type !== 'subscription'"
+          class="border-t pt-4"
+        >
+          <label class="input-label">{{ t('admin.groups.invalidRequestFallback.title') }}</label>
+          <Select
+            v-model="editForm.fallback_group_id_on_invalid_request"
+            :options="invalidRequestFallbackOptionsForEdit"
+            :placeholder="t('admin.groups.invalidRequestFallback.noFallback')"
+          />
+          <p class="input-hint">{{ t('admin.groups.invalidRequestFallback.hint') }}</p>
         </div>
 
         <!-- 模型路由配置（仅 anthropic 平台） -->
@@ -1384,7 +1741,7 @@ import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
 import { useOnboardingStore } from '@/stores/onboarding'
 import { adminAPI } from '@/api/admin'
-import type { Group, GroupPlatform, SubscriptionType } from '@/types'
+import type { Group, AdminGroup, GroupPlatform, SubscriptionType } from '@/types'
 import type { Column } from '@/components/common/types'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import TablePageLayout from '@/components/layout/TablePageLayout.vue'
@@ -1480,7 +1837,68 @@ const fallbackGroupOptionsForEdit = computed(() => {
   return options
 })
 
-const groups = ref<Group[]>([])
+// 无效请求兜底分组选项（创建时）- 仅包含 anthropic 平台、非订阅且未配置兜底的分组
+const invalidRequestFallbackOptions = computed(() => {
+  const options: { value: number | null; label: string }[] = [
+    { value: null, label: t('admin.groups.invalidRequestFallback.noFallback') }
+  ]
+  const eligibleGroups = groups.value.filter(
+    (g) =>
+      g.platform === 'anthropic' &&
+      g.status === 'active' &&
+      g.subscription_type !== 'subscription' &&
+      g.fallback_group_id_on_invalid_request === null
+  )
+  eligibleGroups.forEach((g) => {
+    options.push({ value: g.id, label: g.name })
+  })
+  return options
+})
+
+// 无效请求兜底分组选项（编辑时）- 排除自身
+const invalidRequestFallbackOptionsForEdit = computed(() => {
+  const options: { value: number | null; label: string }[] = [
+    { value: null, label: t('admin.groups.invalidRequestFallback.noFallback') }
+  ]
+  const currentId = editingGroup.value?.id
+  const eligibleGroups = groups.value.filter(
+    (g) =>
+      g.platform === 'anthropic' &&
+      g.status === 'active' &&
+      g.subscription_type !== 'subscription' &&
+      g.fallback_group_id_on_invalid_request === null &&
+      g.id !== currentId
+  )
+  eligibleGroups.forEach((g) => {
+    options.push({ value: g.id, label: g.name })
+  })
+  return options
+})
+
+// 复制账号的源分组选项（创建时）- 仅包含相同平台且有账号的分组
+const copyAccountsGroupOptions = computed(() => {
+  const eligibleGroups = groups.value.filter(
+    (g) => g.platform === createForm.platform && (g.account_count || 0) > 0
+  )
+  return eligibleGroups.map((g) => ({
+    value: g.id,
+    label: `${g.name} (${g.account_count || 0} 个账号)`
+  }))
+})
+
+// 复制账号的源分组选项（编辑时）- 仅包含相同平台且有账号的分组，排除自身
+const copyAccountsGroupOptionsForEdit = computed(() => {
+  const currentId = editingGroup.value?.id
+  const eligibleGroups = groups.value.filter(
+    (g) => g.platform === editForm.platform && (g.account_count || 0) > 0 && g.id !== currentId
+  )
+  return eligibleGroups.map((g) => ({
+    value: g.id,
+    label: `${g.name} (${g.account_count || 0} 个账号)`
+  }))
+})
+
+const groups = ref<AdminGroup[]>([])
 const loading = ref(false)
 const searchQuery = ref('')
 const filters = reactive({
@@ -1522,6 +1940,7 @@ const createForm = reactive({
   // Claude Code 客户端限制（仅 anthropic 平台使用）
   claude_code_only: false,
   fallback_group_id: null as number | null,
+  fallback_group_id_on_invalid_request: null as number | null,
   // 模型路由开关
   model_routing_enabled: false,
   // 支付相关
@@ -1530,7 +1949,13 @@ const createForm = reactive({
   is_purchasable: false,
   sort_order: 0,
   is_recommended: false,
-  external_buy_url: '' as string
+  external_buy_url: '' as string,
+  // 支持的模型系列（仅 antigravity 平台）
+  supported_model_scopes: ['claude', 'gemini_text', 'gemini_image'] as string[],
+  // MCP XML 协议注入开关（仅 antigravity 平台）
+  mcp_xml_inject: true,
+  // 从分组复制账号
+  copy_accounts_from_group_ids: [] as number[]
 })
 
 // 简单账号类型（用于模型路由选择）
@@ -1598,6 +2023,26 @@ const removeSelectedAccount = (ruleIndex: number, accountId: number, isEdit: boo
   if (!rule) return
 
   rule.accounts = rule.accounts.filter(a => a.id !== accountId)
+}
+
+// 切换创建表单的模型系列选择
+const toggleCreateScope = (scope: string) => {
+  const idx = createForm.supported_model_scopes.indexOf(scope)
+  if (idx === -1) {
+    createForm.supported_model_scopes.push(scope)
+  } else {
+    createForm.supported_model_scopes.splice(idx, 1)
+  }
+}
+
+// 切换编辑表单的模型系列选择
+const toggleEditScope = (scope: string) => {
+  const idx = editForm.supported_model_scopes.indexOf(scope)
+  if (idx === -1) {
+    editForm.supported_model_scopes.push(scope)
+  } else {
+    editForm.supported_model_scopes.splice(idx, 1)
+  }
 }
 
 // 处理账号搜索输入框聚焦
@@ -1700,6 +2145,7 @@ const editForm = reactive({
   // Claude Code 客户端限制（仅 anthropic 平台使用）
   claude_code_only: false,
   fallback_group_id: null as number | null,
+  fallback_group_id_on_invalid_request: null as number | null,
   // 模型路由开关
   model_routing_enabled: false,
   // 支付相关
@@ -1708,7 +2154,13 @@ const editForm = reactive({
   is_purchasable: false,
   sort_order: 0,
   is_recommended: false,
-  external_buy_url: '' as string
+  external_buy_url: '' as string,
+  // 支持的模型系列（仅 antigravity 平台）
+  supported_model_scopes: ['claude', 'gemini_text', 'gemini_image'] as string[],
+  // MCP XML 协议注入开关（仅 antigravity 平台）
+  mcp_xml_inject: true,
+  // 从分组复制账号
+  copy_accounts_from_group_ids: [] as number[]
 })
 
 // 根据分组类型返回不同的删除确认消息
@@ -1741,9 +2193,9 @@ const loadGroups = async () => {
     if (signal.aborted) return
     // 默认模式：隐藏不可购买的订阅类型，保留余额类型和可购买的
     if (isActiveFilter) {
-      groups.value = response.items.filter(g => g.is_purchasable || g.subscription_type === 'standard')
+      groups.value = response.items.filter(g => g.is_purchasable || g.subscription_type === 'standard') as AdminGroup[]
     } else {
-      groups.value = response.items
+      groups.value = response.items as AdminGroup[]
     }
     pagination.total = response.total
     pagination.pages = response.pages
@@ -1802,6 +2254,10 @@ const closeCreateModal = () => {
   createForm.sort_order = 0
   createForm.is_recommended = false
   createForm.external_buy_url = ''
+  createForm.fallback_group_id_on_invalid_request = null
+  createForm.supported_model_scopes = ['claude', 'gemini_text', 'gemini_image']
+  createForm.mcp_xml_inject = true
+  createForm.copy_accounts_from_group_ids = []
   createModelRoutingRules.value = []
 }
 
@@ -1834,7 +2290,7 @@ const handleCreateGroup = async () => {
   }
 }
 
-const handleEdit = async (group: Group) => {
+const handleEdit = async (group: AdminGroup) => {
   editingGroup.value = group
   editForm.name = group.name
   editForm.description = group.description || ''
@@ -1851,6 +2307,7 @@ const handleEdit = async (group: Group) => {
   editForm.image_price_4k = group.image_price_4k
   editForm.claude_code_only = group.claude_code_only || false
   editForm.fallback_group_id = group.fallback_group_id
+  editForm.fallback_group_id_on_invalid_request = group.fallback_group_id_on_invalid_request
   editForm.model_routing_enabled = group.model_routing_enabled || false
   editForm.default_validity_days = group.default_validity_days || 30
   editForm.price = group.price
@@ -1858,6 +2315,9 @@ const handleEdit = async (group: Group) => {
   editForm.sort_order = group.sort_order || 0
   editForm.is_recommended = group.is_recommended || false
   editForm.external_buy_url = group.external_buy_url || ''
+  editForm.supported_model_scopes = group.supported_model_scopes || ['claude', 'gemini_text', 'gemini_image']
+  editForm.mcp_xml_inject = group.mcp_xml_inject ?? true
+  editForm.copy_accounts_from_group_ids = [] // 复制账号字段每次编辑时重置为空
   // 加载模型路由规则（异步加载账号名称）
   editModelRoutingRules.value = await convertApiFormatToRoutingRules(group.model_routing)
   showEditModal.value = true
@@ -1867,6 +2327,7 @@ const closeEditModal = () => {
   showEditModal.value = false
   editingGroup.value = null
   editModelRoutingRules.value = []
+  editForm.copy_accounts_from_group_ids = []
 }
 
 const handleUpdateGroup = async () => {
@@ -1882,6 +2343,10 @@ const handleUpdateGroup = async () => {
     const payload = {
       ...editForm,
       fallback_group_id: editForm.fallback_group_id === null ? 0 : editForm.fallback_group_id,
+      fallback_group_id_on_invalid_request:
+        editForm.fallback_group_id_on_invalid_request === null
+          ? 0
+          : editForm.fallback_group_id_on_invalid_request,
       model_routing: convertRoutingRulesToApiFormat(editModelRoutingRules.value)
     }
     await adminAPI.groups.update(editingGroup.value.id, payload)
@@ -1922,6 +2387,16 @@ watch(
   (newVal) => {
     if (newVal === 'subscription') {
       createForm.is_exclusive = true
+      createForm.fallback_group_id_on_invalid_request = null
+    }
+  }
+)
+
+watch(
+  () => createForm.platform,
+  (newVal) => {
+    if (!['anthropic', 'antigravity'].includes(newVal)) {
+      createForm.fallback_group_id_on_invalid_request = null
     }
   }
 )
