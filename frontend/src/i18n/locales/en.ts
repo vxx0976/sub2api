@@ -215,6 +215,12 @@ export default {
       moreInfo: 'Contact support for more plans',
       action: 'Invite Friends'
     },
+    contact: {
+      title: 'Contact Us',
+      wechat: 'WeChat',
+      telegram: 'Telegram',
+      scanQr: 'Scan to add WeChat'
+    },
     links: {
       subscriptions: 'Subscriptions',
       plans: 'Buy Plans',
@@ -4078,7 +4084,14 @@ export default {
         homeContent: 'Home Page Content',
         homeContentPlaceholder: 'Enter custom content for the home page. Supports Markdown & HTML. If a URL is entered, it will be displayed as an iframe.',
         homeContentHint: 'Customize the home page content. Supports Markdown/HTML. If you enter a URL (starting with http:// or https://), it will be used as an iframe src to embed an external page. When set, the default status information will no longer be displayed.',
-        homeContentIframeWarning: '⚠️ iframe mode note: Some websites have X-Frame-Options or CSP security policies that prevent embedding in iframes. If the page appears blank or shows an error, please verify the target website allows embedding, or consider using HTML mode to build your own content.'
+        homeContentIframeWarning: '⚠️ iframe mode note: Some websites have X-Frame-Options or CSP security policies that prevent embedding in iframes. If the page appears blank or shows an error, please verify the target website allows embedding, or consider using HTML mode to build your own content.',
+        hideCcsImportButton: 'Hide CCS Import Button',
+        hideCcsImportButtonHint: 'When enabled, the "Import CCS" button will be hidden on the API Keys page',
+        cryptoAddresses: 'Crypto Addresses',
+        cryptoAddressesHint: 'Configure cryptocurrency receiving addresses, displayed on the plans page',
+        addCryptoAddress: 'Add Address',
+        chainName: 'Chain',
+        walletAddress: 'Address'
       },
       purchase: {
         title: 'Purchase Page',
@@ -4459,6 +4472,12 @@ export default {
         payAsYouGo: 'Pay only for what you use',
         neverExpires: 'Balance never expires'
       }
+    },
+    cryptoBanner: {
+      title: 'Crypto Payment Available',
+      descriptionPrefix: 'Contact us via',
+      descriptionSuffix: 'after transfer to confirm your order',
+      copySuccess: 'Address copied'
     },
     enterprise: {
       badge: 'Premium',

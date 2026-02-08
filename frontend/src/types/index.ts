@@ -98,6 +98,7 @@ export interface PublicSettings {
   linuxdo_oauth_enabled: boolean
   version: string
   announcements?: SimpleAnnouncement[]
+  crypto_addresses?: string
 }
 
 export interface AuthResponse {

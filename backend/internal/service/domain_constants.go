@@ -114,6 +114,7 @@ const (
 	SettingKeyPurchaseSubscriptionEnabled = "purchase_subscription_enabled" // 是否展示"购买订阅"页面入口
 	SettingKeyPurchaseSubscriptionURL     = "purchase_subscription_url"     // "购买订阅"页面 URL（作为 iframe src）
 	SettingKeyAnnouncements               = "announcements"                 // 系统公告列表（JSON 数组）
+	SettingKeyCryptoAddresses             = "crypto_addresses"              // 虚拟货币收款地址（JSON 数组）
 
 	// 默认配置
 	SettingKeyDefaultConcurrency = "default_concurrency" // 新用户默认并发量

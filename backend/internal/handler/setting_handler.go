@@ -62,5 +62,6 @@ func (h *SettingHandler) GetPublicSettings(c *gin.Context) {
 		LinuxDoOAuthEnabled:         settings.LinuxDoOAuthEnabled,
 		Version:                     h.version,
 		Announcements:               announcements,
+		CryptoAddresses:             settings.CryptoAddresses,
 	})
 }

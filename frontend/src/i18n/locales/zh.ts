@@ -214,6 +214,12 @@ export default {
       moreInfo: '更多套餐详情请咨询客服',
       action: '去邀请'
     },
+    contact: {
+      title: '联系我们',
+      wechat: '微信',
+      telegram: 'Telegram',
+      scanQr: '扫码添加微信'
+    },
     links: {
       subscriptions: '我的订阅',
       plans: '购买套餐',
@@ -4068,7 +4074,12 @@ export default {
         homeContentIframeWarning:
           '⚠️ iframe 模式提示：部分网站设置了 X-Frame-Options 或 CSP 安全策略，禁止被嵌入到 iframe 中。如果页面显示空白或报错，请确认目标网站允许被嵌入，或考虑使用 HTML 模式自行构建页面内容。',
         hideCcsImportButton: '隐藏 CCS 导入按钮',
-        hideCcsImportButtonHint: '启用后将在 API Keys 页面隐藏"导入 CCS"按钮'
+        hideCcsImportButtonHint: '启用后将在 API Keys 页面隐藏"导入 CCS"按钮',
+        cryptoAddresses: '虚拟货币地址',
+        cryptoAddressesHint: '配置收款的虚拟货币地址，将展示在套餐购买页面',
+        addCryptoAddress: '添加地址',
+        chainName: '链名称',
+        walletAddress: '钱包地址'
       },
       purchase: {
         title: '购买订阅页面',
@@ -4446,6 +4457,12 @@ export default {
         payAsYouGo: '按实际使用扣费',
         neverExpires: '余额永久有效'
       }
+    },
+    cryptoBanner: {
+      title: '支持虚拟货币支付',
+      descriptionPrefix: '转账后请通过',
+      descriptionSuffix: '联系我们确认订单',
+      copySuccess: '地址已复制'
     },
     enterprise: {
       badge: '高端定制',

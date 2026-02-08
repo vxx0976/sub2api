@@ -76,6 +76,7 @@ func (h *SettingHandler) GetSettings(c *gin.Context) {
 		HideCcsImportButton:                  settings.HideCcsImportButton,
 		PurchaseSubscriptionEnabled:          settings.PurchaseSubscriptionEnabled,
 		PurchaseSubscriptionURL:              settings.PurchaseSubscriptionURL,
+		CryptoAddresses:                      settings.CryptoAddresses,
 		DefaultConcurrency:                   settings.DefaultConcurrency,
 		DefaultBalance:                       settings.DefaultBalance,
 		EnableModelFallback:                  settings.EnableModelFallback,
@@ -133,6 +134,7 @@ type UpdateSettingsRequest struct {
 	HideCcsImportButton         bool    `json:"hide_ccs_import_button"`
 	PurchaseSubscriptionEnabled *bool   `json:"purchase_subscription_enabled"`
 	PurchaseSubscriptionURL     *string `json:"purchase_subscription_url"`
+	CryptoAddresses             string  `json:"crypto_addresses"`
 
 	// 默认配置
 	DefaultConcurrency int     `json:"default_concurrency"`
@@ -319,6 +321,7 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		HideCcsImportButton:         req.HideCcsImportButton,
 		PurchaseSubscriptionEnabled: purchaseEnabled,
 		PurchaseSubscriptionURL:     purchaseURL,
+		CryptoAddresses:             req.CryptoAddresses,
 		DefaultConcurrency:          req.DefaultConcurrency,
 		DefaultBalance:              req.DefaultBalance,
 		EnableModelFallback:         req.EnableModelFallback,
@@ -400,6 +403,7 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		HideCcsImportButton:                  updatedSettings.HideCcsImportButton,
 		PurchaseSubscriptionEnabled:          updatedSettings.PurchaseSubscriptionEnabled,
 		PurchaseSubscriptionURL:              updatedSettings.PurchaseSubscriptionURL,
+		CryptoAddresses:                      updatedSettings.CryptoAddresses,
 		DefaultConcurrency:                   updatedSettings.DefaultConcurrency,
 		DefaultBalance:                       updatedSettings.DefaultBalance,
 		EnableModelFallback:                  updatedSettings.EnableModelFallback,
@@ -515,6 +519,9 @@ func diffSettings(before *service.SystemSettings, after *service.SystemSettings,
 	}
 	if before.HideCcsImportButton != after.HideCcsImportButton {
 		changed = append(changed, "hide_ccs_import_button")
+	}
+	if before.CryptoAddresses != after.CryptoAddresses {
+		changed = append(changed, "crypto_addresses")
 	}
 	if before.DefaultConcurrency != after.DefaultConcurrency {
 		changed = append(changed, "default_concurrency")

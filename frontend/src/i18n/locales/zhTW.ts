@@ -188,6 +188,11 @@ export default {
     description: '主控台首頁',
     welcome: '歡迎回來',
     balance: '餘額',
+    gettingStarted: {
+      title: '新手教程',
+      badge: '推薦',
+      description: '快速了解如何使用本平台，3 分鐘上手'
+    },
     announcements: '系統公告',
     promotions: '優惠活動',
     quickLinks: '快捷入口',
@@ -208,6 +213,12 @@ export default {
       planItem: '買 ¥{price} 方案各得 ${reward}',
       moreInfo: '更多方案詳情請諮詢客服',
       action: '去邀請'
+    },
+    contact: {
+      title: '聯繫我們',
+      wechat: 'WeChat',
+      telegram: 'Telegram',
+      scanQr: '掃碼添加微信'
     },
     links: {
       subscriptions: '我的訂閱',
@@ -333,7 +344,9 @@ export default {
       port: '端口',
       password: '密碼（可選）',
       database: '資料庫',
-      passwordPlaceholder: '密碼'
+      passwordPlaceholder: '密碼',
+      enableTls: '啟用 TLS',
+      enableTlsHint: '連接 Redis 時使用 TLS（公共 CA 憑證）'
     },
     admin: {
       title: '管理員帳戶',
@@ -450,7 +463,8 @@ export default {
   // Navigation
   nav: {
     consoleHome: '首頁',
-    dashboard: '仪表盤',
+    dashboard: '儀表盤',
+    announcements: '公告',
     apiKeys: 'API 金鑰',
     usage: '使用記錄',
     redeem: '兌換',
@@ -479,6 +493,7 @@ export default {
     adminReferrals: '邀請管理',
     adminRechargeOrders: '儲值管理',
     rechargeSettings: '儲值配置',
+    buySubscription: '購買訂閱',
     docs: '接入文檔',
     referral: '邀請好友'
   },
@@ -828,7 +843,14 @@ export default {
     promoCodeMaxUsed: '此優惠碼已達到使用上限',
     promoCodeAlreadyUsed: '您已使用過此優惠碼',
     promoCodeValidating: '優惠碼正在驗證中，請稍候',
-    promoCodeInvalidCannotRegister: '優惠碼无效，請檢查后重試或清空優惠碼',
+    promoCodeInvalidCannotRegister: '優惠碼無效，請檢查後重試或清空優惠碼',
+    invitationCodeLabel: '邀請碼',
+    invitationCodePlaceholder: '請輸入邀請碼',
+    invitationCodeRequired: '請輸入邀請碼',
+    invitationCodeValid: '邀請碼有效',
+    invitationCodeInvalid: '邀請碼無效或已被使用',
+    invitationCodeValidating: '正在驗證邀請碼...',
+    invitationCodeInvalidCannotRegister: '邀請碼無效，請檢查後重試',
     linuxdo: {
       signIn: '使用 Linux.do 登入',
       orContinue: '或使用郵箱密碼繼續',
@@ -1038,6 +1060,34 @@ export default {
       geminiCli: 'Gemini CLI',
       geminiCliDesc: '匯入為 Gemini CLI 配置',
     },
+    // 配額和有效期
+    quota: '額度',
+    quotaLimit: '額度限制',
+    quotaAmount: '額度金額 (USD)',
+    quotaAmountPlaceholder: '輸入 USD 額度限制',
+    quotaAmountHint: '設定此金鑰可消費的最大金額。0 = 無限制。',
+    quotaUsed: '已用額度',
+    reset: '重置',
+    resetQuotaUsed: '將已用額度重置為 0',
+    resetQuotaTitle: '確認重置額度',
+    resetQuotaConfirmMessage: '確定要將金鑰 "{name}" 的已用額度（${used}）重置為 0 嗎？此操作不可撤銷。',
+    quotaResetSuccess: '額度重置成功',
+    failedToResetQuota: '重置額度失敗',
+    expiration: '金鑰有效期',
+    expiresInDays: '{days} 天',
+    extendDays: '+{days} 天',
+    customDate: '自定義',
+    expirationDate: '過期時間',
+    expirationDateHint: '選擇此 API 金鑰的過期時間。',
+    currentExpiration: '當前過期時間',
+    expiresAt: '過期時間',
+    noExpiration: '永久有效',
+    status: {
+      active: '活躍',
+      inactive: '已停用',
+      quota_exhausted: '額度耗盡',
+      expired: '已過期'
+    }
   },
 
   // Usage
@@ -1070,6 +1120,7 @@ export default {
     exporting: '匯出中...',
     preparingExport: '正在準備匯出...',
     model: '模型',
+    reasoningEffort: '推理強度',
     type: '類型',
     tokens: 'Token',
     cost: '費用',
@@ -1484,6 +1535,16 @@ export default {
       allowedGroupsUpdated: '允許群組更新成功',
       failedToLoadGroups: '加載群組列表失敗',
       failedToUpdateAllowedGroups: '更新允許群組失敗',
+      // 使用者群組配置
+      groupConfig: '使用者群組配置',
+      groupConfigHint: '為使用者 {email} 配置專屬群組倍率（覆蓋群組預設倍率）',
+      exclusiveGroups: '專屬群組',
+      publicGroups: '公開群組（預設可用）',
+      defaultRate: '預設倍率',
+      customRate: '專屬倍率',
+      useDefaultRate: '使用預設',
+      customRatePlaceholder: '留空使用預設',
+      groupConfigUpdated: '群組配置更新成功',
       deposit: '儲值',
       withdraw: '退款',
       depositAmount: '儲值金額',
@@ -1503,6 +1564,20 @@ export default {
       failedToDeposit: '儲值失敗',
       failedToWithdraw: '退款失敗',
       useDepositWithdrawButtons: '請使用儲值/退款按鈕調整餘額',
+      // 餘額變動記錄
+      balanceHistory: '儲值記錄',
+      balanceHistoryTip: '點擊查看儲值記錄',
+      balanceHistoryTitle: '使用者儲值和並行變動記錄',
+      noBalanceHistory: '暫無變動記錄',
+      allTypes: '全部類型',
+      typeBalance: '餘額（兌換碼）',
+      typeAdminBalance: '餘額（管理員調整）',
+      typeConcurrency: '並行（兌換碼）',
+      typeAdminConcurrency: '並行（管理員調整）',
+      typeSubscription: '訂閱',
+      failedToLoadBalanceHistory: '加載餘額記錄失敗',
+      createdAt: '建立時間',
+      totalRecharged: '總儲值',
       // Settings Dropdowns
       filterSettings: '筛選設定',
       columnSettings: '列設定',
@@ -1657,6 +1732,7 @@ export default {
       public: '公開',
       rateAndAccounts: '{rate}x 費率 · {count} 個帳號',
       accountsCount: '{count} 個帳號',
+      noAccounts: '暫無帳號',
       enterGroupName: '請輸入群組名稱',
       optionalDescription: '可選描述',
       platformHint: '選擇此群組關联的平台',
@@ -1699,7 +1775,20 @@ export default {
         disabled: '允許所有客戶端',
         fallbackGroup: '降级群組',
         fallbackHint: '非 Claude Code 請求將使用此群組，留空則直接拒絕',
-        noFallback: '不降级（直接拒絕）'
+        noFallback: '不降級（直接拒絕）'
+      },
+      invalidRequestFallback: {
+        title: '無效請求兜底群組',
+        hint: '僅當上游明確返回 prompt too long 時才會觸發，留空表示不兜底',
+        noFallback: '不兜底'
+      },
+      copyAccounts: {
+        title: '從群組複製帳號',
+        tooltip: '選擇一個或多個相同平台的群組，建立後會自動將這些群組的所有帳號綁定到新群組（去重）。',
+        tooltipEdit: '選擇一個或多個相同平台的群組，儲存後當前群組的帳號會被替換為這些群組的帳號（去重）。',
+        selectPlaceholder: '選擇群組以複製其帳號...',
+        hint: '可選多個群組，帳號會自動去重',
+        hintEdit: '⚠️ 注意：這會替換當前群組的所有帳號綁定'
       },
       modelRouting: {
         title: '模型路由配置',
@@ -1733,7 +1822,10 @@ export default {
         sortOrder: '排序權重',
         sortOrderHint: '數值越大排序越靠前',
         isRecommended: '推薦方案',
-        isRecommendedHint: '在方案頁面顯示推薦標識'
+        isRecommendedHint: '在方案頁面顯示推薦標識',
+        externalBuyUrl: '外部購買連結',
+        externalBuyUrlPlaceholder: 'https://item.taobao.com/item.htm?id=...',
+        externalBuyUrlHint: '可選，配置後使用者可透過此連結跳轉到外部平台購買'
       },
       planPreview: {
         title: '方案預覽',
@@ -1742,6 +1834,20 @@ export default {
         noPlansDesc: '請先創建訂閱類型的群組并啟用購買功能。',
         notPurchasable: '未開放購買',
         previewOnly: '僅供預覽'
+      },
+      mcpXml: {
+        title: 'MCP XML 協議注入',
+        tooltip: '啟用後，當請求包含 MCP 工具時，會在 system prompt 中注入 XML 格式呼叫協議提示詞。關閉此選項可避免對某些客戶端造成干擾。',
+        enabled: '已啟用',
+        disabled: '已禁用'
+      },
+      supportedScopes: {
+        title: '支援的模型系列',
+        tooltip: '選擇此群組支援的模型系列。未勾選的系列將不會被路由到此群組。',
+        claude: 'Claude',
+        geminiText: 'Gemini Text',
+        geminiImage: 'Gemini Image',
+        hint: '至少選擇一個模型系列'
       }
     },
 
@@ -4103,6 +4209,12 @@ export default {
         payAsYouGo: '按實際使用扣費',
         neverExpires: '餘額永久有效'
       }
+    },
+    cryptoBanner: {
+      title: '支援加密貨幣付款',
+      descriptionPrefix: '轉帳後請透過',
+      descriptionSuffix: '聯繫我們確認訂單',
+      copySuccess: '地址已複製'
     },
     enterprise: {
       badge: '高端定制',

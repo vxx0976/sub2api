@@ -802,6 +802,51 @@
               </p>
             </div>
 
+            <!-- Crypto Addresses -->
+            <div>
+              <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                {{ t('admin.settings.site.cryptoAddresses') }}
+              </label>
+              <p class="mb-3 text-xs text-gray-500 dark:text-gray-400">
+                {{ t('admin.settings.site.cryptoAddressesHint') }}
+              </p>
+              <div class="space-y-2">
+                <div
+                  v-for="(addr, index) in cryptoAddressList"
+                  :key="index"
+                  class="flex items-center gap-2"
+                >
+                  <input
+                    v-model="addr.chain"
+                    type="text"
+                    class="input w-40"
+                    :placeholder="t('admin.settings.site.chainName')"
+                  />
+                  <input
+                    v-model="addr.address"
+                    type="text"
+                    class="input flex-1 font-mono text-sm"
+                    :placeholder="t('admin.settings.site.walletAddress')"
+                  />
+                  <button
+                    type="button"
+                    @click="cryptoAddressList.splice(index, 1)"
+                    class="flex-shrink-0 rounded-lg p-2 text-red-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
+                  >
+                    <Icon name="trash" size="sm" />
+                  </button>
+                </div>
+              </div>
+              <button
+                type="button"
+                @click="cryptoAddressList.push({ chain: '', address: '' })"
+                class="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-dashed border-gray-300 px-3 py-1.5 text-sm text-gray-500 transition-colors hover:border-gray-400 hover:text-gray-700 dark:border-dark-600 dark:text-dark-400 dark:hover:border-dark-500 dark:hover:text-dark-300"
+              >
+                <Icon name="plus" size="sm" />
+                {{ t('admin.settings.site.addCryptoAddress') }}
+              </button>
+            </div>
+
             <!-- Doc URL -->
             <div>
               <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -1251,6 +1296,7 @@ const form = reactive<SettingsForm>({
   hide_ccs_import_button: false,
   purchase_subscription_enabled: false,
   purchase_subscription_url: '',
+  crypto_addresses: '',
   smtp_host: '',
   smtp_port: 587,
   smtp_username: '',
@@ -1285,6 +1331,13 @@ const form = reactive<SettingsForm>({
   ops_query_mode_default: 'auto',
   ops_metrics_interval_seconds: 60
 })
+
+// Crypto address list (managed separately, synced to form.crypto_addresses on save)
+interface CryptoAddressItem {
+  chain: string
+  address: string
+}
+const cryptoAddressList = ref<CryptoAddressItem[]>([])
 
 // LinuxDo OAuth redirect URL suggestion
 const linuxdoRedirectUrlSuggestion = computed(() => {
@@ -1348,6 +1401,13 @@ async function loadSettings() {
     form.smtp_password = ''
     form.turnstile_secret_key = ''
     form.linuxdo_connect_client_secret = ''
+    // Parse crypto addresses
+    try {
+      const parsed = form.crypto_addresses ? JSON.parse(form.crypto_addresses) : []
+      cryptoAddressList.value = Array.isArray(parsed) ? parsed : []
+    } catch {
+      cryptoAddressList.value = []
+    }
   } catch (error: any) {
     appStore.showError(
       t('admin.settings.failedToLoad') + ': ' + (error.message || t('common.unknownError'))
@@ -1359,6 +1419,9 @@ async function loadSettings() {
 
 async function saveSettings() {
   saving.value = true
+  // Serialize crypto addresses before save
+  const validAddresses = cryptoAddressList.value.filter(a => a.chain.trim() && a.address.trim())
+  form.crypto_addresses = validAddresses.length > 0 ? JSON.stringify(validAddresses) : ''
   try {
     const payload: UpdateSettingsRequest = {
       registration_enabled: form.registration_enabled,
@@ -1379,6 +1442,7 @@ async function saveSettings() {
       hide_ccs_import_button: form.hide_ccs_import_button,
       purchase_subscription_enabled: form.purchase_subscription_enabled,
       purchase_subscription_url: form.purchase_subscription_url,
+      crypto_addresses: form.crypto_addresses,
       smtp_host: form.smtp_host,
       smtp_port: form.smtp_port,
       smtp_username: form.smtp_username,

@@ -39,6 +39,7 @@ type SystemSettings struct {
 	HideCcsImportButton         bool
 	PurchaseSubscriptionEnabled bool
 	PurchaseSubscriptionURL     string
+	CryptoAddresses             string
 
 	DefaultConcurrency int
 	DefaultBalance     float64
@@ -89,6 +90,7 @@ type PublicSettings struct {
 	LinuxDoOAuthEnabled         bool
 	Version                     string
 	Announcements               []SimpleAnnouncement
+	CryptoAddresses             string
 }
 
 // StreamTimeoutSettings 流超时处理配置（仅控制超时后的处理方式，超时判定由网关配置控制）

@@ -188,6 +188,11 @@ export default {
     description: 'コンソールホーム',
     welcome: 'おかえりなさい',
     balance: '残高',
+    gettingStarted: {
+      title: '初心者ガイド',
+      badge: 'おすすめ',
+      description: 'プラットフォームの使い方を素早く理解、3分で始められます'
+    },
     announcements: 'システムお知らせ',
     promotions: 'キャンペーン',
     quickLinks: 'クイックアクセス',
@@ -208,6 +213,12 @@ export default {
       planItem: '¥{price} プラン購入でそれぞれ ${reward} 獲得',
       moreInfo: 'プランの詳細はカスタマーサービスにお問い合わせください',
       action: '招待する'
+    },
+    contact: {
+      title: 'お問い合わせ',
+      wechat: 'WeChat',
+      telegram: 'Telegram',
+      scanQr: 'QRコードをスキャンしてWeChatを追加'
     },
     links: {
       subscriptions: 'マイサブスクリプション',
@@ -333,7 +344,9 @@ export default {
       port: 'ポート',
       password: 'パスワード（任意）',
       database: 'データベース',
-      passwordPlaceholder: 'パスワード'
+      passwordPlaceholder: 'パスワード',
+      enableTls: 'TLS を有効にする',
+      enableTlsHint: 'Redis 接続時に TLS を使用（パブリック CA 証明書）'
     },
     admin: {
       title: '管理者アカウント',
@@ -451,6 +464,7 @@ export default {
   nav: {
     consoleHome: 'ホーム',
     dashboard: 'ダッシュボード',
+    announcements: 'お知らせ',
     apiKeys: 'APIキー',
     usage: '使用履歴',
     redeem: '引き換え',
@@ -479,6 +493,7 @@ export default {
     adminReferrals: '招待管理',
     adminRechargeOrders: 'チャージ管理',
     rechargeSettings: 'チャージ設定',
+    buySubscription: 'サブスクリプション購入',
     docs: '接続ドキュメント',
     referral: '友達を招待'
   },
@@ -829,6 +844,13 @@ export default {
     promoCodeAlreadyUsed: 'このクーポンコードは既に使用済みです',
     promoCodeValidating: 'クーポンコードを検証中です。お待ちください',
     promoCodeInvalidCannotRegister: 'クーポンコードが無効です。確認して再試行するか、クーポンコードをクリアしてください',
+    invitationCodeLabel: '招待コード',
+    invitationCodePlaceholder: '招待コードを入力してください',
+    invitationCodeRequired: '招待コードを入力してください',
+    invitationCodeValid: '招待コードは有効です',
+    invitationCodeInvalid: '招待コードが無効または使用済みです',
+    invitationCodeValidating: '招待コードを検証中...',
+    invitationCodeInvalidCannotRegister: '招待コードが無効です。確認して再試行してください',
     linuxdo: {
       signIn: 'Linux.doでログイン',
       orContinue: 'またはメールアドレスとパスワードで続行',
@@ -941,7 +963,7 @@ export default {
     createKey: 'キーを作成',
     editKey: 'キーを編集',
     deleteKey: 'キーを削除',
-    deleteConfirmMessage: "确定要删除 '{name}' 吗？此操作无法撤销。",
+    deleteConfirmMessage: "'{name}' を削除してもよろしいですか？この操作は元に戻せません。",
     apiKey: 'APIキー',
     group: 'グループ',
     noGroup: 'グループなし',
@@ -1038,6 +1060,33 @@ export default {
       geminiCli: 'Gemini CLI',
       geminiCliDesc: 'Gemini CLI設定としてインポート',
     },
+    // クォータと有効期限
+    quotaLimit: 'クォータ制限',
+    quotaAmount: 'クォータ金額 (USD)',
+    quotaAmountPlaceholder: 'USDクォータ制限を入力',
+    quotaAmountHint: 'このキーが消費できる最大金額を設定します。0 = 無制限。',
+    quotaUsed: '使用済みクォータ',
+    reset: 'リセット',
+    resetQuotaUsed: '使用済みクォータを0にリセット',
+    resetQuotaTitle: 'クォータリセットの確認',
+    resetQuotaConfirmMessage: 'キー "{name}" の使用済みクォータ（${used}）を0にリセットしてもよろしいですか？この操作は元に戻せません。',
+    quotaResetSuccess: 'クォータのリセットに成功しました',
+    failedToResetQuota: 'クォータのリセットに失敗しました',
+    expiration: 'キーの有効期限',
+    expiresInDays: '{days} 日間',
+    extendDays: '+{days} 日',
+    customDate: 'カスタム',
+    expirationDate: '有効期限',
+    expirationDateHint: 'このAPIキーの有効期限を選択してください。',
+    currentExpiration: '現在の有効期限',
+    expiresAt: '有効期限',
+    noExpiration: '無期限',
+    status: {
+      active: 'アクティブ',
+      inactive: '停止中',
+      quota_exhausted: 'クォータ上限',
+      expired: '期限切れ'
+    }
   },
 
   // Usage
@@ -1070,6 +1119,7 @@ export default {
     exporting: 'エクスポート中...',
     preparingExport: 'エクスポートを準備中...',
     model: 'モデル',
+    reasoningEffort: '推論強度',
     type: 'タイプ',
     tokens: 'Token',
     cost: '費用',
@@ -1365,7 +1415,7 @@ export default {
       createUser: 'ユーザーを作成',
       editUser: 'ユーザーを編集',
       deleteUser: 'ユーザーを削除',
-      deleteConfirmMessage: "确定要删除用户 '{email}' 吗？此操作无法撤销。",
+      deleteConfirmMessage: "ユーザー '{email}' を削除してもよろしいですか？この操作は元に戻せません。",
       searchPlaceholder: 'ユーザーを検索...',
       searchUsers: 'ユーザーを検索...',
       roleFilter: 'ロールフィルター',
@@ -1434,7 +1484,7 @@ export default {
       failedToDelete: 'ユーザーの削除に失敗しました',
       failedToToggle: 'ユーザーステータスの更新に失敗しました',
       failedToLoadApiKeys: 'ユーザーAPIキーの読み込みに失敗しました',
-      deleteConfirm: "确定要删除用户 '{email}' 吗？此操作无法撤销。",
+      deleteConfirm: "ユーザー '{email}' を削除してもよろしいですか？この操作は元に戻せません。",
       roles: {
         admin: '管理者',
         user: 'ユーザー'
@@ -1484,6 +1534,16 @@ export default {
       allowedGroupsUpdated: '許可グループの更新に成功しました',
       failedToLoadGroups: 'グループリストの読み込みに失敗しました',
       failedToUpdateAllowedGroups: '許可グループの更新に失敗しました',
+      // ユーザーグループ設定
+      groupConfig: 'ユーザーグループ設定',
+      groupConfigHint: 'ユーザー {email} の専用グループ倍率を設定（グループのデフォルト倍率を上書き）',
+      exclusiveGroups: '専用グループ',
+      publicGroups: '公開グループ（デフォルトで利用可能）',
+      defaultRate: 'デフォルト倍率',
+      customRate: '専用倍率',
+      useDefaultRate: 'デフォルトを使用',
+      customRatePlaceholder: '空欄でデフォルトを使用',
+      groupConfigUpdated: 'グループ設定の更新に成功しました',
       deposit: 'チャージ',
       withdraw: '返金',
       depositAmount: 'チャージ金額',
@@ -1503,6 +1563,20 @@ export default {
       failedToDeposit: 'チャージに失敗しました',
       failedToWithdraw: '返金に失敗しました',
       useDepositWithdrawButtons: 'チャージ/返金ボタンを使用して残高を調整してください',
+      // 残高変動履歴
+      balanceHistory: 'チャージ履歴',
+      balanceHistoryTip: 'クリックしてチャージ履歴を表示',
+      balanceHistoryTitle: 'ユーザーのチャージと同時接続数の変動履歴',
+      noBalanceHistory: '変動履歴はありません',
+      allTypes: 'すべてのタイプ',
+      typeBalance: '残高（引き換えコード）',
+      typeAdminBalance: '残高（管理者調整）',
+      typeConcurrency: '同時接続数（引き換えコード）',
+      typeAdminConcurrency: '同時接続数（管理者調整）',
+      typeSubscription: 'サブスクリプション',
+      failedToLoadBalanceHistory: '残高履歴の読み込みに失敗しました',
+      createdAt: '作成日時',
+      totalRecharged: '合計チャージ',
       // Settings Dropdowns
       filterSettings: 'フィルター設定',
       columnSettings: '列設定',
@@ -1515,7 +1589,7 @@ export default {
         addAttribute: '属性を追加',
         editAttribute: '属性を編集',
         deleteAttribute: '属性を削除',
-        deleteConfirm: "确定要删除属性 '{name}' 吗？所有用户的该属性值将被删除。",
+        deleteConfirm: "属性 '{name}' を削除してもよろしいですか？すべてのユーザーのこの属性値が削除されます。",
         noAttributes: 'カスタム属性なし',
         noAttributesHint: '上のボタンをクリックしてカスタム属性を追加してください',
         key: '属性キー',
@@ -1576,9 +1650,9 @@ export default {
       createGroup: 'グループを作成',
       editGroup: 'グループを編集',
       deleteGroup: 'グループを削除',
-      deleteConfirm: "确定要删除分组 '{name}' 吗？所有关联的 API 密钥将不再属于任何分组。",
+      deleteConfirm: "グループ '{name}' を削除してもよろしいですか？関連するすべてのAPIキーはどのグループにも属さなくなります。",
       deleteConfirmSubscription:
-        "确定要删除订阅分组 '{name}' 吗？此操作会让所有绑定此订阅的用户的 API Key 失效，并删除所有相关的订阅记录。此操作无法撤销。",
+        "サブスクリプショングループ '{name}' を削除してもよろしいですか？この操作により、このサブスクリプションに紐づくすべてのユーザーのAPIキーが無効になり、すべての関連サブスクリプション記録が削除されます。この操作は元に戻せません。",
       columns: {
         name: '名前',
         platform: 'プラットフォーム',
@@ -1700,6 +1774,19 @@ export default {
         fallbackGroup: 'ダウングレードグループ',
         fallbackHint: 'Claude Code以外のリクエストはこのグループを使用します。空欄の場合は直接拒否されます',
         noFallback: 'ダウングレードなし（直接拒否）'
+      },
+      invalidRequestFallback: {
+        title: '無効リクエストのフォールバックグループ',
+        hint: '上流が明示的に prompt too long を返した場合にのみトリガーされます。空欄の場合はフォールバックなし',
+        noFallback: 'フォールバックなし'
+      },
+      copyAccounts: {
+        title: 'グループからアカウントをコピー',
+        tooltip: '同じプラットフォームの1つ以上のグループを選択すると、作成後にそれらのグループのすべてのアカウントが新しいグループに自動的にバインドされます（重複を除く）。',
+        tooltipEdit: '同じプラットフォームの1つ以上のグループを選択すると、保存後に現在のグループのアカウントがこれらのグループのアカウントに置き換えられます（重複を除く）。',
+        selectPlaceholder: 'アカウントをコピーするグループを選択...',
+        hint: '複数のグループを選択可能、アカウントは自動的に重複除去されます',
+        hintEdit: '注意：現在のグループのすべてのアカウントバインドが置き換えられます'
       },
       modelRouting: {
         title: 'モデルルーティング設定',
@@ -4103,6 +4190,12 @@ export default {
         payAsYouGo: '実際の使用量に応じて課金',
         neverExpires: '残高は永久に有効'
       }
+    },
+    cryptoBanner: {
+      title: '暗号通貨決済対応',
+      descriptionPrefix: '送金後、',
+      descriptionSuffix: 'でご連絡いただき注文を確認してください',
+      copySuccess: 'アドレスをコピーしました'
     },
     enterprise: {
       badge: 'ハイエンドカスタム',

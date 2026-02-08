@@ -188,6 +188,11 @@ export default {
     description: '콘솔 홈',
     welcome: '다시 오신 것을 환영합니다',
     balance: '잔액',
+    gettingStarted: {
+      title: '초보자 튜토리얼',
+      badge: '추천',
+      description: '플랫폼 사용법을 빠르게 알아보세요. 3분이면 충분합니다'
+    },
     announcements: '시스템 공지',
     promotions: '프로모션',
     quickLinks: '바로가기',
@@ -208,6 +213,12 @@ export default {
       planItem: '¥{price} 요금제 구매 시 각각 ${reward} 지급',
       moreInfo: '더 많은 요금제 정보는 고객 지원에 문의하세요',
       action: '초대하러 가기'
+    },
+    contact: {
+      title: '문의하기',
+      wechat: 'WeChat',
+      telegram: 'Telegram',
+      scanQr: 'QR 코드를 스캔하여 WeChat 추가'
     },
     links: {
       subscriptions: '내 구독',
@@ -333,7 +344,9 @@ export default {
       port: '포트',
       password: '비밀번호 (선택)',
       database: '데이터베이스',
-      passwordPlaceholder: '비밀번호'
+      passwordPlaceholder: '비밀번호',
+      enableTls: 'TLS 활성화',
+      enableTlsHint: 'Redis 연결 시 TLS 사용 (공개 CA 인증서)'
     },
     admin: {
       title: '관리자 계정',
@@ -451,6 +464,7 @@ export default {
   nav: {
     consoleHome: '홈',
     dashboard: '대시보드',
+    announcements: '공지',
     apiKeys: 'API 키',
     usage: '사용 기록',
     redeem: '교환',
@@ -479,6 +493,7 @@ export default {
     adminReferrals: '초대 관리',
     adminRechargeOrders: '충전 관리',
     rechargeSettings: '충전 설정',
+    buySubscription: '구독 구매',
     docs: '연동 문서',
     referral: '친구 초대'
   },
@@ -829,6 +844,13 @@ export default {
     promoCodeAlreadyUsed: '이미 이 할인 코드를 사용하셨습니다',
     promoCodeValidating: '할인 코드 검증 중, 잠시 기다려 주세요',
     promoCodeInvalidCannotRegister: '할인 코드가 유효하지 않습니다. 확인 후 다시 시도하거나 할인 코드를 비워 주세요',
+    invitationCodeLabel: '초대 코드',
+    invitationCodePlaceholder: '초대 코드를 입력하세요',
+    invitationCodeRequired: '초대 코드를 입력하세요',
+    invitationCodeValid: '초대 코드가 유효합니다',
+    invitationCodeInvalid: '초대 코드가 유효하지 않거나 이미 사용되었습니다',
+    invitationCodeValidating: '초대 코드 검증 중...',
+    invitationCodeInvalidCannotRegister: '초대 코드가 유효하지 않습니다. 확인 후 다시 시도하세요',
     linuxdo: {
       signIn: 'Linux.do로 로그인',
       orContinue: '또는 이메일과 비밀번호로 계속',
@@ -941,7 +963,7 @@ export default {
     createKey: '키 생성',
     editKey: '키 편집',
     deleteKey: '키 삭제',
-    deleteConfirmMessage: "确定要删除 '{name}' 吗？此操作无法撤销。",
+    deleteConfirmMessage: "'{name}'을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
     apiKey: 'API 키',
     group: '그룹',
     noGroup: '그룹 없음',
@@ -1038,6 +1060,33 @@ export default {
       geminiCli: 'Gemini CLI',
       geminiCliDesc: 'Gemini CLI 설정으로 가져오기',
     },
+    // 할당량 및 유효기간
+    quotaLimit: '할당량 제한',
+    quotaAmount: '할당량 금액 (USD)',
+    quotaAmountPlaceholder: 'USD 할당량 제한 입력',
+    quotaAmountHint: '이 키가 사용할 수 있는 최대 금액을 설정합니다. 0 = 무제한.',
+    quotaUsed: '사용된 할당량',
+    reset: '초기화',
+    resetQuotaUsed: '사용된 할당량을 0으로 초기화',
+    resetQuotaTitle: '할당량 초기화 확인',
+    resetQuotaConfirmMessage: '키 "{name}"의 사용된 할당량(${used})을 0으로 초기화하시겠습니까? 이 작업은 되돌릴 수 없습니다.',
+    quotaResetSuccess: '할당량 초기화 성공',
+    failedToResetQuota: '할당량 초기화 실패',
+    expiration: '키 유효기간',
+    expiresInDays: '{days}일',
+    extendDays: '+{days}일',
+    customDate: '사용자 지정',
+    expirationDate: '만료 시간',
+    expirationDateHint: '이 API 키의 만료 시간을 선택하세요.',
+    currentExpiration: '현재 만료 시간',
+    expiresAt: '만료 시간',
+    noExpiration: '영구 유효',
+    status: {
+      active: '활성',
+      inactive: '비활성',
+      quota_exhausted: '할당량 소진',
+      expired: '만료됨'
+    }
   },
 
   // Usage
@@ -1070,6 +1119,7 @@ export default {
     exporting: '내보내기 중...',
     preparingExport: '내보내기 준비 중...',
     model: '모델',
+    reasoningEffort: '추론 강도',
     type: '유형',
     tokens: 'Token',
     cost: '비용',
@@ -1365,9 +1415,9 @@ export default {
       createUser: '사용자 생성',
       editUser: '사용자 편집',
       deleteUser: '사용자 삭제',
-      deleteConfirmMessage: "确定要删除用户 '{email}' 吗？此操作无法撤销。",
-      searchPlaceholder: '사용자 검색...',
-      searchUsers: '사용자 검색...',
+      deleteConfirmMessage: "사용자 '{email}'을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
+      searchPlaceholder: '사용자 이메일, 사용자 이름, 메모 검색...',
+      searchUsers: '사용자 이메일, 사용자 이름, 메모 검색',
       roleFilter: '역할 필터',
       allRoles: '전체 역할',
       allStatus: '전체 상태',
@@ -1434,7 +1484,7 @@ export default {
       failedToDelete: '사용자 삭제에 실패했습니다',
       failedToToggle: '사용자 상태 업데이트에 실패했습니다',
       failedToLoadApiKeys: '사용자 API 키 로드에 실패했습니다',
-      deleteConfirm: "确定要删除用户 '{email}' 吗？此操作无法撤销。",
+      deleteConfirm: "사용자 '{email}'을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
       roles: {
         admin: '관리자',
         user: '사용자'
@@ -1503,6 +1553,35 @@ export default {
       failedToDeposit: '충전에 실패했습니다',
       failedToWithdraw: '환불에 실패했습니다',
       useDepositWithdrawButtons: '충전/환불 버튼을 사용하여 잔액을 조정해 주세요',
+      // 사용자 그룹 설정
+      groupConfig: '사용자 그룹 설정',
+      groupConfigHint: '사용자 {email}의 전용 그룹 배율 설정 (그룹 기본 배율 덮어쓰기)',
+      exclusiveGroups: '전용 그룹',
+      publicGroups: '공개 그룹 (기본 사용 가능)',
+      defaultRate: '기본 배율',
+      customRate: '전용 배율',
+      useDefaultRate: '기본값 사용',
+      customRatePlaceholder: '비워두면 기본값 사용',
+      groupConfigUpdated: '그룹 설정이 성공적으로 업데이트되었습니다',
+      // 잔액 변동 기록
+      balanceHistory: '충전 기록',
+      balanceHistoryTitle: '{email} 잔액 변동 기록',
+      balanceHistoryEmpty: '잔액 변동 기록이 없습니다',
+      balanceHistoryFailed: '잔액 변동 기록 로드에 실패했습니다',
+      balanceHistoryDate: '시간',
+      balanceHistoryType: '유형',
+      balanceHistoryAmount: '금액',
+      balanceHistoryBalance: '잔액',
+      balanceHistoryNotes: '메모',
+      balanceHistoryAdmin: '운영자',
+      balanceHistoryTypes: {
+        deposit: '충전',
+        withdraw: '환불',
+        admin_adjust: '관리자 조정',
+        redeem: '코드 교환',
+        purchase: '구매',
+        refund: '환불'
+      },
       // Settings Dropdowns
       filterSettings: '필터 설정',
       columnSettings: '열 설정',
@@ -1515,7 +1594,7 @@ export default {
         addAttribute: '속성 추가',
         editAttribute: '속성 편집',
         deleteAttribute: '속성 삭제',
-        deleteConfirm: "确定要删除属性 '{name}' 吗？所有用户的该属性值将被删除。",
+        deleteConfirm: "속성 '{name}'을(를) 삭제하시겠습니까? 모든 사용자의 해당 속성 값이 삭제됩니다.",
         noAttributes: '사용자 지정 속성이 없습니다',
         noAttributesHint: '위의 버튼을 클릭하여 사용자 지정 속성을 추가하세요',
         key: '속성 키',
@@ -1576,9 +1655,9 @@ export default {
       createGroup: '그룹 생성',
       editGroup: '그룹 편집',
       deleteGroup: '그룹 삭제',
-      deleteConfirm: "确定要删除分组 '{name}' 吗？所有关联的 API 密钥将不再属于任何分组。",
+      deleteConfirm: "그룹 '{name}'을(를) 삭제하시겠습니까? 연결된 모든 API 키가 어떤 그룹에도 속하지 않게 됩니다.",
       deleteConfirmSubscription:
-        "确定要删除订阅分组 '{name}' 吗？此操作会让所有绑定此订阅的用户的 API Key 失效，并删除所有相关的订阅记录。此操作无法撤销。",
+        "구독 그룹 '{name}'을(를) 삭제하시겠습니까? 이 작업으로 이 구독에 바인딩된 모든 사용자의 API 키가 무효화되고, 관련 구독 기록이 모두 삭제됩니다. 이 작업은 되돌릴 수 없습니다.",
       columns: {
         name: '이름',
         platform: '플랫폼',
@@ -4103,6 +4182,12 @@ export default {
         payAsYouGo: '실제 사용량에 따라 차감',
         neverExpires: '잔액 영구 유효'
       }
+    },
+    cryptoBanner: {
+      title: '암호화폐 결제 가능',
+      descriptionPrefix: '송금 후',
+      descriptionSuffix: '으로 연락하여 주문을 확인해 주세요',
+      copySuccess: '주소가 복사되었습니다'
     },
     enterprise: {
       badge: '프리미엄 맞춤',

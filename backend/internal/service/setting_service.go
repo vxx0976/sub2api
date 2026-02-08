@@ -78,6 +78,7 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		SettingKeyPurchaseSubscriptionURL,
 		SettingKeyLinuxDoConnectEnabled,
 		SettingKeyAnnouncements,
+		SettingKeyCryptoAddresses,
 	}
 
 	settings, err := s.settingRepo.GetMultiple(ctx, keys)
@@ -123,6 +124,7 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		PurchaseSubscriptionURL:     strings.TrimSpace(settings[SettingKeyPurchaseSubscriptionURL]),
 		LinuxDoOAuthEnabled:         linuxDoEnabled,
 		Announcements:               announcements,
+		CryptoAddresses:             settings[SettingKeyCryptoAddresses],
 	}, nil
 }
 
@@ -168,6 +170,7 @@ func (s *SettingService) GetPublicSettingsForInjection(ctx context.Context) (any
 		LinuxDoOAuthEnabled         bool           `json:"linuxdo_oauth_enabled"`
 		Version                     string         `json:"version,omitempty"`
 		Announcements               []SimpleAnnouncement `json:"announcements,omitempty"`
+		CryptoAddresses             string         `json:"crypto_addresses,omitempty"`
 	}{
 		RegistrationEnabled:         settings.RegistrationEnabled,
 		EmailVerifyEnabled:          settings.EmailVerifyEnabled,
@@ -190,6 +193,7 @@ func (s *SettingService) GetPublicSettingsForInjection(ctx context.Context) (any
 		LinuxDoOAuthEnabled:         settings.LinuxDoOAuthEnabled,
 		Version:                     s.version,
 		Announcements:               settings.Announcements,
+		CryptoAddresses:             settings.CryptoAddresses,
 	}, nil
 }
 
@@ -242,6 +246,7 @@ func (s *SettingService) UpdateSettings(ctx context.Context, settings *SystemSet
 	updates[SettingKeyHideCcsImportButton] = strconv.FormatBool(settings.HideCcsImportButton)
 	updates[SettingKeyPurchaseSubscriptionEnabled] = strconv.FormatBool(settings.PurchaseSubscriptionEnabled)
 	updates[SettingKeyPurchaseSubscriptionURL] = strings.TrimSpace(settings.PurchaseSubscriptionURL)
+	updates[SettingKeyCryptoAddresses] = settings.CryptoAddresses
 
 	// 默认配置
 	updates[SettingKeyDefaultConcurrency] = strconv.Itoa(settings.DefaultConcurrency)
@@ -446,6 +451,7 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 		HideCcsImportButton:          settings[SettingKeyHideCcsImportButton] == "true",
 		PurchaseSubscriptionEnabled:  settings[SettingKeyPurchaseSubscriptionEnabled] == "true",
 		PurchaseSubscriptionURL:      strings.TrimSpace(settings[SettingKeyPurchaseSubscriptionURL]),
+		CryptoAddresses:              settings[SettingKeyCryptoAddresses],
 	}
 
 	// 解析整数类型

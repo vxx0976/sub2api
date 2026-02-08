@@ -37,6 +37,7 @@ type SystemSettings struct {
 	HideCcsImportButton         bool   `json:"hide_ccs_import_button"`
 	PurchaseSubscriptionEnabled bool   `json:"purchase_subscription_enabled"`
 	PurchaseSubscriptionURL     string `json:"purchase_subscription_url"`
+	CryptoAddresses             string `json:"crypto_addresses"`
 
 	DefaultConcurrency int     `json:"default_concurrency"`
 	DefaultBalance     float64 `json:"default_balance"`
@@ -87,6 +88,7 @@ type PublicSettings struct {
 	LinuxDoOAuthEnabled         bool           `json:"linuxdo_oauth_enabled"`
 	Version                     string         `json:"version"`
 	Announcements               []SimpleAnnouncement `json:"announcements,omitempty"`
+	CryptoAddresses             string         `json:"crypto_addresses"`
 }
 
 // StreamTimeoutSettings 流超时处理配置 DTO
