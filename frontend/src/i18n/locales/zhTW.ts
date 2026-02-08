@@ -3946,6 +3946,8 @@ export default {
         contactInfoHint: '填寫客服聯繫方式，將展示在兌換頁面、個人资料等位置',
         docUrl: '文檔連結',
         docUrlHint: '文檔網站的連結。留空則隱藏文檔連結。',
+        queryDomain: '查詢域名',
+        queryDomainHint: '配置後該域名將顯示 API Key 查詢頁面',
         docUrlPlaceholder: 'https://docs.example.com',
         siteLogo: '站點Logo',
         uploadImage: '上傳圖片',
@@ -4465,5 +4467,76 @@ export default {
         description: '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;">點擊確認創建您的 API 金鑰。</p><div style="padding: 8px 12px; background: #fee2e2; border-left: 3px solid #ef4444; border-radius: 4px; font-size: 13px; margin-bottom: 12px;"><b>⚠️ 重要：</b><ul style="margin: 8px 0 0 16px;"><li>創建後請立即複製金鑰（sk-xxx）</li><li>金鑰只顯示一次，遺失需重新生成</li></ul></div><p style="padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px;"><b>🚀 如何使用：</b><br/>將金鑰配置到支援 OpenAI 介面的任何客戶端（如 ChatBox、OpenCat 等），即可開始使用！</p><p style="margin-top: 12px; color: #10b981; font-weight: 600;">👉 點擊"創建"按鈕</p></div>'
       }
     }
+  },
+  keyQuery: {
+    title: 'API Key 查詢',
+    placeholder: '請輸入您的 API Key',
+    submit: '查詢',
+    querying: '查詢中...',
+    invalidKey: '無效的 API Key',
+    keyInfo: '金鑰資訊',
+    keyName: '名稱',
+    status: '狀態',
+    quota: '配額',
+    used: '已使用',
+    remaining: '剩餘',
+    unlimited: '無限制',
+    expiresAt: '過期時間',
+    neverExpires: '永不過期',
+    daysRemaining: '{days} 天後過期',
+    subscription: '訂閱資訊',
+    noSubscription: '無有效訂閱',
+    dailyUsage: '今日用量',
+    weeklyUsage: '本週用量',
+    monthlyUsage: '本月用量',
+    usageSummary: '用量概覽（近7天）',
+    totalCost: '總費用',
+    requestCount: '請求次數',
+    topModels: '熱門模型',
+    statusActive: '正常',
+    statusInactive: '已停用',
+    statusExpired: '已過期',
+    statusExhausted: '配額耗盡',
+    noLimit: '無限制',
+    requests: '次',
+    tabs: {
+      overview: '概覽',
+      usageDetails: '使用詳情'
+    },
+    timeRange: {
+      today: '今天',
+      thisMonth: '本月',
+      all: '全部',
+      custom: '自訂'
+    },
+    stats: {
+      totalTokens: '總Token',
+      inputTokens: '輸入Token',
+      outputTokens: '輸出Token',
+      cacheTokens: '快取Token',
+      avgDuration: '平均耗時'
+    },
+    models: {
+      title: '模型用量',
+      requests: '請求數',
+      tokens: 'Token數',
+      cost: '費用'
+    },
+    usage: {
+      time: '時間',
+      model: '模型',
+      inputTokens: '輸入',
+      outputTokens: '輸出',
+      cacheTokens: '快取',
+      cost: '費用',
+      duration: '耗時',
+      noData: '暫無資料',
+      prev: '上一頁',
+      next: '下一頁'
+    },
+    trend: {
+      title: '用量趨勢'
+    },
+    language: '語言'
   }
 }

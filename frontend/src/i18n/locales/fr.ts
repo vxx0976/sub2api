@@ -4074,6 +4074,8 @@ export default {
         docUrl: 'URL de documentation',
         docUrlPlaceholder: 'https://docs.example.com',
         docUrlHint: 'Lien vers votre site de documentation. Laissez vide pour masquer le lien de documentation.',
+        queryDomain: 'Domaine de requete',
+        queryDomainHint: 'Une fois configure, ce domaine affichera la page de requete API Key',
         siteLogo: 'Logo du site',
         uploadImage: 'Télécharger une image',
         remove: 'Supprimer',
@@ -4728,5 +4730,76 @@ export default {
         description: '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;">Cliquez pour confirmer et créer votre clé API.</p><div style="padding: 8px 12px; background: #fee2e2; border-left: 3px solid #ef4444; border-radius: 4px; font-size: 13px; margin-bottom: 12px;"><b>⚠️ Important :</b><ul style="margin: 8px 0 0 16px;"><li>Copiez la clé (sk-xxx) immédiatement après la création</li><li>La clé n\'est affichée qu\'une seule fois, besoin de régénérer si perdue</li></ul></div><p style="padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px;"><b>🚀 Comment utiliser :</b><br/>Configurez la clé dans n\'importe quel client compatible OpenAI (comme ChatBox, OpenCat, etc.) et commencez à utiliser !</p><p style="margin-top: 12px; color: #10b981; font-weight: 600;">👉 Cliquez sur le bouton « Créer »</p></div>'
       }
     }
+  },
+  keyQuery: {
+    title: 'Requete API Key',
+    placeholder: 'Entrez votre API Key',
+    submit: 'Rechercher',
+    querying: 'Recherche...',
+    invalidKey: 'API Key invalide',
+    keyInfo: 'Informations de la cle',
+    keyName: 'Nom',
+    status: 'Statut',
+    quota: 'Quota',
+    used: 'Utilise',
+    remaining: 'Restant',
+    unlimited: 'Illimite',
+    expiresAt: 'Expire le',
+    neverExpires: 'N\'expire jamais',
+    daysRemaining: 'Expire dans {days} jours',
+    subscription: 'Abonnement',
+    noSubscription: 'Aucun abonnement actif',
+    dailyUsage: 'Utilisation quotidienne',
+    weeklyUsage: 'Utilisation hebdomadaire',
+    monthlyUsage: 'Utilisation mensuelle',
+    usageSummary: 'Resume d\'utilisation (7 jours)',
+    totalCost: 'Cout total',
+    requestCount: 'Nombre de requetes',
+    topModels: 'Modeles populaires',
+    statusActive: 'Actif',
+    statusInactive: 'Inactif',
+    statusExpired: 'Expire',
+    statusExhausted: 'Quota epuise',
+    noLimit: 'Sans limite',
+    requests: 'requetes',
+    tabs: {
+      overview: 'Apercu',
+      usageDetails: 'Details d\'utilisation'
+    },
+    timeRange: {
+      today: 'Aujourd\'hui',
+      thisMonth: 'Ce mois',
+      all: 'Tout',
+      custom: 'Personnalise'
+    },
+    stats: {
+      totalTokens: 'Tokens totaux',
+      inputTokens: 'Tokens d\'entree',
+      outputTokens: 'Tokens de sortie',
+      cacheTokens: 'Tokens de cache',
+      avgDuration: 'Duree moyenne'
+    },
+    models: {
+      title: 'Utilisation par modele',
+      requests: 'Requetes',
+      tokens: 'Tokens',
+      cost: 'Cout'
+    },
+    usage: {
+      time: 'Heure',
+      model: 'Modele',
+      inputTokens: 'Entree',
+      outputTokens: 'Sortie',
+      cacheTokens: 'Cache',
+      cost: 'Cout',
+      duration: 'Duree',
+      noData: 'Aucune donnee',
+      prev: 'Precedent',
+      next: 'Suivant'
+    },
+    trend: {
+      title: 'Tendance d\'utilisation'
+    },
+    language: 'Langue'
   }
 }

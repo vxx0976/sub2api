@@ -3927,6 +3927,8 @@ export default {
         contactInfoHint: 'カスタマーサポート連絡先を入力すると、引換ページやプロフィールなどに表示されます',
         docUrl: 'ドキュメントリンク',
         docUrlHint: 'ドキュメントサイトのリンク。空欄の場合はドキュメントリンクを非表示にします。',
+        queryDomain: 'クエリドメイン',
+        queryDomainHint: '設定するとこのドメインで API Key 照会ページが表示されます',
         docUrlPlaceholder: 'https://docs.example.com',
         siteLogo: 'サイトロゴ',
         uploadImage: '画像をアップロード',
@@ -4446,5 +4448,76 @@ export default {
         description: '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;">クリックして確認し、APIキーを作成します。</p><div style="padding: 8px 12px; background: #fee2e2; border-left: 3px solid #ef4444; border-radius: 4px; font-size: 13px; margin-bottom: 12px;"><b>⚠️ 重要：</b><ul style="margin: 8px 0 0 16px;"><li>作成後はすぐにAPIキー（sk-xxx）をコピーしてください</li><li>APIキーは一度しか表示されません。紛失した場合は再生成が必要です</li></ul></div><p style="padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px;"><b>🚀 使い方：</b><br/>APIキーをOpenAIインターフェースをサポートする任意のクライアント（ChatBox、OpenCatなど）に設定するだけで、すぐに使い始められます！</p><p style="margin-top: 12px; color: #10b981; font-weight: 600;">👉 「作成」ボタンをクリック</p></div>'
       }
     }
+  },
+  keyQuery: {
+    title: 'API Key 照会',
+    placeholder: 'API Key を入力してください',
+    submit: '照会',
+    querying: '照会中...',
+    invalidKey: '無効な API Key',
+    keyInfo: 'キー情報',
+    keyName: '名前',
+    status: 'ステータス',
+    quota: 'クォータ',
+    used: '使用済み',
+    remaining: '残り',
+    unlimited: '無制限',
+    expiresAt: '有効期限',
+    neverExpires: '無期限',
+    daysRemaining: 'あと {days} 日で期限切れ',
+    subscription: 'サブスクリプション',
+    noSubscription: '有効なサブスクリプションなし',
+    dailyUsage: '本日の使用量',
+    weeklyUsage: '今週の使用量',
+    monthlyUsage: '今月の使用量',
+    usageSummary: '使用量概要（過去7日間）',
+    totalCost: '合計費用',
+    requestCount: 'リクエスト数',
+    topModels: '人気モデル',
+    statusActive: '有効',
+    statusInactive: '無効',
+    statusExpired: '期限切れ',
+    statusExhausted: 'クォータ超過',
+    noLimit: '制限なし',
+    requests: '件',
+    tabs: {
+      overview: '概要',
+      usageDetails: '使用詳細'
+    },
+    timeRange: {
+      today: '今日',
+      thisMonth: '今月',
+      all: '全期間',
+      custom: 'カスタム'
+    },
+    stats: {
+      totalTokens: '合計トークン',
+      inputTokens: '入力トークン',
+      outputTokens: '出力トークン',
+      cacheTokens: 'キャッシュトークン',
+      avgDuration: '平均所要時間'
+    },
+    models: {
+      title: 'モデル使用量',
+      requests: 'リクエスト数',
+      tokens: 'トークン数',
+      cost: '費用'
+    },
+    usage: {
+      time: '時間',
+      model: 'モデル',
+      inputTokens: '入力',
+      outputTokens: '出力',
+      cacheTokens: 'キャッシュ',
+      cost: '費用',
+      duration: '所要時間',
+      noData: 'データなし',
+      prev: '前へ',
+      next: '次へ'
+    },
+    trend: {
+      title: '使用量トレンド'
+    },
+    language: '言語'
   }
 }

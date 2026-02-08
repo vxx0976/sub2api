@@ -85,6 +85,7 @@ func ProvideHandlers(
 	settingHandler *SettingHandler,
 	referralHandler *ReferralHandler,
 	totpHandler *TotpHandler,
+	keyQueryHandler *KeyQueryHandler,
 ) *Handlers {
 	return &Handlers{
 		Auth:          authHandler,
@@ -102,6 +103,7 @@ func ProvideHandlers(
 		Setting:       settingHandler,
 		Referral:      referralHandler,
 		Totp:          totpHandler,
+		KeyQuery:      keyQueryHandler,
 	}
 }
 
@@ -122,6 +124,7 @@ var ProviderSet = wire.NewSet(
 	NewTotpHandler,
 	ProvideSettingHandler,
 	NewReferralHandler,
+	NewKeyQueryHandler,
 
 	// Admin handlers
 	admin.NewDashboardHandler,

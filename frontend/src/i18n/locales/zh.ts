@@ -4058,6 +4058,8 @@ export default {
         contactInfoHint: '填写客服联系方式，将展示在兑换页面、个人资料等位置',
         docUrl: '文档链接',
         docUrlHint: '文档网站的链接。留空则隐藏文档链接。',
+        queryDomain: '查询域名',
+        queryDomainHint: '配置后该域名将显示 API Key 查询页面',
         docUrlPlaceholder: 'https://docs.example.com',
         siteLogo: '站点Logo',
         uploadImage: '上传图片',
@@ -4740,5 +4742,76 @@ export default {
           '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;">点击确认创建您的 API 密钥。</p><div style="padding: 8px 12px; background: #fee2e2; border-left: 3px solid #ef4444; border-radius: 4px; font-size: 13px; margin-bottom: 12px;"><b>⚠️ 重要：</b><ul style="margin: 8px 0 0 16px;"><li>创建后请立即复制密钥（sk-xxx）</li><li>密钥只显示一次，丢失需重新生成</li></ul></div><p style="padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px;"><b>🚀 如何使用：</b><br/>将密钥配置到支持 OpenAI 接口的任何客户端（如 ChatBox、OpenCat 等），即可开始使用！</p><p style="margin-top: 12px; color: #10b981; font-weight: 600;">👉 点击"创建"按钮</p></div>'
       }
     }
+  },
+  keyQuery: {
+    title: 'API Key 查询',
+    placeholder: '请输入您的 API Key',
+    submit: '查询',
+    querying: '查询中...',
+    invalidKey: '无效的 API Key',
+    keyInfo: '密钥信息',
+    keyName: '名称',
+    status: '状态',
+    quota: '配额',
+    used: '已使用',
+    remaining: '剩余',
+    unlimited: '无限制',
+    expiresAt: '过期时间',
+    neverExpires: '永不过期',
+    daysRemaining: '{days} 天后过期',
+    subscription: '订阅信息',
+    noSubscription: '无有效订阅',
+    dailyUsage: '今日用量',
+    weeklyUsage: '本周用量',
+    monthlyUsage: '本月用量',
+    usageSummary: '用量概览（近7天）',
+    totalCost: '总费用',
+    requestCount: '请求次数',
+    topModels: '热门模型',
+    statusActive: '正常',
+    statusInactive: '已禁用',
+    statusExpired: '已过期',
+    statusExhausted: '配额耗尽',
+    noLimit: '无限制',
+    requests: '次',
+    tabs: {
+      overview: '概览',
+      usageDetails: '使用详情'
+    },
+    timeRange: {
+      today: '今天',
+      thisMonth: '本月',
+      all: '全部',
+      custom: '自定义'
+    },
+    stats: {
+      totalTokens: '总Token',
+      inputTokens: '输入Token',
+      outputTokens: '输出Token',
+      cacheTokens: '缓存Token',
+      avgDuration: '平均耗时'
+    },
+    models: {
+      title: '模型用量',
+      requests: '请求数',
+      tokens: 'Token数',
+      cost: '费用'
+    },
+    usage: {
+      time: '时间',
+      model: '模型',
+      inputTokens: '输入',
+      outputTokens: '输出',
+      cacheTokens: '缓存',
+      cost: '费用',
+      duration: '耗时',
+      noData: '暂无数据',
+      prev: '上一页',
+      next: '下一页'
+    },
+    trend: {
+      title: '用量趋势'
+    },
+    language: '语言'
   }
 }

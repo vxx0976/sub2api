@@ -3919,6 +3919,8 @@ export default {
         contactInfoHint: '고객 지원 연락처를 입력하면 교환 페이지, 프로필 등에 표시됩니다',
         docUrl: '문서 링크',
         docUrlHint: '문서 웹사이트 링크입니다. 비우면 문서 링크가 숨겨집니다.',
+        queryDomain: '조회 도메인',
+        queryDomainHint: '설정하면 해당 도메인에서 API Key 조회 페이지가 표시됩니다',
         docUrlPlaceholder: 'https://docs.example.com',
         siteLogo: '사이트 Logo',
         uploadImage: '이미지 업로드',
@@ -4438,5 +4440,76 @@ export default {
         description: '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;">확인을 클릭하여 API 키를 생성하세요.</p><div style="padding: 8px 12px; background: #fee2e2; border-left: 3px solid #ef4444; border-radius: 4px; font-size: 13px; margin-bottom: 12px;"><b>⚠️ 중요:</b><ul style="margin: 8px 0 0 16px;"><li>생성 후 즉시 키(sk-xxx)를 복사하세요</li><li>키는 한 번만 표시되며, 분실 시 재생성 필요</li></ul></div><p style="padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px;"><b>🚀 사용 방법:</b><br/>키를 OpenAI 인터페이스를 지원하는 클라이언트(ChatBox, OpenCat 등)에 설정하면 바로 사용할 수 있습니다!</p><p style="margin-top: 12px; color: #10b981; font-weight: 600;">👉 "생성" 버튼을 클릭하세요</p></div>'
       }
     }
+  },
+  keyQuery: {
+    title: 'API Key 조회',
+    placeholder: 'API Key를 입력하세요',
+    submit: '조회',
+    querying: '조회 중...',
+    invalidKey: '유효하지 않은 API Key',
+    keyInfo: '키 정보',
+    keyName: '이름',
+    status: '상태',
+    quota: '할당량',
+    used: '사용됨',
+    remaining: '남은',
+    unlimited: '무제한',
+    expiresAt: '만료일',
+    neverExpires: '만료 없음',
+    daysRemaining: '{days}일 후 만료',
+    subscription: '구독 정보',
+    noSubscription: '활성 구독 없음',
+    dailyUsage: '일일 사용량',
+    weeklyUsage: '주간 사용량',
+    monthlyUsage: '월간 사용량',
+    usageSummary: '사용량 요약 (7일)',
+    totalCost: '총 비용',
+    requestCount: '요청 횟수',
+    topModels: '인기 모델',
+    statusActive: '활성',
+    statusInactive: '비활성',
+    statusExpired: '만료됨',
+    statusExhausted: '할당량 소진',
+    noLimit: '제한 없음',
+    requests: '건',
+    tabs: {
+      overview: '개요',
+      usageDetails: '사용 내역'
+    },
+    timeRange: {
+      today: '오늘',
+      thisMonth: '이번 달',
+      all: '전체',
+      custom: '사용자 지정'
+    },
+    stats: {
+      totalTokens: '총 토큰',
+      inputTokens: '입력 토큰',
+      outputTokens: '출력 토큰',
+      cacheTokens: '캐시 토큰',
+      avgDuration: '평균 소요시간'
+    },
+    models: {
+      title: '모델 사용량',
+      requests: '요청 수',
+      tokens: '토큰 수',
+      cost: '비용'
+    },
+    usage: {
+      time: '시간',
+      model: '모델',
+      inputTokens: '입력',
+      outputTokens: '출력',
+      cacheTokens: '캐시',
+      cost: '비용',
+      duration: '소요시간',
+      noData: '데이터 없음',
+      prev: '이전',
+      next: '다음'
+    },
+    trend: {
+      title: '사용량 추이'
+    },
+    language: '언어'
   }
 }

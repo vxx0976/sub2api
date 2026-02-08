@@ -863,6 +863,22 @@
               </p>
             </div>
 
+            <!-- Query Domain -->
+            <div>
+              <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                {{ t('admin.settings.site.queryDomain') }}
+              </label>
+              <input
+                v-model="form.query_domain"
+                type="text"
+                class="input font-mono text-sm"
+                placeholder="query.example.com"
+              />
+              <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                {{ t('admin.settings.site.queryDomainHint') }}
+              </p>
+            </div>
+
             <!-- Site Logo Upload -->
             <div>
               <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -1297,6 +1313,7 @@ const form = reactive<SettingsForm>({
   purchase_subscription_enabled: false,
   purchase_subscription_url: '',
   crypto_addresses: '',
+  query_domain: '',
   smtp_host: '',
   smtp_port: 587,
   smtp_username: '',
@@ -1443,6 +1460,7 @@ async function saveSettings() {
       purchase_subscription_enabled: form.purchase_subscription_enabled,
       purchase_subscription_url: form.purchase_subscription_url,
       crypto_addresses: form.crypto_addresses,
+      query_domain: form.query_domain,
       smtp_host: form.smtp_host,
       smtp_port: form.smtp_port,
       smtp_username: form.smtp_username,

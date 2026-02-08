@@ -4074,6 +4074,8 @@ export default {
         docUrl: 'Documentation URL',
         docUrlPlaceholder: 'https://docs.example.com',
         docUrlHint: 'Link to your documentation site. Leave empty to hide the documentation link.',
+        queryDomain: 'Query Domain',
+        queryDomainHint: 'When configured, this domain shows the API Key query page',
         siteLogo: 'Site Logo',
         uploadImage: 'Upload Image',
         remove: 'Remove',
@@ -4728,5 +4730,76 @@ export default {
         description: '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;">Click to confirm and create your API key.</p><div style="padding: 8px 12px; background: #fee2e2; border-left: 3px solid #ef4444; border-radius: 4px; font-size: 13px; margin-bottom: 12px;"><b>⚠️ Important:</b><ul style="margin: 8px 0 0 16px;"><li>Copy the key (sk-xxx) immediately after creation</li><li>Key is only shown once, need to regenerate if lost</li></ul></div><p style="padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px;"><b>🚀 How to Use:</b><br/>Configure the key in any OpenAI-compatible client (like ChatBox, OpenCat, etc.) and start using!</p><p style="margin-top: 12px; color: #10b981; font-weight: 600;">👉 Click "Create" button</p></div>'
       }
     }
+  },
+  keyQuery: {
+    title: 'API Key Query',
+    placeholder: 'Enter your API Key',
+    submit: 'Query',
+    querying: 'Querying...',
+    invalidKey: 'Invalid API Key',
+    keyInfo: 'Key Information',
+    keyName: 'Name',
+    status: 'Status',
+    quota: 'Quota',
+    used: 'Used',
+    remaining: 'Remaining',
+    unlimited: 'Unlimited',
+    expiresAt: 'Expires At',
+    neverExpires: 'Never Expires',
+    daysRemaining: 'Expires in {days} days',
+    subscription: 'Subscription',
+    noSubscription: 'No Active Subscription',
+    dailyUsage: 'Daily Usage',
+    weeklyUsage: 'Weekly Usage',
+    monthlyUsage: 'Monthly Usage',
+    usageSummary: 'Usage Summary (7 Days)',
+    totalCost: 'Total Cost',
+    requestCount: 'Requests',
+    topModels: 'Top Models',
+    statusActive: 'Active',
+    statusInactive: 'Inactive',
+    statusExpired: 'Expired',
+    statusExhausted: 'Quota Exhausted',
+    noLimit: 'No Limit',
+    requests: 'requests',
+    tabs: {
+      overview: 'Overview',
+      usageDetails: 'Usage Details'
+    },
+    timeRange: {
+      today: 'Today',
+      thisMonth: 'This Month',
+      all: 'All',
+      custom: 'Custom'
+    },
+    stats: {
+      totalTokens: 'Total Tokens',
+      inputTokens: 'Input Tokens',
+      outputTokens: 'Output Tokens',
+      cacheTokens: 'Cache Tokens',
+      avgDuration: 'Avg Duration'
+    },
+    models: {
+      title: 'Model Usage',
+      requests: 'Requests',
+      tokens: 'Tokens',
+      cost: 'Cost'
+    },
+    usage: {
+      time: 'Time',
+      model: 'Model',
+      inputTokens: 'Input',
+      outputTokens: 'Output',
+      cacheTokens: 'Cache',
+      cost: 'Cost',
+      duration: 'Duration',
+      noData: 'No data',
+      prev: 'Previous',
+      next: 'Next'
+    },
+    trend: {
+      title: 'Usage Trend'
+    },
+    language: 'Language'
   }
 }

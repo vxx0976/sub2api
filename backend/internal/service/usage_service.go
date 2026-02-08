@@ -350,3 +350,21 @@ func (s *UsageService) GetStatsWithFilters(ctx context.Context, filters usagesta
 	}
 	return stats, nil
 }
+
+// GetAPIKeyModelStats returns model usage stats filtered by API key ID.
+func (s *UsageService) GetAPIKeyModelStats(ctx context.Context, apiKeyID int64, startTime, endTime time.Time) ([]usagestats.ModelStat, error) {
+	stats, err := s.usageRepo.GetModelStatsWithFilters(ctx, startTime, endTime, 0, apiKeyID, 0, 0, nil, nil)
+	if err != nil {
+		return nil, fmt.Errorf("get api key model stats: %w", err)
+	}
+	return stats, nil
+}
+
+// GetAPIKeyUsageTrend returns usage trend data filtered by API key ID.
+func (s *UsageService) GetAPIKeyUsageTrend(ctx context.Context, apiKeyID int64, startTime, endTime time.Time, granularity string) ([]usagestats.TrendDataPoint, error) {
+	trend, err := s.usageRepo.GetUsageTrendWithFilters(ctx, startTime, endTime, granularity, 0, apiKeyID, 0, 0, "", nil, nil)
+	if err != nil {
+		return nil, fmt.Errorf("get api key usage trend: %w", err)
+	}
+	return trend, nil
+}

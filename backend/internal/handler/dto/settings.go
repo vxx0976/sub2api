@@ -38,6 +38,7 @@ type SystemSettings struct {
 	PurchaseSubscriptionEnabled bool   `json:"purchase_subscription_enabled"`
 	PurchaseSubscriptionURL     string `json:"purchase_subscription_url"`
 	CryptoAddresses             string `json:"crypto_addresses"`
+	QueryDomain                 string `json:"query_domain"`
 
 	DefaultConcurrency int     `json:"default_concurrency"`
 	DefaultBalance     float64 `json:"default_balance"`
@@ -89,6 +90,7 @@ type PublicSettings struct {
 	Version                     string         `json:"version"`
 	Announcements               []SimpleAnnouncement `json:"announcements,omitempty"`
 	CryptoAddresses             string         `json:"crypto_addresses"`
+	QueryDomain                 string         `json:"query_domain"`
 }
 
 // StreamTimeoutSettings 流超时处理配置 DTO

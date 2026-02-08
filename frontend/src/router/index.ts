@@ -501,6 +501,18 @@ const routes: RouteRecordRaw[] = [
     redirect: '/admin/orders'
   },
 
+  // ==================== Public Key Query ====================
+  {
+    path: '/key-query',
+    name: 'KeyQuery',
+    component: () => import('@/views/KeyQueryView.vue'),
+    meta: {
+      requiresAuth: false,
+      title: 'API Key Query',
+      noindex: true
+    }
+  },
+
   // ==================== 404 Not Found ====================
   {
     path: '/:pathMatch(.*)*',
@@ -552,8 +564,15 @@ router.beforeEach((to, _from, next) => {
     authInitialized = true
   }
 
-  // Set page title
+  // Domain-based redirect: if hostname matches query_domain, force key-query page
   const appStore = useAppStore()
+  const queryDomain = appStore.cachedPublicSettings?.query_domain
+  if (queryDomain && window.location.hostname === queryDomain && to.path !== '/key-query') {
+    next('/key-query')
+    return
+  }
+
+  // Set page title
   const siteName = appStore.siteName || '码驿站'
   if (to.meta.title) {
     document.title = `${to.meta.title} - ${siteName}`

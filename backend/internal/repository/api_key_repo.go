@@ -109,6 +109,7 @@ func (r *apiKeyRepository) GetByKeyForAuth(ctx context.Context, key string) (*se
 		Select(
 			apikey.FieldID,
 			apikey.FieldUserID,
+			apikey.FieldName,
 			apikey.FieldGroupID,
 			apikey.FieldStatus,
 			apikey.FieldIPWhitelist,

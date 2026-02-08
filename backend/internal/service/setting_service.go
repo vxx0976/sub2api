@@ -79,6 +79,7 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		SettingKeyLinuxDoConnectEnabled,
 		SettingKeyAnnouncements,
 		SettingKeyCryptoAddresses,
+		SettingKeyQueryDomain,
 	}
 
 	settings, err := s.settingRepo.GetMultiple(ctx, keys)
@@ -125,6 +126,7 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		LinuxDoOAuthEnabled:         linuxDoEnabled,
 		Announcements:               announcements,
 		CryptoAddresses:             settings[SettingKeyCryptoAddresses],
+		QueryDomain:                 settings[SettingKeyQueryDomain],
 	}, nil
 }
 
@@ -171,6 +173,7 @@ func (s *SettingService) GetPublicSettingsForInjection(ctx context.Context) (any
 		Version                     string         `json:"version,omitempty"`
 		Announcements               []SimpleAnnouncement `json:"announcements,omitempty"`
 		CryptoAddresses             string         `json:"crypto_addresses,omitempty"`
+		QueryDomain                 string         `json:"query_domain,omitempty"`
 	}{
 		RegistrationEnabled:         settings.RegistrationEnabled,
 		EmailVerifyEnabled:          settings.EmailVerifyEnabled,
@@ -194,6 +197,7 @@ func (s *SettingService) GetPublicSettingsForInjection(ctx context.Context) (any
 		Version:                     s.version,
 		Announcements:               settings.Announcements,
 		CryptoAddresses:             settings.CryptoAddresses,
+		QueryDomain:                 settings.QueryDomain,
 	}, nil
 }
 
@@ -247,6 +251,7 @@ func (s *SettingService) UpdateSettings(ctx context.Context, settings *SystemSet
 	updates[SettingKeyPurchaseSubscriptionEnabled] = strconv.FormatBool(settings.PurchaseSubscriptionEnabled)
 	updates[SettingKeyPurchaseSubscriptionURL] = strings.TrimSpace(settings.PurchaseSubscriptionURL)
 	updates[SettingKeyCryptoAddresses] = settings.CryptoAddresses
+	updates[SettingKeyQueryDomain] = settings.QueryDomain
 
 	// 默认配置
 	updates[SettingKeyDefaultConcurrency] = strconv.Itoa(settings.DefaultConcurrency)
@@ -452,6 +457,7 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 		PurchaseSubscriptionEnabled:  settings[SettingKeyPurchaseSubscriptionEnabled] == "true",
 		PurchaseSubscriptionURL:      strings.TrimSpace(settings[SettingKeyPurchaseSubscriptionURL]),
 		CryptoAddresses:              settings[SettingKeyCryptoAddresses],
+		QueryDomain:                  settings[SettingKeyQueryDomain],
 	}
 
 	// 解析整数类型

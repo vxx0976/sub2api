@@ -40,6 +40,7 @@ type SystemSettings struct {
 	PurchaseSubscriptionEnabled bool
 	PurchaseSubscriptionURL     string
 	CryptoAddresses             string
+	QueryDomain                 string
 
 	DefaultConcurrency int
 	DefaultBalance     float64
@@ -91,6 +92,7 @@ type PublicSettings struct {
 	Version                     string
 	Announcements               []SimpleAnnouncement
 	CryptoAddresses             string
+	QueryDomain                 string
 }
 
 // StreamTimeoutSettings 流超时处理配置（仅控制超时后的处理方式，超时判定由网关配置控制）

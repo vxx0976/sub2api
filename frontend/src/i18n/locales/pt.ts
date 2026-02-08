@@ -4074,6 +4074,8 @@ export default {
         docUrl: 'URL da Documentacao',
         docUrlPlaceholder: 'https://docs.example.com',
         docUrlHint: 'Link para seu site de documentacao. Deixe vazio para ocultar o link da documentacao.',
+        queryDomain: 'Dominio de consulta',
+        queryDomainHint: 'Quando configurado, este dominio exibira a pagina de consulta de API Key',
         siteLogo: 'Logo do Site',
         uploadImage: 'Enviar Imagem',
         remove: 'Remover',
@@ -4728,5 +4730,76 @@ export default {
         description: '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;">Clique para confirmar e criar sua chave API.</p><div style="padding: 8px 12px; background: #fee2e2; border-left: 3px solid #ef4444; border-radius: 4px; font-size: 13px; margin-bottom: 12px;"><b>⚠️ Importante:</b><ul style="margin: 8px 0 0 16px;"><li>Copie a chave (sk-xxx) imediatamente apos a criacao</li><li>A chave so e mostrada uma vez, precisa regenerar se perdida</li></ul></div><p style="padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px;"><b>🚀 Como Usar:</b><br/>Configure a chave em qualquer cliente compativel com OpenAI (como ChatBox, OpenCat, etc.) e comece a usar!</p><p style="margin-top: 12px; color: #10b981; font-weight: 600;">👉 Clique no botao "Criar"</p></div>'
       }
     }
+  },
+  keyQuery: {
+    title: 'Consulta de API Key',
+    placeholder: 'Insira sua API Key',
+    submit: 'Consultar',
+    querying: 'Consultando...',
+    invalidKey: 'API Key invalida',
+    keyInfo: 'Informacoes da chave',
+    keyName: 'Nome',
+    status: 'Status',
+    quota: 'Cota',
+    used: 'Usado',
+    remaining: 'Restante',
+    unlimited: 'Ilimitado',
+    expiresAt: 'Expira em',
+    neverExpires: 'Nunca expira',
+    daysRemaining: 'Expira em {days} dias',
+    subscription: 'Assinatura',
+    noSubscription: 'Sem assinatura ativa',
+    dailyUsage: 'Uso diario',
+    weeklyUsage: 'Uso semanal',
+    monthlyUsage: 'Uso mensal',
+    usageSummary: 'Resumo de uso (7 dias)',
+    totalCost: 'Custo total',
+    requestCount: 'Numero de solicitacoes',
+    topModels: 'Modelos populares',
+    statusActive: 'Ativo',
+    statusInactive: 'Inativo',
+    statusExpired: 'Expirado',
+    statusExhausted: 'Cota esgotada',
+    noLimit: 'Sem limite',
+    requests: 'solicitacoes',
+    tabs: {
+      overview: 'Visao geral',
+      usageDetails: 'Detalhes de uso'
+    },
+    timeRange: {
+      today: 'Hoje',
+      thisMonth: 'Este mes',
+      all: 'Tudo',
+      custom: 'Personalizado'
+    },
+    stats: {
+      totalTokens: 'Tokens totais',
+      inputTokens: 'Tokens de entrada',
+      outputTokens: 'Tokens de saida',
+      cacheTokens: 'Tokens de cache',
+      avgDuration: 'Duracao media'
+    },
+    models: {
+      title: 'Uso por modelo',
+      requests: 'Solicitacoes',
+      tokens: 'Tokens',
+      cost: 'Custo'
+    },
+    usage: {
+      time: 'Hora',
+      model: 'Modelo',
+      inputTokens: 'Entrada',
+      outputTokens: 'Saida',
+      cacheTokens: 'Cache',
+      cost: 'Custo',
+      duration: 'Duracao',
+      noData: 'Sem dados',
+      prev: 'Anterior',
+      next: 'Proximo'
+    },
+    trend: {
+      title: 'Tendencia de uso'
+    },
+    language: 'Idioma'
   }
 }

@@ -99,6 +99,7 @@ export interface PublicSettings {
   version: string
   announcements?: SimpleAnnouncement[]
   crypto_addresses?: string
+  query_domain?: string
 }
 
 export interface AuthResponse {

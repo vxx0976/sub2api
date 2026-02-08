@@ -77,6 +77,7 @@ func (h *SettingHandler) GetSettings(c *gin.Context) {
 		PurchaseSubscriptionEnabled:          settings.PurchaseSubscriptionEnabled,
 		PurchaseSubscriptionURL:              settings.PurchaseSubscriptionURL,
 		CryptoAddresses:                      settings.CryptoAddresses,
+		QueryDomain:                          settings.QueryDomain,
 		DefaultConcurrency:                   settings.DefaultConcurrency,
 		DefaultBalance:                       settings.DefaultBalance,
 		EnableModelFallback:                  settings.EnableModelFallback,
@@ -135,6 +136,7 @@ type UpdateSettingsRequest struct {
 	PurchaseSubscriptionEnabled *bool   `json:"purchase_subscription_enabled"`
 	PurchaseSubscriptionURL     *string `json:"purchase_subscription_url"`
 	CryptoAddresses             string  `json:"crypto_addresses"`
+	QueryDomain                 string  `json:"query_domain"`
 
 	// 默认配置
 	DefaultConcurrency int     `json:"default_concurrency"`
@@ -322,6 +324,7 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		PurchaseSubscriptionEnabled: purchaseEnabled,
 		PurchaseSubscriptionURL:     purchaseURL,
 		CryptoAddresses:             req.CryptoAddresses,
+		QueryDomain:                 req.QueryDomain,
 		DefaultConcurrency:          req.DefaultConcurrency,
 		DefaultBalance:              req.DefaultBalance,
 		EnableModelFallback:         req.EnableModelFallback,
@@ -404,6 +407,7 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		PurchaseSubscriptionEnabled:          updatedSettings.PurchaseSubscriptionEnabled,
 		PurchaseSubscriptionURL:              updatedSettings.PurchaseSubscriptionURL,
 		CryptoAddresses:                      updatedSettings.CryptoAddresses,
+		QueryDomain:                          updatedSettings.QueryDomain,
 		DefaultConcurrency:                   updatedSettings.DefaultConcurrency,
 		DefaultBalance:                       updatedSettings.DefaultBalance,
 		EnableModelFallback:                  updatedSettings.EnableModelFallback,
@@ -522,6 +526,9 @@ func diffSettings(before *service.SystemSettings, after *service.SystemSettings,
 	}
 	if before.CryptoAddresses != after.CryptoAddresses {
 		changed = append(changed, "crypto_addresses")
+	}
+	if before.QueryDomain != after.QueryDomain {
+		changed = append(changed, "query_domain")
 	}
 	if before.DefaultConcurrency != after.DefaultConcurrency {
 		changed = append(changed, "default_concurrency")

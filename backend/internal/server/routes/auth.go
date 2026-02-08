@@ -60,6 +60,19 @@ func RegisterAuthRoutes(
 		settings.GET("/public", h.Setting.GetPublicSettings)
 	}
 
+	// 公开 Key 查询接口（无需认证）
+	publicGroup := v1.Group("/public")
+	rateLimit := rateLimiter.LimitWithOptions("key-query", 30, time.Minute, middleware.RateLimitOptions{
+		FailureMode: middleware.RateLimitFailClose,
+	})
+	{
+		publicGroup.POST("/key-query", rateLimit, h.KeyQuery.QueryKey)
+		publicGroup.POST("/key-usage", rateLimit, h.KeyQuery.ListUsage)
+		publicGroup.POST("/key-usage/stats", rateLimit, h.KeyQuery.UsageStats)
+		publicGroup.POST("/key-usage/models", rateLimit, h.KeyQuery.UsageModels)
+		publicGroup.POST("/key-usage/trend", rateLimit, h.KeyQuery.UsageTrend)
+	}
+
 	// 需要认证的当前用户信息
 	authenticated := v1.Group("")
 	authenticated.Use(gin.HandlerFunc(jwtAuth))

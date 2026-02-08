@@ -4074,6 +4074,8 @@ export default {
         docUrl: 'URL de documentacion',
         docUrlPlaceholder: 'https://docs.ejemplo.com',
         docUrlHint: 'Enlace a su sitio de documentacion. Dejar vacio para ocultar el enlace de documentacion.',
+        queryDomain: 'Dominio de consulta',
+        queryDomainHint: 'Una vez configurado, este dominio mostrara la pagina de consulta de API Key',
         siteLogo: 'Logo del sitio',
         uploadImage: 'Subir imagen',
         remove: 'Eliminar',
@@ -4728,5 +4730,76 @@ export default {
         description: '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;">Haga clic para confirmar y crear su clave API.</p><div style="padding: 8px 12px; background: #fee2e2; border-left: 3px solid #ef4444; border-radius: 4px; font-size: 13px; margin-bottom: 12px;"><b>⚠️ Importante:</b><ul style="margin: 8px 0 0 16px;"><li>Copie la clave (sk-xxx) inmediatamente despues de la creacion</li><li>La clave solo se muestra una vez, necesitara regenerar si se pierde</li></ul></div><p style="padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px;"><b>🚀 Como usar:</b><br/>Configure la clave en cualquier cliente compatible con OpenAI (como ChatBox, OpenCat, etc.) y ¡comience a usar!</p><p style="margin-top: 12px; color: #10b981; font-weight: 600;">👉 Haga clic en el boton "Crear"</p></div>'
       }
     }
+  },
+  keyQuery: {
+    title: 'Consulta de API Key',
+    placeholder: 'Ingrese su API Key',
+    submit: 'Consultar',
+    querying: 'Consultando...',
+    invalidKey: 'API Key invalida',
+    keyInfo: 'Informacion de la clave',
+    keyName: 'Nombre',
+    status: 'Estado',
+    quota: 'Cuota',
+    used: 'Usado',
+    remaining: 'Restante',
+    unlimited: 'Ilimitado',
+    expiresAt: 'Expira el',
+    neverExpires: 'Nunca expira',
+    daysRemaining: 'Expira en {days} dias',
+    subscription: 'Suscripcion',
+    noSubscription: 'Sin suscripcion activa',
+    dailyUsage: 'Uso diario',
+    weeklyUsage: 'Uso semanal',
+    monthlyUsage: 'Uso mensual',
+    usageSummary: 'Resumen de uso (7 dias)',
+    totalCost: 'Costo total',
+    requestCount: 'Numero de solicitudes',
+    topModels: 'Modelos populares',
+    statusActive: 'Activo',
+    statusInactive: 'Inactivo',
+    statusExpired: 'Expirado',
+    statusExhausted: 'Cuota agotada',
+    noLimit: 'Sin limite',
+    requests: 'solicitudes',
+    tabs: {
+      overview: 'Resumen',
+      usageDetails: 'Detalles de uso'
+    },
+    timeRange: {
+      today: 'Hoy',
+      thisMonth: 'Este mes',
+      all: 'Todo',
+      custom: 'Personalizado'
+    },
+    stats: {
+      totalTokens: 'Tokens totales',
+      inputTokens: 'Tokens de entrada',
+      outputTokens: 'Tokens de salida',
+      cacheTokens: 'Tokens de cache',
+      avgDuration: 'Duracion promedio'
+    },
+    models: {
+      title: 'Uso por modelo',
+      requests: 'Solicitudes',
+      tokens: 'Tokens',
+      cost: 'Costo'
+    },
+    usage: {
+      time: 'Hora',
+      model: 'Modelo',
+      inputTokens: 'Entrada',
+      outputTokens: 'Salida',
+      cacheTokens: 'Cache',
+      cost: 'Costo',
+      duration: 'Duracion',
+      noData: 'Sin datos',
+      prev: 'Anterior',
+      next: 'Siguiente'
+    },
+    trend: {
+      title: 'Tendencia de uso'
+    },
+    language: 'Idioma'
   }
 }

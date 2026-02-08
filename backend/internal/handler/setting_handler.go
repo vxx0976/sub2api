@@ -63,5 +63,6 @@ func (h *SettingHandler) GetPublicSettings(c *gin.Context) {
 		Version:                     h.version,
 		Announcements:               announcements,
 		CryptoAddresses:             settings.CryptoAddresses,
+		QueryDomain:                 settings.QueryDomain,
 	})
 }
