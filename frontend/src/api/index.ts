@@ -23,5 +23,8 @@ export { default as announcementsAPI } from './announcements'
 // Admin APIs
 export { adminAPI } from './admin'
 
+// Reseller APIs
+export { resellerAPI } from './reseller'
+
 // Default export
 export { default } from './client'

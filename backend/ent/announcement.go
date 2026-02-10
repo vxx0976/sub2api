@@ -39,6 +39,8 @@ type Announcement struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
+	// 分销商用户 ID（NULL=全局公告）
+	OwnerID *int64 `json:"owner_id,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the AnnouncementQuery when eager-loading is set.
 	Edges        AnnouncementEdges `json:"edges"`
@@ -70,7 +72,7 @@ func (*Announcement) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case announcement.FieldTargeting:
 			values[i] = new([]byte)
-		case announcement.FieldID, announcement.FieldCreatedBy, announcement.FieldUpdatedBy:
+		case announcement.FieldID, announcement.FieldCreatedBy, announcement.FieldUpdatedBy, announcement.FieldOwnerID:
 			values[i] = new(sql.NullInt64)
 		case announcement.FieldTitle, announcement.FieldContent, announcement.FieldStatus:
 			values[i] = new(sql.NullString)
@@ -163,6 +165,13 @@ func (_m *Announcement) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.UpdatedAt = value.Time
 			}
+		case announcement.FieldOwnerID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field owner_id", values[i])
+			} else if value.Valid {
+				_m.OwnerID = new(int64)
+				*_m.OwnerID = value.Int64
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -241,6 +250,11 @@ func (_m *Announcement) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("updated_at=")
 	builder.WriteString(_m.UpdatedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	if v := _m.OwnerID; v != nil {
+		builder.WriteString("owner_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteByte(')')
 	return builder.String()
 }

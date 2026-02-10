@@ -51,6 +51,12 @@ type User struct {
 	TotpEnabled bool `json:"totp_enabled,omitempty"`
 	// TotpEnabledAt holds the value of the "totp_enabled_at" field.
 	TotpEnabledAt *time.Time `json:"totp_enabled_at,omitempty"`
+	// 上级分销商用户 ID
+	ParentID *int64 `json:"parent_id,omitempty"`
+	// Token 版本号，密码修改时递增
+	TokenVersion int64 `json:"token_version,omitempty"`
+	// 角色版本号，角色变更时递增
+	RoleVersion int64 `json:"role_version,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the UserQuery when eager-loading is set.
 	Edges        UserEdges `json:"edges"`
@@ -85,11 +91,17 @@ type UserEdges struct {
 	ReferralRewardsGiven []*ReferralReward `json:"referral_rewards_given,omitempty"`
 	// ReferralRewardReceived holds the value of the referral_reward_received edge.
 	ReferralRewardReceived []*ReferralReward `json:"referral_reward_received,omitempty"`
+	// SubUsers holds the value of the sub_users edge.
+	SubUsers []*User `json:"sub_users,omitempty"`
+	// Parent holds the value of the parent edge.
+	Parent *User `json:"parent,omitempty"`
+	// ResellerDomains holds the value of the reseller_domains edge.
+	ResellerDomains []*ResellerDomain `json:"reseller_domains,omitempty"`
 	// UserAllowedGroups holds the value of the user_allowed_groups edge.
 	UserAllowedGroups []*UserAllowedGroup `json:"user_allowed_groups,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [14]bool
+	loadedTypes [17]bool
 }
 
 // APIKeysOrErr returns the APIKeys value or an error if the edge
@@ -209,10 +221,39 @@ func (e UserEdges) ReferralRewardReceivedOrErr() ([]*ReferralReward, error) {
 	return nil, &NotLoadedError{edge: "referral_reward_received"}
 }
 
+// SubUsersOrErr returns the SubUsers value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) SubUsersOrErr() ([]*User, error) {
+	if e.loadedTypes[13] {
+		return e.SubUsers, nil
+	}
+	return nil, &NotLoadedError{edge: "sub_users"}
+}
+
+// ParentOrErr returns the Parent value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e UserEdges) ParentOrErr() (*User, error) {
+	if e.Parent != nil {
+		return e.Parent, nil
+	} else if e.loadedTypes[14] {
+		return nil, &NotFoundError{label: user.Label}
+	}
+	return nil, &NotLoadedError{edge: "parent"}
+}
+
+// ResellerDomainsOrErr returns the ResellerDomains value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) ResellerDomainsOrErr() ([]*ResellerDomain, error) {
+	if e.loadedTypes[15] {
+		return e.ResellerDomains, nil
+	}
+	return nil, &NotLoadedError{edge: "reseller_domains"}
+}
+
 // UserAllowedGroupsOrErr returns the UserAllowedGroups value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserEdges) UserAllowedGroupsOrErr() ([]*UserAllowedGroup, error) {
-	if e.loadedTypes[13] {
+	if e.loadedTypes[16] {
 		return e.UserAllowedGroups, nil
 	}
 	return nil, &NotLoadedError{edge: "user_allowed_groups"}
@@ -227,7 +268,7 @@ func (*User) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case user.FieldBalance:
 			values[i] = new(sql.NullFloat64)
-		case user.FieldID, user.FieldConcurrency, user.FieldReferredBy:
+		case user.FieldID, user.FieldConcurrency, user.FieldReferredBy, user.FieldParentID, user.FieldTokenVersion, user.FieldRoleVersion:
 			values[i] = new(sql.NullInt64)
 		case user.FieldEmail, user.FieldPasswordHash, user.FieldRole, user.FieldStatus, user.FieldUsername, user.FieldNotes, user.FieldReferralCode, user.FieldTotpSecretEncrypted:
 			values[i] = new(sql.NullString)
@@ -361,6 +402,25 @@ func (_m *User) assignValues(columns []string, values []any) error {
 				_m.TotpEnabledAt = new(time.Time)
 				*_m.TotpEnabledAt = value.Time
 			}
+		case user.FieldParentID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field parent_id", values[i])
+			} else if value.Valid {
+				_m.ParentID = new(int64)
+				*_m.ParentID = value.Int64
+			}
+		case user.FieldTokenVersion:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field token_version", values[i])
+			} else if value.Valid {
+				_m.TokenVersion = value.Int64
+			}
+		case user.FieldRoleVersion:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field role_version", values[i])
+			} else if value.Valid {
+				_m.RoleVersion = value.Int64
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -437,6 +497,21 @@ func (_m *User) QueryReferralRewardsGiven() *ReferralRewardQuery {
 // QueryReferralRewardReceived queries the "referral_reward_received" edge of the User entity.
 func (_m *User) QueryReferralRewardReceived() *ReferralRewardQuery {
 	return NewUserClient(_m.config).QueryReferralRewardReceived(_m)
+}
+
+// QuerySubUsers queries the "sub_users" edge of the User entity.
+func (_m *User) QuerySubUsers() *UserQuery {
+	return NewUserClient(_m.config).QuerySubUsers(_m)
+}
+
+// QueryParent queries the "parent" edge of the User entity.
+func (_m *User) QueryParent() *UserQuery {
+	return NewUserClient(_m.config).QueryParent(_m)
+}
+
+// QueryResellerDomains queries the "reseller_domains" edge of the User entity.
+func (_m *User) QueryResellerDomains() *ResellerDomainQuery {
+	return NewUserClient(_m.config).QueryResellerDomains(_m)
 }
 
 // QueryUserAllowedGroups queries the "user_allowed_groups" edge of the User entity.
@@ -527,6 +602,17 @@ func (_m *User) String() string {
 		builder.WriteString("totp_enabled_at=")
 		builder.WriteString(v.Format(time.ANSIC))
 	}
+	builder.WriteString(", ")
+	if v := _m.ParentID; v != nil {
+		builder.WriteString("parent_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("token_version=")
+	builder.WriteString(fmt.Sprintf("%v", _m.TokenVersion))
+	builder.WriteString(", ")
+	builder.WriteString("role_version=")
+	builder.WriteString(fmt.Sprintf("%v", _m.RoleVersion))
 	builder.WriteByte(')')
 	return builder.String()
 }

@@ -20,6 +20,7 @@ type UserListFilters struct {
 	Role       string           // User role filter
 	Search     string           // Search in email, username
 	Attributes map[int64]string // Custom attribute filters: attributeID -> value
+	ParentID   *int64           // Filter by parent reseller ID
 }
 
 type UserRepository interface {
@@ -35,6 +36,7 @@ type UserRepository interface {
 
 	UpdateBalance(ctx context.Context, id int64, amount float64) error
 	DeductBalance(ctx context.Context, id int64, amount float64) error
+	DeductBalanceIfSufficient(ctx context.Context, id int64, amount float64) error
 	UpdateConcurrency(ctx context.Context, id int64, amount int) error
 	ExistsByEmail(ctx context.Context, email string) (bool, error)
 	RemoveGroupFromAllowedGroups(ctx context.Context, groupID int64) (int64, error)

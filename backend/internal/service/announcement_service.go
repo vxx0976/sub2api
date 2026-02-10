@@ -196,6 +196,45 @@ func (s *AnnouncementService) List(ctx context.Context, params pagination.Pagina
 	return s.announcementRepo.List(ctx, params, filters)
 }
 
+// ListPublicActive returns active announcements visible to the public (no auth required).
+// If ownerID is non-nil, it returns announcements owned by that reseller.
+// If ownerID is nil, it returns system announcements (those with no owner).
+func (s *AnnouncementService) ListPublicActive(ctx context.Context, ownerID *int64) ([]Announcement, error) {
+	now := time.Now()
+
+	if ownerID != nil {
+		anns, err := s.announcementRepo.ListActiveByOwnerID(ctx, *ownerID, now)
+		if err != nil {
+			return nil, fmt.Errorf("list active announcements by owner: %w", err)
+		}
+		return filterActive(anns, now), nil
+	}
+
+	// No owner -- return system announcements (owner_id IS NULL)
+	anns, err := s.announcementRepo.ListActive(ctx, now)
+	if err != nil {
+		return nil, fmt.Errorf("list active announcements: %w", err)
+	}
+	// Filter to only system announcements (owner_id is nil)
+	systemAnns := make([]Announcement, 0, len(anns))
+	for i := range anns {
+		if anns[i].OwnerID == nil {
+			systemAnns = append(systemAnns, anns[i])
+		}
+	}
+	return filterActive(systemAnns, now), nil
+}
+
+func filterActive(anns []Announcement, now time.Time) []Announcement {
+	result := make([]Announcement, 0, len(anns))
+	for i := range anns {
+		if anns[i].IsActiveAt(now) {
+			result = append(result, anns[i])
+		}
+	}
+	return result
+}
+
 func (s *AnnouncementService) ListForUser(ctx context.Context, userID int64, unreadOnly bool) ([]UserAnnouncement, error) {
 	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {

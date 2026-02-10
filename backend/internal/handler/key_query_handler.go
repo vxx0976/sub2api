@@ -5,7 +5,6 @@ import (
 	"sort"
 	"time"
 
-	"github.com/Wei-Shaw/sub2api/internal/handler/dto"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/timezone"
@@ -86,6 +85,23 @@ type keyQueryResponse struct {
 	UsageSummary *keyQueryUsageSummary     `json:"usage_summary"`
 }
 
+// publicUsageLog is a minimal usage log for the public key-usage endpoint.
+// It intentionally omits user_id, account_id, request_id, group_id,
+// subscription_id, user_agent, and other sensitive/internal fields.
+type publicUsageLog struct {
+	Model               string    `json:"model"`
+	InputTokens         int       `json:"input_tokens"`
+	OutputTokens        int       `json:"output_tokens"`
+	CacheCreationTokens int       `json:"cache_creation_tokens"`
+	CacheReadTokens     int       `json:"cache_read_tokens"`
+	TotalCost           float64   `json:"total_cost"`
+	ActualCost          float64   `json:"actual_cost"`
+	Stream              bool      `json:"stream"`
+	DurationMs          *int      `json:"duration_ms"`
+	ImageCount          int       `json:"image_count,omitempty"`
+	CreatedAt           time.Time `json:"created_at"`
+}
+
 // QueryKey handles POST /api/v1/public/key-query
 func (h *KeyQueryHandler) QueryKey(c *gin.Context) {
 	var req keyQueryRequest
@@ -162,12 +178,12 @@ func (h *KeyQueryHandler) QueryKey(c *gin.Context) {
 		}
 	}
 
-	// Build 7-day usage summary
+	// Build 7-day usage summary (scoped to THIS API key only)
 	var usageSummary *keyQueryUsageSummary
 	now := time.Now()
 	startTime := now.AddDate(0, 0, -7)
 
-	stats, err := h.usageService.GetStatsByUser(ctx, apiKey.UserID, startTime, now)
+	stats, err := h.usageService.GetStatsByAPIKey(ctx, apiKey.ID, startTime, now)
 	if err == nil && stats != nil {
 		usageSummary = &keyQueryUsageSummary{
 			TotalCost7d:    math.Round(stats.TotalActualCost*100) / 100,
@@ -175,8 +191,8 @@ func (h *KeyQueryHandler) QueryKey(c *gin.Context) {
 			TopModels:      make([]keyQueryTopModel, 0),
 		}
 
-		// Get top models
-		modelStats, err := h.usageService.GetUserModelStats(ctx, apiKey.UserID, startTime, now)
+		// Get top models (scoped to THIS API key only)
+		modelStats, err := h.usageService.GetAPIKeyModelStats(ctx, apiKey.ID, startTime, now)
 		if err == nil && len(modelStats) > 0 {
 			// Sort by request count descending
 			sort.Slice(modelStats, func(i, j int) bool {
@@ -309,9 +325,23 @@ func (h *KeyQueryHandler) ListUsage(c *gin.Context) {
 		return
 	}
 
-	out := make([]dto.UsageLog, 0, len(records))
+	// Use minimal public DTO — strip user_id, account_id, request_id, etc.
+	out := make([]publicUsageLog, 0, len(records))
 	for i := range records {
-		out = append(out, *dto.UsageLogFromService(&records[i]))
+		r := &records[i]
+		out = append(out, publicUsageLog{
+			Model:               r.Model,
+			InputTokens:         r.InputTokens,
+			OutputTokens:        r.OutputTokens,
+			CacheCreationTokens: r.CacheCreationTokens,
+			CacheReadTokens:     r.CacheReadTokens,
+			TotalCost:           r.TotalCost,
+			ActualCost:          r.ActualCost,
+			Stream:              r.Stream,
+			DurationMs:          r.DurationMs,
+			ImageCount:          r.ImageCount,
+			CreatedAt:           r.CreatedAt,
+		})
 	}
 	response.Paginated(c, out, result.Total, page, pageSize)
 }

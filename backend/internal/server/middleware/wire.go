@@ -14,9 +14,13 @@ type AdminAuthMiddleware gin.HandlerFunc
 // APIKeyAuthMiddleware API Key 认证中间件类型
 type APIKeyAuthMiddleware gin.HandlerFunc
 
+// ResellerAuthMiddleware 分销商认证中间件类型
+type ResellerAuthMiddleware gin.HandlerFunc
+
 // ProviderSet 中间件层的依赖注入
 var ProviderSet = wire.NewSet(
 	NewJWTAuthMiddleware,
 	NewAdminAuthMiddleware,
 	NewAPIKeyAuthMiddleware,
+	NewResellerAuthMiddleware,
 )

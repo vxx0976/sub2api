@@ -32,10 +32,13 @@ func ProvideRouter(
 	jwtAuth middleware2.JWTAuthMiddleware,
 	adminAuth middleware2.AdminAuthMiddleware,
 	apiKeyAuth middleware2.APIKeyAuthMiddleware,
+	resellerAuth middleware2.ResellerAuthMiddleware,
 	apiKeyService *service.APIKeyService,
 	subscriptionService *service.SubscriptionService,
 	opsService *service.OpsService,
 	settingService *service.SettingService,
+	domainRepo service.ResellerDomainRepository,
+	settingRepo service.ResellerSettingRepository,
 	redisClient *redis.Client,
 	db *sql.DB,
 ) *gin.Engine {
@@ -55,7 +58,7 @@ func ProvideRouter(
 		}
 	}
 
-	return SetupRouter(r, handlers, jwtAuth, adminAuth, apiKeyAuth, apiKeyService, subscriptionService, opsService, settingService, cfg, redisClient, db)
+	return SetupRouter(r, handlers, jwtAuth, adminAuth, apiKeyAuth, resellerAuth, apiKeyService, subscriptionService, opsService, settingService, domainRepo, settingRepo, cfg, redisClient, db)
 }
 
 // ProvideHTTPServer 提供 HTTP 服务器

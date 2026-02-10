@@ -315,6 +315,34 @@ const routes: RouteRecordRaw[] = [
     }
   },
 
+  // ==================== Reseller Routes ====================
+  {
+    path: '/reseller',
+    redirect: '/dashboard'
+  },
+  {
+    path: '/reseller/domains',
+    name: 'ResellerDomains',
+    component: () => import('@/views/reseller/DomainsView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresReseller: true,
+      title: 'Site Management',
+      titleKey: 'reseller.sites.title'
+    }
+  },
+  {
+    path: '/reseller/settings',
+    name: 'ResellerSettings',
+    component: () => import('@/views/reseller/SettingsView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresReseller: true,
+      title: 'Settings',
+      titleKey: 'reseller.settings.title'
+    }
+  },
+
   // ==================== Admin Routes ====================
   {
     path: '/admin',
@@ -588,8 +616,14 @@ router.beforeEach((to, _from, next) => {
   if (!requiresAuth) {
     // If already authenticated and trying to access login/register, redirect to appropriate dashboard
     if (authStore.isAuthenticated && (to.path === '/login' || to.path === '/register')) {
-      // Admin users go to admin dashboard, regular users go to console home
-      next(authStore.isAdmin ? '/admin/dashboard' : '/console-home')
+      // Admin users go to admin dashboard, resellers to reseller dashboard, regular users to console home
+      if (authStore.isAdmin) {
+        next('/admin/dashboard')
+      } else if (authStore.isReseller) {
+        next('/reseller/dashboard')
+      } else {
+        next('/console-home')
+      }
       return
     }
     next()
@@ -608,7 +642,14 @@ router.beforeEach((to, _from, next) => {
 
   // Check admin requirement
   if (requiresAdmin && !authStore.isAdmin) {
-    // User is authenticated but not admin, redirect to console home
+    // User is authenticated but not admin, redirect appropriately
+    next(authStore.isReseller ? '/reseller/dashboard' : '/console-home')
+    return
+  }
+
+  // Check reseller requirement
+  const requiresReseller = to.meta.requiresReseller === true
+  if (requiresReseller && !authStore.isReseller && !authStore.isAdmin) {
     next('/console-home')
     return
   }

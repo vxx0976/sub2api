@@ -49,6 +49,12 @@ const (
 	FieldTotpEnabled = "totp_enabled"
 	// FieldTotpEnabledAt holds the string denoting the totp_enabled_at field in the database.
 	FieldTotpEnabledAt = "totp_enabled_at"
+	// FieldParentID holds the string denoting the parent_id field in the database.
+	FieldParentID = "parent_id"
+	// FieldTokenVersion holds the string denoting the token_version field in the database.
+	FieldTokenVersion = "token_version"
+	// FieldRoleVersion holds the string denoting the role_version field in the database.
+	FieldRoleVersion = "role_version"
 	// EdgeAPIKeys holds the string denoting the api_keys edge name in mutations.
 	EdgeAPIKeys = "api_keys"
 	// EdgeRedeemCodes holds the string denoting the redeem_codes edge name in mutations.
@@ -75,6 +81,12 @@ const (
 	EdgeReferralRewardsGiven = "referral_rewards_given"
 	// EdgeReferralRewardReceived holds the string denoting the referral_reward_received edge name in mutations.
 	EdgeReferralRewardReceived = "referral_reward_received"
+	// EdgeSubUsers holds the string denoting the sub_users edge name in mutations.
+	EdgeSubUsers = "sub_users"
+	// EdgeParent holds the string denoting the parent edge name in mutations.
+	EdgeParent = "parent"
+	// EdgeResellerDomains holds the string denoting the reseller_domains edge name in mutations.
+	EdgeResellerDomains = "reseller_domains"
 	// EdgeUserAllowedGroups holds the string denoting the user_allowed_groups edge name in mutations.
 	EdgeUserAllowedGroups = "user_allowed_groups"
 	// Table holds the table name of the user in the database.
@@ -168,6 +180,21 @@ const (
 	ReferralRewardReceivedInverseTable = "referral_rewards"
 	// ReferralRewardReceivedColumn is the table column denoting the referral_reward_received relation/edge.
 	ReferralRewardReceivedColumn = "invitee_id"
+	// SubUsersTable is the table that holds the sub_users relation/edge.
+	SubUsersTable = "users"
+	// SubUsersColumn is the table column denoting the sub_users relation/edge.
+	SubUsersColumn = "parent_id"
+	// ParentTable is the table that holds the parent relation/edge.
+	ParentTable = "users"
+	// ParentColumn is the table column denoting the parent relation/edge.
+	ParentColumn = "parent_id"
+	// ResellerDomainsTable is the table that holds the reseller_domains relation/edge.
+	ResellerDomainsTable = "reseller_domains"
+	// ResellerDomainsInverseTable is the table name for the ResellerDomain entity.
+	// It exists in this package in order to avoid circular dependency with the "resellerdomain" package.
+	ResellerDomainsInverseTable = "reseller_domains"
+	// ResellerDomainsColumn is the table column denoting the reseller_domains relation/edge.
+	ResellerDomainsColumn = "reseller_id"
 	// UserAllowedGroupsTable is the table that holds the user_allowed_groups relation/edge.
 	UserAllowedGroupsTable = "user_allowed_groups"
 	// UserAllowedGroupsInverseTable is the table name for the UserAllowedGroup entity.
@@ -197,6 +224,9 @@ var Columns = []string{
 	FieldTotpSecretEncrypted,
 	FieldTotpEnabled,
 	FieldTotpEnabledAt,
+	FieldParentID,
+	FieldTokenVersion,
+	FieldRoleVersion,
 }
 
 var (
@@ -257,6 +287,10 @@ var (
 	DefaultReferralRewarded bool
 	// DefaultTotpEnabled holds the default value on creation for the "totp_enabled" field.
 	DefaultTotpEnabled bool
+	// DefaultTokenVersion holds the default value on creation for the "token_version" field.
+	DefaultTokenVersion int64
+	// DefaultRoleVersion holds the default value on creation for the "role_version" field.
+	DefaultRoleVersion int64
 )
 
 // OrderOption defines the ordering options for the User queries.
@@ -350,6 +384,21 @@ func ByTotpEnabled(opts ...sql.OrderTermOption) OrderOption {
 // ByTotpEnabledAt orders the results by the totp_enabled_at field.
 func ByTotpEnabledAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTotpEnabledAt, opts...).ToFunc()
+}
+
+// ByParentID orders the results by the parent_id field.
+func ByParentID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldParentID, opts...).ToFunc()
+}
+
+// ByTokenVersion orders the results by the token_version field.
+func ByTokenVersion(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTokenVersion, opts...).ToFunc()
+}
+
+// ByRoleVersion orders the results by the role_version field.
+func ByRoleVersion(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRoleVersion, opts...).ToFunc()
 }
 
 // ByAPIKeysCount orders the results by api_keys count.
@@ -534,6 +583,41 @@ func ByReferralRewardReceived(term sql.OrderTerm, terms ...sql.OrderTerm) OrderO
 	}
 }
 
+// BySubUsersCount orders the results by sub_users count.
+func BySubUsersCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newSubUsersStep(), opts...)
+	}
+}
+
+// BySubUsers orders the results by sub_users terms.
+func BySubUsers(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newSubUsersStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByParentField orders the results by parent field.
+func ByParentField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newParentStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByResellerDomainsCount orders the results by reseller_domains count.
+func ByResellerDomainsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newResellerDomainsStep(), opts...)
+	}
+}
+
+// ByResellerDomains orders the results by reseller_domains terms.
+func ByResellerDomains(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newResellerDomainsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByUserAllowedGroupsCount orders the results by user_allowed_groups count.
 func ByUserAllowedGroupsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -636,6 +720,27 @@ func newReferralRewardReceivedStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ReferralRewardReceivedInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, ReferralRewardReceivedTable, ReferralRewardReceivedColumn),
+	)
+}
+func newSubUsersStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(Table, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, SubUsersTable, SubUsersColumn),
+	)
+}
+func newParentStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(Table, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, ParentTable, ParentColumn),
+	)
+}
+func newResellerDomainsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ResellerDomainsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ResellerDomainsTable, ResellerDomainsColumn),
 	)
 }
 func newUserAllowedGroupsStep() *sqlgraph.Step {

@@ -205,12 +205,20 @@ func (s *OrderService) GetOrderByNo(ctx context.Context, orderNo string) (*Order
 	return s.orderRepo.GetByOrderNo(ctx, orderNo)
 }
 
-// GetPurchasablePlans retrieves all purchasable plans
+// GetPurchasablePlans retrieves all purchasable plans (admin-owned, for main site)
 func (s *OrderService) GetPurchasablePlans(ctx context.Context) ([]Group, error) {
 	if !s.cfg.Payment.Enabled {
 		return nil, ErrPaymentDisabled
 	}
 	return s.groupRepo.ListPurchasable(ctx)
+}
+
+// GetPurchasablePlansForReseller retrieves purchasable plans owned by the given reseller
+func (s *OrderService) GetPurchasablePlansForReseller(ctx context.Context, ownerID int64) ([]Group, error) {
+	if !s.cfg.Payment.Enabled {
+		return nil, ErrPaymentDisabled
+	}
+	return s.groupRepo.ListPurchasableByOwnerID(ctx, ownerID)
 }
 
 // RepayOrder generates a new payment URL for an existing pending order

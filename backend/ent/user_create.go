@@ -19,6 +19,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/rechargeorder"
 	"github.com/Wei-Shaw/sub2api/ent/redeemcode"
 	"github.com/Wei-Shaw/sub2api/ent/referralreward"
+	"github.com/Wei-Shaw/sub2api/ent/resellerdomain"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
 	"github.com/Wei-Shaw/sub2api/ent/user"
 	"github.com/Wei-Shaw/sub2api/ent/userattributevalue"
@@ -255,6 +256,48 @@ func (_c *UserCreate) SetNillableTotpEnabledAt(v *time.Time) *UserCreate {
 	return _c
 }
 
+// SetParentID sets the "parent_id" field.
+func (_c *UserCreate) SetParentID(v int64) *UserCreate {
+	_c.mutation.SetParentID(v)
+	return _c
+}
+
+// SetNillableParentID sets the "parent_id" field if the given value is not nil.
+func (_c *UserCreate) SetNillableParentID(v *int64) *UserCreate {
+	if v != nil {
+		_c.SetParentID(*v)
+	}
+	return _c
+}
+
+// SetTokenVersion sets the "token_version" field.
+func (_c *UserCreate) SetTokenVersion(v int64) *UserCreate {
+	_c.mutation.SetTokenVersion(v)
+	return _c
+}
+
+// SetNillableTokenVersion sets the "token_version" field if the given value is not nil.
+func (_c *UserCreate) SetNillableTokenVersion(v *int64) *UserCreate {
+	if v != nil {
+		_c.SetTokenVersion(*v)
+	}
+	return _c
+}
+
+// SetRoleVersion sets the "role_version" field.
+func (_c *UserCreate) SetRoleVersion(v int64) *UserCreate {
+	_c.mutation.SetRoleVersion(v)
+	return _c
+}
+
+// SetNillableRoleVersion sets the "role_version" field if the given value is not nil.
+func (_c *UserCreate) SetNillableRoleVersion(v *int64) *UserCreate {
+	if v != nil {
+		_c.SetRoleVersion(*v)
+	}
+	return _c
+}
+
 // AddAPIKeyIDs adds the "api_keys" edge to the APIKey entity by IDs.
 func (_c *UserCreate) AddAPIKeyIDs(ids ...int64) *UserCreate {
 	_c.mutation.AddAPIKeyIDs(ids...)
@@ -450,6 +493,41 @@ func (_c *UserCreate) AddReferralRewardReceived(v ...*ReferralReward) *UserCreat
 	return _c.AddReferralRewardReceivedIDs(ids...)
 }
 
+// AddSubUserIDs adds the "sub_users" edge to the User entity by IDs.
+func (_c *UserCreate) AddSubUserIDs(ids ...int64) *UserCreate {
+	_c.mutation.AddSubUserIDs(ids...)
+	return _c
+}
+
+// AddSubUsers adds the "sub_users" edges to the User entity.
+func (_c *UserCreate) AddSubUsers(v ...*User) *UserCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddSubUserIDs(ids...)
+}
+
+// SetParent sets the "parent" edge to the User entity.
+func (_c *UserCreate) SetParent(v *User) *UserCreate {
+	return _c.SetParentID(v.ID)
+}
+
+// AddResellerDomainIDs adds the "reseller_domains" edge to the ResellerDomain entity by IDs.
+func (_c *UserCreate) AddResellerDomainIDs(ids ...int64) *UserCreate {
+	_c.mutation.AddResellerDomainIDs(ids...)
+	return _c
+}
+
+// AddResellerDomains adds the "reseller_domains" edges to the ResellerDomain entity.
+func (_c *UserCreate) AddResellerDomains(v ...*ResellerDomain) *UserCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddResellerDomainIDs(ids...)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (_c *UserCreate) Mutation() *UserMutation {
 	return _c.mutation
@@ -533,6 +611,14 @@ func (_c *UserCreate) defaults() error {
 		v := user.DefaultTotpEnabled
 		_c.mutation.SetTotpEnabled(v)
 	}
+	if _, ok := _c.mutation.TokenVersion(); !ok {
+		v := user.DefaultTokenVersion
+		_c.mutation.SetTokenVersion(v)
+	}
+	if _, ok := _c.mutation.RoleVersion(); !ok {
+		v := user.DefaultRoleVersion
+		_c.mutation.SetRoleVersion(v)
+	}
 	return nil
 }
 
@@ -603,6 +689,12 @@ func (_c *UserCreate) check() error {
 	}
 	if _, ok := _c.mutation.TotpEnabled(); !ok {
 		return &ValidationError{Name: "totp_enabled", err: errors.New(`ent: missing required field "User.totp_enabled"`)}
+	}
+	if _, ok := _c.mutation.TokenVersion(); !ok {
+		return &ValidationError{Name: "token_version", err: errors.New(`ent: missing required field "User.token_version"`)}
+	}
+	if _, ok := _c.mutation.RoleVersion(); !ok {
+		return &ValidationError{Name: "role_version", err: errors.New(`ent: missing required field "User.role_version"`)}
 	}
 	return nil
 }
@@ -698,6 +790,14 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.TotpEnabledAt(); ok {
 		_spec.SetField(user.FieldTotpEnabledAt, field.TypeTime, value)
 		_node.TotpEnabledAt = &value
+	}
+	if value, ok := _c.mutation.TokenVersion(); ok {
+		_spec.SetField(user.FieldTokenVersion, field.TypeInt64, value)
+		_node.TokenVersion = value
+	}
+	if value, ok := _c.mutation.RoleVersion(); ok {
+		_spec.SetField(user.FieldRoleVersion, field.TypeInt64, value)
+		_node.RoleVersion = value
 	}
 	if nodes := _c.mutation.APIKeysIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -904,6 +1004,55 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(referralreward.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.SubUsersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.SubUsersTable,
+			Columns: []string{user.SubUsersColumn},
+			Bidi:    true,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ParentIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   user.ParentTable,
+			Columns: []string{user.ParentColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.ParentID = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ResellerDomainsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ResellerDomainsTable,
+			Columns: []string{user.ResellerDomainsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(resellerdomain.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -1200,6 +1349,60 @@ func (u *UserUpsert) UpdateTotpEnabledAt() *UserUpsert {
 // ClearTotpEnabledAt clears the value of the "totp_enabled_at" field.
 func (u *UserUpsert) ClearTotpEnabledAt() *UserUpsert {
 	u.SetNull(user.FieldTotpEnabledAt)
+	return u
+}
+
+// SetParentID sets the "parent_id" field.
+func (u *UserUpsert) SetParentID(v int64) *UserUpsert {
+	u.Set(user.FieldParentID, v)
+	return u
+}
+
+// UpdateParentID sets the "parent_id" field to the value that was provided on create.
+func (u *UserUpsert) UpdateParentID() *UserUpsert {
+	u.SetExcluded(user.FieldParentID)
+	return u
+}
+
+// ClearParentID clears the value of the "parent_id" field.
+func (u *UserUpsert) ClearParentID() *UserUpsert {
+	u.SetNull(user.FieldParentID)
+	return u
+}
+
+// SetTokenVersion sets the "token_version" field.
+func (u *UserUpsert) SetTokenVersion(v int64) *UserUpsert {
+	u.Set(user.FieldTokenVersion, v)
+	return u
+}
+
+// UpdateTokenVersion sets the "token_version" field to the value that was provided on create.
+func (u *UserUpsert) UpdateTokenVersion() *UserUpsert {
+	u.SetExcluded(user.FieldTokenVersion)
+	return u
+}
+
+// AddTokenVersion adds v to the "token_version" field.
+func (u *UserUpsert) AddTokenVersion(v int64) *UserUpsert {
+	u.Add(user.FieldTokenVersion, v)
+	return u
+}
+
+// SetRoleVersion sets the "role_version" field.
+func (u *UserUpsert) SetRoleVersion(v int64) *UserUpsert {
+	u.Set(user.FieldRoleVersion, v)
+	return u
+}
+
+// UpdateRoleVersion sets the "role_version" field to the value that was provided on create.
+func (u *UserUpsert) UpdateRoleVersion() *UserUpsert {
+	u.SetExcluded(user.FieldRoleVersion)
+	return u
+}
+
+// AddRoleVersion adds v to the "role_version" field.
+func (u *UserUpsert) AddRoleVersion(v int64) *UserUpsert {
+	u.Add(user.FieldRoleVersion, v)
 	return u
 }
 
@@ -1525,6 +1728,69 @@ func (u *UserUpsertOne) UpdateTotpEnabledAt() *UserUpsertOne {
 func (u *UserUpsertOne) ClearTotpEnabledAt() *UserUpsertOne {
 	return u.Update(func(s *UserUpsert) {
 		s.ClearTotpEnabledAt()
+	})
+}
+
+// SetParentID sets the "parent_id" field.
+func (u *UserUpsertOne) SetParentID(v int64) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.SetParentID(v)
+	})
+}
+
+// UpdateParentID sets the "parent_id" field to the value that was provided on create.
+func (u *UserUpsertOne) UpdateParentID() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateParentID()
+	})
+}
+
+// ClearParentID clears the value of the "parent_id" field.
+func (u *UserUpsertOne) ClearParentID() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearParentID()
+	})
+}
+
+// SetTokenVersion sets the "token_version" field.
+func (u *UserUpsertOne) SetTokenVersion(v int64) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.SetTokenVersion(v)
+	})
+}
+
+// AddTokenVersion adds v to the "token_version" field.
+func (u *UserUpsertOne) AddTokenVersion(v int64) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.AddTokenVersion(v)
+	})
+}
+
+// UpdateTokenVersion sets the "token_version" field to the value that was provided on create.
+func (u *UserUpsertOne) UpdateTokenVersion() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateTokenVersion()
+	})
+}
+
+// SetRoleVersion sets the "role_version" field.
+func (u *UserUpsertOne) SetRoleVersion(v int64) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.SetRoleVersion(v)
+	})
+}
+
+// AddRoleVersion adds v to the "role_version" field.
+func (u *UserUpsertOne) AddRoleVersion(v int64) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.AddRoleVersion(v)
+	})
+}
+
+// UpdateRoleVersion sets the "role_version" field to the value that was provided on create.
+func (u *UserUpsertOne) UpdateRoleVersion() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateRoleVersion()
 	})
 }
 
@@ -2016,6 +2282,69 @@ func (u *UserUpsertBulk) UpdateTotpEnabledAt() *UserUpsertBulk {
 func (u *UserUpsertBulk) ClearTotpEnabledAt() *UserUpsertBulk {
 	return u.Update(func(s *UserUpsert) {
 		s.ClearTotpEnabledAt()
+	})
+}
+
+// SetParentID sets the "parent_id" field.
+func (u *UserUpsertBulk) SetParentID(v int64) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.SetParentID(v)
+	})
+}
+
+// UpdateParentID sets the "parent_id" field to the value that was provided on create.
+func (u *UserUpsertBulk) UpdateParentID() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateParentID()
+	})
+}
+
+// ClearParentID clears the value of the "parent_id" field.
+func (u *UserUpsertBulk) ClearParentID() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearParentID()
+	})
+}
+
+// SetTokenVersion sets the "token_version" field.
+func (u *UserUpsertBulk) SetTokenVersion(v int64) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.SetTokenVersion(v)
+	})
+}
+
+// AddTokenVersion adds v to the "token_version" field.
+func (u *UserUpsertBulk) AddTokenVersion(v int64) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.AddTokenVersion(v)
+	})
+}
+
+// UpdateTokenVersion sets the "token_version" field to the value that was provided on create.
+func (u *UserUpsertBulk) UpdateTokenVersion() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateTokenVersion()
+	})
+}
+
+// SetRoleVersion sets the "role_version" field.
+func (u *UserUpsertBulk) SetRoleVersion(v int64) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.SetRoleVersion(v)
+	})
+}
+
+// AddRoleVersion adds v to the "role_version" field.
+func (u *UserUpsertBulk) AddRoleVersion(v int64) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.AddRoleVersion(v)
+	})
+}
+
+// UpdateRoleVersion sets the "role_version" field to the value that was provided on create.
+func (u *UserUpsertBulk) UpdateRoleVersion() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateRoleVersion()
 	})
 }
 

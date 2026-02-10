@@ -26,6 +26,8 @@ type GroupRepository interface {
 	ListActive(ctx context.Context) ([]Group, error)
 	ListActiveByPlatform(ctx context.Context, platform string) ([]Group, error)
 	ListPurchasable(ctx context.Context) ([]Group, error)
+	// ListPurchasableByOwnerID returns purchasable subscription groups owned by the given reseller.
+	ListPurchasableByOwnerID(ctx context.Context, ownerID int64) ([]Group, error)
 
 	ExistsByName(ctx context.Context, name string) (bool, error)
 	GetAccountCount(ctx context.Context, groupID int64) (int64, error)

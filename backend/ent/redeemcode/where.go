@@ -105,6 +105,11 @@ func ValidityDays(v int) predicate.RedeemCode {
 	return predicate.RedeemCode(sql.FieldEQ(FieldValidityDays, v))
 }
 
+// OwnerID applies equality check predicate on the "owner_id" field. It's identical to OwnerIDEQ.
+func OwnerID(v int64) predicate.RedeemCode {
+	return predicate.RedeemCode(sql.FieldEQ(FieldOwnerID, v))
+}
+
 // CodeEQ applies the EQ predicate on the "code" field.
 func CodeEQ(v string) predicate.RedeemCode {
 	return predicate.RedeemCode(sql.FieldEQ(FieldCode, v))
@@ -603,6 +608,56 @@ func ValidityDaysLT(v int) predicate.RedeemCode {
 // ValidityDaysLTE applies the LTE predicate on the "validity_days" field.
 func ValidityDaysLTE(v int) predicate.RedeemCode {
 	return predicate.RedeemCode(sql.FieldLTE(FieldValidityDays, v))
+}
+
+// OwnerIDEQ applies the EQ predicate on the "owner_id" field.
+func OwnerIDEQ(v int64) predicate.RedeemCode {
+	return predicate.RedeemCode(sql.FieldEQ(FieldOwnerID, v))
+}
+
+// OwnerIDNEQ applies the NEQ predicate on the "owner_id" field.
+func OwnerIDNEQ(v int64) predicate.RedeemCode {
+	return predicate.RedeemCode(sql.FieldNEQ(FieldOwnerID, v))
+}
+
+// OwnerIDIn applies the In predicate on the "owner_id" field.
+func OwnerIDIn(vs ...int64) predicate.RedeemCode {
+	return predicate.RedeemCode(sql.FieldIn(FieldOwnerID, vs...))
+}
+
+// OwnerIDNotIn applies the NotIn predicate on the "owner_id" field.
+func OwnerIDNotIn(vs ...int64) predicate.RedeemCode {
+	return predicate.RedeemCode(sql.FieldNotIn(FieldOwnerID, vs...))
+}
+
+// OwnerIDGT applies the GT predicate on the "owner_id" field.
+func OwnerIDGT(v int64) predicate.RedeemCode {
+	return predicate.RedeemCode(sql.FieldGT(FieldOwnerID, v))
+}
+
+// OwnerIDGTE applies the GTE predicate on the "owner_id" field.
+func OwnerIDGTE(v int64) predicate.RedeemCode {
+	return predicate.RedeemCode(sql.FieldGTE(FieldOwnerID, v))
+}
+
+// OwnerIDLT applies the LT predicate on the "owner_id" field.
+func OwnerIDLT(v int64) predicate.RedeemCode {
+	return predicate.RedeemCode(sql.FieldLT(FieldOwnerID, v))
+}
+
+// OwnerIDLTE applies the LTE predicate on the "owner_id" field.
+func OwnerIDLTE(v int64) predicate.RedeemCode {
+	return predicate.RedeemCode(sql.FieldLTE(FieldOwnerID, v))
+}
+
+// OwnerIDIsNil applies the IsNil predicate on the "owner_id" field.
+func OwnerIDIsNil() predicate.RedeemCode {
+	return predicate.RedeemCode(sql.FieldIsNull(FieldOwnerID))
+}
+
+// OwnerIDNotNil applies the NotNil predicate on the "owner_id" field.
+func OwnerIDNotNil() predicate.RedeemCode {
+	return predicate.RedeemCode(sql.FieldNotNull(FieldOwnerID))
 }
 
 // HasUser applies the HasEdge predicate on the "user" edge.

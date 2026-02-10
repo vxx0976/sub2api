@@ -60,7 +60,9 @@ func (r *userRepository) Create(ctx context.Context, userIn *service.User) error
 		SetBalance(userIn.Balance).
 		SetConcurrency(userIn.Concurrency).
 		SetStatus(userIn.Status).
-		SetReferralRewarded(userIn.ReferralRewarded)
+		SetReferralRewarded(userIn.ReferralRewarded).
+		SetTokenVersion(userIn.TokenVersion).
+		SetRoleVersion(userIn.RoleVersion)
 
 	// Set optional referral fields
 	if userIn.ReferralCode != nil {
@@ -68,6 +70,9 @@ func (r *userRepository) Create(ctx context.Context, userIn *service.User) error
 	}
 	if userIn.ReferredBy != nil {
 		createBuilder = createBuilder.SetReferredBy(*userIn.ReferredBy)
+	}
+	if userIn.ParentID != nil {
+		createBuilder = createBuilder.SetParentID(*userIn.ParentID)
 	}
 
 	created, err := createBuilder.Save(ctx)
@@ -152,7 +157,9 @@ func (r *userRepository) Update(ctx context.Context, userIn *service.User) error
 		SetBalance(userIn.Balance).
 		SetConcurrency(userIn.Concurrency).
 		SetStatus(userIn.Status).
-		SetReferralRewarded(userIn.ReferralRewarded)
+		SetReferralRewarded(userIn.ReferralRewarded).
+		SetTokenVersion(userIn.TokenVersion).
+		SetRoleVersion(userIn.RoleVersion)
 
 	// Set optional referral fields
 	if userIn.ReferralCode != nil {
@@ -160,6 +167,12 @@ func (r *userRepository) Update(ctx context.Context, userIn *service.User) error
 	}
 	if userIn.ReferredBy != nil {
 		updateBuilder = updateBuilder.SetReferredBy(*userIn.ReferredBy)
+	}
+	// Set optional parent (reseller hierarchy)
+	if userIn.ParentID != nil {
+		updateBuilder = updateBuilder.SetParentID(*userIn.ParentID)
+	} else {
+		updateBuilder = updateBuilder.ClearParentID()
 	}
 
 	updated, err := updateBuilder.Save(ctx)
@@ -213,6 +226,9 @@ func (r *userRepository) ListWithFilters(ctx context.Context, params pagination.
 				dbuser.NotesContainsFold(filters.Search),
 			),
 		)
+	}
+	if filters.ParentID != nil {
+		q = q.Where(dbuser.ParentIDEQ(*filters.ParentID))
 	}
 
 	// If attribute filters are specified, we need to filter by user IDs first
@@ -365,6 +381,27 @@ func (r *userRepository) DeductBalance(ctx context.Context, id int64, amount flo
 	}
 	if n == 0 {
 		return service.ErrUserNotFound
+	}
+	return nil
+}
+
+// DeductBalanceIfSufficient atomically deducts balance only if sufficient funds exist.
+// Returns ErrInsufficientBalance if balance < amount, ErrUserNotFound if user not found.
+func (r *userRepository) DeductBalanceIfSufficient(ctx context.Context, id int64, amount float64) error {
+	client := clientFromContext(ctx, r.client)
+	n, err := client.User.Update().
+		Where(dbuser.IDEQ(id), dbuser.BalanceGTE(amount)).
+		AddBalance(-amount).
+		Save(ctx)
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		exists, _ := client.User.Query().Where(dbuser.IDEQ(id)).Exist(ctx)
+		if !exists {
+			return service.ErrUserNotFound
+		}
+		return service.ErrInsufficientBalance
 	}
 	return nil
 }

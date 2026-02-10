@@ -17,12 +17,14 @@ var (
 		{Name: "deleted_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
 		{Name: "key", Type: field.TypeString, Unique: true, Size: 128},
 		{Name: "name", Type: field.TypeString, Size: 100},
+		{Name: "notes", Type: field.TypeString, Size: 500, Default: ""},
 		{Name: "status", Type: field.TypeString, Size: 20, Default: "active"},
 		{Name: "ip_whitelist", Type: field.TypeJSON, Nullable: true},
 		{Name: "ip_blacklist", Type: field.TypeJSON, Nullable: true},
 		{Name: "quota", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
 		{Name: "quota_used", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
 		{Name: "expires_at", Type: field.TypeTime, Nullable: true},
+		{Name: "tg_chat_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "group_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "user_id", Type: field.TypeInt64},
 	}
@@ -34,13 +36,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "api_keys_groups_api_keys",
-				Columns:    []*schema.Column{APIKeysColumns[12]},
+				Columns:    []*schema.Column{APIKeysColumns[14]},
 				RefColumns: []*schema.Column{GroupsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "api_keys_users_api_keys",
-				Columns:    []*schema.Column{APIKeysColumns[13]},
+				Columns:    []*schema.Column{APIKeysColumns[15]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -49,17 +51,17 @@ var (
 			{
 				Name:    "apikey_user_id",
 				Unique:  false,
-				Columns: []*schema.Column{APIKeysColumns[13]},
+				Columns: []*schema.Column{APIKeysColumns[15]},
 			},
 			{
 				Name:    "apikey_group_id",
 				Unique:  false,
-				Columns: []*schema.Column{APIKeysColumns[12]},
+				Columns: []*schema.Column{APIKeysColumns[14]},
 			},
 			{
 				Name:    "apikey_status",
 				Unique:  false,
-				Columns: []*schema.Column{APIKeysColumns[6]},
+				Columns: []*schema.Column{APIKeysColumns[7]},
 			},
 			{
 				Name:    "apikey_deleted_at",
@@ -69,12 +71,17 @@ var (
 			{
 				Name:    "apikey_quota_quota_used",
 				Unique:  false,
-				Columns: []*schema.Column{APIKeysColumns[9], APIKeysColumns[10]},
+				Columns: []*schema.Column{APIKeysColumns[10], APIKeysColumns[11]},
 			},
 			{
 				Name:    "apikey_expires_at",
 				Unique:  false,
-				Columns: []*schema.Column{APIKeysColumns[11]},
+				Columns: []*schema.Column{APIKeysColumns[12]},
+			},
+			{
+				Name:    "apikey_tg_chat_id",
+				Unique:  false,
+				Columns: []*schema.Column{APIKeysColumns[13]},
 			},
 		},
 	}
@@ -230,6 +237,7 @@ var (
 		{Name: "updated_by", Type: field.TypeInt64, Nullable: true},
 		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
 		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "owner_id", Type: field.TypeInt64, Nullable: true},
 	}
 	// AnnouncementsTable holds the schema information for the "announcements" table.
 	AnnouncementsTable = &schema.Table{
@@ -256,6 +264,11 @@ var (
 				Name:    "announcement_ends_at",
 				Unique:  false,
 				Columns: []*schema.Column{AnnouncementsColumns[6]},
+			},
+			{
+				Name:    "announcement_owner_id",
+				Unique:  false,
+				Columns: []*schema.Column{AnnouncementsColumns[11]},
 			},
 		},
 	}
@@ -427,6 +440,9 @@ var (
 		{Name: "sort_order", Type: field.TypeInt, Default: 0},
 		{Name: "is_recommended", Type: field.TypeBool, Default: false},
 		{Name: "external_buy_url", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "owner_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "source_group_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "reseller_template", Type: field.TypeBool, Default: false},
 	}
 	// GroupsTable holds the schema information for the "groups" table.
 	GroupsTable = &schema.Table{
@@ -458,6 +474,16 @@ var (
 				Name:    "group_deleted_at",
 				Unique:  false,
 				Columns: []*schema.Column{GroupsColumns[3]},
+			},
+			{
+				Name:    "group_sort_order",
+				Unique:  false,
+				Columns: []*schema.Column{GroupsColumns[27]},
+			},
+			{
+				Name:    "group_owner_id",
+				Unique:  false,
+				Columns: []*schema.Column{GroupsColumns[30]},
 			},
 		},
 	}
@@ -696,6 +722,7 @@ var (
 		{Name: "notes", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
 		{Name: "validity_days", Type: field.TypeInt, Default: 30},
+		{Name: "owner_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "group_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "used_by", Type: field.TypeInt64, Nullable: true},
 	}
@@ -707,13 +734,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "redeem_codes_groups_redeem_codes",
-				Columns:    []*schema.Column{RedeemCodesColumns[9]},
+				Columns:    []*schema.Column{RedeemCodesColumns[10]},
 				RefColumns: []*schema.Column{GroupsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "redeem_codes_users_redeem_codes",
-				Columns:    []*schema.Column{RedeemCodesColumns[10]},
+				Columns:    []*schema.Column{RedeemCodesColumns[11]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -727,10 +754,15 @@ var (
 			{
 				Name:    "redeemcode_used_by",
 				Unique:  false,
-				Columns: []*schema.Column{RedeemCodesColumns[10]},
+				Columns: []*schema.Column{RedeemCodesColumns[11]},
 			},
 			{
 				Name:    "redeemcode_group_id",
+				Unique:  false,
+				Columns: []*schema.Column{RedeemCodesColumns[10]},
+			},
+			{
+				Name:    "redeemcode_owner_id",
 				Unique:  false,
 				Columns: []*schema.Column{RedeemCodesColumns[9]},
 			},
@@ -793,6 +825,86 @@ var (
 				Name:    "referralreward_created_at",
 				Unique:  false,
 				Columns: []*schema.Column{ReferralRewardsColumns[1]},
+			},
+		},
+	}
+	// ResellerDomainsColumns holds the columns for the "reseller_domains" table.
+	ResellerDomainsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "deleted_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "domain", Type: field.TypeString, Size: 255},
+		{Name: "site_name", Type: field.TypeString, Size: 100, Default: ""},
+		{Name: "site_logo", Type: field.TypeString, Default: ""},
+		{Name: "brand_color", Type: field.TypeString, Size: 20, Default: ""},
+		{Name: "custom_css", Type: field.TypeString, Default: ""},
+		{Name: "subtitle", Type: field.TypeString, Size: 255, Default: ""},
+		{Name: "home_content", Type: field.TypeString, Default: ""},
+		{Name: "home_template", Type: field.TypeString, Size: 50, Default: ""},
+		{Name: "doc_url", Type: field.TypeString, Size: 500, Default: ""},
+		{Name: "purchase_enabled", Type: field.TypeBool, Default: false},
+		{Name: "purchase_url", Type: field.TypeString, Size: 500, Default: ""},
+		{Name: "default_locale", Type: field.TypeString, Size: 20, Default: ""},
+		{Name: "seo_title", Type: field.TypeString, Size: 255, Default: ""},
+		{Name: "seo_description", Type: field.TypeString, Default: ""},
+		{Name: "seo_keywords", Type: field.TypeString, Size: 500, Default: ""},
+		{Name: "login_redirect", Type: field.TypeString, Size: 255, Default: ""},
+		{Name: "verify_token", Type: field.TypeString, Size: 64, Default: ""},
+		{Name: "verified", Type: field.TypeBool, Default: false},
+		{Name: "verified_at", Type: field.TypeTime, Nullable: true},
+		{Name: "reseller_id", Type: field.TypeInt64},
+	}
+	// ResellerDomainsTable holds the schema information for the "reseller_domains" table.
+	ResellerDomainsTable = &schema.Table{
+		Name:       "reseller_domains",
+		Columns:    ResellerDomainsColumns,
+		PrimaryKey: []*schema.Column{ResellerDomainsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "reseller_domains_users_reseller_domains",
+				Columns:    []*schema.Column{ResellerDomainsColumns[23]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "resellerdomain_domain",
+				Unique:  true,
+				Columns: []*schema.Column{ResellerDomainsColumns[4]},
+			},
+			{
+				Name:    "resellerdomain_reseller_id",
+				Unique:  false,
+				Columns: []*schema.Column{ResellerDomainsColumns[23]},
+			},
+			{
+				Name:    "resellerdomain_verified",
+				Unique:  false,
+				Columns: []*schema.Column{ResellerDomainsColumns[21]},
+			},
+		},
+	}
+	// ResellerSettingsColumns holds the columns for the "reseller_settings" table.
+	ResellerSettingsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "reseller_id", Type: field.TypeInt64},
+		{Name: "key", Type: field.TypeString, Size: 100},
+		{Name: "value", Type: field.TypeString, Default: "", SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+	}
+	// ResellerSettingsTable holds the schema information for the "reseller_settings" table.
+	ResellerSettingsTable = &schema.Table{
+		Name:       "reseller_settings",
+		Columns:    ResellerSettingsColumns,
+		PrimaryKey: []*schema.Column{ResellerSettingsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "resellersetting_reseller_id_key",
+				Unique:  true,
+				Columns: []*schema.Column{ResellerSettingsColumns[1], ResellerSettingsColumns[2]},
 			},
 		},
 	}
@@ -991,12 +1103,23 @@ var (
 		{Name: "totp_secret_encrypted", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "totp_enabled", Type: field.TypeBool, Default: false},
 		{Name: "totp_enabled_at", Type: field.TypeTime, Nullable: true},
+		{Name: "token_version", Type: field.TypeInt64, Default: 0},
+		{Name: "role_version", Type: field.TypeInt64, Default: 0},
+		{Name: "parent_id", Type: field.TypeInt64, Nullable: true},
 	}
 	// UsersTable holds the schema information for the "users" table.
 	UsersTable = &schema.Table{
 		Name:       "users",
 		Columns:    UsersColumns,
 		PrimaryKey: []*schema.Column{UsersColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "users_users_sub_users",
+				Columns:    []*schema.Column{UsersColumns[20]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
 		Indexes: []*schema.Index{
 			{
 				Name:    "user_status",
@@ -1007,6 +1130,11 @@ var (
 				Name:    "user_deleted_at",
 				Unique:  false,
 				Columns: []*schema.Column{UsersColumns[3]},
+			},
+			{
+				Name:    "user_parent_id",
+				Unique:  false,
+				Columns: []*schema.Column{UsersColumns[20]},
 			},
 		},
 	}
@@ -1230,6 +1358,8 @@ var (
 		RechargeOrdersTable,
 		RedeemCodesTable,
 		ReferralRewardsTable,
+		ResellerDomainsTable,
+		ResellerSettingsTable,
 		SettingsTable,
 		UsageCleanupTasksTable,
 		UsageLogsTable,
@@ -1302,6 +1432,13 @@ func init() {
 	ReferralRewardsTable.Annotation = &entsql.Annotation{
 		Table: "referral_rewards",
 	}
+	ResellerDomainsTable.ForeignKeys[0].RefTable = UsersTable
+	ResellerDomainsTable.Annotation = &entsql.Annotation{
+		Table: "reseller_domains",
+	}
+	ResellerSettingsTable.Annotation = &entsql.Annotation{
+		Table: "reseller_settings",
+	}
 	SettingsTable.Annotation = &entsql.Annotation{
 		Table: "settings",
 	}
@@ -1316,6 +1453,7 @@ func init() {
 	UsageLogsTable.Annotation = &entsql.Annotation{
 		Table: "usage_logs",
 	}
+	UsersTable.ForeignKeys[0].RefTable = UsersTable
 	UsersTable.Annotation = &entsql.Annotation{
 		Table: "users",
 	}

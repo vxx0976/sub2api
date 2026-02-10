@@ -100,6 +100,11 @@ func UpdatedAt(v time.Time) predicate.Announcement {
 	return predicate.Announcement(sql.FieldEQ(FieldUpdatedAt, v))
 }
 
+// OwnerID applies equality check predicate on the "owner_id" field. It's identical to OwnerIDEQ.
+func OwnerID(v int64) predicate.Announcement {
+	return predicate.Announcement(sql.FieldEQ(FieldOwnerID, v))
+}
+
 // TitleEQ applies the EQ predicate on the "title" field.
 func TitleEQ(v string) predicate.Announcement {
 	return predicate.Announcement(sql.FieldEQ(FieldTitle, v))
@@ -583,6 +588,56 @@ func UpdatedAtLT(v time.Time) predicate.Announcement {
 // UpdatedAtLTE applies the LTE predicate on the "updated_at" field.
 func UpdatedAtLTE(v time.Time) predicate.Announcement {
 	return predicate.Announcement(sql.FieldLTE(FieldUpdatedAt, v))
+}
+
+// OwnerIDEQ applies the EQ predicate on the "owner_id" field.
+func OwnerIDEQ(v int64) predicate.Announcement {
+	return predicate.Announcement(sql.FieldEQ(FieldOwnerID, v))
+}
+
+// OwnerIDNEQ applies the NEQ predicate on the "owner_id" field.
+func OwnerIDNEQ(v int64) predicate.Announcement {
+	return predicate.Announcement(sql.FieldNEQ(FieldOwnerID, v))
+}
+
+// OwnerIDIn applies the In predicate on the "owner_id" field.
+func OwnerIDIn(vs ...int64) predicate.Announcement {
+	return predicate.Announcement(sql.FieldIn(FieldOwnerID, vs...))
+}
+
+// OwnerIDNotIn applies the NotIn predicate on the "owner_id" field.
+func OwnerIDNotIn(vs ...int64) predicate.Announcement {
+	return predicate.Announcement(sql.FieldNotIn(FieldOwnerID, vs...))
+}
+
+// OwnerIDGT applies the GT predicate on the "owner_id" field.
+func OwnerIDGT(v int64) predicate.Announcement {
+	return predicate.Announcement(sql.FieldGT(FieldOwnerID, v))
+}
+
+// OwnerIDGTE applies the GTE predicate on the "owner_id" field.
+func OwnerIDGTE(v int64) predicate.Announcement {
+	return predicate.Announcement(sql.FieldGTE(FieldOwnerID, v))
+}
+
+// OwnerIDLT applies the LT predicate on the "owner_id" field.
+func OwnerIDLT(v int64) predicate.Announcement {
+	return predicate.Announcement(sql.FieldLT(FieldOwnerID, v))
+}
+
+// OwnerIDLTE applies the LTE predicate on the "owner_id" field.
+func OwnerIDLTE(v int64) predicate.Announcement {
+	return predicate.Announcement(sql.FieldLTE(FieldOwnerID, v))
+}
+
+// OwnerIDIsNil applies the IsNil predicate on the "owner_id" field.
+func OwnerIDIsNil() predicate.Announcement {
+	return predicate.Announcement(sql.FieldIsNull(FieldOwnerID))
+}
+
+// OwnerIDNotNil applies the NotNil predicate on the "owner_id" field.
+func OwnerIDNotNil() predicate.Announcement {
+	return predicate.Announcement(sql.FieldNotNull(FieldOwnerID))
 }
 
 // HasReads applies the HasEdge predicate on the "reads" edge.

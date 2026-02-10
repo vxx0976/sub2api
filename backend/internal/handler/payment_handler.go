@@ -79,7 +79,15 @@ func NewPaymentHandler(
 // GetPlans handles getting purchasable plans
 // GET /api/v1/plans
 func (h *PaymentHandler) GetPlans(c *gin.Context) {
-	plans, err := h.orderService.GetPurchasablePlans(c.Request.Context())
+	var plans []service.Group
+	var err error
+
+	// Check if accessing from a reseller domain
+	if domainCtx := middleware2.GetResellerDomainFromContext(c); domainCtx != nil {
+		plans, err = h.orderService.GetPurchasablePlansForReseller(c.Request.Context(), domainCtx.ResellerID)
+	} else {
+		plans, err = h.orderService.GetPurchasablePlans(c.Request.Context())
+	}
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return

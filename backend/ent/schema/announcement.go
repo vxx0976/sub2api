@@ -71,6 +71,10 @@ func (Announcement) Fields() []ent.Field {
 			Default(time.Now).
 			UpdateDefault(time.Now).
 			SchemaType(map[string]string{dialect.Postgres: "timestamptz"}),
+		field.Int64("owner_id").
+			Optional().
+			Nillable().
+			Comment("分销商用户 ID（NULL=全局公告）"),
 	}
 }
 
@@ -86,5 +90,6 @@ func (Announcement) Indexes() []ent.Index {
 		index.Fields("created_at"),
 		index.Fields("starts_at"),
 		index.Fields("ends_at"),
+		index.Fields("owner_id"),
 	}
 }

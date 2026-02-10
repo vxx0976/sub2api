@@ -432,8 +432,8 @@
                     </td>
                   </tr>
                   <tr
-                    v-for="log in usageLogs"
-                    :key="log.id"
+                    v-for="(log, index) in usageLogs"
+                    :key="index"
                     class="border-b border-gray-100 transition hover:bg-gray-50 dark:border-dark-700 dark:hover:bg-dark-700/50"
                   >
                     <td class="whitespace-nowrap px-4 py-2.5 font-mono text-xs text-gray-700 dark:text-gray-300">{{ formatDateTime(log.created_at) }}</td>

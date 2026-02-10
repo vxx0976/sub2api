@@ -206,6 +206,7 @@ type Announcement struct {
 	UpdatedBy *int64
 	CreatedAt time.Time
 	UpdatedAt time.Time
+	OwnerID   *int64
 }
 
 func (a *Announcement) IsActiveAt(now time.Time) bool {

@@ -44,6 +44,10 @@ type Tx struct {
 	RedeemCode *RedeemCodeClient
 	// ReferralReward is the client for interacting with the ReferralReward builders.
 	ReferralReward *ReferralRewardClient
+	// ResellerDomain is the client for interacting with the ResellerDomain builders.
+	ResellerDomain *ResellerDomainClient
+	// ResellerSetting is the client for interacting with the ResellerSetting builders.
+	ResellerSetting *ResellerSettingClient
 	// Setting is the client for interacting with the Setting builders.
 	Setting *SettingClient
 	// UsageCleanupTask is the client for interacting with the UsageCleanupTask builders.
@@ -206,6 +210,8 @@ func (tx *Tx) init() {
 	tx.RechargeOrder = NewRechargeOrderClient(tx.config)
 	tx.RedeemCode = NewRedeemCodeClient(tx.config)
 	tx.ReferralReward = NewReferralRewardClient(tx.config)
+	tx.ResellerDomain = NewResellerDomainClient(tx.config)
+	tx.ResellerSetting = NewResellerSettingClient(tx.config)
 	tx.Setting = NewSettingClient(tx.config)
 	tx.UsageCleanupTask = NewUsageCleanupTaskClient(tx.config)
 	tx.UsageLog = NewUsageLogClient(tx.config)

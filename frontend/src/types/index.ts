@@ -29,7 +29,7 @@ export interface User {
   username: string
   notes: string
   email: string
-  role: 'admin' | 'user' // User role for authorization
+  role: 'admin' | 'user' | 'reseller' // User role for authorization
   balance: number // User balance for API usage
   concurrency: number // Allowed concurrent requests
   status: 'active' | 'disabled' // Account status
@@ -42,6 +42,8 @@ export interface User {
 export interface AdminUser extends User {
   // 管理员备注（普通用户接口不返回）
   notes: string
+  // 父用户ID（分销商的子用户才有此字段）
+  parent_id?: number | null
   // 用户专属分组倍率配置 (group_id -> rate_multiplier)
   group_rates?: Record<number, number>
   // 当前并发数（仅管理员列表接口返回）
@@ -62,6 +64,7 @@ export interface RegisterRequest {
   turnstile_token?: string
   promo_code?: string
   invitation_code?: string
+  parent_id?: number
 }
 
 export interface SendVerifyCodeRequest {
@@ -102,6 +105,12 @@ export interface PublicSettings {
   announcements?: SimpleAnnouncement[]
   crypto_addresses?: string
   query_domain?: string
+  default_locale?: string
+  // Reseller domain branding (injected when accessed via a reseller's custom domain)
+  reseller_id?: number
+  reseller_domain?: string
+  brand_color?: string
+  custom_css?: string
 }
 
 export interface AuthResponse {
@@ -391,6 +400,7 @@ export interface Group {
   is_purchasable: boolean
   sort_order: number
   is_recommended: boolean
+  reseller_template: boolean
   external_buy_url?: string | null
   account_count?: number
   account_groups?: GroupAccountInfo[]
@@ -443,6 +453,7 @@ export interface CreateApiKeyRequest {
   ip_blacklist?: string[]
   quota?: number // Quota limit in USD (0 = unlimited)
   expires_in_days?: number // Days until expiry (null = never expires)
+  notes?: string // Optional notes
 }
 
 export interface UpdateApiKeyRequest {
@@ -454,6 +465,7 @@ export interface UpdateApiKeyRequest {
   quota?: number // Quota limit in USD (null = no change, 0 = unlimited)
   expires_at?: string | null // Expiration time (null = no change)
   reset_quota?: boolean // Reset quota_used to 0
+  notes?: string // Optional notes
 }
 
 export interface CreateGroupRequest {
@@ -1044,7 +1056,7 @@ export interface UpdateUserRequest {
   password?: string
   username?: string
   notes?: string
-  role?: 'admin' | 'user'
+  role?: 'admin' | 'user' | 'reseller'
   balance?: number
   concurrency?: number
   status?: 'active' | 'disabled'

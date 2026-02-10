@@ -194,6 +194,33 @@ func (_u *RedeemCodeUpdate) AddValidityDays(v int) *RedeemCodeUpdate {
 	return _u
 }
 
+// SetOwnerID sets the "owner_id" field.
+func (_u *RedeemCodeUpdate) SetOwnerID(v int64) *RedeemCodeUpdate {
+	_u.mutation.ResetOwnerID()
+	_u.mutation.SetOwnerID(v)
+	return _u
+}
+
+// SetNillableOwnerID sets the "owner_id" field if the given value is not nil.
+func (_u *RedeemCodeUpdate) SetNillableOwnerID(v *int64) *RedeemCodeUpdate {
+	if v != nil {
+		_u.SetOwnerID(*v)
+	}
+	return _u
+}
+
+// AddOwnerID adds value to the "owner_id" field.
+func (_u *RedeemCodeUpdate) AddOwnerID(v int64) *RedeemCodeUpdate {
+	_u.mutation.AddOwnerID(v)
+	return _u
+}
+
+// ClearOwnerID clears the value of the "owner_id" field.
+func (_u *RedeemCodeUpdate) ClearOwnerID() *RedeemCodeUpdate {
+	_u.mutation.ClearOwnerID()
+	return _u
+}
+
 // SetUserID sets the "user" edge to the User entity by ID.
 func (_u *RedeemCodeUpdate) SetUserID(id int64) *RedeemCodeUpdate {
 	_u.mutation.SetUserID(id)
@@ -326,6 +353,15 @@ func (_u *RedeemCodeUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 	}
 	if value, ok := _u.mutation.AddedValidityDays(); ok {
 		_spec.AddField(redeemcode.FieldValidityDays, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.OwnerID(); ok {
+		_spec.SetField(redeemcode.FieldOwnerID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedOwnerID(); ok {
+		_spec.AddField(redeemcode.FieldOwnerID, field.TypeInt64, value)
+	}
+	if _u.mutation.OwnerIDCleared() {
+		_spec.ClearField(redeemcode.FieldOwnerID, field.TypeInt64)
 	}
 	if _u.mutation.UserCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -569,6 +605,33 @@ func (_u *RedeemCodeUpdateOne) AddValidityDays(v int) *RedeemCodeUpdateOne {
 	return _u
 }
 
+// SetOwnerID sets the "owner_id" field.
+func (_u *RedeemCodeUpdateOne) SetOwnerID(v int64) *RedeemCodeUpdateOne {
+	_u.mutation.ResetOwnerID()
+	_u.mutation.SetOwnerID(v)
+	return _u
+}
+
+// SetNillableOwnerID sets the "owner_id" field if the given value is not nil.
+func (_u *RedeemCodeUpdateOne) SetNillableOwnerID(v *int64) *RedeemCodeUpdateOne {
+	if v != nil {
+		_u.SetOwnerID(*v)
+	}
+	return _u
+}
+
+// AddOwnerID adds value to the "owner_id" field.
+func (_u *RedeemCodeUpdateOne) AddOwnerID(v int64) *RedeemCodeUpdateOne {
+	_u.mutation.AddOwnerID(v)
+	return _u
+}
+
+// ClearOwnerID clears the value of the "owner_id" field.
+func (_u *RedeemCodeUpdateOne) ClearOwnerID() *RedeemCodeUpdateOne {
+	_u.mutation.ClearOwnerID()
+	return _u
+}
+
 // SetUserID sets the "user" edge to the User entity by ID.
 func (_u *RedeemCodeUpdateOne) SetUserID(id int64) *RedeemCodeUpdateOne {
 	_u.mutation.SetUserID(id)
@@ -731,6 +794,15 @@ func (_u *RedeemCodeUpdateOne) sqlSave(ctx context.Context) (_node *RedeemCode, 
 	}
 	if value, ok := _u.mutation.AddedValidityDays(); ok {
 		_spec.AddField(redeemcode.FieldValidityDays, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.OwnerID(); ok {
+		_spec.SetField(redeemcode.FieldOwnerID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedOwnerID(); ok {
+		_spec.AddField(redeemcode.FieldOwnerID, field.TypeInt64, value)
+	}
+	if _u.mutation.OwnerIDCleared() {
+		_spec.ClearField(redeemcode.FieldOwnerID, field.TypeInt64)
 	}
 	if _u.mutation.UserCleared() {
 		edge := &sqlgraph.EdgeSpec{

@@ -19,7 +19,7 @@ export async function list(
   pageSize: number = 20,
   filters?: {
     status?: 'active' | 'disabled'
-    role?: 'admin' | 'user'
+    role?: 'admin' | 'user' | 'reseller'
     search?: string
     attributes?: Record<number, string>  // attributeId -> value
   },

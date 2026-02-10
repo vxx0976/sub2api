@@ -411,6 +411,48 @@ func (_c *GroupCreate) SetNillableExternalBuyURL(v *string) *GroupCreate {
 	return _c
 }
 
+// SetOwnerID sets the "owner_id" field.
+func (_c *GroupCreate) SetOwnerID(v int64) *GroupCreate {
+	_c.mutation.SetOwnerID(v)
+	return _c
+}
+
+// SetNillableOwnerID sets the "owner_id" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableOwnerID(v *int64) *GroupCreate {
+	if v != nil {
+		_c.SetOwnerID(*v)
+	}
+	return _c
+}
+
+// SetSourceGroupID sets the "source_group_id" field.
+func (_c *GroupCreate) SetSourceGroupID(v int64) *GroupCreate {
+	_c.mutation.SetSourceGroupID(v)
+	return _c
+}
+
+// SetNillableSourceGroupID sets the "source_group_id" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableSourceGroupID(v *int64) *GroupCreate {
+	if v != nil {
+		_c.SetSourceGroupID(*v)
+	}
+	return _c
+}
+
+// SetResellerTemplate sets the "reseller_template" field.
+func (_c *GroupCreate) SetResellerTemplate(v bool) *GroupCreate {
+	_c.mutation.SetResellerTemplate(v)
+	return _c
+}
+
+// SetNillableResellerTemplate sets the "reseller_template" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableResellerTemplate(v *bool) *GroupCreate {
+	if v != nil {
+		_c.SetResellerTemplate(*v)
+	}
+	return _c
+}
+
 // AddAPIKeyIDs adds the "api_keys" edge to the APIKey entity by IDs.
 func (_c *GroupCreate) AddAPIKeyIDs(ids ...int64) *GroupCreate {
 	_c.mutation.AddAPIKeyIDs(ids...)
@@ -619,6 +661,10 @@ func (_c *GroupCreate) defaults() error {
 		v := group.DefaultIsRecommended
 		_c.mutation.SetIsRecommended(v)
 	}
+	if _, ok := _c.mutation.ResellerTemplate(); !ok {
+		v := group.DefaultResellerTemplate
+		_c.mutation.SetResellerTemplate(v)
+	}
 	return nil
 }
 
@@ -691,6 +737,9 @@ func (_c *GroupCreate) check() error {
 	}
 	if _, ok := _c.mutation.IsRecommended(); !ok {
 		return &ValidationError{Name: "is_recommended", err: errors.New(`ent: missing required field "Group.is_recommended"`)}
+	}
+	if _, ok := _c.mutation.ResellerTemplate(); !ok {
+		return &ValidationError{Name: "reseller_template", err: errors.New(`ent: missing required field "Group.reseller_template"`)}
 	}
 	return nil
 }
@@ -834,6 +883,18 @@ func (_c *GroupCreate) createSpec() (*Group, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.ExternalBuyURL(); ok {
 		_spec.SetField(group.FieldExternalBuyURL, field.TypeString, value)
 		_node.ExternalBuyURL = &value
+	}
+	if value, ok := _c.mutation.OwnerID(); ok {
+		_spec.SetField(group.FieldOwnerID, field.TypeInt64, value)
+		_node.OwnerID = &value
+	}
+	if value, ok := _c.mutation.SourceGroupID(); ok {
+		_spec.SetField(group.FieldSourceGroupID, field.TypeInt64, value)
+		_node.SourceGroupID = &value
+	}
+	if value, ok := _c.mutation.ResellerTemplate(); ok {
+		_spec.SetField(group.FieldResellerTemplate, field.TypeBool, value)
+		_node.ResellerTemplate = value
 	}
 	if nodes := _c.mutation.APIKeysIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -1493,6 +1554,66 @@ func (u *GroupUpsert) ClearExternalBuyURL() *GroupUpsert {
 	return u
 }
 
+// SetOwnerID sets the "owner_id" field.
+func (u *GroupUpsert) SetOwnerID(v int64) *GroupUpsert {
+	u.Set(group.FieldOwnerID, v)
+	return u
+}
+
+// UpdateOwnerID sets the "owner_id" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateOwnerID() *GroupUpsert {
+	u.SetExcluded(group.FieldOwnerID)
+	return u
+}
+
+// AddOwnerID adds v to the "owner_id" field.
+func (u *GroupUpsert) AddOwnerID(v int64) *GroupUpsert {
+	u.Add(group.FieldOwnerID, v)
+	return u
+}
+
+// ClearOwnerID clears the value of the "owner_id" field.
+func (u *GroupUpsert) ClearOwnerID() *GroupUpsert {
+	u.SetNull(group.FieldOwnerID)
+	return u
+}
+
+// SetSourceGroupID sets the "source_group_id" field.
+func (u *GroupUpsert) SetSourceGroupID(v int64) *GroupUpsert {
+	u.Set(group.FieldSourceGroupID, v)
+	return u
+}
+
+// UpdateSourceGroupID sets the "source_group_id" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateSourceGroupID() *GroupUpsert {
+	u.SetExcluded(group.FieldSourceGroupID)
+	return u
+}
+
+// AddSourceGroupID adds v to the "source_group_id" field.
+func (u *GroupUpsert) AddSourceGroupID(v int64) *GroupUpsert {
+	u.Add(group.FieldSourceGroupID, v)
+	return u
+}
+
+// ClearSourceGroupID clears the value of the "source_group_id" field.
+func (u *GroupUpsert) ClearSourceGroupID() *GroupUpsert {
+	u.SetNull(group.FieldSourceGroupID)
+	return u
+}
+
+// SetResellerTemplate sets the "reseller_template" field.
+func (u *GroupUpsert) SetResellerTemplate(v bool) *GroupUpsert {
+	u.Set(group.FieldResellerTemplate, v)
+	return u
+}
+
+// UpdateResellerTemplate sets the "reseller_template" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateResellerTemplate() *GroupUpsert {
+	u.SetExcluded(group.FieldResellerTemplate)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create.
 // Using this option is equivalent to using:
 //
@@ -2102,6 +2223,76 @@ func (u *GroupUpsertOne) UpdateExternalBuyURL() *GroupUpsertOne {
 func (u *GroupUpsertOne) ClearExternalBuyURL() *GroupUpsertOne {
 	return u.Update(func(s *GroupUpsert) {
 		s.ClearExternalBuyURL()
+	})
+}
+
+// SetOwnerID sets the "owner_id" field.
+func (u *GroupUpsertOne) SetOwnerID(v int64) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetOwnerID(v)
+	})
+}
+
+// AddOwnerID adds v to the "owner_id" field.
+func (u *GroupUpsertOne) AddOwnerID(v int64) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.AddOwnerID(v)
+	})
+}
+
+// UpdateOwnerID sets the "owner_id" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateOwnerID() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateOwnerID()
+	})
+}
+
+// ClearOwnerID clears the value of the "owner_id" field.
+func (u *GroupUpsertOne) ClearOwnerID() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.ClearOwnerID()
+	})
+}
+
+// SetSourceGroupID sets the "source_group_id" field.
+func (u *GroupUpsertOne) SetSourceGroupID(v int64) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetSourceGroupID(v)
+	})
+}
+
+// AddSourceGroupID adds v to the "source_group_id" field.
+func (u *GroupUpsertOne) AddSourceGroupID(v int64) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.AddSourceGroupID(v)
+	})
+}
+
+// UpdateSourceGroupID sets the "source_group_id" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateSourceGroupID() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateSourceGroupID()
+	})
+}
+
+// ClearSourceGroupID clears the value of the "source_group_id" field.
+func (u *GroupUpsertOne) ClearSourceGroupID() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.ClearSourceGroupID()
+	})
+}
+
+// SetResellerTemplate sets the "reseller_template" field.
+func (u *GroupUpsertOne) SetResellerTemplate(v bool) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetResellerTemplate(v)
+	})
+}
+
+// UpdateResellerTemplate sets the "reseller_template" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateResellerTemplate() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateResellerTemplate()
 	})
 }
 
@@ -2880,6 +3071,76 @@ func (u *GroupUpsertBulk) UpdateExternalBuyURL() *GroupUpsertBulk {
 func (u *GroupUpsertBulk) ClearExternalBuyURL() *GroupUpsertBulk {
 	return u.Update(func(s *GroupUpsert) {
 		s.ClearExternalBuyURL()
+	})
+}
+
+// SetOwnerID sets the "owner_id" field.
+func (u *GroupUpsertBulk) SetOwnerID(v int64) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetOwnerID(v)
+	})
+}
+
+// AddOwnerID adds v to the "owner_id" field.
+func (u *GroupUpsertBulk) AddOwnerID(v int64) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.AddOwnerID(v)
+	})
+}
+
+// UpdateOwnerID sets the "owner_id" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateOwnerID() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateOwnerID()
+	})
+}
+
+// ClearOwnerID clears the value of the "owner_id" field.
+func (u *GroupUpsertBulk) ClearOwnerID() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.ClearOwnerID()
+	})
+}
+
+// SetSourceGroupID sets the "source_group_id" field.
+func (u *GroupUpsertBulk) SetSourceGroupID(v int64) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetSourceGroupID(v)
+	})
+}
+
+// AddSourceGroupID adds v to the "source_group_id" field.
+func (u *GroupUpsertBulk) AddSourceGroupID(v int64) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.AddSourceGroupID(v)
+	})
+}
+
+// UpdateSourceGroupID sets the "source_group_id" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateSourceGroupID() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateSourceGroupID()
+	})
+}
+
+// ClearSourceGroupID clears the value of the "source_group_id" field.
+func (u *GroupUpsertBulk) ClearSourceGroupID() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.ClearSourceGroupID()
+	})
+}
+
+// SetResellerTemplate sets the "reseller_template" field.
+func (u *GroupUpsertBulk) SetResellerTemplate(v bool) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetResellerTemplate(v)
+	})
+}
+
+// UpdateResellerTemplate sets the "reseller_template" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateResellerTemplate() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateResellerTemplate()
 	})
 }
 

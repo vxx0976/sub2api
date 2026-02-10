@@ -142,6 +142,19 @@ func (Group) Fields() []ent.Field {
 			Nillable().
 			SchemaType(map[string]string{dialect.Postgres: "text"}).
 			Comment("外部购买链接（如淘宝）"),
+
+		// 分销商所有权
+		field.Int64("owner_id").
+			Optional().
+			Nillable().
+			Comment("分销商用户 ID（NULL=管理员分组）"),
+		field.Int64("source_group_id").
+			Optional().
+			Nillable().
+			Comment("克隆来源的管理员模板分组 ID"),
+		field.Bool("reseller_template").
+			Default(false).
+			Comment("是否标记为分销商可用模板"),
 	}
 }
 
@@ -172,5 +185,6 @@ func (Group) Indexes() []ent.Index {
 		index.Fields("is_exclusive"),
 		index.Fields("deleted_at"),
 		index.Fields("sort_order"),
+		index.Fields("owner_id"),
 	}
 }

@@ -30,7 +30,6 @@ export interface KeyQueryResponse {
 }
 
 export interface UsageLog {
-  id: number
   created_at: string
   model: string
   input_tokens: number
@@ -39,7 +38,9 @@ export interface UsageLog {
   cache_read_tokens: number
   total_cost: number
   actual_cost: number
+  stream: boolean
   duration_ms: number | null
+  image_count?: number
 }
 
 export interface Pagination {

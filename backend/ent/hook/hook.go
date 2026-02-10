@@ -189,6 +189,30 @@ func (f ReferralRewardFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Val
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ReferralRewardMutation", m)
 }
 
+// The ResellerDomainFunc type is an adapter to allow the use of ordinary
+// function as ResellerDomain mutator.
+type ResellerDomainFunc func(context.Context, *ent.ResellerDomainMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ResellerDomainFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ResellerDomainMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ResellerDomainMutation", m)
+}
+
+// The ResellerSettingFunc type is an adapter to allow the use of ordinary
+// function as ResellerSetting mutator.
+type ResellerSettingFunc func(context.Context, *ent.ResellerSettingMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ResellerSettingFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ResellerSettingMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ResellerSettingMutation", m)
+}
+
 // The SettingFunc type is an adapter to allow the use of ordinary
 // function as Setting mutator.
 type SettingFunc func(context.Context, *ent.SettingMutation) (ent.Value, error)

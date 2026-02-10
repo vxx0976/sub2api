@@ -7,6 +7,7 @@ import { defineStore } from 'pinia'
 import { ref, computed, readonly } from 'vue'
 import { authAPI, isTotp2FARequired, type LoginResponse } from '@/api'
 import type { User, LoginRequest, RegisterRequest, AuthResponse } from '@/types'
+import { useAppStore } from '@/stores/app'
 
 const AUTH_TOKEN_KEY = 'auth_token'
 const AUTH_USER_KEY = 'auth_user'
@@ -34,6 +35,10 @@ export const useAuthStore = defineStore('auth', () => {
 
   const isAdmin = computed(() => {
     return user.value?.role === 'admin'
+  })
+
+  const isReseller = computed(() => {
+    return user.value?.role === 'reseller'
   })
 
   const isSimpleMode = computed(() => runMode.value === 'simple')
@@ -262,6 +267,12 @@ export const useAuthStore = defineStore('auth', () => {
    */
   async function register(userData: RegisterRequest): Promise<User> {
     try {
+      // Auto-inject parent_id when on a reseller domain
+      const appStore = useAppStore()
+      if (appStore.isResellerDomain && appStore.resellerId && !userData.parent_id) {
+        userData = { ...userData, parent_id: appStore.resellerId }
+      }
+
       const response = await authAPI.register(userData)
 
       // Use the common helper to set auth state
@@ -394,6 +405,7 @@ export const useAuthStore = defineStore('auth', () => {
     // Computed
     isAuthenticated,
     isAdmin,
+    isReseller,
     isSimpleMode,
 
     // Actions

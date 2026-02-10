@@ -188,6 +188,31 @@ func (r *orderRepository) ListAll(ctx context.Context, params pagination.Paginat
 	return orderEntitiesToService(orders), paginationResultFromTotal(int64(total), params), nil
 }
 
+func (r *orderRepository) ListByUserIDs(ctx context.Context, userIDs []int64, params pagination.PaginationParams) ([]service.Order, *pagination.PaginationResult, error) {
+	if len(userIDs) == 0 {
+		return nil, &pagination.PaginationResult{Total: 0, Page: params.Page, PageSize: params.PageSize, Pages: 0}, nil
+	}
+	client := clientFromContext(ctx, r.client)
+	q := client.Order.Query().Where(order.UserIDIn(userIDs...))
+
+	total, err := q.Clone().Count(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	orders, err := q.
+		WithUser().WithGroup().WithSubscription().
+		Order(dbent.Desc(order.FieldCreatedAt)).
+		Offset(params.Offset()).
+		Limit(params.Limit()).
+		All(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return orderEntitiesToService(orders), paginationResultFromTotal(int64(total), params), nil
+}
+
 func (r *orderRepository) ListPending(ctx context.Context) ([]service.Order, error) {
 	client := clientFromContext(ctx, r.client)
 	orders, err := client.Order.Query().

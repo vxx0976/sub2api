@@ -33,6 +33,7 @@ export interface SystemSettings {
   purchase_subscription_url: string
   crypto_addresses: string
   query_domain: string
+  default_locale: string
   // SMTP settings
   smtp_host: string
   smtp_port: number
@@ -91,6 +92,7 @@ export interface UpdateSettingsRequest {
   purchase_subscription_url?: string
   crypto_addresses?: string
   query_domain?: string
+  default_locale?: string
   smtp_host?: string
   smtp_port?: number
   smtp_username?: string

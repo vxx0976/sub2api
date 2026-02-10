@@ -38,6 +38,28 @@ type UserAnnouncement struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
+// PublicAnnouncement is a lightweight announcement DTO for public (no-auth) endpoints.
+type PublicAnnouncement struct {
+	ID        int64      `json:"id"`
+	Title     string     `json:"title"`
+	Content   string     `json:"content"`
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt time.Time  `json:"updated_at"`
+}
+
+func PublicAnnouncementFromService(a *service.Announcement) *PublicAnnouncement {
+	if a == nil {
+		return nil
+	}
+	return &PublicAnnouncement{
+		ID:        a.ID,
+		Title:     a.Title,
+		Content:   a.Content,
+		CreatedAt: a.CreatedAt,
+		UpdatedAt: a.UpdatedAt,
+	}
+}
+
 func AnnouncementFromService(a *service.Announcement) *Announcement {
 	if a == nil {
 		return nil

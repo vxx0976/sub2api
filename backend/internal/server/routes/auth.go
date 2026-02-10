@@ -71,6 +71,9 @@ func RegisterAuthRoutes(
 		publicGroup.POST("/key-usage/stats", rateLimit, h.KeyQuery.UsageStats)
 		publicGroup.POST("/key-usage/models", rateLimit, h.KeyQuery.UsageModels)
 		publicGroup.POST("/key-usage/trend", rateLimit, h.KeyQuery.UsageTrend)
+
+		// Public announcements (domain-aware, no auth required)
+		publicGroup.GET("/announcements", h.Announcement.ListPublic)
 	}
 
 	// 需要认证的当前用户信息

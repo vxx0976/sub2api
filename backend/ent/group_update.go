@@ -572,6 +572,74 @@ func (_u *GroupUpdate) ClearExternalBuyURL() *GroupUpdate {
 	return _u
 }
 
+// SetOwnerID sets the "owner_id" field.
+func (_u *GroupUpdate) SetOwnerID(v int64) *GroupUpdate {
+	_u.mutation.ResetOwnerID()
+	_u.mutation.SetOwnerID(v)
+	return _u
+}
+
+// SetNillableOwnerID sets the "owner_id" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillableOwnerID(v *int64) *GroupUpdate {
+	if v != nil {
+		_u.SetOwnerID(*v)
+	}
+	return _u
+}
+
+// AddOwnerID adds value to the "owner_id" field.
+func (_u *GroupUpdate) AddOwnerID(v int64) *GroupUpdate {
+	_u.mutation.AddOwnerID(v)
+	return _u
+}
+
+// ClearOwnerID clears the value of the "owner_id" field.
+func (_u *GroupUpdate) ClearOwnerID() *GroupUpdate {
+	_u.mutation.ClearOwnerID()
+	return _u
+}
+
+// SetSourceGroupID sets the "source_group_id" field.
+func (_u *GroupUpdate) SetSourceGroupID(v int64) *GroupUpdate {
+	_u.mutation.ResetSourceGroupID()
+	_u.mutation.SetSourceGroupID(v)
+	return _u
+}
+
+// SetNillableSourceGroupID sets the "source_group_id" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillableSourceGroupID(v *int64) *GroupUpdate {
+	if v != nil {
+		_u.SetSourceGroupID(*v)
+	}
+	return _u
+}
+
+// AddSourceGroupID adds value to the "source_group_id" field.
+func (_u *GroupUpdate) AddSourceGroupID(v int64) *GroupUpdate {
+	_u.mutation.AddSourceGroupID(v)
+	return _u
+}
+
+// ClearSourceGroupID clears the value of the "source_group_id" field.
+func (_u *GroupUpdate) ClearSourceGroupID() *GroupUpdate {
+	_u.mutation.ClearSourceGroupID()
+	return _u
+}
+
+// SetResellerTemplate sets the "reseller_template" field.
+func (_u *GroupUpdate) SetResellerTemplate(v bool) *GroupUpdate {
+	_u.mutation.SetResellerTemplate(v)
+	return _u
+}
+
+// SetNillableResellerTemplate sets the "reseller_template" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillableResellerTemplate(v *bool) *GroupUpdate {
+	if v != nil {
+		_u.SetResellerTemplate(*v)
+	}
+	return _u
+}
+
 // AddAPIKeyIDs adds the "api_keys" edge to the APIKey entity by IDs.
 func (_u *GroupUpdate) AddAPIKeyIDs(ids ...int64) *GroupUpdate {
 	_u.mutation.AddAPIKeyIDs(ids...)
@@ -1071,6 +1139,27 @@ func (_u *GroupUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.ExternalBuyURLCleared() {
 		_spec.ClearField(group.FieldExternalBuyURL, field.TypeString)
+	}
+	if value, ok := _u.mutation.OwnerID(); ok {
+		_spec.SetField(group.FieldOwnerID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedOwnerID(); ok {
+		_spec.AddField(group.FieldOwnerID, field.TypeInt64, value)
+	}
+	if _u.mutation.OwnerIDCleared() {
+		_spec.ClearField(group.FieldOwnerID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.SourceGroupID(); ok {
+		_spec.SetField(group.FieldSourceGroupID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedSourceGroupID(); ok {
+		_spec.AddField(group.FieldSourceGroupID, field.TypeInt64, value)
+	}
+	if _u.mutation.SourceGroupIDCleared() {
+		_spec.ClearField(group.FieldSourceGroupID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.ResellerTemplate(); ok {
+		_spec.SetField(group.FieldResellerTemplate, field.TypeBool, value)
 	}
 	if _u.mutation.APIKeysCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -1967,6 +2056,74 @@ func (_u *GroupUpdateOne) ClearExternalBuyURL() *GroupUpdateOne {
 	return _u
 }
 
+// SetOwnerID sets the "owner_id" field.
+func (_u *GroupUpdateOne) SetOwnerID(v int64) *GroupUpdateOne {
+	_u.mutation.ResetOwnerID()
+	_u.mutation.SetOwnerID(v)
+	return _u
+}
+
+// SetNillableOwnerID sets the "owner_id" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillableOwnerID(v *int64) *GroupUpdateOne {
+	if v != nil {
+		_u.SetOwnerID(*v)
+	}
+	return _u
+}
+
+// AddOwnerID adds value to the "owner_id" field.
+func (_u *GroupUpdateOne) AddOwnerID(v int64) *GroupUpdateOne {
+	_u.mutation.AddOwnerID(v)
+	return _u
+}
+
+// ClearOwnerID clears the value of the "owner_id" field.
+func (_u *GroupUpdateOne) ClearOwnerID() *GroupUpdateOne {
+	_u.mutation.ClearOwnerID()
+	return _u
+}
+
+// SetSourceGroupID sets the "source_group_id" field.
+func (_u *GroupUpdateOne) SetSourceGroupID(v int64) *GroupUpdateOne {
+	_u.mutation.ResetSourceGroupID()
+	_u.mutation.SetSourceGroupID(v)
+	return _u
+}
+
+// SetNillableSourceGroupID sets the "source_group_id" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillableSourceGroupID(v *int64) *GroupUpdateOne {
+	if v != nil {
+		_u.SetSourceGroupID(*v)
+	}
+	return _u
+}
+
+// AddSourceGroupID adds value to the "source_group_id" field.
+func (_u *GroupUpdateOne) AddSourceGroupID(v int64) *GroupUpdateOne {
+	_u.mutation.AddSourceGroupID(v)
+	return _u
+}
+
+// ClearSourceGroupID clears the value of the "source_group_id" field.
+func (_u *GroupUpdateOne) ClearSourceGroupID() *GroupUpdateOne {
+	_u.mutation.ClearSourceGroupID()
+	return _u
+}
+
+// SetResellerTemplate sets the "reseller_template" field.
+func (_u *GroupUpdateOne) SetResellerTemplate(v bool) *GroupUpdateOne {
+	_u.mutation.SetResellerTemplate(v)
+	return _u
+}
+
+// SetNillableResellerTemplate sets the "reseller_template" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillableResellerTemplate(v *bool) *GroupUpdateOne {
+	if v != nil {
+		_u.SetResellerTemplate(*v)
+	}
+	return _u
+}
+
 // AddAPIKeyIDs adds the "api_keys" edge to the APIKey entity by IDs.
 func (_u *GroupUpdateOne) AddAPIKeyIDs(ids ...int64) *GroupUpdateOne {
 	_u.mutation.AddAPIKeyIDs(ids...)
@@ -2496,6 +2653,27 @@ func (_u *GroupUpdateOne) sqlSave(ctx context.Context) (_node *Group, err error)
 	}
 	if _u.mutation.ExternalBuyURLCleared() {
 		_spec.ClearField(group.FieldExternalBuyURL, field.TypeString)
+	}
+	if value, ok := _u.mutation.OwnerID(); ok {
+		_spec.SetField(group.FieldOwnerID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedOwnerID(); ok {
+		_spec.AddField(group.FieldOwnerID, field.TypeInt64, value)
+	}
+	if _u.mutation.OwnerIDCleared() {
+		_spec.ClearField(group.FieldOwnerID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.SourceGroupID(); ok {
+		_spec.SetField(group.FieldSourceGroupID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedSourceGroupID(); ok {
+		_spec.AddField(group.FieldSourceGroupID, field.TypeInt64, value)
+	}
+	if _u.mutation.SourceGroupIDCleared() {
+		_spec.ClearField(group.FieldSourceGroupID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.ResellerTemplate(); ok {
+		_spec.SetField(group.FieldResellerTemplate, field.TypeBool, value)
 	}
 	if _u.mutation.APIKeysCleared() {
 		edge := &sqlgraph.EdgeSpec{

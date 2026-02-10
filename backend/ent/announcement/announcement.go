@@ -34,6 +34,8 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
+	// FieldOwnerID holds the string denoting the owner_id field in the database.
+	FieldOwnerID = "owner_id"
 	// EdgeReads holds the string denoting the reads edge name in mutations.
 	EdgeReads = "reads"
 	// Table holds the table name of the announcement in the database.
@@ -60,6 +62,7 @@ var Columns = []string{
 	FieldUpdatedBy,
 	FieldCreatedAt,
 	FieldUpdatedAt,
+	FieldOwnerID,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -140,6 +143,11 @@ func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByUpdatedAt orders the results by the updated_at field.
 func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
+}
+
+// ByOwnerID orders the results by the owner_id field.
+func ByOwnerID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldOwnerID, opts...).ToFunc()
 }
 
 // ByReadsCount orders the results by reads count.

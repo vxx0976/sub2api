@@ -32,6 +32,12 @@ export const useAppStore = defineStore('app', () => {
   const docUrl = ref<string>('')
   const cachedPublicSettings = ref<PublicSettings | null>(null)
 
+  // Reseller domain branding (set when accessed via a reseller's custom domain)
+  const resellerId = ref<number | null>(null)
+  const resellerDomain = ref<string>('')
+  const brandColor = ref<string>('')
+  const isResellerDomain = computed(() => resellerId.value !== null && resellerId.value > 0)
+
   // Version cache state
   const versionLoaded = ref<boolean>(false)
   const versionLoading = ref<boolean>(false)
@@ -291,6 +297,31 @@ export const useAppStore = defineStore('app', () => {
     apiBaseUrl.value = config.api_base_url || ''
     docUrl.value = config.doc_url || ''
     publicSettingsLoaded.value = true
+
+    // Reseller domain branding
+    resellerId.value = config.reseller_id ?? null
+    resellerDomain.value = config.reseller_domain || ''
+    brandColor.value = config.brand_color || ''
+
+    // Apply custom CSS from reseller branding
+    if (config.custom_css) {
+      applyCustomCSS(config.custom_css)
+    }
+  }
+
+  /**
+   * Inject reseller custom CSS into the document head
+   */
+  function applyCustomCSS(css: string): void {
+    const existingStyle = document.getElementById('reseller-custom-css')
+    if (existingStyle) {
+      existingStyle.textContent = css
+      return
+    }
+    const style = document.createElement('style')
+    style.id = 'reseller-custom-css'
+    style.textContent = css
+    document.head.appendChild(style)
   }
 
   /**
@@ -389,6 +420,12 @@ export const useAppStore = defineStore('app', () => {
     apiBaseUrl,
     docUrl,
     cachedPublicSettings,
+
+    // Reseller domain state
+    resellerId,
+    resellerDomain,
+    brandColor,
+    isResellerDomain,
 
     // Version state
     versionLoaded,

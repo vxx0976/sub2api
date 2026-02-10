@@ -38,6 +38,9 @@ func (r *announcementRepository) Create(ctx context.Context, a *service.Announce
 	if a.UpdatedBy != nil {
 		builder.SetUpdatedBy(*a.UpdatedBy)
 	}
+	if a.OwnerID != nil {
+		builder.SetOwnerID(*a.OwnerID)
+	}
 
 	created, err := builder.Save(ctx)
 	if err != nil {
@@ -155,6 +158,23 @@ func (r *announcementRepository) ListActive(ctx context.Context, now time.Time) 
 	return announcementEntitiesToService(items), nil
 }
 
+func (r *announcementRepository) ListActiveByOwnerID(ctx context.Context, ownerID int64, now time.Time) ([]service.Announcement, error) {
+	q := r.client.Announcement.Query().
+		Where(
+			announcement.StatusEQ(service.AnnouncementStatusActive),
+			announcement.OwnerIDEQ(ownerID),
+			announcement.Or(announcement.StartsAtIsNil(), announcement.StartsAtLTE(now)),
+			announcement.Or(announcement.EndsAtIsNil(), announcement.EndsAtGT(now)),
+		).
+		Order(dbent.Desc(announcement.FieldID))
+
+	items, err := q.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return announcementEntitiesToService(items), nil
+}
+
 func applyAnnouncementEntityToService(dst *service.Announcement, src *dbent.Announcement) {
 	if dst == nil || src == nil {
 		return
@@ -180,6 +200,7 @@ func announcementEntityToService(m *dbent.Announcement) *service.Announcement {
 		UpdatedBy: m.UpdatedBy,
 		CreatedAt: m.CreatedAt,
 		UpdatedAt: m.UpdatedAt,
+		OwnerID:   m.OwnerID,
 	}
 }
 

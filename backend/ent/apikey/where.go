@@ -85,6 +85,11 @@ func Name(v string) predicate.APIKey {
 	return predicate.APIKey(sql.FieldEQ(FieldName, v))
 }
 
+// Notes applies equality check predicate on the "notes" field. It's identical to NotesEQ.
+func Notes(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldEQ(FieldNotes, v))
+}
+
 // GroupID applies equality check predicate on the "group_id" field. It's identical to GroupIDEQ.
 func GroupID(v int64) predicate.APIKey {
 	return predicate.APIKey(sql.FieldEQ(FieldGroupID, v))
@@ -108,6 +113,11 @@ func QuotaUsed(v float64) predicate.APIKey {
 // ExpiresAt applies equality check predicate on the "expires_at" field. It's identical to ExpiresAtEQ.
 func ExpiresAt(v time.Time) predicate.APIKey {
 	return predicate.APIKey(sql.FieldEQ(FieldExpiresAt, v))
+}
+
+// TgChatID applies equality check predicate on the "tg_chat_id" field. It's identical to TgChatIDEQ.
+func TgChatID(v int64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldEQ(FieldTgChatID, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
@@ -390,6 +400,71 @@ func NameContainsFold(v string) predicate.APIKey {
 	return predicate.APIKey(sql.FieldContainsFold(FieldName, v))
 }
 
+// NotesEQ applies the EQ predicate on the "notes" field.
+func NotesEQ(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldEQ(FieldNotes, v))
+}
+
+// NotesNEQ applies the NEQ predicate on the "notes" field.
+func NotesNEQ(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldNEQ(FieldNotes, v))
+}
+
+// NotesIn applies the In predicate on the "notes" field.
+func NotesIn(vs ...string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldIn(FieldNotes, vs...))
+}
+
+// NotesNotIn applies the NotIn predicate on the "notes" field.
+func NotesNotIn(vs ...string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldNotIn(FieldNotes, vs...))
+}
+
+// NotesGT applies the GT predicate on the "notes" field.
+func NotesGT(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldGT(FieldNotes, v))
+}
+
+// NotesGTE applies the GTE predicate on the "notes" field.
+func NotesGTE(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldGTE(FieldNotes, v))
+}
+
+// NotesLT applies the LT predicate on the "notes" field.
+func NotesLT(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldLT(FieldNotes, v))
+}
+
+// NotesLTE applies the LTE predicate on the "notes" field.
+func NotesLTE(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldLTE(FieldNotes, v))
+}
+
+// NotesContains applies the Contains predicate on the "notes" field.
+func NotesContains(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldContains(FieldNotes, v))
+}
+
+// NotesHasPrefix applies the HasPrefix predicate on the "notes" field.
+func NotesHasPrefix(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldHasPrefix(FieldNotes, v))
+}
+
+// NotesHasSuffix applies the HasSuffix predicate on the "notes" field.
+func NotesHasSuffix(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldHasSuffix(FieldNotes, v))
+}
+
+// NotesEqualFold applies the EqualFold predicate on the "notes" field.
+func NotesEqualFold(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldEqualFold(FieldNotes, v))
+}
+
+// NotesContainsFold applies the ContainsFold predicate on the "notes" field.
+func NotesContainsFold(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldContainsFold(FieldNotes, v))
+}
+
 // GroupIDEQ applies the EQ predicate on the "group_id" field.
 func GroupIDEQ(v int64) predicate.APIKey {
 	return predicate.APIKey(sql.FieldEQ(FieldGroupID, v))
@@ -633,6 +708,56 @@ func ExpiresAtIsNil() predicate.APIKey {
 // ExpiresAtNotNil applies the NotNil predicate on the "expires_at" field.
 func ExpiresAtNotNil() predicate.APIKey {
 	return predicate.APIKey(sql.FieldNotNull(FieldExpiresAt))
+}
+
+// TgChatIDEQ applies the EQ predicate on the "tg_chat_id" field.
+func TgChatIDEQ(v int64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldEQ(FieldTgChatID, v))
+}
+
+// TgChatIDNEQ applies the NEQ predicate on the "tg_chat_id" field.
+func TgChatIDNEQ(v int64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldNEQ(FieldTgChatID, v))
+}
+
+// TgChatIDIn applies the In predicate on the "tg_chat_id" field.
+func TgChatIDIn(vs ...int64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldIn(FieldTgChatID, vs...))
+}
+
+// TgChatIDNotIn applies the NotIn predicate on the "tg_chat_id" field.
+func TgChatIDNotIn(vs ...int64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldNotIn(FieldTgChatID, vs...))
+}
+
+// TgChatIDGT applies the GT predicate on the "tg_chat_id" field.
+func TgChatIDGT(v int64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldGT(FieldTgChatID, v))
+}
+
+// TgChatIDGTE applies the GTE predicate on the "tg_chat_id" field.
+func TgChatIDGTE(v int64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldGTE(FieldTgChatID, v))
+}
+
+// TgChatIDLT applies the LT predicate on the "tg_chat_id" field.
+func TgChatIDLT(v int64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldLT(FieldTgChatID, v))
+}
+
+// TgChatIDLTE applies the LTE predicate on the "tg_chat_id" field.
+func TgChatIDLTE(v int64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldLTE(FieldTgChatID, v))
+}
+
+// TgChatIDIsNil applies the IsNil predicate on the "tg_chat_id" field.
+func TgChatIDIsNil() predicate.APIKey {
+	return predicate.APIKey(sql.FieldIsNull(FieldTgChatID))
+}
+
+// TgChatIDNotNil applies the NotNil predicate on the "tg_chat_id" field.
+func TgChatIDNotNil() predicate.APIKey {
+	return predicate.APIKey(sql.FieldNotNull(FieldTgChatID))
 }
 
 // HasUser applies the HasEdge predicate on the "user" edge.

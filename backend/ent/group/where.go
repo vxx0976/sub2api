@@ -190,6 +190,21 @@ func ExternalBuyURL(v string) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldExternalBuyURL, v))
 }
 
+// OwnerID applies equality check predicate on the "owner_id" field. It's identical to OwnerIDEQ.
+func OwnerID(v int64) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldOwnerID, v))
+}
+
+// SourceGroupID applies equality check predicate on the "source_group_id" field. It's identical to SourceGroupIDEQ.
+func SourceGroupID(v int64) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldSourceGroupID, v))
+}
+
+// ResellerTemplate applies equality check predicate on the "reseller_template" field. It's identical to ResellerTemplateEQ.
+func ResellerTemplate(v bool) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldResellerTemplate, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldCreatedAt, v))
@@ -1368,6 +1383,116 @@ func ExternalBuyURLEqualFold(v string) predicate.Group {
 // ExternalBuyURLContainsFold applies the ContainsFold predicate on the "external_buy_url" field.
 func ExternalBuyURLContainsFold(v string) predicate.Group {
 	return predicate.Group(sql.FieldContainsFold(FieldExternalBuyURL, v))
+}
+
+// OwnerIDEQ applies the EQ predicate on the "owner_id" field.
+func OwnerIDEQ(v int64) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldOwnerID, v))
+}
+
+// OwnerIDNEQ applies the NEQ predicate on the "owner_id" field.
+func OwnerIDNEQ(v int64) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldOwnerID, v))
+}
+
+// OwnerIDIn applies the In predicate on the "owner_id" field.
+func OwnerIDIn(vs ...int64) predicate.Group {
+	return predicate.Group(sql.FieldIn(FieldOwnerID, vs...))
+}
+
+// OwnerIDNotIn applies the NotIn predicate on the "owner_id" field.
+func OwnerIDNotIn(vs ...int64) predicate.Group {
+	return predicate.Group(sql.FieldNotIn(FieldOwnerID, vs...))
+}
+
+// OwnerIDGT applies the GT predicate on the "owner_id" field.
+func OwnerIDGT(v int64) predicate.Group {
+	return predicate.Group(sql.FieldGT(FieldOwnerID, v))
+}
+
+// OwnerIDGTE applies the GTE predicate on the "owner_id" field.
+func OwnerIDGTE(v int64) predicate.Group {
+	return predicate.Group(sql.FieldGTE(FieldOwnerID, v))
+}
+
+// OwnerIDLT applies the LT predicate on the "owner_id" field.
+func OwnerIDLT(v int64) predicate.Group {
+	return predicate.Group(sql.FieldLT(FieldOwnerID, v))
+}
+
+// OwnerIDLTE applies the LTE predicate on the "owner_id" field.
+func OwnerIDLTE(v int64) predicate.Group {
+	return predicate.Group(sql.FieldLTE(FieldOwnerID, v))
+}
+
+// OwnerIDIsNil applies the IsNil predicate on the "owner_id" field.
+func OwnerIDIsNil() predicate.Group {
+	return predicate.Group(sql.FieldIsNull(FieldOwnerID))
+}
+
+// OwnerIDNotNil applies the NotNil predicate on the "owner_id" field.
+func OwnerIDNotNil() predicate.Group {
+	return predicate.Group(sql.FieldNotNull(FieldOwnerID))
+}
+
+// SourceGroupIDEQ applies the EQ predicate on the "source_group_id" field.
+func SourceGroupIDEQ(v int64) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldSourceGroupID, v))
+}
+
+// SourceGroupIDNEQ applies the NEQ predicate on the "source_group_id" field.
+func SourceGroupIDNEQ(v int64) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldSourceGroupID, v))
+}
+
+// SourceGroupIDIn applies the In predicate on the "source_group_id" field.
+func SourceGroupIDIn(vs ...int64) predicate.Group {
+	return predicate.Group(sql.FieldIn(FieldSourceGroupID, vs...))
+}
+
+// SourceGroupIDNotIn applies the NotIn predicate on the "source_group_id" field.
+func SourceGroupIDNotIn(vs ...int64) predicate.Group {
+	return predicate.Group(sql.FieldNotIn(FieldSourceGroupID, vs...))
+}
+
+// SourceGroupIDGT applies the GT predicate on the "source_group_id" field.
+func SourceGroupIDGT(v int64) predicate.Group {
+	return predicate.Group(sql.FieldGT(FieldSourceGroupID, v))
+}
+
+// SourceGroupIDGTE applies the GTE predicate on the "source_group_id" field.
+func SourceGroupIDGTE(v int64) predicate.Group {
+	return predicate.Group(sql.FieldGTE(FieldSourceGroupID, v))
+}
+
+// SourceGroupIDLT applies the LT predicate on the "source_group_id" field.
+func SourceGroupIDLT(v int64) predicate.Group {
+	return predicate.Group(sql.FieldLT(FieldSourceGroupID, v))
+}
+
+// SourceGroupIDLTE applies the LTE predicate on the "source_group_id" field.
+func SourceGroupIDLTE(v int64) predicate.Group {
+	return predicate.Group(sql.FieldLTE(FieldSourceGroupID, v))
+}
+
+// SourceGroupIDIsNil applies the IsNil predicate on the "source_group_id" field.
+func SourceGroupIDIsNil() predicate.Group {
+	return predicate.Group(sql.FieldIsNull(FieldSourceGroupID))
+}
+
+// SourceGroupIDNotNil applies the NotNil predicate on the "source_group_id" field.
+func SourceGroupIDNotNil() predicate.Group {
+	return predicate.Group(sql.FieldNotNull(FieldSourceGroupID))
+}
+
+// ResellerTemplateEQ applies the EQ predicate on the "reseller_template" field.
+func ResellerTemplateEQ(v bool) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldResellerTemplate, v))
+}
+
+// ResellerTemplateNEQ applies the NEQ predicate on the "reseller_template" field.
+func ResellerTemplateNEQ(v bool) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldResellerTemplate, v))
 }
 
 // HasAPIKeys applies the HasEdge predicate on the "api_keys" edge.

@@ -81,6 +81,7 @@ type CreateUserInput struct {
 	Password      string
 	Username      string
 	Notes         string
+	Role          string // "user" or "reseller"; defaults to "user"
 	Balance       float64
 	Concurrency   int
 	AllowedGroups []int64
@@ -91,6 +92,7 @@ type UpdateUserInput struct {
 	Password      string
 	Username      *string
 	Notes         *string
+	Role          string   // "user" or "reseller"; empty means no change
 	Balance       *float64 // 使用指针区分"未提供"和"设置为0"
 	Concurrency   *int     // 使用指针区分"未提供"和"设置为0"
 	Status        string
@@ -132,6 +134,7 @@ type CreateGroupInput struct {
 	IsPurchasable       bool
 	SortOrder           int
 	IsRecommended       bool
+	ResellerTemplate    bool
 	ExternalBuyURL      *string
 }
 
@@ -168,6 +171,7 @@ type UpdateGroupInput struct {
 	IsPurchasable       *bool
 	SortOrder           *int
 	IsRecommended       *bool
+	ResellerTemplate    *bool
 	ExternalBuyURL      *string
 }
 
@@ -389,11 +393,17 @@ func (s *adminServiceImpl) GetUser(ctx context.Context, id int64) (*User, error)
 }
 
 func (s *adminServiceImpl) CreateUser(ctx context.Context, input *CreateUserInput) (*User, error) {
+	// Determine role: allow "user" or "reseller", default to "user"
+	role := RoleUser
+	if input.Role == RoleReseller {
+		role = RoleReseller
+	}
+
 	user := &User{
 		Email:         input.Email,
 		Username:      input.Username,
 		Notes:         input.Notes,
-		Role:          RoleUser, // Always create as regular user, never admin
+		Role:          role,
 		Balance:       input.Balance,
 		Concurrency:   input.Concurrency,
 		Status:        StatusActive,
@@ -449,6 +459,15 @@ func (s *adminServiceImpl) UpdateUser(ctx context.Context, id int64, input *Upda
 
 	if input.AllowedGroups != nil {
 		user.AllowedGroups = *input.AllowedGroups
+	}
+
+	// Handle role change: only allow user/reseller, never set to admin via this API
+	if input.Role != "" && input.Role != user.Role {
+		if input.Role == RoleUser || input.Role == RoleReseller {
+			user.Role = input.Role
+			// Increment RoleVersion to invalidate all existing JWT tokens
+			user.RoleVersion++
+		}
 	}
 
 	if err := s.userRepo.Update(ctx, user); err != nil {
@@ -741,6 +760,7 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 		IsPurchasable:                   input.IsPurchasable,
 		SortOrder:                       input.SortOrder,
 		IsRecommended:                   input.IsRecommended,
+		ResellerTemplate:                input.ResellerTemplate,
 		ExternalBuyURL:                  input.ExternalBuyURL,
 	}
 	if err := s.groupRepo.Create(ctx, group); err != nil {
@@ -955,6 +975,9 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 	}
 	if input.IsRecommended != nil {
 		group.IsRecommended = *input.IsRecommended
+	}
+	if input.ResellerTemplate != nil {
+		group.ResellerTemplate = *input.ResellerTemplate
 	}
 	if input.ExternalBuyURL != nil {
 		if *input.ExternalBuyURL == "" {

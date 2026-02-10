@@ -87,6 +87,22 @@ func (User) Fields() []ent.Field {
 		field.Time("totp_enabled_at").
 			Optional().
 			Nillable(),
+
+		// 分销商层级关系
+		field.Int64("parent_id").
+			Optional().
+			Nillable().
+			Comment("上级分销商用户 ID"),
+
+		// Token 版本控制（密码修改时递增，使旧 token 失效）
+		field.Int64("token_version").
+			Default(0).
+			Comment("Token 版本号，密码修改时递增"),
+
+		// 角色版本控制（角色变更时递增，使旧 token 失效）
+		field.Int64("role_version").
+			Default(0).
+			Comment("角色版本号，角色变更时递增"),
 	}
 }
 
@@ -107,6 +123,16 @@ func (User) Edges() []ent.Edge {
 		// Referral system edges
 		edge.To("referral_rewards_given", ReferralReward.Type),
 		edge.To("referral_reward_received", ReferralReward.Type),
+		// 分销商层级：一个用户有多个下级用户
+		edge.To("sub_users", User.Type).
+			Annotations(entsql.OnDelete(entsql.SetNull)),
+		// 分销商层级：一个用户有一个上级（反向边）
+		edge.From("parent", User.Type).
+			Ref("sub_users").
+			Field("parent_id").
+			Unique(),
+		// 分销商自定义域名
+		edge.To("reseller_domains", ResellerDomain.Type),
 	}
 }
 
@@ -115,5 +141,6 @@ func (User) Indexes() []ent.Index {
 		// email 字段已在 Fields() 中声明 Unique()，无需重复索引
 		index.Fields("status"),
 		index.Fields("deleted_at"),
+		index.Fields("parent_id"),
 	}
 }

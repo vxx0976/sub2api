@@ -25,8 +25,28 @@
 
     <!-- Navigation -->
     <nav class="sidebar-nav scrollbar-hide">
+      <!-- Reseller View -->
+      <template v-if="isReseller">
+        <div class="sidebar-section">
+          <router-link
+            v-for="item in resellerNavItems"
+            :key="item.path"
+            :to="item.path"
+            class="sidebar-link mb-1"
+            :class="{ 'sidebar-link-active': isActive(item.path) }"
+            :title="sidebarCollapsed ? item.label : undefined"
+            @click="handleMenuItemClick(item.path)"
+          >
+            <component :is="item.icon" class="h-5 w-5 flex-shrink-0" />
+            <transition name="fade">
+              <span v-if="!sidebarCollapsed">{{ item.label }}</span>
+            </transition>
+          </router-link>
+        </div>
+      </template>
+
       <!-- Admin View: Admin menu first, then personal menu -->
-      <template v-if="isAdmin">
+      <template v-else-if="isAdmin">
         <!-- Admin Section -->
         <div class="sidebar-section">
           <router-link
@@ -138,6 +158,7 @@ const adminSettingsStore = useAdminSettingsStore()
 const sidebarCollapsed = computed(() => appStore.sidebarCollapsed)
 const mobileOpen = computed(() => appStore.mobileOpen)
 const isAdmin = computed(() => authStore.isAdmin)
+const isReseller = computed(() => authStore.isReseller)
 const isDark = ref(document.documentElement.classList.contains('dark'))
 
 // Site settings from appStore (cached, no flicker)
@@ -477,6 +498,15 @@ const userNavItems = computed(() => {
   ]
   return authStore.isSimpleMode ? items.filter(item => !item.hideInSimpleMode) : items
 })
+
+// Reseller navigation items
+const resellerNavItems = computed(() => [
+  { path: '/dashboard', label: t('nav.dashboard'), icon: DashboardIcon },
+  { path: '/keys', label: t('nav.apiKeys'), icon: KeyIcon },
+  { path: '/usage', label: t('nav.usage'), icon: ChartIcon },
+  { path: '/reseller/domains', label: t('nav.resellerSites'), icon: GlobeIcon },
+  { path: '/reseller/settings', label: t('nav.resellerSettings'), icon: CogIcon },
+])
 
 // Admin navigation items
 const adminNavItems = computed(() => {

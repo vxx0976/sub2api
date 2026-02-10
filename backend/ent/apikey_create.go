@@ -85,6 +85,20 @@ func (_c *APIKeyCreate) SetName(v string) *APIKeyCreate {
 	return _c
 }
 
+// SetNotes sets the "notes" field.
+func (_c *APIKeyCreate) SetNotes(v string) *APIKeyCreate {
+	_c.mutation.SetNotes(v)
+	return _c
+}
+
+// SetNillableNotes sets the "notes" field if the given value is not nil.
+func (_c *APIKeyCreate) SetNillableNotes(v *string) *APIKeyCreate {
+	if v != nil {
+		_c.SetNotes(*v)
+	}
+	return _c
+}
+
 // SetGroupID sets the "group_id" field.
 func (_c *APIKeyCreate) SetGroupID(v int64) *APIKeyCreate {
 	_c.mutation.SetGroupID(v)
@@ -167,6 +181,20 @@ func (_c *APIKeyCreate) SetNillableExpiresAt(v *time.Time) *APIKeyCreate {
 	return _c
 }
 
+// SetTgChatID sets the "tg_chat_id" field.
+func (_c *APIKeyCreate) SetTgChatID(v int64) *APIKeyCreate {
+	_c.mutation.SetTgChatID(v)
+	return _c
+}
+
+// SetNillableTgChatID sets the "tg_chat_id" field if the given value is not nil.
+func (_c *APIKeyCreate) SetNillableTgChatID(v *int64) *APIKeyCreate {
+	if v != nil {
+		_c.SetTgChatID(*v)
+	}
+	return _c
+}
+
 // SetUser sets the "user" edge to the User entity.
 func (_c *APIKeyCreate) SetUser(v *User) *APIKeyCreate {
 	return _c.SetUserID(v.ID)
@@ -243,6 +271,10 @@ func (_c *APIKeyCreate) defaults() error {
 		v := apikey.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.Notes(); !ok {
+		v := apikey.DefaultNotes
+		_c.mutation.SetNotes(v)
+	}
 	if _, ok := _c.mutation.Status(); !ok {
 		v := apikey.DefaultStatus
 		_c.mutation.SetStatus(v)
@@ -283,6 +315,14 @@ func (_c *APIKeyCreate) check() error {
 	if v, ok := _c.mutation.Name(); ok {
 		if err := apikey.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "APIKey.name": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.Notes(); !ok {
+		return &ValidationError{Name: "notes", err: errors.New(`ent: missing required field "APIKey.notes"`)}
+	}
+	if v, ok := _c.mutation.Notes(); ok {
+		if err := apikey.NotesValidator(v); err != nil {
+			return &ValidationError{Name: "notes", err: fmt.Errorf(`ent: validator failed for field "APIKey.notes": %w`, err)}
 		}
 	}
 	if _, ok := _c.mutation.Status(); !ok {
@@ -349,6 +389,10 @@ func (_c *APIKeyCreate) createSpec() (*APIKey, *sqlgraph.CreateSpec) {
 		_spec.SetField(apikey.FieldName, field.TypeString, value)
 		_node.Name = value
 	}
+	if value, ok := _c.mutation.Notes(); ok {
+		_spec.SetField(apikey.FieldNotes, field.TypeString, value)
+		_node.Notes = value
+	}
 	if value, ok := _c.mutation.Status(); ok {
 		_spec.SetField(apikey.FieldStatus, field.TypeString, value)
 		_node.Status = value
@@ -372,6 +416,10 @@ func (_c *APIKeyCreate) createSpec() (*APIKey, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.ExpiresAt(); ok {
 		_spec.SetField(apikey.FieldExpiresAt, field.TypeTime, value)
 		_node.ExpiresAt = &value
+	}
+	if value, ok := _c.mutation.TgChatID(); ok {
+		_spec.SetField(apikey.FieldTgChatID, field.TypeInt64, value)
+		_node.TgChatID = &value
 	}
 	if nodes := _c.mutation.UserIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -541,6 +589,18 @@ func (u *APIKeyUpsert) UpdateName() *APIKeyUpsert {
 	return u
 }
 
+// SetNotes sets the "notes" field.
+func (u *APIKeyUpsert) SetNotes(v string) *APIKeyUpsert {
+	u.Set(apikey.FieldNotes, v)
+	return u
+}
+
+// UpdateNotes sets the "notes" field to the value that was provided on create.
+func (u *APIKeyUpsert) UpdateNotes() *APIKeyUpsert {
+	u.SetExcluded(apikey.FieldNotes)
+	return u
+}
+
 // SetGroupID sets the "group_id" field.
 func (u *APIKeyUpsert) SetGroupID(v int64) *APIKeyUpsert {
 	u.Set(apikey.FieldGroupID, v)
@@ -658,6 +718,30 @@ func (u *APIKeyUpsert) UpdateExpiresAt() *APIKeyUpsert {
 // ClearExpiresAt clears the value of the "expires_at" field.
 func (u *APIKeyUpsert) ClearExpiresAt() *APIKeyUpsert {
 	u.SetNull(apikey.FieldExpiresAt)
+	return u
+}
+
+// SetTgChatID sets the "tg_chat_id" field.
+func (u *APIKeyUpsert) SetTgChatID(v int64) *APIKeyUpsert {
+	u.Set(apikey.FieldTgChatID, v)
+	return u
+}
+
+// UpdateTgChatID sets the "tg_chat_id" field to the value that was provided on create.
+func (u *APIKeyUpsert) UpdateTgChatID() *APIKeyUpsert {
+	u.SetExcluded(apikey.FieldTgChatID)
+	return u
+}
+
+// AddTgChatID adds v to the "tg_chat_id" field.
+func (u *APIKeyUpsert) AddTgChatID(v int64) *APIKeyUpsert {
+	u.Add(apikey.FieldTgChatID, v)
+	return u
+}
+
+// ClearTgChatID clears the value of the "tg_chat_id" field.
+func (u *APIKeyUpsert) ClearTgChatID() *APIKeyUpsert {
+	u.SetNull(apikey.FieldTgChatID)
 	return u
 }
 
@@ -780,6 +864,20 @@ func (u *APIKeyUpsertOne) SetName(v string) *APIKeyUpsertOne {
 func (u *APIKeyUpsertOne) UpdateName() *APIKeyUpsertOne {
 	return u.Update(func(s *APIKeyUpsert) {
 		s.UpdateName()
+	})
+}
+
+// SetNotes sets the "notes" field.
+func (u *APIKeyUpsertOne) SetNotes(v string) *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.SetNotes(v)
+	})
+}
+
+// UpdateNotes sets the "notes" field to the value that was provided on create.
+func (u *APIKeyUpsertOne) UpdateNotes() *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.UpdateNotes()
 	})
 }
 
@@ -920,6 +1018,34 @@ func (u *APIKeyUpsertOne) UpdateExpiresAt() *APIKeyUpsertOne {
 func (u *APIKeyUpsertOne) ClearExpiresAt() *APIKeyUpsertOne {
 	return u.Update(func(s *APIKeyUpsert) {
 		s.ClearExpiresAt()
+	})
+}
+
+// SetTgChatID sets the "tg_chat_id" field.
+func (u *APIKeyUpsertOne) SetTgChatID(v int64) *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.SetTgChatID(v)
+	})
+}
+
+// AddTgChatID adds v to the "tg_chat_id" field.
+func (u *APIKeyUpsertOne) AddTgChatID(v int64) *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.AddTgChatID(v)
+	})
+}
+
+// UpdateTgChatID sets the "tg_chat_id" field to the value that was provided on create.
+func (u *APIKeyUpsertOne) UpdateTgChatID() *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.UpdateTgChatID()
+	})
+}
+
+// ClearTgChatID clears the value of the "tg_chat_id" field.
+func (u *APIKeyUpsertOne) ClearTgChatID() *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.ClearTgChatID()
 	})
 }
 
@@ -1211,6 +1337,20 @@ func (u *APIKeyUpsertBulk) UpdateName() *APIKeyUpsertBulk {
 	})
 }
 
+// SetNotes sets the "notes" field.
+func (u *APIKeyUpsertBulk) SetNotes(v string) *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.SetNotes(v)
+	})
+}
+
+// UpdateNotes sets the "notes" field to the value that was provided on create.
+func (u *APIKeyUpsertBulk) UpdateNotes() *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.UpdateNotes()
+	})
+}
+
 // SetGroupID sets the "group_id" field.
 func (u *APIKeyUpsertBulk) SetGroupID(v int64) *APIKeyUpsertBulk {
 	return u.Update(func(s *APIKeyUpsert) {
@@ -1348,6 +1488,34 @@ func (u *APIKeyUpsertBulk) UpdateExpiresAt() *APIKeyUpsertBulk {
 func (u *APIKeyUpsertBulk) ClearExpiresAt() *APIKeyUpsertBulk {
 	return u.Update(func(s *APIKeyUpsert) {
 		s.ClearExpiresAt()
+	})
+}
+
+// SetTgChatID sets the "tg_chat_id" field.
+func (u *APIKeyUpsertBulk) SetTgChatID(v int64) *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.SetTgChatID(v)
+	})
+}
+
+// AddTgChatID adds v to the "tg_chat_id" field.
+func (u *APIKeyUpsertBulk) AddTgChatID(v int64) *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.AddTgChatID(v)
+	})
+}
+
+// UpdateTgChatID sets the "tg_chat_id" field to the value that was provided on create.
+func (u *APIKeyUpsertBulk) UpdateTgChatID() *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.UpdateTgChatID()
+	})
+}
+
+// ClearTgChatID clears the value of the "tg_chat_id" field.
+func (u *APIKeyUpsertBulk) ClearTgChatID() *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.ClearTgChatID()
 	})
 }
 

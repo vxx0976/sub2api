@@ -57,7 +57,7 @@
               <p class="text-xl font-bold text-green-600 dark:text-green-400">
                 ${{ (usageStats?.total_actual_cost || 0).toFixed(4) }}
               </p>
-              <p class="text-xs text-gray-500 dark:text-gray-400">
+              <p v-if="!isRegularUser" class="text-xs text-gray-500 dark:text-gray-400">
                 {{ t('usage.actualCost') }} /
                 <span class="line-through">${{ (usageStats?.total_cost || 0).toFixed(4) }}</span>
                 {{ t('usage.standardCost') }}
@@ -438,6 +438,7 @@
 import { ref, computed, reactive, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
+import { useAuthStore } from '@/stores/auth'
 import { usageAPI, keysAPI } from '@/api'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import TablePageLayout from '@/components/layout/TablePageLayout.vue'
@@ -453,6 +454,8 @@ import EmptyState from '@/components/common/EmptyState.vue'
 
 const { t } = useI18n()
 const appStore = useAppStore()
+const authStore = useAuthStore()
+const isRegularUser = computed(() => !authStore.isAdmin && !authStore.isReseller)
 
 let abortController: AbortController | null = null
 

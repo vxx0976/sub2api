@@ -12,8 +12,9 @@ const (
 
 // Role constants
 const (
-	RoleAdmin = "admin"
-	RoleUser  = "user"
+	RoleAdmin    = "admin"
+	RoleReseller = "reseller"
+	RoleUser     = "user"
 )
 
 // Platform constants
@@ -48,8 +49,9 @@ const (
 
 // Admin adjustment type constants
 const (
-	AdjustmentTypeAdminBalance     = "admin_balance"     // 管理员调整余额
-	AdjustmentTypeAdminConcurrency = "admin_concurrency" // 管理员调整并发数
+	AdjustmentTypeAdminBalance      = "admin_balance"      // 管理员调整余额
+	AdjustmentTypeAdminConcurrency  = "admin_concurrency"  // 管理员调整并发数
+	AdjustmentTypeResellerTransfer  = "reseller_transfer"  // 分销商余额转移
 )
 
 // Group subscription type constants

@@ -68,6 +68,10 @@ func (RedeemCode) Fields() []ent.Field {
 			Nillable(),
 		field.Int("validity_days").
 			Default(30),
+		field.Int64("owner_id").
+			Optional().
+			Nillable().
+			Comment("分销商用户 ID（NULL=管理员兑换码）"),
 	}
 }
 
@@ -90,5 +94,6 @@ func (RedeemCode) Indexes() []ent.Index {
 		index.Fields("status"),
 		index.Fields("used_by"),
 		index.Fields("group_id"),
+		index.Fields("owner_id"),
 	}
 }

@@ -80,6 +80,7 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		SettingKeyAnnouncements,
 		SettingKeyCryptoAddresses,
 		SettingKeyQueryDomain,
+		SettingKeyDefaultLocale,
 	}
 
 	settings, err := s.settingRepo.GetMultiple(ctx, keys)
@@ -127,6 +128,7 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		Announcements:               announcements,
 		CryptoAddresses:             settings[SettingKeyCryptoAddresses],
 		QueryDomain:                 settings[SettingKeyQueryDomain],
+		DefaultLocale:               settings[SettingKeyDefaultLocale],
 	}, nil
 }
 
@@ -174,6 +176,7 @@ func (s *SettingService) GetPublicSettingsForInjection(ctx context.Context) (any
 		Announcements               []SimpleAnnouncement `json:"announcements,omitempty"`
 		CryptoAddresses             string         `json:"crypto_addresses,omitempty"`
 		QueryDomain                 string         `json:"query_domain,omitempty"`
+		DefaultLocale               string         `json:"default_locale,omitempty"`
 	}{
 		RegistrationEnabled:         settings.RegistrationEnabled,
 		EmailVerifyEnabled:          settings.EmailVerifyEnabled,
@@ -198,6 +201,7 @@ func (s *SettingService) GetPublicSettingsForInjection(ctx context.Context) (any
 		Announcements:               settings.Announcements,
 		CryptoAddresses:             settings.CryptoAddresses,
 		QueryDomain:                 settings.QueryDomain,
+		DefaultLocale:               settings.DefaultLocale,
 	}, nil
 }
 
@@ -252,6 +256,7 @@ func (s *SettingService) UpdateSettings(ctx context.Context, settings *SystemSet
 	updates[SettingKeyPurchaseSubscriptionURL] = strings.TrimSpace(settings.PurchaseSubscriptionURL)
 	updates[SettingKeyCryptoAddresses] = settings.CryptoAddresses
 	updates[SettingKeyQueryDomain] = settings.QueryDomain
+	updates[SettingKeyDefaultLocale] = settings.DefaultLocale
 
 	// 默认配置
 	updates[SettingKeyDefaultConcurrency] = strconv.Itoa(settings.DefaultConcurrency)
@@ -458,6 +463,7 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 		PurchaseSubscriptionURL:      strings.TrimSpace(settings[SettingKeyPurchaseSubscriptionURL]),
 		CryptoAddresses:              settings[SettingKeyCryptoAddresses],
 		QueryDomain:                  settings[SettingKeyQueryDomain],
+		DefaultLocale:                settings[SettingKeyDefaultLocale],
 	}
 
 	// 解析整数类型

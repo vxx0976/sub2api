@@ -100,6 +100,20 @@ func (_u *APIKeyUpdate) SetNillableName(v *string) *APIKeyUpdate {
 	return _u
 }
 
+// SetNotes sets the "notes" field.
+func (_u *APIKeyUpdate) SetNotes(v string) *APIKeyUpdate {
+	_u.mutation.SetNotes(v)
+	return _u
+}
+
+// SetNillableNotes sets the "notes" field if the given value is not nil.
+func (_u *APIKeyUpdate) SetNillableNotes(v *string) *APIKeyUpdate {
+	if v != nil {
+		_u.SetNotes(*v)
+	}
+	return _u
+}
+
 // SetGroupID sets the "group_id" field.
 func (_u *APIKeyUpdate) SetGroupID(v int64) *APIKeyUpdate {
 	_u.mutation.SetGroupID(v)
@@ -232,6 +246,33 @@ func (_u *APIKeyUpdate) ClearExpiresAt() *APIKeyUpdate {
 	return _u
 }
 
+// SetTgChatID sets the "tg_chat_id" field.
+func (_u *APIKeyUpdate) SetTgChatID(v int64) *APIKeyUpdate {
+	_u.mutation.ResetTgChatID()
+	_u.mutation.SetTgChatID(v)
+	return _u
+}
+
+// SetNillableTgChatID sets the "tg_chat_id" field if the given value is not nil.
+func (_u *APIKeyUpdate) SetNillableTgChatID(v *int64) *APIKeyUpdate {
+	if v != nil {
+		_u.SetTgChatID(*v)
+	}
+	return _u
+}
+
+// AddTgChatID adds value to the "tg_chat_id" field.
+func (_u *APIKeyUpdate) AddTgChatID(v int64) *APIKeyUpdate {
+	_u.mutation.AddTgChatID(v)
+	return _u
+}
+
+// ClearTgChatID clears the value of the "tg_chat_id" field.
+func (_u *APIKeyUpdate) ClearTgChatID() *APIKeyUpdate {
+	_u.mutation.ClearTgChatID()
+	return _u
+}
+
 // SetUser sets the "user" edge to the User entity.
 func (_u *APIKeyUpdate) SetUser(v *User) *APIKeyUpdate {
 	return _u.SetUserID(v.ID)
@@ -349,6 +390,11 @@ func (_u *APIKeyUpdate) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "APIKey.name": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Notes(); ok {
+		if err := apikey.NotesValidator(v); err != nil {
+			return &ValidationError{Name: "notes", err: fmt.Errorf(`ent: validator failed for field "APIKey.notes": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Status(); ok {
 		if err := apikey.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "APIKey.status": %w`, err)}
@@ -386,6 +432,9 @@ func (_u *APIKeyUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(apikey.FieldName, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.Notes(); ok {
+		_spec.SetField(apikey.FieldNotes, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(apikey.FieldStatus, field.TypeString, value)
@@ -429,6 +478,15 @@ func (_u *APIKeyUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.ExpiresAtCleared() {
 		_spec.ClearField(apikey.FieldExpiresAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.TgChatID(); ok {
+		_spec.SetField(apikey.FieldTgChatID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedTgChatID(); ok {
+		_spec.AddField(apikey.FieldTgChatID, field.TypeInt64, value)
+	}
+	if _u.mutation.TgChatIDCleared() {
+		_spec.ClearField(apikey.FieldTgChatID, field.TypeInt64)
 	}
 	if _u.mutation.UserCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -621,6 +679,20 @@ func (_u *APIKeyUpdateOne) SetNillableName(v *string) *APIKeyUpdateOne {
 	return _u
 }
 
+// SetNotes sets the "notes" field.
+func (_u *APIKeyUpdateOne) SetNotes(v string) *APIKeyUpdateOne {
+	_u.mutation.SetNotes(v)
+	return _u
+}
+
+// SetNillableNotes sets the "notes" field if the given value is not nil.
+func (_u *APIKeyUpdateOne) SetNillableNotes(v *string) *APIKeyUpdateOne {
+	if v != nil {
+		_u.SetNotes(*v)
+	}
+	return _u
+}
+
 // SetGroupID sets the "group_id" field.
 func (_u *APIKeyUpdateOne) SetGroupID(v int64) *APIKeyUpdateOne {
 	_u.mutation.SetGroupID(v)
@@ -750,6 +822,33 @@ func (_u *APIKeyUpdateOne) SetNillableExpiresAt(v *time.Time) *APIKeyUpdateOne {
 // ClearExpiresAt clears the value of the "expires_at" field.
 func (_u *APIKeyUpdateOne) ClearExpiresAt() *APIKeyUpdateOne {
 	_u.mutation.ClearExpiresAt()
+	return _u
+}
+
+// SetTgChatID sets the "tg_chat_id" field.
+func (_u *APIKeyUpdateOne) SetTgChatID(v int64) *APIKeyUpdateOne {
+	_u.mutation.ResetTgChatID()
+	_u.mutation.SetTgChatID(v)
+	return _u
+}
+
+// SetNillableTgChatID sets the "tg_chat_id" field if the given value is not nil.
+func (_u *APIKeyUpdateOne) SetNillableTgChatID(v *int64) *APIKeyUpdateOne {
+	if v != nil {
+		_u.SetTgChatID(*v)
+	}
+	return _u
+}
+
+// AddTgChatID adds value to the "tg_chat_id" field.
+func (_u *APIKeyUpdateOne) AddTgChatID(v int64) *APIKeyUpdateOne {
+	_u.mutation.AddTgChatID(v)
+	return _u
+}
+
+// ClearTgChatID clears the value of the "tg_chat_id" field.
+func (_u *APIKeyUpdateOne) ClearTgChatID() *APIKeyUpdateOne {
+	_u.mutation.ClearTgChatID()
 	return _u
 }
 
@@ -883,6 +982,11 @@ func (_u *APIKeyUpdateOne) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "APIKey.name": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Notes(); ok {
+		if err := apikey.NotesValidator(v); err != nil {
+			return &ValidationError{Name: "notes", err: fmt.Errorf(`ent: validator failed for field "APIKey.notes": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Status(); ok {
 		if err := apikey.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "APIKey.status": %w`, err)}
@@ -938,6 +1042,9 @@ func (_u *APIKeyUpdateOne) sqlSave(ctx context.Context) (_node *APIKey, err erro
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(apikey.FieldName, field.TypeString, value)
 	}
+	if value, ok := _u.mutation.Notes(); ok {
+		_spec.SetField(apikey.FieldNotes, field.TypeString, value)
+	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(apikey.FieldStatus, field.TypeString, value)
 	}
@@ -980,6 +1087,15 @@ func (_u *APIKeyUpdateOne) sqlSave(ctx context.Context) (_node *APIKey, err erro
 	}
 	if _u.mutation.ExpiresAtCleared() {
 		_spec.ClearField(apikey.FieldExpiresAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.TgChatID(); ok {
+		_spec.SetField(apikey.FieldTgChatID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedTgChatID(); ok {
+		_spec.AddField(apikey.FieldTgChatID, field.TypeInt64, value)
+	}
+	if _u.mutation.TgChatIDCleared() {
+		_spec.ClearField(apikey.FieldTgChatID, field.TypeInt64)
 	}
 	if _u.mutation.UserCleared() {
 		edge := &sqlgraph.EdgeSpec{

@@ -770,6 +770,22 @@
               </div>
             </div>
 
+            <!-- Default Locale -->
+            <div>
+              <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                {{ t('admin.settings.site.defaultLocale') }}
+              </label>
+              <select v-model="form.default_locale" class="input">
+                <option value="">{{ t('admin.settings.site.defaultLocaleBrowser') }}</option>
+                <option v-for="locale in availableLocaleOptions" :key="locale.code" :value="locale.code">
+                  {{ locale.name }}
+                </option>
+              </select>
+              <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                {{ t('admin.settings.site.defaultLocaleHint') }}
+              </p>
+            </div>
+
             <!-- API Base URL -->
             <div>
               <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -1240,6 +1256,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { availableLocales } from '@/i18n'
 import { adminAPI } from '@/api'
 import type { SystemSettings, UpdateSettingsRequest } from '@/api/admin/settings'
 import AppLayout from '@/components/layout/AppLayout.vue'
@@ -1251,6 +1268,7 @@ import { useAppStore } from '@/stores'
 const { t } = useI18n()
 const appStore = useAppStore()
 const { copyToClipboard } = useClipboard()
+const availableLocaleOptions = availableLocales
 
 const loading = ref(true)
 const saving = ref(false)
@@ -1305,6 +1323,7 @@ const form = reactive<SettingsForm>({
   site_name: 'Sub2API',
   site_logo: '',
   site_subtitle: 'Subscription to API Conversion Platform',
+  default_locale: '',
   api_base_url: '',
   contact_info: '',
   doc_url: '',
@@ -1461,6 +1480,7 @@ async function saveSettings() {
       purchase_subscription_url: form.purchase_subscription_url,
       crypto_addresses: form.crypto_addresses,
       query_domain: form.query_domain,
+      default_locale: form.default_locale,
       smtp_host: form.smtp_host,
       smtp_port: form.smtp_port,
       smtp_username: form.smtp_username,

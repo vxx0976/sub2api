@@ -466,20 +466,35 @@
           </div>
         </div>
 
-        <!-- Sort Order (always visible) -->
+        <!-- Reseller Template (always visible) -->
         <div class="border-t pt-4">
           <div class="space-y-4">
             <div>
-              <label class="input-label">{{ t('admin.groups.payment.sortOrder') }}</label>
-              <input
-                v-model.number="createForm.sort_order"
-                type="number"
-                step="1"
-                min="0"
-                class="input"
-                placeholder="0"
-              />
-              <p class="input-hint">{{ t('admin.groups.payment.sortOrderHint') }}</p>
+              <div class="mb-1.5 flex items-center gap-1">
+                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {{ t('admin.groups.payment.resellerTemplate') }}
+                </label>
+              </div>
+              <div class="flex items-center gap-3">
+                <button
+                  type="button"
+                  @click="createForm.reseller_template = !createForm.reseller_template"
+                  :class="[
+                    'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
+                    createForm.reseller_template ? 'bg-primary-500' : 'bg-gray-300 dark:bg-dark-600'
+                  ]"
+                >
+                  <span
+                    :class="[
+                      'inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform',
+                      createForm.reseller_template ? 'translate-x-6' : 'translate-x-1'
+                    ]"
+                  />
+                </button>
+                <span class="text-sm text-gray-500 dark:text-gray-400">
+                  {{ t('admin.groups.payment.resellerTemplateHint') }}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -1206,20 +1221,35 @@
           </div>
         </div>
 
-        <!-- Sort Order (always visible) -->
+        <!-- Reseller Template (always visible) -->
         <div class="border-t pt-4">
           <div class="space-y-4">
             <div>
-              <label class="input-label">{{ t('admin.groups.payment.sortOrder') }}</label>
-              <input
-                v-model.number="editForm.sort_order"
-                type="number"
-                step="1"
-                min="0"
-                class="input"
-                placeholder="0"
-              />
-              <p class="input-hint">{{ t('admin.groups.payment.sortOrderHint') }}</p>
+              <div class="mb-1.5 flex items-center gap-1">
+                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {{ t('admin.groups.payment.resellerTemplate') }}
+                </label>
+              </div>
+              <div class="flex items-center gap-3">
+                <button
+                  type="button"
+                  @click="editForm.reseller_template = !editForm.reseller_template"
+                  :class="[
+                    'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
+                    editForm.reseller_template ? 'bg-primary-500' : 'bg-gray-300 dark:bg-dark-600'
+                  ]"
+                >
+                  <span
+                    :class="[
+                      'inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform',
+                      editForm.reseller_template ? 'translate-x-6' : 'translate-x-1'
+                    ]"
+                  />
+                </button>
+                <span class="text-sm text-gray-500 dark:text-gray-400">
+                  {{ t('admin.groups.payment.resellerTemplateHint') }}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -2048,6 +2078,8 @@ const createForm = reactive({
   sort_order: 0,
   is_recommended: false,
   external_buy_url: '' as string,
+  // 分销商模板
+  reseller_template: false,
   // 支持的模型系列（仅 antigravity 平台）
   supported_model_scopes: ['claude', 'gemini_text', 'gemini_image'] as string[],
   // MCP XML 协议注入开关（仅 antigravity 平台）
@@ -2253,6 +2285,8 @@ const editForm = reactive({
   sort_order: 0,
   is_recommended: false,
   external_buy_url: '' as string,
+  // 分销商模板
+  reseller_template: false,
   // 支持的模型系列（仅 antigravity 平台）
   supported_model_scopes: ['claude', 'gemini_text', 'gemini_image'] as string[],
   // MCP XML 协议注入开关（仅 antigravity 平台）
@@ -2351,6 +2385,7 @@ const closeCreateModal = () => {
   createForm.is_purchasable = false
   createForm.sort_order = 0
   createForm.is_recommended = false
+  createForm.reseller_template = false
   createForm.external_buy_url = ''
   createForm.fallback_group_id_on_invalid_request = null
   createForm.supported_model_scopes = ['claude', 'gemini_text', 'gemini_image']
@@ -2412,6 +2447,7 @@ const handleEdit = async (group: AdminGroup) => {
   editForm.is_purchasable = group.is_purchasable || false
   editForm.sort_order = group.sort_order || 0
   editForm.is_recommended = group.is_recommended || false
+  editForm.reseller_template = group.reseller_template || false
   editForm.external_buy_url = group.external_buy_url || ''
   editForm.supported_model_scopes = group.supported_model_scopes || ['claude', 'gemini_text', 'gemini_image']
   editForm.mcp_xml_inject = group.mcp_xml_inject ?? true

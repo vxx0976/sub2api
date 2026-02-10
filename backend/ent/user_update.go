@@ -20,6 +20,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/rechargeorder"
 	"github.com/Wei-Shaw/sub2api/ent/redeemcode"
 	"github.com/Wei-Shaw/sub2api/ent/referralreward"
+	"github.com/Wei-Shaw/sub2api/ent/resellerdomain"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
 	"github.com/Wei-Shaw/sub2api/ent/user"
 	"github.com/Wei-Shaw/sub2api/ent/userattributevalue"
@@ -306,6 +307,68 @@ func (_u *UserUpdate) ClearTotpEnabledAt() *UserUpdate {
 	return _u
 }
 
+// SetParentID sets the "parent_id" field.
+func (_u *UserUpdate) SetParentID(v int64) *UserUpdate {
+	_u.mutation.SetParentID(v)
+	return _u
+}
+
+// SetNillableParentID sets the "parent_id" field if the given value is not nil.
+func (_u *UserUpdate) SetNillableParentID(v *int64) *UserUpdate {
+	if v != nil {
+		_u.SetParentID(*v)
+	}
+	return _u
+}
+
+// ClearParentID clears the value of the "parent_id" field.
+func (_u *UserUpdate) ClearParentID() *UserUpdate {
+	_u.mutation.ClearParentID()
+	return _u
+}
+
+// SetTokenVersion sets the "token_version" field.
+func (_u *UserUpdate) SetTokenVersion(v int64) *UserUpdate {
+	_u.mutation.ResetTokenVersion()
+	_u.mutation.SetTokenVersion(v)
+	return _u
+}
+
+// SetNillableTokenVersion sets the "token_version" field if the given value is not nil.
+func (_u *UserUpdate) SetNillableTokenVersion(v *int64) *UserUpdate {
+	if v != nil {
+		_u.SetTokenVersion(*v)
+	}
+	return _u
+}
+
+// AddTokenVersion adds value to the "token_version" field.
+func (_u *UserUpdate) AddTokenVersion(v int64) *UserUpdate {
+	_u.mutation.AddTokenVersion(v)
+	return _u
+}
+
+// SetRoleVersion sets the "role_version" field.
+func (_u *UserUpdate) SetRoleVersion(v int64) *UserUpdate {
+	_u.mutation.ResetRoleVersion()
+	_u.mutation.SetRoleVersion(v)
+	return _u
+}
+
+// SetNillableRoleVersion sets the "role_version" field if the given value is not nil.
+func (_u *UserUpdate) SetNillableRoleVersion(v *int64) *UserUpdate {
+	if v != nil {
+		_u.SetRoleVersion(*v)
+	}
+	return _u
+}
+
+// AddRoleVersion adds value to the "role_version" field.
+func (_u *UserUpdate) AddRoleVersion(v int64) *UserUpdate {
+	_u.mutation.AddRoleVersion(v)
+	return _u
+}
+
 // AddAPIKeyIDs adds the "api_keys" edge to the APIKey entity by IDs.
 func (_u *UserUpdate) AddAPIKeyIDs(ids ...int64) *UserUpdate {
 	_u.mutation.AddAPIKeyIDs(ids...)
@@ -499,6 +562,41 @@ func (_u *UserUpdate) AddReferralRewardReceived(v ...*ReferralReward) *UserUpdat
 		ids[i] = v[i].ID
 	}
 	return _u.AddReferralRewardReceivedIDs(ids...)
+}
+
+// AddSubUserIDs adds the "sub_users" edge to the User entity by IDs.
+func (_u *UserUpdate) AddSubUserIDs(ids ...int64) *UserUpdate {
+	_u.mutation.AddSubUserIDs(ids...)
+	return _u
+}
+
+// AddSubUsers adds the "sub_users" edges to the User entity.
+func (_u *UserUpdate) AddSubUsers(v ...*User) *UserUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddSubUserIDs(ids...)
+}
+
+// SetParent sets the "parent" edge to the User entity.
+func (_u *UserUpdate) SetParent(v *User) *UserUpdate {
+	return _u.SetParentID(v.ID)
+}
+
+// AddResellerDomainIDs adds the "reseller_domains" edge to the ResellerDomain entity by IDs.
+func (_u *UserUpdate) AddResellerDomainIDs(ids ...int64) *UserUpdate {
+	_u.mutation.AddResellerDomainIDs(ids...)
+	return _u
+}
+
+// AddResellerDomains adds the "reseller_domains" edges to the ResellerDomain entity.
+func (_u *UserUpdate) AddResellerDomains(v ...*ResellerDomain) *UserUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddResellerDomainIDs(ids...)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -779,6 +877,54 @@ func (_u *UserUpdate) RemoveReferralRewardReceived(v ...*ReferralReward) *UserUp
 	return _u.RemoveReferralRewardReceivedIDs(ids...)
 }
 
+// ClearSubUsers clears all "sub_users" edges to the User entity.
+func (_u *UserUpdate) ClearSubUsers() *UserUpdate {
+	_u.mutation.ClearSubUsers()
+	return _u
+}
+
+// RemoveSubUserIDs removes the "sub_users" edge to User entities by IDs.
+func (_u *UserUpdate) RemoveSubUserIDs(ids ...int64) *UserUpdate {
+	_u.mutation.RemoveSubUserIDs(ids...)
+	return _u
+}
+
+// RemoveSubUsers removes "sub_users" edges to User entities.
+func (_u *UserUpdate) RemoveSubUsers(v ...*User) *UserUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveSubUserIDs(ids...)
+}
+
+// ClearParent clears the "parent" edge to the User entity.
+func (_u *UserUpdate) ClearParent() *UserUpdate {
+	_u.mutation.ClearParent()
+	return _u
+}
+
+// ClearResellerDomains clears all "reseller_domains" edges to the ResellerDomain entity.
+func (_u *UserUpdate) ClearResellerDomains() *UserUpdate {
+	_u.mutation.ClearResellerDomains()
+	return _u
+}
+
+// RemoveResellerDomainIDs removes the "reseller_domains" edge to ResellerDomain entities by IDs.
+func (_u *UserUpdate) RemoveResellerDomainIDs(ids ...int64) *UserUpdate {
+	_u.mutation.RemoveResellerDomainIDs(ids...)
+	return _u
+}
+
+// RemoveResellerDomains removes "reseller_domains" edges to ResellerDomain entities.
+func (_u *UserUpdate) RemoveResellerDomains(v ...*ResellerDomain) *UserUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveResellerDomainIDs(ids...)
+}
+
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (_u *UserUpdate) Save(ctx context.Context) (int, error) {
 	if err := _u.defaults(); err != nil {
@@ -939,6 +1085,18 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.TotpEnabledAtCleared() {
 		_spec.ClearField(user.FieldTotpEnabledAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.TokenVersion(); ok {
+		_spec.SetField(user.FieldTokenVersion, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedTokenVersion(); ok {
+		_spec.AddField(user.FieldTokenVersion, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.RoleVersion(); ok {
+		_spec.SetField(user.FieldRoleVersion, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedRoleVersion(); ok {
+		_spec.AddField(user.FieldRoleVersion, field.TypeInt64, value)
 	}
 	if _u.mutation.APIKeysCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -1530,6 +1688,125 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(referralreward.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.SubUsersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.SubUsersTable,
+			Columns: []string{user.SubUsersColumn},
+			Bidi:    true,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedSubUsersIDs(); len(nodes) > 0 && !_u.mutation.SubUsersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.SubUsersTable,
+			Columns: []string{user.SubUsersColumn},
+			Bidi:    true,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.SubUsersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.SubUsersTable,
+			Columns: []string{user.SubUsersColumn},
+			Bidi:    true,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ParentCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   user.ParentTable,
+			Columns: []string{user.ParentColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ParentIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   user.ParentTable,
+			Columns: []string{user.ParentColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ResellerDomainsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ResellerDomainsTable,
+			Columns: []string{user.ResellerDomainsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(resellerdomain.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedResellerDomainsIDs(); len(nodes) > 0 && !_u.mutation.ResellerDomainsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ResellerDomainsTable,
+			Columns: []string{user.ResellerDomainsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(resellerdomain.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ResellerDomainsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ResellerDomainsTable,
+			Columns: []string{user.ResellerDomainsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(resellerdomain.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -1824,6 +2101,68 @@ func (_u *UserUpdateOne) ClearTotpEnabledAt() *UserUpdateOne {
 	return _u
 }
 
+// SetParentID sets the "parent_id" field.
+func (_u *UserUpdateOne) SetParentID(v int64) *UserUpdateOne {
+	_u.mutation.SetParentID(v)
+	return _u
+}
+
+// SetNillableParentID sets the "parent_id" field if the given value is not nil.
+func (_u *UserUpdateOne) SetNillableParentID(v *int64) *UserUpdateOne {
+	if v != nil {
+		_u.SetParentID(*v)
+	}
+	return _u
+}
+
+// ClearParentID clears the value of the "parent_id" field.
+func (_u *UserUpdateOne) ClearParentID() *UserUpdateOne {
+	_u.mutation.ClearParentID()
+	return _u
+}
+
+// SetTokenVersion sets the "token_version" field.
+func (_u *UserUpdateOne) SetTokenVersion(v int64) *UserUpdateOne {
+	_u.mutation.ResetTokenVersion()
+	_u.mutation.SetTokenVersion(v)
+	return _u
+}
+
+// SetNillableTokenVersion sets the "token_version" field if the given value is not nil.
+func (_u *UserUpdateOne) SetNillableTokenVersion(v *int64) *UserUpdateOne {
+	if v != nil {
+		_u.SetTokenVersion(*v)
+	}
+	return _u
+}
+
+// AddTokenVersion adds value to the "token_version" field.
+func (_u *UserUpdateOne) AddTokenVersion(v int64) *UserUpdateOne {
+	_u.mutation.AddTokenVersion(v)
+	return _u
+}
+
+// SetRoleVersion sets the "role_version" field.
+func (_u *UserUpdateOne) SetRoleVersion(v int64) *UserUpdateOne {
+	_u.mutation.ResetRoleVersion()
+	_u.mutation.SetRoleVersion(v)
+	return _u
+}
+
+// SetNillableRoleVersion sets the "role_version" field if the given value is not nil.
+func (_u *UserUpdateOne) SetNillableRoleVersion(v *int64) *UserUpdateOne {
+	if v != nil {
+		_u.SetRoleVersion(*v)
+	}
+	return _u
+}
+
+// AddRoleVersion adds value to the "role_version" field.
+func (_u *UserUpdateOne) AddRoleVersion(v int64) *UserUpdateOne {
+	_u.mutation.AddRoleVersion(v)
+	return _u
+}
+
 // AddAPIKeyIDs adds the "api_keys" edge to the APIKey entity by IDs.
 func (_u *UserUpdateOne) AddAPIKeyIDs(ids ...int64) *UserUpdateOne {
 	_u.mutation.AddAPIKeyIDs(ids...)
@@ -2017,6 +2356,41 @@ func (_u *UserUpdateOne) AddReferralRewardReceived(v ...*ReferralReward) *UserUp
 		ids[i] = v[i].ID
 	}
 	return _u.AddReferralRewardReceivedIDs(ids...)
+}
+
+// AddSubUserIDs adds the "sub_users" edge to the User entity by IDs.
+func (_u *UserUpdateOne) AddSubUserIDs(ids ...int64) *UserUpdateOne {
+	_u.mutation.AddSubUserIDs(ids...)
+	return _u
+}
+
+// AddSubUsers adds the "sub_users" edges to the User entity.
+func (_u *UserUpdateOne) AddSubUsers(v ...*User) *UserUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddSubUserIDs(ids...)
+}
+
+// SetParent sets the "parent" edge to the User entity.
+func (_u *UserUpdateOne) SetParent(v *User) *UserUpdateOne {
+	return _u.SetParentID(v.ID)
+}
+
+// AddResellerDomainIDs adds the "reseller_domains" edge to the ResellerDomain entity by IDs.
+func (_u *UserUpdateOne) AddResellerDomainIDs(ids ...int64) *UserUpdateOne {
+	_u.mutation.AddResellerDomainIDs(ids...)
+	return _u
+}
+
+// AddResellerDomains adds the "reseller_domains" edges to the ResellerDomain entity.
+func (_u *UserUpdateOne) AddResellerDomains(v ...*ResellerDomain) *UserUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddResellerDomainIDs(ids...)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -2297,6 +2671,54 @@ func (_u *UserUpdateOne) RemoveReferralRewardReceived(v ...*ReferralReward) *Use
 	return _u.RemoveReferralRewardReceivedIDs(ids...)
 }
 
+// ClearSubUsers clears all "sub_users" edges to the User entity.
+func (_u *UserUpdateOne) ClearSubUsers() *UserUpdateOne {
+	_u.mutation.ClearSubUsers()
+	return _u
+}
+
+// RemoveSubUserIDs removes the "sub_users" edge to User entities by IDs.
+func (_u *UserUpdateOne) RemoveSubUserIDs(ids ...int64) *UserUpdateOne {
+	_u.mutation.RemoveSubUserIDs(ids...)
+	return _u
+}
+
+// RemoveSubUsers removes "sub_users" edges to User entities.
+func (_u *UserUpdateOne) RemoveSubUsers(v ...*User) *UserUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveSubUserIDs(ids...)
+}
+
+// ClearParent clears the "parent" edge to the User entity.
+func (_u *UserUpdateOne) ClearParent() *UserUpdateOne {
+	_u.mutation.ClearParent()
+	return _u
+}
+
+// ClearResellerDomains clears all "reseller_domains" edges to the ResellerDomain entity.
+func (_u *UserUpdateOne) ClearResellerDomains() *UserUpdateOne {
+	_u.mutation.ClearResellerDomains()
+	return _u
+}
+
+// RemoveResellerDomainIDs removes the "reseller_domains" edge to ResellerDomain entities by IDs.
+func (_u *UserUpdateOne) RemoveResellerDomainIDs(ids ...int64) *UserUpdateOne {
+	_u.mutation.RemoveResellerDomainIDs(ids...)
+	return _u
+}
+
+// RemoveResellerDomains removes "reseller_domains" edges to ResellerDomain entities.
+func (_u *UserUpdateOne) RemoveResellerDomains(v ...*ResellerDomain) *UserUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveResellerDomainIDs(ids...)
+}
+
 // Where appends a list predicates to the UserUpdate builder.
 func (_u *UserUpdateOne) Where(ps ...predicate.User) *UserUpdateOne {
 	_u.mutation.Where(ps...)
@@ -2487,6 +2909,18 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 	}
 	if _u.mutation.TotpEnabledAtCleared() {
 		_spec.ClearField(user.FieldTotpEnabledAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.TokenVersion(); ok {
+		_spec.SetField(user.FieldTokenVersion, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedTokenVersion(); ok {
+		_spec.AddField(user.FieldTokenVersion, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.RoleVersion(); ok {
+		_spec.SetField(user.FieldRoleVersion, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedRoleVersion(); ok {
+		_spec.AddField(user.FieldRoleVersion, field.TypeInt64, value)
 	}
 	if _u.mutation.APIKeysCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -3078,6 +3512,125 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(referralreward.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.SubUsersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.SubUsersTable,
+			Columns: []string{user.SubUsersColumn},
+			Bidi:    true,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedSubUsersIDs(); len(nodes) > 0 && !_u.mutation.SubUsersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.SubUsersTable,
+			Columns: []string{user.SubUsersColumn},
+			Bidi:    true,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.SubUsersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.SubUsersTable,
+			Columns: []string{user.SubUsersColumn},
+			Bidi:    true,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ParentCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   user.ParentTable,
+			Columns: []string{user.ParentColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ParentIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   user.ParentTable,
+			Columns: []string{user.ParentColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ResellerDomainsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ResellerDomainsTable,
+			Columns: []string{user.ResellerDomainsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(resellerdomain.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedResellerDomainsIDs(); len(nodes) > 0 && !_u.mutation.ResellerDomainsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ResellerDomainsTable,
+			Columns: []string{user.ResellerDomainsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(resellerdomain.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ResellerDomainsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ResellerDomainsTable,
+			Columns: []string{user.ResellerDomainsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(resellerdomain.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

@@ -14,8 +14,9 @@ const (
 
 // Role constants
 const (
-	RoleAdmin = domain.RoleAdmin
-	RoleUser  = domain.RoleUser
+	RoleAdmin    = domain.RoleAdmin
+	RoleReseller = domain.RoleReseller
+	RoleUser     = domain.RoleUser
 )
 
 // Platform constants
@@ -50,8 +51,9 @@ const (
 
 // Admin adjustment type constants
 const (
-	AdjustmentTypeAdminBalance     = domain.AdjustmentTypeAdminBalance     // 管理员调整余额
-	AdjustmentTypeAdminConcurrency = domain.AdjustmentTypeAdminConcurrency // 管理员调整并发数
+	AdjustmentTypeAdminBalance      = domain.AdjustmentTypeAdminBalance      // 管理员调整余额
+	AdjustmentTypeAdminConcurrency  = domain.AdjustmentTypeAdminConcurrency  // 管理员调整并发数
+	AdjustmentTypeResellerTransfer  = domain.AdjustmentTypeResellerTransfer  // 分销商余额转移
 )
 
 // Group subscription type constants
@@ -123,6 +125,9 @@ const (
 
 	// 管理员 API Key
 	SettingKeyAdminAPIKey = "admin_api_key" // 全局管理员 API Key（用于外部系统集成）
+
+	// 默认语言
+	SettingKeyDefaultLocale = "default_locale" // 默认界面语言（如 en, zh, ja 等）
 
 	// Gemini 配额策略（JSON）
 	SettingKeyGeminiQuotaPolicy = "gemini_quota_policy"

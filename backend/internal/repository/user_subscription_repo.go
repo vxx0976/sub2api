@@ -264,6 +264,32 @@ func (r *userSubscriptionRepository) List(ctx context.Context, params pagination
 	return userSubscriptionEntitiesToService(subs), paginationResultFromTotal(int64(total), params), nil
 }
 
+func (r *userSubscriptionRepository) ListByUserIDs(ctx context.Context, userIDs []int64, params pagination.PaginationParams) ([]service.UserSubscription, *pagination.PaginationResult, error) {
+	if len(userIDs) == 0 {
+		return nil, &pagination.PaginationResult{Total: 0, Page: params.Page, PageSize: params.PageSize, Pages: 0}, nil
+	}
+	client := clientFromContext(ctx, r.client)
+	q := client.UserSubscription.Query().
+		Where(usersubscription.UserIDIn(userIDs...))
+
+	total, err := q.Clone().Count(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	subs, err := q.
+		WithUser().WithGroup().WithAssignedByUser().
+		Order(dbent.Desc(usersubscription.FieldCreatedAt)).
+		Offset(params.Offset()).
+		Limit(params.Limit()).
+		All(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return userSubscriptionEntitiesToService(subs), paginationResultFromTotal(int64(total), params), nil
+}
+
 func (r *userSubscriptionRepository) ExistsByUserIDAndGroupID(ctx context.Context, userID, groupID int64) (bool, error) {
 	client := clientFromContext(ctx, r.client)
 	return client.UserSubscription.Query().

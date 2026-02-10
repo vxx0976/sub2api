@@ -41,6 +41,10 @@ func (APIKey) Fields() []ent.Field {
 		field.String("name").
 			MaxLen(100).
 			NotEmpty(),
+		field.String("notes").
+			MaxLen(500).
+			Default("").
+			Comment("Notes for this API key (e.g. customer name)"),
 		field.Int64("group_id").
 			Optional().
 			Nillable(),
@@ -70,6 +74,12 @@ func (APIKey) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			Comment("Expiration time for this API key (null = never expires)"),
+
+		// Telegram chat ID for user binding (nil = not bound)
+		field.Int64("tg_chat_id").
+			Optional().
+			Nillable().
+			Comment("Telegram chat ID for the key holder (null = not bound)"),
 	}
 }
 
@@ -98,5 +108,6 @@ func (APIKey) Indexes() []ent.Index {
 		// Index for quota queries
 		index.Fields("quota", "quota_used"),
 		index.Fields("expires_at"),
+		index.Fields("tg_chat_id"),
 	}
 }

@@ -55,6 +55,7 @@ type CreateGroupRequest struct {
 	IsPurchasable       bool     `json:"is_purchasable"`
 	SortOrder           int      `json:"sort_order"`
 	IsRecommended       bool     `json:"is_recommended"`
+	ResellerTemplate    bool     `json:"reseller_template"`
 	ExternalBuyURL      *string  `json:"external_buy_url"`
 }
 
@@ -91,6 +92,7 @@ type UpdateGroupRequest struct {
 	IsPurchasable       *bool    `json:"is_purchasable"`
 	SortOrder           *int     `json:"sort_order"`
 	IsRecommended       *bool    `json:"is_recommended"`
+	ResellerTemplate    *bool    `json:"reseller_template"`
 	ExternalBuyURL      *string  `json:"external_buy_url"`
 }
 
@@ -213,6 +215,7 @@ func (h *GroupHandler) Create(c *gin.Context) {
 		IsPurchasable:                   req.IsPurchasable,
 		SortOrder:                       req.SortOrder,
 		IsRecommended:                   req.IsRecommended,
+		ResellerTemplate:                req.ResellerTemplate,
 		ExternalBuyURL:                  req.ExternalBuyURL,
 	})
 	if err != nil {
@@ -265,6 +268,7 @@ func (h *GroupHandler) Update(c *gin.Context) {
 		IsPurchasable:                   req.IsPurchasable,
 		SortOrder:                       req.SortOrder,
 		IsRecommended:                   req.IsRecommended,
+		ResellerTemplate:                req.ResellerTemplate,
 		ExternalBuyURL:                  req.ExternalBuyURL,
 	})
 	if err != nil {

@@ -60,6 +60,7 @@ func UserFromServiceAdmin(u *service.User) *AdminUser {
 	return &AdminUser{
 		User:       *base,
 		Notes:      u.Notes,
+		ParentID:   u.ParentID,
 		GroupRates: u.GroupRates,
 	}
 }
@@ -73,6 +74,7 @@ func APIKeyFromService(k *service.APIKey) *APIKey {
 		UserID:      k.UserID,
 		Key:         k.Key,
 		Name:        k.Name,
+		Notes:       k.Notes,
 		GroupID:     k.GroupID,
 		Status:      k.Status,
 		IPWhitelist: k.IPWhitelist,
@@ -151,6 +153,7 @@ func groupFromServiceBase(g *service.Group) Group {
 		IsPurchasable:                   g.IsPurchasable,
 		SortOrder:                       g.SortOrder,
 		IsRecommended:                   g.IsRecommended,
+		ResellerTemplate:                g.ResellerTemplate,
 		ExternalBuyURL:                  g.ExternalBuyURL,
 		CreatedAt:                       g.CreatedAt,
 		UpdatedAt:                       g.UpdatedAt,

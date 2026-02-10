@@ -156,6 +156,20 @@ func (_c *RedeemCodeCreate) SetNillableValidityDays(v *int) *RedeemCodeCreate {
 	return _c
 }
 
+// SetOwnerID sets the "owner_id" field.
+func (_c *RedeemCodeCreate) SetOwnerID(v int64) *RedeemCodeCreate {
+	_c.mutation.SetOwnerID(v)
+	return _c
+}
+
+// SetNillableOwnerID sets the "owner_id" field if the given value is not nil.
+func (_c *RedeemCodeCreate) SetNillableOwnerID(v *int64) *RedeemCodeCreate {
+	if v != nil {
+		_c.SetOwnerID(*v)
+	}
+	return _c
+}
+
 // SetUserID sets the "user" edge to the User entity by ID.
 func (_c *RedeemCodeCreate) SetUserID(id int64) *RedeemCodeCreate {
 	_c.mutation.SetUserID(id)
@@ -330,6 +344,10 @@ func (_c *RedeemCodeCreate) createSpec() (*RedeemCode, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.ValidityDays(); ok {
 		_spec.SetField(redeemcode.FieldValidityDays, field.TypeInt, value)
 		_node.ValidityDays = value
+	}
+	if value, ok := _c.mutation.OwnerID(); ok {
+		_spec.SetField(redeemcode.FieldOwnerID, field.TypeInt64, value)
+		_node.OwnerID = &value
 	}
 	if nodes := _c.mutation.UserIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -561,6 +579,30 @@ func (u *RedeemCodeUpsert) AddValidityDays(v int) *RedeemCodeUpsert {
 	return u
 }
 
+// SetOwnerID sets the "owner_id" field.
+func (u *RedeemCodeUpsert) SetOwnerID(v int64) *RedeemCodeUpsert {
+	u.Set(redeemcode.FieldOwnerID, v)
+	return u
+}
+
+// UpdateOwnerID sets the "owner_id" field to the value that was provided on create.
+func (u *RedeemCodeUpsert) UpdateOwnerID() *RedeemCodeUpsert {
+	u.SetExcluded(redeemcode.FieldOwnerID)
+	return u
+}
+
+// AddOwnerID adds v to the "owner_id" field.
+func (u *RedeemCodeUpsert) AddOwnerID(v int64) *RedeemCodeUpsert {
+	u.Add(redeemcode.FieldOwnerID, v)
+	return u
+}
+
+// ClearOwnerID clears the value of the "owner_id" field.
+func (u *RedeemCodeUpsert) ClearOwnerID() *RedeemCodeUpsert {
+	u.SetNull(redeemcode.FieldOwnerID)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create.
 // Using this option is equivalent to using:
 //
@@ -771,6 +813,34 @@ func (u *RedeemCodeUpsertOne) AddValidityDays(v int) *RedeemCodeUpsertOne {
 func (u *RedeemCodeUpsertOne) UpdateValidityDays() *RedeemCodeUpsertOne {
 	return u.Update(func(s *RedeemCodeUpsert) {
 		s.UpdateValidityDays()
+	})
+}
+
+// SetOwnerID sets the "owner_id" field.
+func (u *RedeemCodeUpsertOne) SetOwnerID(v int64) *RedeemCodeUpsertOne {
+	return u.Update(func(s *RedeemCodeUpsert) {
+		s.SetOwnerID(v)
+	})
+}
+
+// AddOwnerID adds v to the "owner_id" field.
+func (u *RedeemCodeUpsertOne) AddOwnerID(v int64) *RedeemCodeUpsertOne {
+	return u.Update(func(s *RedeemCodeUpsert) {
+		s.AddOwnerID(v)
+	})
+}
+
+// UpdateOwnerID sets the "owner_id" field to the value that was provided on create.
+func (u *RedeemCodeUpsertOne) UpdateOwnerID() *RedeemCodeUpsertOne {
+	return u.Update(func(s *RedeemCodeUpsert) {
+		s.UpdateOwnerID()
+	})
+}
+
+// ClearOwnerID clears the value of the "owner_id" field.
+func (u *RedeemCodeUpsertOne) ClearOwnerID() *RedeemCodeUpsertOne {
+	return u.Update(func(s *RedeemCodeUpsert) {
+		s.ClearOwnerID()
 	})
 }
 
@@ -1150,6 +1220,34 @@ func (u *RedeemCodeUpsertBulk) AddValidityDays(v int) *RedeemCodeUpsertBulk {
 func (u *RedeemCodeUpsertBulk) UpdateValidityDays() *RedeemCodeUpsertBulk {
 	return u.Update(func(s *RedeemCodeUpsert) {
 		s.UpdateValidityDays()
+	})
+}
+
+// SetOwnerID sets the "owner_id" field.
+func (u *RedeemCodeUpsertBulk) SetOwnerID(v int64) *RedeemCodeUpsertBulk {
+	return u.Update(func(s *RedeemCodeUpsert) {
+		s.SetOwnerID(v)
+	})
+}
+
+// AddOwnerID adds v to the "owner_id" field.
+func (u *RedeemCodeUpsertBulk) AddOwnerID(v int64) *RedeemCodeUpsertBulk {
+	return u.Update(func(s *RedeemCodeUpsert) {
+		s.AddOwnerID(v)
+	})
+}
+
+// UpdateOwnerID sets the "owner_id" field to the value that was provided on create.
+func (u *RedeemCodeUpsertBulk) UpdateOwnerID() *RedeemCodeUpsertBulk {
+	return u.Update(func(s *RedeemCodeUpsert) {
+		s.UpdateOwnerID()
+	})
+}
+
+// ClearOwnerID clears the value of the "owner_id" field.
+func (u *RedeemCodeUpsertBulk) ClearOwnerID() *RedeemCodeUpsertBulk {
+	return u.Update(func(s *RedeemCodeUpsert) {
+		s.ClearOwnerID()
 	})
 }
 

@@ -32,6 +32,8 @@ type APIKey struct {
 	Key string `json:"key,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
+	// Notes for this API key (e.g. customer name)
+	Notes string `json:"notes,omitempty"`
 	// GroupID holds the value of the "group_id" field.
 	GroupID *int64 `json:"group_id,omitempty"`
 	// Status holds the value of the "status" field.
@@ -46,6 +48,8 @@ type APIKey struct {
 	QuotaUsed float64 `json:"quota_used,omitempty"`
 	// Expiration time for this API key (null = never expires)
 	ExpiresAt *time.Time `json:"expires_at,omitempty"`
+	// Telegram chat ID for the key holder (null = not bound)
+	TgChatID *int64 `json:"tg_chat_id,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the APIKeyQuery when eager-loading is set.
 	Edges        APIKeyEdges `json:"edges"`
@@ -105,9 +109,9 @@ func (*APIKey) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case apikey.FieldQuota, apikey.FieldQuotaUsed:
 			values[i] = new(sql.NullFloat64)
-		case apikey.FieldID, apikey.FieldUserID, apikey.FieldGroupID:
+		case apikey.FieldID, apikey.FieldUserID, apikey.FieldGroupID, apikey.FieldTgChatID:
 			values[i] = new(sql.NullInt64)
-		case apikey.FieldKey, apikey.FieldName, apikey.FieldStatus:
+		case apikey.FieldKey, apikey.FieldName, apikey.FieldNotes, apikey.FieldStatus:
 			values[i] = new(sql.NullString)
 		case apikey.FieldCreatedAt, apikey.FieldUpdatedAt, apikey.FieldDeletedAt, apikey.FieldExpiresAt:
 			values[i] = new(sql.NullTime)
@@ -169,6 +173,12 @@ func (_m *APIKey) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Name = value.String
 			}
+		case apikey.FieldNotes:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field notes", values[i])
+			} else if value.Valid {
+				_m.Notes = value.String
+			}
 		case apikey.FieldGroupID:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field group_id", values[i])
@@ -216,6 +226,13 @@ func (_m *APIKey) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.ExpiresAt = new(time.Time)
 				*_m.ExpiresAt = value.Time
+			}
+		case apikey.FieldTgChatID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field tg_chat_id", values[i])
+			} else if value.Valid {
+				_m.TgChatID = new(int64)
+				*_m.TgChatID = value.Int64
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -288,6 +305,9 @@ func (_m *APIKey) String() string {
 	builder.WriteString("name=")
 	builder.WriteString(_m.Name)
 	builder.WriteString(", ")
+	builder.WriteString("notes=")
+	builder.WriteString(_m.Notes)
+	builder.WriteString(", ")
 	if v := _m.GroupID; v != nil {
 		builder.WriteString("group_id=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
@@ -311,6 +331,11 @@ func (_m *APIKey) String() string {
 	if v := _m.ExpiresAt; v != nil {
 		builder.WriteString("expires_at=")
 		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.TgChatID; v != nil {
+		builder.WriteString("tg_chat_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteByte(')')
 	return builder.String()

@@ -73,6 +73,12 @@ const (
 	FieldIsRecommended = "is_recommended"
 	// FieldExternalBuyURL holds the string denoting the external_buy_url field in the database.
 	FieldExternalBuyURL = "external_buy_url"
+	// FieldOwnerID holds the string denoting the owner_id field in the database.
+	FieldOwnerID = "owner_id"
+	// FieldSourceGroupID holds the string denoting the source_group_id field in the database.
+	FieldSourceGroupID = "source_group_id"
+	// FieldResellerTemplate holds the string denoting the reseller_template field in the database.
+	FieldResellerTemplate = "reseller_template"
 	// EdgeAPIKeys holds the string denoting the api_keys edge name in mutations.
 	EdgeAPIKeys = "api_keys"
 	// EdgeRedeemCodes holds the string denoting the redeem_codes edge name in mutations.
@@ -186,6 +192,9 @@ var Columns = []string{
 	FieldSortOrder,
 	FieldIsRecommended,
 	FieldExternalBuyURL,
+	FieldOwnerID,
+	FieldSourceGroupID,
+	FieldResellerTemplate,
 }
 
 var (
@@ -255,6 +264,8 @@ var (
 	DefaultSortOrder int
 	// DefaultIsRecommended holds the default value on creation for the "is_recommended" field.
 	DefaultIsRecommended bool
+	// DefaultResellerTemplate holds the default value on creation for the "reseller_template" field.
+	DefaultResellerTemplate bool
 )
 
 // OrderOption defines the ordering options for the Group queries.
@@ -398,6 +409,21 @@ func ByIsRecommended(opts ...sql.OrderTermOption) OrderOption {
 // ByExternalBuyURL orders the results by the external_buy_url field.
 func ByExternalBuyURL(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldExternalBuyURL, opts...).ToFunc()
+}
+
+// ByOwnerID orders the results by the owner_id field.
+func ByOwnerID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldOwnerID, opts...).ToFunc()
+}
+
+// BySourceGroupID orders the results by the source_group_id field.
+func BySourceGroupID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSourceGroupID, opts...).ToFunc()
+}
+
+// ByResellerTemplate orders the results by the reseller_template field.
+func ByResellerTemplate(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldResellerTemplate, opts...).ToFunc()
 }
 
 // ByAPIKeysCount orders the results by api_keys count.

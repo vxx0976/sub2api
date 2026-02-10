@@ -2,6 +2,7 @@ package handler
 
 import (
 	"github.com/Wei-Shaw/sub2api/internal/handler/admin"
+	"github.com/Wei-Shaw/sub2api/internal/handler/reseller"
 )
 
 // AdminHandlers contains all admin-related HTTP handlers
@@ -30,6 +31,15 @@ type AdminHandlers struct {
 	ErrorPassthrough *admin.ErrorPassthroughHandler
 }
 
+// ResellerHandlers contains all reseller-related HTTP handlers
+type ResellerHandlers struct {
+	Dashboard *reseller.DashboardHandler
+	Domain    *reseller.DomainHandler
+	Group     *reseller.GroupHandler
+	Setting   *reseller.SettingHandler
+	Key       *reseller.KeyHandler
+}
+
 // Handlers contains all HTTP handlers
 type Handlers struct {
 	Auth          *AuthHandler
@@ -42,6 +52,7 @@ type Handlers struct {
 	Recharge      *RechargeHandler
 	Announcement  *AnnouncementHandler
 	Admin         *AdminHandlers
+	Reseller      *ResellerHandlers
 	Gateway       *GatewayHandler
 	OpenAIGateway *OpenAIGatewayHandler
 	Setting       *SettingHandler

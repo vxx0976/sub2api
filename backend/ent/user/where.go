@@ -140,6 +140,21 @@ func TotpEnabledAt(v time.Time) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldTotpEnabledAt, v))
 }
 
+// ParentID applies equality check predicate on the "parent_id" field. It's identical to ParentIDEQ.
+func ParentID(v int64) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldParentID, v))
+}
+
+// TokenVersion applies equality check predicate on the "token_version" field. It's identical to TokenVersionEQ.
+func TokenVersion(v int64) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldTokenVersion, v))
+}
+
+// RoleVersion applies equality check predicate on the "role_version" field. It's identical to RoleVersionEQ.
+func RoleVersion(v int64) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldRoleVersion, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldCreatedAt, v))
@@ -1010,6 +1025,116 @@ func TotpEnabledAtNotNil() predicate.User {
 	return predicate.User(sql.FieldNotNull(FieldTotpEnabledAt))
 }
 
+// ParentIDEQ applies the EQ predicate on the "parent_id" field.
+func ParentIDEQ(v int64) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldParentID, v))
+}
+
+// ParentIDNEQ applies the NEQ predicate on the "parent_id" field.
+func ParentIDNEQ(v int64) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldParentID, v))
+}
+
+// ParentIDIn applies the In predicate on the "parent_id" field.
+func ParentIDIn(vs ...int64) predicate.User {
+	return predicate.User(sql.FieldIn(FieldParentID, vs...))
+}
+
+// ParentIDNotIn applies the NotIn predicate on the "parent_id" field.
+func ParentIDNotIn(vs ...int64) predicate.User {
+	return predicate.User(sql.FieldNotIn(FieldParentID, vs...))
+}
+
+// ParentIDIsNil applies the IsNil predicate on the "parent_id" field.
+func ParentIDIsNil() predicate.User {
+	return predicate.User(sql.FieldIsNull(FieldParentID))
+}
+
+// ParentIDNotNil applies the NotNil predicate on the "parent_id" field.
+func ParentIDNotNil() predicate.User {
+	return predicate.User(sql.FieldNotNull(FieldParentID))
+}
+
+// TokenVersionEQ applies the EQ predicate on the "token_version" field.
+func TokenVersionEQ(v int64) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldTokenVersion, v))
+}
+
+// TokenVersionNEQ applies the NEQ predicate on the "token_version" field.
+func TokenVersionNEQ(v int64) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldTokenVersion, v))
+}
+
+// TokenVersionIn applies the In predicate on the "token_version" field.
+func TokenVersionIn(vs ...int64) predicate.User {
+	return predicate.User(sql.FieldIn(FieldTokenVersion, vs...))
+}
+
+// TokenVersionNotIn applies the NotIn predicate on the "token_version" field.
+func TokenVersionNotIn(vs ...int64) predicate.User {
+	return predicate.User(sql.FieldNotIn(FieldTokenVersion, vs...))
+}
+
+// TokenVersionGT applies the GT predicate on the "token_version" field.
+func TokenVersionGT(v int64) predicate.User {
+	return predicate.User(sql.FieldGT(FieldTokenVersion, v))
+}
+
+// TokenVersionGTE applies the GTE predicate on the "token_version" field.
+func TokenVersionGTE(v int64) predicate.User {
+	return predicate.User(sql.FieldGTE(FieldTokenVersion, v))
+}
+
+// TokenVersionLT applies the LT predicate on the "token_version" field.
+func TokenVersionLT(v int64) predicate.User {
+	return predicate.User(sql.FieldLT(FieldTokenVersion, v))
+}
+
+// TokenVersionLTE applies the LTE predicate on the "token_version" field.
+func TokenVersionLTE(v int64) predicate.User {
+	return predicate.User(sql.FieldLTE(FieldTokenVersion, v))
+}
+
+// RoleVersionEQ applies the EQ predicate on the "role_version" field.
+func RoleVersionEQ(v int64) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldRoleVersion, v))
+}
+
+// RoleVersionNEQ applies the NEQ predicate on the "role_version" field.
+func RoleVersionNEQ(v int64) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldRoleVersion, v))
+}
+
+// RoleVersionIn applies the In predicate on the "role_version" field.
+func RoleVersionIn(vs ...int64) predicate.User {
+	return predicate.User(sql.FieldIn(FieldRoleVersion, vs...))
+}
+
+// RoleVersionNotIn applies the NotIn predicate on the "role_version" field.
+func RoleVersionNotIn(vs ...int64) predicate.User {
+	return predicate.User(sql.FieldNotIn(FieldRoleVersion, vs...))
+}
+
+// RoleVersionGT applies the GT predicate on the "role_version" field.
+func RoleVersionGT(v int64) predicate.User {
+	return predicate.User(sql.FieldGT(FieldRoleVersion, v))
+}
+
+// RoleVersionGTE applies the GTE predicate on the "role_version" field.
+func RoleVersionGTE(v int64) predicate.User {
+	return predicate.User(sql.FieldGTE(FieldRoleVersion, v))
+}
+
+// RoleVersionLT applies the LT predicate on the "role_version" field.
+func RoleVersionLT(v int64) predicate.User {
+	return predicate.User(sql.FieldLT(FieldRoleVersion, v))
+}
+
+// RoleVersionLTE applies the LTE predicate on the "role_version" field.
+func RoleVersionLTE(v int64) predicate.User {
+	return predicate.User(sql.FieldLTE(FieldRoleVersion, v))
+}
+
 // HasAPIKeys applies the HasEdge predicate on the "api_keys" edge.
 func HasAPIKeys() predicate.User {
 	return predicate.User(func(s *sql.Selector) {
@@ -1301,6 +1426,75 @@ func HasReferralRewardReceived() predicate.User {
 func HasReferralRewardReceivedWith(preds ...predicate.ReferralReward) predicate.User {
 	return predicate.User(func(s *sql.Selector) {
 		step := newReferralRewardReceivedStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasSubUsers applies the HasEdge predicate on the "sub_users" edge.
+func HasSubUsers() predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, SubUsersTable, SubUsersColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasSubUsersWith applies the HasEdge predicate on the "sub_users" edge with a given conditions (other predicates).
+func HasSubUsersWith(preds ...predicate.User) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := newSubUsersStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasParent applies the HasEdge predicate on the "parent" edge.
+func HasParent() predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, ParentTable, ParentColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasParentWith applies the HasEdge predicate on the "parent" edge with a given conditions (other predicates).
+func HasParentWith(preds ...predicate.User) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := newParentStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasResellerDomains applies the HasEdge predicate on the "reseller_domains" edge.
+func HasResellerDomains() predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ResellerDomainsTable, ResellerDomainsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasResellerDomainsWith applies the HasEdge predicate on the "reseller_domains" edge with a given conditions (other predicates).
+func HasResellerDomainsWith(preds ...predicate.ResellerDomain) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := newResellerDomainsStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

@@ -61,6 +61,9 @@ type SystemSettings struct {
 	OpsRealtimeMonitoringEnabled bool
 	OpsQueryModeDefault          string
 	OpsMetricsIntervalSeconds    int
+
+	// Default locale
+	DefaultLocale string
 }
 
 // SimpleAnnouncement represents a single announcement item for public display
@@ -93,6 +96,7 @@ type PublicSettings struct {
 	Announcements               []SimpleAnnouncement
 	CryptoAddresses             string
 	QueryDomain                 string
+	DefaultLocale               string
 }
 
 // StreamTimeoutSettings 流超时处理配置（仅控制超时后的处理方式，超时判定由网关配置控制）

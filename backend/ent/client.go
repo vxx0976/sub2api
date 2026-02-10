@@ -30,6 +30,8 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/rechargeorder"
 	"github.com/Wei-Shaw/sub2api/ent/redeemcode"
 	"github.com/Wei-Shaw/sub2api/ent/referralreward"
+	"github.com/Wei-Shaw/sub2api/ent/resellerdomain"
+	"github.com/Wei-Shaw/sub2api/ent/resellersetting"
 	"github.com/Wei-Shaw/sub2api/ent/setting"
 	"github.com/Wei-Shaw/sub2api/ent/usagecleanuptask"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
@@ -77,6 +79,10 @@ type Client struct {
 	RedeemCode *RedeemCodeClient
 	// ReferralReward is the client for interacting with the ReferralReward builders.
 	ReferralReward *ReferralRewardClient
+	// ResellerDomain is the client for interacting with the ResellerDomain builders.
+	ResellerDomain *ResellerDomainClient
+	// ResellerSetting is the client for interacting with the ResellerSetting builders.
+	ResellerSetting *ResellerSettingClient
 	// Setting is the client for interacting with the Setting builders.
 	Setting *SettingClient
 	// UsageCleanupTask is the client for interacting with the UsageCleanupTask builders.
@@ -119,6 +125,8 @@ func (c *Client) init() {
 	c.RechargeOrder = NewRechargeOrderClient(c.config)
 	c.RedeemCode = NewRedeemCodeClient(c.config)
 	c.ReferralReward = NewReferralRewardClient(c.config)
+	c.ResellerDomain = NewResellerDomainClient(c.config)
+	c.ResellerSetting = NewResellerSettingClient(c.config)
 	c.Setting = NewSettingClient(c.config)
 	c.UsageCleanupTask = NewUsageCleanupTaskClient(c.config)
 	c.UsageLog = NewUsageLogClient(c.config)
@@ -234,6 +242,8 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		RechargeOrder:           NewRechargeOrderClient(cfg),
 		RedeemCode:              NewRedeemCodeClient(cfg),
 		ReferralReward:          NewReferralRewardClient(cfg),
+		ResellerDomain:          NewResellerDomainClient(cfg),
+		ResellerSetting:         NewResellerSettingClient(cfg),
 		Setting:                 NewSettingClient(cfg),
 		UsageCleanupTask:        NewUsageCleanupTaskClient(cfg),
 		UsageLog:                NewUsageLogClient(cfg),
@@ -276,6 +286,8 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		RechargeOrder:           NewRechargeOrderClient(cfg),
 		RedeemCode:              NewRedeemCodeClient(cfg),
 		ReferralReward:          NewReferralRewardClient(cfg),
+		ResellerDomain:          NewResellerDomainClient(cfg),
+		ResellerSetting:         NewResellerSettingClient(cfg),
 		Setting:                 NewSettingClient(cfg),
 		UsageCleanupTask:        NewUsageCleanupTaskClient(cfg),
 		UsageLog:                NewUsageLogClient(cfg),
@@ -316,8 +328,9 @@ func (c *Client) Use(hooks ...Hook) {
 		c.APIKey, c.Account, c.AccountGroup, c.Announcement, c.AnnouncementRead,
 		c.Channel, c.ErrorPassthroughRule, c.Group, c.Order, c.PromoCode,
 		c.PromoCodeUsage, c.Proxy, c.RechargeOrder, c.RedeemCode, c.ReferralReward,
-		c.Setting, c.UsageCleanupTask, c.UsageLog, c.User, c.UserAllowedGroup,
-		c.UserAttributeDefinition, c.UserAttributeValue, c.UserSubscription,
+		c.ResellerDomain, c.ResellerSetting, c.Setting, c.UsageCleanupTask, c.UsageLog,
+		c.User, c.UserAllowedGroup, c.UserAttributeDefinition, c.UserAttributeValue,
+		c.UserSubscription,
 	} {
 		n.Use(hooks...)
 	}
@@ -330,8 +343,9 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.APIKey, c.Account, c.AccountGroup, c.Announcement, c.AnnouncementRead,
 		c.Channel, c.ErrorPassthroughRule, c.Group, c.Order, c.PromoCode,
 		c.PromoCodeUsage, c.Proxy, c.RechargeOrder, c.RedeemCode, c.ReferralReward,
-		c.Setting, c.UsageCleanupTask, c.UsageLog, c.User, c.UserAllowedGroup,
-		c.UserAttributeDefinition, c.UserAttributeValue, c.UserSubscription,
+		c.ResellerDomain, c.ResellerSetting, c.Setting, c.UsageCleanupTask, c.UsageLog,
+		c.User, c.UserAllowedGroup, c.UserAttributeDefinition, c.UserAttributeValue,
+		c.UserSubscription,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -370,6 +384,10 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.RedeemCode.mutate(ctx, m)
 	case *ReferralRewardMutation:
 		return c.ReferralReward.mutate(ctx, m)
+	case *ResellerDomainMutation:
+		return c.ResellerDomain.mutate(ctx, m)
+	case *ResellerSettingMutation:
+		return c.ResellerSetting.mutate(ctx, m)
 	case *SettingMutation:
 		return c.Setting.mutate(ctx, m)
 	case *UsageCleanupTaskMutation:
@@ -2907,6 +2925,290 @@ func (c *ReferralRewardClient) mutate(ctx context.Context, m *ReferralRewardMuta
 	}
 }
 
+// ResellerDomainClient is a client for the ResellerDomain schema.
+type ResellerDomainClient struct {
+	config
+}
+
+// NewResellerDomainClient returns a client for the ResellerDomain from the given config.
+func NewResellerDomainClient(c config) *ResellerDomainClient {
+	return &ResellerDomainClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `resellerdomain.Hooks(f(g(h())))`.
+func (c *ResellerDomainClient) Use(hooks ...Hook) {
+	c.hooks.ResellerDomain = append(c.hooks.ResellerDomain, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `resellerdomain.Intercept(f(g(h())))`.
+func (c *ResellerDomainClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ResellerDomain = append(c.inters.ResellerDomain, interceptors...)
+}
+
+// Create returns a builder for creating a ResellerDomain entity.
+func (c *ResellerDomainClient) Create() *ResellerDomainCreate {
+	mutation := newResellerDomainMutation(c.config, OpCreate)
+	return &ResellerDomainCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ResellerDomain entities.
+func (c *ResellerDomainClient) CreateBulk(builders ...*ResellerDomainCreate) *ResellerDomainCreateBulk {
+	return &ResellerDomainCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ResellerDomainClient) MapCreateBulk(slice any, setFunc func(*ResellerDomainCreate, int)) *ResellerDomainCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ResellerDomainCreateBulk{err: fmt.Errorf("calling to ResellerDomainClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ResellerDomainCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ResellerDomainCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ResellerDomain.
+func (c *ResellerDomainClient) Update() *ResellerDomainUpdate {
+	mutation := newResellerDomainMutation(c.config, OpUpdate)
+	return &ResellerDomainUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ResellerDomainClient) UpdateOne(_m *ResellerDomain) *ResellerDomainUpdateOne {
+	mutation := newResellerDomainMutation(c.config, OpUpdateOne, withResellerDomain(_m))
+	return &ResellerDomainUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ResellerDomainClient) UpdateOneID(id int64) *ResellerDomainUpdateOne {
+	mutation := newResellerDomainMutation(c.config, OpUpdateOne, withResellerDomainID(id))
+	return &ResellerDomainUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ResellerDomain.
+func (c *ResellerDomainClient) Delete() *ResellerDomainDelete {
+	mutation := newResellerDomainMutation(c.config, OpDelete)
+	return &ResellerDomainDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ResellerDomainClient) DeleteOne(_m *ResellerDomain) *ResellerDomainDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ResellerDomainClient) DeleteOneID(id int64) *ResellerDomainDeleteOne {
+	builder := c.Delete().Where(resellerdomain.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ResellerDomainDeleteOne{builder}
+}
+
+// Query returns a query builder for ResellerDomain.
+func (c *ResellerDomainClient) Query() *ResellerDomainQuery {
+	return &ResellerDomainQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeResellerDomain},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ResellerDomain entity by its id.
+func (c *ResellerDomainClient) Get(ctx context.Context, id int64) (*ResellerDomain, error) {
+	return c.Query().Where(resellerdomain.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ResellerDomainClient) GetX(ctx context.Context, id int64) *ResellerDomain {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryReseller queries the reseller edge of a ResellerDomain.
+func (c *ResellerDomainClient) QueryReseller(_m *ResellerDomain) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(resellerdomain.Table, resellerdomain.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, resellerdomain.ResellerTable, resellerdomain.ResellerColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ResellerDomainClient) Hooks() []Hook {
+	hooks := c.hooks.ResellerDomain
+	return append(hooks[:len(hooks):len(hooks)], resellerdomain.Hooks[:]...)
+}
+
+// Interceptors returns the client interceptors.
+func (c *ResellerDomainClient) Interceptors() []Interceptor {
+	inters := c.inters.ResellerDomain
+	return append(inters[:len(inters):len(inters)], resellerdomain.Interceptors[:]...)
+}
+
+func (c *ResellerDomainClient) mutate(ctx context.Context, m *ResellerDomainMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ResellerDomainCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ResellerDomainUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ResellerDomainUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ResellerDomainDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ResellerDomain mutation op: %q", m.Op())
+	}
+}
+
+// ResellerSettingClient is a client for the ResellerSetting schema.
+type ResellerSettingClient struct {
+	config
+}
+
+// NewResellerSettingClient returns a client for the ResellerSetting from the given config.
+func NewResellerSettingClient(c config) *ResellerSettingClient {
+	return &ResellerSettingClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `resellersetting.Hooks(f(g(h())))`.
+func (c *ResellerSettingClient) Use(hooks ...Hook) {
+	c.hooks.ResellerSetting = append(c.hooks.ResellerSetting, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `resellersetting.Intercept(f(g(h())))`.
+func (c *ResellerSettingClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ResellerSetting = append(c.inters.ResellerSetting, interceptors...)
+}
+
+// Create returns a builder for creating a ResellerSetting entity.
+func (c *ResellerSettingClient) Create() *ResellerSettingCreate {
+	mutation := newResellerSettingMutation(c.config, OpCreate)
+	return &ResellerSettingCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ResellerSetting entities.
+func (c *ResellerSettingClient) CreateBulk(builders ...*ResellerSettingCreate) *ResellerSettingCreateBulk {
+	return &ResellerSettingCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ResellerSettingClient) MapCreateBulk(slice any, setFunc func(*ResellerSettingCreate, int)) *ResellerSettingCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ResellerSettingCreateBulk{err: fmt.Errorf("calling to ResellerSettingClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ResellerSettingCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ResellerSettingCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ResellerSetting.
+func (c *ResellerSettingClient) Update() *ResellerSettingUpdate {
+	mutation := newResellerSettingMutation(c.config, OpUpdate)
+	return &ResellerSettingUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ResellerSettingClient) UpdateOne(_m *ResellerSetting) *ResellerSettingUpdateOne {
+	mutation := newResellerSettingMutation(c.config, OpUpdateOne, withResellerSetting(_m))
+	return &ResellerSettingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ResellerSettingClient) UpdateOneID(id int64) *ResellerSettingUpdateOne {
+	mutation := newResellerSettingMutation(c.config, OpUpdateOne, withResellerSettingID(id))
+	return &ResellerSettingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ResellerSetting.
+func (c *ResellerSettingClient) Delete() *ResellerSettingDelete {
+	mutation := newResellerSettingMutation(c.config, OpDelete)
+	return &ResellerSettingDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ResellerSettingClient) DeleteOne(_m *ResellerSetting) *ResellerSettingDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ResellerSettingClient) DeleteOneID(id int64) *ResellerSettingDeleteOne {
+	builder := c.Delete().Where(resellersetting.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ResellerSettingDeleteOne{builder}
+}
+
+// Query returns a query builder for ResellerSetting.
+func (c *ResellerSettingClient) Query() *ResellerSettingQuery {
+	return &ResellerSettingQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeResellerSetting},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ResellerSetting entity by its id.
+func (c *ResellerSettingClient) Get(ctx context.Context, id int64) (*ResellerSetting, error) {
+	return c.Query().Where(resellersetting.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ResellerSettingClient) GetX(ctx context.Context, id int64) *ResellerSetting {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *ResellerSettingClient) Hooks() []Hook {
+	return c.hooks.ResellerSetting
+}
+
+// Interceptors returns the client interceptors.
+func (c *ResellerSettingClient) Interceptors() []Interceptor {
+	return c.inters.ResellerSetting
+}
+
+func (c *ResellerSettingClient) mutate(ctx context.Context, m *ResellerSettingMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ResellerSettingCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ResellerSettingUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ResellerSettingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ResellerSettingDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ResellerSetting mutation op: %q", m.Op())
+	}
+}
+
 // SettingClient is a client for the Setting schema.
 type SettingClient struct {
 	config
@@ -3702,6 +4004,54 @@ func (c *UserClient) QueryReferralRewardReceived(_m *User) *ReferralRewardQuery 
 	return query
 }
 
+// QuerySubUsers queries the sub_users edge of a User.
+func (c *UserClient) QuerySubUsers(_m *User) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.SubUsersTable, user.SubUsersColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryParent queries the parent edge of a User.
+func (c *UserClient) QueryParent(_m *User) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, user.ParentTable, user.ParentColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryResellerDomains queries the reseller_domains edge of a User.
+func (c *UserClient) QueryResellerDomains(_m *User) *ResellerDomainQuery {
+	query := (&ResellerDomainClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(resellerdomain.Table, resellerdomain.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.ResellerDomainsTable, user.ResellerDomainsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryUserAllowedGroups queries the user_allowed_groups edge of a User.
 func (c *UserClient) QueryUserAllowedGroups(_m *User) *UserAllowedGroupQuery {
 	query := (&UserAllowedGroupClient{config: c.config}).Query()
@@ -4397,16 +4747,16 @@ type (
 	hooks struct {
 		APIKey, Account, AccountGroup, Announcement, AnnouncementRead, Channel,
 		ErrorPassthroughRule, Group, Order, PromoCode, PromoCodeUsage, Proxy,
-		RechargeOrder, RedeemCode, ReferralReward, Setting, UsageCleanupTask, UsageLog,
-		User, UserAllowedGroup, UserAttributeDefinition, UserAttributeValue,
-		UserSubscription []ent.Hook
+		RechargeOrder, RedeemCode, ReferralReward, ResellerDomain, ResellerSetting,
+		Setting, UsageCleanupTask, UsageLog, User, UserAllowedGroup,
+		UserAttributeDefinition, UserAttributeValue, UserSubscription []ent.Hook
 	}
 	inters struct {
 		APIKey, Account, AccountGroup, Announcement, AnnouncementRead, Channel,
 		ErrorPassthroughRule, Group, Order, PromoCode, PromoCodeUsage, Proxy,
-		RechargeOrder, RedeemCode, ReferralReward, Setting, UsageCleanupTask, UsageLog,
-		User, UserAllowedGroup, UserAttributeDefinition, UserAttributeValue,
-		UserSubscription []ent.Interceptor
+		RechargeOrder, RedeemCode, ReferralReward, ResellerDomain, ResellerSetting,
+		Setting, UsageCleanupTask, UsageLog, User, UserAllowedGroup,
+		UserAttributeDefinition, UserAttributeValue, UserSubscription []ent.Interceptor
 	}
 )
 

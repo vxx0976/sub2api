@@ -23,10 +23,10 @@
           <template #cell-key="{ value, row }">
             <div class="flex items-center gap-2">
               <code class="code text-xs">
-                {{ maskKey(value) }}
+                {{ maskKey(value || '') }}
               </code>
               <button
-                @click="copyToClipboard(value, row.id)"
+                @click="copyToClipboard(value || '', row.id)"
                 class="rounded-lg p-1 transition-colors hover:bg-gray-100 dark:hover:bg-dark-700"
                 :class="
                   copiedKeyId === row.id
@@ -109,8 +109,8 @@
                   ${{ (usageStats[row.id]?.total_actual_cost ?? 0).toFixed(4) }}
                 </span>
               </div>
-              <!-- Quota progress (if quota is set) -->
-              <div v-if="row.quota > 0" class="mt-1.5">
+              <!-- Quota progress (hidden for regular users) -->
+              <div v-if="row.quota > 0 && !isRegularUser" class="mt-1.5">
                 <div class="flex items-center gap-1.5">
                   <span class="text-gray-500 dark:text-gray-400">{{ t('keys.quota') }}:</span>
                   <span :class="[
@@ -249,6 +249,16 @@
           />
         </div>
 
+        <div v-if="!isRegularUser">
+          <label class="input-label">{{ t('keys.notes') }}</label>
+          <input
+            v-model="formData.notes"
+            type="text"
+            class="input"
+            :placeholder="t('keys.notesPlaceholder')"
+          />
+        </div>
+
         <div>
           <label class="input-label">{{ t('keys.groupLabel') }}</label>
           <Select
@@ -337,8 +347,8 @@
           </div>
         </div>
 
-        <!-- Quota Limit Section -->
-        <div class="space-y-3">
+        <!-- Quota Limit Section (hidden for regular users when creating) -->
+        <div v-if="!isRegularUser || showEditModal" class="space-y-3">
           <label class="input-label">{{ t('keys.quotaLimit') }}</label>
           <!-- Switch commented out - always show input, 0 = unlimited
           <div class="flex items-center justify-between">
@@ -403,8 +413,8 @@
           </div>
         </div>
 
-        <!-- Expiration Section -->
-        <div class="space-y-3">
+        <!-- Expiration Section (hidden for regular users when creating) -->
+        <div v-if="!isRegularUser || showEditModal" class="space-y-3">
           <div class="flex items-center justify-between">
             <label class="input-label mb-0">{{ t('keys.expiration') }}</label>
             <button
@@ -620,6 +630,10 @@ import TablePageLayout from '@/components/layout/TablePageLayout.vue'
 import type { Column } from '@/components/common/types'
 import type { BatchApiKeyUsageStats } from '@/api/usage'
 import { formatDateTime } from '@/utils/format'
+import { useAuthStore } from '@/stores/auth'
+
+const authStore = useAuthStore()
+const isRegularUser = computed(() => !authStore.isAdmin && !authStore.isReseller)
 
 // Helper to format date for datetime-local input
 const formatDateTimeLocal = (isoDate: string): string => {
@@ -642,16 +656,20 @@ const appStore = useAppStore()
 const onboardingStore = useOnboardingStore()
 const { copyToClipboard: clipboardCopy } = useClipboard()
 
-const columns = computed<Column[]>(() => [
-  { key: 'name', label: t('common.name'), sortable: true },
-  { key: 'key', label: t('keys.apiKey'), sortable: false },
-  { key: 'group', label: t('keys.group'), sortable: false },
-  { key: 'usage', label: t('keys.usage'), sortable: false },
-  { key: 'expires_at', label: t('keys.expiresAt'), sortable: true },
-  { key: 'status', label: t('common.status'), sortable: true },
-  { key: 'created_at', label: t('keys.created'), sortable: true },
-  { key: 'actions', label: t('common.actions'), sortable: false }
-])
+const columns = computed<Column[]>(() => {
+  const cols: Column[] = [
+    { key: 'name', label: t('common.name'), sortable: true },
+    ...(!isRegularUser.value ? [{ key: 'notes', label: t('keys.notes') }] : []),
+    { key: 'key', label: t('keys.apiKey'), sortable: false },
+    { key: 'group', label: t('keys.group'), sortable: false },
+    { key: 'usage', label: t('keys.usage'), sortable: false },
+    ...(!isRegularUser.value ? [{ key: 'expires_at', label: t('keys.expiresAt'), sortable: true }] : []),
+    { key: 'status', label: t('common.status'), sortable: true },
+    { key: 'created_at', label: t('keys.created'), sortable: true },
+    { key: 'actions', label: t('common.actions'), sortable: false }
+  ]
+  return cols
+})
 
 const apiKeys = ref<ApiKey[]>([])
 const groups = ref<Group[]>([])
@@ -697,6 +715,7 @@ const setGroupButtonRef = (keyId: number, el: Element | ComponentPublicInstance 
 
 const formData = ref({
   name: '',
+  notes: '',
   group_id: null as number | null,
   status: 'active' as 'active' | 'inactive',
   use_custom_key: false,
@@ -747,6 +766,7 @@ const groupOptions = computed(() =>
 )
 
 const maskKey = (key: string): string => {
+  if (!key) return ''
   if (key.length <= 12) return key
   return `${key.slice(0, 8)}...${key.slice(-4)}`
 }
@@ -858,6 +878,7 @@ const editKey = (key: ApiKey) => {
   const hasExpiration = !!key.expires_at
   formData.value = {
     name: key.name,
+    notes: (key as any).notes || '',
     group_id: key.group_id,
     status: key.status === 'quota_exhausted' || key.status === 'expired' ? 'inactive' : key.status,
     use_custom_key: false,
@@ -989,7 +1010,8 @@ const handleSubmit = async () => {
         ip_whitelist: ipWhitelist,
         ip_blacklist: ipBlacklist,
         quota: quota,
-        expires_at: expiresAt
+        expires_at: expiresAt,
+        notes: formData.value.notes
       })
       appStore.showSuccess(t('keys.keyUpdatedSuccess'))
     } else {
@@ -1001,7 +1023,8 @@ const handleSubmit = async () => {
         ipWhitelist,
         ipBlacklist,
         quota,
-        expiresInDays
+        expiresInDays,
+        formData.value.notes || undefined
       )
       appStore.showSuccess(t('keys.keyCreatedSuccess'))
       // Only advance tour if active, on submit step, and creation succeeded
@@ -1046,6 +1069,7 @@ const closeModals = () => {
   selectedKey.value = null
   formData.value = {
     name: '',
+    notes: '',
     group_id: null,
     status: 'active',
     use_custom_key: false,

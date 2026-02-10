@@ -28,7 +28,8 @@ type User struct {
 type AdminUser struct {
 	User
 
-	Notes string `json:"notes"`
+	Notes    string `json:"notes"`
+	ParentID *int64 `json:"parent_id,omitempty"`
 	// GroupRates 用户专属分组倍率配置
 	// map[groupID]rateMultiplier
 	GroupRates map[int64]float64 `json:"group_rates,omitempty"`
@@ -39,6 +40,7 @@ type APIKey struct {
 	UserID      int64      `json:"user_id"`
 	Key         string     `json:"key"`
 	Name        string     `json:"name"`
+	Notes       string     `json:"notes"`
 	GroupID     *int64     `json:"group_id"`
 	Status      string     `json:"status"`
 	IPWhitelist []string   `json:"ip_whitelist"`
@@ -84,6 +86,7 @@ type Group struct {
 	IsPurchasable       bool     `json:"is_purchasable"`
 	SortOrder           int      `json:"sort_order"`
 	IsRecommended       bool     `json:"is_recommended"`
+	ResellerTemplate    bool     `json:"reseller_template"`
 	ExternalBuyURL      *string  `json:"external_buy_url"`
 
 	CreatedAt time.Time `json:"created_at"`

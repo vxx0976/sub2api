@@ -2,6 +2,7 @@ package handler
 
 import (
 	"github.com/Wei-Shaw/sub2api/internal/handler/admin"
+	"github.com/Wei-Shaw/sub2api/internal/handler/reseller"
 	"github.com/Wei-Shaw/sub2api/internal/service"
 
 	"github.com/google/wire"
@@ -58,6 +59,23 @@ func ProvideAdminHandlers(
 	}
 }
 
+// ProvideResellerHandlers creates the ResellerHandlers struct
+func ProvideResellerHandlers(
+	dashboardHandler *reseller.DashboardHandler,
+	domainHandler *reseller.DomainHandler,
+	groupHandler *reseller.GroupHandler,
+	settingHandler *reseller.SettingHandler,
+	keyHandler *reseller.KeyHandler,
+) *ResellerHandlers {
+	return &ResellerHandlers{
+		Dashboard: dashboardHandler,
+		Domain:    domainHandler,
+		Group:     groupHandler,
+		Setting:   settingHandler,
+		Key:       keyHandler,
+	}
+}
+
 // ProvideSystemHandler creates admin.SystemHandler with UpdateService
 func ProvideSystemHandler(updateService *service.UpdateService) *admin.SystemHandler {
 	return admin.NewSystemHandler(updateService)
@@ -80,6 +98,7 @@ func ProvideHandlers(
 	rechargeHandler *RechargeHandler,
 	announcementHandler *AnnouncementHandler,
 	adminHandlers *AdminHandlers,
+	resellerHandlers *ResellerHandlers,
 	gatewayHandler *GatewayHandler,
 	openaiGatewayHandler *OpenAIGatewayHandler,
 	settingHandler *SettingHandler,
@@ -98,6 +117,7 @@ func ProvideHandlers(
 		Recharge:      rechargeHandler,
 		Announcement:  announcementHandler,
 		Admin:         adminHandlers,
+		Reseller:      resellerHandlers,
 		Gateway:       gatewayHandler,
 		OpenAIGateway: openaiGatewayHandler,
 		Setting:       settingHandler,
@@ -150,7 +170,15 @@ var ProviderSet = wire.NewSet(
 	admin.NewChannelHandler,
 	admin.NewErrorPassthroughHandler,
 
-	// AdminHandlers and Handlers constructors
+	// Reseller handlers
+	reseller.NewDashboardHandler,
+	reseller.NewDomainHandler,
+	reseller.NewGroupHandler,
+	reseller.NewSettingHandler,
+	reseller.NewKeyHandler,
+
+	// AdminHandlers, ResellerHandlers and Handlers constructors
 	ProvideAdminHandlers,
+	ProvideResellerHandlers,
 	ProvideHandlers,
 )

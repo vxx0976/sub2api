@@ -20,6 +20,8 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/rechargeorder"
 	"github.com/Wei-Shaw/sub2api/ent/redeemcode"
 	"github.com/Wei-Shaw/sub2api/ent/referralreward"
+	"github.com/Wei-Shaw/sub2api/ent/resellerdomain"
+	"github.com/Wei-Shaw/sub2api/ent/resellersetting"
 	"github.com/Wei-Shaw/sub2api/ent/schema"
 	"github.com/Wei-Shaw/sub2api/ent/setting"
 	"github.com/Wei-Shaw/sub2api/ent/usagecleanuptask"
@@ -90,18 +92,24 @@ func init() {
 			return nil
 		}
 	}()
+	// apikeyDescNotes is the schema descriptor for notes field.
+	apikeyDescNotes := apikeyFields[3].Descriptor()
+	// apikey.DefaultNotes holds the default value on creation for the notes field.
+	apikey.DefaultNotes = apikeyDescNotes.Default.(string)
+	// apikey.NotesValidator is a validator for the "notes" field. It is called by the builders before save.
+	apikey.NotesValidator = apikeyDescNotes.Validators[0].(func(string) error)
 	// apikeyDescStatus is the schema descriptor for status field.
-	apikeyDescStatus := apikeyFields[4].Descriptor()
+	apikeyDescStatus := apikeyFields[5].Descriptor()
 	// apikey.DefaultStatus holds the default value on creation for the status field.
 	apikey.DefaultStatus = apikeyDescStatus.Default.(string)
 	// apikey.StatusValidator is a validator for the "status" field. It is called by the builders before save.
 	apikey.StatusValidator = apikeyDescStatus.Validators[0].(func(string) error)
 	// apikeyDescQuota is the schema descriptor for quota field.
-	apikeyDescQuota := apikeyFields[7].Descriptor()
+	apikeyDescQuota := apikeyFields[8].Descriptor()
 	// apikey.DefaultQuota holds the default value on creation for the quota field.
 	apikey.DefaultQuota = apikeyDescQuota.Default.(float64)
 	// apikeyDescQuotaUsed is the schema descriptor for quota_used field.
-	apikeyDescQuotaUsed := apikeyFields[8].Descriptor()
+	apikeyDescQuotaUsed := apikeyFields[9].Descriptor()
 	// apikey.DefaultQuotaUsed holds the default value on creation for the quota_used field.
 	apikey.DefaultQuotaUsed = apikeyDescQuotaUsed.Default.(float64)
 	accountMixin := schema.Account{}.Mixin()
@@ -500,6 +508,10 @@ func init() {
 	groupDescIsRecommended := groupFields[24].Descriptor()
 	// group.DefaultIsRecommended holds the default value on creation for the is_recommended field.
 	group.DefaultIsRecommended = groupDescIsRecommended.Default.(bool)
+	// groupDescResellerTemplate is the schema descriptor for reseller_template field.
+	groupDescResellerTemplate := groupFields[28].Descriptor()
+	// group.DefaultResellerTemplate holds the default value on creation for the reseller_template field.
+	group.DefaultResellerTemplate = groupDescResellerTemplate.Default.(bool)
 	orderFields := schema.Order{}.Fields()
 	_ = orderFields
 	// orderDescOrderNo is the schema descriptor for order_no field.
@@ -790,6 +802,167 @@ func init() {
 	referralrewardDescSkipReferrerReason := referralrewardFields[5].Descriptor()
 	// referralreward.SkipReferrerReasonValidator is a validator for the "skip_referrer_reason" field. It is called by the builders before save.
 	referralreward.SkipReferrerReasonValidator = referralrewardDescSkipReferrerReason.Validators[0].(func(string) error)
+	resellerdomainMixin := schema.ResellerDomain{}.Mixin()
+	resellerdomainMixinHooks1 := resellerdomainMixin[1].Hooks()
+	resellerdomain.Hooks[0] = resellerdomainMixinHooks1[0]
+	resellerdomainMixinInters1 := resellerdomainMixin[1].Interceptors()
+	resellerdomain.Interceptors[0] = resellerdomainMixinInters1[0]
+	resellerdomainMixinFields0 := resellerdomainMixin[0].Fields()
+	_ = resellerdomainMixinFields0
+	resellerdomainFields := schema.ResellerDomain{}.Fields()
+	_ = resellerdomainFields
+	// resellerdomainDescCreatedAt is the schema descriptor for created_at field.
+	resellerdomainDescCreatedAt := resellerdomainMixinFields0[0].Descriptor()
+	// resellerdomain.DefaultCreatedAt holds the default value on creation for the created_at field.
+	resellerdomain.DefaultCreatedAt = resellerdomainDescCreatedAt.Default.(func() time.Time)
+	// resellerdomainDescUpdatedAt is the schema descriptor for updated_at field.
+	resellerdomainDescUpdatedAt := resellerdomainMixinFields0[1].Descriptor()
+	// resellerdomain.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	resellerdomain.DefaultUpdatedAt = resellerdomainDescUpdatedAt.Default.(func() time.Time)
+	// resellerdomain.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	resellerdomain.UpdateDefaultUpdatedAt = resellerdomainDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// resellerdomainDescDomain is the schema descriptor for domain field.
+	resellerdomainDescDomain := resellerdomainFields[1].Descriptor()
+	// resellerdomain.DomainValidator is a validator for the "domain" field. It is called by the builders before save.
+	resellerdomain.DomainValidator = func() func(string) error {
+		validators := resellerdomainDescDomain.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(domain string) error {
+			for _, fn := range fns {
+				if err := fn(domain); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// resellerdomainDescSiteName is the schema descriptor for site_name field.
+	resellerdomainDescSiteName := resellerdomainFields[2].Descriptor()
+	// resellerdomain.DefaultSiteName holds the default value on creation for the site_name field.
+	resellerdomain.DefaultSiteName = resellerdomainDescSiteName.Default.(string)
+	// resellerdomain.SiteNameValidator is a validator for the "site_name" field. It is called by the builders before save.
+	resellerdomain.SiteNameValidator = resellerdomainDescSiteName.Validators[0].(func(string) error)
+	// resellerdomainDescSiteLogo is the schema descriptor for site_logo field.
+	resellerdomainDescSiteLogo := resellerdomainFields[3].Descriptor()
+	// resellerdomain.DefaultSiteLogo holds the default value on creation for the site_logo field.
+	resellerdomain.DefaultSiteLogo = resellerdomainDescSiteLogo.Default.(string)
+	// resellerdomainDescBrandColor is the schema descriptor for brand_color field.
+	resellerdomainDescBrandColor := resellerdomainFields[4].Descriptor()
+	// resellerdomain.DefaultBrandColor holds the default value on creation for the brand_color field.
+	resellerdomain.DefaultBrandColor = resellerdomainDescBrandColor.Default.(string)
+	// resellerdomain.BrandColorValidator is a validator for the "brand_color" field. It is called by the builders before save.
+	resellerdomain.BrandColorValidator = resellerdomainDescBrandColor.Validators[0].(func(string) error)
+	// resellerdomainDescCustomCSS is the schema descriptor for custom_css field.
+	resellerdomainDescCustomCSS := resellerdomainFields[5].Descriptor()
+	// resellerdomain.DefaultCustomCSS holds the default value on creation for the custom_css field.
+	resellerdomain.DefaultCustomCSS = resellerdomainDescCustomCSS.Default.(string)
+	// resellerdomainDescSubtitle is the schema descriptor for subtitle field.
+	resellerdomainDescSubtitle := resellerdomainFields[6].Descriptor()
+	// resellerdomain.DefaultSubtitle holds the default value on creation for the subtitle field.
+	resellerdomain.DefaultSubtitle = resellerdomainDescSubtitle.Default.(string)
+	// resellerdomain.SubtitleValidator is a validator for the "subtitle" field. It is called by the builders before save.
+	resellerdomain.SubtitleValidator = resellerdomainDescSubtitle.Validators[0].(func(string) error)
+	// resellerdomainDescHomeContent is the schema descriptor for home_content field.
+	resellerdomainDescHomeContent := resellerdomainFields[7].Descriptor()
+	// resellerdomain.DefaultHomeContent holds the default value on creation for the home_content field.
+	resellerdomain.DefaultHomeContent = resellerdomainDescHomeContent.Default.(string)
+	// resellerdomainDescHomeTemplate is the schema descriptor for home_template field.
+	resellerdomainDescHomeTemplate := resellerdomainFields[8].Descriptor()
+	// resellerdomain.DefaultHomeTemplate holds the default value on creation for the home_template field.
+	resellerdomain.DefaultHomeTemplate = resellerdomainDescHomeTemplate.Default.(string)
+	// resellerdomain.HomeTemplateValidator is a validator for the "home_template" field. It is called by the builders before save.
+	resellerdomain.HomeTemplateValidator = resellerdomainDescHomeTemplate.Validators[0].(func(string) error)
+	// resellerdomainDescDocURL is the schema descriptor for doc_url field.
+	resellerdomainDescDocURL := resellerdomainFields[9].Descriptor()
+	// resellerdomain.DefaultDocURL holds the default value on creation for the doc_url field.
+	resellerdomain.DefaultDocURL = resellerdomainDescDocURL.Default.(string)
+	// resellerdomain.DocURLValidator is a validator for the "doc_url" field. It is called by the builders before save.
+	resellerdomain.DocURLValidator = resellerdomainDescDocURL.Validators[0].(func(string) error)
+	// resellerdomainDescPurchaseEnabled is the schema descriptor for purchase_enabled field.
+	resellerdomainDescPurchaseEnabled := resellerdomainFields[10].Descriptor()
+	// resellerdomain.DefaultPurchaseEnabled holds the default value on creation for the purchase_enabled field.
+	resellerdomain.DefaultPurchaseEnabled = resellerdomainDescPurchaseEnabled.Default.(bool)
+	// resellerdomainDescPurchaseURL is the schema descriptor for purchase_url field.
+	resellerdomainDescPurchaseURL := resellerdomainFields[11].Descriptor()
+	// resellerdomain.DefaultPurchaseURL holds the default value on creation for the purchase_url field.
+	resellerdomain.DefaultPurchaseURL = resellerdomainDescPurchaseURL.Default.(string)
+	// resellerdomain.PurchaseURLValidator is a validator for the "purchase_url" field. It is called by the builders before save.
+	resellerdomain.PurchaseURLValidator = resellerdomainDescPurchaseURL.Validators[0].(func(string) error)
+	// resellerdomainDescDefaultLocale is the schema descriptor for default_locale field.
+	resellerdomainDescDefaultLocale := resellerdomainFields[12].Descriptor()
+	// resellerdomain.DefaultDefaultLocale holds the default value on creation for the default_locale field.
+	resellerdomain.DefaultDefaultLocale = resellerdomainDescDefaultLocale.Default.(string)
+	// resellerdomain.DefaultLocaleValidator is a validator for the "default_locale" field. It is called by the builders before save.
+	resellerdomain.DefaultLocaleValidator = resellerdomainDescDefaultLocale.Validators[0].(func(string) error)
+	// resellerdomainDescSeoTitle is the schema descriptor for seo_title field.
+	resellerdomainDescSeoTitle := resellerdomainFields[13].Descriptor()
+	// resellerdomain.DefaultSeoTitle holds the default value on creation for the seo_title field.
+	resellerdomain.DefaultSeoTitle = resellerdomainDescSeoTitle.Default.(string)
+	// resellerdomain.SeoTitleValidator is a validator for the "seo_title" field. It is called by the builders before save.
+	resellerdomain.SeoTitleValidator = resellerdomainDescSeoTitle.Validators[0].(func(string) error)
+	// resellerdomainDescSeoDescription is the schema descriptor for seo_description field.
+	resellerdomainDescSeoDescription := resellerdomainFields[14].Descriptor()
+	// resellerdomain.DefaultSeoDescription holds the default value on creation for the seo_description field.
+	resellerdomain.DefaultSeoDescription = resellerdomainDescSeoDescription.Default.(string)
+	// resellerdomainDescSeoKeywords is the schema descriptor for seo_keywords field.
+	resellerdomainDescSeoKeywords := resellerdomainFields[15].Descriptor()
+	// resellerdomain.DefaultSeoKeywords holds the default value on creation for the seo_keywords field.
+	resellerdomain.DefaultSeoKeywords = resellerdomainDescSeoKeywords.Default.(string)
+	// resellerdomain.SeoKeywordsValidator is a validator for the "seo_keywords" field. It is called by the builders before save.
+	resellerdomain.SeoKeywordsValidator = resellerdomainDescSeoKeywords.Validators[0].(func(string) error)
+	// resellerdomainDescLoginRedirect is the schema descriptor for login_redirect field.
+	resellerdomainDescLoginRedirect := resellerdomainFields[16].Descriptor()
+	// resellerdomain.DefaultLoginRedirect holds the default value on creation for the login_redirect field.
+	resellerdomain.DefaultLoginRedirect = resellerdomainDescLoginRedirect.Default.(string)
+	// resellerdomain.LoginRedirectValidator is a validator for the "login_redirect" field. It is called by the builders before save.
+	resellerdomain.LoginRedirectValidator = resellerdomainDescLoginRedirect.Validators[0].(func(string) error)
+	// resellerdomainDescVerifyToken is the schema descriptor for verify_token field.
+	resellerdomainDescVerifyToken := resellerdomainFields[17].Descriptor()
+	// resellerdomain.DefaultVerifyToken holds the default value on creation for the verify_token field.
+	resellerdomain.DefaultVerifyToken = resellerdomainDescVerifyToken.Default.(string)
+	// resellerdomain.VerifyTokenValidator is a validator for the "verify_token" field. It is called by the builders before save.
+	resellerdomain.VerifyTokenValidator = resellerdomainDescVerifyToken.Validators[0].(func(string) error)
+	// resellerdomainDescVerified is the schema descriptor for verified field.
+	resellerdomainDescVerified := resellerdomainFields[18].Descriptor()
+	// resellerdomain.DefaultVerified holds the default value on creation for the verified field.
+	resellerdomain.DefaultVerified = resellerdomainDescVerified.Default.(bool)
+	resellersettingFields := schema.ResellerSetting{}.Fields()
+	_ = resellersettingFields
+	// resellersettingDescKey is the schema descriptor for key field.
+	resellersettingDescKey := resellersettingFields[1].Descriptor()
+	// resellersetting.KeyValidator is a validator for the "key" field. It is called by the builders before save.
+	resellersetting.KeyValidator = func() func(string) error {
+		validators := resellersettingDescKey.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(key string) error {
+			for _, fn := range fns {
+				if err := fn(key); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// resellersettingDescValue is the schema descriptor for value field.
+	resellersettingDescValue := resellersettingFields[2].Descriptor()
+	// resellersetting.DefaultValue holds the default value on creation for the value field.
+	resellersetting.DefaultValue = resellersettingDescValue.Default.(string)
+	// resellersettingDescCreatedAt is the schema descriptor for created_at field.
+	resellersettingDescCreatedAt := resellersettingFields[3].Descriptor()
+	// resellersetting.DefaultCreatedAt holds the default value on creation for the created_at field.
+	resellersetting.DefaultCreatedAt = resellersettingDescCreatedAt.Default.(func() time.Time)
+	// resellersettingDescUpdatedAt is the schema descriptor for updated_at field.
+	resellersettingDescUpdatedAt := resellersettingFields[4].Descriptor()
+	// resellersetting.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	resellersetting.DefaultUpdatedAt = resellersettingDescUpdatedAt.Default.(func() time.Time)
+	// resellersetting.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	resellersetting.UpdateDefaultUpdatedAt = resellersettingDescUpdatedAt.UpdateDefault.(func() time.Time)
 	settingFields := schema.Setting{}.Fields()
 	_ = settingFields
 	// settingDescKey is the schema descriptor for key field.
@@ -1068,6 +1241,14 @@ func init() {
 	userDescTotpEnabled := userFields[12].Descriptor()
 	// user.DefaultTotpEnabled holds the default value on creation for the totp_enabled field.
 	user.DefaultTotpEnabled = userDescTotpEnabled.Default.(bool)
+	// userDescTokenVersion is the schema descriptor for token_version field.
+	userDescTokenVersion := userFields[15].Descriptor()
+	// user.DefaultTokenVersion holds the default value on creation for the token_version field.
+	user.DefaultTokenVersion = userDescTokenVersion.Default.(int64)
+	// userDescRoleVersion is the schema descriptor for role_version field.
+	userDescRoleVersion := userFields[16].Descriptor()
+	// user.DefaultRoleVersion holds the default value on creation for the role_version field.
+	user.DefaultRoleVersion = userDescRoleVersion.Default.(int64)
 	userallowedgroupFields := schema.UserAllowedGroup{}.Fields()
 	_ = userallowedgroupFields
 	// userallowedgroupDescCreatedAt is the schema descriptor for created_at field.

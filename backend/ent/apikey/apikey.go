@@ -27,6 +27,8 @@ const (
 	FieldKey = "key"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
+	// FieldNotes holds the string denoting the notes field in the database.
+	FieldNotes = "notes"
 	// FieldGroupID holds the string denoting the group_id field in the database.
 	FieldGroupID = "group_id"
 	// FieldStatus holds the string denoting the status field in the database.
@@ -41,6 +43,8 @@ const (
 	FieldQuotaUsed = "quota_used"
 	// FieldExpiresAt holds the string denoting the expires_at field in the database.
 	FieldExpiresAt = "expires_at"
+	// FieldTgChatID holds the string denoting the tg_chat_id field in the database.
+	FieldTgChatID = "tg_chat_id"
 	// EdgeUser holds the string denoting the user edge name in mutations.
 	EdgeUser = "user"
 	// EdgeGroup holds the string denoting the group edge name in mutations.
@@ -81,6 +85,7 @@ var Columns = []string{
 	FieldUserID,
 	FieldKey,
 	FieldName,
+	FieldNotes,
 	FieldGroupID,
 	FieldStatus,
 	FieldIPWhitelist,
@@ -88,6 +93,7 @@ var Columns = []string{
 	FieldQuota,
 	FieldQuotaUsed,
 	FieldExpiresAt,
+	FieldTgChatID,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -118,6 +124,10 @@ var (
 	KeyValidator func(string) error
 	// NameValidator is a validator for the "name" field. It is called by the builders before save.
 	NameValidator func(string) error
+	// DefaultNotes holds the default value on creation for the "notes" field.
+	DefaultNotes string
+	// NotesValidator is a validator for the "notes" field. It is called by the builders before save.
+	NotesValidator func(string) error
 	// DefaultStatus holds the default value on creation for the "status" field.
 	DefaultStatus string
 	// StatusValidator is a validator for the "status" field. It is called by the builders before save.
@@ -166,6 +176,11 @@ func ByName(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldName, opts...).ToFunc()
 }
 
+// ByNotes orders the results by the notes field.
+func ByNotes(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldNotes, opts...).ToFunc()
+}
+
 // ByGroupID orders the results by the group_id field.
 func ByGroupID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldGroupID, opts...).ToFunc()
@@ -189,6 +204,11 @@ func ByQuotaUsed(opts ...sql.OrderTermOption) OrderOption {
 // ByExpiresAt orders the results by the expires_at field.
 func ByExpiresAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldExpiresAt, opts...).ToFunc()
+}
+
+// ByTgChatID orders the results by the tg_chat_id field.
+func ByTgChatID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTgChatID, opts...).ToFunc()
 }
 
 // ByUserField orders the results by user field.

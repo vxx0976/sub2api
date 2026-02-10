@@ -14,10 +14,16 @@ const LOCALE_KEY = 'sub2api_locale'
 const SUPPORTED_LOCALES = ['en', 'zh', 'ja', 'ko', 'zh-TW', 'ru', 'fr', 'de', 'es', 'pt']
 
 function getDefaultLocale(): string {
-  // Check localStorage first
+  // Check localStorage first (user manual selection)
   const saved = localStorage.getItem(LOCALE_KEY)
   if (saved && SUPPORTED_LOCALES.includes(saved)) {
     return saved
+  }
+
+  // Check server-injected default locale
+  const appConfig = (window as any).__APP_CONFIG__
+  if (appConfig?.default_locale && SUPPORTED_LOCALES.includes(appConfig.default_locale)) {
+    return appConfig.default_locale
   }
 
   // Check browser language

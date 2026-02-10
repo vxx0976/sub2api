@@ -59,7 +59,10 @@ func (r *groupRepository) Create(ctx context.Context, groupIn *service.Group) er
 		SetIsPurchasable(groupIn.IsPurchasable).
 		SetSortOrder(groupIn.SortOrder).
 		SetIsRecommended(groupIn.IsRecommended).
-		SetNillableExternalBuyURL(groupIn.ExternalBuyURL)
+		SetNillableExternalBuyURL(groupIn.ExternalBuyURL).
+		SetNillableOwnerID(groupIn.OwnerID).
+		SetNillableSourceGroupID(groupIn.SourceGroupID).
+		SetResellerTemplate(groupIn.ResellerTemplate)
 
 	// 设置模型路由配置
 	if groupIn.ModelRouting != nil {
@@ -125,7 +128,21 @@ func (r *groupRepository) Update(ctx context.Context, groupIn *service.Group) er
 		SetIsPurchasable(groupIn.IsPurchasable).
 		SetSortOrder(groupIn.SortOrder).
 		SetIsRecommended(groupIn.IsRecommended).
-		SetNillableExternalBuyURL(groupIn.ExternalBuyURL)
+		SetNillableExternalBuyURL(groupIn.ExternalBuyURL).
+		SetResellerTemplate(groupIn.ResellerTemplate)
+
+	// 处理 OwnerID
+	if groupIn.OwnerID != nil {
+		builder = builder.SetOwnerID(*groupIn.OwnerID)
+	} else {
+		builder = builder.ClearOwnerID()
+	}
+	// 处理 SourceGroupID
+	if groupIn.SourceGroupID != nil {
+		builder = builder.SetSourceGroupID(*groupIn.SourceGroupID)
+	} else {
+		builder = builder.ClearSourceGroupID()
+	}
 
 	// 处理 FallbackGroupID：nil 时清除，否则设置
 	if groupIn.FallbackGroupID != nil {
@@ -319,6 +336,28 @@ func (r *groupRepository) ListPurchasable(ctx context.Context) ([]service.Group,
 			group.StatusEQ(service.StatusActive),
 			group.IsPurchasableEQ(true),
 			group.SubscriptionTypeEQ(service.SubscriptionTypeSubscription),
+			group.OwnerIDIsNil(), // Only show admin (non-reseller) groups on the main site
+		).
+		Order(dbent.Desc(group.FieldSortOrder), dbent.Asc(group.FieldID)).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	outGroups := make([]service.Group, 0, len(groups))
+	for i := range groups {
+		outGroups = append(outGroups, *groupEntityToService(groups[i]))
+	}
+	return outGroups, nil
+}
+
+func (r *groupRepository) ListPurchasableByOwnerID(ctx context.Context, ownerID int64) ([]service.Group, error) {
+	groups, err := r.client.Group.Query().
+		Where(
+			group.StatusEQ(service.StatusActive),
+			group.IsPurchasableEQ(true),
+			group.SubscriptionTypeEQ(service.SubscriptionTypeSubscription),
+			group.OwnerIDEQ(ownerID),
 		).
 		Order(dbent.Desc(group.FieldSortOrder), dbent.Asc(group.FieldID)).
 		All(ctx)

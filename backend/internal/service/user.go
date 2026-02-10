@@ -18,6 +18,7 @@ type User struct {
 	Status        string    `json:"status"`
 	AllowedGroups []int64   `json:"allowed_groups,omitempty"`
 	TokenVersion  int64     `json:"-"` // Internal use only
+	RoleVersion   int64     `json:"-"` // Internal use only — 角色变更时递增
 	CreatedAt     time.Time `json:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at"`
 
@@ -25,6 +26,9 @@ type User struct {
 	ReferralCode     *string `json:"referral_code,omitempty"`
 	ReferredBy       *int64  `json:"-"` // Internal use only
 	ReferralRewarded bool    `json:"-"` // Internal use only
+
+	// 分销商层级
+	ParentID *int64 `json:"parent_id,omitempty"` // 上级分销商用户 ID
 
 	// GroupRates 用户专属分组倍率配置
 	// map[groupID]rateMultiplier
@@ -41,6 +45,10 @@ type User struct {
 
 func (u *User) IsAdmin() bool {
 	return u.Role == RoleAdmin
+}
+
+func (u *User) IsReseller() bool {
+	return u.Role == RoleReseller
 }
 
 func (u *User) IsActive() bool {

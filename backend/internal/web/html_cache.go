@@ -8,13 +8,20 @@ import (
 	"sync"
 )
 
-// HTMLCache manages the cached index.html with injected settings
+// cacheEntry represents a single cached HTML page for a specific domain
+type cacheEntry struct {
+	content []byte
+	etag    string
+}
+
+// HTMLCache manages the cached index.html with injected settings.
+// Supports multi-tenant caching keyed by domain name.
+// The default (main) site uses "" as the key.
 type HTMLCache struct {
 	mu              sync.RWMutex
-	cachedHTML      []byte
-	etag            string
-	baseHTMLHash    string // Hash of the original index.html (immutable after build)
-	settingsVersion uint64 // Incremented when settings change
+	entries         map[string]*cacheEntry // domain -> cache entry ("" = default)
+	baseHTMLHash    string                 // Hash of the original index.html (immutable after build)
+	settingsVersion uint64                 // Incremented when settings change
 }
 
 // CachedHTML represents the cache state
@@ -25,7 +32,9 @@ type CachedHTML struct {
 
 // NewHTMLCache creates a new HTML cache instance
 func NewHTMLCache() *HTMLCache {
-	return &HTMLCache{}
+	return &HTMLCache{
+		entries: make(map[string]*cacheEntry),
+	}
 }
 
 // SetBaseHTML initializes the cache with the base HTML template
@@ -37,37 +46,49 @@ func (c *HTMLCache) SetBaseHTML(baseHTML []byte) {
 	c.baseHTMLHash = hex.EncodeToString(hash[:8]) // First 8 bytes for brevity
 }
 
-// Invalidate marks the cache as stale
+// Invalidate marks all cache entries as stale (e.g. when global settings change)
 func (c *HTMLCache) Invalidate() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	c.settingsVersion++
-	c.cachedHTML = nil
-	c.etag = ""
+	c.entries = make(map[string]*cacheEntry)
 }
 
-// Get returns the cached HTML or nil if cache is stale
-func (c *HTMLCache) Get() *CachedHTML {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-
-	if c.cachedHTML == nil {
-		return nil
-	}
-	return &CachedHTML{
-		Content: c.cachedHTML,
-		ETag:    c.etag,
-	}
-}
-
-// Set updates the cache with new rendered HTML
-func (c *HTMLCache) Set(html []byte, settingsJSON []byte) {
+// InvalidateDomain invalidates a specific domain's cache entry
+func (c *HTMLCache) InvalidateDomain(domain string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	c.cachedHTML = html
-	c.etag = c.generateETag(settingsJSON)
+	delete(c.entries, domain)
+}
+
+// Get returns the cached HTML for a domain, or nil if cache is stale.
+// Use "" for the default (main) site.
+func (c *HTMLCache) Get(domain string) *CachedHTML {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	entry := c.entries[domain]
+	if entry == nil {
+		return nil
+	}
+	return &CachedHTML{
+		Content: entry.content,
+		ETag:    entry.etag,
+	}
+}
+
+// Set updates the cache with new rendered HTML for a specific domain.
+// Use "" for the default (main) site.
+func (c *HTMLCache) Set(domain string, html []byte, settingsJSON []byte) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.entries[domain] = &cacheEntry{
+		content: html,
+		etag:    c.generateETag(settingsJSON),
+	}
 }
 
 // generateETag creates an ETag from base HTML hash + settings hash

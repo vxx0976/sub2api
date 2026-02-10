@@ -148,6 +148,20 @@ func (_c *AnnouncementCreate) SetNillableUpdatedAt(v *time.Time) *AnnouncementCr
 	return _c
 }
 
+// SetOwnerID sets the "owner_id" field.
+func (_c *AnnouncementCreate) SetOwnerID(v int64) *AnnouncementCreate {
+	_c.mutation.SetOwnerID(v)
+	return _c
+}
+
+// SetNillableOwnerID sets the "owner_id" field if the given value is not nil.
+func (_c *AnnouncementCreate) SetNillableOwnerID(v *int64) *AnnouncementCreate {
+	if v != nil {
+		_c.SetOwnerID(*v)
+	}
+	return _c
+}
+
 // AddReadIDs adds the "reads" edge to the AnnouncementRead entity by IDs.
 func (_c *AnnouncementCreate) AddReadIDs(ids ...int64) *AnnouncementCreate {
 	_c.mutation.AddReadIDs(ids...)
@@ -310,6 +324,10 @@ func (_c *AnnouncementCreate) createSpec() (*Announcement, *sqlgraph.CreateSpec)
 	if value, ok := _c.mutation.UpdatedAt(); ok {
 		_spec.SetField(announcement.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
+	}
+	if value, ok := _c.mutation.OwnerID(); ok {
+		_spec.SetField(announcement.FieldOwnerID, field.TypeInt64, value)
+		_node.OwnerID = &value
 	}
 	if nodes := _c.mutation.ReadsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -526,6 +544,30 @@ func (u *AnnouncementUpsert) SetUpdatedAt(v time.Time) *AnnouncementUpsert {
 // UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
 func (u *AnnouncementUpsert) UpdateUpdatedAt() *AnnouncementUpsert {
 	u.SetExcluded(announcement.FieldUpdatedAt)
+	return u
+}
+
+// SetOwnerID sets the "owner_id" field.
+func (u *AnnouncementUpsert) SetOwnerID(v int64) *AnnouncementUpsert {
+	u.Set(announcement.FieldOwnerID, v)
+	return u
+}
+
+// UpdateOwnerID sets the "owner_id" field to the value that was provided on create.
+func (u *AnnouncementUpsert) UpdateOwnerID() *AnnouncementUpsert {
+	u.SetExcluded(announcement.FieldOwnerID)
+	return u
+}
+
+// AddOwnerID adds v to the "owner_id" field.
+func (u *AnnouncementUpsert) AddOwnerID(v int64) *AnnouncementUpsert {
+	u.Add(announcement.FieldOwnerID, v)
+	return u
+}
+
+// ClearOwnerID clears the value of the "owner_id" field.
+func (u *AnnouncementUpsert) ClearOwnerID() *AnnouncementUpsert {
+	u.SetNull(announcement.FieldOwnerID)
 	return u
 }
 
@@ -746,6 +788,34 @@ func (u *AnnouncementUpsertOne) SetUpdatedAt(v time.Time) *AnnouncementUpsertOne
 func (u *AnnouncementUpsertOne) UpdateUpdatedAt() *AnnouncementUpsertOne {
 	return u.Update(func(s *AnnouncementUpsert) {
 		s.UpdateUpdatedAt()
+	})
+}
+
+// SetOwnerID sets the "owner_id" field.
+func (u *AnnouncementUpsertOne) SetOwnerID(v int64) *AnnouncementUpsertOne {
+	return u.Update(func(s *AnnouncementUpsert) {
+		s.SetOwnerID(v)
+	})
+}
+
+// AddOwnerID adds v to the "owner_id" field.
+func (u *AnnouncementUpsertOne) AddOwnerID(v int64) *AnnouncementUpsertOne {
+	return u.Update(func(s *AnnouncementUpsert) {
+		s.AddOwnerID(v)
+	})
+}
+
+// UpdateOwnerID sets the "owner_id" field to the value that was provided on create.
+func (u *AnnouncementUpsertOne) UpdateOwnerID() *AnnouncementUpsertOne {
+	return u.Update(func(s *AnnouncementUpsert) {
+		s.UpdateOwnerID()
+	})
+}
+
+// ClearOwnerID clears the value of the "owner_id" field.
+func (u *AnnouncementUpsertOne) ClearOwnerID() *AnnouncementUpsertOne {
+	return u.Update(func(s *AnnouncementUpsert) {
+		s.ClearOwnerID()
 	})
 }
 
@@ -1132,6 +1202,34 @@ func (u *AnnouncementUpsertBulk) SetUpdatedAt(v time.Time) *AnnouncementUpsertBu
 func (u *AnnouncementUpsertBulk) UpdateUpdatedAt() *AnnouncementUpsertBulk {
 	return u.Update(func(s *AnnouncementUpsert) {
 		s.UpdateUpdatedAt()
+	})
+}
+
+// SetOwnerID sets the "owner_id" field.
+func (u *AnnouncementUpsertBulk) SetOwnerID(v int64) *AnnouncementUpsertBulk {
+	return u.Update(func(s *AnnouncementUpsert) {
+		s.SetOwnerID(v)
+	})
+}
+
+// AddOwnerID adds v to the "owner_id" field.
+func (u *AnnouncementUpsertBulk) AddOwnerID(v int64) *AnnouncementUpsertBulk {
+	return u.Update(func(s *AnnouncementUpsert) {
+		s.AddOwnerID(v)
+	})
+}
+
+// UpdateOwnerID sets the "owner_id" field to the value that was provided on create.
+func (u *AnnouncementUpsertBulk) UpdateOwnerID() *AnnouncementUpsertBulk {
+	return u.Update(func(s *AnnouncementUpsert) {
+		s.UpdateOwnerID()
+	})
+}
+
+// ClearOwnerID clears the value of the "owner_id" field.
+func (u *AnnouncementUpsertBulk) ClearOwnerID() *AnnouncementUpsertBulk {
+	return u.Update(func(s *AnnouncementUpsert) {
+		s.ClearOwnerID()
 	})
 }
 

@@ -22,6 +22,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/rechargeorder"
 	"github.com/Wei-Shaw/sub2api/ent/redeemcode"
 	"github.com/Wei-Shaw/sub2api/ent/referralreward"
+	"github.com/Wei-Shaw/sub2api/ent/resellerdomain"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
 	"github.com/Wei-Shaw/sub2api/ent/user"
 	"github.com/Wei-Shaw/sub2api/ent/userallowedgroup"
@@ -49,6 +50,9 @@ type UserQuery struct {
 	withRechargeOrders         *RechargeOrderQuery
 	withReferralRewardsGiven   *ReferralRewardQuery
 	withReferralRewardReceived *ReferralRewardQuery
+	withSubUsers               *UserQuery
+	withParent                 *UserQuery
+	withResellerDomains        *ResellerDomainQuery
 	withUserAllowedGroups      *UserAllowedGroupQuery
 	modifiers                  []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
@@ -373,6 +377,72 @@ func (_q *UserQuery) QueryReferralRewardReceived() *ReferralRewardQuery {
 	return query
 }
 
+// QuerySubUsers chains the current query on the "sub_users" edge.
+func (_q *UserQuery) QuerySubUsers() *UserQuery {
+	query := (&UserClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.SubUsersTable, user.SubUsersColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryParent chains the current query on the "parent" edge.
+func (_q *UserQuery) QueryParent() *UserQuery {
+	query := (&UserClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, user.ParentTable, user.ParentColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryResellerDomains chains the current query on the "reseller_domains" edge.
+func (_q *UserQuery) QueryResellerDomains() *ResellerDomainQuery {
+	query := (&ResellerDomainClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(resellerdomain.Table, resellerdomain.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.ResellerDomainsTable, user.ResellerDomainsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // QueryUserAllowedGroups chains the current query on the "user_allowed_groups" edge.
 func (_q *UserQuery) QueryUserAllowedGroups() *UserAllowedGroupQuery {
 	query := (&UserAllowedGroupClient{config: _q.config}).Query()
@@ -600,6 +670,9 @@ func (_q *UserQuery) Clone() *UserQuery {
 		withRechargeOrders:         _q.withRechargeOrders.Clone(),
 		withReferralRewardsGiven:   _q.withReferralRewardsGiven.Clone(),
 		withReferralRewardReceived: _q.withReferralRewardReceived.Clone(),
+		withSubUsers:               _q.withSubUsers.Clone(),
+		withParent:                 _q.withParent.Clone(),
+		withResellerDomains:        _q.withResellerDomains.Clone(),
 		withUserAllowedGroups:      _q.withUserAllowedGroups.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
@@ -750,6 +823,39 @@ func (_q *UserQuery) WithReferralRewardReceived(opts ...func(*ReferralRewardQuer
 	return _q
 }
 
+// WithSubUsers tells the query-builder to eager-load the nodes that are connected to
+// the "sub_users" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *UserQuery) WithSubUsers(opts ...func(*UserQuery)) *UserQuery {
+	query := (&UserClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withSubUsers = query
+	return _q
+}
+
+// WithParent tells the query-builder to eager-load the nodes that are connected to
+// the "parent" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *UserQuery) WithParent(opts ...func(*UserQuery)) *UserQuery {
+	query := (&UserClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withParent = query
+	return _q
+}
+
+// WithResellerDomains tells the query-builder to eager-load the nodes that are connected to
+// the "reseller_domains" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *UserQuery) WithResellerDomains(opts ...func(*ResellerDomainQuery)) *UserQuery {
+	query := (&ResellerDomainClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withResellerDomains = query
+	return _q
+}
+
 // WithUserAllowedGroups tells the query-builder to eager-load the nodes that are connected to
 // the "user_allowed_groups" edge. The optional arguments are used to configure the query builder of the edge.
 func (_q *UserQuery) WithUserAllowedGroups(opts ...func(*UserAllowedGroupQuery)) *UserQuery {
@@ -839,7 +945,7 @@ func (_q *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 	var (
 		nodes       = []*User{}
 		_spec       = _q.querySpec()
-		loadedTypes = [14]bool{
+		loadedTypes = [17]bool{
 			_q.withAPIKeys != nil,
 			_q.withRedeemCodes != nil,
 			_q.withSubscriptions != nil,
@@ -853,6 +959,9 @@ func (_q *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 			_q.withRechargeOrders != nil,
 			_q.withReferralRewardsGiven != nil,
 			_q.withReferralRewardReceived != nil,
+			_q.withSubUsers != nil,
+			_q.withParent != nil,
+			_q.withResellerDomains != nil,
 			_q.withUserAllowedGroups != nil,
 		}
 	)
@@ -971,6 +1080,26 @@ func (_q *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 			func(n *User, e *ReferralReward) {
 				n.Edges.ReferralRewardReceived = append(n.Edges.ReferralRewardReceived, e)
 			}); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withSubUsers; query != nil {
+		if err := _q.loadSubUsers(ctx, query, nodes,
+			func(n *User) { n.Edges.SubUsers = []*User{} },
+			func(n *User, e *User) { n.Edges.SubUsers = append(n.Edges.SubUsers, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withParent; query != nil {
+		if err := _q.loadParent(ctx, query, nodes, nil,
+			func(n *User, e *User) { n.Edges.Parent = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withResellerDomains; query != nil {
+		if err := _q.loadResellerDomains(ctx, query, nodes,
+			func(n *User) { n.Edges.ResellerDomains = []*ResellerDomain{} },
+			func(n *User, e *ResellerDomain) { n.Edges.ResellerDomains = append(n.Edges.ResellerDomains, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -1411,6 +1540,101 @@ func (_q *UserQuery) loadReferralRewardReceived(ctx context.Context, query *Refe
 	}
 	return nil
 }
+func (_q *UserQuery) loadSubUsers(ctx context.Context, query *UserQuery, nodes []*User, init func(*User), assign func(*User, *User)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*User)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(user.FieldParentID)
+	}
+	query.Where(predicate.User(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(user.SubUsersColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.ParentID
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "parent_id" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "parent_id" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *UserQuery) loadParent(ctx context.Context, query *UserQuery, nodes []*User, init func(*User), assign func(*User, *User)) error {
+	ids := make([]int64, 0, len(nodes))
+	nodeids := make(map[int64][]*User)
+	for i := range nodes {
+		if nodes[i].ParentID == nil {
+			continue
+		}
+		fk := *nodes[i].ParentID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(user.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "parent_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (_q *UserQuery) loadResellerDomains(ctx context.Context, query *ResellerDomainQuery, nodes []*User, init func(*User), assign func(*User, *ResellerDomain)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*User)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(resellerdomain.FieldResellerID)
+	}
+	query.Where(predicate.ResellerDomain(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(user.ResellerDomainsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.ResellerID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "reseller_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
 func (_q *UserQuery) loadUserAllowedGroups(ctx context.Context, query *UserAllowedGroupQuery, nodes []*User, init func(*User), assign func(*User, *UserAllowedGroup)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[int64]*User)
@@ -1469,6 +1693,9 @@ func (_q *UserQuery) querySpec() *sqlgraph.QuerySpec {
 			if fields[i] != user.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
+		}
+		if _q.withParent != nil {
+			_spec.Node.AddColumnOnce(user.FieldParentID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

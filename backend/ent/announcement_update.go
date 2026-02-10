@@ -192,6 +192,33 @@ func (_u *AnnouncementUpdate) SetUpdatedAt(v time.Time) *AnnouncementUpdate {
 	return _u
 }
 
+// SetOwnerID sets the "owner_id" field.
+func (_u *AnnouncementUpdate) SetOwnerID(v int64) *AnnouncementUpdate {
+	_u.mutation.ResetOwnerID()
+	_u.mutation.SetOwnerID(v)
+	return _u
+}
+
+// SetNillableOwnerID sets the "owner_id" field if the given value is not nil.
+func (_u *AnnouncementUpdate) SetNillableOwnerID(v *int64) *AnnouncementUpdate {
+	if v != nil {
+		_u.SetOwnerID(*v)
+	}
+	return _u
+}
+
+// AddOwnerID adds value to the "owner_id" field.
+func (_u *AnnouncementUpdate) AddOwnerID(v int64) *AnnouncementUpdate {
+	_u.mutation.AddOwnerID(v)
+	return _u
+}
+
+// ClearOwnerID clears the value of the "owner_id" field.
+func (_u *AnnouncementUpdate) ClearOwnerID() *AnnouncementUpdate {
+	_u.mutation.ClearOwnerID()
+	return _u
+}
+
 // AddReadIDs adds the "reads" edge to the AnnouncementRead entity by IDs.
 func (_u *AnnouncementUpdate) AddReadIDs(ids ...int64) *AnnouncementUpdate {
 	_u.mutation.AddReadIDs(ids...)
@@ -348,6 +375,15 @@ func (_u *AnnouncementUpdate) sqlSave(ctx context.Context) (_node int, err error
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(announcement.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if value, ok := _u.mutation.OwnerID(); ok {
+		_spec.SetField(announcement.FieldOwnerID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedOwnerID(); ok {
+		_spec.AddField(announcement.FieldOwnerID, field.TypeInt64, value)
+	}
+	if _u.mutation.OwnerIDCleared() {
+		_spec.ClearField(announcement.FieldOwnerID, field.TypeInt64)
 	}
 	if _u.mutation.ReadsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -576,6 +612,33 @@ func (_u *AnnouncementUpdateOne) SetUpdatedAt(v time.Time) *AnnouncementUpdateOn
 	return _u
 }
 
+// SetOwnerID sets the "owner_id" field.
+func (_u *AnnouncementUpdateOne) SetOwnerID(v int64) *AnnouncementUpdateOne {
+	_u.mutation.ResetOwnerID()
+	_u.mutation.SetOwnerID(v)
+	return _u
+}
+
+// SetNillableOwnerID sets the "owner_id" field if the given value is not nil.
+func (_u *AnnouncementUpdateOne) SetNillableOwnerID(v *int64) *AnnouncementUpdateOne {
+	if v != nil {
+		_u.SetOwnerID(*v)
+	}
+	return _u
+}
+
+// AddOwnerID adds value to the "owner_id" field.
+func (_u *AnnouncementUpdateOne) AddOwnerID(v int64) *AnnouncementUpdateOne {
+	_u.mutation.AddOwnerID(v)
+	return _u
+}
+
+// ClearOwnerID clears the value of the "owner_id" field.
+func (_u *AnnouncementUpdateOne) ClearOwnerID() *AnnouncementUpdateOne {
+	_u.mutation.ClearOwnerID()
+	return _u
+}
+
 // AddReadIDs adds the "reads" edge to the AnnouncementRead entity by IDs.
 func (_u *AnnouncementUpdateOne) AddReadIDs(ids ...int64) *AnnouncementUpdateOne {
 	_u.mutation.AddReadIDs(ids...)
@@ -762,6 +825,15 @@ func (_u *AnnouncementUpdateOne) sqlSave(ctx context.Context) (_node *Announceme
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(announcement.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if value, ok := _u.mutation.OwnerID(); ok {
+		_spec.SetField(announcement.FieldOwnerID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedOwnerID(); ok {
+		_spec.AddField(announcement.FieldOwnerID, field.TypeInt64, value)
+	}
+	if _u.mutation.OwnerIDCleared() {
+		_spec.ClearField(announcement.FieldOwnerID, field.TypeInt64)
 	}
 	if _u.mutation.ReadsCleared() {
 		edge := &sqlgraph.EdgeSpec{

@@ -279,4 +279,7 @@ var ProviderSet = wire.NewSet(
 	NewTotpService,
 	NewChannelService,
 	NewErrorPassthroughService,
+	NewResellerService,
+	ProvideTelegramBotManager,
+	ProvideTelegramNotificationService,
 )

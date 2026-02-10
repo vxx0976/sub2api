@@ -32,6 +32,7 @@ func (r *apiKeyRepository) Create(ctx context.Context, key *service.APIKey) erro
 		SetUserID(key.UserID).
 		SetKey(key.Key).
 		SetName(key.Name).
+		SetNotes(key.Notes).
 		SetStatus(key.Status).
 		SetNillableGroupID(key.GroupID).
 		SetQuota(key.Quota).
@@ -170,6 +171,7 @@ func (r *apiKeyRepository) Update(ctx context.Context, key *service.APIKey) erro
 	builder := r.client.APIKey.Update().
 		Where(apikey.IDEQ(key.ID), apikey.DeletedAtIsNil()).
 		SetName(key.Name).
+		SetNotes(key.Notes).
 		SetStatus(key.Status).
 		SetQuota(key.Quota).
 		SetQuotaUsed(key.QuotaUsed).
@@ -197,6 +199,13 @@ func (r *apiKeyRepository) Update(ctx context.Context, key *service.APIKey) erro
 		builder.SetIPBlacklist(key.IPBlacklist)
 	} else {
 		builder.ClearIPBlacklist()
+	}
+
+	// Telegram chat ID
+	if key.TgChatID != nil {
+		builder.SetTgChatID(*key.TgChatID)
+	} else {
+		builder.ClearTgChatID()
 	}
 
 	affected, err := builder.Save(ctx)
@@ -408,6 +417,23 @@ func (r *apiKeyRepository) IncrementQuotaUsed(ctx context.Context, id int64, amo
 	return newValue, nil
 }
 
+func (r *apiKeyRepository) FindByTgChatID(ctx context.Context, ownerUserID int64, chatID int64) (*service.APIKey, error) {
+	m, err := r.activeQuery().
+		Where(
+			apikey.UserIDEQ(ownerUserID),
+			apikey.TgChatIDEQ(chatID),
+		).
+		WithGroup().
+		First(ctx)
+	if err != nil {
+		if dbent.IsNotFound(err) {
+			return nil, nil // not found, no error
+		}
+		return nil, err
+	}
+	return apiKeyEntityToService(m), nil
+}
+
 func apiKeyEntityToService(m *dbent.APIKey) *service.APIKey {
 	if m == nil {
 		return nil
@@ -417,6 +443,7 @@ func apiKeyEntityToService(m *dbent.APIKey) *service.APIKey {
 		UserID:      m.UserID,
 		Key:         m.Key,
 		Name:        m.Name,
+		Notes:       m.Notes,
 		Status:      m.Status,
 		IPWhitelist: m.IPWhitelist,
 		IPBlacklist: m.IPBlacklist,
@@ -426,6 +453,7 @@ func apiKeyEntityToService(m *dbent.APIKey) *service.APIKey {
 		Quota:       m.Quota,
 		QuotaUsed:   m.QuotaUsed,
 		ExpiresAt:   m.ExpiresAt,
+		TgChatID:    m.TgChatID,
 	}
 	if m.Edges.User != nil {
 		out.User = userEntityToService(m.Edges.User)
@@ -456,6 +484,9 @@ func userEntityToService(u *dbent.User) *service.User {
 		TotpSecretEncrypted: u.TotpSecretEncrypted,
 		TotpEnabled:         u.TotpEnabled,
 		TotpEnabledAt:       u.TotpEnabledAt,
+		ParentID:            u.ParentID,
+		TokenVersion:        u.TokenVersion,
+		RoleVersion:         u.RoleVersion,
 		CreatedAt:           u.CreatedAt,
 		UpdatedAt:           u.UpdatedAt,
 	}
@@ -494,6 +525,9 @@ func groupEntityToService(g *dbent.Group) *service.Group {
 		SortOrder:                       g.SortOrder,
 		IsRecommended:                   g.IsRecommended,
 		ExternalBuyURL:                  g.ExternalBuyURL,
+		OwnerID:                         g.OwnerID,
+		SourceGroupID:                   g.SourceGroupID,
+		ResellerTemplate:                g.ResellerTemplate,
 		CreatedAt:                       g.CreatedAt,
 		UpdatedAt:                       g.UpdatedAt,
 	}

@@ -68,6 +68,13 @@ func jwtAuth(authService *service.AuthService, userService *service.UserService)
 			return
 		}
 
+		// Security: Validate RoleVersion to ensure token reflects current role
+		// This check ensures tokens issued before a role change are rejected
+		if claims.RoleVersion != user.RoleVersion {
+			AbortWithError(c, 401, "TOKEN_REVOKED", "Token has been revoked (role changed)")
+			return
+		}
+
 		c.Set(string(ContextKeyUser), AuthSubject{
 			UserID:      user.ID,
 			Concurrency: user.Concurrency,

@@ -438,6 +438,17 @@ func (s *SubscriptionService) List(ctx context.Context, page, pageSize int, user
 	return subs, pag, nil
 }
 
+// ListByUserIDs lists subscriptions for multiple user IDs (used by reseller)
+func (s *SubscriptionService) ListByUserIDs(ctx context.Context, userIDs []int64, params pagination.PaginationParams) ([]UserSubscription, *pagination.PaginationResult, error) {
+	subs, pag, err := s.userSubRepo.ListByUserIDs(ctx, userIDs, params)
+	if err != nil {
+		return nil, nil, err
+	}
+	normalizeExpiredWindows(subs)
+	normalizeSubscriptionStatus(subs)
+	return subs, pag, nil
+}
+
 // normalizeExpiredWindows 将已过期窗口的数据清零（仅影响返回数据，不影响数据库）
 // 这确保前端显示正确的当前窗口状态，而不是过期窗口的历史数据
 func normalizeExpiredWindows(subs []UserSubscription) {

@@ -70,12 +70,18 @@ type Group struct {
 	Price *float64 `json:"price,omitempty"`
 	// 是否允许用户购买
 	IsPurchasable bool `json:"is_purchasable,omitempty"`
-	// 排序权重，数值越大越靠前
+	// 分组显示排序，数值越小越靠前
 	SortOrder int `json:"sort_order,omitempty"`
 	// 是否推荐套餐
 	IsRecommended bool `json:"is_recommended,omitempty"`
 	// 外部购买链接（如淘宝）
 	ExternalBuyURL *string `json:"external_buy_url,omitempty"`
+	// 分销商用户 ID（NULL=管理员分组）
+	OwnerID *int64 `json:"owner_id,omitempty"`
+	// 克隆来源的管理员模板分组 ID
+	SourceGroupID *int64 `json:"source_group_id,omitempty"`
+	// 是否标记为分销商可用模板
+	ResellerTemplate bool `json:"reseller_template,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the GroupQuery when eager-loading is set.
 	Edges        GroupEdges `json:"edges"`
@@ -195,11 +201,11 @@ func (*Group) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case group.FieldModelRouting, group.FieldSupportedModelScopes:
 			values[i] = new([]byte)
-		case group.FieldIsExclusive, group.FieldClaudeCodeOnly, group.FieldModelRoutingEnabled, group.FieldMcpXMLInject, group.FieldIsPurchasable, group.FieldIsRecommended:
+		case group.FieldIsExclusive, group.FieldClaudeCodeOnly, group.FieldModelRoutingEnabled, group.FieldMcpXMLInject, group.FieldIsPurchasable, group.FieldIsRecommended, group.FieldResellerTemplate:
 			values[i] = new(sql.NullBool)
 		case group.FieldRateMultiplier, group.FieldDailyLimitUsd, group.FieldWeeklyLimitUsd, group.FieldMonthlyLimitUsd, group.FieldImagePrice1k, group.FieldImagePrice2k, group.FieldImagePrice4k, group.FieldPrice:
 			values[i] = new(sql.NullFloat64)
-		case group.FieldID, group.FieldDefaultValidityDays, group.FieldFallbackGroupID, group.FieldFallbackGroupIDOnInvalidRequest, group.FieldSortOrder:
+		case group.FieldID, group.FieldDefaultValidityDays, group.FieldFallbackGroupID, group.FieldFallbackGroupIDOnInvalidRequest, group.FieldSortOrder, group.FieldOwnerID, group.FieldSourceGroupID:
 			values[i] = new(sql.NullInt64)
 		case group.FieldName, group.FieldDescription, group.FieldStatus, group.FieldPlatform, group.FieldSubscriptionType, group.FieldExternalBuyURL:
 			values[i] = new(sql.NullString)
@@ -416,6 +422,26 @@ func (_m *Group) assignValues(columns []string, values []any) error {
 				_m.ExternalBuyURL = new(string)
 				*_m.ExternalBuyURL = value.String
 			}
+		case group.FieldOwnerID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field owner_id", values[i])
+			} else if value.Valid {
+				_m.OwnerID = new(int64)
+				*_m.OwnerID = value.Int64
+			}
+		case group.FieldSourceGroupID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field source_group_id", values[i])
+			} else if value.Valid {
+				_m.SourceGroupID = new(int64)
+				*_m.SourceGroupID = value.Int64
+			}
+		case group.FieldResellerTemplate:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field reseller_template", values[i])
+			} else if value.Valid {
+				_m.ResellerTemplate = value.Bool
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -607,6 +633,19 @@ func (_m *Group) String() string {
 		builder.WriteString("external_buy_url=")
 		builder.WriteString(*v)
 	}
+	builder.WriteString(", ")
+	if v := _m.OwnerID; v != nil {
+		builder.WriteString("owner_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.SourceGroupID; v != nil {
+		builder.WriteString("source_group_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("reseller_template=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ResellerTemplate))
 	builder.WriteByte(')')
 	return builder.String()
 }

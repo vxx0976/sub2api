@@ -51,6 +51,7 @@ type JWTClaims struct {
 	Email        string `json:"email"`
 	Role         string `json:"role"`
 	TokenVersion int64  `json:"token_version"` // Used to invalidate tokens on password change
+	RoleVersion  int64  `json:"role_version"`  // Used to invalidate tokens on role change
 	jwt.RegisteredClaims
 }
 
@@ -100,9 +101,9 @@ func (s *AuthService) Register(ctx context.Context, email, password string) (str
 	return s.RegisterWithVerification(ctx, email, password, "", "", "")
 }
 
+
 // RegisterWithVerification 用户注册（支持邮件验证、优惠码和邀请码），返回token和用户
 func (s *AuthService) RegisterWithVerification(ctx context.Context, email, password, verifyCode, promoCode, invitationCode string) (string, *User, error) {
-	// 检查是否开放注册（默认关闭：settingService 未配置时不允许注册）
 	if s.settingService == nil || !s.settingService.IsRegistrationEnabled(ctx) {
 		return "", nil, ErrRegDisabled
 	}
@@ -256,7 +257,6 @@ type SendVerifyCodeResult struct {
 
 // SendVerifyCode 发送邮箱验证码（同步方式）
 func (s *AuthService) SendVerifyCode(ctx context.Context, email string) error {
-	// 检查是否开放注册（默认关闭）
 	if s.settingService == nil || !s.settingService.IsRegistrationEnabled(ctx) {
 		return ErrRegDisabled
 	}
@@ -293,7 +293,6 @@ func (s *AuthService) SendVerifyCode(ctx context.Context, email string) error {
 func (s *AuthService) SendVerifyCodeAsync(ctx context.Context, email string) (*SendVerifyCodeResult, error) {
 	log.Printf("[Auth] SendVerifyCodeAsync called for email: %s", email)
 
-	// 检查是否开放注册（默认关闭）
 	if s.settingService == nil || !s.settingService.IsRegistrationEnabled(ctx) {
 		log.Println("[Auth] Registration is disabled")
 		return nil, ErrRegDisabled
@@ -692,6 +691,7 @@ func (s *AuthService) GenerateToken(user *User) (string, error) {
 		Email:        user.Email,
 		Role:         user.Role,
 		TokenVersion: user.TokenVersion,
+		RoleVersion:  user.RoleVersion,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expiresAt),
 			IssuedAt:  jwt.NewNumericDate(now),
@@ -758,6 +758,11 @@ func (s *AuthService) RefreshToken(ctx context.Context, oldTokenString string) (
 	// Security: Check TokenVersion to prevent refreshing revoked tokens
 	// This ensures tokens issued before a password change cannot be refreshed
 	if claims.TokenVersion != user.TokenVersion {
+		return "", ErrTokenRevoked
+	}
+
+	// Security: Check RoleVersion to prevent refreshing tokens after role change
+	if claims.RoleVersion != user.RoleVersion {
 		return "", ErrTokenRevoked
 	}
 

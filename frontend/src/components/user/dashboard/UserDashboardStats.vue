@@ -1,8 +1,8 @@
 <template>
   <!-- Row 1: Core Stats -->
   <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
-    <!-- Balance -->
-    <div v-if="!isSimple" class="card p-4">
+    <!-- Balance (admin/reseller only) -->
+    <div v-if="!isRegularUser" class="card p-4">
       <div class="flex items-center gap-3">
         <div class="rounded-lg bg-emerald-100 p-2 dark:bg-emerald-900/30">
           <svg class="h-5 w-5 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -13,6 +13,19 @@
           <p class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('dashboard.balance') }}</p>
           <p class="text-xl font-bold text-emerald-600 dark:text-emerald-400">${{ formatBalance(balance) }}</p>
           <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('common.available') }}</p>
+        </div>
+      </div>
+    </div>
+    <!-- Total Requests (regular users, replaces balance) -->
+    <div v-else class="card p-4">
+      <div class="flex items-center gap-3">
+        <div class="rounded-lg bg-emerald-100 p-2 dark:bg-emerald-900/30">
+          <Icon name="document" size="md" class="text-emerald-600 dark:text-emerald-400" :stroke-width="2" />
+        </div>
+        <div>
+          <p class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('dashboard.totalRequests') }}</p>
+          <p class="text-xl font-bold text-gray-900 dark:text-white">{{ formatNumber(stats?.total_requests || 0) }}</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('dashboard.allTime') }}</p>
         </div>
       </div>
     </div>
@@ -55,12 +68,12 @@
           <p class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('dashboard.todayCost') }}</p>
           <p class="text-xl font-bold text-gray-900 dark:text-white">
             <span class="text-purple-600 dark:text-purple-400" :title="t('dashboard.actual')">${{ formatCost(stats?.today_actual_cost || 0) }}</span>
-            <span class="text-sm font-normal text-gray-400 dark:text-gray-500" :title="t('dashboard.standard')"> / ${{ formatCost(stats?.today_cost || 0) }}</span>
+            <span v-if="!isRegularUser" class="text-sm font-normal text-gray-400 dark:text-gray-500" :title="t('dashboard.standard')"> / ${{ formatCost(stats?.today_cost || 0) }}</span>
           </p>
           <p class="text-xs">
             <span class="text-gray-500 dark:text-gray-400">{{ t('common.total') }}: </span>
             <span class="text-purple-600 dark:text-purple-400" :title="t('dashboard.actual')">${{ formatCost(stats?.total_actual_cost || 0) }}</span>
-            <span class="text-gray-400 dark:text-gray-500" :title="t('dashboard.standard')"> / ${{ formatCost(stats?.total_cost || 0) }}</span>
+            <span v-if="!isRegularUser" class="text-gray-400 dark:text-gray-500" :title="t('dashboard.standard')"> / ${{ formatCost(stats?.total_cost || 0) }}</span>
           </p>
         </div>
       </div>
@@ -134,8 +147,10 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Icon from '@/components/icons/Icon.vue'
+import { useAuthStore } from '@/stores/auth'
 import type { UserDashboardStats as UserStatsType } from '@/api/usage'
 
 defineProps<{
@@ -144,6 +159,8 @@ defineProps<{
   isSimple: boolean
 }>()
 const { t } = useI18n()
+const authStore = useAuthStore()
+const isRegularUser = computed(() => !authStore.isAdmin && !authStore.isReseller)
 
 const formatBalance = (b: number) =>
   new Intl.NumberFormat('en-US', {

@@ -54,6 +54,8 @@ type AnnouncementRepository interface {
 
 	List(ctx context.Context, params pagination.PaginationParams, filters AnnouncementListFilters) ([]Announcement, *pagination.PaginationResult, error)
 	ListActive(ctx context.Context, now time.Time) ([]Announcement, error)
+	// ListActiveByOwnerID returns active announcements owned by the given reseller.
+	ListActiveByOwnerID(ctx context.Context, ownerID int64, now time.Time) ([]Announcement, error)
 }
 
 type AnnouncementReadRepository interface {

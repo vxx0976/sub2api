@@ -51,6 +51,12 @@ type RedeemCode func(*sql.Selector)
 // ReferralReward is the predicate function for referralreward builders.
 type ReferralReward func(*sql.Selector)
 
+// ResellerDomain is the predicate function for resellerdomain builders.
+type ResellerDomain func(*sql.Selector)
+
+// ResellerSetting is the predicate function for resellersetting builders.
+type ResellerSetting func(*sql.Selector)
+
 // Setting is the predicate function for setting builders.
 type Setting func(*sql.Selector)
 

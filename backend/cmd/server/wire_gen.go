@@ -12,6 +12,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/Wei-Shaw/sub2api/internal/handler"
 	"github.com/Wei-Shaw/sub2api/internal/handler/admin"
+	"github.com/Wei-Shaw/sub2api/internal/handler/reseller"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/payment"
 	"github.com/Wei-Shaw/sub2api/internal/repository"
 	"github.com/Wei-Shaw/sub2api/internal/server"
@@ -194,17 +195,29 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	errorPassthroughService := service.NewErrorPassthroughService(errorPassthroughRepository, errorPassthroughCache)
 	errorPassthroughHandler := admin.NewErrorPassthroughHandler(errorPassthroughService)
 	adminHandlers := handler.ProvideAdminHandlers(dashboardHandler, adminUserHandler, groupHandler, accountHandler, adminAnnouncementHandler, oAuthHandler, openAIOAuthHandler, geminiOAuthHandler, antigravityOAuthHandler, proxyHandler, adminRedeemHandler, promoHandler, settingHandler, opsHandler, systemHandler, adminSubscriptionHandler, orderHandler, adminUsageHandler, userAttributeHandler, referralHandler, channelHandler, errorPassthroughHandler)
+	resellerDomainRepository := repository.NewResellerDomainRepository(client)
+	resellerSettingRepository := repository.NewResellerSettingRepository(client)
+	resellerService := service.NewResellerService(userRepository, resellerDomainRepository, groupRepository, resellerSettingRepository, apiKeyRepository, apiKeyService)
+	telegramBotManager := service.ProvideTelegramBotManager(resellerSettingRepository, apiKeyRepository, resellerService)
+	telegramNotificationService := service.ProvideTelegramNotificationService(telegramBotManager)
+	resellerDashboardHandler := reseller.NewDashboardHandler(resellerService)
+	resellerDomainHandler := reseller.NewDomainHandler(resellerService)
+	resellerGroupHandler := reseller.NewGroupHandler(resellerService)
+	resellerSettingHandler := reseller.NewSettingHandler(resellerService, telegramBotManager)
+	resellerKeyHandler := reseller.NewKeyHandler(resellerService)
+	resellerHandlers := handler.ProvideResellerHandlers(resellerDashboardHandler, resellerDomainHandler, resellerGroupHandler, resellerSettingHandler, resellerKeyHandler)
 	gatewayHandler := handler.NewGatewayHandler(gatewayService, geminiMessagesCompatService, antigravityGatewayService, userService, concurrencyService, billingCacheService, usageService, apiKeyService, errorPassthroughService, configConfig)
 	openAIGatewayHandler := handler.NewOpenAIGatewayHandler(openAIGatewayService, concurrencyService, billingCacheService, apiKeyService, errorPassthroughService, configConfig)
 	handlerSettingHandler := handler.ProvideSettingHandler(settingService, buildInfo)
 	handlerReferralHandler := handler.NewReferralHandler(referralService)
 	totpHandler := handler.NewTotpHandler(totpService)
 	keyQueryHandler := handler.NewKeyQueryHandler(apiKeyService, subscriptionService, usageService)
-	handlers := handler.ProvideHandlers(authHandler, userHandler, apiKeyHandler, usageHandler, redeemHandler, subscriptionHandler, paymentHandler, rechargeHandler, announcementHandler, adminHandlers, gatewayHandler, openAIGatewayHandler, handlerSettingHandler, handlerReferralHandler, totpHandler, keyQueryHandler)
+	handlers := handler.ProvideHandlers(authHandler, userHandler, apiKeyHandler, usageHandler, redeemHandler, subscriptionHandler, paymentHandler, rechargeHandler, announcementHandler, adminHandlers, resellerHandlers, gatewayHandler, openAIGatewayHandler, handlerSettingHandler, handlerReferralHandler, totpHandler, keyQueryHandler)
 	jwtAuthMiddleware := middleware.NewJWTAuthMiddleware(authService, userService)
 	adminAuthMiddleware := middleware.NewAdminAuthMiddleware(authService, userService, settingService)
 	apiKeyAuthMiddleware := middleware.NewAPIKeyAuthMiddleware(apiKeyService, subscriptionService, configConfig)
-	engine := server.ProvideRouter(configConfig, handlers, jwtAuthMiddleware, adminAuthMiddleware, apiKeyAuthMiddleware, apiKeyService, subscriptionService, opsService, settingService, redisClient, db)
+	resellerAuthMiddleware := middleware.NewResellerAuthMiddleware(authService, userService)
+	engine := server.ProvideRouter(configConfig, handlers, jwtAuthMiddleware, adminAuthMiddleware, apiKeyAuthMiddleware, resellerAuthMiddleware, apiKeyService, subscriptionService, opsService, settingService, resellerDomainRepository, resellerSettingRepository, redisClient, db)
 	httpServer := server.ProvideHTTPServer(configConfig, engine)
 	opsMetricsCollector := service.ProvideOpsMetricsCollector(opsRepository, settingRepository, accountRepository, concurrencyService, db, redisClient, configConfig)
 	opsAggregationService := service.ProvideOpsAggregationService(opsRepository, settingRepository, db, redisClient, configConfig)
@@ -214,7 +227,7 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	tokenRefreshService := service.ProvideTokenRefreshService(accountRepository, oAuthService, openAIOAuthService, geminiOAuthService, antigravityOAuthService, compositeTokenCacheInvalidator, schedulerCache, configConfig)
 	accountExpiryService := service.ProvideAccountExpiryService(accountRepository)
 	subscriptionExpiryService := service.ProvideSubscriptionExpiryService(userSubscriptionRepository)
-	v := provideCleanup(client, redisClient, opsMetricsCollector, opsAggregationService, opsAlertEvaluatorService, opsCleanupService, opsScheduledReportService, schedulerSnapshotService, tokenRefreshService, accountExpiryService, subscriptionExpiryService, usageCleanupService, pricingService, emailQueueService, billingCacheService, oAuthService, openAIOAuthService, geminiOAuthService, antigravityOAuthService)
+	v := provideCleanup(client, redisClient, opsMetricsCollector, opsAggregationService, opsAlertEvaluatorService, opsCleanupService, opsScheduledReportService, schedulerSnapshotService, tokenRefreshService, accountExpiryService, subscriptionExpiryService, usageCleanupService, pricingService, emailQueueService, billingCacheService, oAuthService, openAIOAuthService, geminiOAuthService, antigravityOAuthService, telegramBotManager, telegramNotificationService)
 	application := &Application{
 		Server:  httpServer,
 		Cleanup: v,
@@ -256,6 +269,8 @@ func provideCleanup(
 	openaiOAuth *service.OpenAIOAuthService,
 	geminiOAuth *service.GeminiOAuthService,
 	antigravityOAuth *service.AntigravityOAuthService,
+	telegramBotManager *service.TelegramBotManager,
+	telegramNotification *service.TelegramNotificationService,
 ) func() {
 	return func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -345,6 +360,18 @@ func provideCleanup(
 			}},
 			{"AntigravityOAuthService", func() error {
 				antigravityOAuth.Stop()
+				return nil
+			}},
+			{"TelegramNotificationService", func() error {
+				if telegramNotification != nil {
+					telegramNotification.Stop()
+				}
+				return nil
+			}},
+			{"TelegramBotManager", func() error {
+				if telegramBotManager != nil {
+					telegramBotManager.Stop()
+				}
 				return nil
 			}},
 			{"Redis", func() error {

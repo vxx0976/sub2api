@@ -113,7 +113,12 @@ const siteSubtitle = computed(() => appStore.cachedPublicSettings?.site_subtitle
 
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 const isAdmin = computed(() => authStore.isAdmin)
-const dashboardPath = computed(() => (isAdmin.value ? '/admin/dashboard' : '/console-home'))
+const isReseller = computed(() => authStore.isReseller)
+const dashboardPath = computed(() => {
+  if (isAdmin.value) return '/admin/dashboard'
+  if (isReseller.value) return '/reseller/dashboard'
+  return '/console-home'
+})
 const userInitial = computed(() => {
   const user = authStore.user
   if (!user || !user.email) return ''

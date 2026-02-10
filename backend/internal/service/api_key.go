@@ -15,6 +15,7 @@ type APIKey struct {
 	UserID      int64
 	Key         string
 	Name        string
+	Notes       string
 	GroupID     *int64
 	Status      string
 	IPWhitelist []string
@@ -28,6 +29,9 @@ type APIKey struct {
 	Quota     float64    // Quota limit in USD (0 = unlimited)
 	QuotaUsed float64    // Used quota amount
 	ExpiresAt *time.Time // Expiration time (nil = never expires)
+
+	// Telegram binding
+	TgChatID *int64 // Telegram chat ID for the key holder (nil = not bound)
 }
 
 func (k *APIKey) IsActive() bool {
