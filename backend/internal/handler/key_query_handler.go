@@ -170,7 +170,12 @@ func (h *KeyQueryHandler) QueryKey(c *gin.Context) {
 					subInfo.WeeklyUsageUSD = &usage
 				}
 				if sub.Group.HasMonthlyLimit() {
-					subInfo.MonthlyLimitUSD = sub.Group.MonthlyLimitUSD
+					// 使用动态有效额度（单周期额度 × 剩余周期数）
+					effectiveLimit := sub.GetEffectiveMonthlyLimit(sub.Group)
+					if effectiveLimit <= 0 {
+						effectiveLimit = *sub.Group.MonthlyLimitUSD
+					}
+					subInfo.MonthlyLimitUSD = &effectiveLimit
 					usage := sub.MonthlyUsageUSD
 					subInfo.MonthlyUsageUSD = &usage
 				}

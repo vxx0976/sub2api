@@ -670,9 +670,12 @@ func (s *SubscriptionService) GetSubscriptionProgress(ctx context.Context, subsc
 		}
 	}
 
-	// 月进度
+	// 月进度 - 使用动态有效额度（单周期额度 × 剩余周期数）
 	if group.HasMonthlyLimit() && sub.MonthlyWindowStart != nil {
-		limit := *group.MonthlyLimitUSD
+		limit := sub.GetEffectiveMonthlyLimit(group)
+		if limit <= 0 {
+			limit = *group.MonthlyLimitUSD
+		}
 		resetsAt := sub.MonthlyWindowStart.Add(30 * 24 * time.Hour)
 		progress.Monthly = &UsageWindowProgress{
 			LimitUSD:        limit,

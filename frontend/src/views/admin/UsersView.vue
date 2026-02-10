@@ -893,11 +893,29 @@ const getDaysRemaining = (expiresAt: string): number => {
   return Math.ceil(diffMs / (1000 * 60 * 60 * 24))
 }
 
+// 计算剩余周期数（向上取整，每30天为一个周期）
+const getSubRemainingCycles = (sub: any): number => {
+  if (!sub.expires_at) return 1
+  const now = new Date()
+  const expires = new Date(sub.expires_at)
+  const diff = expires.getTime() - now.getTime()
+  const daysRemaining = Math.ceil(diff / (1000 * 60 * 60 * 24))
+  if (daysRemaining <= 0) return 0
+  return Math.ceil(daysRemaining / 30)
+}
+
+// 计算有效月额度（单周期额度 × 剩余周期数）
+const getSubEffectiveMonthlyLimit = (sub: any): number => {
+  const monthlyLimit = sub.group?.monthly_limit_usd || 0
+  const cycles = getSubRemainingCycles(sub)
+  return monthlyLimit * cycles
+}
+
 // 用量进度条辅助函数
 // 获取主要进度（优先级：月 > 周 > 日）
 const getMainProgress = (sub: any): { used: number; limit: number } => {
   if (sub.group?.monthly_limit_usd) {
-    return { used: sub.monthly_usage_usd ?? 0, limit: sub.group.monthly_limit_usd }
+    return { used: sub.monthly_usage_usd ?? 0, limit: getSubEffectiveMonthlyLimit(sub) }
   }
   if (sub.group?.weekly_limit_usd) {
     return { used: sub.weekly_usage_usd ?? 0, limit: sub.group.weekly_limit_usd }
@@ -938,7 +956,8 @@ const getUsageTooltip = (sub: any): string => {
     parts.push(`${t('admin.subscriptions.weekly')}: ${pct}%`)
   }
   if (sub.group?.monthly_limit_usd) {
-    const pct = Math.round(((sub.monthly_usage_usd ?? 0) / sub.group.monthly_limit_usd) * 100)
+    const effectiveLimit = getSubEffectiveMonthlyLimit(sub)
+    const pct = effectiveLimit > 0 ? Math.round(((sub.monthly_usage_usd ?? 0) / effectiveLimit) * 100) : 0
     parts.push(`${t('admin.subscriptions.monthly')}: ${pct}%`)
   }
   return parts.join(' | ')

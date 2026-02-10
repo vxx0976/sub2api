@@ -158,7 +158,13 @@ func (h *SubscriptionHandler) GetSummary(c *gin.Context) {
 				item.WeeklyLimitUSD = *sub.Group.WeeklyLimitUSD
 			}
 			if sub.Group.MonthlyLimitUSD != nil {
-				item.MonthlyLimitUSD = *sub.Group.MonthlyLimitUSD
+				// 使用动态有效额度（单周期额度 × 剩余周期数）
+				effectiveLimit := sub.GetEffectiveMonthlyLimit(sub.Group)
+				if effectiveLimit > 0 {
+					item.MonthlyLimitUSD = effectiveLimit
+				} else {
+					item.MonthlyLimitUSD = *sub.Group.MonthlyLimitUSD
+				}
 			}
 		}
 

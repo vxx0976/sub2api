@@ -304,16 +304,16 @@
                   <div class="h-1.5 flex-1 rounded-full bg-gray-200 dark:bg-dark-600">
                     <div
                       class="h-1.5 rounded-full transition-all"
-                      :class="getProgressClass(row.monthly_usage_usd, row.group?.monthly_limit_usd)"
+                      :class="getProgressClass(row.monthly_usage_usd, getEffectiveMonthlyLimit(row))"
                       :style="{
-                        width: getProgressWidth(row.monthly_usage_usd, row.group?.monthly_limit_usd)
+                        width: getProgressWidth(row.monthly_usage_usd, getEffectiveMonthlyLimit(row))
                       }"
                     ></div>
                   </div>
                   <span class="usage-amount">
                     ${{ row.monthly_usage_usd?.toFixed(2) || '0.00' }}
                     <span class="text-gray-400">/</span>
-                    ${{ row.group?.monthly_limit_usd?.toFixed(2) }}
+                    ${{ getEffectiveMonthlyLimit(row).toFixed(2) }}
                   </span>
                 </div>
                 <div class="reset-info" v-if="row.monthly_window_start">
@@ -1295,6 +1295,24 @@ const copyToClipboard = async (text: string) => {
   } catch {
     appStore.showError(t('common.copyFailed'))
   }
+}
+
+// 计算剩余周期数（向上取整，每30天为一个周期）
+const getRemainingCycles = (sub: UserSubscription): number => {
+  if (!sub.expires_at) return 1
+  const now = new Date()
+  const expires = new Date(sub.expires_at)
+  const diff = expires.getTime() - now.getTime()
+  const daysRemaining = Math.ceil(diff / (1000 * 60 * 60 * 24))
+  if (daysRemaining <= 0) return 0
+  return Math.ceil(daysRemaining / 30)
+}
+
+// 计算有效月额度（单周期额度 × 剩余周期数）
+const getEffectiveMonthlyLimit = (sub: UserSubscription): number => {
+  const monthlyLimit = sub.group?.monthly_limit_usd || 0
+  const cycles = getRemainingCycles(sub)
+  return monthlyLimit * cycles
 }
 
 // Helper functions
