@@ -2147,6 +2147,7 @@ export default {
         overloaded: '過載中',
         tempUnschedulable: '臨時不可調度',
         rateLimitedUntil: '限流中，重置時間：{time}',
+        modelRateLimitedUntil: '{model} 限流中，重置時間：{time}',
         overloadedUntil: '負載過重，重置時間：{time}',
         viewTempUnschedDetails: '查看臨時不可調度詳情'
       },

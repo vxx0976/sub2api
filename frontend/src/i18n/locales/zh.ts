@@ -2074,9 +2074,22 @@ export default {
       syncResult: '同步结果',
       syncResultSummary: '创建 {created}，更新 {updated}，跳过 {skipped}，失败 {failed}',
       syncErrors: '错误/跳过详情',
-      syncCompleted: '同步完成：创建 {created}，更新 {updated}',
-      syncCompletedWithErrors: '同步完成但有错误：失败 {failed}（创建 {created}，更新 {updated}）',
+      syncCompleted: '同步完成：创建 {created}，更新 {updated}，跳过 {skipped}',
+      syncCompletedWithErrors: '同步完成但有错误：失败 {failed}（创建 {created}，更新 {updated}，跳过 {skipped}）',
       syncFailed: '同步失败',
+      crsPreview: '预览',
+      crsPreviewing: '预览中...',
+      crsPreviewFailed: '预览失败',
+      crsExistingAccounts: '将自动更新的已有账号',
+      crsNewAccounts: '新账号（可选择）',
+      crsSelectAll: '全选',
+      crsSelectNone: '全不选',
+      crsNoNewAccounts: '所有 CRS 账号均已同步。',
+      crsWillUpdate: '将更新 {count} 个已有账号。',
+      crsSelectedCount: '已选择 {count} 个新账号',
+      crsUpdateBehaviorNote:
+        '已有账号仅同步 CRS 返回的字段，缺失字段保持原值；凭据按键合并，不会清空未下发的键；未勾选"同步代理"时保留原有代理。',
+      crsBack: '返回',
       editAccount: '编辑账号',
       deleteAccount: '删除账号',
       deleteConfirmMessage: "确定要删除账号 '{name}' 吗？",
@@ -2157,6 +2170,7 @@ export default {
         googleOauth: 'Google OAuth',
         codeAssist: 'Code Assist',
         antigravityOauth: 'Antigravity OAuth',
+        antigravityApikey: '通过 Base URL + API Key 连接',
         upstream: '对接上游',
         upstreamDesc: '通过 Base URL + API Key 连接上游',
         api_key: 'API Key',
@@ -2173,7 +2187,7 @@ export default {
         overloaded: '过载中',
         tempUnschedulable: '临时不可调度',
         rateLimitedUntil: '限流中，重置时间：{time}',
-        scopeRateLimitedUntil: '{scope} 限流中，重置时间：{time}',
+        modelRateLimitedUntil: '{model} 限流至 {time}',
         overloadedUntil: '负载过重，重置时间：{time}',
         viewTempUnschedDetails: '查看临时不可调度详情'
       },
@@ -2456,7 +2470,7 @@ export default {
       // Upstream type
       upstream: {
         baseUrl: '上游 Base URL',
-        baseUrlHint: '上游 Antigravity 服务的地址，例如：https://s.konstants.xyz',
+        baseUrlHint: '上游 Antigravity 服务的地址，例如：https://cloudcode-pa.googleapis.com',
         apiKey: '上游 API Key',
         apiKeyHint: '上游服务的 API Key',
         pleaseEnterBaseUrl: '请输入上游 Base URL',
@@ -3998,7 +4012,6 @@ export default {
         empty: '暂无数据',
         queued: '队列 {count}',
         rateLimited: '限流 {count}',
-        scopeRateLimitedTooltip: '{scope} 限流中 ({count} 个账号)',
         errorAccounts: '异常 {count}',
         loadFailed: '加载并发数据失败',
         switchToUser: '切换到按用户',
@@ -4332,6 +4345,7 @@ export default {
       custom: '自定义',
       code: '状态码',
       body: '消息体',
+      skipMonitoring: '跳过监控',
 
       // Columns
       columns: {
@@ -4376,6 +4390,8 @@ export default {
         passthroughBody: '透传上游错误信息',
         customMessage: '自定义错误信息',
         customMessagePlaceholder: '返回给客户端的错误信息...',
+        skipMonitoring: '跳过运维监控记录',
+        skipMonitoringHint: '开启后，匹配此规则的错误不会被记录到运维监控中',
         enabled: '启用此规则'
       },
 

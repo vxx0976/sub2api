@@ -2128,6 +2128,7 @@ export default {
         overloaded: '過負荷中',
         tempUnschedulable: '一時的にスケジュール不可',
         rateLimitedUntil: 'レート制限中、リセット時間：{time}',
+        modelRateLimitedUntil: '{model} レート制限中、リセット時間：{time}',
         overloadedUntil: '過負荷、リセット時間：{time}',
         viewTempUnschedDetails: '一時的にスケジュール不可の詳細を表示'
       },

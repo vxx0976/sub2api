@@ -2120,6 +2120,7 @@ export default {
         overloaded: '과부하 중',
         tempUnschedulable: '일시적 스케줄링 불가',
         rateLimitedUntil: '속도 제한 중, 초기화 시간: {time}',
+        modelRateLimitedUntil: '{model} 속도 제한 중, 초기화 시간: {time}',
         overloadedUntil: '과부하, 초기화 시간: {time}',
         viewTempUnschedDetails: '일시적 스케줄링 불가 상세 보기'
       },

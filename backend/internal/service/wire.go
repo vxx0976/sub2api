@@ -282,4 +282,5 @@ var ProviderSet = wire.NewSet(
 	NewResellerService,
 	ProvideTelegramBotManager,
 	ProvideTelegramNotificationService,
+	NewDigestSessionStore,
 )

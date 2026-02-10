@@ -2110,7 +2110,7 @@ export default {
         overloaded: 'Sobrecargada',
         tempUnschedulable: 'Temporalmente no programable',
         rateLimitedUntil: 'Tasa limitada hasta {time}',
-        scopeRateLimitedUntil: '{scope} tasa limitada hasta {time}',
+        modelRateLimitedUntil: '{model} tasa limitada hasta {time}',
         overloadedUntil: 'Sobrecargada hasta {time}',
         viewTempUnschedDetails: 'Ver detalles de no programable temporal'
       },

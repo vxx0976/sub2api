@@ -2110,7 +2110,7 @@ export default {
         overloaded: 'Перегружен',
         tempUnschedulable: 'Временно недоступен',
         rateLimitedUntil: 'Ограничение частоты до {time}',
-        scopeRateLimitedUntil: '{scope} ограничение частоты до {time}',
+        modelRateLimitedUntil: '{model} ограничение частоты до {time}',
         overloadedUntil: 'Перегружен до {time}',
         viewTempUnschedDetails: 'Просмотр деталей временной недоступности'
       },

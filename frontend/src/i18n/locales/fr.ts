@@ -2110,7 +2110,7 @@ export default {
         overloaded: 'Surchargé',
         tempUnschedulable: 'Temporairement non planifiable',
         rateLimitedUntil: 'Débit limité jusqu\'à {time}',
-        scopeRateLimitedUntil: '{scope} débit limité jusqu\'à {time}',
+        modelRateLimitedUntil: '{model} débit limité jusqu\'à {time}',
         overloadedUntil: 'Surchargé jusqu\'à {time}',
         viewTempUnschedDetails: 'Voir les détails de non-planification temporaire'
       },

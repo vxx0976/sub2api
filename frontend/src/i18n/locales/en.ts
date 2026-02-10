@@ -2071,10 +2071,23 @@ export default {
       syncResult: 'Sync Result',
       syncResultSummary: 'Created {created}, updated {updated}, skipped {skipped}, failed {failed}',
       syncErrors: 'Errors / Skipped Details',
-      syncCompleted: 'Sync completed: created {created}, updated {updated}',
+      syncCompleted: 'Sync completed: created {created}, updated {updated}, skipped {skipped}',
       syncCompletedWithErrors:
-        'Sync completed with errors: failed {failed} (created {created}, updated {updated})',
+        'Sync completed with errors: failed {failed} (created {created}, updated {updated}, skipped {skipped})',
       syncFailed: 'Sync failed',
+      crsPreview: 'Preview',
+      crsPreviewing: 'Previewing...',
+      crsPreviewFailed: 'Preview failed',
+      crsExistingAccounts: 'Existing accounts (will be updated)',
+      crsNewAccounts: 'New accounts (select to sync)',
+      crsSelectAll: 'Select all',
+      crsSelectNone: 'Select none',
+      crsNoNewAccounts: 'All CRS accounts are already synced.',
+      crsWillUpdate: 'Will update {count} existing accounts.',
+      crsSelectedCount: '{count} new accounts selected',
+      crsUpdateBehaviorNote:
+        'Existing accounts only sync fields returned by CRS; missing fields keep their current values. Credentials are merged by key — keys not returned by CRS are preserved. Proxies are kept when "Sync proxies" is unchecked.',
+      crsBack: 'Back',
       editAccount: 'Edit Account',
       deleteAccount: 'Delete Account',
       searchAccounts: 'Search accounts...',
@@ -2108,8 +2121,7 @@ export default {
         googleOauth: 'Google OAuth',
         codeAssist: 'Code Assist',
         antigravityOauth: 'Antigravity OAuth',
-        api_key: 'API Key',
-        cookie: 'Cookie',
+        antigravityApikey: 'Connect via Base URL + API Key',
         upstream: 'Upstream',
         upstreamDesc: 'Connect via Base URL + API Key'
       },
@@ -2124,7 +2136,7 @@ export default {
         overloaded: 'Overloaded',
         tempUnschedulable: 'Temp Unschedulable',
         rateLimitedUntil: 'Rate limited until {time}',
-        scopeRateLimitedUntil: '{scope} rate limited until {time}',
+        modelRateLimitedUntil: '{model} rate limited until {time}',
         overloadedUntil: 'Overloaded until {time}',
         viewTempUnschedDetails: 'View temp unschedulable details'
       },
@@ -2433,7 +2445,7 @@ export default {
       // Upstream type
       upstream: {
         baseUrl: 'Upstream Base URL',
-        baseUrlHint: 'The address of the upstream Antigravity service, e.g., https://s.konstants.xyz',
+        baseUrlHint: 'The address of the upstream Antigravity service, e.g., https://cloudcode-pa.googleapis.com',
         apiKey: 'Upstream API Key',
         apiKeyHint: 'API Key for the upstream service',
         pleaseEnterBaseUrl: 'Please enter upstream Base URL',
@@ -4012,7 +4024,6 @@ export default {
         empty: 'No data',
         queued: 'Queue {count}',
         rateLimited: 'Rate-limited {count}',
-        scopeRateLimitedTooltip: '{scope} rate-limited ({count} accounts)',
         errorAccounts: 'Errors {count}',
         loadFailed: 'Failed to load concurrency data',
         switchToUser: 'Switch to by User',
@@ -4345,6 +4356,7 @@ export default {
       custom: 'Custom',
       code: 'Code',
       body: 'Body',
+      skipMonitoring: 'Skip Monitoring',
 
       // Columns
       columns: {
@@ -4389,6 +4401,8 @@ export default {
         passthroughBody: 'Passthrough upstream error message',
         customMessage: 'Custom error message',
         customMessagePlaceholder: 'Error message to return to client...',
+        skipMonitoring: 'Skip monitoring',
+        skipMonitoringHint: 'When enabled, errors matching this rule will not be recorded in ops monitoring',
         enabled: 'Enable this rule'
       },
 

@@ -2207,7 +2207,7 @@ export default {
         overloaded: 'Ueberlastet',
         tempUnschedulable: 'Temp Unschedulable',
         rateLimitedUntil: 'Rate limited until {time}',
-        scopeRateLimitedUntil: '{scope} ratenbegrenzt bis {time}',
+        modelRateLimitedUntil: '{model} ratenbegrenzt bis {time}',
         overloadedUntil: 'Overloaded until {time}',
         viewTempUnschedDetails: 'Details der temporaeren Nichtplanbarkeit anzeigen'
 
