@@ -458,7 +458,7 @@ export default {
         withSuffix: '{time} 后解除'
       }
     },
-    reseller: '經銷商'
+    reseller: '商戶'
   },
 
   // Navigation
@@ -497,7 +497,7 @@ export default {
     buySubscription: '購買訂閱',
     docs: '接入文檔',
     referral: '邀請好友',
-    resellerDashboard: '經銷概覽',
+    resellerDashboard: '商戶概覽',
     resellerGroups: '套餐管理',
     resellerKeys: 'API 金鑰',
     resellerDomains: '網域管理',
@@ -982,6 +982,8 @@ export default {
     disable: '禁用',
     nameLabel: '名稱',
     namePlaceholder: '我的 API 金鑰',
+    notes: '備注',
+    notesPlaceholder: '可選備注資訊',
     groupLabel: '群組',
     selectGroup: '選擇群組',
     statusLabel: '狀態',
@@ -1432,7 +1434,7 @@ export default {
       statusFilter: '状態筛選',
       allStatuses: '全部状態',
       admin: '管理員',
-      reseller: '經銷商',
+      reseller: '商戶',
       user: '使用者',
       disabled: '禁用',
       email: '郵箱',
@@ -1496,7 +1498,7 @@ export default {
       deleteConfirm: "確定要刪除使用者 '{email}' 嗎？此操作无法撤銷。",
       roles: {
         admin: '管理員',
-        reseller: '經銷商',
+        reseller: '商戶',
         user: '使用者'
       },
       form: {
@@ -1836,8 +1838,8 @@ export default {
         sortOrderHint: '數值越大排序越靠前',
         isRecommended: '推薦方案',
         isRecommendedHint: '在方案頁面顯示推薦標識',
-        resellerTemplate: '分銷商模板',
-        resellerTemplateHint: '啟用後，分銷商可選擇此套餐作為模板分配給用戶',
+        resellerTemplate: '商戶模板',
+        resellerTemplateHint: '啟用後，商戶可選擇此套餐作為模板分配給用戶',
         externalBuyUrl: '外部購買連結',
         externalBuyUrlPlaceholder: 'https://item.taobao.com/item.htm?id=...',
         externalBuyUrlHint: '可選，配置後使用者可透過此連結跳轉到外部平台購買'
@@ -4606,7 +4608,7 @@ export default {
   // Reseller
   reseller: {
     dashboard: {
-      title: '經銷概覽',
+      title: '商戶概覽',
       myBalance: '我的餘額',
       domains: '自訂網域',
       verifiedDomains: '已驗證網域',
@@ -4668,8 +4670,11 @@ export default {
       verifyNow: '立即驗證',
       verifying: '驗證中...',
       verifyInstructions: '請新增以下 DNS TXT 記錄來驗證網域所有權：',
-      verifyStep1: '1. 在您的 DNS 服務商新增以下 TXT 記錄：',
-      verifyStep2: '2. 等待 DNS 生效後點擊「立即驗證」',
+      verifyStep1_dns: '步驟一：新增 A 記錄（將網域指向伺服器）',
+      verifyStep1_hint: `HOST 填 {'@'} 代表根網域。如果您的 DNS 服務商會自動拼接網域後綴，直接填 {'@'} 即可。`,
+      verifyStep2_txt: '步驟二：新增 TXT 記錄（驗證網域所有權）',
+      verifyStep2_hint: 'HOST 只填 _domain-verify，不要包含網域後綴。',
+      verifyStep3: '步驟三：等待 DNS 生效後（通常幾分鐘），點擊「立即驗證」',
       verifySuccess: '網域驗證成功',
       verifyFailed: '網域驗證失敗，請確認 DNS 記錄已正確設定',
       createSuccess: '網域新增成功',
@@ -4690,7 +4695,7 @@ export default {
       addTitle: '新增站點',
       backToList: '返回列表',
       editSite: '站點設定',
-      tabs: { basic: '基本資訊', appearance: '外觀', homepage: '首頁', features: '功能與 SEO' },
+      tabs: { basic: '基本資訊', homepage: '首頁', docs: '文件', purchase: '購買', seo: 'SEO' },
       domainName: '網域',
       siteName: '站點名稱',
       siteNamePlaceholder: '輸入站點名稱',
@@ -4698,9 +4703,6 @@ export default {
       subtitlePlaceholder: '輸入站點副標題',
       siteLogo: 'Logo URL',
       siteLogoPlaceholder: '輸入 Logo 圖片網址',
-      brandColor: '品牌顏色',
-      customCSS: '自訂 CSS',
-      customCSSPlaceholder: '輸入自訂 CSS 樣式',
       homeTemplate: '首頁範本',
       homeTemplateDefault: '跟隨系統預設',
       homeTemplateMinimal: '簡潔範本',
@@ -4722,9 +4724,7 @@ export default {
       purchaseUrl: '購買頁連結',
       purchaseUrlPlaceholder: '輸入自訂購買頁面 URL',
       purchaseUrlHint: '留空則使用系統預設購買頁',
-      loginRedirect: '登入後跳轉',
-      loginRedirectPlaceholder: '/dashboard',
-      loginRedirectHint: '使用者登入後跳轉的路徑，預設 /dashboard',
+      seoSection: 'SEO 搜尋引擎最佳化',
       seoTitle: 'SEO 標題',
       seoTitlePlaceholder: '自訂搜尋引擎標題',
       seoDescription: 'SEO 描述',
@@ -4784,20 +4784,17 @@ export default {
       telegram: {
         title: 'Telegram 機器人',
         botToken: 'Bot Token',
-        botTokenPlaceholder: '輸入從 @BotFather 取得的 Token',
-        botTokenHint: '從 Telegram @BotFather 取得',
+        botTokenPlaceholder: `輸入從 {'@'}BotFather 取得的 Token`,
+        botTokenHint: `從 Telegram {'@'}BotFather 取得`,
         bindStatus: '綁定狀態',
         bound: '已綁定',
         unbound: '未綁定',
         generateBindCode: '產生綁定碼',
         bindInstructions: '請向 Bot 傳送此命令來綁定：',
         unbind: '解除綁定',
-        features: '功能開關',
-        featureAdminKeys: '分銷商：金鑰管理',
-        featureAdminStats: '分銷商：統計查詢',
-        featureAdminNotify: '分銷商：告警通知',
-        featureUserQuery: '使用者：查詢金鑰資訊',
-        featureUserNotify: '使用者：配額告警推送'
+        saveTokenFirst: '請先填寫 Bot Token 並儲存設定',
+        waitingForBind: '等待綁定中，請向 Bot 傳送上方指令...',
+        bindSuccess: 'Telegram 綁定成功！'
       }
     }
   }

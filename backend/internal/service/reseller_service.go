@@ -26,13 +26,9 @@ var (
 // Reseller Telegram setting keys
 const (
 	ResellerSettingTgBotToken = "tg_bot_token"
-	ResellerSettingTgChatID   = "tg_chat_id"    // reseller's own chat_id
-	ResellerSettingTgBindCode = "tg_bind_code"   // temporary bind code
-	ResellerSettingTgFeatures = "tg_features"    // comma-separated feature flags
+	ResellerSettingTgChatID   = "tg_chat_id"  // reseller's own chat_id
+	ResellerSettingTgBindCode = "tg_bind_code" // temporary bind code
 )
-
-// Default Telegram features (all enabled)
-const DefaultTgFeatures = "admin_keys,admin_stats,admin_notify,user_query,user_notify"
 
 // Protected reseller setting keys that cannot be set directly via API
 var protectedResellerSettingKeys = map[string]bool{
@@ -90,6 +86,8 @@ type ResellerDomainRepository interface {
 	Update(ctx context.Context, domain *ResellerDomain) error
 	Delete(ctx context.Context, id int64) error
 	ListByResellerID(ctx context.Context, resellerID int64, params pagination.PaginationParams) ([]ResellerDomain, *pagination.PaginationResult, error)
+	// PurgeSoftDeletedByDomain physically deletes soft-deleted records for a given domain name.
+	PurgeSoftDeletedByDomain(ctx context.Context, domain string)
 }
 
 // ResellerDashboardStats contains reseller dashboard statistics
@@ -289,11 +287,14 @@ func (s *ResellerService) ListDomains(ctx context.Context, resellerID int64, pag
 
 // CreateDomain creates a new domain for the reseller
 func (s *ResellerService) CreateDomain(ctx context.Context, resellerID int64, input *CreateDomainInput) (*ResellerDomain, error) {
-	// Check if domain already exists
+	// Check if domain already exists (active, not soft-deleted)
 	existing, _ := s.domainRepo.GetByDomain(ctx, input.Domain)
 	if existing != nil {
 		return nil, ErrDomainExists
 	}
+
+	// Purge any soft-deleted record with the same domain to avoid unique constraint violation
+	s.domainRepo.PurgeSoftDeletedByDomain(ctx, input.Domain)
 
 	// Generate verification token
 	token, err := generateVerifyToken()
@@ -392,16 +393,16 @@ func (s *ResellerService) UpdateDomain(ctx context.Context, resellerID, domainID
 	return domain, nil
 }
 
-// DeleteDomain deletes a domain, validating ownership
-func (s *ResellerService) DeleteDomain(ctx context.Context, resellerID, domainID int64) error {
+// DeleteDomain deletes a domain, validating ownership. Returns the domain name for cache invalidation.
+func (s *ResellerService) DeleteDomain(ctx context.Context, resellerID, domainID int64) (string, error) {
 	domain, err := s.domainRepo.GetByID(ctx, domainID)
 	if err != nil {
-		return ErrDomainNotFound
+		return "", ErrDomainNotFound
 	}
 	if domain.ResellerID != resellerID {
-		return ErrOwnershipViolation
+		return "", ErrOwnershipViolation
 	}
-	return s.domainRepo.Delete(ctx, domainID)
+	return domain.Domain, s.domainRepo.Delete(ctx, domainID)
 }
 
 // VerifyDomain initiates or checks domain verification via DNS TXT record

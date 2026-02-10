@@ -458,7 +458,7 @@ export default {
         withSuffix: '{time} 후 해제'
       }
     },
-    reseller: '리셀러'
+    reseller: '판매자'
   },
 
   // Navigation
@@ -497,7 +497,7 @@ export default {
     buySubscription: '구독 구매',
     docs: '연동 문서',
     referral: '친구 초대',
-    resellerDashboard: '리셀러 대시보드',
+    resellerDashboard: '판매자 대시보드',
     resellerGroups: '패키지',
     resellerKeys: 'API 키',
     resellerDomains: '도메인',
@@ -982,6 +982,8 @@ export default {
     disable: '비활성화',
     nameLabel: '이름',
     namePlaceholder: '내 API 키',
+    notes: '메모',
+    notesPlaceholder: '선택사항 메모',
     groupLabel: '그룹',
     selectGroup: '그룹 선택',
     statusLabel: '상태',
@@ -1432,7 +1434,7 @@ export default {
       allStatuses: '전체 상태',
       admin: '관리자',
       user: '사용자',
-      reseller: '리셀러',
+      reseller: '판매자',
       disabled: '비활성화',
       email: '이메일',
       password: '비밀번호',
@@ -1496,7 +1498,7 @@ export default {
       roles: {
         admin: '관리자',
         user: '사용자',
-        reseller: '리셀러'
+        reseller: '판매자'
       },
       form: {
         emailLabel: '이메일',
@@ -1826,8 +1828,8 @@ export default {
         sortOrderHint: '숫자가 클수록 상위에 표시됩니다',
         isRecommended: '추천 요금제',
         isRecommendedHint: '요금제 페이지에 추천 표시',
-        resellerTemplate: '리셀러 템플릿',
-        resellerTemplateHint: '활성화하면 리셀러가 이 플랜을 사용자 템플릿으로 사용할 수 있습니다'
+        resellerTemplate: '판매자 템플릿',
+        resellerTemplateHint: '활성화하면 판매자가 이 플랜을 사용자 템플릿으로 사용할 수 있습니다'
       },
       planPreview: {
         title: '요금제 미리보기',
@@ -4577,7 +4579,7 @@ export default {
   },
   reseller: {
     dashboard: {
-      title: '리셀러 대시보드',
+      title: '판매자 대시보드',
       myBalance: '내 잔액',
       domains: '커스텀 도메인',
       verifiedDomains: '인증된 도메인',
@@ -4639,8 +4641,11 @@ export default {
       verifyNow: '지금 인증',
       verifying: '인증 중...',
       verifyInstructions: '도메인 소유권을 확인하려면 다음 DNS TXT 레코드를 추가하세요:',
-      verifyStep1: '1. DNS 제공업체에서 다음 TXT 레코드를 추가하세요:',
-      verifyStep2: '2. DNS 반영 후 "지금 인증"을 클릭하세요',
+      verifyStep1_dns: '단계 1: A 레코드 추가 (도메인을 서버로 연결)',
+      verifyStep1_hint: `HOST {'@'}는 루트 도메인을 나타냅니다. DNS 제공업체가 도메인 접미사를 자동으로 추가하면 {'@'}만 입력하세요.`,
+      verifyStep2_txt: '단계 2: TXT 레코드 추가 (도메인 소유권 확인)',
+      verifyStep2_hint: 'HOST에 _domain-verify만 입력하고 도메인 접미사는 포함하지 마세요.',
+      verifyStep3: '단계 3: DNS 전파를 기다린 후 (보통 몇 분) "지금 인증"을 클릭하세요',
       verifySuccess: '도메인 인증 성공',
       verifyFailed: '도메인 인증 실패. DNS 레코드가 올바르게 설정되었는지 확인하세요',
       createSuccess: '도메인 추가 성공',
@@ -4661,7 +4666,7 @@ export default {
       addTitle: '사이트 추가',
       backToList: '목록으로 돌아가기',
       editSite: '사이트 설정',
-      tabs: { basic: '기본 정보', appearance: '외관', homepage: '홈페이지', features: '기능 및 SEO' },
+      tabs: { basic: '기본 정보', homepage: '홈페이지', docs: '문서', purchase: '구매', seo: 'SEO' },
       domainName: '도메인',
       siteName: '사이트 이름',
       siteNamePlaceholder: '사이트 이름 입력',
@@ -4669,9 +4674,6 @@ export default {
       subtitlePlaceholder: '부제목 입력',
       siteLogo: '로고 URL',
       siteLogoPlaceholder: '로고 이미지 URL 입력',
-      brandColor: '브랜드 색상',
-      customCSS: '사용자 정의 CSS',
-      customCSSPlaceholder: 'CSS 스타일 입력',
       homeTemplate: '홈페이지 템플릿',
       homeTemplateDefault: '시스템 기본값',
       homeTemplateMinimal: '미니멀',
@@ -4693,9 +4695,7 @@ export default {
       purchaseUrl: '구매 페이지 URL',
       purchaseUrlPlaceholder: '사용자 정의 구매 페이지 URL 입력',
       purchaseUrlHint: '비워두면 시스템 기본 구매 페이지 사용',
-      loginRedirect: '로그인 후 리디렉션',
-      loginRedirectPlaceholder: '/dashboard',
-      loginRedirectHint: '로그인 후 리디렉션 경로, 기본값 /dashboard',
+      seoSection: 'SEO',
       seoTitle: 'SEO 제목',
       seoTitlePlaceholder: '검색 엔진 제목',
       seoDescription: 'SEO 설명',
@@ -4728,7 +4728,7 @@ export default {
     },
     settings: {
       title: '설정',
-      description: '리셀러 사이트 설정',
+      description: '판매자 사이트 설정',
       brand: '브랜드 설정',
       siteName: '사이트 이름',
       siteLogo: '사이트 로고 URL',
@@ -4755,20 +4755,17 @@ export default {
       telegram: {
         title: 'Telegram 봇',
         botToken: '봇 토큰',
-        botTokenPlaceholder: '@BotFather에서 받은 토큰 입력',
-        botTokenHint: 'Telegram @BotFather에서 받으세요',
+        botTokenPlaceholder: `{'@'}BotFather에서 받은 토큰 입력`,
+        botTokenHint: `Telegram {'@'}BotFather에서 받으세요`,
         bindStatus: '바인딩 상태',
         bound: '바인딩됨',
         unbound: '미바인딩',
         generateBindCode: '바인딩 코드 생성',
         bindInstructions: '이 명령을 봇에게 보내 바인딩하세요:',
         unbind: '바인딩 해제',
-        features: '기능 토글',
-        featureAdminKeys: '리셀러: 키 관리',
-        featureAdminStats: '리셀러: 통계 조회',
-        featureAdminNotify: '리셀러: 알림 통지',
-        featureUserQuery: '사용자: 키 정보 조회',
-        featureUserNotify: '사용자: 할당량 알림 푸시'
+        saveTokenFirst: 'Bot Token을 입력하고 설정을 먼저 저장하세요',
+        waitingForBind: '바인딩 대기 중, Bot에 명령을 보내주세요...',
+        bindSuccess: 'Telegram 바인딩 성공!'
       }
     }
   }

@@ -446,7 +446,7 @@ export default {
     now: 'Agora',
     unknown: 'Desconhecido',
     minutes: 'min',
-    reseller: 'Revendedor',
+    reseller: 'Comerciante',
     time: {
       never: 'Nunca',
       justNow: 'Agora mesmo',
@@ -498,7 +498,7 @@ export default {
     buySubscription: 'Comprar Assinatura',
     docs: 'Docs',
     referral: 'Convidar Amigos',
-    resellerDashboard: 'Painel do Revendedor',
+    resellerDashboard: 'Painel do Comerciante',
     resellerGroups: 'Pacotes',
     resellerKeys: 'Chaves API',
     resellerDomains: 'Domínios',
@@ -983,6 +983,8 @@ export default {
     disable: 'Desativar',
     nameLabel: 'Nome',
     namePlaceholder: 'Minha Chave API',
+    notes: 'Notas',
+    notesPlaceholder: 'Notas opcionais',
     groupLabel: 'Grupo',
     selectGroup: 'Selecione um grupo',
     statusLabel: 'Status',
@@ -1589,7 +1591,7 @@ export default {
       roles: {
         admin: 'Admin',
         user: 'Usuario',
-        reseller: 'Revendedor'
+        reseller: 'Comerciante'
       },
       // Dropdowns de Configuracoes
       filterSettings: 'Configuracoes de Filtro',
@@ -1842,8 +1844,8 @@ export default {
         sortOrderHint: 'Valores maiores aparecem primeiro na lista',
         isRecommended: 'Recomendado',
         isRecommendedHint: 'Mostrar selo de recomendado na pagina de planos',
-        resellerTemplate: 'Modelo de revendedor',
-        resellerTemplateHint: 'Quando ativado, os revendedores podem usar este plano como modelo para seus usuários',
+        resellerTemplate: 'Modelo de comerciante',
+        resellerTemplateHint: 'Quando ativado, os comerciantes podem usar este plano como modelo para seus usuários',
         externalBuyUrl: 'URL de Compra Externa',
         externalBuyUrlPlaceholder: 'https://item.taobao.com/item.htm?id=...',
         externalBuyUrlHint: 'Opcional. Quando configurado, usuarios podem clicar para comprar em plataformas externas'
@@ -4866,7 +4868,7 @@ export default {
   },
   reseller: {
     dashboard: {
-      title: 'Painel do Revendedor',
+      title: 'Painel do Comerciante',
       myBalance: 'Meu Saldo',
       domains: 'Domínios Personalizados',
       verifiedDomains: 'Domínios Verificados',
@@ -4928,8 +4930,11 @@ export default {
       verifyNow: 'Verificar Agora',
       verifying: 'Verificando...',
       verifyInstructions: 'Adicione o seguinte registro DNS TXT para verificar a propriedade do domínio:',
-      verifyStep1: '1. Adicione o seguinte registro TXT no seu provedor DNS:',
-      verifyStep2: '2. Clique em "Verificar Agora" após a propagação do DNS',
+      verifyStep1_dns: 'Passo 1: Adicionar registro A (apontar domínio para o servidor)',
+      verifyStep1_hint: `HOST {'@'} representa o domínio raiz. Se seu provedor DNS adiciona automaticamente o sufixo do domínio, basta inserir {'@'}.`,
+      verifyStep2_txt: 'Passo 2: Adicionar registro TXT (verificar propriedade do domínio)',
+      verifyStep2_hint: 'HOST deve ser apenas _domain-verify, sem o sufixo do domínio.',
+      verifyStep3: 'Passo 3: Aguarde a propagação do DNS (geralmente alguns minutos) e clique em "Verificar Agora"',
       verifySuccess: 'Domínio verificado com sucesso',
       verifyFailed: 'Verificação falhou. Verifique se o registro DNS está configurado corretamente',
       createSuccess: 'Domínio adicionado',
@@ -4950,7 +4955,7 @@ export default {
       addTitle: 'Adicionar Site',
       backToList: 'Voltar à Lista',
       editSite: 'Configurações do Site',
-      tabs: { basic: 'Informações Básicas', appearance: 'Aparência', homepage: 'Página Inicial', features: 'Recursos e SEO' },
+      tabs: { basic: 'Informações Básicas', homepage: 'Página Inicial', docs: 'Documentação', purchase: 'Compra', seo: 'SEO' },
       domainName: 'Domínio',
       siteName: 'Nome do Site',
       siteNamePlaceholder: 'Digite o nome do site',
@@ -4958,9 +4963,6 @@ export default {
       subtitlePlaceholder: 'Digite o subtítulo',
       siteLogo: 'URL do Logo',
       siteLogoPlaceholder: 'Digite a URL da imagem do logo',
-      brandColor: 'Cor da Marca',
-      customCSS: 'CSS Personalizado',
-      customCSSPlaceholder: 'Digite estilos CSS',
       homeTemplate: 'Modelo da Página Inicial',
       homeTemplateDefault: 'Padrão do Sistema',
       homeTemplateMinimal: 'Minimalista',
@@ -4982,9 +4984,7 @@ export default {
       purchaseUrl: 'URL da Página de Compra',
       purchaseUrlPlaceholder: 'Digite URL personalizada de compra',
       purchaseUrlHint: 'Deixe vazio para usar a página de compra padrão',
-      loginRedirect: 'Redirecionamento Pós-Login',
-      loginRedirectPlaceholder: '/dashboard',
-      loginRedirectHint: 'Caminho de redirecionamento após login, padrão /dashboard',
+      seoSection: 'SEO',
       seoTitle: 'Título SEO',
       seoTitlePlaceholder: 'Título para motores de busca',
       seoDescription: 'Descrição SEO',
@@ -5044,20 +5044,17 @@ export default {
       telegram: {
         title: 'Bot do Telegram',
         botToken: 'Token do Bot',
-        botTokenPlaceholder: 'Introduza o token do @BotFather',
-        botTokenHint: 'Obtenha-o no Telegram @BotFather',
+        botTokenPlaceholder: `Introduza o token do {'@'}BotFather`,
+        botTokenHint: `Obtenha-o no Telegram {'@'}BotFather`,
         bindStatus: 'Estado de vinculação',
         bound: 'Vinculado',
         unbound: 'Não vinculado',
         generateBindCode: 'Gerar código de vinculação',
         bindInstructions: 'Envie este comando ao seu Bot para vincular:',
         unbind: 'Desvincular',
-        features: 'Alternadores de funcionalidades',
-        featureAdminKeys: 'Revendedor: Gestão de chaves',
-        featureAdminStats: 'Revendedor: Estatísticas',
-        featureAdminNotify: 'Revendedor: Notificações de alerta',
-        featureUserQuery: 'Utilizador: Consultar info da chave',
-        featureUserNotify: 'Utilizador: Alerta de quota'
+        saveTokenFirst: 'Por favor, insira o Bot Token e salve as configurações primeiro',
+        waitingForBind: 'Aguardando vinculação, envie o comando ao seu Bot...',
+        bindSuccess: 'Telegram vinculado com sucesso!'
       }
     }
   }

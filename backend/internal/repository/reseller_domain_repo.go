@@ -7,6 +7,7 @@ import (
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
 	dbresellerdomain "github.com/Wei-Shaw/sub2api/ent/resellerdomain"
+	"github.com/Wei-Shaw/sub2api/ent/schema/mixins"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
 	"github.com/Wei-Shaw/sub2api/internal/service"
 
@@ -154,6 +155,18 @@ func (r *resellerDomainRepository) ListByResellerID(ctx context.Context, reselle
 	}
 
 	return domains, paginationResultFromTotal(int64(total), params), nil
+}
+
+func (r *resellerDomainRepository) PurgeSoftDeletedByDomain(ctx context.Context, domain string) {
+	// Physically delete soft-deleted records to avoid unique constraint violation on re-create.
+	// Must use SkipSoftDelete to bypass the soft-delete hook, which would otherwise
+	// add "deleted_at IS NULL" and convert DELETE to UPDATE, making the purge a no-op.
+	_, _ = r.client.ResellerDomain.Delete().
+		Where(
+			dbresellerdomain.DomainEQ(domain),
+			dbresellerdomain.DeletedAtNotNil(),
+		).
+		Exec(mixins.SkipSoftDelete(ctx))
 }
 
 func resellerDomainEntityToService(e *dbent.ResellerDomain) *service.ResellerDomain {

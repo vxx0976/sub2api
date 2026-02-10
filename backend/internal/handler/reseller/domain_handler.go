@@ -1,7 +1,10 @@
 package reseller
 
 import (
+	"net"
+	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
 	"github.com/Wei-Shaw/sub2api/internal/service"
@@ -11,12 +14,25 @@ import (
 
 // DomainHandler handles reseller domain management
 type DomainHandler struct {
-	resellerService *service.ResellerService
+	resellerService      *service.ResellerService
+	settingService       *service.SettingService
+	invalidateDomainFunc func(domain string)
 }
 
 // NewDomainHandler creates a new DomainHandler
-func NewDomainHandler(resellerService *service.ResellerService) *DomainHandler {
-	return &DomainHandler{resellerService: resellerService}
+func NewDomainHandler(resellerService *service.ResellerService, settingService *service.SettingService) *DomainHandler {
+	return &DomainHandler{resellerService: resellerService, settingService: settingService}
+}
+
+// SetCacheInvalidator sets the function to call when a domain's settings change
+func (h *DomainHandler) SetCacheInvalidator(fn func(domain string)) {
+	h.invalidateDomainFunc = fn
+}
+
+func (h *DomainHandler) invalidateDomainCache(domain string) {
+	if h.invalidateDomainFunc != nil {
+		h.invalidateDomainFunc(domain)
+	}
 }
 
 // List lists the reseller's domains
@@ -80,6 +96,9 @@ func (h *DomainHandler) Update(c *gin.Context) {
 		return
 	}
 
+	// Invalidate HTML cache for this domain so new settings take effect
+	h.invalidateDomainCache(domain.Domain)
+
 	response.Success(c, domain)
 }
 
@@ -93,12 +112,57 @@ func (h *DomainHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	if err := h.resellerService.DeleteDomain(c.Request.Context(), resellerID, domainID); err != nil {
+	domainName, err := h.resellerService.DeleteDomain(c.Request.Context(), resellerID, domainID)
+	if err != nil {
 		response.ErrorFrom(c, err)
 		return
 	}
 
+	h.invalidateDomainCache(domainName)
+
 	response.Success(c, gin.H{"message": "Domain deleted successfully"})
+}
+
+// ServerInfo returns the main site's domain and resolved IP for DNS setup guidance
+// GET /api/v1/reseller/domains/server-info
+func (h *DomainHandler) ServerInfo(c *gin.Context) {
+	// Prefer api_base_url from system settings (resolves to the public IP)
+	host := ""
+	if h.settingService != nil {
+		settings, err := h.settingService.GetPublicSettings(c.Request.Context())
+		if err == nil && settings.APIBaseURL != "" {
+			if u, err := url.Parse(settings.APIBaseURL); err == nil && u.Hostname() != "" {
+				host = u.Hostname()
+			}
+		}
+	}
+	// Fallback to request host
+	if host == "" {
+		host = c.Request.Host
+		if idx := strings.Index(host, ":"); idx != -1 {
+			host = host[:idx]
+		}
+	}
+
+	var serverIP string
+	ips, err := net.LookupHost(host)
+	if err == nil && len(ips) > 0 {
+		// Prefer IPv4
+		for _, ip := range ips {
+			if !strings.Contains(ip, ":") {
+				serverIP = ip
+				break
+			}
+		}
+		if serverIP == "" {
+			serverIP = ips[0]
+		}
+	}
+
+	response.Success(c, gin.H{
+		"domain": host,
+		"ip":     serverIP,
+	})
 }
 
 // Verify verifies a domain via DNS TXT record

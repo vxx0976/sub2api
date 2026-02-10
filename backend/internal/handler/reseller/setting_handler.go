@@ -89,5 +89,29 @@ func (h *SettingHandler) GenerateBindCode(c *gin.Context) {
 		return
 	}
 
+	// Ensure bot is running (in case token was saved but bot hasn't started yet)
+	if h.botManager != nil {
+		allSettings, err := h.resellerService.GetSettings(c.Request.Context(), resellerID)
+		if err == nil {
+			h.botManager.OnSettingsUpdated(resellerID, allSettings)
+		}
+	}
+
 	response.Success(c, gin.H{"bind_code": code})
+}
+
+// UnbindTelegram clears the Telegram chat_id binding for the reseller.
+// DELETE /api/v1/reseller/settings/tg-bind
+func (h *SettingHandler) UnbindTelegram(c *gin.Context) {
+	resellerID := getResellerIDFromContext(c)
+
+	// Directly clear the protected tg_chat_id field
+	if err := h.resellerService.UpdateSettings(c.Request.Context(), resellerID, map[string]string{
+		service.ResellerSettingTgChatID: "",
+	}); err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+
+	response.Success(c, gin.H{"message": "Telegram unbound successfully"})
 }

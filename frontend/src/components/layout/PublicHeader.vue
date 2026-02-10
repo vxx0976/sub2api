@@ -25,17 +25,41 @@
             class="transition-colors"
             :class="isActive('/') ? 'text-gray-900 dark:text-white' : 'text-gray-600 hover:text-gray-900 dark:text-dark-300 dark:hover:text-white'"
           >{{ t('home.nav.home') }}</router-link>
+          <!-- Pricing: shown if reseller has purchase_url or not reseller domain -->
           <router-link
+            v-if="isResellerDomain && resellerPurchaseUrl"
             to="/pricing"
             class="transition-colors"
             :class="isActive('/pricing') ? 'text-gray-900 dark:text-white' : 'text-gray-600 hover:text-gray-900 dark:text-dark-300 dark:hover:text-white'"
           >{{ t('home.nav.pricing') }}</router-link>
           <router-link
+            v-else-if="!isResellerDomain"
+            to="/pricing"
+            class="transition-colors"
+            :class="isActive('/pricing') ? 'text-gray-900 dark:text-white' : 'text-gray-600 hover:text-gray-900 dark:text-dark-300 dark:hover:text-white'"
+          >{{ t('home.nav.pricing') }}</router-link>
+          <!-- Key Query: shown on reseller domains -->
+          <router-link
+            v-if="isResellerDomain"
+            to="/key-query"
+            class="transition-colors"
+            :class="isActive('/key-query') ? 'text-gray-900 dark:text-white' : 'text-gray-600 hover:text-gray-900 dark:text-dark-300 dark:hover:text-white'"
+          >{{ t('keyQuery.title') }}</router-link>
+          <!-- Docs: shown if reseller has doc_url or not reseller domain -->
+          <router-link
+            v-if="isResellerDomain && resellerDocUrl"
             to="/docs"
             class="transition-colors"
             :class="isActive('/docs') ? 'text-gray-900 dark:text-white' : 'text-gray-600 hover:text-gray-900 dark:text-dark-300 dark:hover:text-white'"
           >{{ t('home.nav.docs') }}</router-link>
           <router-link
+            v-else-if="!isResellerDomain"
+            to="/docs"
+            class="transition-colors"
+            :class="isActive('/docs') ? 'text-gray-900 dark:text-white' : 'text-gray-600 hover:text-gray-900 dark:text-dark-300 dark:hover:text-white'"
+          >{{ t('home.nav.docs') }}</router-link>
+          <router-link
+            v-if="!isResellerDomain"
             to="/status"
             class="flex items-center gap-1.5 transition-colors"
             :class="isActive('/status') ? 'text-gray-900 dark:text-white' : 'text-gray-600 hover:text-gray-900 dark:text-dark-300 dark:hover:text-white'"
@@ -60,33 +84,36 @@
             <Icon v-else name="moon" size="md" />
           </button>
 
-          <template v-if="isAuthenticated">
-            <router-link
-              :to="dashboardPath"
-              class="inline-flex items-center gap-1.5 rounded-full bg-gray-900 py-1 pl-1 pr-2.5 transition-colors hover:bg-gray-800 dark:bg-gray-800 dark:hover:bg-gray-700"
-            >
-              <span
-                class="flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-primary-400 to-primary-600 text-[10px] font-semibold text-white"
+          <!-- Auth buttons hidden on reseller domains -->
+          <template v-if="!isResellerDomain">
+            <template v-if="isAuthenticated">
+              <router-link
+                :to="dashboardPath"
+                class="inline-flex items-center gap-1.5 rounded-full bg-gray-900 py-1 pl-1 pr-2.5 transition-colors hover:bg-gray-800 dark:bg-gray-800 dark:hover:bg-gray-700"
               >
-                {{ userInitial }}
-              </span>
-              <span class="text-xs font-medium text-white">{{ t('home.dashboard') }}</span>
-              <Icon name="arrowRight" size="xs" class="text-gray-300" :stroke-width="2" />
-            </router-link>
-          </template>
-          <template v-else>
-            <router-link
-              :to="loginPath"
-              class="inline-flex items-center rounded-full border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-dark-600 dark:bg-dark-800 dark:text-dark-200 dark:hover:bg-dark-700"
-            >
-              {{ t('home.login') }}
-            </router-link>
-            <router-link
-              :to="registerPath"
-              class="inline-flex items-center rounded-full bg-gray-900 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-gray-800 dark:bg-gray-800 dark:hover:bg-gray-700"
-            >
-              {{ t('home.register') }}
-            </router-link>
+                <span
+                  class="flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-primary-400 to-primary-600 text-[10px] font-semibold text-white"
+                >
+                  {{ userInitial }}
+                </span>
+                <span class="text-xs font-medium text-white">{{ t('home.dashboard') }}</span>
+                <Icon name="arrowRight" size="xs" class="text-gray-300" :stroke-width="2" />
+              </router-link>
+            </template>
+            <template v-else>
+              <router-link
+                :to="loginPath"
+                class="inline-flex items-center rounded-full border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-dark-600 dark:bg-dark-800 dark:text-dark-200 dark:hover:bg-dark-700"
+              >
+                {{ t('home.login') }}
+              </router-link>
+              <router-link
+                :to="registerPath"
+                class="inline-flex items-center rounded-full bg-gray-900 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-gray-800 dark:bg-gray-800 dark:hover:bg-gray-700"
+              >
+                {{ t('home.register') }}
+              </router-link>
+            </template>
           </template>
         </div>
       </div>
@@ -111,12 +138,20 @@ const siteName = computed(() => appStore.cachedPublicSettings?.site_name || appS
 const siteLogo = computed(() => appStore.cachedPublicSettings?.site_logo || appStore.siteLogo || '')
 const siteSubtitle = computed(() => appStore.cachedPublicSettings?.site_subtitle || 'AI API Gateway')
 
+// Reseller domain detection
+const isResellerDomain = computed(() => !!appStore.cachedPublicSettings?.reseller_id)
+const resellerPurchaseUrl = computed(() => {
+  const s = appStore.cachedPublicSettings
+  return (s?.purchase_enabled && s?.purchase_url) ? s.purchase_url : ''
+})
+const resellerDocUrl = computed(() => appStore.cachedPublicSettings?.doc_url || '')
+
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 const isAdmin = computed(() => authStore.isAdmin)
 const isReseller = computed(() => authStore.isReseller)
 const dashboardPath = computed(() => {
   if (isAdmin.value) return '/admin/dashboard'
-  if (isReseller.value) return '/reseller/dashboard'
+  if (isReseller.value) return '/dashboard'
   return '/console-home'
 })
 const userInitial = computed(() => {

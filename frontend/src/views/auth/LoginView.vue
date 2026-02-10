@@ -341,7 +341,8 @@ async function handleLogin(): Promise<void> {
 
     // Redirect to intended route, or admin dashboard for admins, console home for users
     const queryRedirect = router.currentRoute.value.query.redirect as string
-    const defaultRoute = authStore.isAdmin ? '/admin/dashboard' : '/console-home'
+    const loginRedirect = appStore.cachedPublicSettings?.login_redirect
+    const defaultRoute = authStore.isAdmin ? '/admin/dashboard' : authStore.isReseller ? '/dashboard' : (loginRedirect || '/console-home')
     const redirectTo = queryRedirect || defaultRoute
     await router.push(redirectTo)
   } catch (error: unknown) {
@@ -384,7 +385,8 @@ async function handle2FAVerify(code: string): Promise<void> {
     appStore.showSuccess(t('auth.loginSuccess'))
 
     // Redirect to dashboard or intended route
-    const redirectTo = (router.currentRoute.value.query.redirect as string) || '/dashboard'
+    const loginRedirect = appStore.cachedPublicSettings?.login_redirect
+    const redirectTo = (router.currentRoute.value.query.redirect as string) || loginRedirect || '/dashboard'
     await router.push(redirectTo)
   } catch (error: unknown) {
     const err = error as { message?: string; response?: { data?: { message?: string } } }

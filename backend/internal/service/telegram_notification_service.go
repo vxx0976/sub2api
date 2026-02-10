@@ -89,13 +89,6 @@ func (s *TelegramNotificationService) runOnce() {
 }
 
 func (s *TelegramNotificationService) checkReseller(ctx context.Context, resellerID int64) {
-	adminNotify := s.botManager.IsFeatureEnabled(resellerID, "admin_notify")
-	userNotify := s.botManager.IsFeatureEnabled(resellerID, "user_notify")
-
-	if !adminNotify && !userNotify {
-		return
-	}
-
 	adminChatID := s.botManager.getResellerChatID(resellerID)
 
 	// Check API key quotas
@@ -113,7 +106,7 @@ func (s *TelegramNotificationService) checkReseller(ctx context.Context, reselle
 
 		// Quota exhausted (>=100%)
 		if pct >= 100 {
-			if adminNotify && adminChatID != 0 {
+			if adminChatID != 0 {
 				dedupKey := fmt.Sprintf("admin_quota_100_%d_%d", resellerID, key.ID)
 				if s.shouldNotify(dedupKey) {
 					_ = s.botManager.SendNotification(resellerID, adminChatID,
@@ -121,7 +114,7 @@ func (s *TelegramNotificationService) checkReseller(ctx context.Context, reselle
 							maskKey(key.Key), key.ID, key.QuotaUsed, key.Quota))
 				}
 			}
-			if userNotify && key.TgChatID != nil {
+			if key.TgChatID != nil {
 				dedupKey := fmt.Sprintf("user_quota_100_%d", key.ID)
 				if s.shouldNotify(dedupKey) {
 					_ = s.botManager.SendNotification(resellerID, *key.TgChatID,
@@ -130,7 +123,7 @@ func (s *TelegramNotificationService) checkReseller(ctx context.Context, reselle
 			}
 		} else if pct >= 80 {
 			// Quota warning (>=80%)
-			if adminNotify && adminChatID != 0 {
+			if adminChatID != 0 {
 				dedupKey := fmt.Sprintf("admin_quota_80_%d_%d", resellerID, key.ID)
 				if s.shouldNotify(dedupKey) {
 					_ = s.botManager.SendNotification(resellerID, adminChatID,
@@ -138,7 +131,7 @@ func (s *TelegramNotificationService) checkReseller(ctx context.Context, reselle
 							maskKey(key.Key), key.ID, key.QuotaUsed, key.Quota, pct))
 				}
 			}
-			if userNotify && key.TgChatID != nil {
+			if key.TgChatID != nil {
 				dedupKey := fmt.Sprintf("user_quota_80_%d", key.ID)
 				if s.shouldNotify(dedupKey) {
 					_ = s.botManager.SendNotification(resellerID, *key.TgChatID,
@@ -149,7 +142,7 @@ func (s *TelegramNotificationService) checkReseller(ctx context.Context, reselle
 	}
 
 	// Check reseller balance
-	if adminNotify && adminChatID != 0 {
+	if adminChatID != 0 {
 		balance, err := s.botManager.GetResellerBalance(ctx, resellerID)
 		if err == nil && balance < 10.0 {
 			dedupKey := fmt.Sprintf("admin_balance_%d", resellerID)

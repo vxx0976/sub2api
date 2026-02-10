@@ -446,7 +446,7 @@ export default {
     now: 'Ahora',
     unknown: 'Desconocido',
     minutes: 'min',
-    reseller: 'Revendedor',
+    reseller: 'Comerciante',
     time: {
       never: 'Nunca',
       justNow: 'Justo ahora',
@@ -498,7 +498,7 @@ export default {
     buySubscription: 'Comprar suscripcion',
     docs: 'Docs',
     referral: 'Invitar amigos',
-    resellerDashboard: 'Panel de Revendedor',
+    resellerDashboard: 'Panel de Comerciante',
     resellerGroups: 'Paquetes',
     resellerKeys: 'Claves API',
     resellerDomains: 'Dominios',
@@ -983,6 +983,8 @@ export default {
     disable: 'Deshabilitar',
     nameLabel: 'Nombre',
     namePlaceholder: 'Mi clave API',
+    notes: 'Notas',
+    notesPlaceholder: 'Notas opcionales',
     groupLabel: 'Grupo',
     selectGroup: 'Seleccionar un grupo',
     statusLabel: 'Estado',
@@ -1589,7 +1591,7 @@ export default {
       roles: {
         admin: 'Administrador',
         user: 'Usuario',
-        reseller: 'Revendedor'
+        reseller: 'Comerciante'
       },
       // Desplegables de configuracion
       filterSettings: 'Configuracion de filtros',
@@ -1842,8 +1844,8 @@ export default {
         sortOrderHint: 'Valores mas altos aparecen primero en la lista',
         isRecommended: 'Recomendado',
         isRecommendedHint: 'Mostrar insignia de recomendado en la pagina de planes',
-        resellerTemplate: 'Plantilla de revendedor',
-        resellerTemplateHint: 'Cuando está habilitado, los revendedores pueden usar este plan como plantilla para sus usuarios',
+        resellerTemplate: 'Plantilla de comerciante',
+        resellerTemplateHint: 'Cuando está habilitado, los comerciantes pueden usar este plan como plantilla para sus usuarios',
         externalBuyUrl: 'URL de compra externa',
         externalBuyUrlPlaceholder: 'https://item.taobao.com/item.htm?id=...',
         externalBuyUrlHint: 'Opcional. Cuando se configura, los usuarios pueden hacer clic para comprar en plataformas externas'
@@ -4865,10 +4867,10 @@ export default {
     language: 'Idioma'
   },
 
-  // Revendedor
+  // Comerciante
   reseller: {
     dashboard: {
-      title: 'Panel de Revendedor',
+      title: 'Panel de Comerciante',
       myBalance: 'Mi Saldo',
       domains: 'Dominios Personalizados',
       verifiedDomains: 'Dominios Verificados',
@@ -4930,8 +4932,11 @@ export default {
       verifyNow: 'Verificar Ahora',
       verifying: 'Verificando...',
       verifyInstructions: 'Agregue el siguiente registro DNS TXT para verificar la propiedad del dominio:',
-      verifyStep1: '1. Agregue el siguiente registro TXT en su proveedor DNS:',
-      verifyStep2: '2. Haga clic en "Verificar Ahora" después de que el DNS se propague',
+      verifyStep1_dns: 'Paso 1: Agregar registro A (apuntar dominio al servidor)',
+      verifyStep1_hint: `HOST {'@'} representa el dominio raíz. Si su proveedor DNS agrega automáticamente el sufijo del dominio, simplemente ingrese {'@'}.`,
+      verifyStep2_txt: 'Paso 2: Agregar registro TXT (verificar propiedad del dominio)',
+      verifyStep2_hint: 'HOST solo debe ser _domain-verify, sin el sufijo del dominio.',
+      verifyStep3: 'Paso 3: Espere la propagación del DNS (generalmente unos minutos) y luego haga clic en "Verificar Ahora"',
       verifySuccess: 'Dominio verificado exitosamente',
       verifyFailed: 'Verificación fallida. Verifique que el registro DNS esté configurado correctamente',
       createSuccess: 'Dominio agregado',
@@ -4952,7 +4957,7 @@ export default {
       addTitle: 'Agregar Sitio',
       backToList: 'Volver a la Lista',
       editSite: 'Configuración del Sitio',
-      tabs: { basic: 'Información Básica', appearance: 'Apariencia', homepage: 'Página de Inicio', features: 'Funciones y SEO' },
+      tabs: { basic: 'Información Básica', homepage: 'Página de Inicio', docs: 'Documentación', purchase: 'Compra', seo: 'SEO' },
       domainName: 'Dominio',
       siteName: 'Nombre del Sitio',
       siteNamePlaceholder: 'Ingrese nombre del sitio',
@@ -4960,9 +4965,6 @@ export default {
       subtitlePlaceholder: 'Ingrese subtítulo',
       siteLogo: 'URL del Logo',
       siteLogoPlaceholder: 'Ingrese URL de imagen del logo',
-      brandColor: 'Color de Marca',
-      customCSS: 'CSS Personalizado',
-      customCSSPlaceholder: 'Ingrese estilos CSS',
       homeTemplate: 'Plantilla de Inicio',
       homeTemplateDefault: 'Predeterminado del Sistema',
       homeTemplateMinimal: 'Minimalista',
@@ -4984,9 +4986,7 @@ export default {
       purchaseUrl: 'URL de Compra',
       purchaseUrlPlaceholder: 'Ingrese URL personalizada de compra',
       purchaseUrlHint: 'Dejar vacío para usar la página de compra predeterminada',
-      loginRedirect: 'Redirección Post-Login',
-      loginRedirectPlaceholder: '/dashboard',
-      loginRedirectHint: 'Ruta de redirección después del login, por defecto /dashboard',
+      seoSection: 'SEO',
       seoTitle: 'Título SEO',
       seoTitlePlaceholder: 'Título para motores de búsqueda',
       seoDescription: 'Descripción SEO',
@@ -5046,20 +5046,17 @@ export default {
       telegram: {
         title: 'Bot de Telegram',
         botToken: 'Token del bot',
-        botTokenPlaceholder: 'Ingrese el token de @BotFather',
-        botTokenHint: 'Obténgalo de Telegram @BotFather',
+        botTokenPlaceholder: `Ingrese el token de {'@'}BotFather`,
+        botTokenHint: `Obténgalo de Telegram {'@'}BotFather`,
         bindStatus: 'Estado de vinculación',
         bound: 'Vinculado',
         unbound: 'No vinculado',
         generateBindCode: 'Generar código de vinculación',
         bindInstructions: 'Envíe este comando a su Bot para vincular:',
         unbind: 'Desvincular',
-        features: 'Interruptores de funciones',
-        featureAdminKeys: 'Revendedor: Gestión de claves',
-        featureAdminStats: 'Revendedor: Estadísticas',
-        featureAdminNotify: 'Revendedor: Notificaciones de alerta',
-        featureUserQuery: 'Usuario: Consultar info de clave',
-        featureUserNotify: 'Usuario: Alerta de cuota'
+        saveTokenFirst: 'Por favor, ingrese el Bot Token y guarde la configuración primero',
+        waitingForBind: 'Esperando vinculación, envíe el comando a su Bot...',
+        bindSuccess: '¡Telegram vinculado exitosamente!'
       }
     }
   }

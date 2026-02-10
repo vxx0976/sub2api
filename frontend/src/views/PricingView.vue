@@ -1,5 +1,19 @@
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-dark-950">
+  <!-- Reseller domain with purchase_url: embed in iframe -->
+  <div v-if="isResellerDomain && resellerPurchaseUrl" class="flex min-h-screen flex-col bg-gray-50 dark:bg-dark-950">
+    <PublicHeader />
+    <main class="flex-1">
+      <iframe
+        :src="resellerPurchaseUrl"
+        class="h-[calc(100vh-57px)] w-full border-0"
+        allowfullscreen
+        referrerpolicy="no-referrer-when-downgrade"
+      ></iframe>
+    </main>
+  </div>
+
+  <!-- Normal pricing page -->
+  <div v-else class="min-h-screen bg-gray-50 dark:bg-dark-950">
     <!-- Header -->
     <PublicHeader />
 
@@ -263,15 +277,23 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useAuthStore } from '@/stores'
+import { useAuthStore, useAppStore } from '@/stores'
 import PublicHeader from '@/components/layout/PublicHeader.vue'
 import Icon from '@/components/icons/Icon.vue'
 
 const { t } = useI18n()
 const authStore = useAuthStore()
+const appStore = useAppStore()
 
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 const showWechatModal = ref(false)
+
+// Reseller domain detection
+const isResellerDomain = computed(() => !!appStore.cachedPublicSettings?.reseller_id)
+const resellerPurchaseUrl = computed(() => {
+  const s = appStore.cachedPublicSettings
+  return (s?.purchase_enabled && s?.purchase_url) ? s.purchase_url : ''
+})
 
 // Subscription plans
 const planConfig = [

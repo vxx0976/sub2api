@@ -113,12 +113,21 @@ export async function verify(id: number): Promise<ResellerDomain> {
   return data
 }
 
+/**
+ * Get server info (main domain + resolved IP) for DNS setup guidance
+ */
+export async function getServerInfo(): Promise<{ domain: string; ip: string }> {
+  const { data } = await apiClient.get<{ domain: string; ip: string }>('/reseller/domains/server-info')
+  return data
+}
+
 export const domainsAPI = {
   list,
   create,
   update,
   delete: deleteDomain,
-  verify
+  verify,
+  getServerInfo
 }
 
 export default domainsAPI

@@ -1,15 +1,74 @@
 <template>
-  <!-- Custom Home Content: Full Page Mode -->
-  <div v-if="homeContent" class="min-h-screen">
-    <!-- iframe mode -->
+  <!-- External URL: iframe mode -->
+  <div v-if="homeTemplate === 'external_url' && homeContent" class="min-h-screen">
     <iframe
-      v-if="isHomeContentUrl"
       :src="homeContent.trim()"
       class="h-screen w-full border-0"
       allowfullscreen
     ></iframe>
-    <!-- HTML mode - SECURITY: homeContent is admin-only setting, XSS risk is acceptable -->
-    <div v-else v-html="homeContent"></div>
+  </div>
+
+  <!-- Custom HTML mode - SECURITY: homeContent is admin-only setting, XSS risk is acceptable -->
+  <div v-else-if="homeTemplate === 'custom_html' && homeContent" class="min-h-screen" v-html="homeContent"></div>
+
+  <!-- Minimal template -->
+  <div v-else-if="homeTemplate === 'minimal'" class="relative flex min-h-screen flex-col bg-gray-50 dark:bg-dark-950">
+    <PublicHeader />
+    <main class="relative z-10 flex flex-1 items-center justify-center">
+      <div class="mx-auto max-w-lg px-6 py-16 text-center">
+        <div v-if="appStore.siteLogo" class="mb-6 flex justify-center">
+          <img :src="appStore.siteLogo" :alt="siteName" class="h-16 w-16 rounded-2xl object-contain" />
+        </div>
+        <h1 class="text-3xl font-semibold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
+          {{ siteName }}
+        </h1>
+        <p v-if="appStore.cachedPublicSettings?.site_subtitle" class="mt-3 text-base text-gray-600 dark:text-dark-400">
+          {{ appStore.cachedPublicSettings.site_subtitle }}
+        </p>
+        <div class="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+          <!-- Reseller domain: purchase link instead of login -->
+          <router-link
+            v-if="isResellerDomain && resellerPurchaseUrl"
+            to="/pricing"
+            class="btn btn-primary btn-lg px-8"
+          >
+            {{ t('home.getStarted') }}
+            <Icon name="arrowRight" size="md" :stroke-width="2" />
+          </router-link>
+          <router-link v-else-if="!isResellerDomain" :to="isAuthenticated ? dashboardPath : loginPath" class="btn btn-primary btn-lg px-8">
+            {{ isAuthenticated ? t('home.goToDashboard') : t('home.getStarted') }}
+            <Icon name="arrowRight" size="md" :stroke-width="2" />
+          </router-link>
+          <router-link v-if="isResellerDomain" to="/key-query" class="btn btn-secondary btn-lg px-8">
+            <Icon name="search" size="sm" />
+            {{ t('keyQuery.title') }}
+          </router-link>
+          <router-link
+            v-if="isResellerDomain && docUrl"
+            to="/docs"
+            class="btn btn-secondary btn-lg px-8"
+          >
+            <Icon name="book" size="sm" />
+            {{ t('home.docs') }}
+          </router-link>
+          <a
+            v-else-if="!isResellerDomain && docUrl"
+            :href="docUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="btn btn-secondary btn-lg px-8"
+          >
+            <Icon name="book" size="sm" />
+            {{ t('home.docs') }}
+          </a>
+        </div>
+      </div>
+    </main>
+    <footer class="relative z-10 border-t border-gray-200/60 px-6 py-6 dark:border-dark-800/60">
+      <p class="text-center text-sm text-gray-500 dark:text-dark-400">
+        &copy; {{ currentYear }} {{ siteName }}
+      </p>
+    </footer>
   </div>
 
   <!-- Default Home Page -->
@@ -63,18 +122,51 @@
               </p>
 
               <div class="mt-7 flex flex-col items-center gap-3 sm:flex-row lg:justify-start">
-                <router-link :to="isAuthenticated ? dashboardPath : loginPath" class="btn btn-primary btn-lg px-7">
+                <!-- Reseller domain: purchase link instead of login -->
+                <router-link
+                  v-if="isResellerDomain && resellerPurchaseUrl"
+                  to="/pricing"
+                  class="btn btn-primary btn-lg px-7"
+                >
+                  {{ t('home.getStarted') }}
+                  <Icon name="arrowRight" size="md" :stroke-width="2" />
+                </router-link>
+                <router-link v-else-if="!isResellerDomain" :to="isAuthenticated ? dashboardPath : loginPath" class="btn btn-primary btn-lg px-7">
                   {{ isAuthenticated ? t('home.goToDashboard') : t('home.getStarted') }}
                   <Icon name="arrowRight" size="md" :stroke-width="2" />
                 </router-link>
 
-                <router-link to="/pricing" class="btn btn-secondary btn-lg px-7">
+                <!-- Key Query: shown on reseller domains -->
+                <router-link v-if="isResellerDomain" to="/key-query" class="btn btn-secondary btn-lg px-7">
+                  <Icon name="search" size="md" />
+                  {{ t('keyQuery.title') }}
+                </router-link>
+
+                <!-- Pricing: internal route for both reseller and non-reseller -->
+                <router-link
+                  v-if="isResellerDomain && resellerPurchaseUrl"
+                  to="/pricing"
+                  class="btn btn-secondary btn-lg px-7"
+                >
+                  <Icon name="dollar" size="md" />
+                  {{ t('home.hero.viewPricing') }}
+                </router-link>
+                <router-link v-else-if="!isResellerDomain" to="/pricing" class="btn btn-secondary btn-lg px-7">
                   <Icon name="dollar" size="md" />
                   {{ t('home.hero.viewPricing') }}
                 </router-link>
 
+                <!-- Docs: in-app for reseller, external for main site -->
+                <router-link
+                  v-if="isResellerDomain && docUrl"
+                  to="/docs"
+                  class="inline-flex items-center gap-2 text-sm font-semibold text-gray-700 hover:text-gray-900 dark:text-dark-300 dark:hover:text-white"
+                >
+                  <Icon name="book" size="sm" />
+                  {{ t('home.docs') }}
+                </router-link>
                 <a
-                  v-if="docUrl"
+                  v-else-if="!isResellerDomain && docUrl"
                   :href="docUrl"
                   target="_blank"
                   rel="noopener noreferrer"
@@ -258,8 +350,8 @@
         </div>
       </section>
 
-      <!-- Referral Reward Section -->
-      <section class="relative overflow-hidden py-16">
+      <!-- Referral Reward Section (hidden on reseller domains) -->
+      <section v-if="!isResellerDomain" class="relative overflow-hidden py-16">
         <div class="absolute inset-0 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20"></div>
         <div class="pointer-events-none absolute inset-0">
           <div class="absolute -left-20 top-0 h-64 w-64 rounded-full bg-purple-400/20 blur-3xl"></div>
@@ -455,7 +547,16 @@
         </div>
 
         <div v-if="docUrl" class="mt-6 text-center">
+          <router-link
+            v-if="isResellerDomain"
+            to="/docs"
+            class="inline-flex items-center gap-2 text-sm font-semibold text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+          >
+            {{ t('home.faq.more') }}
+            <Icon name="arrowRight" size="sm" />
+          </router-link>
           <a
+            v-else
             :href="docUrl"
             target="_blank"
             rel="noopener noreferrer"
@@ -487,14 +588,31 @@
 
             <div class="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
               <router-link
+                v-if="isResellerDomain && resellerPurchaseUrl"
+                to="/pricing"
+                class="btn btn-primary btn-lg w-full px-7 sm:w-auto"
+              >
+                {{ t('home.getStarted') }}
+                <Icon name="arrowRight" size="md" :stroke-width="2" />
+              </router-link>
+              <router-link
+                v-else-if="!isResellerDomain"
                 :to="isAuthenticated ? dashboardPath : loginPath"
                 class="btn btn-primary btn-lg w-full px-7 sm:w-auto"
               >
                 {{ isAuthenticated ? t('home.goToDashboard') : t('home.getStarted') }}
                 <Icon name="arrowRight" size="md" :stroke-width="2" />
               </router-link>
+              <router-link
+                v-if="isResellerDomain && docUrl"
+                to="/docs"
+                class="btn btn-secondary btn-lg w-full border-white/10 bg-white/10 text-white hover:bg-white/15 sm:w-auto"
+              >
+                <Icon name="book" size="md" />
+                {{ t('home.docs') }}
+              </router-link>
               <a
-                v-if="docUrl"
+                v-else-if="!isResellerDomain && docUrl"
                 :href="docUrl"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -518,8 +636,15 @@
           &copy; {{ currentYear }} {{ siteName }}. {{ t('home.footer.allRightsReserved') }}
         </p>
         <div class="flex items-center gap-4">
+          <router-link
+            v-if="isResellerDomain && docUrl"
+            to="/docs"
+            class="text-sm text-gray-500 transition-colors hover:text-gray-700 dark:text-dark-400 dark:hover:text-white"
+          >
+            {{ t('home.docs') }}
+          </router-link>
           <a
-            v-if="docUrl"
+            v-else-if="docUrl"
             :href="docUrl"
             target="_blank"
             rel="noopener noreferrer"
@@ -557,6 +682,7 @@ const loginPath = computed(() => refCode.value ? `/login?redirect=${encodeURICom
 const siteName = computed(() => appStore.cachedPublicSettings?.site_name || appStore.siteName || '码驿站')
 const docUrl = computed(() => appStore.cachedPublicSettings?.doc_url || appStore.docUrl || '')
 const homeContent = computed(() => appStore.cachedPublicSettings?.home_content || '')
+const homeTemplate = computed(() => appStore.cachedPublicSettings?.home_template || 'default')
 const apiBaseRoot = computed(() => {
   const fallback = typeof window !== 'undefined' ? window.location.origin : 'https://YOUR_HOST'
   const raw = (appStore.cachedPublicSettings?.api_base_url || fallback).trim()
@@ -564,10 +690,11 @@ const apiBaseRoot = computed(() => {
   return trimmed.replace(/\/v1beta$/, '').replace(/\/v1$/, '')
 })
 
-// Check if homeContent is a URL (for iframe display)
-const isHomeContentUrl = computed(() => {
-  const content = homeContent.value.trim()
-  return content.startsWith('http://') || content.startsWith('https://')
+// Reseller domain detection
+const isResellerDomain = computed(() => !!appStore.cachedPublicSettings?.reseller_id)
+const resellerPurchaseUrl = computed(() => {
+  const s = appStore.cachedPublicSettings
+  return (s?.purchase_enabled && s?.purchase_url) ? s.purchase_url : ''
 })
 
 // Auth state

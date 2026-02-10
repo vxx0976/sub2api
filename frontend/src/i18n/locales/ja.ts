@@ -458,7 +458,7 @@ export default {
         withSuffix: '{time} 後に解除'
       }
     },
-    reseller: '代理店'
+    reseller: '販売者'
   },
 
   // Navigation
@@ -497,7 +497,7 @@ export default {
     buySubscription: 'サブスクリプション購入',
     docs: '接続ドキュメント',
     referral: '友達を招待',
-    resellerDashboard: '代理店ダッシュボード',
+    resellerDashboard: '販売者ダッシュボード',
     resellerGroups: 'パッケージ',
     resellerKeys: 'APIキー',
     resellerDomains: 'ドメイン',
@@ -982,6 +982,8 @@ export default {
     disable: '無効化',
     nameLabel: '名前',
     namePlaceholder: 'マイAPIキー',
+    notes: '備考',
+    notesPlaceholder: '任意の備考',
     groupLabel: 'グループ',
     selectGroup: 'グループを選択',
     statusLabel: 'ステータス',
@@ -1432,7 +1434,7 @@ export default {
       allStatuses: 'すべてのステータス',
       admin: '管理者',
       user: 'ユーザー',
-      reseller: '代理店',
+      reseller: '販売者',
       disabled: '無効',
       email: 'メールアドレス',
       password: 'パスワード',
@@ -1496,7 +1498,7 @@ export default {
       roles: {
         admin: '管理者',
         user: 'ユーザー',
-        reseller: '代理店'
+        reseller: '販売者'
       },
       form: {
         emailLabel: 'メールアドレス',
@@ -1834,8 +1836,8 @@ export default {
         sortOrderHint: '数値が大きいほど上位に表示されます',
         isRecommended: 'おすすめプラン',
         isRecommendedHint: 'プランページにおすすめマークを表示',
-        resellerTemplate: 'リセラーテンプレート',
-        resellerTemplateHint: '有効にすると、リセラーはこのプランをユーザーのテンプレートとして使用できます'
+        resellerTemplate: '販売者テンプレート',
+        resellerTemplateHint: '有効にすると、販売者はこのプランをユーザーのテンプレートとして使用できます'
       },
       planPreview: {
         title: 'プランプレビュー',
@@ -4587,7 +4589,7 @@ export default {
   // Reseller
   reseller: {
     dashboard: {
-      title: '代理店ダッシュボード',
+      title: '販売者ダッシュボード',
       myBalance: '残高',
       domains: 'カスタムドメイン',
       verifiedDomains: '認証済みドメイン',
@@ -4649,8 +4651,11 @@ export default {
       verifyNow: '今すぐ認証',
       verifying: '認証中...',
       verifyInstructions: 'ドメインの所有権を確認するために、以下のDNS TXTレコードを追加してください：',
-      verifyStep1: '1. DNSプロバイダーで以下のTXTレコードを追加してください：',
-      verifyStep2: '2. DNS反映後に「今すぐ認証」をクリックしてください',
+      verifyStep1_dns: 'ステップ1：Aレコードを追加（ドメインをサーバーに向ける）',
+      verifyStep1_hint: `HOST {'@'} はルートドメインを表します。DNSプロバイダーがドメインサフィックスを自動的に追加する場合は、{'@'} を入力してください。`,
+      verifyStep2_txt: 'ステップ2：TXTレコードを追加（ドメイン所有権を確認）',
+      verifyStep2_hint: 'HOSTは _domain-verify のみ入力し、ドメインサフィックスは含めないでください。',
+      verifyStep3: 'ステップ3：DNSの反映を待ち（通常数分）、「今すぐ認証」をクリックしてください',
       verifySuccess: 'ドメイン認証成功',
       verifyFailed: 'ドメイン認証失敗。DNSレコードが正しく設定されているか確認してください',
       createSuccess: 'ドメイン追加成功',
@@ -4671,7 +4676,7 @@ export default {
       addTitle: 'サイトを追加',
       backToList: 'リストに戻る',
       editSite: 'サイト設定',
-      tabs: { basic: '基本情報', appearance: '外観', homepage: 'ホームページ', features: '機能とSEO' },
+      tabs: { basic: '基本情報', homepage: 'ホームページ', docs: 'ドキュメント', purchase: '購入', seo: 'SEO' },
       domainName: 'ドメイン',
       siteName: 'サイト名',
       siteNamePlaceholder: 'サイト名を入力',
@@ -4679,9 +4684,6 @@ export default {
       subtitlePlaceholder: 'サブタイトルを入力',
       siteLogo: 'ロゴURL',
       siteLogoPlaceholder: 'ロゴ画像のURLを入力',
-      brandColor: 'ブランドカラー',
-      customCSS: 'カスタムCSS',
-      customCSSPlaceholder: 'カスタムCSSスタイルを入力',
       homeTemplate: 'ホームページテンプレート',
       homeTemplateDefault: 'システムデフォルト',
       homeTemplateMinimal: 'ミニマル',
@@ -4703,9 +4705,7 @@ export default {
       purchaseUrl: '購入ページURL',
       purchaseUrlPlaceholder: 'カスタム購入ページURLを入力',
       purchaseUrlHint: '空欄の場合はシステムデフォルトの購入ページを使用',
-      loginRedirect: 'ログイン後のリダイレクト',
-      loginRedirectPlaceholder: '/dashboard',
-      loginRedirectHint: 'ログイン後のリダイレクトパス、デフォルトは /dashboard',
+      seoSection: 'SEO',
       seoTitle: 'SEOタイトル',
       seoTitlePlaceholder: '検索エンジン向けタイトル',
       seoDescription: 'SEO説明文',
@@ -4738,7 +4738,7 @@ export default {
     },
     settings: {
       title: '設定',
-      description: 'リセラーサイトの設定',
+      description: '販売者サイトの設定',
       brand: 'ブランド設定',
       siteName: 'サイト名',
       siteLogo: 'サイトロゴURL',
@@ -4765,20 +4765,17 @@ export default {
       telegram: {
         title: 'Telegram ボット',
         botToken: 'ボットトークン',
-        botTokenPlaceholder: '@BotFather から取得したトークンを入力',
-        botTokenHint: 'Telegram @BotFather から取得してください',
+        botTokenPlaceholder: `{'@'}BotFather から取得したトークンを入力`,
+        botTokenHint: `Telegram {'@'}BotFather から取得してください`,
         bindStatus: 'バインド状態',
         bound: 'バインド済み',
         unbound: '未バインド',
         generateBindCode: 'バインドコードを生成',
         bindInstructions: 'このコマンドを Bot に送信してバインドしてください：',
         unbind: 'バインド解除',
-        features: '機能スイッチ',
-        featureAdminKeys: 'リセラー：キー管理',
-        featureAdminStats: 'リセラー：統計照会',
-        featureAdminNotify: 'リセラー：アラート通知',
-        featureUserQuery: 'ユーザー：キー情報照会',
-        featureUserNotify: 'ユーザー：クォータアラート通知'
+        saveTokenFirst: 'Bot Tokenを入力して設定を保存してください',
+        waitingForBind: 'バインド待機中、Botにコマンドを送信してください...',
+        bindSuccess: 'Telegramバインド成功！'
       }
     }
   }

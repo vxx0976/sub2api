@@ -483,7 +483,7 @@ const userNavItems = computed(() => {
     { path: '/subscriptions', label: t('nav.mySubscriptions'), icon: CreditCardIcon, hideInSimpleMode: true },
     { path: '/plans', label: t('nav.plans'), icon: GiftIcon, hideInSimpleMode: true },
     { path: '/orders', label: t('nav.orders'), icon: OrdersIcon, hideInSimpleMode: true },
-    ...(appStore.cachedPublicSettings?.purchase_subscription_enabled
+    ...((appStore.cachedPublicSettings?.purchase_subscription_enabled || appStore.cachedPublicSettings?.purchase_enabled)
       ? [
           {
             path: '/purchase',
@@ -504,8 +504,8 @@ const resellerNavItems = computed(() => [
   { path: '/dashboard', label: t('nav.dashboard'), icon: DashboardIcon },
   { path: '/keys', label: t('nav.apiKeys'), icon: KeyIcon },
   { path: '/usage', label: t('nav.usage'), icon: ChartIcon },
-  { path: '/reseller/domains', label: t('nav.resellerSites'), icon: GlobeIcon },
-  { path: '/reseller/settings', label: t('nav.resellerSettings'), icon: CogIcon },
+  { path: '/merchant/sites', label: t('nav.resellerSites'), icon: GlobeIcon },
+  { path: '/merchant/settings', label: t('nav.resellerSettings'), icon: CogIcon },
 ])
 
 // Admin navigation items

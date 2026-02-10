@@ -112,9 +112,9 @@
                         <tr>
                           <td class="px-3 py-2">A</td>
                           <td class="px-3 py-2">@</td>
-                          <td class="px-3 py-2">{{ serverHost }}</td>
+                          <td class="px-3 py-2">{{ serverIP }}</td>
                           <td class="px-1 py-2">
-                            <button @click="copyToClipboard(serverHost)" class="rounded p-1 text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
+                            <button @click="copyToClipboard(serverIP)" class="rounded p-1 text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
                               <Icon name="copy" size="xs" />
                             </button>
                           </td>
@@ -250,6 +250,27 @@
                 :placeholder="t('reseller.sites.subtitlePlaceholder')"
               />
             </div>
+            <div>
+              <label class="label">{{ t('reseller.sites.siteLogo') }}</label>
+              <input
+                v-model="editForm.site_logo"
+                type="text"
+                class="input"
+                :placeholder="t('reseller.sites.siteLogoPlaceholder')"
+              />
+            </div>
+
+            <!-- Default Language -->
+            <div>
+              <label class="label">{{ t('reseller.sites.defaultLocale') }}</label>
+              <select v-model="editForm.default_locale" class="input">
+                <option value="">{{ t('reseller.sites.defaultLocaleBrowser') }}</option>
+                <option v-for="locale in availableLocales" :key="locale.code" :value="locale.code">
+                  {{ locale.name }}
+                </option>
+              </select>
+              <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('reseller.sites.defaultLocaleHint') }}</p>
+            </div>
 
             <!-- Verification Status -->
             <div class="rounded-xl border p-4" :class="editingSite.verified ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20' : 'border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-900/20'">
@@ -296,9 +317,9 @@
                         <tr>
                           <td class="px-3 py-2">A</td>
                           <td class="px-3 py-2">@</td>
-                          <td class="px-3 py-2">{{ serverHost }}</td>
+                          <td class="px-3 py-2">{{ serverIP }}</td>
                           <td class="px-1 py-2">
-                            <button @click="copyToClipboard(serverHost)" class="rounded p-1 text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
+                            <button @click="copyToClipboard(serverIP)" class="rounded p-1 text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
                               <Icon name="copy" size="xs" />
                             </button>
                           </td>
@@ -346,35 +367,7 @@
                 {{ verifying ? t('reseller.domains.verifying') : t('reseller.domains.verifyNow') }}
               </button>
             </div>
-          </div>
 
-          <!-- Tab 2: Appearance -->
-          <div v-if="activeTab === 'appearance'" class="space-y-5">
-            <div>
-              <label class="label">{{ t('reseller.sites.siteLogo') }}</label>
-              <input
-                v-model="editForm.site_logo"
-                type="text"
-                class="input"
-                :placeholder="t('reseller.sites.siteLogoPlaceholder')"
-              />
-            </div>
-            <div>
-              <label class="label">{{ t('reseller.sites.brandColor') }}</label>
-              <div class="flex items-center gap-2">
-                <input v-model="editForm.brand_color" type="color" class="h-10 w-10 cursor-pointer rounded-lg border-0" />
-                <input v-model="editForm.brand_color" type="text" class="input flex-1" placeholder="#4F46E5" />
-              </div>
-            </div>
-            <div>
-              <label class="label">{{ t('reseller.sites.customCSS') }}</label>
-              <textarea
-                v-model="editForm.custom_css"
-                class="input font-mono text-sm"
-                rows="6"
-                :placeholder="t('reseller.sites.customCSSPlaceholder')"
-              />
-            </div>
           </div>
 
           <!-- Tab 3: Homepage -->
@@ -446,21 +439,8 @@
             </div>
           </div>
 
-          <!-- Tab 4: Features & SEO -->
-          <div v-if="activeTab === 'features'" class="space-y-5">
-            <!-- Default Language -->
-            <div>
-              <label class="label">{{ t('reseller.sites.defaultLocale') }}</label>
-              <select v-model="editForm.default_locale" class="input">
-                <option value="">{{ t('reseller.sites.defaultLocaleBrowser') }}</option>
-                <option v-for="locale in availableLocales" :key="locale.code" :value="locale.code">
-                  {{ locale.name }}
-                </option>
-              </select>
-              <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('reseller.sites.defaultLocaleHint') }}</p>
-            </div>
-
-            <!-- Documentation URL -->
+          <!-- Tab 3: Docs -->
+          <div v-if="activeTab === 'docs'" class="space-y-5">
             <div>
               <label class="label">{{ t('reseller.sites.docUrl') }}</label>
               <input
@@ -470,8 +450,10 @@
                 :placeholder="t('reseller.sites.docUrlPlaceholder')"
               />
             </div>
+          </div>
 
-            <!-- Purchase Page -->
+          <!-- Tab 4: Purchase -->
+          <div v-if="activeTab === 'purchase'" class="space-y-5">
             <div class="space-y-3">
               <div class="flex items-center gap-3">
                 <input
@@ -496,51 +478,36 @@
                 <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('reseller.sites.purchaseUrlHint') }}</p>
               </div>
             </div>
+          </div>
 
-            <!-- Login Redirect -->
+          <!-- Tab 5: SEO -->
+          <div v-if="activeTab === 'seo'" class="space-y-5">
             <div>
-              <label class="label">{{ t('reseller.sites.loginRedirect') }}</label>
+              <label class="label">{{ t('reseller.sites.seoTitle') }}</label>
               <input
-                v-model="editForm.login_redirect"
+                v-model="editForm.seo_title"
                 type="text"
                 class="input"
-                :placeholder="t('reseller.sites.loginRedirectPlaceholder')"
+                :placeholder="t('reseller.sites.seoTitlePlaceholder')"
               />
-              <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('reseller.sites.loginRedirectHint') }}</p>
             </div>
-
-            <!-- SEO Section -->
-            <div class="border-t border-gray-200 pt-5 dark:border-gray-700">
-              <h3 class="mb-4 text-sm font-semibold text-gray-900 dark:text-white">SEO</h3>
-              <div class="space-y-4">
-                <div>
-                  <label class="label">{{ t('reseller.sites.seoTitle') }}</label>
-                  <input
-                    v-model="editForm.seo_title"
-                    type="text"
-                    class="input"
-                    :placeholder="t('reseller.sites.seoTitlePlaceholder')"
-                  />
-                </div>
-                <div>
-                  <label class="label">{{ t('reseller.sites.seoDescription') }}</label>
-                  <textarea
-                    v-model="editForm.seo_description"
-                    class="input"
-                    rows="3"
-                    :placeholder="t('reseller.sites.seoDescriptionPlaceholder')"
-                  />
-                </div>
-                <div>
-                  <label class="label">{{ t('reseller.sites.seoKeywords') }}</label>
-                  <input
-                    v-model="editForm.seo_keywords"
-                    type="text"
-                    class="input"
-                    :placeholder="t('reseller.sites.seoKeywordsPlaceholder')"
-                  />
-                </div>
-              </div>
+            <div>
+              <label class="label">{{ t('reseller.sites.seoDescription') }}</label>
+              <textarea
+                v-model="editForm.seo_description"
+                class="input"
+                rows="3"
+                :placeholder="t('reseller.sites.seoDescriptionPlaceholder')"
+              />
+            </div>
+            <div>
+              <label class="label">{{ t('reseller.sites.seoKeywords') }}</label>
+              <input
+                v-model="editForm.seo_keywords"
+                type="text"
+                class="input"
+                :placeholder="t('reseller.sites.seoKeywordsPlaceholder')"
+              />
             </div>
           </div>
         </div>
@@ -623,8 +590,17 @@ import Icon from '@/components/icons/Icon.vue'
 const { t } = useI18n()
 const appStore = useAppStore()
 
-// Server host for A record guidance
-const serverHost = computed(() => window.location.hostname)
+// Server IP for A record guidance
+const serverIP = ref('')
+
+async function loadServerInfo() {
+  try {
+    const info = await resellerAPI.domains.getServerInfo()
+    serverIP.value = info.ip || info.domain
+  } catch {
+    serverIP.value = window.location.hostname
+  }
+}
 
 // List state
 const loading = ref(true)
@@ -645,9 +621,10 @@ const verifying = ref(false)
 // Tabs definition
 const tabs = computed(() => [
   { id: 'basic', label: t('reseller.sites.tabs.basic') },
-  { id: 'appearance', label: t('reseller.sites.tabs.appearance') },
   { id: 'homepage', label: t('reseller.sites.tabs.homepage') },
-  { id: 'features', label: t('reseller.sites.tabs.features') }
+  { id: 'docs', label: t('reseller.sites.tabs.docs') },
+  { id: 'purchase', label: t('reseller.sites.tabs.purchase') },
+  { id: 'seo', label: t('reseller.sites.tabs.seo') }
 ])
 
 // Create form (simplified)
@@ -662,8 +639,6 @@ const editForm = ref({
   site_name: '',
   site_logo: '',
   subtitle: '',
-  brand_color: '#4F46E5',
-  custom_css: '',
   doc_url: '',
   home_content: '',
   home_template: 'default',
@@ -672,8 +647,7 @@ const editForm = ref({
   default_locale: '',
   seo_title: '',
   seo_description: '',
-  seo_keywords: '',
-  login_redirect: ''
+  seo_keywords: ''
 })
 
 async function loadDomains() {
@@ -696,8 +670,6 @@ function openEditView(domain: ResellerDomain) {
     site_name: domain.site_name || '',
     site_logo: domain.site_logo || '',
     subtitle: domain.subtitle || '',
-    brand_color: domain.brand_color || '#4F46E5',
-    custom_css: domain.custom_css || '',
     doc_url: domain.doc_url || '',
     home_content: domain.home_content || '',
     home_template: domain.home_template || 'default',
@@ -706,8 +678,7 @@ function openEditView(domain: ResellerDomain) {
     default_locale: domain.default_locale || '',
     seo_title: domain.seo_title || '',
     seo_description: domain.seo_description || '',
-    seo_keywords: domain.seo_keywords || '',
-    login_redirect: domain.login_redirect || ''
+    seo_keywords: domain.seo_keywords || ''
   }
 }
 
@@ -762,8 +733,6 @@ async function saveEditForm() {
       site_name: editForm.value.site_name,
       site_logo: editForm.value.site_logo,
       subtitle: editForm.value.subtitle,
-      brand_color: editForm.value.brand_color,
-      custom_css: editForm.value.custom_css,
       doc_url: editForm.value.doc_url,
       home_content: editForm.value.home_content,
       home_template: editForm.value.home_template,
@@ -772,8 +741,7 @@ async function saveEditForm() {
       default_locale: editForm.value.default_locale,
       seo_title: editForm.value.seo_title,
       seo_description: editForm.value.seo_description,
-      seo_keywords: editForm.value.seo_keywords,
-      login_redirect: editForm.value.login_redirect
+      seo_keywords: editForm.value.seo_keywords
     })
     // Update the editingSite with fresh data
     editingSite.value = updated
@@ -834,5 +802,6 @@ async function copyToClipboard(text: string) {
 
 onMounted(() => {
   loadDomains()
+  loadServerInfo()
 })
 </script>

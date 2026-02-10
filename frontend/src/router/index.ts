@@ -315,14 +315,18 @@ const routes: RouteRecordRaw[] = [
     }
   },
 
-  // ==================== Reseller Routes ====================
+  // ==================== Merchant Routes ====================
   {
-    path: '/reseller',
+    path: '/merchant',
     redirect: '/dashboard'
   },
+  // Legacy reseller paths redirect to merchant
+  { path: '/reseller', redirect: '/merchant' },
+  { path: '/reseller/domains', redirect: '/merchant/sites' },
+  { path: '/reseller/settings', redirect: '/merchant/settings' },
   {
-    path: '/reseller/domains',
-    name: 'ResellerDomains',
+    path: '/merchant/sites',
+    name: 'MerchantSites',
     component: () => import('@/views/reseller/DomainsView.vue'),
     meta: {
       requiresAuth: true,
@@ -332,8 +336,8 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
-    path: '/reseller/settings',
-    name: 'ResellerSettings',
+    path: '/merchant/settings',
+    name: 'MerchantSettings',
     component: () => import('@/views/reseller/SettingsView.vue'),
     meta: {
       requiresAuth: true,
@@ -620,7 +624,7 @@ router.beforeEach((to, _from, next) => {
       if (authStore.isAdmin) {
         next('/admin/dashboard')
       } else if (authStore.isReseller) {
-        next('/reseller/dashboard')
+        next('/dashboard')
       } else {
         next('/console-home')
       }
@@ -643,7 +647,7 @@ router.beforeEach((to, _from, next) => {
   // Check admin requirement
   if (requiresAdmin && !authStore.isAdmin) {
     // User is authenticated but not admin, redirect appropriately
-    next(authStore.isReseller ? '/reseller/dashboard' : '/console-home')
+    next(authStore.isReseller ? '/dashboard' : '/console-home')
     return
   }
 

@@ -2078,7 +2078,7 @@ const createForm = reactive({
   sort_order: 0,
   is_recommended: false,
   external_buy_url: '' as string,
-  // 分销商模板
+  // 商户模板
   reseller_template: false,
   // 支持的模型系列（仅 antigravity 平台）
   supported_model_scopes: ['claude', 'gemini_text', 'gemini_image'] as string[],
@@ -2285,7 +2285,7 @@ const editForm = reactive({
   sort_order: 0,
   is_recommended: false,
   external_buy_url: '' as string,
-  // 分销商模板
+  // 商户模板
   reseller_template: false,
   // 支持的模型系列（仅 antigravity 平台）
   supported_model_scopes: ['claude', 'gemini_text', 'gemini_image'] as string[],

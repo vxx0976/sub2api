@@ -201,7 +201,7 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	telegramBotManager := service.ProvideTelegramBotManager(resellerSettingRepository, apiKeyRepository, resellerService)
 	telegramNotificationService := service.ProvideTelegramNotificationService(telegramBotManager)
 	resellerDashboardHandler := reseller.NewDashboardHandler(resellerService)
-	resellerDomainHandler := reseller.NewDomainHandler(resellerService)
+	resellerDomainHandler := reseller.NewDomainHandler(resellerService, settingService)
 	resellerGroupHandler := reseller.NewGroupHandler(resellerService)
 	resellerSettingHandler := reseller.NewSettingHandler(resellerService, telegramBotManager)
 	resellerKeyHandler := reseller.NewKeyHandler(resellerService)

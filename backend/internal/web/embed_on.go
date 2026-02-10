@@ -87,6 +87,13 @@ func (s *FrontendServer) InvalidateCache() {
 	}
 }
 
+// InvalidateDomainCache invalidates cache for a specific reseller domain
+func (s *FrontendServer) InvalidateDomainCache(domain string) {
+	if s != nil && s.cache != nil {
+		s.cache.InvalidateDomain(domain)
+	}
+}
+
 // Middleware returns the Gin middleware handler
 func (s *FrontendServer) Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -232,18 +239,28 @@ func mergeResellerBranding(baseJSON []byte, info *middleware.ResellerDomainConte
 	if info.HomeContent != "" {
 		m["home_content"] = info.HomeContent
 	}
+	// For reseller domains: only show doc_url and purchase if the reseller explicitly set them.
+	// Clear system defaults so the frontend can hide links the reseller didn't configure.
 	if info.DocURL != "" {
 		m["doc_url"] = info.DocURL
+	} else {
+		delete(m, "doc_url")
 	}
 	if info.HomeTemplate != "" {
 		m["home_template"] = info.HomeTemplate
 	}
 	if info.PurchaseEnabled {
 		m["purchase_enabled"] = true
+		if info.PurchaseURL != "" {
+			m["purchase_url"] = info.PurchaseURL
+		}
+	} else {
+		delete(m, "purchase_enabled")
+		delete(m, "purchase_url")
 	}
-	if info.PurchaseURL != "" {
-		m["purchase_url"] = info.PurchaseURL
-	}
+	// Also clear system-wide purchase settings on reseller domains
+	delete(m, "purchase_subscription_enabled")
+	delete(m, "purchase_subscription_url")
 	if info.SEOTitle != "" {
 		m["seo_title"] = info.SEOTitle
 	}

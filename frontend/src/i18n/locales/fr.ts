@@ -446,7 +446,7 @@ export default {
     now: 'Maintenant',
     unknown: 'Inconnu',
     minutes: 'min',
-    reseller: 'Revendeur',
+    reseller: 'Marchand',
     time: {
       never: 'Jamais',
       justNow: 'À l\'instant',
@@ -498,7 +498,7 @@ export default {
     buySubscription: 'Acheter un abonnement',
     docs: 'Docs',
     referral: 'Inviter des amis',
-    resellerDashboard: 'Tableau de Bord Revendeur',
+    resellerDashboard: 'Tableau de Bord Marchand',
     resellerGroups: 'Forfaits',
     resellerKeys: 'Clés API',
     resellerDomains: 'Domaines',
@@ -983,6 +983,8 @@ export default {
     disable: 'Désactiver',
     nameLabel: 'Nom',
     namePlaceholder: 'Ma clé API',
+    notes: 'Notes',
+    notesPlaceholder: 'Notes optionnelles',
     groupLabel: 'Groupe',
     selectGroup: 'Sélectionner un groupe',
     statusLabel: 'Statut',
@@ -1589,7 +1591,7 @@ export default {
       roles: {
         admin: 'Admin',
         user: 'Utilisateur',
-        reseller: 'Revendeur'
+        reseller: 'Marchand'
       },
       // Menus déroulants des paramètres
       filterSettings: 'Paramètres de filtre',
@@ -1842,8 +1844,8 @@ export default {
         sortOrderHint: 'Les valeurs plus élevées apparaissent en premier dans la liste',
         isRecommended: 'Recommandé',
         isRecommendedHint: 'Afficher le badge recommandé sur la page des forfaits',
-        resellerTemplate: 'Modèle revendeur',
-        resellerTemplateHint: 'Lorsqu\'activé, les revendeurs peuvent utiliser ce forfait comme modèle pour leurs utilisateurs',
+        resellerTemplate: 'Modèle marchand',
+        resellerTemplateHint: 'Lorsqu\'activé, les marchands peuvent utiliser ce forfait comme modèle pour leurs utilisateurs',
         externalBuyUrl: 'URL d\'achat externe',
         externalBuyUrlPlaceholder: 'https://item.taobao.com/item.htm?id=...',
         externalBuyUrlHint: 'Optionnel. Lorsque configuré, les utilisateurs peuvent cliquer pour acheter sur des plateformes externes'
@@ -4866,7 +4868,7 @@ export default {
   },
   reseller: {
     dashboard: {
-      title: 'Tableau de Bord Revendeur',
+      title: 'Tableau de Bord Marchand',
       myBalance: 'Mon Solde',
       domains: 'Domaines Personnalisés',
       verifiedDomains: 'Domaines Vérifiés',
@@ -4928,8 +4930,11 @@ export default {
       verifyNow: 'Vérifier Maintenant',
       verifying: 'Vérification en cours...',
       verifyInstructions: 'Ajoutez l\'enregistrement DNS TXT suivant pour vérifier la propriété du domaine :',
-      verifyStep1: '1. Ajoutez l\'enregistrement TXT suivant chez votre fournisseur DNS :',
-      verifyStep2: '2. Cliquez sur "Vérifier Maintenant" après la propagation DNS',
+      verifyStep1_dns: 'Étape 1 : Ajouter un enregistrement A (pointer le domaine vers le serveur)',
+      verifyStep1_hint: `HOST {'@'} représente le domaine racine. Si votre fournisseur DNS ajoute automatiquement le suffixe du domaine, entrez simplement {'@'}.`,
+      verifyStep2_txt: 'Étape 2 : Ajouter un enregistrement TXT (vérifier la propriété du domaine)',
+      verifyStep2_hint: 'HOST doit être uniquement _domain-verify, sans le suffixe du domaine.',
+      verifyStep3: 'Étape 3 : Attendez la propagation DNS (généralement quelques minutes) puis cliquez sur « Vérifier Maintenant »',
       verifySuccess: 'Domaine vérifié avec succès',
       verifyFailed: 'Vérification échouée. Vérifiez que l\'enregistrement DNS est correctement configuré',
       createSuccess: 'Domaine ajouté',
@@ -4950,7 +4955,7 @@ export default {
       addTitle: 'Ajouter un Site',
       backToList: 'Retour à la Liste',
       editSite: 'Paramètres du Site',
-      tabs: { basic: 'Informations', appearance: 'Apparence', homepage: 'Page d\'Accueil', features: 'Fonctions et SEO' },
+      tabs: { basic: 'Informations', homepage: 'Page d\'Accueil', docs: 'Documentation', purchase: 'Achat', seo: 'SEO' },
       domainName: 'Domaine',
       siteName: 'Nom du Site',
       siteNamePlaceholder: 'Entrez le nom du site',
@@ -4958,9 +4963,6 @@ export default {
       subtitlePlaceholder: 'Entrez le sous-titre',
       siteLogo: 'URL du Logo',
       siteLogoPlaceholder: 'Entrez l\'URL de l\'image du logo',
-      brandColor: 'Couleur de Marque',
-      customCSS: 'CSS Personnalisé',
-      customCSSPlaceholder: 'Entrez les styles CSS',
       homeTemplate: 'Modèle de Page d\'Accueil',
       homeTemplateDefault: 'Par Défaut du Système',
       homeTemplateMinimal: 'Minimaliste',
@@ -4982,9 +4984,7 @@ export default {
       purchaseUrl: 'URL de la Page d\'Achat',
       purchaseUrlPlaceholder: 'Entrez l\'URL personnalisée d\'achat',
       purchaseUrlHint: 'Laisser vide pour la page d\'achat par défaut',
-      loginRedirect: 'Redirection Post-Connexion',
-      loginRedirectPlaceholder: '/dashboard',
-      loginRedirectHint: 'Chemin de redirection après connexion, par défaut /dashboard',
+      seoSection: 'SEO',
       seoTitle: 'Titre SEO',
       seoTitlePlaceholder: 'Titre pour moteurs de recherche',
       seoDescription: 'Description SEO',
@@ -5017,7 +5017,7 @@ export default {
     },
     settings: {
       title: 'Paramètres',
-      description: 'Configurer votre site revendeur',
+      description: 'Configurer votre site marchand',
       brand: 'Paramètres de marque',
       siteName: 'Nom du site',
       siteLogo: 'URL du logo',
@@ -5044,20 +5044,17 @@ export default {
       telegram: {
         title: 'Bot Telegram',
         botToken: 'Jeton du bot',
-        botTokenPlaceholder: 'Entrez le jeton obtenu de @BotFather',
-        botTokenHint: 'Obtenez-le depuis Telegram @BotFather',
+        botTokenPlaceholder: `Entrez le jeton obtenu de {'@'}BotFather`,
+        botTokenHint: `Obtenez-le depuis Telegram {'@'}BotFather`,
         bindStatus: 'Statut de liaison',
         bound: 'Lié',
         unbound: 'Non lié',
         generateBindCode: 'Générer un code de liaison',
         bindInstructions: 'Envoyez cette commande à votre Bot pour le lier :',
         unbind: 'Délier',
-        features: 'Activation des fonctionnalités',
-        featureAdminKeys: 'Revendeur : Gestion des clés',
-        featureAdminStats: 'Revendeur : Statistiques',
-        featureAdminNotify: 'Revendeur : Notifications d\'alerte',
-        featureUserQuery: 'Utilisateur : Consulter les infos de clé',
-        featureUserNotify: 'Utilisateur : Alerte de quota'
+        saveTokenFirst: 'Veuillez entrer le Bot Token et enregistrer les paramètres d\'abord',
+        waitingForBind: 'En attente de liaison, veuillez envoyer la commande à votre Bot...',
+        bindSuccess: 'Telegram lié avec succès !'
       }
     }
   }

@@ -446,7 +446,7 @@ export default {
     now: 'Сейчас',
     unknown: 'Неизвестно',
     minutes: 'мин',
-    reseller: 'Реселлер',
+    reseller: 'Продавец',
     time: {
       never: 'Никогда',
       justNow: 'Только что',
@@ -498,7 +498,7 @@ export default {
     buySubscription: 'Купить подписку',
     docs: 'Документация',
     referral: 'Пригласить друзей',
-    resellerDashboard: 'Панель реселлера',
+    resellerDashboard: 'Панель продавца',
     resellerGroups: 'Пакеты',
     resellerKeys: 'API-ключи',
     resellerDomains: 'Домены',
@@ -983,6 +983,8 @@ export default {
     disable: 'Отключить',
     nameLabel: 'Имя',
     namePlaceholder: 'Мой API Key',
+    notes: 'Заметки',
+    notesPlaceholder: 'Необязательные заметки',
     groupLabel: 'Группа',
     selectGroup: 'Выберите группу',
     statusLabel: 'Статус',
@@ -1589,7 +1591,7 @@ export default {
       roles: {
         admin: 'Администратор',
         user: 'Пользователь',
-        reseller: 'Реселлер'
+        reseller: 'Продавец'
       },
       // Settings Dropdowns
       filterSettings: 'Настройки фильтра',
@@ -1842,8 +1844,8 @@ export default {
         sortOrderHint: 'Более высокие значения отображаются первыми в списке',
         isRecommended: 'Рекомендуемый',
         isRecommendedHint: 'Показывать значок «Рекомендуем» на странице тарифов',
-        resellerTemplate: 'Шаблон реселлера',
-        resellerTemplateHint: 'При включении реселлеры могут использовать этот план как шаблон для своих пользователей',
+        resellerTemplate: 'Шаблон продавца',
+        resellerTemplateHint: 'При включении продавцы могут использовать этот план как шаблон для своих пользователей',
         externalBuyUrl: 'Внешняя ссылка покупки',
         externalBuyUrlPlaceholder: 'https://item.taobao.com/item.htm?id=...',
         externalBuyUrlHint: 'Необязательно. При настройке пользователи могут перейти для покупки на внешних площадках'
@@ -4866,7 +4868,7 @@ export default {
   // Reseller
   reseller: {
     dashboard: {
-      title: 'Панель реселлера',
+      title: 'Панель продавца',
       myBalance: 'Мой баланс',
       domains: 'Собственные домены',
       verifiedDomains: 'Проверенные домены',
@@ -4928,8 +4930,11 @@ export default {
       verifyNow: 'Проверить сейчас',
       verifying: 'Проверка...',
       verifyInstructions: 'Добавьте следующую DNS TXT запись для подтверждения владения доменом:',
-      verifyStep1: '1. Добавьте следующую TXT запись у вашего DNS-провайдера:',
-      verifyStep2: '2. Нажмите "Проверить сейчас" после обновления DNS',
+      verifyStep1_dns: 'Шаг 1: Добавьте A-запись (направьте домен на сервер)',
+      verifyStep1_hint: `HOST {'@'} обозначает корневой домен. Если ваш DNS-провайдер автоматически добавляет суффикс домена, просто введите {'@'}.`,
+      verifyStep2_txt: 'Шаг 2: Добавьте TXT-запись (подтвердите владение доменом)',
+      verifyStep2_hint: 'HOST должен быть только _domain-verify, без суффикса домена.',
+      verifyStep3: 'Шаг 3: Дождитесь распространения DNS (обычно несколько минут) и нажмите «Проверить сейчас»',
       verifySuccess: 'Домен успешно проверен',
       verifyFailed: 'Проверка домена не удалась. Убедитесь, что DNS запись настроена правильно',
       createSuccess: 'Домен добавлен',
@@ -4950,7 +4955,7 @@ export default {
       addTitle: 'Добавить сайт',
       backToList: 'Назад к списку',
       editSite: 'Настройки сайта',
-      tabs: { basic: 'Основные', appearance: 'Внешний вид', homepage: 'Главная', features: 'Функции и SEO' },
+      tabs: { basic: 'Основные', homepage: 'Главная', docs: 'Документация', purchase: 'Покупка', seo: 'SEO' },
       domainName: 'Домен',
       siteName: 'Название сайта',
       siteNamePlaceholder: 'Введите название сайта',
@@ -4958,9 +4963,6 @@ export default {
       subtitlePlaceholder: 'Введите подзаголовок',
       siteLogo: 'URL логотипа',
       siteLogoPlaceholder: 'Введите URL изображения логотипа',
-      brandColor: 'Цвет бренда',
-      customCSS: 'Пользовательский CSS',
-      customCSSPlaceholder: 'Введите CSS стили',
       homeTemplate: 'Шаблон главной страницы',
       homeTemplateDefault: 'По умолчанию',
       homeTemplateMinimal: 'Минимальный',
@@ -4982,9 +4984,7 @@ export default {
       purchaseUrl: 'URL страницы покупки',
       purchaseUrlPlaceholder: 'Введите URL пользовательской страницы покупки',
       purchaseUrlHint: 'Оставьте пустым для использования страницы покупки по умолчанию',
-      loginRedirect: 'Перенаправление после входа',
-      loginRedirectPlaceholder: '/dashboard',
-      loginRedirectHint: 'Путь перенаправления после входа, по умолчанию /dashboard',
+      seoSection: 'SEO',
       seoTitle: 'SEO заголовок',
       seoTitlePlaceholder: 'Заголовок для поисковых систем',
       seoDescription: 'SEO описание',
@@ -5017,7 +5017,7 @@ export default {
     },
     settings: {
       title: 'Настройки',
-      description: 'Настройка вашего реселлерского сайта',
+      description: 'Настройка вашего сайта продавца',
       brand: 'Настройки бренда',
       siteName: 'Название сайта',
       siteLogo: 'URL логотипа',
@@ -5044,20 +5044,17 @@ export default {
       telegram: {
         title: 'Telegram бот',
         botToken: 'Токен бота',
-        botTokenPlaceholder: 'Введите токен от @BotFather',
-        botTokenHint: 'Получите в Telegram @BotFather',
+        botTokenPlaceholder: `Введите токен от {'@'}BotFather`,
+        botTokenHint: `Получите в Telegram {'@'}BotFather`,
         bindStatus: 'Статус привязки',
         bound: 'Привязан',
         unbound: 'Не привязан',
         generateBindCode: 'Сгенерировать код привязки',
         bindInstructions: 'Отправьте эту команду боту для привязки:',
         unbind: 'Отвязать',
-        features: 'Переключатели функций',
-        featureAdminKeys: 'Реселлер: Управление ключами',
-        featureAdminStats: 'Реселлер: Статистика',
-        featureAdminNotify: 'Реселлер: Уведомления об ошибках',
-        featureUserQuery: 'Пользователь: Запрос информации о ключе',
-        featureUserNotify: 'Пользователь: Уведомления о квоте'
+        saveTokenFirst: 'Сначала введите Bot Token и сохраните настройки',
+        waitingForBind: 'Ожидание привязки, отправьте команду вашему боту...',
+        bindSuccess: 'Telegram успешно привязан!'
       }
     }
   }

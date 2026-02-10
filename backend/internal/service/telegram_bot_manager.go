@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"strings"
 	"sync"
 	"time"
 
@@ -22,11 +21,20 @@ type TelegramBotManager struct {
 	wg          sync.WaitGroup
 }
 
+type pendingEdit struct {
+	keyID   int64
+	field   string // "name" / "notes" / "quota" / "exp"
+	msgID   int    // bot prompt message ID, to delete after edit
+	listPg  int    // page number to return to after edit
+	detailM int    // detail message ID to update after edit
+}
+
 type botInstance struct {
 	resellerID int64
 	bot        *tgbotapi.BotAPI
 	cancel     context.CancelFunc
-	features   map[string]bool
+	edits      map[int64]*pendingEdit // chatID -> pending edit
+	editsMu    sync.Mutex
 }
 
 // NewTelegramBotManager creates a new TelegramBotManager.
@@ -61,9 +69,7 @@ func (m *TelegramBotManager) Start() {
 		if token == "" {
 			continue
 		}
-		// Load features
-		features := m.loadFeatures(ctx, resellerID)
-		if err := m.startBot(resellerID, token, features); err != nil {
+		if err := m.startBot(resellerID, token); err != nil {
 			log.Printf("[TelegramBot] Failed to start bot for reseller %d: %v", resellerID, err)
 		}
 	}
@@ -97,13 +103,13 @@ func (m *TelegramBotManager) OnSettingsUpdated(resellerID int64, settings map[st
 	}
 
 	token := settings[ResellerSettingTgBotToken]
-	features := parseTgFeatures(settings[ResellerSettingTgFeatures])
 
 	m.mu.RLock()
 	existing := m.bots[resellerID]
 	m.mu.RUnlock()
 
 	if token == "" {
+		log.Printf("[TelegramBot] OnSettingsUpdated reseller=%d: no token, skipping", resellerID)
 		// Token removed → stop bot
 		if existing != nil {
 			m.stopBot(resellerID)
@@ -123,7 +129,8 @@ func (m *TelegramBotManager) OnSettingsUpdated(resellerID int64, settings map[st
 		if existing != nil {
 			m.stopBot(resellerID)
 		}
-		if err := m.startBot(resellerID, token, features); err != nil {
+		log.Printf("[TelegramBot] OnSettingsUpdated reseller=%d: starting bot (existing=%v)", resellerID, existing != nil)
+		if err := m.startBot(resellerID, token); err != nil {
 			log.Printf("[TelegramBot] Failed to restart bot for reseller %d: %v", resellerID, err)
 		}
 	}
@@ -145,7 +152,7 @@ func (m *TelegramBotManager) SendNotification(resellerID int64, chatID int64, te
 	return err
 }
 
-func (m *TelegramBotManager) startBot(resellerID int64, token string, features map[string]bool) error {
+func (m *TelegramBotManager) startBot(resellerID int64, token string) error {
 	bot, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
 		return fmt.Errorf("create bot: %w", err)
@@ -156,7 +163,7 @@ func (m *TelegramBotManager) startBot(resellerID int64, token string, features m
 		resellerID: resellerID,
 		bot:        bot,
 		cancel:     cancel,
-		features:   features,
+		edits:      make(map[int64]*pendingEdit),
 	}
 
 	m.mu.Lock()
@@ -204,20 +211,27 @@ func (m *TelegramBotManager) runBot(ctx context.Context, inst *botInstance) {
 			if !ok {
 				return
 			}
-			if update.Message == nil || !update.Message.IsCommand() {
+			// 1. Handle callback queries (inline keyboard button clicks)
+			if update.CallbackQuery != nil {
+				m.handleCallback(inst, update.CallbackQuery)
 				continue
 			}
-			m.handleMessage(inst, update.Message)
+			// 2. Handle command messages
+			if update.Message != nil && update.Message.IsCommand() {
+				// Clear any pending edit when a new command is issued
+				inst.editsMu.Lock()
+				delete(inst.edits, update.Message.Chat.ID)
+				inst.editsMu.Unlock()
+				m.handleMessage(inst, update.Message)
+				continue
+			}
+			// 3. Handle plain text (edit flow input)
+			if update.Message != nil && update.Message.Text != "" {
+				m.handleTextInput(inst, update.Message)
+				continue
+			}
 		}
 	}
-}
-
-func (m *TelegramBotManager) loadFeatures(ctx context.Context, resellerID int64) map[string]bool {
-	raw, err := m.settingRepo.Get(ctx, resellerID, ResellerSettingTgFeatures)
-	if err != nil || raw == "" {
-		return parseTgFeatures(DefaultTgFeatures)
-	}
-	return parseTgFeatures(raw)
 }
 
 // getResellerChatID returns the chat ID bound to the reseller (admin mode).
@@ -229,33 +243,6 @@ func (m *TelegramBotManager) getResellerChatID(resellerID int64) int64 {
 	var chatID int64
 	fmt.Sscanf(val, "%d", &chatID)
 	return chatID
-}
-
-// parseTgFeatures parses a comma-separated feature string into a map.
-func parseTgFeatures(s string) map[string]bool {
-	features := make(map[string]bool)
-	if s == "" {
-		// All enabled by default
-		for _, f := range strings.Split(DefaultTgFeatures, ",") {
-			features[strings.TrimSpace(f)] = true
-		}
-		return features
-	}
-	for _, f := range strings.Split(s, ",") {
-		f = strings.TrimSpace(f)
-		if f != "" {
-			features[f] = true
-		}
-	}
-	return features
-}
-
-// featureEnabled checks if a feature is enabled for the bot instance.
-func featureEnabled(inst *botInstance, feature string) bool {
-	if inst.features == nil {
-		return true // default: all enabled
-	}
-	return inst.features[feature]
 }
 
 // sendReply sends a text reply to the given message.

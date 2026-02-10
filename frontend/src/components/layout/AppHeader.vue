@@ -38,9 +38,9 @@
           <span class="hidden sm:inline">{{ t('nav.docs') }}</span>
         </a>
 
-        <!-- Redeem Button (hide for admin) -->
+        <!-- Redeem Button (hide for admin and reseller) -->
         <router-link
-          v-if="user && !isAdmin"
+          v-if="user && !isAdmin && !isReseller"
           to="/redeem"
           class="flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-primary-600 dark:bg-primary-600 dark:hover:bg-primary-700"
         >
@@ -251,6 +251,7 @@ const onboardingStore = useOnboardingStore()
 
 const user = computed(() => authStore.user)
 const isAdmin = computed(() => authStore.isAdmin)
+const isReseller = computed(() => authStore.isReseller)
 const dropdownOpen = ref(false)
 const dropdownRef = ref<HTMLElement | null>(null)
 const contactInfo = computed(() => appStore.contactInfo)

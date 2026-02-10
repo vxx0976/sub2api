@@ -89,11 +89,13 @@ const appStore = useAppStore()
 const loading = ref(false)
 
 const purchaseEnabled = computed(() => {
-  return appStore.cachedPublicSettings?.purchase_subscription_enabled ?? false
+  const settings = appStore.cachedPublicSettings
+  return settings?.purchase_enabled ?? settings?.purchase_subscription_enabled ?? false
 })
 
 const purchaseUrl = computed(() => {
-  return (appStore.cachedPublicSettings?.purchase_subscription_url || '').trim()
+  const settings = appStore.cachedPublicSettings
+  return (settings?.purchase_url || settings?.purchase_subscription_url || '').trim()
 })
 
 const isValidUrl = computed(() => {

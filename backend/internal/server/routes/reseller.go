@@ -62,6 +62,7 @@ func registerResellerSettingRoutes(reseller *gin.RouterGroup, h *handler.Handler
 		settings.GET("", h.Reseller.Setting.Get)
 		settings.PUT("", h.Reseller.Setting.Update)
 		settings.POST("/tg-bind-code", h.Reseller.Setting.GenerateBindCode)
+		settings.DELETE("/tg-bind", h.Reseller.Setting.UnbindTelegram)
 	}
 }
 
@@ -69,6 +70,7 @@ func registerResellerDomainRoutes(reseller *gin.RouterGroup, h *handler.Handlers
 	domains := reseller.Group("/domains")
 	{
 		domains.GET("", h.Reseller.Domain.List)
+		domains.GET("/server-info", h.Reseller.Domain.ServerInfo)
 		domains.POST("", h.Reseller.Domain.Create)
 		domains.PUT("/:id", h.Reseller.Domain.Update)
 		domains.DELETE("/:id", h.Reseller.Domain.Delete)

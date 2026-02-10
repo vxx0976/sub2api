@@ -1,5 +1,19 @@
 <template>
-  <PublicLayout>
+  <!-- Reseller domain with doc_url: embed in iframe -->
+  <div v-if="isResellerDomain && resellerDocUrl" class="flex min-h-screen flex-col bg-gray-50 dark:bg-dark-950">
+    <PublicHeader />
+    <main class="flex-1">
+      <iframe
+        :src="resellerDocUrl"
+        class="h-[calc(100vh-57px)] w-full border-0"
+        allowfullscreen
+        referrerpolicy="no-referrer-when-downgrade"
+      ></iframe>
+    </main>
+  </div>
+
+  <!-- Normal docs page -->
+  <PublicLayout v-else>
     <div class="mx-auto max-w-4xl">
       <!-- Header -->
       <div class="mb-8 text-center">
@@ -136,8 +150,16 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useAppStore } from '@/stores'
 import PublicLayout from '@/components/layout/PublicLayout.vue'
+import PublicHeader from '@/components/layout/PublicHeader.vue'
 
 const { t } = useI18n()
+const appStore = useAppStore()
+
+// Reseller domain detection
+const isResellerDomain = computed(() => !!appStore.cachedPublicSettings?.reseller_id)
+const resellerDocUrl = computed(() => appStore.cachedPublicSettings?.doc_url || '')
 </script>

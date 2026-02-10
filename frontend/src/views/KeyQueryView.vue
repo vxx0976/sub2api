@@ -1,7 +1,8 @@
 <template>
   <div class="min-h-screen bg-gray-50 dark:bg-dark-900">
-    <!-- Header -->
-    <header class="border-b border-gray-200 bg-white dark:border-dark-700 dark:bg-dark-800">
+    <!-- Header: use PublicHeader on reseller domains for consistent navigation -->
+    <PublicHeader v-if="isResellerDomain" />
+    <header v-else class="border-b border-gray-200 bg-white dark:border-dark-700 dark:bg-dark-800">
       <div class="mx-auto flex max-w-3xl items-center justify-between px-4 py-4">
         <div class="flex items-center gap-3">
           <img
@@ -485,6 +486,7 @@ import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores'
 import { availableLocales, setLocale } from '@/i18n'
+import PublicHeader from '@/components/layout/PublicHeader.vue'
 import {
   queryApiKey,
   queryKeyUsage,
@@ -501,6 +503,9 @@ import {
 
 const { t, locale } = useI18n()
 const appStore = useAppStore()
+
+// Reseller domain detection
+const isResellerDomain = computed(() => !!appStore.cachedPublicSettings?.reseller_id)
 
 const STORAGE_KEY = 'key_query_api_key'
 const apiKey = ref(localStorage.getItem(STORAGE_KEY) || '')

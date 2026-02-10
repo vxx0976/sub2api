@@ -32,10 +32,18 @@ export async function generateBindCode(): Promise<{ bind_code: string }> {
   return data
 }
 
+/**
+ * Unbind Telegram (clear chat_id)
+ */
+export async function unbindTelegram(): Promise<void> {
+  await apiClient.delete('/reseller/settings/tg-bind')
+}
+
 export const settingsAPI = {
   get,
   update,
-  generateBindCode
+  generateBindCode,
+  unbindTelegram
 }
 
 export default settingsAPI

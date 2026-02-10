@@ -457,7 +457,7 @@ export default {
     confirmDelete: 'Confirm Delete',
     deleting: 'Deleting...',
     leaveEmpty: 'leave empty to keep unchanged',
-    reseller: 'Reseller',
+    reseller: 'Merchant',
     time: {
       never: 'Never',
       justNow: 'Just now',
@@ -509,7 +509,7 @@ export default {
     buySubscription: 'Purchase Subscription',
     docs: 'Docs',
     referral: 'Invite Friends',
-    resellerDashboard: 'Reseller Dashboard',
+    resellerDashboard: 'Merchant Dashboard',
     resellerGroups: 'Packages',
     resellerKeys: 'API Keys',
     resellerDomains: 'Domains',
@@ -1444,7 +1444,7 @@ export default {
       allRoles: 'All Roles',
       allStatus: 'All Status',
       admin: 'Admin',
-      reseller: 'Reseller',
+      reseller: 'Merchant',
       user: 'User',
       disabled: 'Disabled',
       email: 'Email',
@@ -1604,7 +1604,7 @@ export default {
       totalRecharged: 'Total Recharged',
       roles: {
         admin: 'Admin',
-        reseller: 'Reseller',
+        reseller: 'Merchant',
         user: 'User'
       },
       // Settings Dropdowns
@@ -1858,8 +1858,8 @@ export default {
         sortOrderHint: 'Higher values appear first in the list',
         isRecommended: 'Recommended',
         isRecommendedHint: 'Show recommended badge on the plans page',
-        resellerTemplate: 'Reseller Template',
-        resellerTemplateHint: 'When enabled, resellers can use this plan as a template for their users',
+        resellerTemplate: 'Merchant Template',
+        resellerTemplateHint: 'When enabled, merchants can use this plan as a template for their users',
         externalBuyUrl: 'External Buy URL',
         externalBuyUrlPlaceholder: 'https://item.taobao.com/item.htm?id=...',
         externalBuyUrlHint: 'Optional. When configured, users can click to purchase on external platforms'
@@ -4885,7 +4885,7 @@ export default {
   // Reseller
   reseller: {
     dashboard: {
-      title: 'Reseller Dashboard',
+      title: 'Merchant Dashboard',
       myBalance: 'My Balance',
       domains: 'Custom Domains',
       verifiedDomains: 'Verified Domains',
@@ -4952,7 +4952,7 @@ export default {
       verifying: 'Verifying...',
       verifyInstructions: 'Add the following DNS records at your DNS provider:',
       verifyStep1_dns: 'Step 1: Add A Record (point domain to server)',
-      verifyStep1_hint: 'Use @ as HOST for the root domain. If your DNS provider auto-appends the domain suffix, just enter @.',
+      verifyStep1_hint: `Use {'@'} as HOST for the root domain. If your DNS provider auto-appends the domain suffix, just enter {'@'}.`,
       verifyStep2_txt: 'Step 2: Add TXT Record (verify domain ownership)',
       verifyStep2_hint: 'HOST should only be _domain-verify without the domain suffix. VALUE must include the domain-verify= prefix.',
       verifyStep3: 'Step 3: Wait for DNS propagation (usually a few minutes), then click "Verify Now"',
@@ -4981,9 +4981,10 @@ export default {
       editSite: 'Site Settings',
       tabs: {
         basic: 'Basic Info',
-        appearance: 'Appearance',
         homepage: 'Homepage',
-        features: 'Features & SEO'
+        docs: 'Docs',
+        purchase: 'Purchase',
+        seo: 'SEO'
       },
       domainName: 'Domain',
       siteName: 'Site Name',
@@ -4992,9 +4993,6 @@ export default {
       subtitlePlaceholder: 'Enter site subtitle',
       siteLogo: 'Logo URL',
       siteLogoPlaceholder: 'Enter logo image URL',
-      brandColor: 'Brand Color',
-      customCSS: 'Custom CSS',
-      customCSSPlaceholder: 'Enter custom CSS styles',
       homeTemplate: 'Homepage Template',
       homeTemplateDefault: 'Follow System Default',
       homeTemplateMinimal: 'Minimal',
@@ -5016,9 +5014,7 @@ export default {
       purchaseUrl: 'Purchase Page URL',
       purchaseUrlPlaceholder: 'Enter custom purchase page URL',
       purchaseUrlHint: 'Leave empty to use system default purchase page',
-      loginRedirect: 'Post-Login Redirect',
-      loginRedirectPlaceholder: '/dashboard',
-      loginRedirectHint: 'Path to redirect after login, defaults to /dashboard',
+      seoSection: 'SEO',
       seoTitle: 'SEO Title',
       seoTitlePlaceholder: 'Custom search engine title',
       seoDescription: 'SEO Description',
@@ -5051,7 +5047,7 @@ export default {
     },
     settings: {
       title: 'Settings',
-      description: 'Configure your reseller site',
+      description: 'Configure your merchant site',
       brand: 'Brand Settings',
       siteName: 'Site Name',
       siteLogo: 'Site Logo URL',
@@ -5078,20 +5074,17 @@ export default {
       telegram: {
         title: 'Telegram Bot',
         botToken: 'Bot Token',
-        botTokenPlaceholder: 'Enter token from @BotFather',
-        botTokenHint: 'Get it from Telegram @BotFather',
+        botTokenPlaceholder: `Enter token from {'@'}BotFather`,
+        botTokenHint: `Get it from Telegram {'@'}BotFather`,
         bindStatus: 'Bind Status',
         bound: 'Bound',
         unbound: 'Not Bound',
         generateBindCode: 'Generate Bind Code',
         bindInstructions: 'Send this command to your Bot to bind:',
         unbind: 'Unbind',
-        features: 'Feature Toggles',
-        featureAdminKeys: 'Reseller: Key Management',
-        featureAdminStats: 'Reseller: Statistics',
-        featureAdminNotify: 'Reseller: Alert Notifications',
-        featureUserQuery: 'User: Query Key Info',
-        featureUserNotify: 'User: Quota Alert Push'
+        saveTokenFirst: 'Please enter Bot Token and save settings first',
+        waitingForBind: 'Waiting for bind, please send the command to your Bot...',
+        bindSuccess: 'Telegram bound successfully!'
       }
     }
   }

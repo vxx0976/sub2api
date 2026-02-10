@@ -54,39 +54,29 @@
               <label class="label">{{ t('reseller.settings.telegram.bindStatus') }}</label>
               <div v-if="settings.tg_chat_id" class="flex items-center gap-2">
                 <span class="text-sm text-green-600 dark:text-green-400">✅ {{ t('reseller.settings.telegram.bound') }} (Chat: {{ settings.tg_chat_id }})</span>
-                <button @click="unbindTelegram" class="btn btn-sm btn-danger" :disabled="saving">
+                <button @click="handleUnbindTelegram" class="btn btn-sm btn-danger" :disabled="saving">
                   {{ t('reseller.settings.telegram.unbind') }}
                 </button>
               </div>
               <div v-else class="space-y-2">
                 <span class="text-sm text-yellow-600 dark:text-yellow-400">⚠️ {{ t('reseller.settings.telegram.unbound') }}</span>
                 <div class="flex items-center gap-2">
-                  <button @click="handleGenerateBindCode" class="btn btn-sm btn-secondary" :disabled="generatingCode">
+                  <button @click="handleGenerateBindCode" class="btn btn-sm btn-secondary" :disabled="generatingCode || !settings.tg_bot_token">
                     {{ t('reseller.settings.telegram.generateBindCode') }}
                   </button>
                 </div>
+                <p v-if="!settings.tg_bot_token" class="text-xs text-amber-600 dark:text-amber-400">{{ t('reseller.settings.telegram.saveTokenFirst') }}</p>
                 <div v-if="bindCode" class="mt-2 rounded-md bg-gray-50 dark:bg-gray-800 p-3">
                   <p class="text-sm text-gray-700 dark:text-gray-300">{{ t('reseller.settings.telegram.bindInstructions') }}</p>
                   <code class="mt-1 block text-sm font-mono text-primary-600 dark:text-primary-400">/bind {{ bindCode }}</code>
+                  <p v-if="polling" class="mt-2 flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+                    <svg class="h-3 w-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    {{ t('reseller.settings.telegram.waitingForBind') }}
+                  </p>
                 </div>
               </div>
             </div>
 
-            <!-- Feature Toggles -->
-            <div>
-              <label class="label">{{ t('reseller.settings.telegram.features') }}</label>
-              <div class="space-y-2">
-                <label v-for="feature in tgFeatures" :key="feature.id" class="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    :checked="isFeatureEnabled(feature.id)"
-                    @change="toggleFeature(feature.id)"
-                    class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                  />
-                  <span class="text-sm text-gray-700 dark:text-gray-300">{{ feature.label }}</span>
-                </label>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -106,7 +96,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { resellerAPI } from '@/api'
 import { useAppStore } from '@/stores'
@@ -121,6 +111,8 @@ const loading = ref(true)
 const saving = ref(false)
 const generatingCode = ref(false)
 const bindCode = ref('')
+const polling = ref(false)
+let pollTimer: ReturnType<typeof setInterval> | null = null
 
 const availableLocaleOptions = availableLocales
 
@@ -129,38 +121,8 @@ const settings = ref<Record<string, string>>({
   crypto_addresses: '',
   default_locale: '',
   tg_bot_token: '',
-  tg_chat_id: '',
-  tg_features: ''
+  tg_chat_id: ''
 })
-
-const tgFeatures = computed(() => [
-  { id: 'admin_keys', label: t('reseller.settings.telegram.featureAdminKeys') },
-  { id: 'admin_stats', label: t('reseller.settings.telegram.featureAdminStats') },
-  { id: 'admin_notify', label: t('reseller.settings.telegram.featureAdminNotify') },
-  { id: 'user_query', label: t('reseller.settings.telegram.featureUserQuery') },
-  { id: 'user_notify', label: t('reseller.settings.telegram.featureUserNotify') }
-])
-
-const defaultFeatures = 'admin_keys,admin_stats,admin_notify,user_query,user_notify'
-
-function getEnabledFeatures(): Set<string> {
-  const raw = settings.value.tg_features || defaultFeatures
-  return new Set(raw.split(',').map(f => f.trim()).filter(Boolean))
-}
-
-function isFeatureEnabled(id: string): boolean {
-  return getEnabledFeatures().has(id)
-}
-
-function toggleFeature(id: string) {
-  const enabled = getEnabledFeatures()
-  if (enabled.has(id)) {
-    enabled.delete(id)
-  } else {
-    enabled.add(id)
-  }
-  settings.value.tg_features = Array.from(enabled).join(',')
-}
 
 async function loadSettings() {
   loading.value = true
@@ -198,8 +160,18 @@ async function saveSettings() {
 async function handleGenerateBindCode() {
   generatingCode.value = true
   try {
+    // Save settings first (including bot token) to ensure backend has the token
+    const payload: Record<string, string> = {}
+    for (const [key, value] of Object.entries(settings.value)) {
+      if (key === 'tg_chat_id' || key === 'tg_bind_code') continue
+      payload[key] = value
+    }
+    await resellerAPI.settings.update(payload)
+
     const result = await resellerAPI.settings.generateBindCode()
     bindCode.value = result.bind_code
+    // Start polling to detect when bind succeeds
+    startBindPolling()
   } catch (error: any) {
     appStore.showError(error.message || t('common.operationFailed'))
   } finally {
@@ -207,10 +179,43 @@ async function handleGenerateBindCode() {
   }
 }
 
-async function unbindTelegram() {
+function startBindPolling() {
+  stopBindPolling()
+  polling.value = true
+  let attempts = 0
+  const maxAttempts = 60 // poll for ~3 minutes
+  pollTimer = setInterval(async () => {
+    attempts++
+    if (attempts > maxAttempts) {
+      stopBindPolling()
+      return
+    }
+    try {
+      const data = await resellerAPI.settings.get()
+      if (data.tg_chat_id) {
+        settings.value.tg_chat_id = data.tg_chat_id
+        bindCode.value = ''
+        stopBindPolling()
+        appStore.showSuccess(t('reseller.settings.telegram.bindSuccess'))
+      }
+    } catch {
+      // ignore polling errors
+    }
+  }, 3000)
+}
+
+function stopBindPolling() {
+  polling.value = false
+  if (pollTimer) {
+    clearInterval(pollTimer)
+    pollTimer = null
+  }
+}
+
+async function handleUnbindTelegram() {
   saving.value = true
   try {
-    await resellerAPI.settings.update({ tg_chat_id: '' })
+    await resellerAPI.settings.unbindTelegram()
     settings.value.tg_chat_id = ''
     appStore.showSuccess(t('common.saveSuccess'))
   } catch (error: any) {
@@ -222,5 +227,9 @@ async function unbindTelegram() {
 
 onMounted(() => {
   loadSettings()
+})
+
+onBeforeUnmount(() => {
+  stopBindPolling()
 })
 </script>

@@ -52,8 +52,9 @@ func SetupRouter(
 			log.Printf("Warning: Failed to create frontend server with settings injection: %v, using legacy mode", err)
 			r.Use(web.ServeEmbeddedFrontend())
 		} else {
-			// Register cache invalidation callback
+			// Register cache invalidation callbacks
 			settingService.SetOnUpdateCallback(frontendServer.InvalidateCache)
+			handlers.Reseller.Domain.SetCacheInvalidator(frontendServer.InvalidateDomainCache)
 			r.Use(frontendServer.Middleware())
 		}
 	}

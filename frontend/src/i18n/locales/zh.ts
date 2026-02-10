@@ -456,7 +456,7 @@ export default {
     confirmDelete: '确认删除',
     deleting: '删除中...',
     leaveEmpty: '留空则不修改',
-    reseller: '分销商',
+    reseller: '商户',
     time: {
       never: '从未',
       justNow: '刚刚',
@@ -508,7 +508,7 @@ export default {
     buySubscription: '购买订阅',
     docs: '接入文档',
     referral: '邀请好友',
-    resellerDashboard: '分销概览',
+    resellerDashboard: '商户概览',
     resellerGroups: '套餐管理',
     resellerKeys: 'API 密钥',
     resellerDomains: '域名管理',
@@ -1454,7 +1454,7 @@ export default {
       statusFilter: '状态筛选',
       allStatuses: '全部状态',
       admin: '管理员',
-      reseller: '分销商',
+      reseller: '商户',
       user: '用户',
       disabled: '禁用',
       email: '邮箱',
@@ -1518,7 +1518,7 @@ export default {
       deleteConfirm: "确定要删除用户 '{email}' 吗？此操作无法撤销。",
       roles: {
         admin: '管理员',
-        reseller: '分销商',
+        reseller: '商户',
         user: '用户'
       },
       form: {
@@ -1862,8 +1862,8 @@ export default {
         sortOrderHint: '数值越大排序越靠前',
         isRecommended: '推荐套餐',
         isRecommendedHint: '在套餐页面显示推荐标识',
-        resellerTemplate: '分销商模板',
-        resellerTemplateHint: '启用后，分销商可选择此套餐作为模板分配给用户',
+        resellerTemplate: '商户模板',
+        resellerTemplateHint: '启用后，商户可选择此套餐作为模板分配给用户',
         externalBuyUrl: '外部购买链接',
         externalBuyUrlPlaceholder: 'https://item.taobao.com/item.htm?id=...',
         externalBuyUrlHint: '可选，配置后用户可通过此链接跳转到外部平台购买'
@@ -4897,7 +4897,7 @@ export default {
   // Reseller
   reseller: {
     dashboard: {
-      title: '分销概览',
+      title: '商户概览',
       myBalance: '我的余额',
       domains: '自定义域名',
       verifiedDomains: '已验证域名',
@@ -4964,7 +4964,7 @@ export default {
       verifying: '验证中...',
       verifyInstructions: '请在您的 DNS 服务商添加以下记录来配置域名：',
       verifyStep1_dns: '步骤一：添加 A 记录（将域名指向服务器）',
-      verifyStep1_hint: 'HOST 填 @ 代表根域名。如果你的 DNS 服务商自动拼接域名后缀，直接填 @ 即可。',
+      verifyStep1_hint: `HOST 填 {'@'} 代表根域名。如果你的 DNS 服务商自动拼接域名后缀，直接填 {'@'} 即可。`,
       verifyStep2_txt: '步骤二：添加 TXT 记录（验证域名所有权）',
       verifyStep2_hint: 'HOST 只填 _domain-verify，不要包含域名后缀。VALUE 需包含 domain-verify= 前缀。',
       verifyStep3: '步骤三：等待 DNS 生效后（通常几分钟），点击下方「立即验证」',
@@ -4993,9 +4993,10 @@ export default {
       editSite: '站点设置',
       tabs: {
         basic: '基础信息',
-        appearance: '外观',
         homepage: '首页',
-        features: '功能与 SEO'
+        docs: '文档',
+        purchase: '购买',
+        seo: 'SEO'
       },
       domainName: '域名',
       siteName: '站点名称',
@@ -5004,9 +5005,6 @@ export default {
       subtitlePlaceholder: '输入站点副标题',
       siteLogo: 'Logo URL',
       siteLogoPlaceholder: '输入 Logo 图片地址',
-      brandColor: '品牌颜色',
-      customCSS: '自定义 CSS',
-      customCSSPlaceholder: '输入自定义 CSS 样式',
       homeTemplate: '首页模板',
       homeTemplateDefault: '跟随系统默认',
       homeTemplateMinimal: '简洁模板',
@@ -5028,9 +5026,7 @@ export default {
       purchaseUrl: '购买页链接',
       purchaseUrlPlaceholder: '输入自定义购买页面 URL',
       purchaseUrlHint: '留空则使用系统默认购买页',
-      loginRedirect: '登录后跳转',
-      loginRedirectPlaceholder: '/dashboard',
-      loginRedirectHint: '用户登录后跳转的路径，默认 /dashboard',
+      seoSection: 'SEO 搜索引擎优化',
       seoTitle: 'SEO 标题',
       seoTitlePlaceholder: '自定义搜索引擎标题',
       seoDescription: 'SEO 描述',
@@ -5063,7 +5059,7 @@ export default {
     },
     settings: {
       title: '系统设置',
-      description: '配置您的分销站点',
+      description: '配置您的商户站点',
       brand: '品牌设置',
       siteName: '站点名称',
       siteLogo: '站点 Logo URL',
@@ -5090,20 +5086,17 @@ export default {
       telegram: {
         title: 'Telegram 机器人',
         botToken: 'Bot Token',
-        botTokenPlaceholder: '输入从 @BotFather 获取的 Token',
-        botTokenHint: '从 Telegram @BotFather 获取',
+        botTokenPlaceholder: `输入从 {'@'}BotFather 获取的 Token`,
+        botTokenHint: `从 Telegram {'@'}BotFather 获取`,
         bindStatus: '绑定状态',
         bound: '已绑定',
         unbound: '未绑定',
         generateBindCode: '生成绑定码',
         bindInstructions: '请向 Bot 发送此命令来绑定：',
         unbind: '解除绑定',
-        features: '功能开关',
-        featureAdminKeys: '分销商：密钥管理',
-        featureAdminStats: '分销商：统计查询',
-        featureAdminNotify: '分销商：告警通知',
-        featureUserQuery: '用户：查询密钥信息',
-        featureUserNotify: '用户：配额告警推送'
+        saveTokenFirst: '请先填写 Bot Token 并保存设置',
+        waitingForBind: '等待绑定中，请向 Bot 发送上方命令...',
+        bindSuccess: 'Telegram 绑定成功！'
       }
     }
   }

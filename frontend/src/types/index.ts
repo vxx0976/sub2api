@@ -42,7 +42,7 @@ export interface User {
 export interface AdminUser extends User {
   // 管理员备注（普通用户接口不返回）
   notes: string
-  // 父用户ID（分销商的子用户才有此字段）
+  // 父用户ID（商户的子用户才有此字段）
   parent_id?: number | null
   // 用户专属分组倍率配置 (group_id -> rate_multiplier)
   group_rates?: Record<number, number>
@@ -97,6 +97,7 @@ export interface PublicSettings {
   contact_info: string
   doc_url: string
   home_content: string
+  home_template?: string
   hide_ccs_import_button: boolean
   purchase_subscription_enabled: boolean
   purchase_subscription_url: string
@@ -111,6 +112,12 @@ export interface PublicSettings {
   reseller_domain?: string
   brand_color?: string
   custom_css?: string
+  purchase_enabled?: boolean
+  purchase_url?: string
+  login_redirect?: string
+  seo_title?: string
+  seo_description?: string
+  seo_keywords?: string
 }
 
 export interface AuthResponse {
