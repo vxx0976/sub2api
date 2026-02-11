@@ -218,7 +218,7 @@ export default {
       title: '聯繫我們',
       wechat: 'WeChat',
       telegram: 'Telegram',
-      scanQr: '掃碼添加微信'
+      scanQr: '微信：mayione1'
     },
     links: {
       subscriptions: '我的訂閱',
@@ -292,7 +292,7 @@ export default {
       feature3: '更高並行支援',
       feature4: '專屬技術支援',
       action: '聯繫諮詢',
-      wechatTitle: '掃碼添加微信',
+      wechatTitle: '添加微信',
       wechatDesc: '添加客服微信諮詢定制專線服務'
     }
   },
@@ -4512,7 +4512,7 @@ export default {
       contactUs: '聯繫客服',
       customized: '根據需求定制方案',
       contact: '聯繫客服諮詢',
-      contactMessage: '請聯繫客服獲取定制方案：微信 AI碼驿站',
+      contactMessage: '請聯繫客服獲取定制方案：微信 mayione1',
       features: {
         dedicated: '獨享專屬線路',
         unlimited: '无限額度配置',
@@ -4521,7 +4521,7 @@ export default {
       },
       dialog: {
         title: '聯繫客服',
-        subtitle: '掃碼添加微信，獲取定制方案',
+        subtitle: '添加微信 mayione1，獲取定制方案',
         tip: '工作時間：周一至周日 9:00-22:00'
       }
     }

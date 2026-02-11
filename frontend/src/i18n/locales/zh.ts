@@ -218,7 +218,7 @@ export default {
       title: '联系我们',
       wechat: '微信',
       telegram: 'Telegram',
-      scanQr: '扫码添加微信'
+      scanQr: '微信：mayione1'
     },
     links: {
       subscriptions: '我的订阅',
@@ -292,7 +292,7 @@ export default {
       feature3: '更高并发支持',
       feature4: '专属技术支持',
       action: '联系咨询',
-      wechatTitle: '扫码添加微信',
+      wechatTitle: '添加微信',
       wechatDesc: '添加客服微信咨询定制专线服务'
     }
   },
@@ -4568,7 +4568,7 @@ export default {
       contactUs: '联系客服',
       customized: '根据需求定制方案',
       contact: '联系客服咨询',
-      contactMessage: '请联系客服获取定制方案：微信 AI码驿站',
+      contactMessage: '请联系客服获取定制方案：微信 mayione1',
       features: {
         dedicated: '独享专属线路',
         unlimited: '无限额度配置',
@@ -4577,7 +4577,7 @@ export default {
       },
       dialog: {
         title: '联系客服',
-        subtitle: '扫码添加微信，获取定制方案',
+        subtitle: '添加微信 mayione1，获取定制方案',
         tip: '工作时间：周一至周日 9:00-22:00'
       }
     }

@@ -219,7 +219,7 @@ export default {
       title: 'Связаться с нами',
       wechat: 'WeChat',
       telegram: 'Telegram',
-      scanQr: 'Отсканируйте для добавления WeChat'
+      scanQr: 'WeChat: mayione1'
     },
     links: {
       subscriptions: 'Подписки',
@@ -293,7 +293,7 @@ export default {
       feature3: 'Повышенная поддержка конкурентности',
       feature4: 'Выделенная техническая поддержка',
       action: 'Связаться с нами',
-      wechatTitle: 'Отсканируйте для добавления WeChat',
+      wechatTitle: 'Добавить WeChat',
       wechatDesc: 'Добавьте наш WeChat для получения информации о выделенной линии'
     }
   },
@@ -4581,7 +4581,7 @@ export default {
       contactUs: 'Связаться с нами',
       customized: 'Индивидуальные решения',
       contact: 'Связаться с отделом продаж',
-      contactMessage: 'Пожалуйста, свяжитесь с нами для индивидуального плана: WeChat AI码驿站',
+      contactMessage: 'Пожалуйста, свяжитесь с нами для индивидуального плана: WeChat mayione1',
       features: {
         dedicated: 'Выделенная частная линия',
         unlimited: 'Безлимитная квота',
@@ -4590,7 +4590,7 @@ export default {
       },
       dialog: {
         title: 'Связаться с нами',
-        subtitle: 'Отсканируйте QR-код для добавления в WeChat для индивидуальных решений',
+        subtitle: 'Добавьте WeChat mayione1 для индивидуальных решений',
         tip: 'Рабочие часы: Пн-Вс 9:00-22:00'
       }
     }

@@ -218,7 +218,7 @@ export default {
       title: 'お問い合わせ',
       wechat: 'WeChat',
       telegram: 'Telegram',
-      scanQr: 'QRコードをスキャンしてWeChatを追加'
+      scanQr: 'WeChat：mayione1'
     },
     links: {
       subscriptions: 'マイサブスクリプション',
@@ -292,7 +292,7 @@ export default {
       feature3: 'より高い同時接続サポート',
       feature4: '専属テクニカルサポート',
       action: 'お問い合わせ',
-      wechatTitle: 'QR コードをスキャンして WeChat を追加',
+      wechatTitle: 'WeChat を追加',
       wechatDesc: 'カスタマーサービスの WeChat を追加して専用回線サービスについてお問い合わせ'
     }
   },
@@ -4545,7 +4545,7 @@ export default {
       contactUs: 'カスタマーサポートに連絡',
       customized: 'ニーズに合わせたカスタムプラン',
       contact: 'カスタマーサポートにお問い合わせ',
-      contactMessage: 'カスタムプランについてはカスタマーサポートにお問い合わせください：WeChat AI码驿站',
+      contactMessage: 'カスタムプランについてはカスタマーサポートにお問い合わせください：WeChat mayione1',
       features: {
         dedicated: '専用回線を独占',
         unlimited: '無制限クォータ設定',
@@ -4554,7 +4554,7 @@ export default {
       },
       dialog: {
         title: 'カスタマーサポートに連絡',
-        subtitle: 'QRコードをスキャンしてWeChatを追加し、カスタムプランを取得',
+        subtitle: 'WeChat mayione1 を追加して、カスタムプランを取得',
         tip: '営業時間：月曜〜日曜 9:00〜22:00'
       }
     }

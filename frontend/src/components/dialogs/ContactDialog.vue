@@ -38,21 +38,12 @@
                 </p>
               </div>
 
-              <!-- QR Code -->
-              <div class="mb-4 overflow-hidden rounded-2xl border border-gray-100 bg-white p-2 dark:border-dark-600 dark:bg-dark-700">
-                <img
-                  :src="qrCodeUrl"
-                  alt="WeChat QR Code"
-                  class="mx-auto h-auto w-full max-w-[240px]"
-                />
-              </div>
-
               <!-- WeChat ID -->
               <div class="mb-4 inline-flex items-center gap-2 rounded-full bg-green-50 px-4 py-2 dark:bg-green-900/20">
                 <svg class="h-4 w-4 text-green-600 dark:text-green-400" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M8.691 2.188C3.891 2.188 0 5.476 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 01.213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.29.295a.326.326 0 00.167-.054l1.903-1.114a.864.864 0 01.717-.098 10.16 10.16 0 002.837.403c.276 0 .543-.027.811-.05-.857-2.578.157-4.972 1.932-6.446 1.703-1.415 3.882-1.98 5.853-1.838-.576-3.583-4.196-6.348-8.596-6.348zM5.785 5.991c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 01-1.162 1.178A1.17 1.17 0 014.623 7.17c0-.651.52-1.18 1.162-1.18zm5.813 0c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 01-1.162 1.178 1.17 1.17 0 01-1.162-1.178c0-.651.52-1.18 1.162-1.18z"/>
                 </svg>
-                <span class="text-sm font-medium text-green-700 dark:text-green-300">AI码驿站</span>
+                <span class="text-sm font-medium text-green-700 dark:text-green-300">mayione1</span>
               </div>
 
               <!-- Tip -->
@@ -80,8 +71,6 @@ defineEmits<{
 
 const { t } = useI18n()
 
-// Use runtime URL to avoid Vite import analysis
-const qrCodeUrl = '/wechat-qrcode.png'
 </script>
 
 <style scoped>

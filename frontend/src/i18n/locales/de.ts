@@ -238,7 +238,7 @@ export default {
       title: 'Kontakt',
       wechat: 'WeChat',
       telegram: 'Telegram',
-      scanQr: 'Scannen, um WeChat hinzuzufügen'
+      scanQr: 'WeChat: mayione1'
     },
     links: {
       subscriptions: 'Abonnements',
@@ -318,7 +318,7 @@ export default {
       feature3: 'Hoehere Parallelitaetsunterstuetzung',
       feature4: 'Dedizierter technischer Support',
       action: 'Kontaktieren Sie uns',
-      wechatTitle: 'QR-Code scannen fuer WeChat',
+      wechatTitle: 'WeChat hinzufuegen',
       wechatDesc: 'Kontaktieren Sie uns fuer den dedizierten Leitungsdienst'
 
     }
@@ -4763,7 +4763,7 @@ export default {
       contactUs: 'Kontaktieren Sie uns',
       customized: 'Massgeschneiderte Loesungen',
       contact: 'Contact Sales',
-      contactMessage: 'Please contact us for a custom plan: WeChat AI码驿站',
+      contactMessage: 'Bitte kontaktieren Sie uns fuer einen individuellen Plan: WeChat mayione1',
       features: {
         dedicated: 'Dedizierte private Leitung',
         unlimited: 'Unlimited quota',
@@ -4773,7 +4773,7 @@ export default {
       },
       dialog: {
         title: 'Kontaktieren Sie uns',
-        subtitle: 'QR-Code scannen, um WeChat fuer massgeschneiderte Loesungen hinzuzufuegen',
+        subtitle: 'WeChat mayione1 hinzufuegen fuer massgeschneiderte Loesungen',
         tip: 'Geschaeftszeiten: Mo-So 9:00-22:00'
 
       }

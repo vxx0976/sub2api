@@ -219,7 +219,7 @@ export default {
       title: 'Fale Conosco',
       wechat: 'WeChat',
       telegram: 'Telegram',
-      scanQr: 'Escaneie para adicionar WeChat'
+      scanQr: 'WeChat: mayione1'
     },
     links: {
       subscriptions: 'Assinaturas',
@@ -293,7 +293,7 @@ export default {
       feature3: 'Maior suporte a concorrencia',
       feature4: 'Suporte tecnico dedicado',
       action: 'Fale Conosco',
-      wechatTitle: 'Escaneie para Adicionar no WeChat',
+      wechatTitle: 'Adicionar WeChat',
       wechatDesc: 'Adicione nosso WeChat para consultar sobre o servico de linha dedicada'
     }
   },
@@ -4583,7 +4583,7 @@ export default {
       contactUs: 'Fale Conosco',
       customized: 'Solucoes personalizadas',
       contact: 'Contatar Vendas',
-      contactMessage: 'Por favor, entre em contato para um plano personalizado: WeChat AI码驿站',
+      contactMessage: 'Por favor, entre em contato para um plano personalizado: WeChat mayione1',
       features: {
         dedicated: 'Linha privada dedicada',
         unlimited: 'Cota ilimitada',
@@ -4592,7 +4592,7 @@ export default {
       },
       dialog: {
         title: 'Fale Conosco',
-        subtitle: 'Escaneie o codigo QR para adicionar no WeChat para solucoes personalizadas',
+        subtitle: 'Adicione WeChat mayione1 para solucoes personalizadas',
         tip: 'Horario comercial: Seg-Dom 9:00-22:00'
       }
     }

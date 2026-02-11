@@ -218,7 +218,7 @@ export default {
       title: '문의하기',
       wechat: 'WeChat',
       telegram: 'Telegram',
-      scanQr: 'QR 코드를 스캔하여 WeChat 추가'
+      scanQr: 'WeChat: mayione1'
     },
     links: {
       subscriptions: '내 구독',
@@ -292,7 +292,7 @@ export default {
       feature3: '더 높은 동시 접속 지원',
       feature4: '전담 기술 지원',
       action: '문의하기',
-      wechatTitle: 'QR 코드 스캔하여 WeChat 추가',
+      wechatTitle: 'WeChat 추가',
       wechatDesc: '고객 지원 WeChat 추가하여 맞춤 전용 회선 서비스 문의'
     }
   },
@@ -4551,7 +4551,7 @@ export default {
       contactUs: '고객 지원 문의',
       customized: '요구에 따라 맞춤 방안',
       contact: '고객 지원에 문의하세요',
-      contactMessage: '맞춤 방안을 위해 고객 지원에 문의하세요: 위챗 AI码驿站',
+      contactMessage: '맞춤 방안을 위해 고객 지원에 문의하세요: WeChat mayione1',
       features: {
         dedicated: '전용 회선 독점 사용',
         unlimited: '무제한 할당량 설정',
@@ -4560,7 +4560,7 @@ export default {
       },
       dialog: {
         title: '고객 지원 문의',
-        subtitle: 'QR 코드를 스캔하여 위챗을 추가하고 맞춤 방안을 받으세요',
+        subtitle: 'WeChat mayione1 을 추가하여 맞춤 방안을 받으세요',
         tip: '운영 시간: 월요일~일요일 9:00-22:00'
       }
     }
