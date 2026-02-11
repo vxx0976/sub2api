@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"log"
-	"sort"
 	"time"
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
@@ -251,27 +250,6 @@ func (r *groupRepository) ListWithFilters(ctx context.Context, params pagination
 			outGroups[i].AccountGroups = accountsMap[outGroups[i].ID]
 		}
 	}
-
-	// Sort groups by the minimum account priority (ascending)
-	// Groups without accounts go to the end
-	sort.Slice(outGroups, func(i, j int) bool {
-		iAccounts := outGroups[i].AccountGroups
-		jAccounts := outGroups[j].AccountGroups
-
-		// Groups without accounts go to the end
-		if len(iAccounts) == 0 && len(jAccounts) == 0 {
-			return outGroups[i].ID < outGroups[j].ID
-		}
-		if len(iAccounts) == 0 {
-			return false
-		}
-		if len(jAccounts) == 0 {
-			return true
-		}
-
-		// Both have accounts, compare first account's priority (already sorted by priority ASC)
-		return iAccounts[0].Priority < jAccounts[0].Priority
-	})
 
 	return outGroups, paginationResultFromTotal(int64(total), params), nil
 }

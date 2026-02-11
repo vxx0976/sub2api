@@ -20,13 +20,6 @@
               />
             </div>
           <Select
-            v-model="filters.is_purchasable"
-            :options="purchasableFilterOptions"
-            :placeholder="t('admin.groups.allPurchasable')"
-            class="w-44"
-            @change="loadGroups"
-          />
-          <Select
             v-model="filters.status"
             :options="statusOptions"
             :placeholder="t('admin.groups.allStatus')"
@@ -1916,13 +1909,6 @@ const platformOptions = computed(() => [
   { value: 'antigravity', label: 'Antigravity' }
 ])
 
-const purchasableFilterOptions = computed(() => [
-  { value: 'active', label: t('admin.groups.activePlans') },
-  { value: '', label: t('admin.groups.allPurchasable') },
-  { value: 'true', label: t('admin.groups.purchasable') },
-  { value: 'false', label: t('admin.groups.notPurchasable') }
-])
-
 const editStatusOptions = computed(() => [
   { value: 'active', label: t('admin.accounts.status.active') },
   { value: 'inactive', label: t('admin.accounts.status.inactive') }
@@ -2027,7 +2013,6 @@ const groups = ref<AdminGroup[]>([])
 const loading = ref(false)
 const searchQuery = ref('')
 const filters = reactive({
-  is_purchasable: 'active',
   status: '',
   is_exclusive: ''
 })
@@ -2315,20 +2300,13 @@ const loadGroups = async () => {
   const { signal } = currentController
   loading.value = true
   try {
-    const isActiveFilter = filters.is_purchasable === 'active'
     const response = await adminAPI.groups.list(pagination.page, pagination.page_size, {
       status: filters.status as any,
       is_exclusive: filters.is_exclusive ? filters.is_exclusive === 'true' : undefined,
-      is_purchasable: (!isActiveFilter && filters.is_purchasable) ? filters.is_purchasable === 'true' : undefined,
       search: searchQuery.value.trim() || undefined
     }, { signal })
     if (signal.aborted) return
-    // 默认模式：隐藏不可购买的订阅类型，保留余额类型和可购买的
-    if (isActiveFilter) {
-      groups.value = response.items.filter(g => g.is_purchasable || g.subscription_type === 'standard') as AdminGroup[]
-    } else {
-      groups.value = response.items as AdminGroup[]
-    }
+    groups.value = response.items as AdminGroup[]
     pagination.total = response.total
     pagination.pages = response.pages
   } catch (error: any) {

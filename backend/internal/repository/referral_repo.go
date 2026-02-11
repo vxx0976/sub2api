@@ -100,8 +100,11 @@ func (r *referralRepository) GetReferralStats(ctx context.Context, referrerID in
 		return nil, err
 	}
 
-	// Count pending (invited but not yet rewarded)
+	// Count pending (invited but not yet rewarded), ensure non-negative
 	pendingPayment := totalInvited - totalRewarded
+	if pendingPayment < 0 {
+		pendingPayment = 0
+	}
 
 	// Calculate total earnings
 	var totalEarnings float64
@@ -380,11 +383,16 @@ func (r *referralRepository) GetAdminReferralStats(ctx context.Context) (*servic
 		totalInviteePaid += rw.InviteeReward
 	}
 
+	totalPending := totalInvitees - totalRewarded
+	if totalPending < 0 {
+		totalPending = 0
+	}
+
 	return &service.AdminReferralStats{
 		TotalRecords:      totalInvitees,
 		TotalReferrers:    len(referrerSet),
 		TotalInvitees:     totalInvitees,
-		TotalPending:      totalInvitees - totalRewarded,
+		TotalPending:      totalPending,
 		TotalRewarded:     totalRewarded,
 		TotalReferrerPaid: totalReferrerPaid,
 		TotalInviteePaid:  totalInviteePaid,

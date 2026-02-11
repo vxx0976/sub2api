@@ -147,15 +147,32 @@ func (h *DomainHandler) ServerInfo(c *gin.Context) {
 	var serverIP string
 	ips, err := net.LookupHost(host)
 	if err == nil && len(ips) > 0 {
-		// Prefer IPv4
+		// Prefer non-loopback IPv4
 		for _, ip := range ips {
-			if !strings.Contains(ip, ":") {
+			parsed := net.ParseIP(ip)
+			if parsed != nil && !strings.Contains(ip, ":") && !parsed.IsLoopback() {
 				serverIP = ip
 				break
 			}
 		}
+		// Fallback to any non-loopback IP
 		if serverIP == "" {
-			serverIP = ips[0]
+			for _, ip := range ips {
+				parsed := net.ParseIP(ip)
+				if parsed != nil && !parsed.IsLoopback() {
+					serverIP = ip
+					break
+				}
+			}
+		}
+	}
+	// If DNS only returned loopback addresses, detect outbound IP
+	if serverIP == "" {
+		if conn, err := net.Dial("udp", "8.8.8.8:80"); err == nil {
+			if addr, ok := conn.LocalAddr().(*net.UDPAddr); ok {
+				serverIP = addr.IP.String()
+			}
+			conn.Close()
 		}
 	}
 
