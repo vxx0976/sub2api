@@ -75,7 +75,7 @@ onMounted(async () => {
   try {
     const settings = await getPublicSettings()
     siteName.value = settings.site_name || '码驿站'
-    siteLogo.value = sanitizeUrl(settings.site_logo || '', { allowRelative: true })
+    siteLogo.value = sanitizeUrl(settings.site_logo || '', { allowRelative: true, allowDataUrl: true })
     siteSubtitle.value = settings.site_subtitle || 'Subscription to API Conversion Platform'
   } catch (error) {
     console.error('Failed to load public settings:', error)
