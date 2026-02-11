@@ -232,7 +232,7 @@
       <section id="features" class="mx-auto max-w-7xl px-6 py-12 lg:py-16">
         <div class="mx-auto max-w-3xl text-center">
           <h2 class="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white sm:text-3xl">
-            {{ t('home.why.title') }}
+            {{ t('home.why.title', { siteName }) }}
           </h2>
           <p class="mt-2 text-sm leading-relaxed text-gray-600 dark:text-dark-400 sm:text-base">
             {{ t('home.why.subtitle') }}

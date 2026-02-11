@@ -84,7 +84,7 @@ export default {
       tip2: '建議先用短文本測試，確認通了再上復雜請求。'
     },
     why: {
-      title: '為什么選擇我們',
+      title: '為什麼選擇 {siteName}',
       subtitle: '對普通使用者和初級程式設計師更友好的幾個點。'
     },
     tags: {
@@ -458,6 +458,17 @@ export default {
         withSuffix: '{time} 后解除'
       }
     },
+    description: '描述',
+    username: '使用者名稱',
+    concurrency: '並行連線數',
+    allStatuses: '所有狀態',
+    totalItems: '共 {count} 項',
+    loadFailed: '載入失敗',
+    saveSuccess: '儲存成功',
+    saveFailed: '儲存失敗',
+    confirmDelete: '確認刪除',
+    deleting: '刪除中...',
+    leaveEmpty: '不變更則留空',
     reseller: '商戶'
   },
 
@@ -955,7 +966,9 @@ export default {
     viewUsage: '查看使用記錄',
     checkDetailedLogs: '查看詳細的使用日誌',
     redeemCode: '兌換碼',
-    addBalanceWithCode: '使用兌換碼儲值'
+    addBalanceWithCode: '使用兌換碼儲值',
+    totalRequests: '請求總數',
+    allTime: '全部期間'
   },
 
   // Groups (shared)
@@ -2053,6 +2066,19 @@ export default {
       syncCompleted: '同步完成：創建 {created}，更新 {updated}',
       syncCompletedWithErrors: '同步完成但有錯誤：失敗 {failed}（創建 {created}，更新 {updated}）',
       syncFailed: '同步失敗',
+      crsPreview: '預覽',
+      crsPreviewing: '預覽中...',
+      crsPreviewFailed: '預覽失敗',
+      crsExistingAccounts: '將自動更新的既有帳號',
+      crsNewAccounts: '新帳號（可選擇）',
+      crsSelectAll: '全選',
+      crsSelectNone: '全不選',
+      crsNoNewAccounts: '所有 CRS 帳號均已同步。',
+      crsWillUpdate: '將更新 {count} 個既有帳號。',
+      crsSelectedCount: '已選擇 {count} 個新帳號',
+      crsUpdateBehaviorNote:
+        '既有帳號僅同步 CRS 回傳的欄位，缺失欄位保持原值；憑證按鍵合併，不會清空未下發的鍵；未勾選「同步代理」時保留原有代理。',
+      crsBack: '返回',
       editAccount: '編輯帳號',
       deleteAccount: '刪除帳號',
       deleteConfirmMessage: "確定要刪除帳號 '{name}' 嗎？",
@@ -2133,6 +2159,9 @@ export default {
         googleOauth: 'Google OAuth',
         codeAssist: 'Code Assist',
         antigravityOauth: 'Antigravity OAuth',
+        antigravityApikey: '透過 Base URL + API Key 連接',
+        upstream: '對接上游',
+        upstreamDesc: '透過 Base URL + API Key 連接上游',
         api_key: 'API Key',
         cookie: 'Cookie'
       },
@@ -2424,6 +2453,18 @@ export default {
       pleaseEnterApiKey: '請輸入 API Key',
       apiKeyIsRequired: 'API Key 是必需的',
       leaveEmptyToKeep: '留空以保持當前金鑰',
+      mixedChannelWarningTitle: '混合頻道警告',
+      mixedChannelWarning:
+        '警告：群組「{groupName}」中同時包含 {currentPlatform} 和 {otherPlatform} 帳號。混合使用不同頻道可能導致 thinking block 簽章驗證問題，會自動回退到非 thinking 模式。確定要繼續嗎？',
+      // Upstream type
+      upstream: {
+        baseUrl: '上游 Base URL',
+        baseUrlHint: '上游 Antigravity 服務的地址，例如：https://cloudcode-pa.googleapis.com',
+        apiKey: '上游 API Key',
+        apiKeyHint: '上游服務的 API Key',
+        pleaseEnterBaseUrl: '請輸入上游 Base URL',
+        pleaseEnterApiKey: '請輸入上游 API Key'
+      },
       // OAuth flow
       oauth: {
         title: 'Claude 帳號授權',
@@ -2987,6 +3028,7 @@ export default {
         balance: '餘額',
         concurrency: '並行數',
         subscription: '訂閱',
+        invitation: '邀請碼',
         // 管理員在使用者管理頁面調整餘額/並行時產生的記錄
         admin_balance: '餘額（管理員）',
         admin_concurrency: '並行數（管理員）'
@@ -2995,6 +3037,8 @@ export default {
       balance: '餘額',
       concurrency: '並行數',
       subscription: '訂閱',
+      invitation: '邀請碼',
+      invitationHint: '邀請碼用於限制使用者註冊，使用後自動標記為已使用。',
       allTypes: '全部類型',
       allStatus: '全部状態',
       unused: '未使用',
@@ -3072,6 +3116,73 @@ export default {
       failedToGenerate: '生成兌換碼失敗',
       failedToUpdate: '更新兌換碼失敗',
       failedToDelete: '刪除兌換碼失敗'
+    },
+
+    // Announcements
+    announcements: {
+      title: '公告管理',
+      description: '建立公告並按條件投放',
+      createAnnouncement: '建立公告',
+      editAnnouncement: '編輯公告',
+      deleteAnnouncement: '刪除公告',
+      searchAnnouncements: '搜尋公告...',
+      status: '狀態',
+      allStatus: '全部狀態',
+      columns: {
+        title: '標題',
+        status: '狀態',
+        targeting: '展示條件',
+        timeRange: '有效期',
+        createdAt: '建立時間',
+        actions: '操作'
+      },
+      statusLabels: {
+        draft: '草稿',
+        active: '展示中',
+        archived: '已歸檔'
+      },
+      form: {
+        title: '標題',
+        content: '內容（支援 Markdown）',
+        status: '狀態',
+        startsAt: '開始時間',
+        endsAt: '結束時間',
+        startsAtHint: '留空表示立即生效',
+        endsAtHint: '留空表示永久生效',
+        targetingMode: '展示條件',
+        targetingAll: '所有使用者',
+        targetingCustom: '按條件',
+        addOrGroup: '新增 OR 條件組',
+        addAndCondition: '新增 AND 條件',
+        conditionType: '條件類型',
+        conditionSubscription: '訂閱方案',
+        conditionBalance: '餘額',
+        operator: '運算符',
+        balanceValue: '餘額閾值',
+        selectPackages: '選擇方案'
+      },
+      operators: {
+        gt: '>',
+        gte: '≥',
+        lt: '<',
+        lte: '≤',
+        eq: '='
+      },
+      targetingSummaryAll: '全部使用者',
+      targetingSummaryCustom: '自訂（{groups} 組）',
+      timeImmediate: '立即',
+      timeNever: '永久',
+      readStatus: '已讀情況',
+      eligible: '符合條件',
+      readAt: '已讀時間',
+      unread: '未讀',
+      searchUsers: '搜尋使用者...',
+      failedToLoad: '載入公告失敗',
+      failedToCreate: '建立公告失敗',
+      failedToUpdate: '更新公告失敗',
+      failedToDelete: '刪除公告失敗',
+      failedToLoadReadStatus: '載入已讀情況失敗',
+      deleteConfirm: '確定要刪除該公告嗎？此操作無法撤銷。'
     },
 
     // Promo Codes
@@ -3219,6 +3330,7 @@ export default {
       waiting: '等待',
       conns: '連接',
       queue: '隊列',
+      accountSwitches: '帳號切換',
       ok: '正常',
       lastRun: '最近運行',
       lastSuccess: '最近成功',
@@ -3268,6 +3380,7 @@ export default {
       failedToLoadData: '加載運維資料失敗',
       failedToLoadOverview: '加載概覽資料失敗',
       failedToLoadThroughputTrend: '加載吞吐趨勢失敗',
+      failedToLoadSwitchTrend: '載入平均帳號切換趨勢失敗',
       failedToLoadLatencyHistogram: '加載請求時長分布失敗',
       failedToLoadErrorTrend: '加載錯誤趨勢失敗',
       failedToLoadErrorDistribution: '加載錯誤分布失敗',
@@ -3276,9 +3389,11 @@ export default {
       tpsK: 'TPS（千）',
       top: '最高：',
       throughputTrend: '吞吐趨勢',
+      switchRateTrend: '平均帳號切換趨勢',
       latencyHistogram: '請求時長分布',
       errorTrend: '錯誤趨勢',
       errorDistribution: '錯誤分布',
+      switchRate: '平均帳號切換',
       // Health Score & Diagnosis
       health: '健康',
       healthCondition: '健康状況',
@@ -3850,7 +3965,9 @@ export default {
         ignoreContextCanceled: '忽略客戶端斷連錯誤',
         ignoreContextCanceledHint: '啟用後，客戶端主動斷開連接（context canceled）的錯誤將不會寫入錯誤日誌。',
         ignoreNoAvailableAccounts: '忽略無可用帳號錯誤',
-        ignoreNoAvailableAccountsHint: '啟用後，“No available accounts” 錯誤將不會寫入錯誤日誌（不推薦，這通常是配置問題）。',
+        ignoreNoAvailableAccountsHint: '啟用後，"No available accounts" 錯誤將不會寫入錯誤日誌（不推薦，這通常是配置問題）。',
+        ignoreInvalidApiKeyErrors: '忽略無效 API Key 錯誤',
+        ignoreInvalidApiKeyErrorsHint: '啟用後，無效或缺失 API Key 的錯誤（INVALID_API_KEY、API_KEY_REQUIRED）將不會寫入錯誤日誌。',
         autoRefresh: '自動刷新',
         enableAutoRefresh: '啟用自動刷新',
         enableAutoRefreshHint: '自動刷新仪表板資料，啟用后會定期拉取最新資料。',
@@ -3905,6 +4022,7 @@ export default {
       tooltips: {
         totalRequests: '當前時間窗口內的總請求數和Token消耗量。',
         throughputTrend: '當前窗口內的請求/QPS 與 token/TPS 趨勢。',
+        switchRateTrend: '近5小時內帳號切換次數 / 請求總數的趨勢（平均切換次數）。',
         latencyHistogram: '成功請求的請求時長分布（毫秒）。',
         errorTrend: '錯誤趨勢（SLA 口徑排除業務限制；上遊錯誤率排除 429/529）。',
         errorDistribution: '按状態碼統计的錯誤分布。',
@@ -3947,6 +4065,8 @@ export default {
         emailVerificationHint: '新使用者註冊時需要驗證郵箱',
         promoCode: '優惠碼',
         promoCodeHint: '允許使用者在註冊時使用優惠碼',
+        invitationCode: '邀請碼註冊',
+        invitationCodeHint: '開啟後，使用者註冊時需要填寫有效的邀請碼',
         passwordReset: '忘記密碼',
         passwordResetHint: '允許使用者通過郵箱重置密碼',
         totp: '雙因素認證 (2FA)',
@@ -4025,7 +4145,25 @@ export default {
         homeContent: '首頁內容',
         homeContentPlaceholder: '在此輸入首頁內容，支援 Markdown & HTML 代碼。如果輸入的是一個連結，則會使用該連結作為 iframe 的 src 屬性。',
         homeContentHint: '自定義首頁內容，支援 Markdown/HTML。如果輸入的是連結（以 http:// 或 https:// 開頭），則會使用該連結作為 iframe 的 src 屬性，這允許你設定任意網頁作為首頁。設定后首頁的状態資訊將不再顯示。',
-        homeContentIframeWarning: '⚠️ iframe 模式提示：部分網站設定了 X-Frame-Options 或 CSP 安全策略，禁止被嵌入到 iframe 中。如果頁面顯示空白或報錯，請確認目標網站允許被嵌入，或考慮使用 HTML 模式自行構建頁面內容。'
+        homeContentIframeWarning: '⚠️ iframe 模式提示：部分網站設定了 X-Frame-Options 或 CSP 安全策略，禁止被嵌入到 iframe 中。如果頁面顯示空白或報錯，請確認目標網站允許被嵌入，或考慮使用 HTML 模式自行構建頁面內容。',
+        hideCcsImportButton: '隱藏 CCS 匯入按鈕',
+        hideCcsImportButtonHint: '啟用後將在 API Keys 頁面隱藏「匯入 CCS」按鈕',
+        cryptoAddresses: '虛擬貨幣地址',
+        cryptoAddressesHint: '設定收款的虛擬貨幣地址，將展示在方案購買頁面',
+        addCryptoAddress: '新增地址',
+        chainName: '鏈名稱',
+        walletAddress: '錢包地址'
+      },
+      purchase: {
+        title: '購買訂閱頁面',
+        description: '在側邊欄展示「購買訂閱」入口，並在頁面內透過 iframe 開啟指定連結',
+        enabled: '顯示購買訂閱入口',
+        enabledHint: '僅在標準模式（非簡單模式）下展示',
+        url: '購買頁面 URL',
+        urlPlaceholder: 'https://example.com/purchase',
+        urlHint: '必須是完整的 http(s) 連結',
+        iframeWarning:
+          '⚠️ iframe 提示：部分網站會透過 X-Frame-Options 或 CSP（frame-ancestors）禁止被 iframe 嵌入，出現空白時可引導使用者使用「新視窗開啟」。'
       },
       smtp: {
         title: 'SMTP 設定',
@@ -4170,6 +4308,83 @@ export default {
       failedToSave: '儲存設定失敗',
       failedToTestSmtp: 'SMTP 連接測試失敗',
       failedToSendTestEmail: '發送測試郵件失敗'
+    },
+
+    // Error Passthrough Rules
+    errorPassthrough: {
+      title: '錯誤透傳規則',
+      description: '設定上游錯誤如何回傳給客戶端',
+      createRule: '建立規則',
+      editRule: '編輯規則',
+      deleteRule: '刪除規則',
+      noRules: '暫無規則',
+      createFirstRule: '建立第一條錯誤透傳規則',
+      allPlatforms: '所有平台',
+      passthrough: '透傳',
+      custom: '自訂',
+      code: '狀態碼',
+      body: '訊息體',
+      skipMonitoring: '跳過監控',
+
+      // Columns
+      columns: {
+        priority: '優先順序',
+        name: '名稱',
+        conditions: '匹配條件',
+        platforms: '平台',
+        behavior: '回應行為',
+        status: '狀態',
+        actions: '操作'
+      },
+
+      // Match Mode
+      matchMode: {
+        any: '錯誤碼 或 關鍵字',
+        all: '錯誤碼 且 關鍵字',
+        anyHint: '狀態碼匹配任一錯誤碼，或訊息包含任一關鍵字',
+        allHint: '狀態碼匹配任一錯誤碼，且訊息包含任一關鍵字'
+      },
+
+      // Form
+      form: {
+        name: '規則名稱',
+        namePlaceholder: '例如：上下文超限透傳',
+        priority: '優先順序',
+        priorityHint: '數值越小優先順序越高，優先匹配',
+        description: '規則描述',
+        descriptionPlaceholder: '描述此規則的用途...',
+        matchConditions: '匹配條件',
+        errorCodes: '錯誤碼',
+        errorCodesPlaceholder: '422, 400, 429',
+        errorCodesHint: '多個錯誤碼用逗號分隔',
+        keywords: '關鍵字',
+        keywordsPlaceholder: '每行一個關鍵字\ncontext limit\nmodel not supported',
+        keywordsHint: '每行一個關鍵字，不區分大小寫',
+        matchMode: '匹配模式',
+        platforms: '適用平台',
+        platformsHint: '不選擇表示適用於所有平台',
+        responseBehavior: '回應行為',
+        passthroughCode: '透傳上游狀態碼',
+        responseCode: '自訂狀態碼',
+        passthroughBody: '透傳上游錯誤訊息',
+        customMessage: '自訂錯誤訊息',
+        customMessagePlaceholder: '回傳給客戶端的錯誤訊息...',
+        skipMonitoring: '跳過運維監控記錄',
+        skipMonitoringHint: '開啟後，匹配此規則的錯誤不會被記錄到運維監控中',
+        enabled: '啟用此規則'
+      },
+
+      // Messages
+      nameRequired: '請輸入規則名稱',
+      conditionsRequired: '請至少設定一個錯誤碼或關鍵字',
+      ruleCreated: '規則建立成功',
+      ruleUpdated: '規則更新成功',
+      ruleDeleted: '規則刪除成功',
+      deleteConfirm: '確定要刪除規則「{name}」嗎？',
+      failedToLoad: '載入規則失敗',
+      failedToSave: '儲存規則失敗',
+      failedToDelete: '刪除規則失敗',
+      failedToToggle: '切換狀態失敗'
     }
   },
 
@@ -4245,7 +4460,12 @@ export default {
     expiresOn: '{date} 到期',
     resetIn: '{time} 后重置',
     windowNotActive: '等待首次使用',
-    usageOf: '已用 {used} / {limit}'
+    usageOf: '已用 {used} / {limit}',
+    remaining: '剩餘',
+    usedOfTotal: '已用 ${used} / 總計 ${total}（{cycles} 個週期）',
+    renew: '續費',
+    renewPrice: '續費：¥{price} / {days} 天',
+    renewError: '續費失敗，請重試'
   },
 
   // Plans (user purchase page)
@@ -4269,6 +4489,7 @@ export default {
     pricePerDollar: '僅 ¥{price}/刀',
     estimatedUsage: '约可調用 {count} 次（混合使用）',
     estimatedTokens: '约 {tokens} tokens',
+    buyOnTaobao: '前往淘寶購買',
     paygo: {
       title: 'PayGo 按量付費',
       description: '隨充隨用，靈活便捷',
@@ -4358,7 +4579,8 @@ export default {
     noOrders: '暫无儲值記錄',
     noOrdersDesc: '您還沒有儲值過',
     failedToLoad: '加載儲值記錄失敗',
-    repayFailed: '獲取支付連結失敗'
+    repayFailed: '獲取支付連結失敗',
+    paymentClosedHint: '線上付款暫未開放，請聯繫客服充值。'
   },
 
   // User Orders
@@ -4405,14 +4627,14 @@ export default {
     // Admin tour steps
     admin: {
       welcome: {
-        title: '👋 歡迎使用 Sub2API',
-        description: '<div style="line-height: 1.8;"><p style="margin-bottom: 16px;">Sub2API 是一個強大的 AI 服務中轉平台，讓您輕松管理和分發 AI 服務。</p><p style="margin-bottom: 12px;"><b>🎯 核心功能：</b></p><ul style="margin-left: 20px; margin-bottom: 16px;"><li>📦 <b>群組管理</b> - 創建不同的服務方案（VIP、免費試用等）</li><li>🔗 <b>帳號池</b> - 連接多個上遊 AI 服務商帳號</li><li>🔑 <b>金鑰分發</b> - 為使用者生成獨立的 API Key</li><li>💰 <b>計費管理</b> - 靈活的費率和配額控制</li></ul><p style="color: #10b981; font-weight: 600;">接下來，我們將用 3 分鐘帶您完成首次配置 →</p></div>',
+        title: '👋 歡迎使用 {siteName}',
+        description: '<div style="line-height: 1.8;"><p style="margin-bottom: 16px;">{siteName} 是一個強大的 AI 服務中轉平台，讓您輕松管理和分發 AI 服務。</p><p style="margin-bottom: 12px;"><b>🎯 核心功能：</b></p><ul style="margin-left: 20px; margin-bottom: 16px;"><li>📦 <b>群組管理</b> - 創建不同的服務方案（VIP、免費試用等）</li><li>🔗 <b>帳號池</b> - 連接多個上遊 AI 服務商帳號</li><li>🔑 <b>金鑰分發</b> - 為使用者生成獨立的 API Key</li><li>💰 <b>計費管理</b> - 靈活的費率和配額控制</li></ul><p style="color: #10b981; font-weight: 600;">接下來，我們將用 3 分鐘帶您完成首次配置 →</p></div>',
         nextBtn: '開始配置 🚀',
         prevBtn: '跳過'
       },
       groupManage: {
         title: '📦 第一步：群組管理',
-        description: '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;"><b>什么是群組？</b></p><p style="margin-bottom: 12px;">群組是 Sub2API 的核心概念，它就像一個"服務方案"：</p><ul style="margin-left: 20px; margin-bottom: 12px; font-size: 13px;"><li>🎯 每個群組可以包含多個上遊帳號</li><li>💰 每個群組有獨立的計費倍率</li><li>👥 可以設定為公開或專屬群組</li></ul><p style="margin-top: 12px; padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px;"><b>💡 示例：</b>您可以創建"VIP專線"（高倍率）和"免費試用"（低倍率）两個群組</p><p style="margin-top: 16px; color: #10b981; font-weight: 600;">👉 點擊左側的"群組管理"開始</p></div>'
+        description: '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;"><b>什么是群組？</b></p><p style="margin-bottom: 12px;">群組是 {siteName} 的核心概念，它就像一個"服務方案"：</p><ul style="margin-left: 20px; margin-bottom: 12px; font-size: 13px;"><li>🎯 每個群組可以包含多個上遊帳號</li><li>💰 每個群組有獨立的計費倍率</li><li>👥 可以設定為公開或專屬群組</li></ul><p style="margin-top: 12px; padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px;"><b>💡 示例：</b>您可以創建"VIP專線"（高倍率）和"免費試用"（低倍率）两個群組</p><p style="margin-top: 16px; color: #10b981; font-weight: 600;">👉 點擊左側的"群組管理"開始</p></div>'
       },
       createGroup: {
         title: '➕ 創建新群組',
@@ -4505,8 +4727,8 @@ export default {
     // User tour steps
     user: {
       welcome: {
-        title: '👋 歡迎使用 Sub2API',
-        description: '<div style="line-height: 1.8;"><p style="margin-bottom: 16px;">您好！歡迎來到 Sub2API AI 服務平台。</p><p style="margin-bottom: 12px;"><b>🎯 快速開始：</b></p><ul style="margin-left: 20px; margin-bottom: 16px;"><li>🔑 創建 API 金鑰</li><li>📋 複製金鑰到您的應用</li><li>🚀 開始使用 AI 服務</li></ul><p style="color: #10b981; font-weight: 600;">只需 1 分鐘，讓我們開始吧 →</p></div>',
+        title: '👋 歡迎使用 {siteName}',
+        description: '<div style="line-height: 1.8;"><p style="margin-bottom: 16px;">您好！歡迎來到 {siteName} AI 服務平台。</p><p style="margin-bottom: 12px;"><b>🎯 快速開始：</b></p><ul style="margin-left: 20px; margin-bottom: 16px;"><li>🔑 創建 API 金鑰</li><li>📋 複製金鑰到您的應用</li><li>🚀 開始使用 AI 服務</li></ul><p style="color: #10b981; font-weight: 600;">只需 1 分鐘，讓我們開始吧 →</p></div>',
         nextBtn: '開始 🚀',
         prevBtn: '跳過'
       },
@@ -4606,6 +4828,55 @@ export default {
     language: '語言'
   },
 
+  // Purchase
+  purchase: {
+    title: '購買訂閱',
+    description: '透過嵌入頁面購買訂閱方案',
+    openInNewTab: '在新分頁中開啟',
+    notEnabledTitle: '功能未啟用',
+    notEnabledDesc: '管理員尚未啟用購買頁面，請聯繫管理員。',
+    notConfiguredTitle: '購買連結未設定',
+    notConfiguredDesc: '管理員已啟用入口但尚未設定購買連結，請聯繫管理員。',
+  },
+
+  // Announcements (user-facing)
+  announcements: {
+    title: '公告',
+    description: '查看系統公告',
+    unreadOnly: '僅顯示未讀',
+    markRead: '標記為已讀',
+    markAllRead: '全部標記為已讀',
+    viewAll: '查看所有公告',
+    markedAsRead: '已標記為已讀',
+    allMarkedAsRead: '所有公告已標記為已讀',
+    newCount: '{count} 則新公告',
+    readAt: '閱讀時間',
+    read: '已讀',
+    unread: '未讀',
+    startsAt: '開始時間',
+    endsAt: '結束時間',
+    empty: '暫無公告',
+    emptyUnread: '沒有未讀的公告',
+    total: '則公告',
+    emptyDescription: '目前沒有系統公告',
+    readStatus: '您已閱讀此公告',
+    markReadHint: '點擊「標記為已讀」來標記此公告',
+  },
+
+  // Payment
+  payment: {
+    scanToPay: '掃碼付款',
+    transferToPay: '轉帳付款',
+    qrCodeAlt: '付款 QR Code',
+    amountToPay: '付款金額',
+    businessQrInstruction: '請使用支付寶掃描上方 QR Code 完成付款',
+    transferInstruction: '請透過支付寶轉帳至指定帳戶，務必填寫以下備註',
+    transferMemo: '轉帳備註',
+    openAlipay: '開啟支付寶',
+    waitingForPayment: '等待付款中...',
+    paymentSuccess: '付款成功',
+  },
+
   // Reseller
   reseller: {
     dashboard: {
@@ -4653,7 +4924,11 @@ export default {
       updateSuccess: '金鑰更新成功',
       deleteSuccess: '金鑰已刪除',
       resetSuccess: '配額重置成功',
-      keyCopied: '金鑰已複製'
+      keyCopied: '金鑰已複製',
+      expiresInDaysHint: '（依方案自動填入）',
+      expiresInDaysPlaceholder: '0 = 永不過期',
+      quotaHint: '（依方案自動填入）',
+      quotaPlaceholder: '0 = 無限制'
     },
     domains: {
       title: '自訂網域',
@@ -4682,6 +4957,9 @@ export default {
       deleteSuccess: '網域已刪除',
       deleteConfirm: '確定要刪除網域 {domain} 嗎？',
       empty: '暫無自訂網域',
+      dnsType: '類型',
+      dnsHost: 'HOST',
+      dnsValue: 'VALUE',
       subtitle: 'Subtitle',
       homeContent: 'Home Content',
       homeContentPlaceholder: 'Supports HTML',

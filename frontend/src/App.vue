@@ -66,7 +66,7 @@ function updateSeo() {
   const description = descriptionKey ? t(descriptionKey, { siteName, siteSubtitle }) : siteSubtitle
 
   const keywordsKey = typeof meta.keywordsKey === 'string' ? meta.keywordsKey : ''
-  const keywords = keywordsKey ? t(keywordsKey) : ''
+  const keywords = keywordsKey ? t(keywordsKey, { siteName }) : ''
 
   const canonicalUrl = `${window.location.origin}${route.path}`
   const logoUrl = appStore.cachedPublicSettings?.site_logo || appStore.siteLogo || '/logo.png?v=2'

@@ -12,7 +12,7 @@
             class="h-8 w-8 rounded-lg object-contain"
           />
           <h1 class="text-xl font-bold text-gray-900 dark:text-white">
-            {{ appStore.siteName || 'Sub2API' }}
+            {{ appStore.cachedPublicSettings?.site_name || appStore.siteName || '' }}
           </h1>
         </div>
         <!-- Language Switcher -->

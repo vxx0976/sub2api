@@ -84,7 +84,7 @@ export default {
       tip2: '먼저 짧은 텍스트로 테스트한 후 연결이 확인되면 복잡한 요청을 보내는 것을 권장합니다.'
     },
     why: {
-      title: '왜 저희를 선택해야 할까요',
+      title: '{siteName}을 선택하는 이유',
       subtitle: '일반 사용자와 초급 개발자에게 더 친화적인 포인트.'
     },
     tags: {
@@ -458,7 +458,18 @@ export default {
         withSuffix: '{time} 후 해제'
       }
     },
-    reseller: '판매자'
+    reseller: '판매자',
+    description: '설명',
+    username: '사용자명',
+    concurrency: '동시 접속 수',
+    allStatuses: '전체 상태',
+    totalItems: '총 {count}건',
+    loadFailed: '불러오기에 실패했습니다',
+    saveSuccess: '저장되었습니다',
+    saveFailed: '저장에 실패했습니다',
+    confirmDelete: '삭제 확인',
+    deleting: '삭제 중...',
+    leaveEmpty: '변경하지 않으려면 비워두세요'
   },
 
   // Navigation
@@ -955,7 +966,9 @@ export default {
     viewUsage: '사용 기록 보기',
     checkDetailedLogs: '상세 사용 로그 보기',
     redeemCode: '교환 코드',
-    addBalanceWithCode: '교환 코드로 충전'
+    addBalanceWithCode: '교환 코드로 충전',
+    totalRequests: '총 요청 수',
+    allTime: '전체 기간'
   },
 
   // Groups (shared)
@@ -1007,6 +1020,7 @@ export default {
     usage: '사용량',
     today: '오늘',
     total: '누적',
+    quota: '쿼터',
     useKey: '키 사용',
     useKeyModal: {
       title: 'API 키 사용',
@@ -1655,7 +1669,18 @@ export default {
         failedToReorder: '정렬 업데이트에 실패했습니다',
         keyExists: '속성 키가 이미 존재합니다',
         dragToReorder: '드래그하여 정렬'
-      }
+      },
+      balanceHistoryTip: '충전 기록을 열려면 클릭하세요',
+      noBalanceHistory: '이 사용자의 기록이 없습니다',
+      allTypes: '전체 유형',
+      typeBalance: '잔액 (교환)',
+      typeAdminBalance: '잔액 (관리자)',
+      typeConcurrency: '동시 접속 수 (교환)',
+      typeAdminConcurrency: '동시 접속 수 (관리자)',
+      typeSubscription: '구독',
+      failedToLoadBalanceHistory: '잔액 변동 기록 로드에 실패했습니다',
+      createdAt: '생성 시간',
+      totalRecharged: '총 충전 금액'
     },
 
     // Groups Management
@@ -1829,7 +1854,10 @@ export default {
         isRecommended: '추천 요금제',
         isRecommendedHint: '요금제 페이지에 추천 표시',
         resellerTemplate: '판매자 템플릿',
-        resellerTemplateHint: '활성화하면 판매자가 이 플랜을 사용자 템플릿으로 사용할 수 있습니다'
+        resellerTemplateHint: '활성화하면 판매자가 이 플랜을 사용자 템플릿으로 사용할 수 있습니다',
+        externalBuyUrl: '외부 구매 URL',
+        externalBuyUrlPlaceholder: 'https://item.taobao.com/item.htm?id=...',
+        externalBuyUrlHint: '선택 사항. 설정하면 사용자가 외부 플랫폼에서 구매할 수 있습니다'
       },
       planPreview: {
         title: '요금제 미리보기',
@@ -1838,6 +1866,34 @@ export default {
         noPlansDesc: '먼저 구독 유형의 그룹을 생성하고 구매 기능을 활성화해 주세요.',
         notPurchasable: '구매 불가',
         previewOnly: '미리보기 전용'
+      },
+      noAccounts: '계정 없음',
+      invalidRequestFallback: {
+        title: '잘못된 요청 대체 그룹',
+        hint: '업스트림에서 프롬프트 초과를 명시적으로 반환할 때만 트리거됩니다. 비워두면 기본 오류를 반환합니다.',
+        noFallback: '대체 없음'
+      },
+      copyAccounts: {
+        title: '그룹에서 계정 복사',
+        tooltip: '같은 플랫폼의 그룹을 하나 이상 선택하세요. 생성 후 선택한 그룹의 모든 계정이 이 그룹으로 복사됩니다.',
+        tooltipEdit: '같은 플랫폼의 그룹을 하나 이상 선택하세요. 저장 후 현재 그룹의 계정 바인딩이 교체됩니다.',
+        selectPlaceholder: '계정을 복사할 그룹 선택...',
+        hint: '여러 그룹을 선택할 수 있으며, 계정은 중복 제거됩니다',
+        hintEdit: '경고: 기존의 모든 계정 바인딩이 교체됩니다'
+      },
+      mcpXml: {
+        title: 'MCP XML 프로토콜 주입',
+        tooltip: '활성화하면 요청에 MCP 도구가 포함된 경우 XML 형식의 호출 프로토콜 프롬프트가 추가됩니다.',
+        enabled: '활성화',
+        disabled: '비활성화'
+      },
+      supportedScopes: {
+        title: '지원 모델 제품군',
+        tooltip: '이 그룹이 지원하는 모델 제품군을 선택합니다. 선택하지 않은 제품군은 이 그룹으로 라우팅되지 않습니다.',
+        claude: 'Claude',
+        geminiText: 'Gemini 텍스트',
+        geminiImage: 'Gemini 이미지',
+        hint: '최소 하나의 모델 제품군을 선택하세요'
       }
     },
 
@@ -2107,7 +2163,10 @@ export default {
         codeAssist: 'Code Assist',
         antigravityOauth: 'Antigravity OAuth',
         api_key: 'API Key',
-        cookie: 'Cookie'
+        cookie: 'Cookie',
+        antigravityApikey: 'Base URL + API Key로 연결',
+        upstream: '업스트림',
+        upstreamDesc: 'Base URL + API Key로 연결'
       },
       status: {
         active: '정상',
@@ -2715,6 +2774,28 @@ export default {
         todayCost: '오늘 비용',
         usageTrend: '30일 비용 및 요청 추세',
         noData: '이 계정에는 사용 데이터가 없습니다'
+      },
+      crsPreview: '미리보기',
+      crsPreviewing: '미리보기 중...',
+      crsPreviewFailed: '미리보기 실패',
+      crsExistingAccounts: '기존 계정 (업데이트됩니다)',
+      crsNewAccounts: '새 계정 (동기화 선택)',
+      crsSelectAll: '전체 선택',
+      crsSelectNone: '선택 해제',
+      crsNoNewAccounts: '모든 CRS 계정이 이미 동기화되어 있습니다.',
+      crsWillUpdate: '{count}개의 기존 계정이 업데이트됩니다.',
+      crsSelectedCount: '{count}개의 새 계정이 선택됨',
+      crsUpdateBehaviorNote: '기존 계정은 CRS에서 반환한 필드만 동기화되며, 누락된 필드는 현재 값을 유지합니다.',
+      crsBack: '뒤로',
+      mixedChannelWarningTitle: '혼합 채널 경고',
+      mixedChannelWarning: '경고: 그룹 "{groupName}"에 {currentPlatform}과(와) {otherPlatform} 채널이 모두 포함되어 있습니다.',
+      upstream: {
+        baseUrl: '업스트림 Base URL',
+        baseUrlHint: '업스트림 Antigravity 서비스 주소, 예: https://cloudcode-pa.googleapis.com',
+        apiKey: '업스트림 API Key',
+        apiKeyHint: '업스트림 서비스의 API Key',
+        pleaseEnterBaseUrl: '업스트림 Base URL을 입력하세요',
+        pleaseEnterApiKey: '업스트림 API Key를 입력하세요'
       }
     },
 
@@ -2962,7 +3043,8 @@ export default {
         subscription: '구독',
         // 管理员在用户管理页面调整余额/并发时产生的记录
         admin_balance: '잔액 (관리자)',
-        admin_concurrency: '동시 접속 수 (관리자)'
+        admin_concurrency: '동시 접속 수 (관리자)',
+        invitation: '초대'
       },
       // 用于选择器和筛选器的直接键
       balance: '잔액',
@@ -3044,7 +3126,9 @@ export default {
       failedToLoad: '교환 코드 목록 로드 실패',
       failedToGenerate: '교환 코드 생성 실패',
       failedToUpdate: '교환 코드 업데이트 실패',
-      failedToDelete: '교환 코드 삭제 실패'
+      failedToDelete: '교환 코드 삭제 실패',
+      invitation: '초대',
+      invitationHint: '초대 코드는 사용자 등록을 제한하는 데 사용됩니다. 등록 시 자동으로 사용됩니다.'
     },
 
     // Promo Codes
@@ -3104,6 +3188,73 @@ export default {
       failedToUpdate: '프로모션 코드 업데이트 실패',
       failedToDelete: '프로모션 코드 삭제 실패',
       failedToLoadUsages: '사용 기록 로드 실패'
+    },
+
+    // Announcements
+    announcements: {
+      title: '공지사항 관리',
+      description: '공지사항을 생성하고 조건별로 대상 지정',
+      createAnnouncement: '공지사항 생성',
+      editAnnouncement: '공지사항 편집',
+      deleteAnnouncement: '공지사항 삭제',
+      searchAnnouncements: '공지사항 검색...',
+      status: '상태',
+      allStatus: '전체 상태',
+      columns: {
+        title: '제목',
+        status: '상태',
+        targeting: '대상',
+        timeRange: '일정',
+        createdAt: '생성 시간',
+        actions: '작업'
+      },
+      statusLabels: {
+        draft: '초안',
+        active: '활성',
+        archived: '보관됨'
+      },
+      form: {
+        title: '제목',
+        content: '내용 (Markdown 지원)',
+        status: '상태',
+        startsAt: '시작 시간',
+        endsAt: '종료 시간',
+        startsAtHint: '비워두면 즉시 시작됩니다',
+        endsAtHint: '비워두면 만료되지 않습니다',
+        targetingMode: '대상 설정',
+        targetingAll: '전체 사용자',
+        targetingCustom: '사용자 지정 규칙',
+        addOrGroup: 'OR 그룹 추가',
+        addAndCondition: 'AND 조건 추가',
+        conditionType: '조건 유형',
+        conditionSubscription: '구독',
+        conditionBalance: '잔액',
+        operator: '연산자',
+        balanceValue: '잔액 기준값',
+        selectPackages: '패키지 선택'
+      },
+      operators: {
+        gt: '>',
+        gte: '\u2265',
+        lt: '<',
+        lte: '\u2264',
+        eq: '='
+      },
+      targetingSummaryAll: '전체 사용자',
+      targetingSummaryCustom: '사용자 지정 ({groups}개 그룹)',
+      timeImmediate: '즉시',
+      timeNever: '없음',
+      readStatus: '읽음 상태',
+      eligible: '대상',
+      readAt: '읽은 시간',
+      unread: '읽지 않음',
+      searchUsers: '사용자 검색...',
+      failedToLoad: '공지사항 로드에 실패했습니다',
+      failedToCreate: '공지사항 생성에 실패했습니다',
+      failedToUpdate: '공지사항 업데이트에 실패했습니다',
+      failedToDelete: '공지사항 삭제에 실패했습니다',
+      failedToLoadReadStatus: '읽음 상태 로드에 실패했습니다',
+      deleteConfirm: '이 공지사항을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.'
     },
 
     // Usage Records
@@ -3776,6 +3927,10 @@ export default {
           accountHealthThresholdRange: '계정 상태 오류율 임계값은 0에서 100 사이여야 합니다'
         }
       },
+      accountSwitches: '계정 전환 횟수',
+      failedToLoadSwitchTrend: '평균 계정 전환 추세 로드 실패',
+      switchRateTrend: '평균 계정 전환',
+      switchRate: '평균 전환',
       settings: {
         title: '운영 모니터링 설정',
         loadFailed: '설정 로드 실패',
@@ -3824,6 +3979,8 @@ export default {
         ignoreContextCanceledHint: '활성화하면 클라이언트가 주동적으로 연결을 해제한 (context canceled) 오류가 오류 로그에 기록되지 않습니다.',
         ignoreNoAvailableAccounts: '가용 계정 없음 오류 무시',
         ignoreNoAvailableAccountsHint: '활성화하면 "No available accounts" 오류가 오류 로그에 기록되지 않습니다 (권장하지 않음, 일반적으로 설정 문제입니다).',
+        ignoreInvalidApiKeyErrors: '잘못된 API 키 오류 무시',
+        ignoreInvalidApiKeyErrorsHint: '활성화하면 잘못되거나 누락된 API 키 오류 (INVALID_API_KEY, API_KEY_REQUIRED)가 모니터링에서 제외됩니다.',
         autoRefresh: '자동 새로고침',
         enableAutoRefresh: '자동 새로고침 활성화',
         enableAutoRefreshHint: '대시보드 데이터 자동 새로고침, 활성화하면 주기적으로 최신 데이터를 가져옵니다.',
@@ -3895,7 +4052,8 @@ export default {
         errors: '오류 통계, 총 오류 수, 오류율 및 업스트림 오류율을 포함합니다.',
         latency: '요청 소요 시간 통계, p50, p90, p95, p99 등 백분위수를 포함합니다.',
         ttft: '첫 Token 지연 시간 (Time To First Token), 스트리밍 응답의 첫 Token 반환 속도를 측정합니다.',
-        health: '시스템 상태 점수 (0-100), SLA, 오류율 및 리소스 사용 상황을 종합적으로 고려합니다.'
+        health: '시스템 상태 점수 (0-100), SLA, 오류율 및 리소스 사용 상황을 종합적으로 고려합니다.',
+        switchRateTrend: '최근 5시간 동안의 계정 전환 / 총 요청 추세 (평균 전환). 값이 높으면 재시도/전환이 잦을 수 있습니다.'
       },
       charts: {
         emptyRequest: '이 시간 기간 내 요청이 없습니다.',
@@ -3925,7 +4083,9 @@ export default {
         totp: '이중 인증 (2FA)',
         totpHint: '사용자가 Google Authenticator 등의 앱으로 2차 인증을 할 수 있습니다',
         totpKeyNotConfigured:
-          '请先在环境变量中配置 TOTP_ENCRYPTION_KEY。使用命令 openssl rand -hex 32 生成密钥。'
+          '请先在环境变量中配置 TOTP_ENCRYPTION_KEY。使用命令 openssl rand -hex 32 生成密钥。',
+        invitationCode: '초대 코드 가입',
+        invitationCodeHint: '활성화하면 사용자가 가입 시 유효한 초대 코드를 입력해야 합니다'
       },
       turnstile: {
         title: 'Cloudflare Turnstile',
@@ -3998,7 +4158,14 @@ export default {
         homeContent: '홈페이지 콘텐츠',
         homeContentPlaceholder: '여기에 홈페이지 콘텐츠를 입력하세요. Markdown & HTML 코드를 지원합니다. 링크를 입력하면 해당 링크가 iframe의 src 속성으로 사용됩니다.',
         homeContentHint: '홈페이지 콘텐츠를 커스터마이징하며, Markdown/HTML을 지원합니다. 링크를 입력하면 (http:// 또는 https://로 시작) 해당 링크가 iframe의 src 속성으로 사용되어, 임의의 웹페이지를 홈페이지로 설정할 수 있습니다. 설정 후 홈페이지의 상태 정보는 더 이상 표시되지 않습니다.',
-        homeContentIframeWarning: '⚠️ iframe 모드 안내: 일부 웹사이트는 X-Frame-Options 또는 CSP 보안 정책을 설정하여 iframe에 삽입되는 것을 금지합니다. 페이지가 빈 화면으로 표시되거나 오류가 발생하면 대상 웹사이트가 삽입을 허용하는지 확인하거나 HTML 모드로 페이지 콘텐츠를 직접 구성하는 것을 고려하세요.'
+        homeContentIframeWarning: '⚠️ iframe 모드 안내: 일부 웹사이트는 X-Frame-Options 또는 CSP 보안 정책을 설정하여 iframe에 삽입되는 것을 금지합니다. 페이지가 빈 화면으로 표시되거나 오류가 발생하면 대상 웹사이트가 삽입을 허용하는지 확인하거나 HTML 모드로 페이지 콘텐츠를 직접 구성하는 것을 고려하세요.',
+        hideCcsImportButton: 'CCS 가져오기 버튼 숨기기',
+        hideCcsImportButtonHint: '활성화하면 API Keys 페이지에서 "CCS 가져오기" 버튼이 숨겨집니다',
+        cryptoAddresses: '암호화폐 주소',
+        cryptoAddressesHint: '암호화폐 수신 주소를 설정하며, 요금제 페이지에 표시됩니다',
+        addCryptoAddress: '주소 추가',
+        chainName: '체인',
+        walletAddress: '주소'
       },
       smtp: {
         title: 'SMTP 설정',
@@ -4142,7 +4309,86 @@ export default {
       failedToLoad: '설정 로드 실패',
       failedToSave: '설정 저장 실패',
       failedToTestSmtp: 'SMTP 연결 테스트 실패',
-      failedToSendTestEmail: '테스트 이메일 전송 실패'
+      failedToSendTestEmail: '테스트 이메일 전송 실패',
+      purchase: {
+        title: '구매 페이지',
+        description: '사이드바에 "구독 구매" 항목을 표시하고 설정된 URL을 iframe으로 엽니다.',
+        enabled: '구매 항목 표시',
+        enabledHint: '표준 모드에서만 표시됩니다 (단순 모드 제외)',
+        url: '구매 URL',
+        urlPlaceholder: 'https://example.com/purchase',
+        urlHint: '절대 http(s) URL이어야 합니다',
+        iframeWarning: '⚠️ iframe 안내: 일부 웹사이트는 X-Frame-Options 또는 CSP (frame-ancestors)를 통해 임베딩을 차단합니다.'
+      }
+    },
+
+    // Error Passthrough Rules
+    errorPassthrough: {
+      title: '오류 패스스루 규칙',
+      description: '업스트림 오류가 클라이언트에 반환되는 방식을 설정합니다',
+      createRule: '규칙 생성',
+      editRule: '규칙 편집',
+      deleteRule: '규칙 삭제',
+      noRules: '설정된 규칙 없음',
+      createFirstRule: '첫 번째 오류 패스스루 규칙을 생성하세요',
+      allPlatforms: '전체 플랫폼',
+      passthrough: '패스스루',
+      custom: '사용자 지정',
+      code: '코드',
+      body: '본문',
+      skipMonitoring: '모니터링 건너뛰기',
+      columns: {
+        priority: '우선순위',
+        name: '이름',
+        conditions: '조건',
+        platforms: '플랫폼',
+        behavior: '동작',
+        status: '상태',
+        actions: '작업'
+      },
+      matchMode: {
+        any: '코드 OR 키워드',
+        all: '코드 AND 키워드',
+        anyHint: '상태 코드가 오류 코드 중 하나와 일치하거나, 메시지가 키워드 중 하나를 포함',
+        allHint: '상태 코드가 오류 코드 중 하나와 일치하고, 메시지가 키워드 중 하나를 포함'
+      },
+      form: {
+        name: '규칙 이름',
+        namePlaceholder: '예: 컨텍스트 제한 패스스루',
+        priority: '우선순위',
+        priorityHint: '값이 작을수록 우선순위가 높습니다',
+        description: '설명',
+        descriptionPlaceholder: '이 규칙의 목적을 설명하세요...',
+        matchConditions: '매칭 조건',
+        errorCodes: '오류 코드',
+        errorCodesPlaceholder: '422, 400, 429',
+        errorCodesHint: '여러 코드는 쉼표로 구분',
+        keywords: '키워드',
+        keywordsPlaceholder: '한 줄에 하나의 키워드\ncontext limit\nmodel not supported',
+        keywordsHint: '한 줄에 하나의 키워드, 대소문자 구분 없음',
+        matchMode: '매칭 모드',
+        platforms: '플랫폼',
+        platformsHint: '비워두면 전체 플랫폼에 적용',
+        responseBehavior: '응답 동작',
+        passthroughCode: '업스트림 상태 코드 패스스루',
+        responseCode: '사용자 지정 상태 코드',
+        passthroughBody: '업스트림 오류 메시지 패스스루',
+        customMessage: '사용자 지정 오류 메시지',
+        customMessagePlaceholder: '클라이언트에 반환할 오류 메시지...',
+        skipMonitoring: '모니터링 건너뛰기',
+        skipMonitoringHint: '활성화하면 이 규칙에 매칭되는 오류가 운영 모니터링에 기록되지 않습니다',
+        enabled: '이 규칙 활성화'
+      },
+      nameRequired: '규칙 이름을 입력하세요',
+      conditionsRequired: '오류 코드 또는 키워드를 최소 하나 설정하세요',
+      ruleCreated: '규칙이 성공적으로 생성되었습니다',
+      ruleUpdated: '규칙이 성공적으로 업데이트되었습니다',
+      ruleDeleted: '규칙이 성공적으로 삭제되었습니다',
+      deleteConfirm: '규칙 "{name}"을(를) 삭제하시겠습니까?',
+      failedToLoad: '규칙 로드에 실패했습니다',
+      failedToSave: '규칙 저장에 실패했습니다',
+      failedToDelete: '규칙 삭제에 실패했습니다',
+      failedToToggle: '상태 전환에 실패했습니다'
     }
   },
 
@@ -4218,7 +4464,47 @@ export default {
     expiresOn: '{date} 만료',
     resetIn: '{time} 후 초기화',
     windowNotActive: '첫 사용 대기 중',
-    usageOf: '사용 {used} / {limit}'
+    usageOf: '사용 {used} / {limit}',
+    remaining: '남은 기간',
+    usedOfTotal: '사용 ${used} / 전체 ${total} ({cycles} 주기)',
+    renew: '갱신',
+    renewPrice: '갱신: ¥{price} / {days}일',
+    renewError: '갱신에 실패했습니다. 다시 시도해 주세요'
+  },
+
+  // Purchase Subscription Page
+  purchase: {
+    title: '구독 구매',
+    description: '임베디드 페이지에서 구독을 구매합니다',
+    openInNewTab: '새 탭에서 열기',
+    notEnabledTitle: '기능이 활성화되지 않았습니다',
+    notEnabledDesc: '관리자가 구매 페이지를 활성화하지 않았습니다. 관리자에게 문의하세요.',
+    notConfiguredTitle: '구매 URL이 설정되지 않았습니다',
+    notConfiguredDesc: '관리자가 항목을 활성화했지만 구매 URL이 설정되지 않았습니다. 관리자에게 문의하세요.',
+  },
+
+  // Announcements Page
+  announcements: {
+    title: '공지사항',
+    description: '시스템 공지사항 확인',
+    unreadOnly: '읽지 않은 항목만 보기',
+    markRead: '읽음으로 표시',
+    markAllRead: '모두 읽음으로 표시',
+    viewAll: '전체 공지사항 보기',
+    markedAsRead: '읽음으로 표시했습니다',
+    allMarkedAsRead: '모든 공지사항을 읽음으로 표시했습니다',
+    newCount: '새 공지사항 {count}건',
+    readAt: '읽은 시간',
+    read: '읽음',
+    unread: '읽지 않음',
+    startsAt: '시작일',
+    endsAt: '종료일',
+    empty: '공지사항이 없습니다',
+    emptyUnread: '읽지 않은 공지사항이 없습니다',
+    total: '건의 공지사항',
+    emptyDescription: '현재 시스템 공지사항이 없습니다',
+    readStatus: '이 공지사항을 읽었습니다',
+    markReadHint: '"읽음으로 표시"를 클릭하여 읽음 처리할 수 있습니다',
   },
 
   // Plans (user purchase page)
@@ -4242,6 +4528,7 @@ export default {
     pricePerDollar: '단 ¥{price}/달러',
     estimatedUsage: '약 {count}회 호출 가능 (혼합 사용)',
     estimatedTokens: '약 {tokens} tokens',
+    buyOnTaobao: 'Taobao에서 구매',
     paygo: {
       title: 'PayGo 종량제',
       description: '수시 충전, 유연하고 편리',
@@ -4331,7 +4618,8 @@ export default {
     noOrders: '충전 기록 없음',
     noOrdersDesc: '아직 충전한 적이 없습니다',
     failedToLoad: '충전 기록 로드 실패',
-    repayFailed: '결제 링크 가져오기 실패'
+    repayFailed: '결제 링크 가져오기 실패',
+    paymentClosedHint: '온라인 결제를 이용할 수 없습니다. 충전은 고객 지원에 문의해 주세요.'
   },
 
   // User Orders
@@ -4363,6 +4651,20 @@ export default {
     rechargeOrders: '충전 주문'
   },
 
+  // Payment QR Code Modal
+  payment: {
+    scanToPay: '스캔하여 결제',
+    transferToPay: '이체로 결제',
+    qrCodeAlt: '결제 QR코드',
+    amountToPay: '결제 금액',
+    businessQrInstruction: '위 QR코드를 Alipay로 스캔하여 결제해 주세요',
+    transferInstruction: 'Alipay를 통해 지정 계좌로 이체해 주세요. 반드시 아래 메모를 포함해 주세요',
+    transferMemo: '이체 메모',
+    openAlipay: 'Alipay 열기',
+    waitingForPayment: '결제 확인 중...',
+    paymentSuccess: '결제가 완료되었습니다',
+  },
+
   // Onboarding Tour
   onboarding: {
     restartTour: '초보자 가이드 다시 보기',
@@ -4378,14 +4680,14 @@ export default {
     // Admin tour steps
     admin: {
       welcome: {
-        title: '👋 Sub2API에 오신 것을 환영합니다',
-        description: '<div style="line-height: 1.8;"><p style="margin-bottom: 16px;">Sub2API는 강력한 AI 서비스 중계 플랫폼으로, AI 서비스를 쉽게 관리하고 배포할 수 있습니다.</p><p style="margin-bottom: 12px;"><b>🎯 핵심 기능:</b></p><ul style="margin-left: 20px; margin-bottom: 16px;"><li>📦 <b>그룹 관리</b> - 다양한 서비스 요금제 생성 (VIP, 무료 체험 등)</li><li>🔗 <b>계정 풀</b> - 여러 업스트림 AI 서비스 제공자 계정 연결</li><li>🔑 <b>키 배포</b> - 사용자별 독립 API Key 생성</li><li>💰 <b>과금 관리</b> - 유연한 요율 및 할당량 제어</li></ul><p style="color: #10b981; font-weight: 600;">다음으로, 3분 안에 초기 설정을 완료하겠습니다 →</p></div>',
+        title: '👋 {siteName}에 오신 것을 환영합니다',
+        description: '<div style="line-height: 1.8;"><p style="margin-bottom: 16px;">{siteName}는 강력한 AI 서비스 중계 플랫폼으로, AI 서비스를 쉽게 관리하고 배포할 수 있습니다.</p><p style="margin-bottom: 12px;"><b>🎯 핵심 기능:</b></p><ul style="margin-left: 20px; margin-bottom: 16px;"><li>📦 <b>그룹 관리</b> - 다양한 서비스 요금제 생성 (VIP, 무료 체험 등)</li><li>🔗 <b>계정 풀</b> - 여러 업스트림 AI 서비스 제공자 계정 연결</li><li>🔑 <b>키 배포</b> - 사용자별 독립 API Key 생성</li><li>💰 <b>과금 관리</b> - 유연한 요율 및 할당량 제어</li></ul><p style="color: #10b981; font-weight: 600;">다음으로, 3분 안에 초기 설정을 완료하겠습니다 →</p></div>',
         nextBtn: '설정 시작 🚀',
         prevBtn: '건너뛰기'
       },
       groupManage: {
         title: '📦 1단계: 그룹 관리',
-        description: '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;"><b>그룹이란?</b></p><p style="margin-bottom: 12px;">그룹은 Sub2API의 핵심 개념으로, "서비스 요금제"와 같습니다:</p><ul style="margin-left: 20px; margin-bottom: 12px; font-size: 13px;"><li>🎯 각 그룹에 여러 업스트림 계정 포함 가능</li><li>💰 각 그룹에 독립적인 과금 배율 설정</li><li>👥 공개 또는 전용 그룹으로 설정 가능</li></ul><p style="margin-top: 12px; padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px;"><b>💡 예시:</b> "VIP 전용선" (높은 배율)과 "무료 체험" (낮은 배율) 두 그룹을 만들 수 있습니다</p><p style="margin-top: 16px; color: #10b981; font-weight: 600;">👉 왼쪽의 "그룹 관리"를 클릭하세요</p></div>'
+        description: '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;"><b>그룹이란?</b></p><p style="margin-bottom: 12px;">그룹은 {siteName}의 핵심 개념으로, "서비스 요금제"와 같습니다:</p><ul style="margin-left: 20px; margin-bottom: 12px; font-size: 13px;"><li>🎯 각 그룹에 여러 업스트림 계정 포함 가능</li><li>💰 각 그룹에 독립적인 과금 배율 설정</li><li>👥 공개 또는 전용 그룹으로 설정 가능</li></ul><p style="margin-top: 12px; padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px;"><b>💡 예시:</b> "VIP 전용선" (높은 배율)과 "무료 체험" (낮은 배율) 두 그룹을 만들 수 있습니다</p><p style="margin-top: 16px; color: #10b981; font-weight: 600;">👉 왼쪽의 "그룹 관리"를 클릭하세요</p></div>'
       },
       createGroup: {
         title: '➕ 새 그룹 생성',
@@ -4478,8 +4780,8 @@ export default {
     // User tour steps
     user: {
       welcome: {
-        title: '👋 Sub2API에 오신 것을 환영합니다',
-        description: '<div style="line-height: 1.8;"><p style="margin-bottom: 16px;">안녕하세요! Sub2API AI 서비스 플랫폼에 오신 것을 환영합니다.</p><p style="margin-bottom: 12px;"><b>🎯 빠른 시작:</b></p><ul style="margin-left: 20px; margin-bottom: 16px;"><li>🔑 API 키 생성</li><li>📋 키를 앱에 복사</li><li>🚀 AI 서비스 사용 시작</li></ul><p style="color: #10b981; font-weight: 600;">단 1분이면 됩니다. 시작해 봅시다 →</p></div>',
+        title: '👋 {siteName}에 오신 것을 환영합니다',
+        description: '<div style="line-height: 1.8;"><p style="margin-bottom: 16px;">안녕하세요! {siteName} AI 서비스 플랫폼에 오신 것을 환영합니다.</p><p style="margin-bottom: 12px;"><b>🎯 빠른 시작:</b></p><ul style="margin-left: 20px; margin-bottom: 16px;"><li>🔑 API 키 생성</li><li>📋 키를 앱에 복사</li><li>🚀 AI 서비스 사용 시작</li></ul><p style="color: #10b981; font-weight: 600;">단 1분이면 됩니다. 시작해 봅시다 →</p></div>',
         nextBtn: '시작 🚀',
         prevBtn: '건너뛰기'
       },
@@ -4624,7 +4926,11 @@ export default {
       updateSuccess: '키가 업데이트되었습니다',
       deleteSuccess: '키가 삭제되었습니다',
       resetSuccess: '할당량이 초기화되었습니다',
-      keyCopied: '키가 클립보드에 복사되었습니다'
+      keyCopied: '키가 클립보드에 복사되었습니다',
+      expiresInDaysHint: '(플랜에서 자동 입력)',
+      expiresInDaysPlaceholder: '0 = 만료 없음',
+      quotaHint: '(플랜에서 자동 입력)',
+      quotaPlaceholder: '0 = 무제한'
     },
     domains: {
       title: '커스텀 도메인',
@@ -4658,7 +4964,10 @@ export default {
       homeContentPlaceholder: 'Supports HTML',
       docUrl: 'Documentation URL',
       customCSS: 'Custom CSS',
-      customCSSPlaceholder: 'Enter custom CSS styles'
+      customCSSPlaceholder: 'Enter custom CSS styles',
+      dnsType: '타입',
+      dnsHost: 'HOST',
+      dnsValue: 'VALUE'
     },
     sites: {
       title: '사이트 관리',

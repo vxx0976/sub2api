@@ -16,7 +16,7 @@ export default {
       description:
         'One API key for Claude Code, Codex CLI, and Gemini CLI. Transparent pricing, real-time usage, and safety limits for beginners.',
       keywords:
-        'Sub2API, AI coding relay, Vibe Coding, Claude Code, Codex CLI, Gemini CLI, Cursor, OpenCode, API key, transparent pricing, usage, limits'
+        '{siteName}, AI coding relay, Vibe Coding, Claude Code, Codex CLI, Gemini CLI, Cursor, OpenCode, API key, transparent pricing, usage, limits'
     },
     nav: {
       home: 'Startseite',
@@ -90,7 +90,7 @@ export default {
 
     },
     why: {
-      title: 'Warum Sub2API',
+      title: 'Warum {siteName}',
       subtitle: 'Einige Dinge, die Anfaengern helfen, schneller zu starten.'
 
     },
@@ -478,6 +478,17 @@ export default {
     now: 'Jetzt',
     unknown: 'Unbekannt',
     minutes: 'Min',
+    username: 'Benutzername',
+    concurrency: 'Parallelität',
+    allStatuses: 'Alle Status',
+    totalItems: '{count} insgesamt',
+    loadFailed: 'Laden fehlgeschlagen',
+    saveSuccess: 'Erfolgreich gespeichert',
+    saveFailed: 'Speichern fehlgeschlagen',
+    confirmDelete: 'Löschen bestätigen',
+    deleting: 'Wird gelöscht...',
+    leaveEmpty: 'leer lassen, um nicht zu ändern',
+    description: 'Beschreibung',
     reseller: 'Händler',
     time: {
       never: 'Nie',
@@ -993,7 +1004,9 @@ export default {
     todayCost: 'Today Cost',
     todayTokens: 'Today Tokens',
     totalTokens: 'Gesamt-Tokens',
-    cacheToday: 'Cache (Today)',
+    totalRequests: 'Gesamtanfragen',
+    allTime: 'Gesamtzeitraum',
+    cacheToday: 'Cache (Heute)',
     performance: 'Performance',
     avgResponse: 'Avg Response',
     averageTime: 'Average time',
@@ -1505,6 +1518,7 @@ export default {
       allRoles: 'Alle Rollen',
       allStatus: 'Alle Status',
       admin: 'Admin',
+      reseller: 'Händler',
       user: 'Benutzer',
       disabled: 'Deaktiviert',
       email: 'E-Mail',
@@ -2155,6 +2169,19 @@ export default {
       syncCompletedWithErrors:
         'Sync completed with errors: failed {failed} (created {created}, updated {updated})',
       syncFailed: 'Synchronisierung fehlgeschlagen',
+      crsPreview: 'Vorschau',
+      crsPreviewing: 'Vorschau wird geladen...',
+      crsPreviewFailed: 'Vorschau fehlgeschlagen',
+      crsExistingAccounts: 'Vorhandene Konten (werden aktualisiert)',
+      crsNewAccounts: 'Neue Konten (zum Synchronisieren auswählen)',
+      crsSelectAll: 'Alle auswählen',
+      crsSelectNone: 'Keine auswählen',
+      crsNoNewAccounts: 'Alle CRS-Konten sind bereits synchronisiert.',
+      crsWillUpdate: '{count} vorhandene Konten werden aktualisiert.',
+      crsSelectedCount: '{count} neue Konten ausgewählt',
+      crsUpdateBehaviorNote:
+        'Vorhandene Konten synchronisieren nur von CRS zurückgegebene Felder; fehlende Felder behalten ihre aktuellen Werte. Anmeldedaten werden nach Schlüssel zusammengeführt — nicht von CRS zurückgegebene Schlüssel bleiben erhalten. Proxys werden beibehalten, wenn „Proxys synchronisieren" deaktiviert ist.',
+      crsBack: 'Zurück',
       editAccount: 'Konto bearbeiten',
       deleteAccount: 'Konto loeschen',
       searchAccounts: 'Search accounts...',
@@ -2190,6 +2217,7 @@ export default {
         googleOauth: 'Google OAuth',
         codeAssist: 'Code Assist',
         antigravityOauth: 'Antigravity OAuth',
+        antigravityApikey: 'Verbindung über Basis-URL + API-Schlüssel',
         api_key: 'API-Schluessel',
         cookie: 'Cookie',
         upstream: 'Upstream',
@@ -4504,6 +4532,7 @@ export default {
       custom: 'Benutzerdefiniert',
       code: 'Code',
       body: 'Body',
+      skipMonitoring: 'Monitoring überspringen',
 
       // Columns
       columns: {
@@ -4550,7 +4579,9 @@ export default {
         passthroughBody: 'Upstream-Fehlermeldung durchleiten',
         customMessage: 'Benutzerdefinierte Fehlermeldung',
         customMessagePlaceholder: 'Error message to return to client...',
-        enabled: 'Enable this rule'
+        skipMonitoring: 'Monitoring überspringen',
+        skipMonitoringHint: 'Wenn aktiviert, werden Fehler, die dieser Regel entsprechen, nicht im Ops-Monitoring erfasst',
+        enabled: 'Diese Regel aktivieren'
       },
 
       // Messages
@@ -4753,6 +4784,7 @@ export default {
   recharge: {
     title: 'Recharge Account',
     rechargeNow: 'Jetzt aufladen',
+    paymentClosedHint: 'Online-Zahlung ist derzeit nicht verfügbar. Bitte kontaktieren Sie den Support zum Aufladen.',
     rechargeAmount: 'Aufladebetrag (¥)',
     enterAmount: 'Aufladebetrag eingeben',
     quickAmounts: 'Quick Amounts',
@@ -4834,6 +4866,20 @@ export default {
 
   },
 
+  // Zahlungs-QR-Code / Überweisung
+  payment: {
+    scanToPay: 'Zum Bezahlen scannen',
+    transferToPay: 'Per Überweisung zahlen',
+    qrCodeAlt: 'Zahlungs-QR-Code',
+    amountToPay: 'Zu zahlender Betrag',
+    businessQrInstruction: 'Bitte scannen Sie den obigen QR-Code mit Alipay, um die Zahlung abzuschließen',
+    transferInstruction: 'Bitte überweisen Sie über Alipay an das angegebene Konto. Geben Sie unbedingt den folgenden Verwendungszweck an',
+    transferMemo: 'Verwendungszweck',
+    openAlipay: 'Alipay öffnen',
+    waitingForPayment: 'Warte auf Zahlung...',
+    paymentSuccess: 'Zahlung erfolgreich',
+  },
+
   // Onboarding Tour
   onboarding: {
     restartTour: 'Restart Onboarding Tour',
@@ -4850,15 +4896,15 @@ export default {
     // Admin tour steps
     admin: {
       welcome: {
-        title: '👋 Welcome to Sub2API',
-        description: '<div style="line-height: 1.8;"><p style="margin-bottom: 16px;">Sub2API is a powerful AI service gateway platform that helps you easily manage and distribute AI services.</p><p style="margin-bottom: 12px;"><b>🎯 Core Features:</b></p><ul style="margin-left: 20px; margin-bottom: 16px;"><li>📦 <b>Group Management</b> - Create service tiers (VIP, Free Trial, etc.)</li><li>🔗 <b>Account Pool</b> - Connect multiple upstream AI service accounts</li><li>🔑 <b>Key Distribution</b> - Generate independent API Keys for users</li><li>💰 <b>Billing Control</b> - Flexible rate and quota management</li></ul><p style="color: #10b981; font-weight: 600;">Let\'s complete the initial setup in 3 minutes →</p></div>',
+        title: '👋 Welcome to {siteName}',
+        description: '<div style="line-height: 1.8;"><p style="margin-bottom: 16px;">{siteName} is a powerful AI service gateway platform that helps you easily manage and distribute AI services.</p><p style="margin-bottom: 12px;"><b>🎯 Core Features:</b></p><ul style="margin-left: 20px; margin-bottom: 16px;"><li>📦 <b>Group Management</b> - Create service tiers (VIP, Free Trial, etc.)</li><li>🔗 <b>Account Pool</b> - Connect multiple upstream AI service accounts</li><li>🔑 <b>Key Distribution</b> - Generate independent API Keys for users</li><li>💰 <b>Billing Control</b> - Flexible rate and quota management</li></ul><p style="color: #10b981; font-weight: 600;">Let\'s complete the initial setup in 3 minutes →</p></div>',
         nextBtn: 'Start Setup 🚀',
         prevBtn: 'Ueberspringen'
 
       },
       groupManage: {
         title: '📦 Step 1: Group Management',
-        description: '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;"><b>What is a Group?</b></p><p style="margin-bottom: 12px;">Groups are the core concept of Sub2API, like a "service package":</p><ul style="margin-left: 20px; margin-bottom: 12px; font-size: 13px;"><li>🎯 Each group can contain multiple upstream accounts</li><li>💰 Each group has independent billing multiplier</li><li>👥 Can be set as public or exclusive</li></ul><p style="margin-top: 12px; padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px;"><b>💡 Example:</b> You can create "VIP Premium" (high rate) and "Free Trial" (low rate) groups</p><p style="margin-top: 16px; color: #10b981; font-weight: 600;">👉 Click "Group Management" on the left sidebar</p></div>'
+        description: '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;"><b>What is a Group?</b></p><p style="margin-bottom: 12px;">Groups are the core concept of {siteName}, like a "service package":</p><ul style="margin-left: 20px; margin-bottom: 12px; font-size: 13px;"><li>🎯 Each group can contain multiple upstream accounts</li><li>💰 Each group has independent billing multiplier</li><li>👥 Can be set as public or exclusive</li></ul><p style="margin-top: 12px; padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px;"><b>💡 Example:</b> You can create "VIP Premium" (high rate) and "Free Trial" (low rate) groups</p><p style="margin-top: 16px; color: #10b981; font-weight: 600;">👉 Click "Group Management" on the left sidebar</p></div>'
       },
       createGroup: {
         title: '➕ Create New Group',
@@ -4962,8 +5008,8 @@ export default {
     // User tour steps
     user: {
       welcome: {
-        title: '👋 Welcome to Sub2API',
-        description: '<div style="line-height: 1.8;"><p style="margin-bottom: 16px;">Hello! Welcome to the Sub2API AI service platform.</p><p style="margin-bottom: 12px;"><b>🎯 Quick Start:</b></p><ul style="margin-left: 20px; margin-bottom: 16px;"><li>🔑 Create API Key</li><li>📋 Copy key to your application</li><li>🚀 Start using AI services</li></ul><p style="color: #10b981; font-weight: 600;">Just 1 minute, let\'s get started →</p></div>',
+        title: '👋 Welcome to {siteName}',
+        description: '<div style="line-height: 1.8;"><p style="margin-bottom: 16px;">Hello! Welcome to the {siteName} AI service platform.</p><p style="margin-bottom: 12px;"><b>🎯 Quick Start:</b></p><ul style="margin-left: 20px; margin-bottom: 16px;"><li>🔑 Create API Key</li><li>📋 Copy key to your application</li><li>🚀 Start using AI services</li></ul><p style="color: #10b981; font-weight: 600;">Just 1 minute, let\'s get started →</p></div>',
         nextBtn: 'Start 🚀',
         prevBtn: 'Ueberspringen'
 
@@ -5098,6 +5144,10 @@ export default {
       ipBlacklist: 'IP-Blacklist',
       customKey: 'Benutzerdefinierter Schlüssel',
       expiresInDays: 'Gültigkeitstage',
+      expiresInDaysHint: '(automatisch aus dem Plan übernommen)',
+      expiresInDaysPlaceholder: '0 = kein Ablauf',
+      quotaHint: '(automatisch aus dem Plan übernommen)',
+      quotaPlaceholder: '0 = unbegrenzt',
       resetQuota: 'Kontingent zurücksetzen',
       copyKey: 'Schlüssel kopieren',
       noKeys: 'Noch keine API-Schlüssel',
@@ -5134,6 +5184,9 @@ export default {
       verifyStep2_txt: 'Schritt 2: TXT-Eintrag hinzufügen (Domain-Eigentum verifizieren)',
       verifyStep2_hint: 'HOST nur _domain-verify eingeben, ohne das Domain-Suffix.',
       verifyStep3: 'Schritt 3: Warten Sie auf die DNS-Propagierung (meist wenige Minuten) und klicken Sie dann auf "Jetzt verifizieren"',
+      dnsType: 'Typ',
+      dnsHost: 'HOST',
+      dnsValue: 'VALUE',
       verifySuccess: 'Domain-Verifizierung erfolgreich',
       verifyFailed: 'Domain-Verifizierung fehlgeschlagen. Bitte überprüfen Sie die DNS-Konfiguration',
       createSuccess: 'Domain hinzugefügt',

@@ -16,7 +16,7 @@ export default {
       description:
         'Une seule clé API pour Claude Code, Codex CLI et Gemini CLI. Tarification transparente, utilisation en temps réel et limites de sécurité pour les débutants.',
       keywords:
-        'Sub2API, relais de codage IA, Vibe Coding, Claude Code, Codex CLI, Gemini CLI, Cursor, OpenCode, clé API, tarification transparente, utilisation, limites'
+        '{siteName}, relais de codage IA, Vibe Coding, Claude Code, Codex CLI, Gemini CLI, Cursor, OpenCode, clé API, tarification transparente, utilisation, limites'
     },
     nav: {
       home: 'Accueil',
@@ -84,7 +84,7 @@ export default {
       tip2: 'Commencez petit : essayez d\'abord un court prompt pour vérifier que tout fonctionne.'
     },
     why: {
-      title: 'Pourquoi Sub2API',
+      title: 'Pourquoi choisir {siteName}',
       subtitle: 'Quelques fonctionnalités qui aident les débutants à démarrer plus rapidement.'
     },
     tags: {
@@ -446,6 +446,17 @@ export default {
     now: 'Maintenant',
     unknown: 'Inconnu',
     minutes: 'min',
+    username: 'Nom d\'utilisateur',
+    concurrency: 'Simultanéité',
+    allStatuses: 'Tous les statuts',
+    totalItems: '{count} au total',
+    loadFailed: 'Échec du chargement',
+    saveSuccess: 'Enregistré avec succès',
+    saveFailed: 'Échec de l\'enregistrement',
+    confirmDelete: 'Confirmer la suppression',
+    deleting: 'Suppression...',
+    leaveEmpty: 'laisser vide pour ne pas modifier',
+    description: 'Description',
     reseller: 'Marchand',
     time: {
       never: 'Jamais',
@@ -926,6 +937,8 @@ export default {
     todayCost: 'Coût aujourd\'hui',
     todayTokens: 'Tokens aujourd\'hui',
     totalTokens: 'Total des tokens',
+    totalRequests: 'Total des requêtes',
+    allTime: 'Toute la période',
     cacheToday: 'Cache (aujourd\'hui)',
     performance: 'Performance',
     avgResponse: 'Réponse moy.',
@@ -1431,6 +1444,7 @@ export default {
       allRoles: 'Tous les rôles',
       allStatus: 'Tous les statuts',
       admin: 'Admin',
+      reseller: 'Marchand',
       user: 'Utilisateur',
       disabled: 'Désactivé',
       email: 'E-mail',
@@ -2061,6 +2075,19 @@ export default {
       syncCompletedWithErrors:
         'Synchronisation terminée avec des erreurs : échoués {failed} (créés {created}, mis à jour {updated})',
       syncFailed: 'Échec de la synchronisation',
+      crsPreview: 'Aperçu',
+      crsPreviewing: 'Aperçu en cours...',
+      crsPreviewFailed: 'Échec de l\'aperçu',
+      crsExistingAccounts: 'Comptes existants (seront mis à jour)',
+      crsNewAccounts: 'Nouveaux comptes (sélectionnez pour synchroniser)',
+      crsSelectAll: 'Tout sélectionner',
+      crsSelectNone: 'Tout désélectionner',
+      crsNoNewAccounts: 'Tous les comptes CRS sont déjà synchronisés.',
+      crsWillUpdate: '{count} comptes existants seront mis à jour.',
+      crsSelectedCount: '{count} nouveaux comptes sélectionnés',
+      crsUpdateBehaviorNote:
+        'Les comptes existants ne synchronisent que les champs renvoyés par CRS ; les champs manquants conservent leurs valeurs actuelles. Les identifiants sont fusionnés par clé — les clés non renvoyées par CRS sont préservées. Les proxys sont conservés lorsque « Synchroniser les proxys » est décoché.',
+      crsBack: 'Retour',
       editAccount: 'Modifier le compte',
       deleteAccount: 'Supprimer le compte',
       searchAccounts: 'Rechercher des comptes...',
@@ -2094,6 +2121,7 @@ export default {
         googleOauth: 'Google OAuth',
         codeAssist: 'Code Assist',
         antigravityOauth: 'Antigravity OAuth',
+        antigravityApikey: 'Connexion via URL de base + clé API',
         api_key: 'Clé API',
         cookie: 'Cookie',
         upstream: 'Amont',
@@ -4330,6 +4358,7 @@ export default {
       custom: 'Personnalisé',
       code: 'Code',
       body: 'Corps',
+      skipMonitoring: 'Ignorer le monitoring',
 
       // Colonnes
       columns: {
@@ -4374,6 +4403,8 @@ export default {
         passthroughBody: 'Transmettre le message d\'erreur amont',
         customMessage: 'Message d\'erreur personnalisé',
         customMessagePlaceholder: 'Message d\'erreur à renvoyer au client...',
+        skipMonitoring: 'Ignorer le monitoring',
+        skipMonitoringHint: 'Lorsque activé, les erreurs correspondant à cette règle ne seront pas enregistrées dans le monitoring des opérations',
         enabled: 'Activer cette règle'
       },
 
@@ -4571,6 +4602,7 @@ export default {
   recharge: {
     title: 'Recharger le compte',
     rechargeNow: 'Recharger maintenant',
+    paymentClosedHint: 'Le paiement en ligne n\'est pas disponible. Veuillez contacter le support pour recharger.',
     rechargeAmount: 'Montant de recharge (¥)',
     enterAmount: 'Entrez le montant de recharge',
     quickAmounts: 'Montants rapides',
@@ -4651,6 +4683,20 @@ export default {
     rechargeOrders: 'Commandes de recharge'
   },
 
+  // QR code / virement de paiement
+  payment: {
+    scanToPay: 'Scanner pour payer',
+    transferToPay: 'Payer par virement',
+    qrCodeAlt: 'QR code de paiement',
+    amountToPay: 'Montant à payer',
+    businessQrInstruction: 'Veuillez scanner le QR code ci-dessus avec Alipay pour finaliser le paiement',
+    transferInstruction: 'Veuillez effectuer un virement vers le compte indiqué via Alipay en incluant impérativement la référence suivante',
+    transferMemo: 'Référence de virement',
+    openAlipay: 'Ouvrir Alipay',
+    waitingForPayment: 'En attente du paiement...',
+    paymentSuccess: 'Paiement effectué avec succès',
+  },
+
   // Visite guidée d'intégration
   onboarding: {
     restartTour: 'Redémarrer la visite guidée',
@@ -4666,14 +4712,14 @@ export default {
     // Étapes de la visite admin
     admin: {
       welcome: {
-        title: '👋 Bienvenue sur Sub2API',
-        description: '<div style="line-height: 1.8;"><p style="margin-bottom: 16px;">Sub2API est une puissante plateforme de passerelle de services IA qui vous aide à gérer et distribuer facilement les services IA.</p><p style="margin-bottom: 12px;"><b>🎯 Fonctionnalités principales :</b></p><ul style="margin-left: 20px; margin-bottom: 16px;"><li>📦 <b>Gestion des groupes</b> - Créer des niveaux de service (VIP, Essai gratuit, etc.)</li><li>🔗 <b>Pool de comptes</b> - Connecter plusieurs comptes de services IA amont</li><li>🔑 <b>Distribution de clés</b> - Générer des clés API indépendantes pour les utilisateurs</li><li>💰 <b>Contrôle de facturation</b> - Gestion flexible des taux et quotas</li></ul><p style="color: #10b981; font-weight: 600;">Terminons la configuration initiale en 3 minutes →</p></div>',
+        title: '👋 Bienvenue sur {siteName}',
+        description: '<div style="line-height: 1.8;"><p style="margin-bottom: 16px;">{siteName} est une puissante plateforme de passerelle de services IA qui vous aide à gérer et distribuer facilement les services IA.</p><p style="margin-bottom: 12px;"><b>🎯 Fonctionnalités principales :</b></p><ul style="margin-left: 20px; margin-bottom: 16px;"><li>📦 <b>Gestion des groupes</b> - Créer des niveaux de service (VIP, Essai gratuit, etc.)</li><li>🔗 <b>Pool de comptes</b> - Connecter plusieurs comptes de services IA amont</li><li>🔑 <b>Distribution de clés</b> - Générer des clés API indépendantes pour les utilisateurs</li><li>💰 <b>Contrôle de facturation</b> - Gestion flexible des taux et quotas</li></ul><p style="color: #10b981; font-weight: 600;">Terminons la configuration initiale en 3 minutes →</p></div>',
         nextBtn: 'Commencer la configuration 🚀',
         prevBtn: 'Passer'
       },
       groupManage: {
         title: '📦 Étape 1 : Gestion des groupes',
-        description: '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;"><b>Qu\'est-ce qu\'un groupe ?</b></p><p style="margin-bottom: 12px;">Les groupes sont le concept central de Sub2API, comme un « forfait de service » :</p><ul style="margin-left: 20px; margin-bottom: 12px; font-size: 13px;"><li>🎯 Chaque groupe peut contenir plusieurs comptes amont</li><li>💰 Chaque groupe a un multiplicateur de facturation indépendant</li><li>👥 Peut être défini comme public ou exclusif</li></ul><p style="margin-top: 12px; padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px;"><b>💡 Exemple :</b> Vous pouvez créer des groupes « VIP Premium » (taux élevé) et « Essai gratuit » (taux bas)</p><p style="margin-top: 16px; color: #10b981; font-weight: 600;">👉 Cliquez sur « Gestion des groupes » dans la barre latérale gauche</p></div>'
+        description: '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;"><b>Qu\'est-ce qu\'un groupe ?</b></p><p style="margin-bottom: 12px;">Les groupes sont le concept central de {siteName}, comme un « forfait de service » :</p><ul style="margin-left: 20px; margin-bottom: 12px; font-size: 13px;"><li>🎯 Chaque groupe peut contenir plusieurs comptes amont</li><li>💰 Chaque groupe a un multiplicateur de facturation indépendant</li><li>👥 Peut être défini comme public ou exclusif</li></ul><p style="margin-top: 12px; padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px;"><b>💡 Exemple :</b> Vous pouvez créer des groupes « VIP Premium » (taux élevé) et « Essai gratuit » (taux bas)</p><p style="margin-top: 16px; color: #10b981; font-weight: 600;">👉 Cliquez sur « Gestion des groupes » dans la barre latérale gauche</p></div>'
       },
       createGroup: {
         title: '➕ Créer un nouveau groupe',
@@ -4766,8 +4812,8 @@ export default {
     // Étapes de la visite utilisateur
     user: {
       welcome: {
-        title: '👋 Bienvenue sur Sub2API',
-        description: '<div style="line-height: 1.8;"><p style="margin-bottom: 16px;">Bonjour ! Bienvenue sur la plateforme de services IA Sub2API.</p><p style="margin-bottom: 12px;"><b>🎯 Démarrage rapide :</b></p><ul style="margin-left: 20px; margin-bottom: 16px;"><li>🔑 Créer une clé API</li><li>📋 Copier la clé dans votre application</li><li>🚀 Commencer à utiliser les services IA</li></ul><p style="color: #10b981; font-weight: 600;">Juste 1 minute, commençons →</p></div>',
+        title: '👋 Bienvenue sur {siteName}',
+        description: '<div style="line-height: 1.8;"><p style="margin-bottom: 16px;">Bonjour ! Bienvenue sur la plateforme de services IA {siteName}.</p><p style="margin-bottom: 12px;"><b>🎯 Démarrage rapide :</b></p><ul style="margin-left: 20px; margin-bottom: 16px;"><li>🔑 Créer une clé API</li><li>📋 Copier la clé dans votre application</li><li>🚀 Commencer à utiliser les services IA</li></ul><p style="color: #10b981; font-weight: 600;">Juste 1 minute, commençons →</p></div>',
         nextBtn: 'Commencer 🚀',
         prevBtn: 'Passer'
       },
@@ -4899,6 +4945,10 @@ export default {
       ipBlacklist: 'Liste Noire IP',
       customKey: 'Clé Personnalisée',
       expiresInDays: 'Jours de Validité',
+      expiresInDaysHint: '(rempli automatiquement selon le plan)',
+      expiresInDaysPlaceholder: '0 = sans expiration',
+      quotaHint: '(rempli automatiquement selon le plan)',
+      quotaPlaceholder: '0 = illimité',
       resetQuota: 'Réinitialiser le Quota',
       copyKey: 'Copier la Clé',
       noKeys: 'Aucune clé API',
@@ -4935,6 +4985,9 @@ export default {
       verifyStep2_txt: 'Étape 2 : Ajouter un enregistrement TXT (vérifier la propriété du domaine)',
       verifyStep2_hint: 'HOST doit être uniquement _domain-verify, sans le suffixe du domaine.',
       verifyStep3: 'Étape 3 : Attendez la propagation DNS (généralement quelques minutes) puis cliquez sur « Vérifier Maintenant »',
+      dnsType: 'Type',
+      dnsHost: 'HOST',
+      dnsValue: 'VALUE',
       verifySuccess: 'Domaine vérifié avec succès',
       verifyFailed: 'Vérification échouée. Vérifiez que l\'enregistrement DNS est correctement configuré',
       createSuccess: 'Domaine ajouté',

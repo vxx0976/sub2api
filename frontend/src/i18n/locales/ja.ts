@@ -84,7 +84,7 @@ export default {
       tip2: 'まず短いテキストでテストし、接続を確認してから複雑なリクエストを送ることをお勧めします。'
     },
     why: {
-      title: '選ばれる理由',
+      title: '{siteName}が選ばれる理由',
       subtitle: '一般ユーザーや初心者プログラマーに優しいポイント。'
     },
     tags: {
@@ -458,7 +458,18 @@ export default {
         withSuffix: '{time} 後に解除'
       }
     },
-    reseller: '販売者'
+    reseller: '販売者',
+    description: '説明',
+    username: 'ユーザー名',
+    concurrency: '同時接続数',
+    allStatuses: 'すべてのステータス',
+    totalItems: '合計 {count} 件',
+    loadFailed: '読み込みに失敗しました',
+    saveSuccess: '保存しました',
+    saveFailed: '保存に失敗しました',
+    confirmDelete: '削除の確認',
+    deleting: '削除中...',
+    leaveEmpty: '変更しない場合は空欄のまま'
   },
 
   // Navigation
@@ -955,7 +966,9 @@ export default {
     viewUsage: '使用履歴を表示',
     checkDetailedLogs: '詳細な使用ログを表示',
     redeemCode: '引き換えコード',
-    addBalanceWithCode: '引き換えコードでチャージ'
+    addBalanceWithCode: '引き換えコードでチャージ',
+    totalRequests: 'リクエスト総数',
+    allTime: '全期間'
   },
 
   // Groups (shared)
@@ -1007,6 +1020,7 @@ export default {
     usage: '使用量',
     today: '今日',
     total: '累計',
+    quota: 'クォータ',
     useKey: 'キーを使用',
     useKeyModal: {
       title: 'APIキーを使用',
@@ -1742,6 +1756,7 @@ export default {
       public: '公開',
       rateAndAccounts: '{rate}x 料金 · {count} アカウント',
       accountsCount: '{count} アカウント',
+      noAccounts: 'アカウントなし',
       enterGroupName: 'グループ名を入力してください',
       optionalDescription: '説明（任意）',
       platformHint: 'このグループに関連するプラットフォームを選択',
@@ -1837,7 +1852,10 @@ export default {
         isRecommended: 'おすすめプラン',
         isRecommendedHint: 'プランページにおすすめマークを表示',
         resellerTemplate: '販売者テンプレート',
-        resellerTemplateHint: '有効にすると、販売者はこのプランをユーザーのテンプレートとして使用できます'
+        resellerTemplateHint: '有効にすると、販売者はこのプランをユーザーのテンプレートとして使用できます',
+        externalBuyUrl: '外部購入URL',
+        externalBuyUrlPlaceholder: 'https://item.taobao.com/item.htm?id=...',
+        externalBuyUrlHint: '任意。設定すると、ユーザーが外部プラットフォームで購入できるようになります'
       },
       planPreview: {
         title: 'プランプレビュー',
@@ -1846,6 +1864,20 @@ export default {
         noPlansDesc: 'まずサブスクリプションタイプのグループを作成し、購入機能を有効にしてください。',
         notPurchasable: '購入未開放',
         previewOnly: 'プレビューのみ'
+      },
+      mcpXml: {
+        title: 'MCP XMLプロトコルインジェクション',
+        tooltip: '有効にすると、リクエストにMCPツールが含まれている場合、XML形式の呼び出しプロトコルプロンプトがシステムプロンプトに注入されます。特定のクライアントとの干渉を避けるには無効にしてください。',
+        enabled: '有効',
+        disabled: '無効'
+      },
+      supportedScopes: {
+        title: '対応モデルファミリー',
+        tooltip: 'このグループがサポートするモデルファミリーを選択します。チェックされていないファミリーはこのグループにルーティングされません。',
+        claude: 'Claude',
+        geminiText: 'Gemini テキスト',
+        geminiImage: 'Gemini 画像',
+        hint: '少なくとも1つのモデルファミリーを選択してください'
       }
     },
 
@@ -2034,6 +2066,18 @@ export default {
       syncCompleted: '同期完了：作成 {created}、更新 {updated}',
       syncCompletedWithErrors: '同期完了（エラーあり）：失敗 {failed}（作成 {created}、更新 {updated}）',
       syncFailed: '同期に失敗しました',
+      crsPreview: 'プレビュー',
+      crsPreviewing: 'プレビュー中...',
+      crsPreviewFailed: 'プレビューに失敗しました',
+      crsExistingAccounts: '既存アカウント（更新されます）',
+      crsNewAccounts: '新規アカウント（同期するものを選択）',
+      crsSelectAll: 'すべて選択',
+      crsSelectNone: '選択解除',
+      crsNoNewAccounts: 'すべてのCRSアカウントは同期済みです。',
+      crsWillUpdate: '{count} 件の既存アカウントが更新されます。',
+      crsSelectedCount: '{count} 件の新規アカウントを選択中',
+      crsUpdateBehaviorNote: '既存アカウントはCRSから返されたフィールドのみ同期されます。返されなかったフィールドは現在の値が維持されます。認証情報はキー単位でマージされ、CRSから返されないキーは保持されます。「プロキシを同期」が無効の場合、プロキシは維持されます。',
+      crsBack: '戻る',
       editAccount: 'アカウントを編集',
       deleteAccount: 'アカウントを削除',
       deleteConfirmMessage: "确定要删除账号 '{name}' 吗？",
@@ -2115,7 +2159,10 @@ export default {
         codeAssist: 'Code Assist',
         antigravityOauth: 'Antigravity OAuth',
         api_key: 'API Key',
-        cookie: 'Cookie'
+        cookie: 'Cookie',
+        antigravityApikey: 'Base URL + API Key で接続',
+        upstream: 'アップストリーム',
+        upstreamDesc: 'Base URL + API Key で接続'
       },
       status: {
         active: '正常',
@@ -2401,10 +2448,21 @@ export default {
       accountUpdated: 'アカウントの更新に成功しました',
       failedToCreate: 'アカウントの作成に失敗しました',
       failedToUpdate: 'アカウントの更新に失敗しました',
+      mixedChannelWarningTitle: '混合チャンネル警告',
+      mixedChannelWarning: '警告：グループ「{groupName}」には{currentPlatform}と{otherPlatform}のアカウントが混在しています。異なるチャンネルの混在はthinkingブロックの署名検証の問題を引き起こす可能性があり、非thinkingモードにフォールバックされます。続行しますか？',
       pleaseEnterAccountName: 'アカウント名を入力してください',
       pleaseEnterApiKey: 'API Keyを入力してください',
       apiKeyIsRequired: 'API Keyは必須です',
       leaveEmptyToKeep: '空欄のままで現在のAPIキーを維持',
+      // Upstream type
+      upstream: {
+        baseUrl: 'アップストリームBase URL',
+        baseUrlHint: 'アップストリームAntigravityサービスのアドレス。例：https://cloudcode-pa.googleapis.com',
+        apiKey: 'アップストリームAPI Key',
+        apiKeyHint: 'アップストリームサービスのAPI Key',
+        pleaseEnterBaseUrl: 'アップストリームBase URLを入力してください',
+        pleaseEnterApiKey: 'アップストリームAPI Keyを入力してください'
+      },
       // OAuth flow
       oauth: {
         title: 'Claudeアカウント認証',
@@ -2968,6 +3026,7 @@ export default {
         balance: '残高',
         concurrency: '同時接続数',
         subscription: 'サブスクリプション',
+        invitation: '招待',
         // 管理员在用户管理页面调整余额/并发时产生的记录
         admin_balance: '残高（管理者）',
         admin_concurrency: '同時接続数（管理者）'
@@ -2976,6 +3035,8 @@ export default {
       balance: '残高',
       concurrency: '同時接続数',
       subscription: 'サブスクリプション',
+      invitation: '招待',
+      invitationHint: '招待コードはユーザー登録を制限するために使用されます。使用後に自動的に使用済みとなります。',
       allTypes: 'すべてのタイプ',
       allStatus: 'すべてのステータス',
       unused: '未使用',
@@ -3180,6 +3241,73 @@ export default {
       }
     },
 
+    // Announcements Management
+    announcements: {
+      title: 'お知らせ管理',
+      description: 'お知らせの作成と条件ターゲティング',
+      createAnnouncement: 'お知らせを作成',
+      editAnnouncement: 'お知らせを編集',
+      deleteAnnouncement: 'お知らせを削除',
+      searchAnnouncements: 'お知らせを検索...',
+      status: 'ステータス',
+      allStatus: 'すべてのステータス',
+      columns: {
+        title: 'タイトル',
+        status: 'ステータス',
+        targeting: 'ターゲット',
+        timeRange: 'スケジュール',
+        createdAt: '作成日時',
+        actions: '操作'
+      },
+      statusLabels: {
+        draft: '下書き',
+        active: '公開中',
+        archived: 'アーカイブ'
+      },
+      form: {
+        title: 'タイトル',
+        content: '本文（Markdown対応）',
+        status: 'ステータス',
+        startsAt: '開始日時',
+        endsAt: '終了日時',
+        startsAtHint: '空欄の場合は即時公開',
+        endsAtHint: '空欄の場合は無期限',
+        targetingMode: 'ターゲット設定',
+        targetingAll: 'すべてのユーザー',
+        targetingCustom: 'カスタムルール',
+        addOrGroup: 'ORグループを追加',
+        addAndCondition: 'AND条件を追加',
+        conditionType: '条件タイプ',
+        conditionSubscription: 'サブスクリプション',
+        conditionBalance: '残高',
+        operator: '演算子',
+        balanceValue: '残高閾値',
+        selectPackages: 'パッケージを選択'
+      },
+      operators: {
+        gt: '>',
+        gte: '≥',
+        lt: '<',
+        lte: '≤',
+        eq: '='
+      },
+      targetingSummaryAll: 'すべてのユーザー',
+      targetingSummaryCustom: 'カスタム（{groups} グループ）',
+      timeImmediate: '即時',
+      timeNever: '無期限',
+      readStatus: '既読状況',
+      eligible: '対象',
+      readAt: '閲覧日時',
+      unread: '未読',
+      searchUsers: 'ユーザーを検索...',
+      failedToLoad: 'お知らせの読み込みに失敗しました',
+      failedToCreate: 'お知らせの作成に失敗しました',
+      failedToUpdate: 'お知らせの更新に失敗しました',
+      failedToDelete: 'お知らせの削除に失敗しました',
+      failedToLoadReadStatus: '既読状況の読み込みに失敗しました',
+      deleteConfirm: 'このお知らせを削除してもよろしいですか？この操作は元に戻せません。'
+    },
+
     // Ops Monitoring
     ops: {
       title: '運用モニタリング',
@@ -3200,6 +3328,7 @@ export default {
       waiting: '待機',
       conns: '接続',
       queue: 'キュー',
+      accountSwitches: 'アカウント切替',
       ok: '正常',
       lastRun: '最近の実行',
       lastSuccess: '最近の成功',
@@ -3249,6 +3378,7 @@ export default {
       failedToLoadData: '運用データの読み込みに失敗しました',
       failedToLoadOverview: '概要データの読み込みに失敗しました',
       failedToLoadThroughputTrend: 'スループット推移の読み込みに失敗しました',
+      failedToLoadSwitchTrend: '平均アカウント切替推移の読み込みに失敗しました',
       failedToLoadLatencyHistogram: 'リクエスト時間分布の読み込みに失敗しました',
       failedToLoadErrorTrend: 'エラー推移の読み込みに失敗しました',
       failedToLoadErrorDistribution: 'エラー分布の読み込みに失敗しました',
@@ -3257,9 +3387,11 @@ export default {
       tpsK: 'TPS（千）',
       top: '最高：',
       throughputTrend: 'スループット推移',
+      switchRateTrend: '平均アカウント切替',
       latencyHistogram: 'リクエスト時間分布',
       errorTrend: 'エラー推移',
       errorDistribution: 'エラー分布',
+      switchRate: '平均切替回数',
       // Health Score & Diagnosis
       health: 'ヘルス',
       healthCondition: 'ヘルス状態',
@@ -3832,6 +3964,8 @@ export default {
         ignoreContextCanceledHint: '有効にすると、クライアントが自主的に切断（context canceled）したエラーはエラーログに書き込まれません。',
         ignoreNoAvailableAccounts: '利用可能アカウントなしエラーを無視',
         ignoreNoAvailableAccountsHint: '有効にすると、「No available accounts」エラーはエラーログに書き込まれません（非推奨、通常は設定の問題です）。',
+        ignoreInvalidApiKeyErrors: '無効なAPIキーエラーを無視',
+        ignoreInvalidApiKeyErrorsHint: '有効にすると、無効または未入力のAPIキーエラー（INVALID_API_KEY、API_KEY_REQUIRED）はエラーログに書き込まれません。',
         autoRefresh: '自動更新',
         enableAutoRefresh: '自動更新を有効化',
         enableAutoRefreshHint: 'ダッシュボードデータを自動更新します。有効にすると定期的に最新データを取得します。',
@@ -3886,6 +4020,7 @@ export default {
       tooltips: {
         totalRequests: '現在の時間ウィンドウ内の総リクエスト数とToken消費量。',
         throughputTrend: '現在のウィンドウ内のリクエスト/QPS と Token/TPS トレンド。',
+        switchRateTrend: '過去5時間のアカウント切替回数/総リクエスト数の推移（平均切替回数）。',
         latencyHistogram: '成功リクエストのリクエスト時間分布（ミリ秒）。',
         errorTrend: 'エラートレンド（SLA 基準ではビジネス制限を除外、上流エラー率では 429/529 を除外）。',
         errorDistribution: 'ステータスコード別のエラー分布。',
@@ -3928,6 +4063,8 @@ export default {
         emailVerificationHint: '新規ユーザー登録時にメール認証を要求',
         promoCode: 'プロモーションコード',
         promoCodeHint: 'ユーザーが登録時にプロモーションコードを使用可能',
+        invitationCode: '招待コード登録',
+        invitationCodeHint: '有効にすると、ユーザーは登録時に有効な招待コードの入力が必要になります',
         passwordReset: 'パスワードを忘れた場合',
         passwordResetHint: 'ユーザーがメールでパスワードをリセット可能',
         totp: '二要素認証 (2FA)',
@@ -4006,7 +4143,25 @@ export default {
         homeContent: 'トップページコンテンツ',
         homeContentPlaceholder: 'ここにトップページのコンテンツを入力してください。Markdown & HTMLコードに対応しています。リンクを入力した場合、そのリンクがiframeのsrc属性として使用されます。',
         homeContentHint: 'トップページのコンテンツをカスタマイズできます。Markdown/HTMLに対応しています。リンク（http://またはhttps://で始まる）を入力した場合、そのリンクがiframeのsrc属性として使用され、任意のWebページをトップページに設定できます。設定後、トップページのステータス情報は表示されなくなります。',
-        homeContentIframeWarning: '⚠️ iframeモードの注意：一部のWebサイトはX-Frame-OptionsまたはCSPセキュリティポリシーを設定しており、iframeへの埋め込みを禁止しています。ページが空白またはエラーが表示される場合は、対象サイトが埋め込みを許可しているか確認するか、HTMLモードでページコンテンツを自作してください。'
+        homeContentIframeWarning: '⚠️ iframeモードの注意：一部のWebサイトはX-Frame-OptionsまたはCSPセキュリティポリシーを設定しており、iframeへの埋め込みを禁止しています。ページが空白またはエラーが表示される場合は、対象サイトが埋め込みを許可しているか確認するか、HTMLモードでページコンテンツを自作してください。',
+        hideCcsImportButton: 'CCSインポートボタンを非表示',
+        hideCcsImportButtonHint: '有効にすると、APIキーページの「CCSインポート」ボタンが非表示になります',
+        cryptoAddresses: '暗号通貨アドレス',
+        cryptoAddressesHint: '暗号通貨の受取アドレスを設定します。プランページに表示されます',
+        addCryptoAddress: 'アドレスを追加',
+        chainName: 'チェーン',
+        walletAddress: 'アドレス'
+      },
+      purchase: {
+        title: '購入ページ',
+        description: 'サイドバーに「サブスクリプション購入」エントリを表示し、設定されたURLをiframeで開きます',
+        enabled: '購入エントリを表示',
+        enabledHint: 'スタンダードモードでのみ表示されます（シンプルモードでは非表示）',
+        url: '購入URL',
+        urlPlaceholder: 'https://example.com/purchase',
+        urlHint: '絶対URL（http(s)://）である必要があります',
+        iframeWarning:
+          '⚠️ iframeの注意：一部のWebサイトはX-Frame-OptionsまたはCSP（frame-ancestors）により埋め込みをブロックしています。ページが空白の場合は、「新しいタブで開く」代替手段を提供してください。'
       },
       smtp: {
         title: 'SMTP設定',
@@ -4151,6 +4306,83 @@ export default {
       failedToSave: '設定の保存に失敗しました',
       failedToTestSmtp: 'SMTP接続テストに失敗しました',
       failedToSendTestEmail: 'テストメールの送信に失敗しました'
+    },
+
+    // Error Passthrough Rules
+    errorPassthrough: {
+      title: 'エラーパススルールール',
+      description: '上流エラーをクライアントに返す方法を設定します',
+      createRule: 'ルールを作成',
+      editRule: 'ルールを編集',
+      deleteRule: 'ルールを削除',
+      noRules: 'ルールが設定されていません',
+      createFirstRule: '最初のエラーパススルールールを作成してください',
+      allPlatforms: 'すべてのプラットフォーム',
+      passthrough: 'パススルー',
+      custom: 'カスタム',
+      code: 'コード',
+      body: 'ボディ',
+      skipMonitoring: '監視をスキップ',
+
+      // Columns
+      columns: {
+        priority: '優先度',
+        name: '名前',
+        conditions: '条件',
+        platforms: 'プラットフォーム',
+        behavior: '動作',
+        status: 'ステータス',
+        actions: '操作'
+      },
+
+      // Match Mode
+      matchMode: {
+        any: 'コード OR キーワード',
+        all: 'コード AND キーワード',
+        anyHint: 'ステータスコードがいずれかのエラーコードに一致、またはメッセージにいずれかのキーワードを含む',
+        allHint: 'ステータスコードがいずれかのエラーコードに一致、かつメッセージにいずれかのキーワードを含む'
+      },
+
+      // Form
+      form: {
+        name: 'ルール名',
+        namePlaceholder: '例：コンテキスト制限パススルー',
+        priority: '優先度',
+        priorityHint: '値が小さいほど優先度が高くなります',
+        description: '説明',
+        descriptionPlaceholder: 'このルールの目的を記述してください...',
+        matchConditions: 'マッチ条件',
+        errorCodes: 'エラーコード',
+        errorCodesPlaceholder: '422, 400, 429',
+        errorCodesHint: '複数のコードはカンマで区切ってください',
+        keywords: 'キーワード',
+        keywordsPlaceholder: '1行に1つのキーワード\ncontext limit\nmodel not supported',
+        keywordsHint: '1行に1つのキーワード、大文字小文字を区別しません',
+        matchMode: 'マッチモード',
+        platforms: 'プラットフォーム',
+        platformsHint: '空欄にするとすべてのプラットフォームに適用されます',
+        responseBehavior: 'レスポンス動作',
+        passthroughCode: '上流のステータスコードをパススルー',
+        responseCode: 'カスタムステータスコード',
+        passthroughBody: '上流のエラーメッセージをパススルー',
+        customMessage: 'カスタムエラーメッセージ',
+        customMessagePlaceholder: 'クライアントに返すエラーメッセージ...',
+        skipMonitoring: '監視をスキップ',
+        skipMonitoringHint: '有効にすると、このルールに一致するエラーは運用監視に記録されません',
+        enabled: 'このルールを有効化'
+      },
+
+      // Messages
+      nameRequired: 'ルール名を入力してください',
+      conditionsRequired: '少なくとも1つのエラーコードまたはキーワードを設定してください',
+      ruleCreated: 'ルールが正常に作成されました',
+      ruleUpdated: 'ルールが正常に更新されました',
+      ruleDeleted: 'ルールが正常に削除されました',
+      deleteConfirm: 'ルール「{name}」を削除してもよろしいですか？',
+      failedToLoad: 'ルールの読み込みに失敗しました',
+      failedToSave: 'ルールの保存に失敗しました',
+      failedToDelete: 'ルールの削除に失敗しました',
+      failedToToggle: 'ステータスの切替に失敗しました'
     }
   },
 
@@ -4196,6 +4428,41 @@ export default {
   },
 
   // User Subscriptions Page
+  // Purchase Page
+  purchase: {
+    title: 'サブスクリプションの購入',
+    description: '埋め込みページからサブスクリプションを購入',
+    openInNewTab: '新しいタブで開く',
+    notEnabledTitle: '機能が有効化されていません',
+    notEnabledDesc: '管理者が購入ページを有効化していません。管理者にお問い合わせください。',
+    notConfiguredTitle: '購入URLが未設定です',
+    notConfiguredDesc: '管理者がエントリを有効化しましたが、購入URLが設定されていません。管理者にお問い合わせください。',
+  },
+
+  // Announcements Page
+  announcements: {
+    title: 'お知らせ',
+    description: 'システムからのお知らせを確認',
+    unreadOnly: '未読のみ表示',
+    markRead: '既読にする',
+    markAllRead: 'すべて既読にする',
+    viewAll: 'すべてのお知らせを見る',
+    markedAsRead: '既読にしました',
+    allMarkedAsRead: 'すべてのお知らせを既読にしました',
+    newCount: '新着 {count} 件のお知らせ',
+    readAt: '閲覧日時',
+    read: '既読',
+    unread: '未読',
+    startsAt: '開始日時',
+    endsAt: '終了日時',
+    empty: 'お知らせはありません',
+    emptyUnread: '未読のお知らせはありません',
+    total: '件のお知らせ',
+    emptyDescription: '現在、システムからのお知らせはありません',
+    readStatus: 'このお知らせは既読です',
+    markReadHint: '「既読にする」をクリックして既読にできます',
+  },
+
   userSubscriptions: {
     title: 'マイサブスクリプション',
     description: 'サブスクリプションプランと使用量を確認',
@@ -4226,7 +4493,12 @@ export default {
     expiresOn: '{date}に期限切れ',
     resetIn: '{time}後にリセット',
     windowNotActive: '初回使用待ち',
-    usageOf: '使用済み {used} / {limit}'
+    usageOf: '使用済み {used} / {limit}',
+    remaining: '残り',
+    usedOfTotal: '使用済み ${used} / 合計 ${total}（{cycles} サイクル）',
+    renew: '更新',
+    renewPrice: '更新: ¥{price} / {days}日',
+    renewError: '更新に失敗しました。再度お試しください'
   },
 
   // Plans (user purchase page)
@@ -4247,6 +4519,7 @@ export default {
     processing: '処理中...',
     purchase: '今すぐ購入',
     purchaseError: '注文の作成に失敗しました。後ほどお試しください',
+    buyOnTaobao: 'Taobaoで購入',
     pricePerDollar: 'わずか ¥{price}/ドル',
     estimatedUsage: '約{count}回呼び出し可能（混合使用）',
     estimatedTokens: '約{tokens} tokens',
@@ -4291,6 +4564,7 @@ export default {
   recharge: {
     title: 'アカウントチャージ',
     rechargeNow: '今すぐチャージ',
+    paymentClosedHint: 'オンライン決済は現在ご利用いただけません。チャージについてはサポートまでお問い合わせください。',
     rechargeAmount: 'チャージ金額（元）',
     enterAmount: 'チャージ金額を入力してください',
     quickAmounts: 'クイック金額',
@@ -4342,6 +4616,20 @@ export default {
     repayFailed: '支払いリンクの取得に失敗しました'
   },
 
+  // Payment QR Code Modal
+  payment: {
+    scanToPay: 'スキャンして支払う',
+    transferToPay: '振込で支払う',
+    qrCodeAlt: '決済用QRコード',
+    amountToPay: 'お支払い金額',
+    businessQrInstruction: '上記のQRコードをAlipayでスキャンしてお支払いください',
+    transferInstruction: 'Alipayで指定口座に振り込んでください。以下の備考を必ず記入してください',
+    transferMemo: '振込備考',
+    openAlipay: 'Alipayを開く',
+    waitingForPayment: '支払いを確認中...',
+    paymentSuccess: '支払いが完了しました',
+  },
+
   // User Orders
   userOrders: {
     title: 'マイオーダー',
@@ -4386,14 +4674,14 @@ export default {
     // Admin tour steps
     admin: {
       welcome: {
-        title: '👋 Sub2APIへようこそ',
-        description: '<div style="line-height: 1.8;"><p style="margin-bottom: 16px;">Sub2APIは強力なAIサービス中継プラットフォームで、AIサービスの管理と配布を簡単に行えます。</p><p style="margin-bottom: 12px;"><b>🎯 コア機能：</b></p><ul style="margin-left: 20px; margin-bottom: 16px;"><li>📦 <b>グループ管理</b> - 異なるサービスプラン（VIP、無料トライアルなど）を作成</li><li>🔗 <b>アカウントプール</b> - 複数の上流AIサービスプロバイダーアカウントを接続</li><li>🔑 <b>APIキー配布</b> - ユーザーごとに独立したAPIキーを生成</li><li>💰 <b>課金管理</b> - 柔軟な料金と割り当て制御</li></ul><p style="color: #10b981; font-weight: 600;">次の3分間で初期設定を完了しましょう →</p></div>',
+        title: '👋 {siteName}へようこそ',
+        description: '<div style="line-height: 1.8;"><p style="margin-bottom: 16px;">{siteName}は強力なAIサービス中継プラットフォームで、AIサービスの管理と配布を簡単に行えます。</p><p style="margin-bottom: 12px;"><b>🎯 コア機能：</b></p><ul style="margin-left: 20px; margin-bottom: 16px;"><li>📦 <b>グループ管理</b> - 異なるサービスプラン（VIP、無料トライアルなど）を作成</li><li>🔗 <b>アカウントプール</b> - 複数の上流AIサービスプロバイダーアカウントを接続</li><li>🔑 <b>APIキー配布</b> - ユーザーごとに独立したAPIキーを生成</li><li>💰 <b>課金管理</b> - 柔軟な料金と割り当て制御</li></ul><p style="color: #10b981; font-weight: 600;">次の3分間で初期設定を完了しましょう →</p></div>',
         nextBtn: '設定を開始 🚀',
         prevBtn: 'スキップ'
       },
       groupManage: {
         title: '📦 ステップ1：グループ管理',
-        description: '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;"><b>グループとは？</b></p><p style="margin-bottom: 12px;">グループはSub2APIのコア概念で、「サービスプラン」のようなものです：</p><ul style="margin-left: 20px; margin-bottom: 12px; font-size: 13px;"><li>🎯 各グループは複数の上流アカウントを含むことができます</li><li>💰 各グループは独立した課金倍率を持ちます</li><li>👥 公開または専用グループに設定できます</li></ul><p style="margin-top: 12px; padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px;"><b>💡 例：</b>「VIP専用回線」（高倍率）と「無料トライアル」（低倍率）の2つのグループを作成できます</p><p style="margin-top: 16px; color: #10b981; font-weight: 600;">👉 左側の「グループ管理」をクリックして開始</p></div>'
+        description: '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;"><b>グループとは？</b></p><p style="margin-bottom: 12px;">グループは{siteName}のコア概念で、「サービスプラン」のようなものです：</p><ul style="margin-left: 20px; margin-bottom: 12px; font-size: 13px;"><li>🎯 各グループは複数の上流アカウントを含むことができます</li><li>💰 各グループは独立した課金倍率を持ちます</li><li>👥 公開または専用グループに設定できます</li></ul><p style="margin-top: 12px; padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px;"><b>💡 例：</b>「VIP専用回線」（高倍率）と「無料トライアル」（低倍率）の2つのグループを作成できます</p><p style="margin-top: 16px; color: #10b981; font-weight: 600;">👉 左側の「グループ管理」をクリックして開始</p></div>'
       },
       createGroup: {
         title: '➕ 新しいグループを作成',
@@ -4486,8 +4774,8 @@ export default {
     // User tour steps
     user: {
       welcome: {
-        title: '👋 Sub2APIへようこそ',
-        description: '<div style="line-height: 1.8;"><p style="margin-bottom: 16px;">こんにちは！Sub2API AIサービスプラットフォームへようこそ。</p><p style="margin-bottom: 12px;"><b>🎯 クイックスタート：</b></p><ul style="margin-left: 20px; margin-bottom: 16px;"><li>🔑 APIキーを作成</li><li>📋 APIキーをアプリにコピー</li><li>🚀 AIサービスの使用を開始</li></ul><p style="color: #10b981; font-weight: 600;">たった1分で始められます →</p></div>',
+        title: '👋 {siteName}へようこそ',
+        description: '<div style="line-height: 1.8;"><p style="margin-bottom: 16px;">こんにちは！{siteName} AIサービスプラットフォームへようこそ。</p><p style="margin-bottom: 12px;"><b>🎯 クイックスタート：</b></p><ul style="margin-left: 20px; margin-bottom: 16px;"><li>🔑 APIキーを作成</li><li>📋 APIキーをアプリにコピー</li><li>🚀 AIサービスの使用を開始</li></ul><p style="color: #10b981; font-weight: 600;">たった1分で始められます →</p></div>',
         nextBtn: '開始 🚀',
         prevBtn: 'スキップ'
       },
@@ -4621,6 +4909,10 @@ export default {
       ipBlacklist: 'IPブラックリスト',
       customKey: 'カスタムキー',
       expiresInDays: '有効日数',
+      expiresInDaysHint: '（プランから自動入力）',
+      expiresInDaysPlaceholder: '0 = 無期限',
+      quotaHint: '（プランから自動入力）',
+      quotaPlaceholder: '0 = 無制限',
       resetQuota: 'クォータリセット',
       copyKey: 'キーをコピー',
       noKeys: 'APIキーはまだありません',
@@ -4657,6 +4949,9 @@ export default {
       verifyStep2_txt: 'ステップ2：TXTレコードを追加（ドメイン所有権を確認）',
       verifyStep2_hint: 'HOSTは _domain-verify のみ入力し、ドメインサフィックスは含めないでください。',
       verifyStep3: 'ステップ3：DNSの反映を待ち（通常数分）、「今すぐ認証」をクリックしてください',
+      dnsType: 'タイプ',
+      dnsHost: 'HOST',
+      dnsValue: 'VALUE',
       verifySuccess: 'ドメイン認証成功',
       verifyFailed: 'ドメイン認証失敗。DNSレコードが正しく設定されているか確認してください',
       createSuccess: 'ドメイン追加成功',
