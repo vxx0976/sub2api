@@ -8,6 +8,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/payment"
+
 	"github.com/google/uuid"
 )
 
@@ -16,7 +17,7 @@ type OrderService struct {
 	orderRepo           OrderRepository
 	groupRepo           GroupRepository
 	subscriptionService *SubscriptionService
-	musePayment         *payment.MusePayment
+	alipayPayment       *payment.AlipayPayment
 	cfg                 *config.Config
 	referralService     *ReferralService
 }
@@ -26,7 +27,7 @@ func NewOrderService(
 	orderRepo OrderRepository,
 	groupRepo GroupRepository,
 	subscriptionService *SubscriptionService,
-	musePayment *payment.MusePayment,
+	alipayPayment *payment.AlipayPayment,
 	cfg *config.Config,
 	referralService *ReferralService,
 ) *OrderService {
@@ -34,7 +35,7 @@ func NewOrderService(
 		orderRepo:           orderRepo,
 		groupRepo:           groupRepo,
 		subscriptionService: subscriptionService,
-		musePayment:         musePayment,
+		alipayPayment:       alipayPayment,
 		cfg:                 cfg,
 		referralService:     referralService,
 	}
@@ -44,16 +45,18 @@ func NewOrderService(
 type CreateOrderInput struct {
 	UserID  int64
 	GroupID int64
-	BaseURL string // 请求来源的基础 URL，用于动态生成回调地址
 }
 
 // CreateOrderOutput output for creating an order
 type CreateOrderOutput struct {
-	OrderNo      string
-	PayURL       string
-	Amount       float64
-	CreditAmount *float64 // 充值订单实际到账金额（可选）
-	Multiplier   *float64 // 充值订单倍率（可选）
+	OrderNo       string
+	Amount        float64
+	PaymentAmount float64  // actual amount to pay (may differ for unique amount matching)
+	QRCodeURL     string   // URL encoded as QR code
+	QRCode        string   // base64 QR code image
+	Mode          string   // "business_qr" or "transfer"
+	CreditAmount  *float64 // 充值订单实际到账金额（可选）
+	Multiplier    *float64 // 充值订单倍率（可选）
 }
 
 // CreateOrder creates a new order for purchasing a subscription
@@ -93,40 +96,31 @@ func (s *OrderService) CreateOrder(ctx context.Context, input *CreateOrderInput)
 		return nil, fmt.Errorf("create order: %w", err)
 	}
 
-	// Generate payment URL with dynamic callback URLs
-	payParams := payment.CreatePayParams{
-		OrderNo: orderNo,
-		Money:   *group.Price,
-		Name:    fmt.Sprintf("%s 订阅套餐", group.Name),
+	// Generate payment info (QR code)
+	payInfo, err := s.alipayPayment.GeneratePaymentInfo(orderNo, *group.Price)
+	if err != nil {
+		return nil, fmt.Errorf("generate payment info: %w", err)
 	}
-	// 如果提供了 BaseURL，动态生成回调地址
-	if input.BaseURL != "" {
-		payParams.NotifyURL = input.BaseURL + "/api/v1/payment/notify"
-		payParams.ReturnURL = input.BaseURL + "/subscriptions"
+
+	qrCodeBase64, err := payment.GenerateQRCodeBase64(payInfo.QRCodeURL, 256)
+	if err != nil {
+		return nil, fmt.Errorf("generate QR code: %w", err)
 	}
-	payURL := s.musePayment.PaymentURL(payParams)
 
 	return &CreateOrderOutput{
-		OrderNo: orderNo,
-		PayURL:  payURL,
-		Amount:  *group.Price,
+		OrderNo:       orderNo,
+		Amount:        *group.Price,
+		PaymentAmount: payInfo.PaymentAmount,
+		QRCodeURL:     payInfo.QRCodeURL,
+		QRCode:        qrCodeBase64,
+		Mode:          payInfo.Mode,
 	}, nil
 }
 
-// HandlePaymentNotify handles payment callback notification
-func (s *OrderService) HandlePaymentNotify(ctx context.Context, params *payment.NotifyParams) error {
-	// Verify signature
-	if !s.musePayment.VerifySign(params.ToMap()) {
-		return fmt.Errorf("invalid signature")
-	}
-
-	// Check payment status
-	if !params.IsSuccess() {
-		return nil // Not a success notification, ignore
-	}
-
+// ConfirmOrderPaid is called by the payment monitor when a matching payment is detected
+func (s *OrderService) ConfirmOrderPaid(ctx context.Context, orderNo string, tradeNo string, payType string) error {
 	// Get order
-	order, err := s.orderRepo.GetByOrderNo(ctx, params.OutTradeNo)
+	order, err := s.orderRepo.GetByOrderNo(ctx, orderNo)
 	if err != nil {
 		return fmt.Errorf("get order: %w", err)
 	}
@@ -164,17 +158,13 @@ func (s *OrderService) HandlePaymentNotify(ctx context.Context, params *payment.
 	}
 
 	// Update order status
-	if err := s.orderRepo.SetPaid(ctx, order.ID, params.TradeNo, params.Type, sub.ID); err != nil {
+	if err := s.orderRepo.SetPaid(ctx, order.ID, tradeNo, payType, sub.ID); err != nil {
 		return fmt.Errorf("update order status: %w", err)
 	}
 
 	// Process referral reward for first-time subscription payments
-	// Only trigger if:
-	// 1. Referral service is enabled
-	// 2. This is a new subscription (not renewal)
 	if s.referralService != nil && isNewSubscription {
 		go func() {
-			// Use background context since the original request may have completed
 			bgCtx := context.Background()
 			referrerRewarded, inviteeRewarded, err := s.referralService.ProcessReferralReward(bgCtx, order.UserID, order.ID, order.Amount)
 			if err != nil {
@@ -186,6 +176,45 @@ func (s *OrderService) HandlePaymentNotify(ctx context.Context, params *payment.
 	}
 
 	return nil
+}
+
+// GetOrderPaymentStatus returns the payment status of an order
+func (s *OrderService) GetOrderPaymentStatus(ctx context.Context, userID int64, orderNo string) (string, error) {
+	order, err := s.orderRepo.GetByOrderNo(ctx, orderNo)
+	if err != nil {
+		return "", err
+	}
+
+	if order.UserID != userID {
+		return "", ErrOrderNotFound
+	}
+
+	if order.Status == OrderStatusPending && order.ExpiredAt != nil && time.Now().After(*order.ExpiredAt) {
+		_ = s.orderRepo.UpdateStatus(ctx, order.ID, OrderStatusExpired, nil, nil)
+		return OrderStatusExpired, nil
+	}
+
+	return order.Status, nil
+}
+
+// GetPendingOrdersForMonitor returns all pending orders for payment matching
+func (s *OrderService) GetPendingOrdersForMonitor(ctx context.Context) ([]payment.PendingOrder, error) {
+	orders, err := s.orderRepo.ListPending(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]payment.PendingOrder, 0, len(orders))
+	for _, o := range orders {
+		result = append(result, payment.PendingOrder{
+			OrderNo:       o.OrderNo,
+			Amount:        o.Amount,
+			PaymentAmount: o.Amount,
+			CreatedAt:     o.CreatedAt,
+			ExpiredAt:     o.ExpiredAt,
+		})
+	}
+	return result, nil
 }
 
 // GetUserOrders retrieves orders for a user
@@ -207,22 +236,16 @@ func (s *OrderService) GetOrderByNo(ctx context.Context, orderNo string) (*Order
 
 // GetPurchasablePlans retrieves all purchasable plans (admin-owned, for main site)
 func (s *OrderService) GetPurchasablePlans(ctx context.Context) ([]Group, error) {
-	if !s.cfg.Payment.Enabled {
-		return nil, ErrPaymentDisabled
-	}
 	return s.groupRepo.ListPurchasable(ctx)
 }
 
 // GetPurchasablePlansForReseller retrieves purchasable plans owned by the given reseller
 func (s *OrderService) GetPurchasablePlansForReseller(ctx context.Context, ownerID int64) ([]Group, error) {
-	if !s.cfg.Payment.Enabled {
-		return nil, ErrPaymentDisabled
-	}
 	return s.groupRepo.ListPurchasableByOwnerID(ctx, ownerID)
 }
 
-// RepayOrder generates a new payment URL for an existing pending order
-func (s *OrderService) RepayOrder(ctx context.Context, userID int64, orderNo string, baseURL string) (*CreateOrderOutput, error) {
+// RepayOrder generates a new payment QR code for an existing pending order
+func (s *OrderService) RepayOrder(ctx context.Context, userID int64, orderNo string) (*CreateOrderOutput, error) {
 	// Check if payment is enabled
 	if !s.cfg.Payment.Enabled {
 		return nil, ErrPaymentDisabled
@@ -254,29 +277,24 @@ func (s *OrderService) RepayOrder(ctx context.Context, userID int64, orderNo str
 		return nil, ErrOrderExpired
 	}
 
-	// Get group for name
-	group, err := s.groupRepo.GetByID(ctx, order.GroupID)
+	// Generate payment info
+	payInfo, err := s.alipayPayment.GeneratePaymentInfo(order.OrderNo, order.Amount)
 	if err != nil {
-		return nil, fmt.Errorf("get group: %w", err)
+		return nil, fmt.Errorf("generate payment info: %w", err)
 	}
 
-	// Generate payment URL with dynamic callback URLs
-	payParams := payment.CreatePayParams{
-		OrderNo: order.OrderNo,
-		Money:   order.Amount,
-		Name:    fmt.Sprintf("%s 订阅套餐", group.Name),
+	qrCodeBase64, err := payment.GenerateQRCodeBase64(payInfo.QRCodeURL, 256)
+	if err != nil {
+		return nil, fmt.Errorf("generate QR code: %w", err)
 	}
-	// 如果提供了 BaseURL，动态生成回调地址
-	if baseURL != "" {
-		payParams.NotifyURL = baseURL + "/api/v1/payment/notify"
-		payParams.ReturnURL = baseURL + "/subscriptions"
-	}
-	payURL := s.musePayment.PaymentURL(payParams)
 
 	return &CreateOrderOutput{
-		OrderNo: order.OrderNo,
-		PayURL:  payURL,
-		Amount:  order.Amount,
+		OrderNo:       order.OrderNo,
+		Amount:        order.Amount,
+		PaymentAmount: payInfo.PaymentAmount,
+		QRCodeURL:     payInfo.QRCodeURL,
+		QRCode:        qrCodeBase64,
+		Mode:          payInfo.Mode,
 	}, nil
 }
 

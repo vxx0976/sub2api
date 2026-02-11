@@ -4600,6 +4600,7 @@ export default {
   recharge: {
     title: 'Recharge Account',
     rechargeNow: 'Recharge Now',
+    paymentClosedHint: 'Online payment is not available. Please contact support to recharge.',
     rechargeAmount: 'Recharge Amount (¥)',
     enterAmount: 'Enter recharge amount',
     quickAmounts: 'Quick Amounts',
@@ -4649,6 +4650,20 @@ export default {
     noOrdersDesc: "You haven't recharged yet",
     failedToLoad: 'Failed to load recharge records',
     repayFailed: 'Failed to get payment link'
+  },
+
+  // Payment QR Code Modal
+  payment: {
+    scanToPay: 'Scan to Pay',
+    transferToPay: 'Transfer to Pay',
+    qrCodeAlt: 'Payment QR Code',
+    amountToPay: 'Amount to Pay',
+    businessQrInstruction: 'Please scan the QR code above with Alipay to complete payment',
+    transferInstruction: 'Please transfer to the specified account via Alipay. Be sure to include the following memo',
+    transferMemo: 'Transfer Memo',
+    openAlipay: 'Open Alipay',
+    waitingForPayment: 'Waiting for payment...',
+    paymentSuccess: 'Payment successful',
   },
 
   // User Orders

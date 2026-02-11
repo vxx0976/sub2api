@@ -604,6 +604,12 @@ router.beforeEach((to, _from, next) => {
     return
   }
 
+  // Block login/register on reseller domains
+  if (appStore.isResellerDomain && (to.path === '/login' || to.path === '/register')) {
+    next('/home')
+    return
+  }
+
   // Set page title
   const siteName = appStore.siteName || '码驿站'
   if (to.meta.title) {
@@ -636,6 +642,11 @@ router.beforeEach((to, _from, next) => {
 
   // Route requires authentication
   if (!authStore.isAuthenticated) {
+    // On reseller domains, redirect to home instead of login
+    if (appStore.isResellerDomain) {
+      next('/home')
+      return
+    }
     // Not authenticated, redirect to login
     next({
       path: '/login',

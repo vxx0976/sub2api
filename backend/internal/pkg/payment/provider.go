@@ -5,12 +5,12 @@ import (
 	"github.com/google/wire"
 )
 
-// ProvideMusePayment creates a MusePayment instance from config
-func ProvideMusePayment(cfg *config.Config) *MusePayment {
-	return NewMusePayment(cfg.Payment.Muse)
+// ProvideAlipayPayment creates an AlipayPayment instance from config
+func ProvideAlipayPayment(cfg *config.Config) (*AlipayPayment, error) {
+	return NewAlipayPayment(cfg.Payment.Alipay)
 }
 
 // ProviderSet is the Wire provider set for payment package
 var ProviderSet = wire.NewSet(
-	ProvideMusePayment,
+	ProvideAlipayPayment,
 )

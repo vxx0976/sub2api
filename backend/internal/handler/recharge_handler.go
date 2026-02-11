@@ -30,11 +30,14 @@ type CreateRechargeOrderRequest struct {
 
 // 创建充值订单响应
 type CreateRechargeOrderResponse struct {
-	OrderNo      string  `json:"order_no"`
-	PayURL       string  `json:"pay_url"`
-	Amount       float64 `json:"amount"`
-	CreditAmount float64 `json:"credit_amount"`
-	Multiplier   float64 `json:"multiplier"`
+	OrderNo       string  `json:"order_no"`
+	Amount        float64 `json:"amount"`
+	PaymentAmount float64 `json:"payment_amount"`
+	QRCodeURL     string  `json:"qr_code_url"`
+	QRCode        string  `json:"qr_code"`
+	Mode          string  `json:"mode"`
+	CreditAmount  float64 `json:"credit_amount"`
+	Multiplier    float64 `json:"multiplier"`
 }
 
 // CreateRechargeOrder 创建充值订单
@@ -55,7 +58,6 @@ func (h *RechargeHandler) CreateRechargeOrder(c *gin.Context) {
 		c.Request.Context(),
 		subject.UserID,
 		req.Amount,
-		getBaseURL(c),
 	)
 	if err != nil {
 		response.ErrorFrom(c, err)
@@ -63,9 +65,12 @@ func (h *RechargeHandler) CreateRechargeOrder(c *gin.Context) {
 	}
 
 	resp := CreateRechargeOrderResponse{
-		OrderNo: result.OrderNo,
-		PayURL:  result.PayURL,
-		Amount:  result.Amount,
+		OrderNo:       result.OrderNo,
+		Amount:        result.Amount,
+		PaymentAmount: result.PaymentAmount,
+		QRCodeURL:     result.QRCodeURL,
+		QRCode:        result.QRCode,
+		Mode:          result.Mode,
 	}
 	if result.CreditAmount != nil {
 		resp.CreditAmount = *result.CreditAmount
@@ -119,7 +124,6 @@ func (h *RechargeHandler) RepayRechargeOrder(c *gin.Context) {
 		c.Request.Context(),
 		subject.UserID,
 		orderNo,
-		getBaseURL(c),
 	)
 	if err != nil {
 		response.ErrorFrom(c, err)
@@ -127,9 +131,12 @@ func (h *RechargeHandler) RepayRechargeOrder(c *gin.Context) {
 	}
 
 	resp := CreateRechargeOrderResponse{
-		OrderNo: result.OrderNo,
-		PayURL:  result.PayURL,
-		Amount:  result.Amount,
+		OrderNo:       result.OrderNo,
+		Amount:        result.Amount,
+		PaymentAmount: result.PaymentAmount,
+		QRCodeURL:     result.QRCodeURL,
+		QRCode:        result.QRCode,
+		Mode:          result.Mode,
 	}
 	if result.CreditAmount != nil {
 		resp.CreditAmount = *result.CreditAmount

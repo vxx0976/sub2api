@@ -15,4 +15,5 @@ type RechargeOrderRepository interface {
 	SetPaid(ctx context.Context, id int64, tradeNo string, payType string) error
 	ListByUserID(ctx context.Context, userID int64, params pagination.PaginationParams) ([]RechargeOrder, *pagination.PaginationResult, error)
 	ListAll(ctx context.Context, params pagination.PaginationParams, keyword string, status string) ([]RechargeOrder, *pagination.PaginationResult, error)
+	ListPending(ctx context.Context) ([]RechargeOrder, error)
 }

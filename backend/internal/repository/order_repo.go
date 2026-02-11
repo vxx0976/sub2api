@@ -218,8 +218,6 @@ func (r *orderRepository) ListPending(ctx context.Context) ([]service.Order, err
 	orders, err := client.Order.Query().
 		Where(
 			order.StatusEQ(service.OrderStatusPending),
-			order.ExpiredAtNotNil(),
-			order.ExpiredAtLTE(time.Now()),
 		).
 		All(ctx)
 	if err != nil {

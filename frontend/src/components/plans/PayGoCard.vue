@@ -65,6 +65,10 @@
           {{ t('recharge.rechargeNow') }}
         </span>
       </button>
+      <!-- Payment disabled hint -->
+      <p v-if="!config?.enabled" class="mt-2 text-center text-xs text-gray-400 dark:text-dark-500">
+        {{ t('recharge.paymentClosedHint') }}
+      </p>
     </div>
   </div>
 </template>

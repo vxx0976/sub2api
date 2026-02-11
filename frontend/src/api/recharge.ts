@@ -42,8 +42,11 @@ export interface CreateRechargeOrderRequest {
 
 export interface CreateRechargeOrderResponse {
   order_no: string
-  pay_url: string
   amount: number
+  payment_amount: number
+  qr_code_url: string
+  qr_code: string
+  mode: string
   credit_amount: number
   multiplier: number
 }

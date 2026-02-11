@@ -4587,6 +4587,7 @@ export default {
   recharge: {
     title: '账户充值',
     rechargeNow: '立即充值',
+    paymentClosedHint: '在线支付暂未开放，请联系客服充值',
     rechargeAmount: '充值金额（元）',
     enterAmount: '请输入充值金额',
     quickAmounts: '快捷金额',
@@ -4636,6 +4637,20 @@ export default {
     noOrdersDesc: '您还没有充值过',
     failedToLoad: '加载充值记录失败',
     repayFailed: '获取支付链接失败'
+  },
+
+  // Payment QR Code Modal
+  payment: {
+    scanToPay: '扫码支付',
+    transferToPay: '转账支付',
+    qrCodeAlt: '支付二维码',
+    amountToPay: '支付金额',
+    businessQrInstruction: '请使用支付宝扫描上方二维码完成支付',
+    transferInstruction: '请使用支付宝向指定账户转账，转账时请务必填写以下备注信息',
+    transferMemo: '转账备注',
+    openAlipay: '打开支付宝',
+    waitingForPayment: '等待支付中...',
+    paymentSuccess: '支付成功',
   },
 
   // User Orders

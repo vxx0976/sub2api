@@ -8,6 +8,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/payment"
+
 	"github.com/google/uuid"
 )
 
@@ -15,7 +16,7 @@ type RechargeOrderService struct {
 	rechargeOrderRepo RechargeOrderRepository
 	userRepo          UserRepository
 	settingService    *SettingService
-	musePayment       *payment.MusePayment
+	alipayPayment     *payment.AlipayPayment
 	cfg               *config.Config
 }
 
@@ -23,20 +24,20 @@ func NewRechargeOrderService(
 	rechargeOrderRepo RechargeOrderRepository,
 	userRepo UserRepository,
 	settingService *SettingService,
-	musePayment *payment.MusePayment,
+	alipayPayment *payment.AlipayPayment,
 	cfg *config.Config,
 ) *RechargeOrderService {
 	return &RechargeOrderService{
 		rechargeOrderRepo: rechargeOrderRepo,
 		userRepo:          userRepo,
 		settingService:    settingService,
-		musePayment:       musePayment,
+		alipayPayment:     alipayPayment,
 		cfg:               cfg,
 	}
 }
 
 // CreateRechargeOrder 创建充值订单
-func (s *RechargeOrderService) CreateRechargeOrder(ctx context.Context, userID int64, amount float64, baseURL string) (*CreateOrderOutput, error) {
+func (s *RechargeOrderService) CreateRechargeOrder(ctx context.Context, userID int64, amount float64) (*CreateOrderOutput, error) {
 	// 1. 获取充值配置
 	config, err := s.settingService.GetRechargeConfig(ctx)
 	if err != nil {
@@ -77,24 +78,26 @@ func (s *RechargeOrderService) CreateRechargeOrder(ctx context.Context, userID i
 		return nil, fmt.Errorf("create recharge order: %w", err)
 	}
 
-	// 7. 生成支付URL（动态回调地址）
-	payParams := payment.CreatePayParams{
-		OrderNo: orderNo,
-		Money:   amount, // 用户实际支付金额
-		Name:    "账户充值",
+	// 7. 生成支付信息（QR码）
+	payInfo, err := s.alipayPayment.GeneratePaymentInfo(orderNo, amount)
+	if err != nil {
+		return nil, fmt.Errorf("generate payment info: %w", err)
 	}
-	if baseURL != "" {
-		payParams.NotifyURL = baseURL + "/api/v1/payment/notify"
-		payParams.ReturnURL = baseURL + "/recharge-orders"
+
+	qrCodeBase64, err := payment.GenerateQRCodeBase64(payInfo.QRCodeURL, 256)
+	if err != nil {
+		return nil, fmt.Errorf("generate QR code: %w", err)
 	}
-	payURL := s.musePayment.PaymentURL(payParams)
 
 	return &CreateOrderOutput{
-		OrderNo:      orderNo,
-		PayURL:       payURL,
-		Amount:       amount,
-		CreditAmount: &creditAmount,
-		Multiplier:   &multiplier,
+		OrderNo:       orderNo,
+		Amount:        amount,
+		PaymentAmount: payInfo.PaymentAmount,
+		QRCodeURL:     payInfo.QRCodeURL,
+		QRCode:        qrCodeBase64,
+		Mode:          payInfo.Mode,
+		CreditAmount:  &creditAmount,
+		Multiplier:    &multiplier,
 	}, nil
 }
 
@@ -110,7 +113,7 @@ func (s *RechargeOrderService) calculateMultiplier(amount float64, tiers []Recha
 	return 1.0 // 默认倍率
 }
 
-// HandleRechargeNotify 处理充值回调
+// HandleRechargeNotify 处理充值回调（由监控服务调用）
 func (s *RechargeOrderService) HandleRechargeNotify(ctx context.Context, orderNo string, tradeNo string, payType string) error {
 	// 1. 获取订单
 	order, err := s.rechargeOrderRepo.GetByOrderNo(ctx, orderNo)
@@ -141,7 +144,7 @@ func (s *RechargeOrderService) HandleRechargeNotify(ctx context.Context, orderNo
 }
 
 // RepayRechargeOrder 继续支付
-func (s *RechargeOrderService) RepayRechargeOrder(ctx context.Context, userID int64, orderNo string, baseURL string) (*CreateOrderOutput, error) {
+func (s *RechargeOrderService) RepayRechargeOrder(ctx context.Context, userID int64, orderNo string) (*CreateOrderOutput, error) {
 	// 验证功能是否启用
 	config, err := s.settingService.GetRechargeConfig(ctx)
 	if err != nil {
@@ -176,25 +179,66 @@ func (s *RechargeOrderService) RepayRechargeOrder(ctx context.Context, userID in
 		return nil, ErrRechargeOrderExpired
 	}
 
-	// 生成新的支付URL（动态回调地址）
-	payParams := payment.CreatePayParams{
-		OrderNo: order.OrderNo,
-		Money:   order.Amount,
-		Name:    "账户充值",
+	// 生成支付信息
+	payInfo, err := s.alipayPayment.GeneratePaymentInfo(order.OrderNo, order.Amount)
+	if err != nil {
+		return nil, fmt.Errorf("generate payment info: %w", err)
 	}
-	if baseURL != "" {
-		payParams.NotifyURL = baseURL + "/api/v1/payment/notify"
-		payParams.ReturnURL = baseURL + "/recharge-orders"
+
+	qrCodeBase64, err := payment.GenerateQRCodeBase64(payInfo.QRCodeURL, 256)
+	if err != nil {
+		return nil, fmt.Errorf("generate QR code: %w", err)
 	}
-	payURL := s.musePayment.PaymentURL(payParams)
 
 	return &CreateOrderOutput{
-		OrderNo:      order.OrderNo,
-		PayURL:       payURL,
-		Amount:       order.Amount,
-		CreditAmount: &order.CreditAmount,
-		Multiplier:   &order.Multiplier,
+		OrderNo:       order.OrderNo,
+		Amount:        order.Amount,
+		PaymentAmount: payInfo.PaymentAmount,
+		QRCodeURL:     payInfo.QRCodeURL,
+		QRCode:        qrCodeBase64,
+		Mode:          payInfo.Mode,
+		CreditAmount:  &order.CreditAmount,
+		Multiplier:    &order.Multiplier,
 	}, nil
+}
+
+// GetRechargeOrderPaymentStatus returns the payment status of a recharge order
+func (s *RechargeOrderService) GetRechargeOrderPaymentStatus(ctx context.Context, userID int64, orderNo string) (string, error) {
+	order, err := s.rechargeOrderRepo.GetByOrderNo(ctx, orderNo)
+	if err != nil {
+		return "", err
+	}
+
+	if order.UserID != userID {
+		return "", ErrRechargeOrderNotFound
+	}
+
+	if order.Status == RechargeOrderStatusPending && order.ExpiredAt != nil && time.Now().After(*order.ExpiredAt) {
+		_ = s.rechargeOrderRepo.UpdateStatus(ctx, order.ID, RechargeOrderStatusExpired, nil, nil)
+		return RechargeOrderStatusExpired, nil
+	}
+
+	return order.Status, nil
+}
+
+// GetPendingRechargeOrdersForMonitor returns pending recharge orders for payment matching
+func (s *RechargeOrderService) GetPendingRechargeOrdersForMonitor(ctx context.Context) ([]payment.PendingOrder, error) {
+	orders, err := s.rechargeOrderRepo.ListPending(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]payment.PendingOrder, 0, len(orders))
+	for _, o := range orders {
+		result = append(result, payment.PendingOrder{
+			OrderNo:       o.OrderNo,
+			Amount:        o.Amount,
+			PaymentAmount: o.Amount,
+			CreatedAt:     o.CreatedAt,
+			ExpiredAt:     o.ExpiredAt,
+		})
+	}
+	return result, nil
 }
 
 // GetRechargeOrders 获取用户充值订单列表

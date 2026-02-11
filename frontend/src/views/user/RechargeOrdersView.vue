@@ -122,17 +122,30 @@
         />
       </div>
     </div>
+    <!-- Payment QR Code Modal -->
+    <PaymentQRCodeModal
+      :show="showPaymentModal"
+      :order-no="paymentInfo.orderNo"
+      :amount="paymentInfo.amount"
+      :payment-amount="paymentInfo.paymentAmount"
+      :qr-code="paymentInfo.qrCode"
+      :qr-code-url="paymentInfo.qrCodeUrl"
+      :mode="paymentInfo.mode"
+      @close="showPaymentModal = false"
+      @paid="handlePaymentSuccess"
+    />
   </AppLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onActivated } from 'vue'
+import { ref, reactive, onMounted, onActivated } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores'
 import { getRechargeOrders, repayRechargeOrder, type RechargeOrder } from '@/api/recharge'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import Pagination from '@/components/common/Pagination.vue'
 import Icon from '@/components/icons/Icon.vue'
+import PaymentQRCodeModal from '@/components/common/PaymentQRCodeModal.vue'
 
 const { t } = useI18n()
 const appStore = useAppStore()
@@ -143,6 +156,17 @@ const page = ref(1)
 const pageSize = ref(20)
 const total = ref(0)
 const repaying = ref<string | null>(null)
+
+// Payment modal state
+const showPaymentModal = ref(false)
+const paymentInfo = reactive({
+  orderNo: '',
+  amount: 0,
+  paymentAmount: 0,
+  qrCode: '',
+  qrCodeUrl: '',
+  mode: ''
+})
 
 const loadOrders = async () => {
   loading.value = true
@@ -200,16 +224,26 @@ const handleRepay = async (order: RechargeOrder) => {
   repaying.value = order.order_no
   try {
     const result = await repayRechargeOrder(order.order_no)
-    // Redirect to payment page
-    window.location.href = result.pay_url
+    paymentInfo.orderNo = result.order_no
+    paymentInfo.amount = result.amount
+    paymentInfo.paymentAmount = result.payment_amount
+    paymentInfo.qrCode = result.qr_code
+    paymentInfo.qrCodeUrl = result.qr_code_url
+    paymentInfo.mode = result.mode
+    showPaymentModal.value = true
   } catch (error: any) {
     const message = error.response?.data?.message || t('recharge.repayFailed')
     appStore.showError(message)
-    // Refresh orders to update status
     loadOrders()
   } finally {
     repaying.value = null
   }
+}
+
+const handlePaymentSuccess = () => {
+  showPaymentModal.value = false
+  appStore.showSuccess(t('payment.paymentSuccess'))
+  loadOrders()
 }
 
 onMounted(() => {

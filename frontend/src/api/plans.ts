@@ -27,8 +27,11 @@ export interface PurchasablePlan {
  */
 export interface CreateOrderResponse {
   order_no: string
-  pay_url: string
   amount: number
+  payment_amount: number
+  qr_code_url: string
+  qr_code: string
+  mode: string
 }
 
 /**
@@ -81,38 +84,6 @@ export async function getOrders(page: number = 1, pageSize: number = 20): Promis
 }
 
 /**
- * Payment return parameters
- */
-export interface PaymentReturnParams {
-  pid: string
-  trade_no: string
-  out_trade_no: string
-  type: string
-  name: string
-  money: string
-  trade_status: string
-  sign: string
-  sign_type: string
-}
-
-/**
- * Verify payment return response
- */
-export interface VerifyPaymentResponse {
-  status: string
-  order_no: string
-  paid: boolean
-}
-
-/**
- * Verify payment return and process order
- */
-export async function verifyPayment(params: PaymentReturnParams): Promise<VerifyPaymentResponse> {
-  const response = await apiClient.post<VerifyPaymentResponse>('/payment/verify', params)
-  return response.data
-}
-
-/**
  * Repay an existing pending order
  */
 export async function repayOrder(orderNo: string): Promise<CreateOrderResponse> {
@@ -120,10 +91,26 @@ export async function repayOrder(orderNo: string): Promise<CreateOrderResponse> 
   return response.data
 }
 
+/**
+ * Payment status response
+ */
+export interface PaymentStatusResponse {
+  status: string
+  order_no: string
+}
+
+/**
+ * Get order payment status (for polling)
+ */
+export async function getOrderPaymentStatus(orderNo: string): Promise<PaymentStatusResponse> {
+  const response = await apiClient.get<PaymentStatusResponse>(`/orders/${orderNo}/payment-status`)
+  return response.data
+}
+
 export default {
   getPlans,
   createOrder,
   getOrders,
-  verifyPayment,
-  repayOrder
+  repayOrder,
+  getOrderPaymentStatus
 }

@@ -116,11 +116,23 @@
         <Pagination v-if="rechargeTotal > rechargePageSize" :page="rechargePage" :total="rechargeTotal" :page-size="rechargePageSize" @update:page="handleRechargePageChange" class="mt-4" />
       </div>
     </div>
+    <!-- Payment QR Code Modal -->
+    <PaymentQRCodeModal
+      :show="showPaymentModal"
+      :order-no="paymentInfo.orderNo"
+      :amount="paymentInfo.amount"
+      :payment-amount="paymentInfo.paymentAmount"
+      :qr-code="paymentInfo.qrCode"
+      :qr-code-url="paymentInfo.qrCodeUrl"
+      :mode="paymentInfo.mode"
+      @close="showPaymentModal = false"
+      @paid="handlePaymentSuccess"
+    />
   </AppLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onActivated } from 'vue'
+import { ref, reactive, onMounted, onActivated } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores'
 import { getOrders, repayOrder, type Order } from '@/api/plans'
@@ -128,6 +140,7 @@ import { getRechargeOrders, repayRechargeOrder, type RechargeOrder } from '@/api
 import AppLayout from '@/components/layout/AppLayout.vue'
 import Pagination from '@/components/common/Pagination.vue'
 import Icon from '@/components/icons/Icon.vue'
+import PaymentQRCodeModal from '@/components/common/PaymentQRCodeModal.vue'
 
 const { t } = useI18n()
 const appStore = useAppStore()
@@ -148,6 +161,17 @@ const rechargeTotal = ref(0)
 
 // Shared state
 const repaying = ref<string | null>(null)
+
+// Payment modal state
+const showPaymentModal = ref(false)
+const paymentInfo = reactive({
+  orderNo: '',
+  amount: 0,
+  paymentAmount: 0,
+  qrCode: '',
+  qrCodeUrl: '',
+  mode: ''
+})
 
 const loadPlanOrders = async () => {
   planLoading.value = true
@@ -220,11 +244,28 @@ const isRechargeOrderExpired = (order: RechargeOrder): boolean => {
   return new Date() > new Date(order.expired_at)
 }
 
+const openPaymentModal = (result: { order_no: string; amount: number; payment_amount: number; qr_code: string; qr_code_url: string; mode: string }) => {
+  paymentInfo.orderNo = result.order_no
+  paymentInfo.amount = result.amount
+  paymentInfo.paymentAmount = result.payment_amount
+  paymentInfo.qrCode = result.qr_code
+  paymentInfo.qrCodeUrl = result.qr_code_url
+  paymentInfo.mode = result.mode
+  showPaymentModal.value = true
+}
+
+const handlePaymentSuccess = () => {
+  showPaymentModal.value = false
+  appStore.showSuccess(t('payment.paymentSuccess'))
+  loadPlanOrders()
+  loadRechargeOrders()
+}
+
 const handlePlanRepay = async (order: Order) => {
   repaying.value = order.order_no
   try {
     const result = await repayOrder(order.order_no)
-    window.location.href = result.pay_url
+    openPaymentModal(result)
   } catch (error: any) {
     appStore.showError(error.response?.data?.message || t('userOrders.repayFailed'))
     loadPlanOrders()
@@ -237,7 +278,7 @@ const handleRechargeRepay = async (order: RechargeOrder) => {
   repaying.value = order.order_no
   try {
     const result = await repayRechargeOrder(order.order_no)
-    window.location.href = result.pay_url
+    openPaymentModal(result)
   } catch (error: any) {
     appStore.showError(error.response?.data?.message || t('recharge.repayFailed'))
     loadRechargeOrders()

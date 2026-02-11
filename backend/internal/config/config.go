@@ -100,22 +100,38 @@ type UpdateConfig struct {
 type PaymentConfig struct {
 	// Enabled 是否启用支付功能
 	Enabled bool `mapstructure:"enabled"`
-	// Muse 暮色聚合支付配置
-	Muse MusePaymentConfig `mapstructure:"muse"`
+	// Alipay 支付宝原生支付配置
+	Alipay AlipayPaymentConfig `mapstructure:"alipay"`
 }
 
-// MusePaymentConfig 暮色聚合支付配置
-type MusePaymentConfig struct {
-	// PID 商户ID
-	PID string `mapstructure:"pid"`
-	// Key 商户密钥
-	Key string `mapstructure:"key"`
-	// SubmitURL 支付提交地址
-	SubmitURL string `mapstructure:"submit_url"`
-	// NotifyURL 支付回调通知地址
-	NotifyURL string `mapstructure:"notify_url"`
-	// ReturnURL 支付完成跳转地址
-	ReturnURL string `mapstructure:"return_url"`
+// AlipayPaymentConfig 支付宝原生支付配置
+type AlipayPaymentConfig struct {
+	// AppID 支付宝应用ID
+	AppID string `mapstructure:"app_id"`
+	// PrivateKey 应用私钥（RSA2）
+	PrivateKey string `mapstructure:"private_key"`
+	// AlipayPublicKey 支付宝公钥
+	AlipayPublicKey string `mapstructure:"alipay_public_key"`
+	// ServerURL 支付宝网关地址
+	ServerURL string `mapstructure:"server_url"`
+	// TransferUserID 收款支付宝用户ID（转账模式）
+	TransferUserID string `mapstructure:"transfer_user_id"`
+	// Mode 支付模式: business_qr(经营码) 或 transfer(转账)
+	Mode string `mapstructure:"mode"`
+	// BusinessQRURL 经营码支付页面URL（完整URL，优先级高于BusinessQRPath）
+	BusinessQRURL string `mapstructure:"business_qr_url"`
+	// BusinessQRPath 经营码路径（用于生成QR URL: https://qr.alipay.com/{path}）
+	BusinessQRPath string `mapstructure:"business_qr_path"`
+	// AmountOffset 金额偏移量（经营码模式下用于生成唯一金额，默认0.01）
+	AmountOffset float64 `mapstructure:"amount_offset"`
+	// MatchToleranceSeconds 匹配容差时间（秒，经营码模式，默认300）
+	MatchToleranceSeconds int `mapstructure:"match_tolerance_seconds"`
+	// MonitorIntervalSeconds 监控轮询间隔（秒，默认10）
+	MonitorIntervalSeconds int `mapstructure:"monitor_interval_seconds"`
+	// QueryMinutesBack 查询账单回溯分钟数（默认30）
+	QueryMinutesBack int `mapstructure:"query_minutes_back"`
+	// OrderTimeoutSeconds 订单超时时间（秒，默认1800=30分钟）
+	OrderTimeoutSeconds int `mapstructure:"order_timeout_seconds"`
 }
 
 type LinuxDoConnectConfig struct {
@@ -957,11 +973,19 @@ func setDefaults() {
 
 	// Payment - 支付配置
 	viper.SetDefault("payment.enabled", false)
-	viper.SetDefault("payment.muse.pid", "")
-	viper.SetDefault("payment.muse.key", "")
-	viper.SetDefault("payment.muse.submit_url", "https://ms.1212z.cn/submit.php")
-	viper.SetDefault("payment.muse.notify_url", "")
-	viper.SetDefault("payment.muse.return_url", "")
+	viper.SetDefault("payment.alipay.app_id", "")
+	viper.SetDefault("payment.alipay.private_key", "")
+	viper.SetDefault("payment.alipay.alipay_public_key", "")
+	viper.SetDefault("payment.alipay.server_url", "https://openapi.alipay.com/gateway.do")
+	viper.SetDefault("payment.alipay.transfer_user_id", "")
+	viper.SetDefault("payment.alipay.mode", "business_qr")
+	viper.SetDefault("payment.alipay.business_qr_url", "")
+	viper.SetDefault("payment.alipay.business_qr_path", "")
+	viper.SetDefault("payment.alipay.amount_offset", 0.01)
+	viper.SetDefault("payment.alipay.match_tolerance_seconds", 300)
+	viper.SetDefault("payment.alipay.monitor_interval_seconds", 10)
+	viper.SetDefault("payment.alipay.query_minutes_back", 30)
+	viper.SetDefault("payment.alipay.order_timeout_seconds", 1800)
 }
 
 func (c *Config) Validate() error {

@@ -1,8 +1,6 @@
 package handler
 
 import (
-	"net/http"
-
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/payment"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
@@ -11,20 +9,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 )
-
-// getBaseURL 从请求中获取基础 URL
-func getBaseURL(c *gin.Context) string {
-	scheme := "https"
-	if c.Request.TLS == nil {
-		// 检查 X-Forwarded-Proto header（反向代理场景）
-		if proto := c.GetHeader("X-Forwarded-Proto"); proto != "" {
-			scheme = proto
-		} else {
-			scheme = "http"
-		}
-	}
-	return scheme + "://" + c.Request.Host
-}
 
 // PurchasablePlan represents a plan available for purchase
 type PurchasablePlan struct {
@@ -48,16 +32,19 @@ type CreateOrderRequest struct {
 
 // CreateOrderResponse represents the response for creating an order
 type CreateOrderResponse struct {
-	OrderNo string  `json:"order_no"`
-	PayURL  string  `json:"pay_url"`
-	Amount  float64 `json:"amount"`
+	OrderNo       string  `json:"order_no"`
+	Amount        float64 `json:"amount"`
+	PaymentAmount float64 `json:"payment_amount"`
+	QRCodeURL     string  `json:"qr_code_url"`
+	QRCode        string  `json:"qr_code"`
+	Mode          string  `json:"mode"`
 }
 
 // PaymentHandler handles payment-related HTTP requests
 type PaymentHandler struct {
 	orderService         *service.OrderService
 	rechargeOrderService *service.RechargeOrderService
-	musePayment          *payment.MusePayment
+	alipayPayment        *payment.AlipayPayment
 	cfg                  *config.Config
 }
 
@@ -65,13 +52,13 @@ type PaymentHandler struct {
 func NewPaymentHandler(
 	orderService *service.OrderService,
 	rechargeOrderService *service.RechargeOrderService,
-	musePayment *payment.MusePayment,
+	alipayPayment *payment.AlipayPayment,
 	cfg *config.Config,
 ) *PaymentHandler {
 	return &PaymentHandler{
 		orderService:         orderService,
 		rechargeOrderService: rechargeOrderService,
-		musePayment:          musePayment,
+		alipayPayment:        alipayPayment,
 		cfg:                  cfg,
 	}
 }
@@ -134,7 +121,6 @@ func (h *PaymentHandler) CreateOrder(c *gin.Context) {
 	result, err := h.orderService.CreateOrder(c.Request.Context(), &service.CreateOrderInput{
 		UserID:  subject.UserID,
 		GroupID: req.GroupID,
-		BaseURL: getBaseURL(c),
 	})
 	if err != nil {
 		response.ErrorFrom(c, err)
@@ -142,140 +128,12 @@ func (h *PaymentHandler) CreateOrder(c *gin.Context) {
 	}
 
 	response.Success(c, CreateOrderResponse{
-		OrderNo: result.OrderNo,
-		PayURL:  result.PayURL,
-		Amount:  result.Amount,
-	})
-}
-
-// PaymentNotify handles payment callback notification
-// GET /api/v1/payment/notify
-func (h *PaymentHandler) PaymentNotify(c *gin.Context) {
-	var params payment.NotifyParams
-	if err := c.ShouldBindQuery(&params); err != nil {
-		c.String(http.StatusOK, "fail")
-		return
-	}
-
-	// 验证签名
-	if !h.musePayment.VerifySign(params.ToMap()) {
-		c.String(http.StatusOK, "fail")
-		return
-	}
-
-	// 检查是否是充值订单（订单号以 R 开头）
-	if len(params.OutTradeNo) > 0 && params.OutTradeNo[0] == 'R' {
-		// 处理充值订单
-		if err := h.rechargeOrderService.HandleRechargeNotify(
-			c.Request.Context(),
-			params.OutTradeNo,
-			params.TradeNo,
-			params.Type,
-		); err != nil {
-			c.String(http.StatusOK, "fail")
-			return
-		}
-	} else {
-		// 处理套餐订单（原有逻辑）
-		if err := h.orderService.HandlePaymentNotify(c.Request.Context(), &params); err != nil {
-			c.String(http.StatusOK, "fail")
-			return
-		}
-	}
-
-	c.String(http.StatusOK, "success")
-}
-
-// PaymentReturn handles payment completion redirect
-// GET /api/v1/payment/return
-func (h *PaymentHandler) PaymentReturn(c *gin.Context) {
-	baseURL := getBaseURL(c)
-
-	// Get order number from query
-	orderNo := c.Query("out_trade_no")
-	if orderNo == "" {
-		c.Redirect(http.StatusFound, baseURL+"/subscriptions?status=error")
-		return
-	}
-
-	// 判断是充值订单还是套餐订单
-	isRechargeOrder := len(orderNo) > 0 && orderNo[0] == 'R'
-	returnPath := "/subscriptions"
-	if isRechargeOrder {
-		returnPath = "/recharge-orders"
-	}
-
-	// Check order status
-	order, err := h.orderService.GetOrderByNo(c.Request.Context(), orderNo)
-	if err != nil {
-		c.Redirect(http.StatusFound, baseURL+returnPath+"?status=error")
-		return
-	}
-
-	// Redirect based on status
-	status := "pending"
-	if order.IsPaid() {
-		status = "success"
-	} else if order.IsExpired() {
-		status = "expired"
-	}
-
-	c.Redirect(http.StatusFound, baseURL+returnPath+"?status="+status+"&order_no="+orderNo)
-}
-
-// VerifyPaymentReturn handles verification of payment return parameters
-// POST /api/v1/payment/verify
-func (h *PaymentHandler) VerifyPaymentReturn(c *gin.Context) {
-	var params payment.NotifyParams
-	if err := c.ShouldBindJSON(&params); err != nil {
-		response.BadRequest(c, err.Error())
-		return
-	}
-
-	// Check if this is a recharge order (order_no starts with 'R')
-	if len(params.OutTradeNo) > 0 && params.OutTradeNo[0] == 'R' {
-		// Process recharge order
-		if err := h.rechargeOrderService.HandleRechargeNotify(
-			c.Request.Context(),
-			params.OutTradeNo,
-			params.TradeNo,
-			params.Type,
-		); err != nil {
-			response.ErrorFrom(c, err)
-			return
-		}
-
-		// Return success response for recharge order
-		response.Success(c, gin.H{
-			"status":   "paid",
-			"order_no": params.OutTradeNo,
-			"paid":     true,
-		})
-		return
-	}
-
-	// Process subscription order (original logic)
-	if err := h.orderService.HandlePaymentNotify(c.Request.Context(), &params); err != nil {
-		// Check if it's a known error
-		if err == service.ErrOrderExpired {
-			response.BadRequest(c, "订单已过期")
-			return
-		}
-		response.ErrorFrom(c, err)
-		return
-	}
-
-	// Get updated order to return status
-	order, err := h.orderService.GetOrderByNo(c.Request.Context(), params.OutTradeNo)
-	if err != nil {
-		response.ErrorFrom(c, err)
-		return
-	}
-
-	response.Success(c, gin.H{
-		"status":   order.Status,
-		"order_no": order.OrderNo,
-		"paid":     order.IsPaid(),
+		OrderNo:       result.OrderNo,
+		Amount:        result.Amount,
+		PaymentAmount: result.PaymentAmount,
+		QRCodeURL:     result.QRCodeURL,
+		QRCode:        result.QRCode,
+		Mode:          result.Mode,
 	})
 }
 
@@ -314,15 +172,53 @@ func (h *PaymentHandler) RepayOrder(c *gin.Context) {
 		return
 	}
 
-	result, err := h.orderService.RepayOrder(c.Request.Context(), subject.UserID, orderNo, getBaseURL(c))
+	result, err := h.orderService.RepayOrder(c.Request.Context(), subject.UserID, orderNo)
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return
 	}
 
 	response.Success(c, CreateOrderResponse{
-		OrderNo: result.OrderNo,
-		PayURL:  result.PayURL,
-		Amount:  result.Amount,
+		OrderNo:       result.OrderNo,
+		Amount:        result.Amount,
+		PaymentAmount: result.PaymentAmount,
+		QRCodeURL:     result.QRCodeURL,
+		QRCode:        result.QRCode,
+		Mode:          result.Mode,
+	})
+}
+
+// GetOrderPaymentStatus handles polling for order payment status
+// GET /api/v1/orders/:order_no/payment-status
+func (h *PaymentHandler) GetOrderPaymentStatus(c *gin.Context) {
+	subject, ok := middleware2.GetAuthSubjectFromContext(c)
+	if !ok {
+		response.Unauthorized(c, "User not found in context")
+		return
+	}
+
+	orderNo := c.Param("order_no")
+	if orderNo == "" {
+		response.BadRequest(c, "order_no is required")
+		return
+	}
+
+	var status string
+	var err error
+
+	if len(orderNo) > 0 && orderNo[0] == 'R' {
+		status, err = h.rechargeOrderService.GetRechargeOrderPaymentStatus(c.Request.Context(), subject.UserID, orderNo)
+	} else {
+		status, err = h.orderService.GetOrderPaymentStatus(c.Request.Context(), subject.UserID, orderNo)
+	}
+
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+
+	response.Success(c, gin.H{
+		"status":   status,
+		"order_no": orderNo,
 	})
 }

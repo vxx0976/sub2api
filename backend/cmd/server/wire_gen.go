@@ -88,11 +88,19 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	redeemHandler := handler.NewRedeemHandler(redeemService)
 	subscriptionHandler := handler.NewSubscriptionHandler(subscriptionService)
 	orderRepository := repository.NewOrderRepository(client)
-	musePayment := payment.ProvideMusePayment(configConfig)
-	orderService := service.NewOrderService(orderRepository, groupRepository, subscriptionService, musePayment, configConfig, referralService)
+	alipayPayment, err := payment.ProvideAlipayPayment(configConfig)
+	if err != nil {
+		return nil, err
+	}
+	orderService := service.NewOrderService(orderRepository, groupRepository, subscriptionService, alipayPayment, configConfig, referralService)
 	rechargeOrderRepository := repository.NewRechargeOrderRepository(client)
-	rechargeOrderService := service.NewRechargeOrderService(rechargeOrderRepository, userRepository, settingService, musePayment, configConfig)
-	paymentHandler := handler.NewPaymentHandler(orderService, rechargeOrderService, musePayment, configConfig)
+	rechargeOrderService := service.NewRechargeOrderService(rechargeOrderRepository, userRepository, settingService, alipayPayment, configConfig)
+	paymentHandler := handler.NewPaymentHandler(orderService, rechargeOrderService, alipayPayment, configConfig)
+	paymentMonitorService := service.NewPaymentMonitorService(orderService, rechargeOrderService)
+	alipayMonitor := payment.NewAlipayMonitor(alipayPayment, paymentMonitorService)
+	if configConfig.Payment.Enabled {
+		alipayMonitor.Start()
+	}
 	rechargeHandler := handler.NewRechargeHandler(rechargeOrderService, settingService)
 	announcementRepository := repository.NewAnnouncementRepository(client)
 	announcementReadRepository := repository.NewAnnouncementReadRepository(client)
@@ -228,7 +236,7 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	tokenRefreshService := service.ProvideTokenRefreshService(accountRepository, oAuthService, openAIOAuthService, geminiOAuthService, antigravityOAuthService, compositeTokenCacheInvalidator, schedulerCache, configConfig)
 	accountExpiryService := service.ProvideAccountExpiryService(accountRepository)
 	subscriptionExpiryService := service.ProvideSubscriptionExpiryService(userSubscriptionRepository)
-	v := provideCleanup(client, redisClient, opsMetricsCollector, opsAggregationService, opsAlertEvaluatorService, opsCleanupService, opsScheduledReportService, schedulerSnapshotService, tokenRefreshService, accountExpiryService, subscriptionExpiryService, usageCleanupService, pricingService, emailQueueService, billingCacheService, oAuthService, openAIOAuthService, geminiOAuthService, antigravityOAuthService, telegramBotManager, telegramNotificationService)
+	v := provideCleanup(client, redisClient, opsMetricsCollector, opsAggregationService, opsAlertEvaluatorService, opsCleanupService, opsScheduledReportService, schedulerSnapshotService, tokenRefreshService, accountExpiryService, subscriptionExpiryService, usageCleanupService, pricingService, emailQueueService, billingCacheService, oAuthService, openAIOAuthService, geminiOAuthService, antigravityOAuthService, telegramBotManager, telegramNotificationService, alipayMonitor)
 	application := &Application{
 		Server:  httpServer,
 		Cleanup: v,
@@ -272,6 +280,7 @@ func provideCleanup(
 	antigravityOAuth *service.AntigravityOAuthService,
 	telegramBotManager *service.TelegramBotManager,
 	telegramNotification *service.TelegramNotificationService,
+	alipayMonitor *payment.AlipayMonitor,
 ) func() {
 	return func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -281,6 +290,12 @@ func provideCleanup(
 			name string
 			fn   func() error
 		}{
+			{"AlipayMonitor", func() error {
+				if alipayMonitor != nil {
+					alipayMonitor.Stop()
+				}
+				return nil
+			}},
 			{"OpsScheduledReportService", func() error {
 				if opsScheduledReport != nil {
 					opsScheduledReport.Stop()

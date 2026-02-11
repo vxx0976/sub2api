@@ -1,23 +1,8 @@
 <template>
   <AppLayout>
     <div class="space-y-6">
-      <!-- Payment Verification State -->
-      <div v-if="verifyingPayment" class="card p-12 text-center">
-        <div class="flex flex-col items-center gap-4">
-          <div
-            class="h-12 w-12 animate-spin rounded-full border-4 border-primary-500 border-t-transparent"
-          ></div>
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-            {{ t('common.processing') }}
-          </h3>
-          <p class="text-gray-500 dark:text-dark-400">
-            正在验证支付结果...
-          </p>
-        </div>
-      </div>
-
       <!-- Loading State -->
-      <div v-else-if="loading" class="flex justify-center py-12">
+      <div v-if="loading" class="flex justify-center py-12">
         <div
           class="h-8 w-8 animate-spin rounded-full border-2 border-primary-500 border-t-transparent"
         ></div>
@@ -280,30 +265,51 @@
         </div>
       </div>
     </div>
+
+    <!-- Payment QR Code Modal -->
+    <PaymentQRCodeModal
+      :show="showPaymentModal"
+      :order-no="paymentInfo.orderNo"
+      :amount="paymentInfo.amount"
+      :payment-amount="paymentInfo.paymentAmount"
+      :qr-code="paymentInfo.qrCode"
+      :qr-code-url="paymentInfo.qrCodeUrl"
+      :mode="paymentInfo.mode"
+      @close="showPaymentModal = false"
+      @paid="handlePaymentSuccess"
+    />
   </AppLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute, useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import subscriptionsAPI from '@/api/subscriptions'
-import plansAPI, { type PaymentReturnParams } from '@/api/plans'
+import plansAPI from '@/api/plans'
 import type { UserSubscription } from '@/types'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import Icon from '@/components/icons/Icon.vue'
+import PaymentQRCodeModal from '@/components/common/PaymentQRCodeModal.vue'
 import { formatDateOnly } from '@/utils/format'
 
 const { t } = useI18n()
-const route = useRoute()
-const router = useRouter()
 const appStore = useAppStore()
 
 const subscriptions = ref<UserSubscription[]>([])
 const loading = ref(true)
-const verifyingPayment = ref(false)
 const renewingId = ref<number | null>(null)
+
+// Payment modal state
+const showPaymentModal = ref(false)
+const paymentInfo = reactive({
+  orderNo: '',
+  amount: 0,
+  paymentAmount: 0,
+  qrCode: '',
+  qrCodeUrl: '',
+  mode: ''
+})
 
 async function loadSubscriptions() {
   try {
@@ -314,89 +320,6 @@ async function loadSubscriptions() {
     appStore.showError(t('userSubscriptions.failedToLoad'))
   } finally {
     loading.value = false
-  }
-}
-
-// Check if URL contains payment callback parameters
-function hasPaymentParams(): boolean {
-  return !!(
-    route.query.trade_status &&
-    route.query.out_trade_no &&
-    route.query.sign
-  )
-}
-
-// Extract payment parameters from URL
-function getPaymentParams(): PaymentReturnParams {
-  return {
-    pid: String(route.query.pid || ''),
-    trade_no: String(route.query.trade_no || ''),
-    out_trade_no: String(route.query.out_trade_no || ''),
-    type: String(route.query.type || ''),
-    name: String(route.query.name || ''),
-    money: String(route.query.money || ''),
-    trade_status: String(route.query.trade_status || ''),
-    sign: String(route.query.sign || ''),
-    sign_type: String(route.query.sign_type || '')
-  }
-}
-
-// Verify payment and process order
-async function verifyPayment() {
-  if (!hasPaymentParams()) return
-
-  const params = getPaymentParams()
-
-  // Check if this is a recharge order (order_no starts with 'R')
-  if (params.out_trade_no && params.out_trade_no.startsWith('R')) {
-    // This is a recharge order, process payment verification
-    if (params.trade_status === 'TRADE_SUCCESS') {
-      try {
-        // Call verify API to process recharge payment (same as subscription orders)
-        await plansAPI.verifyPayment(params)
-        appStore.showSuccess(t('recharge.rechargeSuccess'))
-      } catch (error) {
-        console.error('Failed to verify recharge payment:', error)
-        appStore.showError(t('recharge.rechargeFailed'))
-      }
-    }
-    // Redirect to recharge orders page
-    router.replace({ path: '/recharge-orders', query: {} })
-    return
-  }
-
-  // Only process if trade status indicates success
-  if (params.trade_status !== 'TRADE_SUCCESS') {
-    appStore.showError(t('userSubscriptions.paymentFailed'))
-    // Clean URL params
-    router.replace({ path: route.path })
-    return
-  }
-
-  try {
-    verifyingPayment.value = true
-    const result = await plansAPI.verifyPayment(params)
-
-    if (result.paid) {
-      appStore.showSuccess(t('userSubscriptions.paymentSuccess'))
-    } else {
-      appStore.showError(t('userSubscriptions.paymentPending'))
-    }
-  } catch (error: unknown) {
-    console.error('Failed to verify payment:', error)
-    // Check if it's a signature error
-    const errorMessage = error instanceof Error ? error.message : String(error)
-    if (errorMessage.includes('signature')) {
-      appStore.showError(t('userSubscriptions.paymentVerifyFailed'))
-    } else {
-      appStore.showError(t('userSubscriptions.paymentProcessError'))
-    }
-  } finally {
-    verifyingPayment.value = false
-    // Clean URL params
-    router.replace({ path: route.path })
-    // Reload subscriptions to show the new one
-    await loadSubscriptions()
   }
 }
 
@@ -505,8 +428,13 @@ async function handleRenew(subscription: UserSubscription) {
   try {
     renewingId.value = subscription.id
     const result = await plansAPI.createOrder(subscription.group_id)
-    // Redirect to payment URL
-    window.location.href = result.pay_url
+    paymentInfo.orderNo = result.order_no
+    paymentInfo.amount = result.amount
+    paymentInfo.paymentAmount = result.payment_amount
+    paymentInfo.qrCode = result.qr_code
+    paymentInfo.qrCodeUrl = result.qr_code_url
+    paymentInfo.mode = result.mode
+    showPaymentModal.value = true
   } catch (error) {
     console.error('Failed to renew subscription:', error)
     appStore.showError(t('userSubscriptions.renewError'))
@@ -515,12 +443,13 @@ async function handleRenew(subscription: UserSubscription) {
   }
 }
 
+function handlePaymentSuccess() {
+  showPaymentModal.value = false
+  appStore.showSuccess(t('payment.paymentSuccess'))
+  loadSubscriptions()
+}
+
 onMounted(async () => {
-  // Check for payment callback first
-  if (hasPaymentParams()) {
-    await verifyPayment()
-  } else {
-    await loadSubscriptions()
-  }
+  await loadSubscriptions()
 })
 </script>

@@ -149,21 +149,24 @@
                 </li>
               </ul>
 
-              <!-- External Buy Link (Taobao) -->
-              <div v-if="plan.external_buy_url" class="mb-2 text-right">
-                <a
-                  :href="plan.external_buy_url"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-primary-500 dark:text-dark-400 dark:hover:text-primary-400 transition-colors"
-                >
-                  {{ t('plans.buyOnTaobao') }}
-                  <Icon name="externalLink" size="xs" />
-                </a>
-              </div>
-
               <!-- Buy Button -->
+              <a
+                v-if="plan.external_buy_url"
+                :href="plan.external_buy_url"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-200"
+                :class="[
+                  plan.id === recommendedPlanId
+                    ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/30 hover:bg-primary-600 hover:shadow-xl hover:shadow-primary-500/40'
+                    : 'border border-gray-200 bg-gray-50 text-gray-700 hover:border-gray-300 hover:bg-gray-100 dark:border-dark-600 dark:bg-dark-700 dark:text-gray-200 dark:hover:bg-dark-600'
+                ]"
+              >
+                {{ t('plans.purchase') }}
+                <Icon name="externalLink" size="xs" />
+              </a>
               <button
+                v-else
                 @click="purchasePlan(plan)"
                 :disabled="purchasing === plan.id"
                 class="w-full rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-200"
@@ -327,11 +330,24 @@
       :show="showContactDialog"
       @close="showContactDialog = false"
     />
+
+    <!-- Payment QR Code Modal -->
+    <PaymentQRCodeModal
+      :show="showPaymentModal"
+      :order-no="paymentInfo.orderNo"
+      :amount="paymentInfo.amount"
+      :payment-amount="paymentInfo.paymentAmount"
+      :qr-code="paymentInfo.qrCode"
+      :qr-code-url="paymentInfo.qrCodeUrl"
+      :mode="paymentInfo.mode"
+      @close="showPaymentModal = false"
+      @paid="handlePaymentSuccess"
+    />
   </AppLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
 import { useAuthStore } from '@/stores/auth'
@@ -343,6 +359,7 @@ import Icon from '@/components/icons/Icon.vue'
 import PayGoCard from '@/components/plans/PayGoCard.vue'
 import RechargeDialog from '@/components/dialogs/RechargeDialog.vue'
 import ContactDialog from '@/components/dialogs/ContactDialog.vue'
+import PaymentQRCodeModal from '@/components/common/PaymentQRCodeModal.vue'
 
 const { t } = useI18n()
 const appStore = useAppStore()
@@ -389,6 +406,17 @@ const rechargeConfig = ref<RechargeConfig | null>(null)
 const showRechargeDialog = ref(false)
 const showContactDialog = ref(false)
 
+// Payment modal state
+const showPaymentModal = ref(false)
+const paymentInfo = reactive({
+  orderNo: '',
+  amount: 0,
+  paymentAmount: 0,
+  qrCode: '',
+  qrCodeUrl: '',
+  mode: ''
+})
+
 // User balance from auth store
 const userBalance = computed(() => authStore.user?.balance ?? null)
 
@@ -416,8 +444,13 @@ async function purchasePlan(plan: PurchasablePlan) {
   try {
     purchasing.value = plan.id
     const result = await plansAPI.createOrder(plan.id)
-    // Redirect to payment URL
-    window.location.href = result.pay_url
+    paymentInfo.orderNo = result.order_no
+    paymentInfo.amount = result.amount
+    paymentInfo.paymentAmount = result.payment_amount
+    paymentInfo.qrCode = result.qr_code
+    paymentInfo.qrCodeUrl = result.qr_code_url
+    paymentInfo.mode = result.mode
+    showPaymentModal.value = true
   } catch (err: any) {
     console.error('Failed to create order:', err)
     appStore.showError(err.message || t('plans.purchaseError'))
@@ -438,13 +471,26 @@ async function loadRechargeConfig() {
 async function handleRecharge(amount: number) {
   try {
     const result = await createRechargeOrder(amount)
-    // Redirect to payment URL
-    window.location.href = result.pay_url
+    showRechargeDialog.value = false
+    paymentInfo.orderNo = result.order_no
+    paymentInfo.amount = result.amount
+    paymentInfo.paymentAmount = result.payment_amount
+    paymentInfo.qrCode = result.qr_code
+    paymentInfo.qrCodeUrl = result.qr_code_url
+    paymentInfo.mode = result.mode
+    showPaymentModal.value = true
   } catch (err: any) {
     console.error('Failed to create recharge order:', err)
     appStore.showError(err.message || t('recharge.rechargeFailed'))
     showRechargeDialog.value = false
   }
+}
+
+function handlePaymentSuccess() {
+  showPaymentModal.value = false
+  appStore.showSuccess(t('payment.paymentSuccess'))
+  // Refresh user data
+  authStore.refreshUser()
 }
 
 function contactEnterprise() {

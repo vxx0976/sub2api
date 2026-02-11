@@ -180,6 +180,19 @@ func (r *rechargeOrderRepository) ListAll(ctx context.Context, params pagination
 	return rechargeOrderEntitiesToService(orders), paginationResultFromTotal(int64(total), params), nil
 }
 
+func (r *rechargeOrderRepository) ListPending(ctx context.Context) ([]service.RechargeOrder, error) {
+	client := clientFromContext(ctx, r.client)
+	orders, err := client.RechargeOrder.Query().
+		Where(
+			rechargeorder.StatusEQ(service.RechargeOrderStatusPending),
+		).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return rechargeOrderEntitiesToService(orders), nil
+}
+
 func rechargeOrderEntityToService(m *dbent.RechargeOrder) *service.RechargeOrder {
 	if m == nil {
 		return nil
