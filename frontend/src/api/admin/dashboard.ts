@@ -9,7 +9,8 @@ import type {
   TrendDataPoint,
   ModelStat,
   ApiKeyUsageTrendPoint,
-  UserUsageTrendPoint
+  UserUsageTrendPoint,
+  GeoDistributionResponse
 } from '@/types'
 
 /**
@@ -195,6 +196,28 @@ export async function getBatchApiKeysUsage(
   return data
 }
 
+export interface GeoDistributionParams {
+  start_date?: string
+  end_date?: string
+}
+
+export async function getGeoDistribution(
+  params?: GeoDistributionParams
+): Promise<GeoDistributionResponse> {
+  const { data } = await apiClient.get<GeoDistributionResponse>(
+    '/admin/dashboard/geo-distribution',
+    { params }
+  )
+  return data
+}
+
+export async function backfillGeoData(): Promise<{ ips_processed: number; rows_updated: number }> {
+  const { data } = await apiClient.post<{ ips_processed: number; rows_updated: number }>(
+    '/admin/dashboard/geo-backfill'
+  )
+  return data
+}
+
 export const dashboardAPI = {
   getStats,
   getRealtimeMetrics,
@@ -203,7 +226,9 @@ export const dashboardAPI = {
   getApiKeyUsageTrend,
   getUserUsageTrend,
   getBatchUsersUsage,
-  getBatchApiKeysUsage
+  getBatchApiKeysUsage,
+  getGeoDistribution,
+  backfillGeoData
 }
 
 export default dashboardAPI

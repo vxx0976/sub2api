@@ -3136,7 +3136,8 @@ export default {
         invitation: 'Приглашение',
         // Admin adjustment types (created when admin modifies user balance/concurrency)
         admin_balance: 'Баланс (администратор)',
-        admin_concurrency: 'Конкурентность (администратор)'
+        admin_concurrency: 'Конкурентность (администратор)',
+        reseller_transfer: 'Перевод реселлера'
       },
       selectGroup: 'Выберите группу',
       selectGroupPlaceholder: 'Выберите группу подписки',

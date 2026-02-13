@@ -1057,6 +1057,18 @@ export interface ApiKeyUsageTrendPoint {
   tokens: number
 }
 
+export interface GeoDistributionItem {
+  country_code: string
+  count: number
+}
+
+export interface GeoDistributionResponse {
+  distribution: GeoDistributionItem[]
+  total: number
+  start_date: string
+  end_date: string
+}
+
 // ==================== Admin User Management ====================
 
 export interface UpdateUserRequest {

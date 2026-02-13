@@ -3265,7 +3265,8 @@ export default {
 
         // Admin adjustment types (created when admin modifies user balance/concurrency)
         admin_balance: 'Balance (Admin)',
-        admin_concurrency: 'Concurrency (Admin)'
+        admin_concurrency: 'Concurrency (Admin)',
+        reseller_transfer: 'Reseller-Übertragung'
       },
       selectGroup: 'Gruppe auswaehlen',
       selectGroupPlaceholder: 'Abonnement-Gruppe waehlen',

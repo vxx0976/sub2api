@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/geoip"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/usagestats"
 )
 
@@ -88,7 +89,7 @@ func NewDashboardService(usageRepo UsageLogRepository, aggRepo DashboardAggregat
 	if aggRepo == nil {
 		aggEnabled = false
 	}
-	return &DashboardService{
+	svc := &DashboardService{
 		usageRepo:      usageRepo,
 		aggRepo:        aggRepo,
 		cache:          cache,
@@ -99,6 +100,32 @@ func NewDashboardService(usageRepo UsageLogRepository, aggRepo DashboardAggregat
 		aggInterval:    aggInterval,
 		aggLookback:    aggLookback,
 		aggUsageDays:   aggUsageDays,
+	}
+
+	// Auto-backfill country_code for historical usage logs in background
+	go svc.autoBackfillGeoData()
+
+	return svc
+}
+
+func (s *DashboardService) autoBackfillGeoData() {
+	ctx := context.Background()
+	const batchSize = 500
+	var totalIPs, totalRows int
+	for {
+		ips, rows, err := s.BackfillGeoData(ctx, batchSize)
+		if err != nil {
+			log.Printf("[GeoBackfill] error: %v", err)
+			return
+		}
+		totalIPs += ips
+		totalRows += int(rows)
+		if ips < batchSize {
+			break
+		}
+	}
+	if totalIPs > 0 {
+		log.Printf("[GeoBackfill] completed: %d IPs resolved, %d rows updated", totalIPs, totalRows)
 	}
 }
 
@@ -333,4 +360,41 @@ func (s *DashboardService) GetBatchAPIKeyUsageStats(ctx context.Context, apiKeyI
 		return nil, fmt.Errorf("get batch api key usage stats: %w", err)
 	}
 	return stats, nil
+}
+
+func (s *DashboardService) GetGeoDistribution(ctx context.Context, startTime, endTime time.Time) ([]GeoDistributionItem, error) {
+	items, err := s.usageRepo.GetGeoDistribution(ctx, startTime, endTime)
+	if err != nil {
+		return nil, fmt.Errorf("get geo distribution: %w", err)
+	}
+	return items, nil
+}
+
+// BackfillGeoData resolves IPs without country_code using GeoIP service.
+// Returns the number of IPs processed and rows updated.
+func (s *DashboardService) BackfillGeoData(ctx context.Context, batchSize int) (ipsProcessed int, rowsUpdated int64, err error) {
+	geoSvc := geoip.Get()
+	if geoSvc == nil || !geoSvc.IsAvailable() {
+		return 0, 0, fmt.Errorf("GeoIP service not available")
+	}
+
+	ips, err := s.usageRepo.GetDistinctIPsWithoutCountry(ctx, batchSize)
+	if err != nil {
+		return 0, 0, fmt.Errorf("get distinct IPs: %w", err)
+	}
+
+	for _, ip := range ips {
+		code := geoSvc.LookupCountry(ip)
+		if code == "" {
+			code = "XX" // Unknown
+		}
+		affected, err := s.usageRepo.BackfillCountryCode(ctx, ip, code)
+		if err != nil {
+			log.Printf("[GeoBackfill] Failed to update IP %s: %v", ip, err)
+			continue
+		}
+		ipsProcessed++
+		rowsUpdated += affected
+	}
+	return ipsProcessed, rowsUpdated, nil
 }

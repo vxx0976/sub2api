@@ -415,3 +415,40 @@ func (h *DashboardHandler) GetBatchAPIKeysUsage(c *gin.Context) {
 
 	response.Success(c, gin.H{"stats": stats})
 }
+
+// GetGeoDistribution handles getting geographic distribution of requests
+// GET /api/v1/admin/dashboard/geo-distribution
+func (h *DashboardHandler) GetGeoDistribution(c *gin.Context) {
+	startTime, endTime := parseTimeRange(c)
+
+	items, err := h.dashboardService.GetGeoDistribution(c.Request.Context(), startTime, endTime)
+	if err != nil {
+		response.Error(c, 500, "Failed to get geo distribution")
+		return
+	}
+
+	var total int64
+	for _, item := range items {
+		total += item.Count
+	}
+
+	response.Success(c, gin.H{
+		"distribution": items,
+		"total":        total,
+		"start_date":   startTime.Format("2006-01-02"),
+		"end_date":     endTime.Add(-24 * time.Hour).Format("2006-01-02"),
+	})
+}
+
+// POST /api/v1/admin/dashboard/geo-backfill
+func (h *DashboardHandler) BackfillGeoData(c *gin.Context) {
+	ipsProcessed, rowsUpdated, err := h.dashboardService.BackfillGeoData(c.Request.Context(), 1000)
+	if err != nil {
+		response.Error(c, 500, err.Error())
+		return
+	}
+	response.Success(c, gin.H{
+		"ips_processed": ipsProcessed,
+		"rows_updated":  rowsUpdated,
+	})
+}

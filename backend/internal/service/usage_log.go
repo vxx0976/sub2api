@@ -45,6 +45,7 @@ type UsageLog struct {
 	FirstTokenMs *int
 	UserAgent    *string
 	IPAddress    *string
+	CountryCode  *string
 
 	// 图片生成字段
 	ImageCount int
@@ -61,4 +62,10 @@ type UsageLog struct {
 
 func (u *UsageLog) TotalTokens() int {
 	return u.InputTokens + u.OutputTokens + u.CacheCreationTokens + u.CacheReadTokens
+}
+
+// GeoDistributionItem represents a country's request count in geo distribution.
+type GeoDistributionItem struct {
+	CountryCode string `json:"country_code"`
+	Count       int64  `json:"count"`
 }

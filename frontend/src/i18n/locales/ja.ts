@@ -3032,7 +3032,8 @@ export default {
         invitation: '招待',
         // 管理员在用户管理页面调整余额/并发时产生的记录
         admin_balance: '残高（管理者）',
-        admin_concurrency: '同時接続数（管理者）'
+        admin_concurrency: '同時接続数（管理者）',
+        reseller_transfer: 'リセラー振替'
       },
       // 用于选择器和筛选器的直接键
       balance: '残高',

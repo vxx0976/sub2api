@@ -174,6 +174,8 @@ func registerDashboardRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 		dashboard.POST("/users-usage", h.Admin.Dashboard.GetBatchUsersUsage)
 		dashboard.POST("/api-keys-usage", h.Admin.Dashboard.GetBatchAPIKeysUsage)
 		dashboard.POST("/aggregation/backfill", h.Admin.Dashboard.BackfillAggregation)
+		dashboard.GET("/geo-distribution", h.Admin.Dashboard.GetGeoDistribution)
+		dashboard.POST("/geo-backfill", h.Admin.Dashboard.BackfillGeoData)
 	}
 }
 

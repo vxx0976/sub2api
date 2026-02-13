@@ -22,7 +22,7 @@ import (
 	"github.com/lib/pq"
 )
 
-const usageLogSelectColumns = "id, user_id, api_key_id, account_id, request_id, model, group_id, subscription_id, input_tokens, output_tokens, cache_creation_tokens, cache_read_tokens, cache_creation_5m_tokens, cache_creation_1h_tokens, input_cost, output_cost, cache_creation_cost, cache_read_cost, total_cost, actual_cost, rate_multiplier, account_rate_multiplier, billing_type, stream, duration_ms, first_token_ms, user_agent, ip_address, image_count, image_size, reasoning_effort, created_at"
+const usageLogSelectColumns = "id, user_id, api_key_id, account_id, request_id, model, group_id, subscription_id, input_tokens, output_tokens, cache_creation_tokens, cache_read_tokens, cache_creation_5m_tokens, cache_creation_1h_tokens, input_cost, output_cost, cache_creation_cost, cache_read_cost, total_cost, actual_cost, rate_multiplier, account_rate_multiplier, billing_type, stream, duration_ms, first_token_ms, user_agent, ip_address, country_code, image_count, image_size, reasoning_effort, created_at"
 
 type usageLogRepository struct {
 	client *dbent.Client
@@ -112,6 +112,7 @@ func (r *usageLogRepository) Create(ctx context.Context, log *service.UsageLog) 
 			first_token_ms,
 			user_agent,
 				ip_address,
+				country_code,
 				image_count,
 				image_size,
 				reasoning_effort,
@@ -122,7 +123,7 @@ func (r *usageLogRepository) Create(ctx context.Context, log *service.UsageLog) 
 				$8, $9, $10, $11,
 				$12, $13,
 				$14, $15, $16, $17, $18, $19,
-				$20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31
+				$20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32
 			)
 			ON CONFLICT (request_id, api_key_id) DO NOTHING
 			RETURNING id, created_at
@@ -134,6 +135,7 @@ func (r *usageLogRepository) Create(ctx context.Context, log *service.UsageLog) 
 	firstToken := nullInt(log.FirstTokenMs)
 	userAgent := nullString(log.UserAgent)
 	ipAddress := nullString(log.IPAddress)
+	countryCode := nullString(log.CountryCode)
 	imageSize := nullString(log.ImageSize)
 	reasoningEffort := nullString(log.ReasoningEffort)
 
@@ -170,6 +172,7 @@ func (r *usageLogRepository) Create(ctx context.Context, log *service.UsageLog) 
 		firstToken,
 		userAgent,
 		ipAddress,
+		countryCode,
 		log.ImageCount,
 		imageSize,
 		reasoningEffort,
@@ -794,6 +797,69 @@ func (r *usageLogRepository) GetDailyStatsAggregated(ctx context.Context, userID
 	}
 
 	return result, nil
+}
+
+func (r *usageLogRepository) GetGeoDistribution(ctx context.Context, startTime, endTime time.Time) ([]service.GeoDistributionItem, error) {
+	query := `
+		SELECT country_code, COUNT(*) as count
+		FROM usage_logs
+		WHERE created_at >= $1 AND created_at < $2 AND country_code IS NOT NULL AND country_code != ''
+		GROUP BY country_code
+		ORDER BY count DESC
+	`
+	rows, err := r.sql.QueryContext(ctx, query, startTime, endTime)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var items []service.GeoDistributionItem
+	for rows.Next() {
+		var item service.GeoDistributionItem
+		if err := rows.Scan(&item.CountryCode, &item.Count); err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+func (r *usageLogRepository) GetDistinctIPsWithoutCountry(ctx context.Context, limit int) ([]string, error) {
+	query := `
+		SELECT DISTINCT ip_address FROM usage_logs
+		WHERE ip_address IS NOT NULL AND ip_address != ''
+		AND (country_code IS NULL OR country_code = '')
+		LIMIT $1
+	`
+	rows, err := r.sql.QueryContext(ctx, query, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var ips []string
+	for rows.Next() {
+		var ip string
+		if err := rows.Scan(&ip); err != nil {
+			return nil, err
+		}
+		ips = append(ips, ip)
+	}
+	return ips, rows.Err()
+}
+
+func (r *usageLogRepository) BackfillCountryCode(ctx context.Context, ip, countryCode string) (int64, error) {
+	result, err := r.sql.ExecContext(ctx,
+		`UPDATE usage_logs SET country_code = $1 WHERE ip_address = $2 AND (country_code IS NULL OR country_code = '')`,
+		countryCode, ip,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
 }
 
 // resolveUsageStatsTimezone 获取用于 SQL 分组的时区名称。
@@ -2192,6 +2258,7 @@ func scanUsageLog(scanner interface{ Scan(...any) error }) (*service.UsageLog, e
 		firstTokenMs          sql.NullInt64
 		userAgent             sql.NullString
 		ipAddress             sql.NullString
+		countryCode           sql.NullString
 		imageCount            int
 		imageSize             sql.NullString
 		reasoningEffort       sql.NullString
@@ -2227,6 +2294,7 @@ func scanUsageLog(scanner interface{ Scan(...any) error }) (*service.UsageLog, e
 		&firstTokenMs,
 		&userAgent,
 		&ipAddress,
+		&countryCode,
 		&imageCount,
 		&imageSize,
 		&reasoningEffort,
@@ -2285,6 +2353,9 @@ func scanUsageLog(scanner interface{ Scan(...any) error }) (*service.UsageLog, e
 	}
 	if ipAddress.Valid {
 		log.IPAddress = &ipAddress.String
+	}
+	if countryCode.Valid {
+		log.CountryCode = &countryCode.String
 	}
 	if imageSize.Valid {
 		log.ImageSize = &imageSize.String

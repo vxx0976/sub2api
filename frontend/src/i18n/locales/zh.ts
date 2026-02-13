@@ -1438,7 +1438,13 @@ export default {
       configureAiAccounts: '配置 AI 平台账号',
       systemSettings: '系统设置',
       configureSystem: '配置系统设置',
-      failedToLoad: '加载仪表盘数据失败'
+      failedToLoad: '加载仪表盘数据失败',
+      geoDistribution: '用户地理分布',
+      country: '国家/地区',
+      geoBackfill: '回填地理数据',
+      geoBackfilling: '正在回填...',
+      geoBackfillDone: '回填完成',
+      geoBackfillFailed: '回填失败'
     },
 
     // Users Management
@@ -3060,7 +3066,8 @@ export default {
         invitation: '邀请码',
         // 管理员在用户管理页面调整余额/并发时产生的记录
         admin_balance: '余额（管理员）',
-        admin_concurrency: '并发数（管理员）'
+        admin_concurrency: '并发数（管理员）',
+        reseller_transfer: '商户转赠'
       },
       // 用于选择器和筛选器的直接键
       balance: '余额',

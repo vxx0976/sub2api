@@ -3047,7 +3047,8 @@ export default {
         // 管理员在用户管理页面调整余额/并发时产生的记录
         admin_balance: '잔액 (관리자)',
         admin_concurrency: '동시 접속 수 (관리자)',
-        invitation: '초대'
+        invitation: '초대',
+        reseller_transfer: '리셀러 이전'
       },
       // 用于选择器和筛选器的直接键
       balance: '잔액',

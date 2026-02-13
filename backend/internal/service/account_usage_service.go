@@ -59,6 +59,11 @@ type UsageLogRepository interface {
 	GetAccountStatsAggregated(ctx context.Context, accountID int64, startTime, endTime time.Time) (*usagestats.UsageStats, error)
 	GetModelStatsAggregated(ctx context.Context, modelName string, startTime, endTime time.Time) (*usagestats.UsageStats, error)
 	GetDailyStatsAggregated(ctx context.Context, userID int64, startTime, endTime time.Time) ([]map[string]any, error)
+
+	// Geo distribution
+	GetGeoDistribution(ctx context.Context, startTime, endTime time.Time) ([]GeoDistributionItem, error)
+	GetDistinctIPsWithoutCountry(ctx context.Context, limit int) ([]string, error)
+	BackfillCountryCode(ctx context.Context, ip, countryCode string) (int64, error)
 }
 
 // apiUsageCache 缓存从 Anthropic API 获取的使用率数据（utilization, resets_at）

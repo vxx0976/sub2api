@@ -65,6 +65,12 @@ type Config struct {
 	Gemini       GeminiConfig               `mapstructure:"gemini"`
 	Update       UpdateConfig               `mapstructure:"update"`
 	Payment      PaymentConfig              `mapstructure:"payment"`
+	GeoIP        GeoIPConfig                `mapstructure:"geoip"`
+}
+
+// GeoIPConfig configures the GeoIP lookup service.
+type GeoIPConfig struct {
+	DatabasePath string `mapstructure:"database_path"`
 }
 
 type GeminiConfig struct {

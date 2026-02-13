@@ -3136,7 +3136,8 @@ export default {
         invitation: 'Convite',
         // Tipos de ajuste admin (criados quando admin modifica saldo/concorrencia do usuario)
         admin_balance: 'Saldo (Admin)',
-        admin_concurrency: 'Concorrencia (Admin)'
+        admin_concurrency: 'Concorrencia (Admin)',
+        reseller_transfer: 'Transferência de Revendedor'
       },
       selectGroup: 'Selecionar Grupo',
       selectGroupPlaceholder: 'Escolha um grupo de assinatura',

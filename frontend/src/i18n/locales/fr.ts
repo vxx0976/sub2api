@@ -3136,7 +3136,8 @@ export default {
         invitation: 'Invitation',
         // Types d'ajustement admin (créés quand l'admin modifie le solde/concurrence utilisateur)
         admin_balance: 'Solde (Admin)',
-        admin_concurrency: 'Concurrence (Admin)'
+        admin_concurrency: 'Concurrence (Admin)',
+        reseller_transfer: 'Transfert revendeur'
       },
       selectGroup: 'Sélectionner le groupe',
       selectGroupPlaceholder: 'Choisir un groupe d\'abonnement',

@@ -1433,7 +1433,13 @@ export default {
       ok: 'ok',
       err: 'err',
       create: 'Create',
-      failedToLoad: 'Failed to load dashboard statistics'
+      failedToLoad: 'Failed to load dashboard statistics',
+      geoDistribution: 'Geographic Distribution',
+      country: 'Country/Region',
+      geoBackfill: 'Backfill Geo Data',
+      geoBackfilling: 'Backfilling...',
+      geoBackfillDone: 'Backfill complete',
+      geoBackfillFailed: 'Backfill failed'
     },
 
     // Users
@@ -3144,7 +3150,8 @@ export default {
         invitation: 'Invitation',
         // Admin adjustment types (created when admin modifies user balance/concurrency)
         admin_balance: 'Balance (Admin)',
-        admin_concurrency: 'Concurrency (Admin)'
+        admin_concurrency: 'Concurrency (Admin)',
+        reseller_transfer: 'Reseller Transfer'
       },
       selectGroup: 'Select Group',
       selectGroupPlaceholder: 'Choose a subscription group',

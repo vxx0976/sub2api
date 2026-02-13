@@ -255,6 +255,14 @@
               </div>
             </div>
           </div>
+
+          <!-- Geo Distribution (Full Width) -->
+          <GeoDistributionChart
+            :distribution="geoDistribution"
+            :total="geoTotal"
+            :loading="chartsLoading"
+            @backfill-done="loadChartData"
+          />
         </div>
       </template>
     </div>
@@ -268,7 +276,7 @@ import { useAppStore } from '@/stores/app'
 
 const { t } = useI18n()
 import { adminAPI } from '@/api/admin'
-import type { DashboardStats, TrendDataPoint, ModelStat, UserUsageTrendPoint } from '@/types'
+import type { DashboardStats, TrendDataPoint, ModelStat, UserUsageTrendPoint, GeoDistributionItem } from '@/types'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import Icon from '@/components/icons/Icon.vue'
@@ -276,6 +284,7 @@ import DateRangePicker from '@/components/common/DateRangePicker.vue'
 import Select from '@/components/common/Select.vue'
 import ModelDistributionChart from '@/components/charts/ModelDistributionChart.vue'
 import TokenUsageTrend from '@/components/charts/TokenUsageTrend.vue'
+import GeoDistributionChart from '@/components/charts/GeoDistributionChart.vue'
 
 import {
   Chart as ChartJS,
@@ -311,6 +320,8 @@ const chartsLoading = ref(false)
 const trendData = ref<TrendDataPoint[]>([])
 const modelStats = ref<ModelStat[]>([])
 const userTrend = ref<UserUsageTrendPoint[]>([])
+const geoDistribution = ref<GeoDistributionItem[]>([])
+const geoTotal = ref(0)
 
 // Helper function to format date in local timezone
 const formatLocalDate = (date: Date): string => {
@@ -534,15 +545,18 @@ const loadChartData = async () => {
       granularity: granularity.value
     }
 
-    const [trendResponse, modelResponse, userResponse] = await Promise.all([
+    const [trendResponse, modelResponse, userResponse, geoResponse] = await Promise.all([
       adminAPI.dashboard.getUsageTrend(params),
       adminAPI.dashboard.getModelStats({ start_date: startDate.value, end_date: endDate.value }),
-      adminAPI.dashboard.getUserUsageTrend({ ...params, limit: 12 })
+      adminAPI.dashboard.getUserUsageTrend({ ...params, limit: 12 }),
+      adminAPI.dashboard.getGeoDistribution({ start_date: startDate.value, end_date: endDate.value })
     ])
 
     trendData.value = trendResponse.trend || []
     modelStats.value = modelResponse.models || []
     userTrend.value = userResponse.trend || []
+    geoDistribution.value = geoResponse.distribution || []
+    geoTotal.value = geoResponse.total || 0
   } catch (error) {
     console.error('Error loading chart data:', error)
   } finally {

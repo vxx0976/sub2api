@@ -24,6 +24,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/claude"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/geoip"
 	"github.com/Wei-Shaw/sub2api/internal/util/responseheaders"
 	"github.com/Wei-Shaw/sub2api/internal/util/urlvalidator"
 	"github.com/cespare/xxhash/v2"
@@ -4628,6 +4629,9 @@ func (s *GatewayService) RecordUsage(ctx context.Context, input *RecordUsageInpu
 	// 添加 IPAddress
 	if input.IPAddress != "" {
 		usageLog.IPAddress = &input.IPAddress
+		if code := geoip.Get().LookupCountry(input.IPAddress); code != "" {
+			usageLog.CountryCode = &code
+		}
 	}
 
 	// 添加分组和订阅关联
@@ -4809,6 +4813,9 @@ func (s *GatewayService) RecordUsageWithLongContext(ctx context.Context, input *
 	// 添加 IPAddress
 	if input.IPAddress != "" {
 		usageLog.IPAddress = &input.IPAddress
+		if code := geoip.Get().LookupCountry(input.IPAddress); code != "" {
+			usageLog.CountryCode = &code
+		}
 	}
 
 	// 添加分组和订阅关联

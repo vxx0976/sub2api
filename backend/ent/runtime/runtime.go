@@ -1136,16 +1136,20 @@ func init() {
 	usagelogDescIPAddress := usagelogFields[26].Descriptor()
 	// usagelog.IPAddressValidator is a validator for the "ip_address" field. It is called by the builders before save.
 	usagelog.IPAddressValidator = usagelogDescIPAddress.Validators[0].(func(string) error)
+	// usagelogDescCountryCode is the schema descriptor for country_code field.
+	usagelogDescCountryCode := usagelogFields[27].Descriptor()
+	// usagelog.CountryCodeValidator is a validator for the "country_code" field. It is called by the builders before save.
+	usagelog.CountryCodeValidator = usagelogDescCountryCode.Validators[0].(func(string) error)
 	// usagelogDescImageCount is the schema descriptor for image_count field.
-	usagelogDescImageCount := usagelogFields[27].Descriptor()
+	usagelogDescImageCount := usagelogFields[28].Descriptor()
 	// usagelog.DefaultImageCount holds the default value on creation for the image_count field.
 	usagelog.DefaultImageCount = usagelogDescImageCount.Default.(int)
 	// usagelogDescImageSize is the schema descriptor for image_size field.
-	usagelogDescImageSize := usagelogFields[28].Descriptor()
+	usagelogDescImageSize := usagelogFields[29].Descriptor()
 	// usagelog.ImageSizeValidator is a validator for the "image_size" field. It is called by the builders before save.
 	usagelog.ImageSizeValidator = usagelogDescImageSize.Validators[0].(func(string) error)
 	// usagelogDescCreatedAt is the schema descriptor for created_at field.
-	usagelogDescCreatedAt := usagelogFields[29].Descriptor()
+	usagelogDescCreatedAt := usagelogFields[30].Descriptor()
 	// usagelog.DefaultCreatedAt holds the default value on creation for the created_at field.
 	usagelog.DefaultCreatedAt = usagelogDescCreatedAt.Default.(func() time.Time)
 	userMixin := schema.User{}.Mixin()

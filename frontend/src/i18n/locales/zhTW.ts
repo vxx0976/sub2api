@@ -3034,7 +3034,8 @@ export default {
         invitation: '邀請碼',
         // 管理員在使用者管理頁面調整餘額/並行時產生的記錄
         admin_balance: '餘額（管理員）',
-        admin_concurrency: '並行數（管理員）'
+        admin_concurrency: '並行數（管理員）',
+        reseller_transfer: '商戶轉贈'
       },
       // 用於選擇器和筛選器的直接鍵
       balance: '餘額',

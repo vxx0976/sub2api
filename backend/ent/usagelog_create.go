@@ -365,6 +365,20 @@ func (_c *UsageLogCreate) SetNillableIPAddress(v *string) *UsageLogCreate {
 	return _c
 }
 
+// SetCountryCode sets the "country_code" field.
+func (_c *UsageLogCreate) SetCountryCode(v string) *UsageLogCreate {
+	_c.mutation.SetCountryCode(v)
+	return _c
+}
+
+// SetNillableCountryCode sets the "country_code" field if the given value is not nil.
+func (_c *UsageLogCreate) SetNillableCountryCode(v *string) *UsageLogCreate {
+	if v != nil {
+		_c.SetCountryCode(*v)
+	}
+	return _c
+}
+
 // SetImageCount sets the "image_count" field.
 func (_c *UsageLogCreate) SetImageCount(v int) *UsageLogCreate {
 	_c.mutation.SetImageCount(v)
@@ -619,6 +633,11 @@ func (_c *UsageLogCreate) check() error {
 			return &ValidationError{Name: "ip_address", err: fmt.Errorf(`ent: validator failed for field "UsageLog.ip_address": %w`, err)}
 		}
 	}
+	if v, ok := _c.mutation.CountryCode(); ok {
+		if err := usagelog.CountryCodeValidator(v); err != nil {
+			return &ValidationError{Name: "country_code", err: fmt.Errorf(`ent: validator failed for field "UsageLog.country_code": %w`, err)}
+		}
+	}
 	if _, ok := _c.mutation.ImageCount(); !ok {
 		return &ValidationError{Name: "image_count", err: errors.New(`ent: missing required field "UsageLog.image_count"`)}
 	}
@@ -753,6 +772,10 @@ func (_c *UsageLogCreate) createSpec() (*UsageLog, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.IPAddress(); ok {
 		_spec.SetField(usagelog.FieldIPAddress, field.TypeString, value)
 		_node.IPAddress = &value
+	}
+	if value, ok := _c.mutation.CountryCode(); ok {
+		_spec.SetField(usagelog.FieldCountryCode, field.TypeString, value)
+		_node.CountryCode = &value
 	}
 	if value, ok := _c.mutation.ImageCount(); ok {
 		_spec.SetField(usagelog.FieldImageCount, field.TypeInt, value)
@@ -1368,6 +1391,24 @@ func (u *UsageLogUpsert) UpdateIPAddress() *UsageLogUpsert {
 // ClearIPAddress clears the value of the "ip_address" field.
 func (u *UsageLogUpsert) ClearIPAddress() *UsageLogUpsert {
 	u.SetNull(usagelog.FieldIPAddress)
+	return u
+}
+
+// SetCountryCode sets the "country_code" field.
+func (u *UsageLogUpsert) SetCountryCode(v string) *UsageLogUpsert {
+	u.Set(usagelog.FieldCountryCode, v)
+	return u
+}
+
+// UpdateCountryCode sets the "country_code" field to the value that was provided on create.
+func (u *UsageLogUpsert) UpdateCountryCode() *UsageLogUpsert {
+	u.SetExcluded(usagelog.FieldCountryCode)
+	return u
+}
+
+// ClearCountryCode clears the value of the "country_code" field.
+func (u *UsageLogUpsert) ClearCountryCode() *UsageLogUpsert {
+	u.SetNull(usagelog.FieldCountryCode)
 	return u
 }
 
@@ -1995,6 +2036,27 @@ func (u *UsageLogUpsertOne) UpdateIPAddress() *UsageLogUpsertOne {
 func (u *UsageLogUpsertOne) ClearIPAddress() *UsageLogUpsertOne {
 	return u.Update(func(s *UsageLogUpsert) {
 		s.ClearIPAddress()
+	})
+}
+
+// SetCountryCode sets the "country_code" field.
+func (u *UsageLogUpsertOne) SetCountryCode(v string) *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.SetCountryCode(v)
+	})
+}
+
+// UpdateCountryCode sets the "country_code" field to the value that was provided on create.
+func (u *UsageLogUpsertOne) UpdateCountryCode() *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.UpdateCountryCode()
+	})
+}
+
+// ClearCountryCode clears the value of the "country_code" field.
+func (u *UsageLogUpsertOne) ClearCountryCode() *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.ClearCountryCode()
 	})
 }
 
@@ -2794,6 +2856,27 @@ func (u *UsageLogUpsertBulk) UpdateIPAddress() *UsageLogUpsertBulk {
 func (u *UsageLogUpsertBulk) ClearIPAddress() *UsageLogUpsertBulk {
 	return u.Update(func(s *UsageLogUpsert) {
 		s.ClearIPAddress()
+	})
+}
+
+// SetCountryCode sets the "country_code" field.
+func (u *UsageLogUpsertBulk) SetCountryCode(v string) *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.SetCountryCode(v)
+	})
+}
+
+// UpdateCountryCode sets the "country_code" field to the value that was provided on create.
+func (u *UsageLogUpsertBulk) UpdateCountryCode() *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.UpdateCountryCode()
+	})
+}
+
+// ClearCountryCode clears the value of the "country_code" field.
+func (u *UsageLogUpsertBulk) ClearCountryCode() *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.ClearCountryCode()
 	})
 }
 

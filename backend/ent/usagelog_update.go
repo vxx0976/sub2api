@@ -571,6 +571,26 @@ func (_u *UsageLogUpdate) ClearIPAddress() *UsageLogUpdate {
 	return _u
 }
 
+// SetCountryCode sets the "country_code" field.
+func (_u *UsageLogUpdate) SetCountryCode(v string) *UsageLogUpdate {
+	_u.mutation.SetCountryCode(v)
+	return _u
+}
+
+// SetNillableCountryCode sets the "country_code" field if the given value is not nil.
+func (_u *UsageLogUpdate) SetNillableCountryCode(v *string) *UsageLogUpdate {
+	if v != nil {
+		_u.SetCountryCode(*v)
+	}
+	return _u
+}
+
+// ClearCountryCode clears the value of the "country_code" field.
+func (_u *UsageLogUpdate) ClearCountryCode() *UsageLogUpdate {
+	_u.mutation.ClearCountryCode()
+	return _u
+}
+
 // SetImageCount sets the "image_count" field.
 func (_u *UsageLogUpdate) SetImageCount(v int) *UsageLogUpdate {
 	_u.mutation.ResetImageCount()
@@ -719,6 +739,11 @@ func (_u *UsageLogUpdate) check() error {
 	if v, ok := _u.mutation.IPAddress(); ok {
 		if err := usagelog.IPAddressValidator(v); err != nil {
 			return &ValidationError{Name: "ip_address", err: fmt.Errorf(`ent: validator failed for field "UsageLog.ip_address": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.CountryCode(); ok {
+		if err := usagelog.CountryCodeValidator(v); err != nil {
+			return &ValidationError{Name: "country_code", err: fmt.Errorf(`ent: validator failed for field "UsageLog.country_code": %w`, err)}
 		}
 	}
 	if v, ok := _u.mutation.ImageSize(); ok {
@@ -881,6 +906,12 @@ func (_u *UsageLogUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.IPAddressCleared() {
 		_spec.ClearField(usagelog.FieldIPAddress, field.TypeString)
+	}
+	if value, ok := _u.mutation.CountryCode(); ok {
+		_spec.SetField(usagelog.FieldCountryCode, field.TypeString, value)
+	}
+	if _u.mutation.CountryCodeCleared() {
+		_spec.ClearField(usagelog.FieldCountryCode, field.TypeString)
 	}
 	if value, ok := _u.mutation.ImageCount(); ok {
 		_spec.SetField(usagelog.FieldImageCount, field.TypeInt, value)
@@ -1598,6 +1629,26 @@ func (_u *UsageLogUpdateOne) ClearIPAddress() *UsageLogUpdateOne {
 	return _u
 }
 
+// SetCountryCode sets the "country_code" field.
+func (_u *UsageLogUpdateOne) SetCountryCode(v string) *UsageLogUpdateOne {
+	_u.mutation.SetCountryCode(v)
+	return _u
+}
+
+// SetNillableCountryCode sets the "country_code" field if the given value is not nil.
+func (_u *UsageLogUpdateOne) SetNillableCountryCode(v *string) *UsageLogUpdateOne {
+	if v != nil {
+		_u.SetCountryCode(*v)
+	}
+	return _u
+}
+
+// ClearCountryCode clears the value of the "country_code" field.
+func (_u *UsageLogUpdateOne) ClearCountryCode() *UsageLogUpdateOne {
+	_u.mutation.ClearCountryCode()
+	return _u
+}
+
 // SetImageCount sets the "image_count" field.
 func (_u *UsageLogUpdateOne) SetImageCount(v int) *UsageLogUpdateOne {
 	_u.mutation.ResetImageCount()
@@ -1759,6 +1810,11 @@ func (_u *UsageLogUpdateOne) check() error {
 	if v, ok := _u.mutation.IPAddress(); ok {
 		if err := usagelog.IPAddressValidator(v); err != nil {
 			return &ValidationError{Name: "ip_address", err: fmt.Errorf(`ent: validator failed for field "UsageLog.ip_address": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.CountryCode(); ok {
+		if err := usagelog.CountryCodeValidator(v); err != nil {
+			return &ValidationError{Name: "country_code", err: fmt.Errorf(`ent: validator failed for field "UsageLog.country_code": %w`, err)}
 		}
 	}
 	if v, ok := _u.mutation.ImageSize(); ok {
@@ -1938,6 +1994,12 @@ func (_u *UsageLogUpdateOne) sqlSave(ctx context.Context) (_node *UsageLog, err 
 	}
 	if _u.mutation.IPAddressCleared() {
 		_spec.ClearField(usagelog.FieldIPAddress, field.TypeString)
+	}
+	if value, ok := _u.mutation.CountryCode(); ok {
+		_spec.SetField(usagelog.FieldCountryCode, field.TypeString, value)
+	}
+	if _u.mutation.CountryCodeCleared() {
+		_spec.ClearField(usagelog.FieldCountryCode, field.TypeString)
 	}
 	if value, ok := _u.mutation.ImageCount(); ok {
 		_spec.SetField(usagelog.FieldImageCount, field.TypeInt, value)
