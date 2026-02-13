@@ -240,15 +240,7 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/referral',
-    name: 'Referral',
-    component: () => import('@/views/user/ReferralView.vue'),
-    meta: {
-      requiresAuth: true,
-      requiresAdmin: false,
-      title: 'Invite Friends',
-      titleKey: 'referral.title',
-      descriptionKey: 'referral.subtitle'
-    }
+    redirect: '/console-home'
   },
   {
     path: '/profile',
@@ -502,15 +494,7 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/admin/referrals',
-    name: 'AdminReferrals',
-    component: () => import('@/views/admin/ReferralsView.vue'),
-    meta: {
-      requiresAuth: true,
-      requiresAdmin: true,
-      title: 'Referral Management',
-      titleKey: 'admin.referrals.title',
-      descriptionKey: 'admin.referrals.description'
-    }
+    redirect: '/admin/dashboard'
   },
   {
     path: '/admin/channels',

@@ -350,8 +350,8 @@
         </div>
       </section>
 
-      <!-- Referral Reward Section (hidden on reseller domains) -->
-      <section v-if="!isResellerDomain" class="relative overflow-hidden py-16">
+      <!-- Referral Reward Section (hidden) -->
+      <section v-if="false" class="relative overflow-hidden py-16">
         <div class="absolute inset-0 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20"></div>
         <div class="pointer-events-none absolute inset-0">
           <div class="absolute -left-20 top-0 h-64 w-64 rounded-full bg-purple-400/20 blur-3xl"></div>

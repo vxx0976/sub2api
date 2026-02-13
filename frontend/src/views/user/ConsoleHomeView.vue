@@ -162,11 +162,12 @@ const quickLinks = computed(() => [
     label: t('consoleHome.links.apiKeys'),
     bgClass: 'bg-gradient-to-br from-amber-500 to-amber-600'
   },
-  {
-    path: '/referral',
-    icon: 'userPlus' as const,
-    label: t('consoleHome.links.referral'),
-    bgClass: 'bg-gradient-to-br from-purple-500 to-purple-600'
-  }
+  // Hidden: referral quick link
+  // {
+  //   path: '/referral',
+  //   icon: 'userPlus' as const,
+  //   label: t('consoleHome.links.referral'),
+  //   bgClass: 'bg-gradient-to-br from-purple-500 to-purple-600'
+  // }
 ])
 </script>
