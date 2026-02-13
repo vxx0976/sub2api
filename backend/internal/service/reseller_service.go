@@ -194,12 +194,14 @@ type UpdateResellerKeyInput struct {
 
 // ResellerService provides reseller-specific business logic
 type ResellerService struct {
-	userRepo      UserRepository
-	domainRepo    ResellerDomainRepository
-	groupRepo     GroupRepository
-	settingRepo   ResellerSettingRepository
-	apiKeyRepo    APIKeyRepository
-	apiKeyService *APIKeyService
+	userRepo         UserRepository
+	domainRepo       ResellerDomainRepository
+	groupRepo        GroupRepository
+	settingRepo      ResellerSettingRepository
+	apiKeyRepo       APIKeyRepository
+	apiKeyService    *APIKeyService
+	redeemRepo       RedeemCodeRepository
+	announcementRepo AnnouncementRepository
 }
 
 // NewResellerService creates a new ResellerService
@@ -210,14 +212,18 @@ func NewResellerService(
 	settingRepo ResellerSettingRepository,
 	apiKeyRepo APIKeyRepository,
 	apiKeyService *APIKeyService,
+	redeemRepo RedeemCodeRepository,
+	announcementRepo AnnouncementRepository,
 ) *ResellerService {
 	return &ResellerService{
-		userRepo:      userRepo,
-		domainRepo:    domainRepo,
-		groupRepo:     groupRepo,
-		settingRepo:   settingRepo,
-		apiKeyRepo:    apiKeyRepo,
-		apiKeyService: apiKeyService,
+		userRepo:         userRepo,
+		domainRepo:       domainRepo,
+		groupRepo:        groupRepo,
+		settingRepo:      settingRepo,
+		apiKeyRepo:       apiKeyRepo,
+		apiKeyService:    apiKeyService,
+		redeemRepo:       redeemRepo,
+		announcementRepo: announcementRepo,
 	}
 }
 
@@ -734,6 +740,236 @@ func (s *ResellerService) GetSettings(ctx context.Context, resellerID int64) (ma
 // UpdateSettings updates settings for the reseller
 func (s *ResellerService) UpdateSettings(ctx context.Context, resellerID int64, settings map[string]string) error {
 	return s.settingRepo.SetAll(ctx, resellerID, settings)
+}
+
+// --- Redeem Code management ---
+
+// GenerateRedeemCodes creates redeem codes funded from the reseller's balance
+func (s *ResellerService) GenerateRedeemCodes(ctx context.Context, resellerID int64, count int, value float64) ([]RedeemCode, error) {
+	if count <= 0 || count > 100 {
+		return nil, infraerrors.BadRequest("INVALID_COUNT", "count must be between 1 and 100")
+	}
+	if value <= 0 {
+		return nil, infraerrors.BadRequest("INVALID_VALUE", "value must be positive")
+	}
+
+	totalCost := value * float64(count)
+
+	// Check reseller balance
+	reseller, err := s.userRepo.GetByID(ctx, resellerID)
+	if err != nil {
+		return nil, fmt.Errorf("get reseller: %w", err)
+	}
+	if reseller.Balance < totalCost {
+		return nil, infraerrors.BadRequest("INSUFFICIENT_BALANCE", "insufficient balance to generate codes")
+	}
+
+	// Deduct balance
+	reseller.Balance -= totalCost
+	if err := s.userRepo.Update(ctx, reseller); err != nil {
+		return nil, fmt.Errorf("deduct balance: %w", err)
+	}
+
+	// Generate codes
+	codes := make([]RedeemCode, count)
+	for i := 0; i < count; i++ {
+		code, err := GenerateRedeemCode()
+		if err != nil {
+			return nil, fmt.Errorf("generate code: %w", err)
+		}
+		codes[i] = RedeemCode{
+			Code:    code,
+			Type:    RedeemTypeBalance,
+			Value:   value,
+			Status:  StatusUnused,
+			OwnerID: &resellerID,
+		}
+	}
+
+	if err := s.redeemRepo.CreateBatch(ctx, codes); err != nil {
+		// Attempt to refund balance on failure
+		reseller.Balance += totalCost
+		_ = s.userRepo.Update(ctx, reseller)
+		return nil, fmt.Errorf("create codes: %w", err)
+	}
+
+	return codes, nil
+}
+
+// ListRedeemCodes returns redeem codes owned by the reseller
+func (s *ResellerService) ListRedeemCodes(ctx context.Context, resellerID int64, page, pageSize int) ([]RedeemCode, *pagination.PaginationResult, error) {
+	// Use ListWithFilters to get all codes, then filter by OwnerID
+	// Using a large page size to get all, then apply manual pagination
+	all, _, err := s.redeemRepo.ListWithFilters(ctx, pagination.PaginationParams{Page: 1, PageSize: 10000}, RedeemTypeBalance, "", "")
+	if err != nil {
+		return nil, nil, fmt.Errorf("list codes: %w", err)
+	}
+
+	// Filter by owner
+	var filtered []RedeemCode
+	for _, c := range all {
+		if c.OwnerID != nil && *c.OwnerID == resellerID {
+			filtered = append(filtered, c)
+		}
+	}
+
+	total := int64(len(filtered))
+	start := (page - 1) * pageSize
+	end := start + pageSize
+	if start > len(filtered) {
+		start = len(filtered)
+	}
+	if end > len(filtered) {
+		end = len(filtered)
+	}
+	pages := int((total + int64(pageSize) - 1) / int64(pageSize))
+
+	return filtered[start:end], &pagination.PaginationResult{
+		Total:    total,
+		Page:     page,
+		PageSize: pageSize,
+		Pages:    pages,
+	}, nil
+}
+
+// DeleteRedeemCode deletes a redeem code owned by the reseller
+func (s *ResellerService) DeleteRedeemCode(ctx context.Context, resellerID, codeID int64) error {
+	code, err := s.redeemRepo.GetByID(ctx, codeID)
+	if err != nil {
+		return infraerrors.NotFound("REDEEM_CODE_NOT_FOUND", "redeem code not found")
+	}
+	if code.OwnerID == nil || *code.OwnerID != resellerID {
+		return ErrOwnershipViolation
+	}
+	if code.Status != StatusUnused {
+		return infraerrors.BadRequest("REDEEM_CODE_USED", "cannot delete a used redeem code")
+	}
+
+	// Refund balance
+	reseller, err := s.userRepo.GetByID(ctx, resellerID)
+	if err != nil {
+		return fmt.Errorf("get reseller: %w", err)
+	}
+	reseller.Balance += code.Value
+	if err := s.userRepo.Update(ctx, reseller); err != nil {
+		return fmt.Errorf("refund balance: %w", err)
+	}
+
+	return s.redeemRepo.Delete(ctx, codeID)
+}
+
+// --- Announcement management ---
+
+// ListAnnouncements returns announcements owned by the reseller
+func (s *ResellerService) ListAnnouncements(ctx context.Context, resellerID int64, page, pageSize int) ([]Announcement, *pagination.PaginationResult, error) {
+	all, pag, err := s.announcementRepo.List(ctx, pagination.PaginationParams{Page: 1, PageSize: 10000}, AnnouncementListFilters{})
+	if err != nil {
+		return nil, nil, fmt.Errorf("list announcements: %w", err)
+	}
+
+	// Filter by owner
+	var filtered []Announcement
+	for _, a := range all {
+		if a.OwnerID != nil && *a.OwnerID == resellerID {
+			filtered = append(filtered, a)
+		}
+	}
+	_ = pag
+
+	total := int64(len(filtered))
+	start := (page - 1) * pageSize
+	end := start + pageSize
+	if start > len(filtered) {
+		start = len(filtered)
+	}
+	if end > len(filtered) {
+		end = len(filtered)
+	}
+	pages := int((total + int64(pageSize) - 1) / int64(pageSize))
+
+	return filtered[start:end], &pagination.PaginationResult{
+		Total:    total,
+		Page:     page,
+		PageSize: pageSize,
+		Pages:    pages,
+	}, nil
+}
+
+// CreateAnnouncement creates an announcement owned by the reseller
+func (s *ResellerService) CreateAnnouncement(ctx context.Context, resellerID int64, input *CreateAnnouncementInput) (*Announcement, error) {
+	a := &Announcement{
+		Title:   input.Title,
+		Content: input.Content,
+		Status:  input.Status,
+		OwnerID: &resellerID,
+	}
+	if a.Status == "" {
+		a.Status = AnnouncementStatusDraft
+	}
+	if input.StartsAt != nil {
+		a.StartsAt = input.StartsAt
+	}
+	if input.EndsAt != nil {
+		a.EndsAt = input.EndsAt
+	}
+
+	if err := s.announcementRepo.Create(ctx, a); err != nil {
+		return nil, fmt.Errorf("create announcement: %w", err)
+	}
+	return a, nil
+}
+
+// UpdateAnnouncement updates an announcement owned by the reseller
+func (s *ResellerService) UpdateAnnouncement(ctx context.Context, resellerID, announcementID int64, input *UpdateAnnouncementInput) (*Announcement, error) {
+	a, err := s.announcementRepo.GetByID(ctx, announcementID)
+	if err != nil {
+		return nil, infraerrors.NotFound("ANNOUNCEMENT_NOT_FOUND", "announcement not found")
+	}
+	if a.OwnerID == nil || *a.OwnerID != resellerID {
+		return nil, ErrOwnershipViolation
+	}
+
+	if input.Title != nil {
+		a.Title = *input.Title
+	}
+	if input.Content != nil {
+		a.Content = *input.Content
+	}
+	if input.Status != nil {
+		a.Status = *input.Status
+	}
+	if input.StartsAt != nil {
+		a.StartsAt = *input.StartsAt
+	}
+	if input.EndsAt != nil {
+		a.EndsAt = *input.EndsAt
+	}
+
+	if err := s.announcementRepo.Update(ctx, a); err != nil {
+		return nil, fmt.Errorf("update announcement: %w", err)
+	}
+	return a, nil
+}
+
+// DeleteAnnouncement deletes an announcement owned by the reseller
+func (s *ResellerService) DeleteAnnouncement(ctx context.Context, resellerID, announcementID int64) error {
+	a, err := s.announcementRepo.GetByID(ctx, announcementID)
+	if err != nil {
+		return infraerrors.NotFound("ANNOUNCEMENT_NOT_FOUND", "announcement not found")
+	}
+	if a.OwnerID == nil || *a.OwnerID != resellerID {
+		return ErrOwnershipViolation
+	}
+	return s.announcementRepo.Delete(ctx, announcementID)
+}
+
+// --- User management ---
+
+// ListUsers returns users belonging to the reseller (parent_id = resellerID)
+func (s *ResellerService) ListUsers(ctx context.Context, resellerID int64, page, pageSize int, filters UserListFilters) ([]User, *pagination.PaginationResult, error) {
+	// Force ParentID to resellerID to prevent privilege escalation
+	filters.ParentID = &resellerID
+	return s.userRepo.ListWithFilters(ctx, pagination.PaginationParams{Page: page, PageSize: pageSize}, filters)
 }
 
 // --- Internal helpers ---

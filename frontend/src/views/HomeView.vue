@@ -35,7 +35,7 @@
             {{ t('home.getStarted') }}
             <Icon name="arrowRight" size="md" :stroke-width="2" />
           </router-link>
-          <router-link v-else-if="!isResellerDomain" :to="isAuthenticated ? dashboardPath : loginPath" class="btn btn-primary btn-lg px-8">
+          <router-link v-else :to="isAuthenticated ? dashboardPath : loginPath" class="btn btn-primary btn-lg px-8">
             {{ isAuthenticated ? t('home.goToDashboard') : t('home.getStarted') }}
             <Icon name="arrowRight" size="md" :stroke-width="2" />
           </router-link>
@@ -131,7 +131,7 @@
                   {{ t('home.getStarted') }}
                   <Icon name="arrowRight" size="md" :stroke-width="2" />
                 </router-link>
-                <router-link v-else-if="!isResellerDomain" :to="isAuthenticated ? dashboardPath : loginPath" class="btn btn-primary btn-lg px-7">
+                <router-link v-else :to="isAuthenticated ? dashboardPath : loginPath" class="btn btn-primary btn-lg px-7">
                   {{ isAuthenticated ? t('home.goToDashboard') : t('home.getStarted') }}
                   <Icon name="arrowRight" size="md" :stroke-width="2" />
                 </router-link>
@@ -596,7 +596,7 @@
                 <Icon name="arrowRight" size="md" :stroke-width="2" />
               </router-link>
               <router-link
-                v-else-if="!isResellerDomain"
+                v-else
                 :to="isAuthenticated ? dashboardPath : loginPath"
                 class="btn btn-primary btn-lg w-full px-7 sm:w-auto"
               >

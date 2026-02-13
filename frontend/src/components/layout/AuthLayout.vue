@@ -61,26 +61,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { getPublicSettings } from '@/api/auth'
-import { sanitizeUrl } from '@/utils/url'
+import { computed } from 'vue'
+import { useAppStore } from '@/stores'
 
-const siteName = ref('码驿站')
-const siteLogo = ref('')
-const siteSubtitle = ref('Subscription to API Conversion Platform')
+const appStore = useAppStore()
+
+const siteName = computed(() => appStore.cachedPublicSettings?.site_name || appStore.siteName || '码驿站')
+const siteLogo = computed(() => appStore.cachedPublicSettings?.site_logo || appStore.siteLogo || '')
+const siteSubtitle = computed(() => appStore.cachedPublicSettings?.site_subtitle || 'Subscription to API Conversion Platform')
 
 const currentYear = computed(() => new Date().getFullYear())
-
-onMounted(async () => {
-  try {
-    const settings = await getPublicSettings()
-    siteName.value = settings.site_name || '码驿站'
-    siteLogo.value = sanitizeUrl(settings.site_logo || '', { allowRelative: true, allowDataUrl: true })
-    siteSubtitle.value = settings.site_subtitle || 'Subscription to API Conversion Platform'
-  } catch (error) {
-    console.error('Failed to load public settings:', error)
-  }
-})
 </script>
 
 <style scoped>

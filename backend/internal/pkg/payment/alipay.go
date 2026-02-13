@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"net/url"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -152,15 +153,22 @@ func (ap *AlipayPayment) ReleaseAmount(amount float64) {
 
 // AccountBill represents a single account log entry from Alipay
 type AccountBill struct {
-	TransDt         string  `json:"trans_dt"`
-	AccountLogID    string  `json:"account_log_id"`
-	AlipayOrderNo   string  `json:"alipay_order_no"`
-	MerchantOrderNo string  `json:"merchant_order_no"`
-	TransAmount     float64 `json:"trans_amount"`
-	Balance         float64 `json:"balance"`
-	Type            string  `json:"type"`
-	OtherAccount    string  `json:"other_account"`
-	TransMemo       string  `json:"trans_memo"`
+	TransDt         string `json:"trans_dt"`
+	AccountLogID    string `json:"account_log_id"`
+	AlipayOrderNo   string `json:"alipay_order_no"`
+	MerchantOrderNo string `json:"merchant_order_no"`
+	TransAmount     string `json:"trans_amount"`
+	Balance         string `json:"balance"`
+	Type            string `json:"type"`
+	OtherAccount    string `json:"other_account"`
+	TransMemo       string `json:"trans_memo"`
+	Direction       string `json:"direction"`
+}
+
+// TransAmountFloat returns the transaction amount as float64
+func (b AccountBill) TransAmountFloat() float64 {
+	v, _ := strconv.ParseFloat(b.TransAmount, 64)
+	return v
 }
 
 // QueryAccountBills queries Alipay account logs via alipay.data.bill.accountlog.query
@@ -229,6 +237,8 @@ func parseAccountBills(data []byte) ([]AccountBill, error) {
 		AlipayDataBillAccountlogQueryResponse struct {
 			Code       string        `json:"code"`
 			Msg        string        `json:"msg"`
+			SubCode    string        `json:"sub_code"`
+			SubMsg     string        `json:"sub_msg"`
 			TotalSize  string        `json:"total_size"`
 			DetailList []AccountBill `json:"detail_list"`
 		} `json:"alipay_data_bill_accountlog_query_response"`
@@ -240,6 +250,9 @@ func parseAccountBills(data []byte) ([]AccountBill, error) {
 
 	resp := result.AlipayDataBillAccountlogQueryResponse
 	if resp.Code != "10000" {
+		if resp.SubCode != "" {
+			return nil, fmt.Errorf("alipay API error: code=%s, msg=%s, sub_code=%s, sub_msg=%s", resp.Code, resp.Msg, resp.SubCode, resp.SubMsg)
+		}
 		return nil, fmt.Errorf("alipay API error: code=%s, msg=%s", resp.Code, resp.Msg)
 	}
 
@@ -251,7 +264,7 @@ func parseAccountBills(data []byte) ([]AccountBill, error) {
 func buildSignString(params map[string]string) string {
 	keys := make([]string, 0, len(params))
 	for k := range params {
-		if k == "sign" || k == "sign_type" {
+		if k == "sign" {
 			continue
 		}
 		if params[k] == "" {

@@ -496,7 +496,16 @@ const userNavItems = computed(() => {
     { path: '/redeem', label: t('nav.redeem'), icon: TicketIcon, hideInSimpleMode: true },
     // { path: '/referral', label: t('nav.referral'), icon: UserPlusIcon, hideInSimpleMode: true }
   ]
-  return authStore.isSimpleMode ? items.filter(item => !item.hideInSimpleMode) : items
+  let filtered = authStore.isSimpleMode ? items.filter(item => !item.hideInSimpleMode) : items
+  if (appStore.isResellerDomain) {
+    const hasPurchaseUrl = !!(appStore.cachedPublicSettings?.purchase_enabled && appStore.cachedPublicSettings?.purchase_url)
+    const hiddenOnResellerDomain = ['/subscriptions', '/orders', '/purchase']
+    if (!hasPurchaseUrl) {
+      hiddenOnResellerDomain.push('/plans')
+    }
+    filtered = filtered.filter(item => !hiddenOnResellerDomain.includes(item.path))
+  }
+  return filtered
 })
 
 // Reseller navigation items
@@ -504,7 +513,10 @@ const resellerNavItems = computed(() => [
   { path: '/dashboard', label: t('nav.dashboard'), icon: DashboardIcon },
   { path: '/keys', label: t('nav.apiKeys'), icon: KeyIcon },
   { path: '/usage', label: t('nav.usage'), icon: ChartIcon },
+  { path: '/merchant/users', label: t('nav.resellerUsers'), icon: UsersIcon },
   { path: '/merchant/sites', label: t('nav.resellerSites'), icon: GlobeIcon },
+  { path: '/merchant/redeem', label: t('nav.resellerRedeem'), icon: TicketIcon },
+  { path: '/merchant/announcements', label: t('nav.resellerAnnouncements'), icon: BellIcon },
   { path: '/merchant/settings', label: t('nav.resellerSettings'), icon: CogIcon },
 ])
 

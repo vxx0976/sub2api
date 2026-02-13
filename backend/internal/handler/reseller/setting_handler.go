@@ -12,13 +12,33 @@ import (
 
 // SettingHandler handles reseller settings management
 type SettingHandler struct {
-	resellerService *service.ResellerService
-	botManager      *service.TelegramBotManager
+	resellerService      *service.ResellerService
+	botManager           *service.TelegramBotManager
+	invalidateDomainFunc func(domain string)
 }
 
 // NewSettingHandler creates a new SettingHandler
 func NewSettingHandler(resellerService *service.ResellerService, botManager *service.TelegramBotManager) *SettingHandler {
 	return &SettingHandler{resellerService: resellerService, botManager: botManager}
+}
+
+// SetCacheInvalidator sets the function to call when reseller settings change
+func (h *SettingHandler) SetCacheInvalidator(fn func(domain string)) {
+	h.invalidateDomainFunc = fn
+}
+
+// invalidateAllDomainCaches invalidates the HTML cache for all domains owned by this reseller
+func (h *SettingHandler) invalidateAllDomainCaches(c *gin.Context, resellerID int64) {
+	if h.invalidateDomainFunc == nil {
+		return
+	}
+	domains, _, err := h.resellerService.ListDomains(c.Request.Context(), resellerID, 1, 100)
+	if err != nil {
+		return
+	}
+	for _, d := range domains {
+		h.invalidateDomainFunc(d.Domain)
+	}
 }
 
 // Get returns all settings for the reseller
@@ -57,6 +77,9 @@ func (h *SettingHandler) Update(c *gin.Context) {
 		response.ErrorFrom(c, err)
 		return
 	}
+
+	// Invalidate HTML cache for all reseller domains so new settings take effect
+	h.invalidateAllDomainCaches(c, resellerID)
 
 	// Notify bot manager about settings change
 	if h.botManager != nil {

@@ -31,6 +31,73 @@
           </div>
         </div>
 
+        <!-- Contact Info -->
+        <div class="card p-6">
+          <h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+            {{ t('reseller.settings.contactSection') }}
+          </h2>
+          <div class="space-y-4">
+            <div>
+              <label class="label">{{ t('reseller.settings.contactWechat') }}</label>
+              <input
+                v-model="settings.contact_wechat"
+                type="text"
+                class="input"
+              />
+            </div>
+            <div>
+              <label class="label">{{ t('reseller.settings.contactTelegram') }}</label>
+              <input
+                v-model="settings.contact_telegram"
+                type="text"
+                class="input"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Announcements -->
+        <div class="card p-6">
+          <h2 class="mb-1 text-lg font-semibold text-gray-900 dark:text-white">
+            {{ t('reseller.settings.announcementsSection') }}
+          </h2>
+          <p class="mb-4 text-xs text-gray-500 dark:text-gray-400">{{ t('reseller.settings.announcementsHint') }}</p>
+          <div class="space-y-3">
+            <div
+              v-for="(item, index) in announcementList"
+              :key="index"
+              class="flex items-center gap-2"
+            >
+              <input
+                v-model="item.title"
+                type="text"
+                class="input flex-1"
+                :placeholder="t('reseller.settings.announcementTitle')"
+              />
+              <input
+                v-model="item.date"
+                type="text"
+                class="input w-32"
+                :placeholder="t('reseller.settings.announcementDate')"
+              />
+              <button
+                type="button"
+                @click="announcementList.splice(index, 1)"
+                class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20"
+              >
+                <Icon name="x" size="sm" />
+              </button>
+            </div>
+            <button
+              type="button"
+              @click="announcementList.push({ title: '', date: '' })"
+              class="btn btn-sm btn-secondary"
+            >
+              {{ t('reseller.settings.addAnnouncement') }}
+            </button>
+          </div>
+        </div>
+
         <!-- Telegram Bot -->
         <div class="card p-6">
           <h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
@@ -96,13 +163,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, reactive, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { resellerAPI } from '@/api'
 import { useAppStore } from '@/stores'
 import { availableLocales } from '@/i18n'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
+import Icon from '@/components/icons/Icon.vue'
 
 const { t } = useI18n()
 const appStore = useAppStore()
@@ -120,9 +188,14 @@ const settings = ref<Record<string, string>>({
   contact_info: '',
   crypto_addresses: '',
   default_locale: '',
+  contact_wechat: '',
+  contact_telegram: '',
   tg_bot_token: '',
   tg_chat_id: ''
 })
+
+// SimpleAnnouncement list (stored as JSON in settings.announcements)
+const announcementList = reactive<{ title: string; date: string }[]>([])
 
 async function loadSettings() {
   loading.value = true
@@ -131,6 +204,16 @@ async function loadSettings() {
     // Merge loaded settings with defaults
     for (const key of Object.keys(data)) {
       settings.value[key] = data[key]
+    }
+    // Parse announcements JSON
+    announcementList.length = 0
+    if (data.announcements) {
+      try {
+        const arr = JSON.parse(data.announcements)
+        if (Array.isArray(arr)) {
+          arr.forEach((a: any) => announcementList.push({ title: a.title || '', date: a.date || '' }))
+        }
+      } catch { /* ignore parse errors */ }
     }
   } catch (error: any) {
     appStore.showError(error.message || t('common.loadFailed'))
@@ -148,6 +231,9 @@ async function saveSettings() {
       if (key === 'tg_chat_id' || key === 'tg_bind_code') continue
       payload[key] = value
     }
+    // Serialize announcements (filter out empty titles)
+    const validAnnouncements = announcementList.filter(a => a.title.trim())
+    payload.announcements = validAnnouncements.length > 0 ? JSON.stringify(validAnnouncements) : ''
     await resellerAPI.settings.update(payload)
     appStore.showSuccess(t('common.saveSuccess'))
   } catch (error: any) {

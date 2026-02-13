@@ -110,11 +110,32 @@ func (h *UserHandler) List(c *gin.Context) {
 		loadInfo, _ = h.concurrencyService.GetUsersLoadBatch(c.Request.Context(), usersConcurrency)
 	}
 
-	// Build response with concurrency info
+	// Collect unique parent IDs for batch lookup
+	parentIDs := make(map[int64]struct{})
+	for i := range users {
+		if users[i].ParentID != nil {
+			parentIDs[*users[i].ParentID] = struct{}{}
+		}
+	}
+
+	// Batch lookup parent emails
+	parentEmails := make(map[int64]string, len(parentIDs))
+	for pid := range parentIDs {
+		if parent, err := h.adminService.GetUser(c.Request.Context(), pid); err == nil {
+			parentEmails[pid] = parent.Email
+		}
+	}
+
+	// Build response with concurrency info and parent emails
 	out := make([]UserWithConcurrency, len(users))
 	for i := range users {
 		out[i] = UserWithConcurrency{
 			AdminUser: *dto.UserFromServiceAdmin(&users[i]),
+		}
+		if users[i].ParentID != nil {
+			if email, ok := parentEmails[*users[i].ParentID]; ok {
+				out[i].AdminUser.ParentEmail = email
+			}
 		}
 		if info := loadInfo[users[i].ID]; info != nil {
 			out[i].CurrentConcurrency = info.CurrentConcurrency

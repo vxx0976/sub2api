@@ -55,6 +55,7 @@ func SetupRouter(
 			// Register cache invalidation callbacks
 			settingService.SetOnUpdateCallback(frontendServer.InvalidateCache)
 			handlers.Reseller.Domain.SetCacheInvalidator(frontendServer.InvalidateDomainCache)
+			handlers.Reseller.Setting.SetCacheInvalidator(frontendServer.InvalidateDomainCache)
 			r.Use(frontendServer.Middleware())
 		}
 	}

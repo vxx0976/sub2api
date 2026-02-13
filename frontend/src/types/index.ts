@@ -44,6 +44,8 @@ export interface AdminUser extends User {
   notes: string
   // 父用户ID（商户的子用户才有此字段）
   parent_id?: number | null
+  // 父用户邮箱（仅管理员列表接口返回，关联查询）
+  parent_email?: string
   // 用户专属分组倍率配置 (group_id -> rate_multiplier)
   group_rates?: Record<number, number>
   // 当前并发数（仅管理员列表接口返回）
@@ -107,6 +109,8 @@ export interface PublicSettings {
   crypto_addresses?: string
   query_domain?: string
   default_locale?: string
+  contact_wechat?: string
+  contact_telegram?: string
   // Reseller domain branding (injected when accessed via a reseller's custom domain)
   reseller_id?: number
   reseller_domain?: string

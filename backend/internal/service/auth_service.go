@@ -98,12 +98,12 @@ func NewAuthService(
 
 // Register 用户注册，返回token和用户
 func (s *AuthService) Register(ctx context.Context, email, password string) (string, *User, error) {
-	return s.RegisterWithVerification(ctx, email, password, "", "", "")
+	return s.RegisterWithVerification(ctx, email, password, "", "", "", nil)
 }
 
 
-// RegisterWithVerification 用户注册（支持邮件验证、优惠码和邀请码），返回token和用户
-func (s *AuthService) RegisterWithVerification(ctx context.Context, email, password, verifyCode, promoCode, invitationCode string) (string, *User, error) {
+// RegisterWithVerification 用户注册（支持邮件验证、优惠码、邀请码和上级分销商），返回token和用户
+func (s *AuthService) RegisterWithVerification(ctx context.Context, email, password, verifyCode, promoCode, invitationCode string, parentID *int64) (string, *User, error) {
 	if s.settingService == nil || !s.settingService.IsRegistrationEnabled(ctx) {
 		return "", nil, ErrRegDisabled
 	}
@@ -200,6 +200,15 @@ func (s *AuthService) RegisterWithVerification(ctx context.Context, email, passw
 		}
 	}
 
+	// Validate parentID: ensure the parent user exists and is a reseller
+	if parentID != nil {
+		parentUser, err := s.userRepo.GetByID(ctx, *parentID)
+		if err != nil || !parentUser.IsReseller() {
+			log.Printf("[Auth] Invalid parent_id %d: user not found or not a reseller", *parentID)
+			parentID = nil // Don't block registration, just ignore invalid parent
+		}
+	}
+
 	// 创建用户
 	user := &User{
 		Email:        email,
@@ -210,6 +219,7 @@ func (s *AuthService) RegisterWithVerification(ctx context.Context, email, passw
 		Status:       StatusActive,
 		ReferralCode: userReferralCode,
 		ReferredBy:   referrerID,
+		ParentID:     parentID,
 	}
 
 	if err := s.userRepo.Create(ctx, user); err != nil {

@@ -66,13 +66,19 @@ func ProvideResellerHandlers(
 	groupHandler *reseller.GroupHandler,
 	settingHandler *reseller.SettingHandler,
 	keyHandler *reseller.KeyHandler,
+	redeemHandler *reseller.RedeemHandler,
+	announcementHandler *reseller.AnnouncementHandler,
+	userHandler *reseller.UserHandler,
 ) *ResellerHandlers {
 	return &ResellerHandlers{
-		Dashboard: dashboardHandler,
-		Domain:    domainHandler,
-		Group:     groupHandler,
-		Setting:   settingHandler,
-		Key:       keyHandler,
+		Dashboard:    dashboardHandler,
+		Domain:       domainHandler,
+		Group:        groupHandler,
+		Setting:      settingHandler,
+		Key:          keyHandler,
+		Redeem:       redeemHandler,
+		Announcement: announcementHandler,
+		User:         userHandler,
 	}
 }
 
@@ -176,6 +182,9 @@ var ProviderSet = wire.NewSet(
 	reseller.NewGroupHandler,
 	reseller.NewSettingHandler,
 	reseller.NewKeyHandler,
+	reseller.NewRedeemHandler,
+	reseller.NewAnnouncementHandler,
+	reseller.NewUserHandler,
 
 	// AdminHandlers, ResellerHandlers and Handlers constructors
 	ProvideAdminHandlers,

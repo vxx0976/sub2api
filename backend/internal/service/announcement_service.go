@@ -251,7 +251,16 @@ func (s *AnnouncementService) ListForUser(ctx context.Context, userID int64, unr
 	}
 
 	now := time.Now()
-	anns, err := s.announcementRepo.ListActive(ctx, now)
+
+	// Fetch announcements based on user's parent:
+	// - Users with parent_id: see their parent reseller's announcements
+	// - Users without parent_id: see system announcements (owner_id IS NULL)
+	var anns []Announcement
+	if user.ParentID != nil {
+		anns, err = s.announcementRepo.ListActiveByOwnerID(ctx, *user.ParentID, now)
+	} else {
+		anns, err = s.announcementRepo.ListActive(ctx, now)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("list active announcements: %w", err)
 	}
@@ -261,6 +270,10 @@ func (s *AnnouncementService) ListForUser(ctx context.Context, userID int64, unr
 	for i := range anns {
 		a := anns[i]
 		if !a.IsActiveAt(now) {
+			continue
+		}
+		// For users without parent, only show system announcements (no owner)
+		if user.ParentID == nil && a.OwnerID != nil {
 			continue
 		}
 		if !a.Targeting.Matches(user.Balance, activeGroupIDs) {

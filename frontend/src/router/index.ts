@@ -338,6 +338,39 @@ const routes: RouteRecordRaw[] = [
       titleKey: 'reseller.settings.title'
     }
   },
+  {
+    path: '/merchant/redeem',
+    name: 'MerchantRedeem',
+    component: () => import('@/views/reseller/RedeemView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresReseller: true,
+      title: 'Redeem Codes',
+      titleKey: 'reseller.redeem.title'
+    }
+  },
+  {
+    path: '/merchant/users',
+    name: 'MerchantUsers',
+    component: () => import('@/views/reseller/UsersView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresReseller: true,
+      title: 'User Management',
+      titleKey: 'reseller.users.title'
+    }
+  },
+  {
+    path: '/merchant/announcements',
+    name: 'MerchantAnnouncements',
+    component: () => import('@/views/reseller/AnnouncementsView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresReseller: true,
+      title: 'Announcements',
+      titleKey: 'reseller.announcements.title'
+    }
+  },
 
   // ==================== Admin Routes ====================
   {
@@ -588,12 +621,6 @@ router.beforeEach((to, _from, next) => {
     return
   }
 
-  // Block login/register on reseller domains
-  if (appStore.isResellerDomain && (to.path === '/login' || to.path === '/register')) {
-    next('/home')
-    return
-  }
-
   // Set page title
   const siteName = appStore.siteName || '码驿站'
   if (to.meta.title) {
@@ -626,15 +653,10 @@ router.beforeEach((to, _from, next) => {
 
   // Route requires authentication
   if (!authStore.isAuthenticated) {
-    // On reseller domains, redirect to home instead of login
-    if (appStore.isResellerDomain) {
-      next('/home')
-      return
-    }
     // Not authenticated, redirect to login
     next({
       path: '/login',
-      query: { redirect: to.fullPath } // Save intended destination
+      query: { redirect: to.fullPath }
     })
     return
   }
@@ -666,6 +688,20 @@ router.beforeEach((to, _from, next) => {
     if (restrictedPaths.some((path) => to.path.startsWith(path))) {
       // 简易模式下访问受限页面,重定向到仪表板
       next(authStore.isAdmin ? '/admin/dashboard' : '/console-home')
+      return
+    }
+  }
+
+  // On reseller domains, redirect subscription-related routes (except /plans which handles it internally)
+  if (appStore.isResellerDomain) {
+    const subscriptionPaths = ['/subscriptions', '/orders', '/purchase']
+    if (subscriptionPaths.includes(to.path)) {
+      next('/console-home')
+      return
+    }
+    // /plans: if no purchase_url configured, redirect to console-home
+    if (to.path === '/plans' && !(appStore.cachedPublicSettings?.purchase_enabled && appStore.cachedPublicSettings?.purchase_url)) {
+      next('/console-home')
       return
     }
   }

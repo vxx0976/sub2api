@@ -1,6 +1,15 @@
 <template>
   <AppLayout>
-    <div class="space-y-6">
+    <!-- Reseller domain: embed purchase page in iframe -->
+    <div v-if="resellerPurchaseUrl" class="-m-4 md:-m-6 lg:-m-8">
+      <iframe
+        :src="resellerPurchaseUrl"
+        class="h-[calc(100vh-4rem)] w-full border-0"
+        allow="payment"
+      />
+    </div>
+
+    <div v-else class="space-y-6">
       <!-- Loading State -->
       <div v-if="loading" class="flex justify-center py-12">
         <div
@@ -365,6 +374,12 @@ const { t } = useI18n()
 const appStore = useAppStore()
 const authStore = useAuthStore()
 
+// Reseller domain: embed purchase page
+const resellerPurchaseUrl = computed(() => {
+  const s = appStore.cachedPublicSettings
+  return (appStore.isResellerDomain && s?.purchase_enabled && s?.purchase_url) ? s.purchase_url : ''
+})
+
 const plans = ref<PurchasablePlan[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
@@ -498,7 +513,9 @@ function contactEnterprise() {
 }
 
 onMounted(() => {
-  loadPlans()
-  loadRechargeConfig()
+  if (!resellerPurchaseUrl.value) {
+    loadPlans()
+    loadRechargeConfig()
+  }
 })
 </script>

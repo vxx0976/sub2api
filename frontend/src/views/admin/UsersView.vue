@@ -270,6 +270,13 @@
             </div>
           </template>
 
+          <template #cell-source="{ row }">
+            <span v-if="row.parent_id" class="text-sm text-gray-700 dark:text-gray-300">
+              {{ row.parent_email || `#${row.parent_id}` }}
+            </span>
+            <span v-else class="text-sm text-gray-400 dark:text-dark-500">{{ t('admin.users.mainSite') }}</span>
+          </template>
+
           <template #cell-role="{ value }">
             <span :class="['badge', value === 'admin' ? 'badge-purple' : value === 'reseller' ? 'badge-blue' : 'badge-gray']">
               {{ t('admin.users.roles.' + value) }}
@@ -619,6 +626,7 @@ const allColumns = computed<Column[]>(() => [
   { key: 'notes', label: t('admin.users.columns.notes'), sortable: false },
   // Dynamic attribute columns
   ...attributeColumns.value,
+  { key: 'source', label: t('admin.users.sourcePlatform'), sortable: false },
   { key: 'role', label: t('admin.users.columns.role'), sortable: true },
   { key: 'subscriptions', label: t('admin.users.columns.subscriptions'), sortable: false },
   { key: 'balance', label: t('admin.users.columns.balance'), sortable: true },

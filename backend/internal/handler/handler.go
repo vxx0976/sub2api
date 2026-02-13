@@ -33,11 +33,14 @@ type AdminHandlers struct {
 
 // ResellerHandlers contains all reseller-related HTTP handlers
 type ResellerHandlers struct {
-	Dashboard *reseller.DashboardHandler
-	Domain    *reseller.DomainHandler
-	Group     *reseller.GroupHandler
-	Setting   *reseller.SettingHandler
-	Key       *reseller.KeyHandler
+	Dashboard    *reseller.DashboardHandler
+	Domain       *reseller.DomainHandler
+	Group        *reseller.GroupHandler
+	Setting      *reseller.SettingHandler
+	Key          *reseller.KeyHandler
+	Redeem       *reseller.RedeemHandler
+	Announcement *reseller.AnnouncementHandler
+	User         *reseller.UserHandler
 }
 
 // Handlers contains all HTTP handlers

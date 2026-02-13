@@ -84,36 +84,34 @@
             <Icon v-else name="moon" size="md" />
           </button>
 
-          <!-- Auth buttons hidden on reseller domains -->
-          <template v-if="!isResellerDomain">
-            <template v-if="isAuthenticated">
-              <router-link
-                :to="dashboardPath"
-                class="inline-flex items-center gap-1.5 rounded-full bg-gray-900 py-1 pl-1 pr-2.5 transition-colors hover:bg-gray-800 dark:bg-gray-800 dark:hover:bg-gray-700"
+          <!-- Auth buttons -->
+          <template v-if="isAuthenticated">
+            <router-link
+              :to="dashboardPath"
+              class="inline-flex items-center gap-1.5 rounded-full bg-gray-900 py-1 pl-1 pr-2.5 transition-colors hover:bg-gray-800 dark:bg-gray-800 dark:hover:bg-gray-700"
+            >
+              <span
+                class="flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-primary-400 to-primary-600 text-[10px] font-semibold text-white"
               >
-                <span
-                  class="flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-primary-400 to-primary-600 text-[10px] font-semibold text-white"
-                >
-                  {{ userInitial }}
-                </span>
-                <span class="text-xs font-medium text-white">{{ t('home.dashboard') }}</span>
-                <Icon name="arrowRight" size="xs" class="text-gray-300" :stroke-width="2" />
-              </router-link>
-            </template>
-            <template v-else>
-              <router-link
-                :to="loginPath"
-                class="inline-flex items-center rounded-full border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-dark-600 dark:bg-dark-800 dark:text-dark-200 dark:hover:bg-dark-700"
-              >
-                {{ t('home.login') }}
-              </router-link>
-              <router-link
-                :to="registerPath"
-                class="inline-flex items-center rounded-full bg-gray-900 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-gray-800 dark:bg-gray-800 dark:hover:bg-gray-700"
-              >
-                {{ t('home.register') }}
-              </router-link>
-            </template>
+                {{ userInitial }}
+              </span>
+              <span class="text-xs font-medium text-white">{{ t('home.dashboard') }}</span>
+              <Icon name="arrowRight" size="xs" class="text-gray-300" :stroke-width="2" />
+            </router-link>
+          </template>
+          <template v-else>
+            <router-link
+              :to="loginPath"
+              class="inline-flex items-center rounded-full border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-dark-600 dark:bg-dark-800 dark:text-dark-200 dark:hover:bg-dark-700"
+            >
+              {{ t('home.login') }}
+            </router-link>
+            <router-link
+              :to="registerPath"
+              class="inline-flex items-center rounded-full bg-gray-900 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-gray-800 dark:bg-gray-800 dark:hover:bg-gray-700"
+            >
+              {{ t('home.register') }}
+            </router-link>
           </template>
         </div>
       </div>

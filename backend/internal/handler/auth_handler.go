@@ -47,6 +47,7 @@ type RegisterRequest struct {
 	TurnstileToken string `json:"turnstile_token"`
 	PromoCode      string `json:"promo_code"`      // 注册优惠码
 	InvitationCode string `json:"invitation_code"` // 邀请码
+	ParentID       *int64 `json:"parent_id"`       // 上级分销商用户 ID
 }
 
 // SendVerifyCodeRequest 发送验证码请求
@@ -122,7 +123,15 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		}
 	}
 
-	_, user, err := h.authService.RegisterWithVerification(c.Request.Context(), req.Email, req.Password, req.VerifyCode, req.PromoCode, req.InvitationCode)
+	// Determine parentID: explicit request field takes priority, then reseller domain context
+	parentID := req.ParentID
+	if parentID == nil {
+		if resellerCtx := middleware2.GetResellerDomainFromContext(c); resellerCtx != nil {
+			parentID = &resellerCtx.ResellerID
+		}
+	}
+
+	_, user, err := h.authService.RegisterWithVerification(c.Request.Context(), req.Email, req.Password, req.VerifyCode, req.PromoCode, req.InvitationCode, parentID)
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return

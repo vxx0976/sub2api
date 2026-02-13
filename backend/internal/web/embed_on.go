@@ -285,11 +285,28 @@ func mergeResellerBranding(baseJSON []byte, info *middleware.ResellerDomainConte
 		if v := rs["default_locale"]; v != "" {
 			m["default_locale"] = v
 		}
+		if v := rs["contact_wechat"]; v != "" {
+			m["contact_wechat"] = v
+		}
+		if v := rs["contact_telegram"]; v != "" {
+			m["contact_telegram"] = v
+		}
 	}
 
 	// Domain-level default_locale overrides reseller-global default_locale
 	if info.DefaultLocale != "" {
 		m["default_locale"] = info.DefaultLocale
+	}
+
+	// Replace system announcements with reseller's own SimpleAnnouncements (if any).
+	delete(m, "announcements")
+	if rs := info.ResellerSettings; rs != nil {
+		if v := rs["announcements"]; v != "" {
+			var arr []any
+			if json.Unmarshal([]byte(v), &arr) == nil && len(arr) > 0 {
+				m["announcements"] = arr
+			}
+		}
 	}
 
 	result, err := json.Marshal(m)

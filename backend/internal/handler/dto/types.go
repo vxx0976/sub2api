@@ -23,8 +23,9 @@ type User struct {
 type AdminUser struct {
 	User
 
-	Notes    string `json:"notes"`
-	ParentID *int64 `json:"parent_id,omitempty"`
+	Notes       string `json:"notes"`
+	ParentID    *int64 `json:"parent_id,omitempty"`
+	ParentEmail string `json:"parent_email,omitempty"`
 	// GroupRates 用户专属分组倍率配置
 	// map[groupID]rateMultiplier
 	GroupRates map[int64]float64 `json:"group_rates,omitempty"`
