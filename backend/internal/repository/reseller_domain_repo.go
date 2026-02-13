@@ -157,6 +157,35 @@ func (r *resellerDomainRepository) ListByResellerID(ctx context.Context, reselle
 	return domains, paginationResultFromTotal(int64(total), params), nil
 }
 
+func (r *resellerDomainRepository) GetDomainsByResellerIDs(ctx context.Context, resellerIDs []int64) (map[int64]string, error) {
+	if len(resellerIDs) == 0 {
+		return map[int64]string{}, nil
+	}
+
+	entities, err := r.client.ResellerDomain.Query().
+		Where(
+			dbresellerdomain.ResellerIDIn(resellerIDs...),
+			dbresellerdomain.DeletedAtIsNil(),
+		).
+		Order(
+			sql.OrderByField(dbresellerdomain.FieldVerified, sql.OrderDesc()).ToFunc(),
+			sql.OrderByField(dbresellerdomain.FieldID, sql.OrderAsc()).ToFunc(),
+		).
+		All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("get domains by reseller ids: %w", err)
+	}
+
+	// Pick the first domain per reseller (verified domains come first due to ordering)
+	result := make(map[int64]string, len(resellerIDs))
+	for _, e := range entities {
+		if _, exists := result[e.ResellerID]; !exists {
+			result[e.ResellerID] = e.Domain
+		}
+	}
+	return result, nil
+}
+
 func (r *resellerDomainRepository) PurgeSoftDeletedByDomain(ctx context.Context, domain string) {
 	// Physically delete soft-deleted records to avoid unique constraint violation on re-create.
 	// Must use SkipSoftDelete to bypass the soft-delete hook, which would otherwise

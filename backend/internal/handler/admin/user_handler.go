@@ -21,13 +21,15 @@ type UserWithConcurrency struct {
 type UserHandler struct {
 	adminService       service.AdminService
 	concurrencyService *service.ConcurrencyService
+	domainRepo         service.ResellerDomainRepository
 }
 
 // NewUserHandler creates a new admin user handler
-func NewUserHandler(adminService service.AdminService, concurrencyService *service.ConcurrencyService) *UserHandler {
+func NewUserHandler(adminService service.AdminService, concurrencyService *service.ConcurrencyService, domainRepo service.ResellerDomainRepository) *UserHandler {
 	return &UserHandler{
 		adminService:       adminService,
 		concurrencyService: concurrencyService,
+		domainRepo:         domainRepo,
 	}
 }
 
@@ -110,31 +112,30 @@ func (h *UserHandler) List(c *gin.Context) {
 		loadInfo, _ = h.concurrencyService.GetUsersLoadBatch(c.Request.Context(), usersConcurrency)
 	}
 
-	// Collect unique parent IDs for batch lookup
-	parentIDs := make(map[int64]struct{})
+	// Collect unique parent IDs for batch domain lookup
+	parentIDList := make([]int64, 0)
+	seen := make(map[int64]struct{})
 	for i := range users {
 		if users[i].ParentID != nil {
-			parentIDs[*users[i].ParentID] = struct{}{}
+			if _, ok := seen[*users[i].ParentID]; !ok {
+				seen[*users[i].ParentID] = struct{}{}
+				parentIDList = append(parentIDList, *users[i].ParentID)
+			}
 		}
 	}
 
-	// Batch lookup parent emails
-	parentEmails := make(map[int64]string, len(parentIDs))
-	for pid := range parentIDs {
-		if parent, err := h.adminService.GetUser(c.Request.Context(), pid); err == nil {
-			parentEmails[pid] = parent.Email
-		}
-	}
+	// Batch lookup parent domains
+	parentDomains, _ := h.domainRepo.GetDomainsByResellerIDs(c.Request.Context(), parentIDList)
 
-	// Build response with concurrency info and parent emails
+	// Build response with concurrency info and parent domains
 	out := make([]UserWithConcurrency, len(users))
 	for i := range users {
 		out[i] = UserWithConcurrency{
 			AdminUser: *dto.UserFromServiceAdmin(&users[i]),
 		}
 		if users[i].ParentID != nil {
-			if email, ok := parentEmails[*users[i].ParentID]; ok {
-				out[i].AdminUser.ParentEmail = email
+			if domain, ok := parentDomains[*users[i].ParentID]; ok {
+				out[i].AdminUser.ParentDomain = domain
 			}
 		}
 		if info := loadInfo[users[i].ID]; info != nil {

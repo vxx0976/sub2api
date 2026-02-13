@@ -547,8 +547,10 @@ export default {
     resellerKeys: 'API-Schlüssel',
     resellerDomains: 'Domains',
     resellerSettings: 'Einstellungen',
-    resellerSites: 'Website-Verwaltung'
-
+    resellerUsers: 'Benutzer',
+    resellerSites: 'Website-Verwaltung',
+    resellerRedeem: 'Einlösecodes',
+    resellerAnnouncements: 'Ankündigungen'
   },
 
   // Docs
@@ -5266,6 +5268,45 @@ export default {
       deleteSuccess: 'Paket gelöscht',
       deleteConfirm: 'Paket „{name}" wirklich löschen?',
       empty: 'Keine Pakete vorhanden'
+    },
+    users: {
+      title: 'Benutzer',
+      description: 'Benutzer Ihrer Plattform anzeigen',
+      search: 'E-Mail oder Benutzername suchen',
+      email: 'E-Mail',
+      username: 'Benutzername',
+      balance: 'Guthaben',
+      status: 'Status',
+      createdAt: 'Registriert',
+      active: 'Aktiv',
+      disabled: 'Deaktiviert',
+      empty: 'Noch keine Benutzer',
+      actions: 'Aktionen',
+      more: 'Mehr',
+      deposit: 'Aufladen',
+      withdraw: 'Rückerstattung',
+      depositAmount: 'Aufladebetrag',
+      withdrawAmount: 'Rückerstattungsbetrag',
+      withdrawAll: 'Alles erstatten',
+      currentBalance: 'Aktuelles Guthaben',
+      newBalance: 'Neues Guthaben',
+      notes: 'Notizen',
+      totalRecharged: 'Gesamt aufgeladen',
+      noHistory: 'Keine Einträge',
+      insufficientBalance: 'Unzureichendes Guthaben',
+      amountRequired: 'Betrag erforderlich',
+      balanceUpdated: 'Guthaben aktualisiert',
+      balanceHistory: 'Guthabenverlauf',
+      balanceHistoryTitle: 'Benutzer-Guthabenverlauf',
+      allTypes: 'Alle Typen',
+      typeBalance: 'Guthaben (Einlösung)',
+      typeAdminBalance: 'Guthaben (Admin)',
+      balanceAddedRedeem: 'Guthaben hinzugefügt (Einlösung)',
+      balanceAddedAdmin: 'Guthaben hinzugefügt (Admin)',
+      balanceDeductedAdmin: 'Guthaben abgezogen (Admin)',
+      adminAdjustment: 'Admin-Anpassung',
+      depositNotesPlaceholder: 'z.B. Neuer Benutzerbonus, Werbeaufladung',
+      withdrawNotesPlaceholder: 'z.B. Serviceproblem-Erstattung, fehlerhafte Abbuchung'
     },
     settings: {
       title: 'Einstellungen',

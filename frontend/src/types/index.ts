@@ -44,8 +44,8 @@ export interface AdminUser extends User {
   notes: string
   // 父用户ID（商户的子用户才有此字段）
   parent_id?: number | null
-  // 父用户邮箱（仅管理员列表接口返回，关联查询）
-  parent_email?: string
+  // 父用户域名（仅管理员列表接口返回，关联查询商户域名）
+  parent_domain?: string
   // 用户专属分组倍率配置 (group_id -> rate_multiplier)
   group_rates?: Record<number, number>
   // 当前并发数（仅管理员列表接口返回）

@@ -86,6 +86,8 @@ type ResellerDomainRepository interface {
 	Update(ctx context.Context, domain *ResellerDomain) error
 	Delete(ctx context.Context, id int64) error
 	ListByResellerID(ctx context.Context, resellerID int64, params pagination.PaginationParams) ([]ResellerDomain, *pagination.PaginationResult, error)
+	// GetDomainsByResellerIDs returns a map of resellerID -> first verified domain (or first domain if none verified).
+	GetDomainsByResellerIDs(ctx context.Context, resellerIDs []int64) (map[int64]string, error)
 	// PurgeSoftDeletedByDomain physically deletes soft-deleted records for a given domain name.
 	PurgeSoftDeletedByDomain(ctx context.Context, domain string)
 }

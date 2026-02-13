@@ -272,7 +272,7 @@
 
           <template #cell-source="{ row }">
             <span v-if="row.parent_id" class="text-sm text-gray-700 dark:text-gray-300">
-              {{ row.parent_email || `#${row.parent_id}` }}
+              {{ row.parent_domain || `#${row.parent_id}` }}
             </span>
             <span v-else class="text-sm text-gray-400 dark:text-dark-500">{{ t('admin.users.mainSite') }}</span>
           </template>
