@@ -469,7 +469,10 @@ export default {
     confirmDelete: '確認刪除',
     deleting: '刪除中...',
     leaveEmpty: '不變更則留空',
-    reseller: '商戶'
+    reseller: '商戶',
+    used: '已使用',
+    expired: '已過期',
+    createdAt: '創建時間'
   },
 
   // Navigation

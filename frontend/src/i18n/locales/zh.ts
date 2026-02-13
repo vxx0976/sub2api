@@ -457,6 +457,9 @@ export default {
     deleting: '删除中...',
     leaveEmpty: '留空则不修改',
     reseller: '商户',
+    used: '已使用',
+    expired: '已过期',
+    createdAt: '创建时间',
     time: {
       never: '从未',
       justNow: '刚刚',
@@ -4170,6 +4173,7 @@ export default {
         contactInfoHint: '填写客服联系方式，将展示在兑换页面、个人资料等位置',
         docUrl: '文档链接',
         docUrlHint: '文档网站的链接。留空则隐藏文档链接。',
+        tawkToHint: '从 Tawk.to 获取，格式: property_id/widget_id。填写后右下角显示在线客服按钮。',
         queryDomain: '查询域名',
         queryDomainHint: '配置后该域名将显示 API Key 查询页面',
         docUrlPlaceholder: 'https://docs.example.com',

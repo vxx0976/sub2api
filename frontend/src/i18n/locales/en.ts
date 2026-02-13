@@ -458,6 +458,9 @@ export default {
     deleting: 'Deleting...',
     leaveEmpty: 'leave empty to keep unchanged',
     reseller: 'Merchant',
+    used: 'Used',
+    expired: 'Expired',
+    createdAt: 'Created At',
     time: {
       never: 'Never',
       justNow: 'Just now',
@@ -4183,6 +4186,7 @@ export default {
         docUrl: 'Documentation URL',
         docUrlPlaceholder: 'https://docs.example.com',
         docUrlHint: 'Link to your documentation site. Leave empty to hide the documentation link.',
+        tawkToHint: 'Get from Tawk.to, format: property_id/widget_id. Shows live chat button when set.',
         queryDomain: 'Query Domain',
         queryDomainHint: 'When configured, this domain shows the API Key query page',
         siteLogo: 'Site Logo',

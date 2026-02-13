@@ -459,6 +459,9 @@ export default {
       }
     },
     reseller: '판매자',
+    used: '사용됨',
+    expired: '만료됨',
+    createdAt: '생성일',
     description: '설명',
     username: '사용자명',
     concurrency: '동시 접속 수',

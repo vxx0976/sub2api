@@ -458,6 +458,9 @@ export default {
     leaveEmpty: 'dejar vacío para no modificar',
     description: 'Descripción',
     reseller: 'Comerciante',
+    used: 'Usado',
+    expired: 'Expirado',
+    createdAt: 'Fecha de creación',
     time: {
       never: 'Nunca',
       justNow: 'Justo ahora',

@@ -458,6 +458,9 @@ export default {
     leaveEmpty: 'laisser vide pour ne pas modifier',
     description: 'Description',
     reseller: 'Marchand',
+    used: 'Utilisé',
+    expired: 'Expiré',
+    createdAt: 'Créé le',
     time: {
       never: 'Jamais',
       justNow: 'À l\'instant',

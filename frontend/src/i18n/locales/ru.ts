@@ -458,6 +458,9 @@ export default {
     leaveEmpty: 'оставьте пустым, чтобы не менять',
     description: 'Описание',
     reseller: 'Продавец',
+    used: 'Использован',
+    expired: 'Истёк',
+    createdAt: 'Дата создания',
     time: {
       never: 'Никогда',
       justNow: 'Только что',

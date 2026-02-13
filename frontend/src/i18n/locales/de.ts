@@ -490,6 +490,9 @@ export default {
     leaveEmpty: 'leer lassen, um nicht zu ändern',
     description: 'Beschreibung',
     reseller: 'Händler',
+    used: 'Verwendet',
+    expired: 'Abgelaufen',
+    createdAt: 'Erstellt am',
     time: {
       never: 'Nie',
       justNow: 'Gerade eben',
