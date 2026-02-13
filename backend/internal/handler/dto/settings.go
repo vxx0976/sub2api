@@ -83,14 +83,30 @@ type PublicSettings struct {
 	ContactInfo                 string         `json:"contact_info"`
 	DocURL                      string         `json:"doc_url"`
 	HomeContent                 string         `json:"home_content"`
+	HomeTemplate                string         `json:"home_template,omitempty"`
 	HideCcsImportButton         bool           `json:"hide_ccs_import_button"`
 	PurchaseSubscriptionEnabled bool           `json:"purchase_subscription_enabled"`
 	PurchaseSubscriptionURL     string         `json:"purchase_subscription_url"`
+	PurchaseEnabled             bool           `json:"purchase_enabled,omitempty"`
+	PurchaseURL                 string         `json:"purchase_url,omitempty"`
 	LinuxDoOAuthEnabled         bool           `json:"linuxdo_oauth_enabled"`
 	Version                     string         `json:"version"`
 	Announcements               []SimpleAnnouncement `json:"announcements,omitempty"`
 	CryptoAddresses             string         `json:"crypto_addresses"`
 	QueryDomain                 string         `json:"query_domain"`
+	DefaultLocale               string         `json:"default_locale,omitempty"`
+	ContactWechat               string         `json:"contact_wechat,omitempty"`
+	ContactTelegram             string         `json:"contact_telegram,omitempty"`
+
+	// Reseller domain branding (populated when accessed via a reseller's custom domain)
+	ResellerID     int64  `json:"reseller_id,omitempty"`
+	ResellerDomain string `json:"reseller_domain,omitempty"`
+	BrandColor     string `json:"brand_color,omitempty"`
+	CustomCSS      string `json:"custom_css,omitempty"`
+	LoginRedirect  string `json:"login_redirect,omitempty"`
+	SEOTitle       string `json:"seo_title,omitempty"`
+	SEODescription string `json:"seo_description,omitempty"`
+	SEOKeywords    string `json:"seo_keywords,omitempty"`
 }
 
 // StreamTimeoutSettings 流超时处理配置 DTO

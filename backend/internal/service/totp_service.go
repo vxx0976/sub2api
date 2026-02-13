@@ -473,6 +473,6 @@ func (s *TotpService) SendVerifyCode(ctx context.Context, userID int64) error {
 	// Get site name for email
 	siteName := s.settingService.GetSiteName(ctx)
 
-	// Send verification code via queue
-	return s.emailQueueService.EnqueueVerifyCode(user.Email, siteName)
+	// Send verification code via queue (no overrides for TOTP)
+	return s.emailQueueService.EnqueueVerifyCode(user.Email, siteName, EmailOptions{})
 }

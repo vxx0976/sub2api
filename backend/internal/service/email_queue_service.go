@@ -14,12 +14,20 @@ const (
 	TaskTypePasswordReset = "password_reset"
 )
 
+// EmailOptions holds optional overrides for email sending (e.g. reseller branding, locale).
+type EmailOptions struct {
+	FromName string // Override SMTP From Name (e.g. reseller domain)
+	SiteName string // Override site name in email content (e.g. reseller site name or domain)
+	Locale   string // User locale for email content language (e.g. "en", "zh", "ja")
+}
+
 // EmailTask 邮件发送任务
 type EmailTask struct {
 	Email    string
 	SiteName string
 	TaskType string // "verify_code" or "password_reset"
 	ResetURL string // Only used for password_reset task type
+	Options  EmailOptions
 }
 
 // EmailQueueService 异步邮件队列服务
@@ -74,20 +82,31 @@ func (s *EmailQueueService) worker(id int) {
 	}
 }
 
+// effectiveSiteName returns the site name to use in email content,
+// preferring the override from EmailOptions.
+func (t *EmailTask) effectiveSiteName() string {
+	if t.Options.SiteName != "" {
+		return t.Options.SiteName
+	}
+	return t.SiteName
+}
+
 // processTask 处理任务
 func (s *EmailQueueService) processTask(workerID int, task EmailTask) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
+	siteName := task.effectiveSiteName()
+
 	switch task.TaskType {
 	case TaskTypeVerifyCode:
-		if err := s.emailService.SendVerifyCode(ctx, task.Email, task.SiteName); err != nil {
+		if err := s.emailService.SendVerifyCode(ctx, task.Email, siteName, task.Options); err != nil {
 			log.Printf("[EmailQueue] Worker %d failed to send verify code to %s: %v", workerID, task.Email, err)
 		} else {
 			log.Printf("[EmailQueue] Worker %d sent verify code to %s", workerID, task.Email)
 		}
 	case TaskTypePasswordReset:
-		if err := s.emailService.SendPasswordResetEmailWithCooldown(ctx, task.Email, task.SiteName, task.ResetURL); err != nil {
+		if err := s.emailService.SendPasswordResetEmailWithCooldown(ctx, task.Email, siteName, task.ResetURL, task.Options); err != nil {
 			log.Printf("[EmailQueue] Worker %d failed to send password reset to %s: %v", workerID, task.Email, err)
 		} else {
 			log.Printf("[EmailQueue] Worker %d sent password reset to %s", workerID, task.Email)
@@ -98,11 +117,12 @@ func (s *EmailQueueService) processTask(workerID int, task EmailTask) {
 }
 
 // EnqueueVerifyCode 将验证码发送任务加入队列
-func (s *EmailQueueService) EnqueueVerifyCode(email, siteName string) error {
+func (s *EmailQueueService) EnqueueVerifyCode(email, siteName string, opts EmailOptions) error {
 	task := EmailTask{
 		Email:    email,
 		SiteName: siteName,
 		TaskType: TaskTypeVerifyCode,
+		Options:  opts,
 	}
 
 	select {
@@ -115,12 +135,13 @@ func (s *EmailQueueService) EnqueueVerifyCode(email, siteName string) error {
 }
 
 // EnqueuePasswordReset 将密码重置邮件任务加入队列
-func (s *EmailQueueService) EnqueuePasswordReset(email, siteName, resetURL string) error {
+func (s *EmailQueueService) EnqueuePasswordReset(email, siteName, resetURL string, opts EmailOptions) error {
 	task := EmailTask{
 		Email:    email,
 		SiteName: siteName,
 		TaskType: TaskTypePasswordReset,
 		ResetURL: resetURL,
+		Options:  opts,
 	}
 
 	select {

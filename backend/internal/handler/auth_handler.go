@@ -39,6 +39,28 @@ func NewAuthHandler(cfg *config.Config, authService *service.AuthService, userSe
 	}
 }
 
+// buildEmailOptions constructs EmailOptions from the request context.
+// Extracts reseller domain branding and user locale.
+func (h *AuthHandler) buildEmailOptions(c *gin.Context) service.EmailOptions {
+	var opts service.EmailOptions
+
+	// User locale from Accept-Language header
+	opts.Locale = c.GetHeader("Accept-Language")
+
+	// Reseller domain overrides
+	if resellerCtx := middleware2.GetResellerDomainFromContext(c); resellerCtx != nil && resellerCtx.Domain != "" {
+		opts.FromName = resellerCtx.Domain
+		// Site name: prefer reseller's configured name, fallback to domain
+		if resellerCtx.SiteName != "" {
+			opts.SiteName = resellerCtx.SiteName
+		} else {
+			opts.SiteName = resellerCtx.Domain
+		}
+	}
+
+	return opts
+}
+
 // RegisterRequest represents the registration request payload
 type RegisterRequest struct {
 	Email          string `json:"email" binding:"required,email"`
@@ -155,7 +177,10 @@ func (h *AuthHandler) SendVerifyCode(c *gin.Context) {
 		return
 	}
 
-	result, err := h.authService.SendVerifyCodeAsync(c.Request.Context(), req.Email)
+	// 构建邮件选项：商户域名覆盖发件人和站点名称，用户语言
+	emailOpts := h.buildEmailOptions(c)
+
+	result, err := h.authService.SendVerifyCodeAsync(c.Request.Context(), req.Email, emailOpts)
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return
@@ -506,9 +531,12 @@ func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 	}
 	frontendBaseURL := scheme + "://" + c.Request.Host
 
+	// 构建邮件选项：商户域名覆盖发件人和站点名称，用户语言
+	emailOpts := h.buildEmailOptions(c)
+
 	// Request password reset (async)
 	// Note: This returns success even if email doesn't exist (to prevent enumeration)
-	if err := h.authService.RequestPasswordResetAsync(c.Request.Context(), req.Email, frontendBaseURL); err != nil {
+	if err := h.authService.RequestPasswordResetAsync(c.Request.Context(), req.Email, frontendBaseURL, emailOpts); err != nil {
 		response.ErrorFrom(c, err)
 		return
 	}

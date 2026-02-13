@@ -145,6 +145,18 @@ func (s *EmailService) SendEmail(ctx context.Context, to, subject, body string) 
 	return s.SendEmailWithConfig(config, to, subject, body)
 }
 
+// sendEmailWithOptions 发送邮件，支持通过 EmailOptions 覆盖发件人名称
+func (s *EmailService) sendEmailWithOptions(ctx context.Context, to, subject, body string, opts EmailOptions) error {
+	config, err := s.GetSMTPConfig(ctx)
+	if err != nil {
+		return err
+	}
+	if opts.FromName != "" {
+		config.FromName = opts.FromName
+	}
+	return s.SendEmailWithConfig(config, to, subject, body)
+}
+
 // SendEmailWithConfig 使用指定配置发送邮件
 func (s *EmailService) SendEmailWithConfig(config *SMTPConfig, to, subject, body string) error {
 	from := config.From
@@ -233,7 +245,7 @@ func (s *EmailService) GenerateVerifyCode() (string, error) {
 }
 
 // SendVerifyCode 发送验证码邮件
-func (s *EmailService) SendVerifyCode(ctx context.Context, email, siteName string) error {
+func (s *EmailService) SendVerifyCode(ctx context.Context, email, siteName string, opts EmailOptions) error {
 	// 检查是否在冷却期内
 	existing, err := s.cache.GetVerificationCode(ctx, email)
 	if err == nil && existing != nil {
@@ -258,12 +270,13 @@ func (s *EmailService) SendVerifyCode(ctx context.Context, email, siteName strin
 		return fmt.Errorf("save verify code: %w", err)
 	}
 
-	// 构建邮件内容
-	subject := fmt.Sprintf("[%s] 邮箱验证码", siteName)
-	body := s.buildVerifyCodeEmailBody(code, siteName)
+	// 构建邮件内容（支持多语言）
+	t := getEmailTexts(opts.Locale)
+	subject := fmt.Sprintf("[%s] %s", siteName, t.VerifySubject)
+	body := s.buildVerifyCodeEmailBody(code, siteName, t)
 
-	// 发送邮件
-	if err := s.SendEmail(ctx, email, subject, body); err != nil {
+	// 发送邮件（支持覆盖发件人名称）
+	if err := s.sendEmailWithOptions(ctx, email, subject, body, opts); err != nil {
 		return fmt.Errorf("send email: %w", err)
 	}
 
@@ -301,8 +314,8 @@ func (s *EmailService) VerifyCode(ctx context.Context, email, code string) error
 	return nil
 }
 
-// buildVerifyCodeEmailBody 构建验证码邮件HTML内容
-func (s *EmailService) buildVerifyCodeEmailBody(code, siteName string) string {
+// buildVerifyCodeEmailBody 构建验证码邮件HTML内容（支持多语言）
+func (s *EmailService) buildVerifyCodeEmailBody(code, siteName string, t emailTexts) string {
 	return fmt.Sprintf(`
 <!DOCTYPE html>
 <html>
@@ -325,20 +338,20 @@ func (s *EmailService) buildVerifyCodeEmailBody(code, siteName string) string {
             <h1>%s</h1>
         </div>
         <div class="content">
-            <p style="font-size: 18px; color: #333;">您的验证码是：</p>
+            <p style="font-size: 18px; color: #333;">%s</p>
             <div class="code">%s</div>
             <div class="info">
-                <p>此验证码将在 <strong>15 分钟</strong>后过期。</p>
-                <p>如果您没有请求此验证码，请忽略此邮件。</p>
+                <p>%s</p>
+                <p>%s</p>
             </div>
         </div>
         <div class="footer">
-            <p>此邮件由系统自动发送，请勿回复。</p>
+            <p>%s</p>
         </div>
     </div>
 </body>
 </html>
-`, siteName, code)
+`, siteName, t.VerifyTitle, code, t.VerifyExpiry, t.VerifyIgnore, t.AutoEmail)
 }
 
 // TestSMTPConnectionWithConfig 使用指定配置测试SMTP连接
@@ -396,7 +409,7 @@ func (s *EmailService) GeneratePasswordResetToken() (string, error) {
 }
 
 // SendPasswordResetEmail sends a password reset email with a reset link
-func (s *EmailService) SendPasswordResetEmail(ctx context.Context, email, siteName, resetURL string) error {
+func (s *EmailService) SendPasswordResetEmail(ctx context.Context, email, siteName, resetURL string, opts EmailOptions) error {
 	var token string
 	var needSaveToken bool
 
@@ -429,12 +442,13 @@ func (s *EmailService) SendPasswordResetEmail(ctx context.Context, email, siteNa
 	// Build full reset URL with URL-encoded token and email
 	fullResetURL := fmt.Sprintf("%s?email=%s&token=%s", resetURL, url.QueryEscape(email), url.QueryEscape(token))
 
-	// Build email content
-	subject := fmt.Sprintf("[%s] 密码重置请求", siteName)
-	body := s.buildPasswordResetEmailBody(fullResetURL, siteName)
+	// Build email content（支持多语言）
+	t := getEmailTexts(opts.Locale)
+	subject := fmt.Sprintf("[%s] %s", siteName, t.ResetSubject)
+	body := s.buildPasswordResetEmailBody(fullResetURL, siteName, t)
 
-	// Send email
-	if err := s.SendEmail(ctx, email, subject, body); err != nil {
+	// Send email（支持覆盖发件人名称）
+	if err := s.sendEmailWithOptions(ctx, email, subject, body, opts); err != nil {
 		return fmt.Errorf("send email: %w", err)
 	}
 
@@ -443,7 +457,7 @@ func (s *EmailService) SendPasswordResetEmail(ctx context.Context, email, siteNa
 
 // SendPasswordResetEmailWithCooldown sends password reset email with cooldown check (called by queue worker)
 // This method wraps SendPasswordResetEmail with email cooldown to prevent email bombing
-func (s *EmailService) SendPasswordResetEmailWithCooldown(ctx context.Context, email, siteName, resetURL string) error {
+func (s *EmailService) SendPasswordResetEmailWithCooldown(ctx context.Context, email, siteName, resetURL string, opts EmailOptions) error {
 	// Check email cooldown to prevent email bombing
 	if s.cache.IsPasswordResetEmailInCooldown(ctx, email) {
 		log.Printf("[Email] Password reset email skipped (cooldown): %s", email)
@@ -451,7 +465,7 @@ func (s *EmailService) SendPasswordResetEmailWithCooldown(ctx context.Context, e
 	}
 
 	// Send email using core method
-	if err := s.SendPasswordResetEmail(ctx, email, siteName, resetURL); err != nil {
+	if err := s.SendPasswordResetEmail(ctx, email, siteName, resetURL, opts); err != nil {
 		return err
 	}
 
@@ -492,8 +506,8 @@ func (s *EmailService) ConsumePasswordResetToken(ctx context.Context, email, tok
 	return nil
 }
 
-// buildPasswordResetEmailBody builds the HTML content for password reset email
-func (s *EmailService) buildPasswordResetEmailBody(resetURL, siteName string) string {
+// buildPasswordResetEmailBody builds the HTML content for password reset email（支持多语言）
+func (s *EmailService) buildPasswordResetEmailBody(resetURL, siteName string, t emailTexts) string {
 	return fmt.Sprintf(`
 <!DOCTYPE html>
 <html>
@@ -519,23 +533,24 @@ func (s *EmailService) buildPasswordResetEmailBody(resetURL, siteName string) st
             <h1>%s</h1>
         </div>
         <div class="content">
-            <p style="font-size: 18px; color: #333;">密码重置请求</p>
-            <p style="color: #666;">您已请求重置密码。请点击下方按钮设置新密码：</p>
-            <a href="%s" class="button">重置密码</a>
+            <p style="font-size: 18px; color: #333;">%s</p>
+            <p style="color: #666;">%s</p>
+            <a href="%s" class="button">%s</a>
             <div class="info">
-                <p>此链接将在 <strong>30 分钟</strong>后失效。</p>
-                <p class="warning">如果您没有请求重置密码，请忽略此邮件。您的密码将保持不变。</p>
+                <p>%s</p>
+                <p class="warning">%s</p>
             </div>
             <div class="link-fallback">
-                <p>如果按钮无法点击，请复制以下链接到浏览器中打开：</p>
+                <p>%s</p>
                 <p>%s</p>
             </div>
         </div>
         <div class="footer">
-            <p>这是一封自动发送的邮件，请勿回复。</p>
+            <p>%s</p>
         </div>
     </div>
 </body>
 </html>
-`, siteName, resetURL, resetURL)
+`, siteName, t.ResetHeading, t.ResetDescription, resetURL, t.ResetButton,
+		t.ResetExpiry, t.ResetIgnore, t.ResetLinkFallback, resetURL, t.AutoEmail)
 }
