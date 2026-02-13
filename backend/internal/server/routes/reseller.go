@@ -100,6 +100,8 @@ func registerResellerUserRoutes(reseller *gin.RouterGroup, h *handler.Handlers) 
 	users := reseller.Group("/users")
 	{
 		users.GET("", h.Reseller.User.List)
+		users.POST("/:id/balance", h.Reseller.User.UpdateBalance)
+		users.GET("/:id/balance-history", h.Reseller.User.BalanceHistory)
 	}
 }
 

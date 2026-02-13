@@ -972,6 +972,104 @@ func (s *ResellerService) ListUsers(ctx context.Context, resellerID int64, page,
 	return s.userRepo.ListWithFilters(ctx, pagination.PaginationParams{Page: page, PageSize: pageSize}, filters)
 }
 
+// TransferBalance transfers balance between the reseller and a user.
+// operation "add" (充值): deducts from reseller, adds to user.
+// operation "subtract" (退款): deducts from user, adds back to reseller.
+func (s *ResellerService) TransferBalance(ctx context.Context, resellerID, userID int64, amount float64, operation string, notes string) (*User, error) {
+	// Validate user belongs to this reseller
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	if user.ParentID == nil || *user.ParentID != resellerID {
+		return nil, ErrOwnershipViolation
+	}
+
+	reseller, err := s.userRepo.GetByID(ctx, resellerID)
+	if err != nil {
+		return nil, fmt.Errorf("get reseller: %w", err)
+	}
+
+	var balanceDiff float64
+	switch operation {
+	case "add":
+		if reseller.Balance < amount {
+			return nil, infraerrors.BadRequest("INSUFFICIENT_BALANCE", "insufficient reseller balance")
+		}
+		reseller.Balance -= amount
+		user.Balance += amount
+		balanceDiff = amount
+	case "subtract":
+		if user.Balance < amount {
+			return nil, infraerrors.BadRequest("INSUFFICIENT_BALANCE", "insufficient user balance")
+		}
+		user.Balance -= amount
+		reseller.Balance += amount
+		balanceDiff = -amount
+	default:
+		return nil, infraerrors.BadRequest("INVALID_OPERATION", "operation must be 'add' or 'subtract'")
+	}
+
+	// Update reseller balance
+	if err := s.userRepo.Update(ctx, reseller); err != nil {
+		return nil, fmt.Errorf("update reseller balance: %w", err)
+	}
+
+	// Update user balance
+	if err := s.userRepo.Update(ctx, user); err != nil {
+		return nil, fmt.Errorf("update user balance: %w", err)
+	}
+
+	// Create audit record
+	code, err := GenerateRedeemCode()
+	if err != nil {
+		return user, nil
+	}
+
+	now := time.Now()
+	adjustmentRecord := &RedeemCode{
+		Code:    code,
+		Type:    AdjustmentTypeResellerTransfer,
+		Value:   balanceDiff,
+		Status:  StatusUsed,
+		UsedBy:  &userID,
+		OwnerID: &resellerID,
+		Notes:   notes,
+	}
+	adjustmentRecord.UsedAt = &now
+
+	if err := s.redeemRepo.Create(ctx, adjustmentRecord); err != nil {
+		fmt.Printf("failed to create reseller transfer audit record: %v\n", err)
+	}
+
+	return user, nil
+}
+
+// GetUserBalanceHistory returns paginated balance history for a user belonging to the reseller.
+func (s *ResellerService) GetUserBalanceHistory(ctx context.Context, resellerID, userID int64, page, pageSize int) ([]RedeemCode, int64, float64, error) {
+	// Validate user belongs to this reseller
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return nil, 0, 0, err
+	}
+	if user.ParentID == nil || *user.ParentID != resellerID {
+		return nil, 0, 0, ErrOwnershipViolation
+	}
+
+	params := pagination.PaginationParams{Page: page, PageSize: pageSize}
+	codes, result, err := s.redeemRepo.ListByUserPaginated(ctx, userID, params, "")
+	if err != nil {
+		return nil, 0, 0, err
+	}
+
+	totalRecharged, err := s.redeemRepo.SumPositiveBalanceByUser(ctx, userID)
+	if err != nil {
+		return nil, 0, 0, err
+	}
+
+	return codes, result.Total, totalRecharged, nil
+}
+
 // --- Internal helpers ---
 
 func generateVerifyToken() (string, error) {
