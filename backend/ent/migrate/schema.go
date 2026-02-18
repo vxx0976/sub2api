@@ -988,6 +988,7 @@ var (
 		{Name: "country_code", Type: field.TypeString, Nullable: true, Size: 2},
 		{Name: "image_count", Type: field.TypeInt, Default: 0},
 		{Name: "image_size", Type: field.TypeString, Nullable: true, Size: 10},
+		{Name: "cache_ttl_overridden", Type: field.TypeBool, Default: false},
 		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
 		{Name: "api_key_id", Type: field.TypeInt64},
 		{Name: "account_id", Type: field.TypeInt64},

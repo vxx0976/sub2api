@@ -22,7 +22,7 @@ import (
 	"github.com/lib/pq"
 )
 
-const usageLogSelectColumns = "id, user_id, api_key_id, account_id, request_id, model, group_id, subscription_id, input_tokens, output_tokens, cache_creation_tokens, cache_read_tokens, cache_creation_5m_tokens, cache_creation_1h_tokens, input_cost, output_cost, cache_creation_cost, cache_read_cost, total_cost, actual_cost, rate_multiplier, account_rate_multiplier, billing_type, stream, duration_ms, first_token_ms, user_agent, ip_address, country_code, image_count, image_size, reasoning_effort, created_at"
+const usageLogSelectColumns = "id, user_id, api_key_id, account_id, request_id, model, group_id, subscription_id, input_tokens, output_tokens, cache_creation_tokens, cache_read_tokens, cache_creation_5m_tokens, cache_creation_1h_tokens, input_cost, output_cost, cache_creation_cost, cache_read_cost, total_cost, actual_cost, rate_multiplier, account_rate_multiplier, billing_type, stream, duration_ms, first_token_ms, user_agent, ip_address, country_code, image_count, image_size, reasoning_effort, cache_ttl_overridden, created_at"
 
 type usageLogRepository struct {
 	client *dbent.Client
@@ -116,6 +116,7 @@ func (r *usageLogRepository) Create(ctx context.Context, log *service.UsageLog) 
 				image_count,
 				image_size,
 				reasoning_effort,
+				cache_ttl_overridden,
 				created_at
 			) VALUES (
 				$1, $2, $3, $4, $5,
@@ -176,6 +177,7 @@ func (r *usageLogRepository) Create(ctx context.Context, log *service.UsageLog) 
 		log.ImageCount,
 		imageSize,
 		reasoningEffort,
+		log.CacheTTLOverridden,
 		createdAt,
 	}
 	if err := scanSingleRow(ctx, sqlq, query, args, &log.ID, &log.CreatedAt); err != nil {
@@ -2262,6 +2264,7 @@ func scanUsageLog(scanner interface{ Scan(...any) error }) (*service.UsageLog, e
 		imageCount            int
 		imageSize             sql.NullString
 		reasoningEffort       sql.NullString
+		cacheTTLOverridden    bool
 		createdAt             time.Time
 	)
 
@@ -2298,6 +2301,7 @@ func scanUsageLog(scanner interface{ Scan(...any) error }) (*service.UsageLog, e
 		&imageCount,
 		&imageSize,
 		&reasoningEffort,
+		&cacheTTLOverridden,
 		&createdAt,
 	); err != nil {
 		return nil, err
@@ -2326,6 +2330,7 @@ func scanUsageLog(scanner interface{ Scan(...any) error }) (*service.UsageLog, e
 		BillingType:           int8(billingType),
 		Stream:                stream,
 		ImageCount:            imageCount,
+		CacheTTLOverridden:    cacheTTLOverridden,
 		CreatedAt:             createdAt,
 	}
 
