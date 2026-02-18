@@ -81,6 +81,8 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		SettingKeyCryptoAddresses,
 		SettingKeyQueryDomain,
 		SettingKeyDefaultLocale,
+		SettingKeyContactWechat,
+		SettingKeyContactTelegram,
 	}
 
 	settings, err := s.settingRepo.GetMultiple(ctx, keys)
@@ -129,6 +131,8 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		CryptoAddresses:             settings[SettingKeyCryptoAddresses],
 		QueryDomain:                 settings[SettingKeyQueryDomain],
 		DefaultLocale:               settings[SettingKeyDefaultLocale],
+		ContactWechat:               settings[SettingKeyContactWechat],
+		ContactTelegram:             settings[SettingKeyContactTelegram],
 	}, nil
 }
 
@@ -177,6 +181,8 @@ func (s *SettingService) GetPublicSettingsForInjection(ctx context.Context) (any
 		CryptoAddresses             string         `json:"crypto_addresses,omitempty"`
 		QueryDomain                 string         `json:"query_domain,omitempty"`
 		DefaultLocale               string         `json:"default_locale,omitempty"`
+		ContactWechat               string         `json:"contact_wechat,omitempty"`
+		ContactTelegram             string         `json:"contact_telegram,omitempty"`
 	}{
 		RegistrationEnabled:         settings.RegistrationEnabled,
 		EmailVerifyEnabled:          settings.EmailVerifyEnabled,
@@ -202,6 +208,8 @@ func (s *SettingService) GetPublicSettingsForInjection(ctx context.Context) (any
 		CryptoAddresses:             settings.CryptoAddresses,
 		QueryDomain:                 settings.QueryDomain,
 		DefaultLocale:               settings.DefaultLocale,
+		ContactWechat:               settings.ContactWechat,
+		ContactTelegram:             settings.ContactTelegram,
 	}, nil
 }
 
@@ -257,6 +265,8 @@ func (s *SettingService) UpdateSettings(ctx context.Context, settings *SystemSet
 	updates[SettingKeyCryptoAddresses] = settings.CryptoAddresses
 	updates[SettingKeyQueryDomain] = settings.QueryDomain
 	updates[SettingKeyDefaultLocale] = settings.DefaultLocale
+	updates[SettingKeyContactWechat] = settings.ContactWechat
+	updates[SettingKeyContactTelegram] = settings.ContactTelegram
 
 	// 默认配置
 	updates[SettingKeyDefaultConcurrency] = strconv.Itoa(settings.DefaultConcurrency)
@@ -464,6 +474,8 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 		CryptoAddresses:              settings[SettingKeyCryptoAddresses],
 		QueryDomain:                  settings[SettingKeyQueryDomain],
 		DefaultLocale:                settings[SettingKeyDefaultLocale],
+		ContactWechat:                settings[SettingKeyContactWechat],
+		ContactTelegram:              settings[SettingKeyContactTelegram],
 	}
 
 	// 解析整数类型
@@ -890,16 +902,18 @@ func (s *SettingService) GetRechargeConfig(ctx context.Context) (*RechargeConfig
 		"recharge_min_amount",
 		"recharge_max_amount",
 		"recharge_tiers",
+		"recharge_usd_cny_rate",
 	})
 	if err != nil {
 		return nil, fmt.Errorf("get recharge settings: %w", err)
 	}
 
 	config := &RechargeConfig{
-		Enabled:   settings["recharge_enabled"] == "true",
-		MinAmount: 10.0,
-		MaxAmount: 10000.0,
-		Tiers:     []RechargeTier{},
+		Enabled:    settings["recharge_enabled"] == "true",
+		MinAmount:  10.0,
+		MaxAmount:  10000.0,
+		UsdCnyRate: 7.0,
+		Tiers:      []RechargeTier{},
 	}
 
 	if minStr := settings["recharge_min_amount"]; minStr != "" {
@@ -911,6 +925,12 @@ func (s *SettingService) GetRechargeConfig(ctx context.Context) (*RechargeConfig
 	if maxStr := settings["recharge_max_amount"]; maxStr != "" {
 		if max, err := strconv.ParseFloat(maxStr, 64); err == nil {
 			config.MaxAmount = max
+		}
+	}
+
+	if rateStr := settings["recharge_usd_cny_rate"]; rateStr != "" {
+		if rate, err := strconv.ParseFloat(rateStr, 64); err == nil && rate > 0 {
+			config.UsdCnyRate = rate
 		}
 	}
 
@@ -944,10 +964,11 @@ func (s *SettingService) UpdateRechargeConfig(ctx context.Context, config *Recha
 	}
 
 	updates := map[string]string{
-		"recharge_enabled":    strconv.FormatBool(config.Enabled),
-		"recharge_min_amount": fmt.Sprintf("%.2f", config.MinAmount),
-		"recharge_max_amount": fmt.Sprintf("%.2f", config.MaxAmount),
-		"recharge_tiers":      string(tiersJSON),
+		"recharge_enabled":      strconv.FormatBool(config.Enabled),
+		"recharge_min_amount":   fmt.Sprintf("%.2f", config.MinAmount),
+		"recharge_max_amount":   fmt.Sprintf("%.2f", config.MaxAmount),
+		"recharge_usd_cny_rate": fmt.Sprintf("%.4f", config.UsdCnyRate),
+		"recharge_tiers":        string(tiersJSON),
 	}
 
 	err = s.settingRepo.SetMultiple(ctx, updates)

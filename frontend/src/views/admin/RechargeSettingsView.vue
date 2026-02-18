@@ -49,7 +49,7 @@
             </div>
 
             <!-- Min/Max Amount -->
-            <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
               <div>
                 <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                   {{ t('admin.settings.recharge.minAmount') }}
@@ -80,6 +80,22 @@
                 />
                 <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
                   {{ t('admin.settings.recharge.maxAmountHint') }}
+                </p>
+              </div>
+              <div>
+                <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {{ t('admin.settings.recharge.usdCnyRate') }}
+                </label>
+                <input
+                  v-model.number="config.usd_cny_rate"
+                  type="number"
+                  min="0.01"
+                  step="0.0001"
+                  class="input"
+                  placeholder="7.0"
+                />
+                <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                  {{ t('admin.settings.recharge.usdCnyRateHint') }}
                 </p>
               </div>
             </div>
@@ -251,6 +267,7 @@ const config = ref<RechargeConfig>({
   enabled: false,
   min_amount: 10,
   max_amount: 10000,
+  usd_cny_rate: 7.0,
   tiers: []
 })
 

@@ -60,16 +60,6 @@
 
           <!-- Right: Actions -->
           <div class="ml-auto flex flex-wrap items-center justify-end gap-3">
-            <!-- Recharge Settings Button (only show on recharge tab) -->
-            <button
-              v-if="activeTab === 'recharge'"
-              @click="showRechargeSettings = true"
-              class="btn btn-secondary"
-              :title="t('admin.settings.recharge.title')"
-            >
-              <Icon name="cog" size="md" class="mr-2" />
-              {{ t('admin.orders.rechargeSettings') }}
-            </button>
             <button
               @click="loadData"
               :disabled="loading"
@@ -273,12 +263,6 @@
       </template>
     </TablePageLayout>
 
-    <!-- Recharge Settings Modal -->
-    <RechargeSettingsModal
-      :show="showRechargeSettings"
-      @close="showRechargeSettings = false"
-      @saved="loadData"
-    />
   </AppLayout>
 </template>
 
@@ -297,14 +281,12 @@ import Pagination from '@/components/common/Pagination.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import Select from '@/components/common/Select.vue'
 import Icon from '@/components/icons/Icon.vue'
-import RechargeSettingsModal from '@/components/admin/RechargeSettingsModal.vue'
 
 const { t } = useI18n()
 const appStore = useAppStore()
 
 // Active tab state
 const activeTab = ref<'subscription' | 'recharge'>('subscription')
-const showRechargeSettings = ref(false)
 
 // Subscription order columns
 const subscriptionColumns = computed<Column[]>(() => [

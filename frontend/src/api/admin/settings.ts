@@ -34,6 +34,8 @@ export interface SystemSettings {
   crypto_addresses: string
   query_domain: string
   default_locale: string
+  contact_wechat: string
+  contact_telegram: string
   // SMTP settings
   smtp_host: string
   smtp_port: number
@@ -93,6 +95,8 @@ export interface UpdateSettingsRequest {
   crypto_addresses?: string
   query_domain?: string
   default_locale?: string
+  contact_wechat?: string
+  contact_telegram?: string
   smtp_host?: string
   smtp_port?: number
   smtp_username?: string

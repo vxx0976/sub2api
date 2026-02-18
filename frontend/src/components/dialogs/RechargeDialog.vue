@@ -5,189 +5,112 @@
     width="normal"
     @close="handleClose"
   >
-    <!-- 促销标语 -->
-    <div class="mb-4 rounded-lg bg-gradient-to-r from-amber-50 to-orange-50 p-3 dark:from-amber-900/20 dark:to-orange-900/20">
-      <div class="flex items-center gap-2">
-        <Icon name="sparkles" size="sm" class="text-amber-600 dark:text-amber-400" />
-        <p class="text-sm font-medium text-amber-900 dark:text-amber-200">
-          {{ t('recharge.promoTitle') }}
-        </p>
-      </div>
-      <p class="mt-1 text-xs text-amber-700 dark:text-amber-300">
-        {{ t('recharge.promoSubtitle') }}
-      </p>
-    </div>
-
     <div class="space-y-4">
-      <!-- 充值金额输入 -->
+      <!-- 支付金额 -->
       <div>
         <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-          {{ t('recharge.rechargeAmount') }}
+          {{ t('recharge.youPay') }} ({{ currency }})
         </label>
-        <input
-          v-model.number="amount"
-          type="number"
-          :min="config?.min_amount || 10"
-          :max="config?.max_amount || 10000"
-          step="0.01"
-          class="input w-full"
-          :placeholder="t('recharge.enterAmount')"
-          @input="validateAmount"
-        />
+        <div class="relative">
+          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium text-gray-500 dark:text-gray-400">
+            {{ currencySymbol }}
+          </span>
+          <input
+            :value="amount || ''"
+            type="number"
+            :min="minAmount"
+            :max="maxAmount || undefined"
+            step="0.01"
+            class="input w-full pl-7"
+            :placeholder="t('recharge.enterAmount')"
+            @input="onAmountInput"
+          />
+        </div>
         <p v-if="amountError" class="mt-1 text-sm text-red-600 dark:text-red-400">
           {{ amountError }}
         </p>
       </div>
 
       <!-- 快捷金额 -->
-      <div>
-        <div class="mb-2 flex items-center justify-between">
-          <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
-            {{ t('recharge.quickAmounts') }}
-          </label>
-          <span class="text-xs text-gray-500 dark:text-gray-400">
-            💰 {{ t('recharge.quickTip') }}
-          </span>
-        </div>
-        <div class="grid grid-cols-4 gap-2">
-          <button
-            v-for="quickAmount in quickAmounts"
-            :key="quickAmount"
-            @click="amount = quickAmount"
-            type="button"
-            :class="[
-              'relative rounded-lg border px-3 py-2 text-sm font-medium transition-all',
-              quickAmount >= 200
-                ? 'border-primary-300 bg-primary-50 text-primary-700 hover:bg-primary-100 dark:border-primary-700 dark:bg-primary-900/30 dark:text-primary-300 dark:hover:bg-primary-900/50'
-                : 'border-gray-200 bg-gray-50 text-gray-700 hover:border-gray-300 hover:bg-gray-100 dark:border-dark-600 dark:bg-dark-700 dark:text-gray-200 dark:hover:border-dark-500 dark:hover:bg-dark-600'
-            ]"
-          >
-            <span v-if="quickAmount >= 1000" class="absolute -top-2 -right-2 rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-bold text-white shadow-lg">
-              🔥
-            </span>
-            <span v-else-if="quickAmount >= 500" class="absolute -top-2 -right-2 rounded-full bg-orange-500 px-1.5 py-0.5 text-[10px] font-bold text-white shadow-lg">
-              HOT
-            </span>
-            ¥{{ quickAmount }}
-          </button>
-        </div>
+      <div class="flex flex-wrap gap-2">
+        <button
+          v-for="q in quickAmounts"
+          :key="q"
+          @click="amount = q"
+          type="button"
+          :class="[
+            'rounded-lg border px-3 py-1.5 text-sm font-medium transition-all',
+            amount === q
+              ? 'border-primary-400 bg-primary-50 text-primary-700 dark:border-primary-600 dark:bg-primary-900/30 dark:text-primary-300'
+              : 'border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100 dark:border-dark-600 dark:bg-dark-700 dark:text-gray-300 dark:hover:bg-dark-600'
+          ]"
+        >
+          {{ currencySymbol }}{{ q }}
+        </button>
       </div>
 
-      <!-- 充值优惠信息 -->
-      <div
-        v-if="config && creditAmount > amount"
-        class="rounded-xl border border-primary-200 bg-gradient-to-r from-primary-50 to-yellow-50 p-4 dark:border-primary-700 dark:from-primary-900/20 dark:to-yellow-900/20"
-      >
-        <div class="flex items-start">
-          <Icon name="gift" size="md" class="mr-3 mt-1 text-primary-600 dark:text-primary-400" />
-          <div class="flex-1">
-            <div class="mb-1 text-sm font-medium text-gray-900 dark:text-white">
-              🎁 {{ t('recharge.bonus') }}
-            </div>
-            <div class="mb-1 text-lg font-bold text-primary-600 dark:text-primary-400">
-              {{ t('recharge.actualCredit') }}: ¥{{ creditAmount.toFixed(2) }}
-            </div>
-            <div class="text-xs text-gray-600 dark:text-gray-400">
-              {{ t('recharge.multiplierInfo', { multiplier: currentMultiplier.toFixed(1) }) }}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 阶梯倍率说明 -->
-      <div v-if="config && config.tiers && config.tiers.length > 0" class="space-y-2">
+      <!-- 到账金额 -->
+      <div v-if="amount > 0" class="rounded-xl border border-primary-200 bg-gradient-to-r from-primary-50 to-blue-50 p-4 dark:border-primary-800 dark:from-primary-900/20 dark:to-blue-900/20">
         <div class="flex items-center justify-between">
-          <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
-            {{ t('recharge.tierInfo') }}
-          </label>
-          <span class="text-xs font-medium text-green-600 dark:text-green-400">
-            🎁 {{ t('recharge.moreGetMore') }}
+          <div class="text-sm text-gray-500 dark:text-gray-400">{{ t('recharge.youReceive') }}</div>
+          <div class="text-xs text-gray-400 dark:text-gray-500">1 {{ currency }} = ${{ unitRate.toFixed(2) }}</div>
+        </div>
+        <div class="mt-1 text-2xl font-bold text-primary-600 dark:text-primary-400">
+          ${{ platformBalance.toFixed(2) }}
+          <span class="ml-1 text-sm font-normal text-gray-500 dark:text-gray-400">{{ t('recharge.platformBalance') }}</span>
+        </div>
+      </div>
+
+      <!-- 非中文：虚拟币支付 + 联系方式 -->
+      <div v-if="!isChinese" class="space-y-2">
+        <div v-if="cryptoAddresses.length > 0">
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('recharge.cryptoPayment') }}</label>
+          <div v-for="(addr, index) in cryptoAddresses" :key="index" class="mt-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 dark:border-dark-600 dark:bg-dark-700">
+            <div class="flex items-center justify-between gap-2">
+              <span class="inline-flex items-center rounded-md bg-gray-200 px-1.5 py-0.5 text-[11px] font-medium text-gray-600 dark:bg-dark-600 dark:text-dark-300">{{ addr.chain }}</span>
+              <button @click="copyAddress(addr.address)" type="button" class="rounded p-1 text-gray-400 transition-colors hover:bg-gray-200 hover:text-gray-600 dark:text-dark-500 dark:hover:bg-dark-600 dark:hover:text-dark-300">
+                <Icon name="clipboard" size="xs" />
+              </button>
+            </div>
+            <p class="mt-1 break-all font-mono text-xs leading-relaxed text-gray-500 dark:text-dark-400">{{ addr.address }}</p>
+          </div>
+        </div>
+        <p class="text-xs text-gray-400 dark:text-gray-500">
+          {{ t('recharge.cryptoHint') }}
+        </p>
+        <div class="flex flex-wrap items-center gap-3 text-xs">
+          <a v-if="contactTelegram" :href="`https://t.me/${contactTelegram}`" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 font-medium text-blue-500 hover:text-blue-600 dark:text-blue-400">
+            Telegram @{{ contactTelegram }}
+            <Icon name="externalLink" size="xs" />
+          </a>
+          <span v-if="contactWechat" class="inline-flex items-center gap-1 text-gray-500 dark:text-gray-400">
+            WeChat: {{ contactWechat }}
           </span>
         </div>
-        <div class="space-y-1">
-          <div
-            v-for="(tier, index) in config.tiers"
-            :key="index"
-            :class="[
-              'flex items-center justify-between rounded px-3 py-2 text-sm',
-              isCurrentTier(tier)
-                ? 'bg-primary-100 text-primary-700 font-medium dark:bg-primary-900/30 dark:text-primary-300'
-                : 'bg-gray-50 text-gray-600 dark:bg-dark-700 dark:text-gray-400'
-            ]"
-          >
-            <span>
-              ¥{{ tier.min }}{{ tier.max ? ` - ¥${tier.max}` : '+' }}
-            </span>
-            <span class="flex items-center gap-2">
-              <!-- 每刀价格 -->
-              <span class="text-xs text-gray-500 dark:text-gray-400">
-                ¥{{ (1 / tier.multiplier).toFixed(2) }}/刀
-              </span>
-              <span class="font-medium">{{ tier.multiplier }}×</span>
-              <!-- 增幅 < 100%: 橙色徽章 -->
-              <span v-if="tier.multiplier >= 1.3 && tier.multiplier < 2.0" class="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-2.5 py-0.5 text-xs font-bold text-white shadow-md">
-                +{{ ((tier.multiplier - 1) * 100).toFixed(0) }}%
-              </span>
-              <!-- 增幅 >= 100%: 红色徽章 -->
-              <span v-else-if="tier.multiplier >= 2.0" class="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-orange-600 to-red-600 px-2.5 py-0.5 text-xs font-bold text-white shadow-lg">
-                <span>🔥</span>
-                <span>+{{ ((tier.multiplier - 1) * 100).toFixed(0) }}%</span>
-              </span>
-              <!-- 增幅 < 30%: 灰色小字 -->
-              <span v-else-if="tier.multiplier > 1.0" class="text-xs text-gray-500 dark:text-gray-400">
-                +{{ ((tier.multiplier - 1) * 100).toFixed(0) }}%
-              </span>
-            </span>
+      </div>
+
+      <!-- 汇率说明 -->
+      <div class="rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-dark-600 dark:bg-dark-700">
+        <div class="flex items-start gap-2">
+          <Icon name="infoCircle" size="sm" class="mt-0.5 text-gray-400 dark:text-gray-500" />
+          <div class="flex-1 text-xs text-gray-500 dark:text-gray-400">
+            <p>{{ rateDescription }}</p>
+            <p class="mt-1">{{ t('recharge.balanceNeverExpires') }}</p>
           </div>
         </div>
       </div>
 
-      <!-- 温馨提示 -->
-      <div class="space-y-2">
-        <!-- 扣费规则说明 -->
-        <div class="rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/20">
-          <div class="flex items-start gap-2">
-            <Icon name="infoCircle" size="sm" class="mt-0.5 text-blue-600 dark:text-blue-400" />
-            <div class="flex-1 text-xs text-blue-700 dark:text-blue-300">
-              <p class="font-medium">{{ t('recharge.usageRuleTitle') }}</p>
-              <p class="mt-1">{{ t('recharge.usageRuleDesc') }}</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- 余额优势 -->
-        <div class="rounded-lg border border-green-200 bg-green-50 p-3 dark:border-green-800 dark:bg-green-900/20">
-          <div class="flex items-start gap-2">
-            <Icon name="check" size="sm" class="mt-0.5 text-green-600 dark:text-green-400" />
-            <div class="flex-1 text-xs text-green-700 dark:text-green-300">
-              <p class="font-medium">{{ t('recharge.benefitTitle') }}</p>
-              <p class="mt-1">{{ t('recharge.benefitDesc') }}</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="text-xs text-gray-500 dark:text-gray-400">
-          <p>{{ t('recharge.minAmount') }}: ¥{{ config?.min_amount || 10 }} · {{ t('recharge.maxAmount') }}: ¥{{ config?.max_amount || 10000 }}</p>
-        </div>
+      <div v-if="isChinese" class="text-xs text-gray-400 dark:text-gray-500">
+        {{ t('recharge.amountRange', { min: minAmount, max: maxAmount, symbol: currencySymbol }) }}
       </div>
     </div>
 
     <template #footer>
       <div class="flex justify-end space-x-3">
-        <button @click="handleClose" type="button" class="btn btn-secondary">
-          {{ t('common.cancel') }}
-        </button>
-        <button
-          @click="handleConfirm"
-          type="button"
-          class="btn btn-primary"
-          :disabled="!isValidAmount || submitting"
-        >
+        <button @click="handleClose" type="button" class="btn btn-secondary">{{ t('common.cancel') }}</button>
+        <button v-if="isChinese" @click="handleConfirm" type="button" class="btn btn-primary" :disabled="!isValidAmount || submitting">
           <span v-if="submitting">{{ t('recharge.processing') }}</span>
-          <span v-else>
-            {{ t('recharge.confirmRecharge') }}
-            <span v-if="amount > 0"> ¥{{ amount.toFixed(2) }}</span>
-          </span>
+          <span v-else>{{ t('recharge.confirmRecharge') }}<span v-if="amount > 0"> {{ currencySymbol }}{{ amount.toFixed(2) }}</span></span>
         </button>
       </div>
     </template>
@@ -199,109 +122,101 @@ import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BaseDialog from '@/components/common/BaseDialog.vue'
 import Icon from '@/components/icons/Icon.vue'
-import type { RechargeConfig, RechargeTier } from '@/api/recharge'
+import { useAppStore } from '@/stores/app'
 
 interface Props {
   show: boolean
-  config: RechargeConfig | null
 }
 
 const props = defineProps<Props>()
-
-const emit = defineEmits<{
-  (e: 'close'): void
-  (e: 'confirm', amount: number): void
-}>()
-
-const { t } = useI18n()
+const emit = defineEmits<{ (e: 'close'): void; (e: 'confirm', amount: number): void }>()
+const { t, locale } = useI18n()
+const appStore = useAppStore()
 
 const amount = ref<number>(0)
 const amountError = ref<string>('')
 const submitting = ref(false)
 
-const quickAmounts = computed(() => [10, 50, 100, 200, 500, 800])
+// 固定倍率：1 CNY = $2 平台余额
+const MULTIPLIER = 2
 
-// 计算当前倍率
-const currentMultiplier = computed(() => {
-  if (!props.config || !props.config.tiers || amount.value <= 0) {
-    return 1.0
-  }
+const isChinese = computed(() => locale.value.startsWith('zh'))
+const currency = computed(() => isChinese.value ? 'CNY' : 'USDT')
+const currencySymbol = computed(() => isChinese.value ? '¥' : '$')
+const contactTelegram = computed(() => appStore.cachedPublicSettings?.contact_telegram || '')
+const contactWechat = computed(() => appStore.cachedPublicSettings?.contact_wechat || '')
 
-  for (const tier of props.config.tiers) {
-    if (amount.value >= tier.min) {
-      if (tier.max === null || amount.value <= tier.max) {
-        return tier.multiplier
-      }
-    }
-  }
-
-  return 1.0
+interface CryptoAddress { chain: string; address: string }
+const cryptoAddresses = computed<CryptoAddress[]>(() => {
+  const raw = appStore.cachedPublicSettings?.crypto_addresses
+  if (!raw) return []
+  try {
+    const parsed = JSON.parse(raw)
+    if (Array.isArray(parsed)) return parsed
+  } catch { /* ignore */ }
+  return []
 })
 
-// 计算实际到账金额
-const creditAmount = computed(() => {
-  return amount.value * currentMultiplier.value
+// 中文：1 CNY = $2；非中文：1 USDT ≈ 1 CNY * MULTIPLIER（按汇率换算）
+const cnyAmount = computed(() => isChinese.value ? amount.value : amount.value * 7)
+const unitRate = computed(() => isChinese.value ? MULTIPLIER : 7 * MULTIPLIER)
+const platformBalance = computed(() => cnyAmount.value * MULTIPLIER)
+
+const rateDescription = computed(() => {
+  if (isChinese.value) return t('recharge.rateDescCny', { multiplier: MULTIPLIER.toFixed(1) })
+  return t('recharge.rateDescUsd', { rate: '7.0', multiplier: MULTIPLIER.toFixed(1), total: (7 * MULTIPLIER).toFixed(2) })
 })
 
-// 验证金额
+// 中文：10-500；非中文：无限制
+const quickAmounts = computed(() => isChinese.value ? [10, 50, 200, 500] : [10, 50, 100, 500])
+const minAmount = computed(() => isChinese.value ? 10 : 1)
+const maxAmount = computed(() => isChinese.value ? 500 : 0) // 0 = 无上限
+
+const onAmountInput = (event: Event) => {
+  const val = parseFloat((event.target as HTMLInputElement).value)
+  amount.value = isNaN(val) ? 0 : val
+  validateAmount()
+}
+
 const validateAmount = () => {
   amountError.value = ''
-
-  if (!props.config) return
-
-  if (amount.value < props.config.min_amount) {
-    amountError.value = t('recharge.invalidAmount', {
-      min: props.config.min_amount,
-      max: props.config.max_amount
-    })
-  } else if (amount.value > props.config.max_amount) {
-    amountError.value = t('recharge.invalidAmount', {
-      min: props.config.min_amount,
-      max: props.config.max_amount
-    })
+  if (amount.value > 0 && amount.value < minAmount.value) {
+    amountError.value = t('recharge.invalidAmountRange', { min: minAmount.value, max: maxAmount.value || '∞', symbol: currencySymbol.value })
+  }
+  if (isChinese.value && amount.value > maxAmount.value) {
+    amountError.value = t('recharge.invalidAmountRange', { min: minAmount.value, max: maxAmount.value, symbol: currencySymbol.value })
   }
 }
 
 const isValidAmount = computed(() => {
-  if (!props.config) return false
-  return (
-    amount.value >= props.config.min_amount &&
-    amount.value <= props.config.max_amount &&
-    !amountError.value
-  )
+  if (amount.value < minAmount.value) return false
+  if (isChinese.value && amount.value > maxAmount.value) return false
+  return !amountError.value
 })
 
-// 判断是否是当前阶梯
-const isCurrentTier = (tier: RechargeTier): boolean => {
-  if (amount.value <= 0) return false
-
-  if (amount.value >= tier.min) {
-    if (tier.max === null) {
-      return true
-    }
-    return amount.value <= tier.max
-  }
-
-  return false
-}
-
-const handleClose = () => {
-  amount.value = 0
-  amountError.value = ''
-  emit('close')
-}
-
+const handleClose = () => { amount.value = 0; amountError.value = ''; emit('close') }
 const handleConfirm = () => {
   if (!isValidAmount.value) return
-
   submitting.value = true
-  emit('confirm', amount.value)
+  emit('confirm', Math.round(cnyAmount.value * 100) / 100)
 }
 
-// 重置提交状态
-watch(() => props.show, (newVal) => {
-  if (!newVal) {
-    submitting.value = false
+async function copyAddress(address: string) {
+  try {
+    await navigator.clipboard.writeText(address)
+    appStore.showSuccess(t('recharge.copySuccess'))
+  } catch {
+    const ta = document.createElement('textarea')
+    ta.value = address
+    document.body.appendChild(ta)
+    ta.select()
+    document.execCommand('copy')
+    document.body.removeChild(ta)
+    appStore.showSuccess(t('recharge.copySuccess'))
   }
+}
+
+watch(() => props.show, (newVal) => {
+  if (!newVal) { submitting.value = false }
 })
 </script>

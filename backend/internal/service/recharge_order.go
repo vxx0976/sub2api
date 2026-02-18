@@ -51,8 +51,9 @@ type RechargeTier struct {
 
 // 充值配置
 type RechargeConfig struct {
-	Enabled   bool           `json:"enabled"`
-	MinAmount float64        `json:"min_amount"`
-	MaxAmount float64        `json:"max_amount"`
-	Tiers     []RechargeTier `json:"tiers"`
+	Enabled    bool           `json:"enabled"`
+	MinAmount  float64        `json:"min_amount"`
+	MaxAmount  float64        `json:"max_amount"`
+	UsdCnyRate float64        `json:"usd_cny_rate"`
+	Tiers      []RechargeTier `json:"tiers"`
 }

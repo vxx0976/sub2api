@@ -65,6 +65,7 @@
         <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           <div
             v-for="plan in plans"
+            v-show="isChinese"
             :key="plan.id"
             class="group relative flex flex-col overflow-hidden rounded-3xl border transition-all duration-300"
             :class="[
@@ -196,56 +197,9 @@
 
           <!-- PayGo Card (Before Enterprise) -->
           <PayGoCard
-            :config="rechargeConfig"
             :current-balance="userBalance"
             @recharge="showRechargeDialog = true"
           />
-
-          <!-- Crypto Payment Card -->
-          <div
-            v-if="cryptoAddresses.length > 0"
-            class="group relative flex flex-col overflow-hidden rounded-3xl border border-gray-200 bg-white transition-all duration-300 hover:border-gray-300 hover:shadow-lg dark:border-dark-600 dark:bg-dark-800 dark:hover:border-dark-500"
-          >
-            <div class="flex flex-1 flex-col p-6">
-              <div class="mb-4">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                  {{ t('plans.cryptoBanner.title') }}
-                </h3>
-                <p class="mt-1 text-sm text-gray-500 dark:text-dark-400">
-                  {{ t('plans.cryptoBanner.descriptionPrefix') }}
-                  <a href="https://t.me/Umasou" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-0.5 font-medium text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300">
-                    Telegram
-                    <Icon name="externalLink" size="xs" />
-                  </a>
-                  {{ t('plans.cryptoBanner.descriptionSuffix') }}
-                </p>
-              </div>
-
-              <div class="flex-1 space-y-2">
-                <div
-                  v-for="(addr, index) in cryptoAddresses"
-                  :key="index"
-                  class="rounded-xl bg-gray-50 px-3 py-2.5 dark:bg-dark-700"
-                >
-                  <div class="flex items-center justify-between gap-2">
-                    <span class="inline-flex items-center rounded-md bg-gray-200 px-1.5 py-0.5 text-[11px] font-medium text-gray-600 dark:bg-dark-600 dark:text-dark-300">
-                      {{ addr.chain }}
-                    </span>
-                    <button
-                      @click="copyCryptoAddress(addr.address)"
-                      class="rounded p-1 text-gray-400 transition-colors hover:bg-gray-200 hover:text-gray-600 dark:text-dark-500 dark:hover:bg-dark-600 dark:hover:text-dark-300"
-                      :title="t('plans.cryptoBanner.copySuccess')"
-                    >
-                      <Icon name="clipboard" size="xs" />
-                    </button>
-                  </div>
-                  <p class="mt-1 font-mono text-xs text-gray-500 dark:text-dark-400 break-all leading-relaxed">
-                    {{ addr.address }}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
 
           <!-- Custom Enterprise Card -->
           <div
@@ -329,7 +283,6 @@
     <!-- Recharge Dialog -->
     <RechargeDialog
       :show="showRechargeDialog"
-      :config="rechargeConfig"
       @close="showRechargeDialog = false"
       @confirm="handleRecharge"
     />
@@ -361,8 +314,7 @@ import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
 import { useAuthStore } from '@/stores/auth'
 import plansAPI, { type PurchasablePlan } from '@/api/plans'
-import { getRechargeConfig, createRechargeOrder } from '@/api/recharge'
-import type { RechargeConfig } from '@/api/recharge'
+import { createRechargeOrder } from '@/api/recharge'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import Icon from '@/components/icons/Icon.vue'
 import PayGoCard from '@/components/plans/PayGoCard.vue'
@@ -370,9 +322,11 @@ import RechargeDialog from '@/components/dialogs/RechargeDialog.vue'
 import ContactDialog from '@/components/dialogs/ContactDialog.vue'
 import PaymentQRCodeModal from '@/components/common/PaymentQRCodeModal.vue'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const appStore = useAppStore()
 const authStore = useAuthStore()
+
+const isChinese = computed(() => locale.value.startsWith('zh'))
 
 // Reseller domain: embed purchase page
 const resellerPurchaseUrl = computed(() => {
@@ -385,39 +339,7 @@ const loading = ref(true)
 const error = ref<string | null>(null)
 const purchasing = ref<number | null>(null)
 
-// Crypto addresses from public settings
-interface CryptoAddress {
-  chain: string
-  address: string
-}
-const cryptoAddresses = computed<CryptoAddress[]>(() => {
-  const raw = appStore.cachedPublicSettings?.crypto_addresses
-  if (!raw) return []
-  try {
-    const parsed = JSON.parse(raw)
-    if (Array.isArray(parsed)) return parsed
-  } catch { /* ignore */ }
-  return []
-})
-
-async function copyCryptoAddress(address: string) {
-  try {
-    await navigator.clipboard.writeText(address)
-    appStore.showSuccess(t('plans.cryptoBanner.copySuccess'))
-  } catch {
-    // fallback
-    const ta = document.createElement('textarea')
-    ta.value = address
-    document.body.appendChild(ta)
-    ta.select()
-    document.execCommand('copy')
-    document.body.removeChild(ta)
-    appStore.showSuccess(t('plans.cryptoBanner.copySuccess'))
-  }
-}
-
 // Recharge related state
-const rechargeConfig = ref<RechargeConfig | null>(null)
 const showRechargeDialog = ref(false)
 const showContactDialog = ref(false)
 
@@ -474,15 +396,6 @@ async function purchasePlan(plan: PurchasablePlan) {
   }
 }
 
-async function loadRechargeConfig() {
-  try {
-    rechargeConfig.value = await getRechargeConfig()
-  } catch (err: any) {
-    console.error('Failed to load recharge config:', err)
-    // Silently fail - recharge will be disabled if config can't be loaded
-  }
-}
-
 async function handleRecharge(amount: number) {
   try {
     const result = await createRechargeOrder(amount)
@@ -515,7 +428,6 @@ function contactEnterprise() {
 onMounted(() => {
   if (!resellerPurchaseUrl.value) {
     loadPlans()
-    loadRechargeConfig()
   }
 })
 </script>

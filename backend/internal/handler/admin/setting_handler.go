@@ -78,6 +78,8 @@ func (h *SettingHandler) GetSettings(c *gin.Context) {
 		PurchaseSubscriptionURL:              settings.PurchaseSubscriptionURL,
 		CryptoAddresses:                      settings.CryptoAddresses,
 		QueryDomain:                          settings.QueryDomain,
+		ContactWechat:                        settings.ContactWechat,
+		ContactTelegram:                      settings.ContactTelegram,
 		DefaultConcurrency:                   settings.DefaultConcurrency,
 		DefaultBalance:                       settings.DefaultBalance,
 		EnableModelFallback:                  settings.EnableModelFallback,
@@ -137,6 +139,8 @@ type UpdateSettingsRequest struct {
 	PurchaseSubscriptionURL     *string `json:"purchase_subscription_url"`
 	CryptoAddresses             string  `json:"crypto_addresses"`
 	QueryDomain                 string  `json:"query_domain"`
+	ContactWechat               string  `json:"contact_wechat"`
+	ContactTelegram             string  `json:"contact_telegram"`
 
 	// 默认配置
 	DefaultConcurrency int     `json:"default_concurrency"`
@@ -325,6 +329,8 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		PurchaseSubscriptionURL:     purchaseURL,
 		CryptoAddresses:             req.CryptoAddresses,
 		QueryDomain:                 req.QueryDomain,
+		ContactWechat:               req.ContactWechat,
+		ContactTelegram:             req.ContactTelegram,
 		DefaultConcurrency:          req.DefaultConcurrency,
 		DefaultBalance:              req.DefaultBalance,
 		EnableModelFallback:         req.EnableModelFallback,

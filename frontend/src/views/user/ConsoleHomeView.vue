@@ -128,22 +128,10 @@ const appStore = useAppStore()
 // Doc URL from settings
 const docUrl = computed(() => appStore.cachedPublicSettings?.doc_url || '')
 
-// Reseller domain detection
-const isResellerDomain = computed(() => !!appStore.cachedPublicSettings?.reseller_id)
 
-// Dynamic contact info — on reseller domains, only show if reseller configured it (no main-site fallback)
-const contactWechat = computed(() => {
-  if (isResellerDomain.value) {
-    return appStore.cachedPublicSettings?.contact_wechat || ''
-  }
-  return appStore.cachedPublicSettings?.contact_wechat || 'mayione1'
-})
-const contactTelegram = computed(() => {
-  if (isResellerDomain.value) {
-    return appStore.cachedPublicSettings?.contact_telegram || ''
-  }
-  return appStore.cachedPublicSettings?.contact_telegram || 'Umasou'
-})
+// Dynamic contact info — from public settings (main site or reseller)
+const contactWechat = computed(() => appStore.cachedPublicSettings?.contact_wechat || '')
+const contactTelegram = computed(() => appStore.cachedPublicSettings?.contact_telegram || '')
 const hasContactInfo = computed(() => !!contactWechat.value || !!contactTelegram.value)
 
 // Announcements from cachedPublicSettings (injected via __APP_CONFIG__).

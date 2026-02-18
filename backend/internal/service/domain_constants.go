@@ -129,6 +129,10 @@ const (
 	// 默认语言
 	SettingKeyDefaultLocale = "default_locale" // 默认界面语言（如 en, zh, ja 等）
 
+	// 联系方式
+	SettingKeyContactWechat   = "contact_wechat"   // 微信联系方式
+	SettingKeyContactTelegram = "contact_telegram"  // Telegram 联系方式
+
 	// Gemini 配额策略（JSON）
 	SettingKeyGeminiQuotaPolicy = "gemini_quota_policy"
 

@@ -42,6 +42,10 @@ type SystemSettings struct {
 	CryptoAddresses             string
 	QueryDomain                 string
 
+	// 联系方式
+	ContactWechat   string
+	ContactTelegram string
+
 	DefaultConcurrency int
 	DefaultBalance     float64
 
@@ -97,6 +101,8 @@ type PublicSettings struct {
 	CryptoAddresses             string
 	QueryDomain                 string
 	DefaultLocale               string
+	ContactWechat               string
+	ContactTelegram             string
 }
 
 // StreamTimeoutSettings 流超时处理配置（仅控制超时后的处理方式，超时判定由网关配置控制）

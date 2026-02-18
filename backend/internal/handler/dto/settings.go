@@ -40,6 +40,10 @@ type SystemSettings struct {
 	CryptoAddresses             string `json:"crypto_addresses"`
 	QueryDomain                 string `json:"query_domain"`
 
+	// 联系方式
+	ContactWechat   string `json:"contact_wechat"`
+	ContactTelegram string `json:"contact_telegram"`
+
 	DefaultConcurrency int     `json:"default_concurrency"`
 	DefaultBalance     float64 `json:"default_balance"`
 

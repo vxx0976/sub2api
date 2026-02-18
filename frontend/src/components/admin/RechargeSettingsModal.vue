@@ -236,6 +236,7 @@ const config = ref<RechargeConfig>({
   enabled: false,
   min_amount: 10,
   max_amount: 10000,
+  usd_cny_rate: 7.0,
   tiers: []
 })
 

@@ -818,6 +818,32 @@
               </p>
             </div>
 
+            <!-- Contact WeChat & Telegram -->
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {{ t('admin.settings.site.contactWechat') }}
+                </label>
+                <input
+                  v-model="form.contact_wechat"
+                  type="text"
+                  class="input"
+                  placeholder="WeChat ID"
+                />
+              </div>
+              <div>
+                <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {{ t('admin.settings.site.contactTelegram') }}
+                </label>
+                <input
+                  v-model="form.contact_telegram"
+                  type="text"
+                  class="input"
+                  placeholder="Telegram username"
+                />
+              </div>
+            </div>
+
             <!-- Crypto Addresses -->
             <div>
               <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -1326,6 +1352,8 @@ const form = reactive<SettingsForm>({
   default_locale: '',
   api_base_url: '',
   contact_info: '',
+  contact_wechat: '',
+  contact_telegram: '',
   doc_url: '',
   home_content: '',
   hide_ccs_import_button: false,
@@ -1473,6 +1501,8 @@ async function saveSettings() {
       site_subtitle: form.site_subtitle,
       api_base_url: form.api_base_url,
       contact_info: form.contact_info,
+      contact_wechat: form.contact_wechat,
+      contact_telegram: form.contact_telegram,
       doc_url: form.doc_url,
       home_content: form.home_content,
       hide_ccs_import_button: form.hide_ccs_import_button,

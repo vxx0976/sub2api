@@ -12,6 +12,7 @@ export interface RechargeConfig {
   enabled: boolean
   min_amount: number
   max_amount: number
+  usd_cny_rate: number
   tiers: RechargeTier[]
 }
 

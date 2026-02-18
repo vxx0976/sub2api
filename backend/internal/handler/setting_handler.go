@@ -67,6 +67,8 @@ func (h *SettingHandler) GetPublicSettings(c *gin.Context) {
 		Announcements:               announcements,
 		CryptoAddresses:             settings.CryptoAddresses,
 		QueryDomain:                 settings.QueryDomain,
+		ContactWechat:               settings.ContactWechat,
+		ContactTelegram:             settings.ContactTelegram,
 	}
 
 	// If accessed via a reseller's custom domain, overlay reseller branding
@@ -124,6 +126,11 @@ func (h *SettingHandler) GetPublicSettings(c *gin.Context) {
 		if info.LoginRedirect != "" {
 			result.LoginRedirect = info.LoginRedirect
 		}
+
+		// Reseller sites are isolated from main site contact info
+		result.ContactInfo = ""
+		result.ContactWechat = ""
+		result.ContactTelegram = ""
 
 		// Override from reseller-global settings
 		if rs := info.ResellerSettings; rs != nil {

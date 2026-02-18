@@ -274,6 +274,11 @@ func mergeResellerBranding(baseJSON []byte, info *middleware.ResellerDomainConte
 		m["login_redirect"] = info.LoginRedirect
 	}
 
+	// Reseller sites are isolated from main site contact info
+	delete(m, "contact_info")
+	delete(m, "contact_wechat")
+	delete(m, "contact_telegram")
+
 	// Override from reseller-global settings (contact_info, crypto_addresses, default_locale, etc.)
 	if rs := info.ResellerSettings; rs != nil {
 		if v := rs["contact_info"]; v != "" {
