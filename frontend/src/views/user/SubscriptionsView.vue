@@ -241,7 +241,7 @@
 
             <!-- Renewal Button -->
             <div
-              v-if="subscription.group?.price && subscription.group?.is_purchasable"
+              v-if="subscription.group?.price"
               class="mt-4 border-t border-gray-100 pt-4 dark:border-dark-700"
             >
               <div class="flex items-center justify-between">

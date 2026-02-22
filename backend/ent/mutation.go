@@ -12245,6 +12245,8 @@ type OrderMutation struct {
 	trade_no               *string
 	amount                 *float64
 	addamount              *float64
+	payment_amount         *float64
+	addpayment_amount      *float64
 	status                 *string
 	pay_type               *string
 	paid_at                *time.Time
@@ -12574,6 +12576,76 @@ func (m *OrderMutation) AddedAmount() (r float64, exists bool) {
 func (m *OrderMutation) ResetAmount() {
 	m.amount = nil
 	m.addamount = nil
+}
+
+// SetPaymentAmount sets the "payment_amount" field.
+func (m *OrderMutation) SetPaymentAmount(f float64) {
+	m.payment_amount = &f
+	m.addpayment_amount = nil
+}
+
+// PaymentAmount returns the value of the "payment_amount" field in the mutation.
+func (m *OrderMutation) PaymentAmount() (r float64, exists bool) {
+	v := m.payment_amount
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPaymentAmount returns the old "payment_amount" field's value of the Order entity.
+// If the Order object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OrderMutation) OldPaymentAmount(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPaymentAmount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPaymentAmount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPaymentAmount: %w", err)
+	}
+	return oldValue.PaymentAmount, nil
+}
+
+// AddPaymentAmount adds f to the "payment_amount" field.
+func (m *OrderMutation) AddPaymentAmount(f float64) {
+	if m.addpayment_amount != nil {
+		*m.addpayment_amount += f
+	} else {
+		m.addpayment_amount = &f
+	}
+}
+
+// AddedPaymentAmount returns the value that was added to the "payment_amount" field in this mutation.
+func (m *OrderMutation) AddedPaymentAmount() (r float64, exists bool) {
+	v := m.addpayment_amount
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearPaymentAmount clears the value of the "payment_amount" field.
+func (m *OrderMutation) ClearPaymentAmount() {
+	m.payment_amount = nil
+	m.addpayment_amount = nil
+	m.clearedFields[order.FieldPaymentAmount] = struct{}{}
+}
+
+// PaymentAmountCleared returns if the "payment_amount" field was cleared in this mutation.
+func (m *OrderMutation) PaymentAmountCleared() bool {
+	_, ok := m.clearedFields[order.FieldPaymentAmount]
+	return ok
+}
+
+// ResetPaymentAmount resets all changes to the "payment_amount" field.
+func (m *OrderMutation) ResetPaymentAmount() {
+	m.payment_amount = nil
+	m.addpayment_amount = nil
+	delete(m.clearedFields, order.FieldPaymentAmount)
 }
 
 // SetStatus sets the "status" field.
@@ -13034,7 +13106,7 @@ func (m *OrderMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *OrderMutation) Fields() []string {
-	fields := make([]string, 0, 12)
+	fields := make([]string, 0, 13)
 	if m.order_no != nil {
 		fields = append(fields, order.FieldOrderNo)
 	}
@@ -13049,6 +13121,9 @@ func (m *OrderMutation) Fields() []string {
 	}
 	if m.amount != nil {
 		fields = append(fields, order.FieldAmount)
+	}
+	if m.payment_amount != nil {
+		fields = append(fields, order.FieldPaymentAmount)
 	}
 	if m.status != nil {
 		fields = append(fields, order.FieldStatus)
@@ -13089,6 +13164,8 @@ func (m *OrderMutation) Field(name string) (ent.Value, bool) {
 		return m.GroupID()
 	case order.FieldAmount:
 		return m.Amount()
+	case order.FieldPaymentAmount:
+		return m.PaymentAmount()
 	case order.FieldStatus:
 		return m.Status()
 	case order.FieldPayType:
@@ -13122,6 +13199,8 @@ func (m *OrderMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldGroupID(ctx)
 	case order.FieldAmount:
 		return m.OldAmount(ctx)
+	case order.FieldPaymentAmount:
+		return m.OldPaymentAmount(ctx)
 	case order.FieldStatus:
 		return m.OldStatus(ctx)
 	case order.FieldPayType:
@@ -13179,6 +13258,13 @@ func (m *OrderMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetAmount(v)
+		return nil
+	case order.FieldPaymentAmount:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPaymentAmount(v)
 		return nil
 	case order.FieldStatus:
 		v, ok := value.(string)
@@ -13240,6 +13326,9 @@ func (m *OrderMutation) AddedFields() []string {
 	if m.addamount != nil {
 		fields = append(fields, order.FieldAmount)
 	}
+	if m.addpayment_amount != nil {
+		fields = append(fields, order.FieldPaymentAmount)
+	}
 	return fields
 }
 
@@ -13250,6 +13339,8 @@ func (m *OrderMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
 	case order.FieldAmount:
 		return m.AddedAmount()
+	case order.FieldPaymentAmount:
+		return m.AddedPaymentAmount()
 	}
 	return nil, false
 }
@@ -13266,6 +13357,13 @@ func (m *OrderMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddAmount(v)
 		return nil
+	case order.FieldPaymentAmount:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPaymentAmount(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Order numeric field %s", name)
 }
@@ -13276,6 +13374,9 @@ func (m *OrderMutation) ClearedFields() []string {
 	var fields []string
 	if m.FieldCleared(order.FieldTradeNo) {
 		fields = append(fields, order.FieldTradeNo)
+	}
+	if m.FieldCleared(order.FieldPaymentAmount) {
+		fields = append(fields, order.FieldPaymentAmount)
 	}
 	if m.FieldCleared(order.FieldPayType) {
 		fields = append(fields, order.FieldPayType)
@@ -13305,6 +13406,9 @@ func (m *OrderMutation) ClearField(name string) error {
 	switch name {
 	case order.FieldTradeNo:
 		m.ClearTradeNo()
+		return nil
+	case order.FieldPaymentAmount:
+		m.ClearPaymentAmount()
 		return nil
 	case order.FieldPayType:
 		m.ClearPayType()
@@ -13340,6 +13444,9 @@ func (m *OrderMutation) ResetField(name string) error {
 		return nil
 	case order.FieldAmount:
 		m.ResetAmount()
+		return nil
+	case order.FieldPaymentAmount:
+		m.ResetPaymentAmount()
 		return nil
 	case order.FieldStatus:
 		m.ResetStatus()

@@ -64,6 +64,20 @@ func (_c *OrderCreate) SetAmount(v float64) *OrderCreate {
 	return _c
 }
 
+// SetPaymentAmount sets the "payment_amount" field.
+func (_c *OrderCreate) SetPaymentAmount(v float64) *OrderCreate {
+	_c.mutation.SetPaymentAmount(v)
+	return _c
+}
+
+// SetNillablePaymentAmount sets the "payment_amount" field if the given value is not nil.
+func (_c *OrderCreate) SetNillablePaymentAmount(v *float64) *OrderCreate {
+	if v != nil {
+		_c.SetPaymentAmount(*v)
+	}
+	return _c
+}
+
 // SetStatus sets the "status" field.
 func (_c *OrderCreate) SetStatus(v string) *OrderCreate {
 	_c.mutation.SetStatus(v)
@@ -333,6 +347,10 @@ func (_c *OrderCreate) createSpec() (*Order, *sqlgraph.CreateSpec) {
 		_spec.SetField(order.FieldAmount, field.TypeFloat64, value)
 		_node.Amount = value
 	}
+	if value, ok := _c.mutation.PaymentAmount(); ok {
+		_spec.SetField(order.FieldPaymentAmount, field.TypeFloat64, value)
+		_node.PaymentAmount = value
+	}
 	if value, ok := _c.mutation.Status(); ok {
 		_spec.SetField(order.FieldStatus, field.TypeString, value)
 		_node.Status = value
@@ -545,6 +563,30 @@ func (u *OrderUpsert) UpdateAmount() *OrderUpsert {
 // AddAmount adds v to the "amount" field.
 func (u *OrderUpsert) AddAmount(v float64) *OrderUpsert {
 	u.Add(order.FieldAmount, v)
+	return u
+}
+
+// SetPaymentAmount sets the "payment_amount" field.
+func (u *OrderUpsert) SetPaymentAmount(v float64) *OrderUpsert {
+	u.Set(order.FieldPaymentAmount, v)
+	return u
+}
+
+// UpdatePaymentAmount sets the "payment_amount" field to the value that was provided on create.
+func (u *OrderUpsert) UpdatePaymentAmount() *OrderUpsert {
+	u.SetExcluded(order.FieldPaymentAmount)
+	return u
+}
+
+// AddPaymentAmount adds v to the "payment_amount" field.
+func (u *OrderUpsert) AddPaymentAmount(v float64) *OrderUpsert {
+	u.Add(order.FieldPaymentAmount, v)
+	return u
+}
+
+// ClearPaymentAmount clears the value of the "payment_amount" field.
+func (u *OrderUpsert) ClearPaymentAmount() *OrderUpsert {
+	u.SetNull(order.FieldPaymentAmount)
 	return u
 }
 
@@ -770,6 +812,34 @@ func (u *OrderUpsertOne) AddAmount(v float64) *OrderUpsertOne {
 func (u *OrderUpsertOne) UpdateAmount() *OrderUpsertOne {
 	return u.Update(func(s *OrderUpsert) {
 		s.UpdateAmount()
+	})
+}
+
+// SetPaymentAmount sets the "payment_amount" field.
+func (u *OrderUpsertOne) SetPaymentAmount(v float64) *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.SetPaymentAmount(v)
+	})
+}
+
+// AddPaymentAmount adds v to the "payment_amount" field.
+func (u *OrderUpsertOne) AddPaymentAmount(v float64) *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.AddPaymentAmount(v)
+	})
+}
+
+// UpdatePaymentAmount sets the "payment_amount" field to the value that was provided on create.
+func (u *OrderUpsertOne) UpdatePaymentAmount() *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.UpdatePaymentAmount()
+	})
+}
+
+// ClearPaymentAmount clears the value of the "payment_amount" field.
+func (u *OrderUpsertOne) ClearPaymentAmount() *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.ClearPaymentAmount()
 	})
 }
 
@@ -1177,6 +1247,34 @@ func (u *OrderUpsertBulk) AddAmount(v float64) *OrderUpsertBulk {
 func (u *OrderUpsertBulk) UpdateAmount() *OrderUpsertBulk {
 	return u.Update(func(s *OrderUpsert) {
 		s.UpdateAmount()
+	})
+}
+
+// SetPaymentAmount sets the "payment_amount" field.
+func (u *OrderUpsertBulk) SetPaymentAmount(v float64) *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.SetPaymentAmount(v)
+	})
+}
+
+// AddPaymentAmount adds v to the "payment_amount" field.
+func (u *OrderUpsertBulk) AddPaymentAmount(v float64) *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.AddPaymentAmount(v)
+	})
+}
+
+// UpdatePaymentAmount sets the "payment_amount" field to the value that was provided on create.
+func (u *OrderUpsertBulk) UpdatePaymentAmount() *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.UpdatePaymentAmount()
+	})
+}
+
+// ClearPaymentAmount clears the value of the "payment_amount" field.
+func (u *OrderUpsertBulk) ClearPaymentAmount() *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.ClearPaymentAmount()
 	})
 }
 

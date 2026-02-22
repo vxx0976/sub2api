@@ -26,6 +26,7 @@ func (r *orderRepository) Create(ctx context.Context, o *service.Order) error {
 		SetUserID(o.UserID).
 		SetGroupID(o.GroupID).
 		SetAmount(o.Amount).
+		SetPaymentAmount(o.PaymentAmount).
 		SetStatus(o.Status)
 
 	if o.TradeNo != nil {
@@ -226,6 +227,34 @@ func (r *orderRepository) ListPending(ctx context.Context) ([]service.Order, err
 	return orderEntitiesToService(orders), nil
 }
 
+func (r *orderRepository) UpdatePaymentAmount(ctx context.Context, id int64, paymentAmount float64) error {
+	client := clientFromContext(ctx, r.client)
+	_, err := client.Order.UpdateOneID(id).
+		SetPaymentAmount(paymentAmount).
+		Save(ctx)
+	return translatePersistenceError(err, service.ErrOrderNotFound, nil)
+}
+
+func (r *orderRepository) Delete(ctx context.Context, id int64) error {
+	client := clientFromContext(ctx, r.client)
+	err := client.Order.DeleteOneID(id).Exec(ctx)
+	return translatePersistenceError(err, service.ErrOrderNotFound, nil)
+}
+
+func (r *orderRepository) MarkManualPaid(ctx context.Context, id int64) error {
+	client := clientFromContext(ctx, r.client)
+	now := time.Now()
+	tradeNo := "manual"
+	payType := "alipay"
+	_, err := client.Order.UpdateOneID(id).
+		SetStatus(service.OrderStatusPaid).
+		SetTradeNo(tradeNo).
+		SetPayType(payType).
+		SetPaidAt(now).
+		Save(ctx)
+	return translatePersistenceError(err, service.ErrOrderNotFound, nil)
+}
+
 func (r *orderRepository) BatchUpdateExpired(ctx context.Context) (int64, error) {
 	client := clientFromContext(ctx, r.client)
 	n, err := client.Order.Update().
@@ -250,6 +279,7 @@ func orderEntityToService(m *dbent.Order) *service.Order {
 		UserID:         m.UserID,
 		GroupID:        m.GroupID,
 		Amount:         m.Amount,
+		PaymentAmount:  m.PaymentAmount,
 		Status:         m.Status,
 		PayType:        m.PayType,
 		PaidAt:         m.PaidAt,

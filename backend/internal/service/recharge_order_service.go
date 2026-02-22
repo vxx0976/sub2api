@@ -48,14 +48,35 @@ func (s *RechargeOrderService) CreateRechargeOrder(ctx context.Context, userID i
 		return nil, ErrRechargeDisabled
 	}
 
-	// 2. 验证金额范围
-	if amount < config.MinAmount || amount > config.MaxAmount {
-		return nil, ErrInvalidRechargeAmount
+	// 2. 检查是否为 ¥1 特惠订单（所有用户可用一次）
+	var multiplier float64
+	var creditAmount float64
+	isFirstRecharge := false
+
+	const firstRechargePrice = 1.0
+	const firstRechargeCredit = 5.0
+
+	if amount == firstRechargePrice {
+		hasPaid, err := s.rechargeOrderRepo.HasPaidOrder(ctx, userID)
+		if err != nil {
+			return nil, fmt.Errorf("check paid orders: %w", err)
+		}
+		if !hasPaid {
+			isFirstRecharge = true
+			creditAmount = firstRechargeCredit
+			multiplier = firstRechargeCredit / firstRechargePrice
+		}
 	}
 
-	// 3. 计算倍率和到账金额
-	multiplier := s.calculateMultiplier(amount, config.Tiers)
-	creditAmount := amount * multiplier
+	if !isFirstRecharge {
+		// 验证金额范围
+		if amount < config.MinAmount || amount > config.MaxAmount {
+			return nil, ErrInvalidRechargeAmount
+		}
+		// 计算倍率和到账金额
+		multiplier = s.calculateMultiplier(amount, config.Tiers)
+		creditAmount = amount * multiplier
+	}
 
 	// 4. 生成订单号（加 R 前缀区分充值订单）
 	orderNo := fmt.Sprintf("R%s", generateRechargeOrderNo())
@@ -249,6 +270,51 @@ func (s *RechargeOrderService) GetRechargeOrders(ctx context.Context, userID int
 // GetAllRechargeOrders 获取所有充值订单（管理员）
 func (s *RechargeOrderService) GetAllRechargeOrders(ctx context.Context, params pagination.PaginationParams, keyword string, status string) ([]RechargeOrder, *pagination.PaginationResult, error) {
 	return s.rechargeOrderRepo.ListAll(ctx, params, keyword, status)
+}
+
+// DeleteRechargeOrder deletes a pending recharge order (admin only)
+func (s *RechargeOrderService) DeleteRechargeOrder(ctx context.Context, id int64) error {
+	order, err := s.rechargeOrderRepo.GetByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	if order.Status != RechargeOrderStatusPending {
+		return ErrRechargeOrderNotPending
+	}
+	return s.rechargeOrderRepo.Delete(ctx, id)
+}
+
+// AdminMarkRechargeOrderPaid marks a pending recharge order as paid manually (admin only, no business logic triggered)
+func (s *RechargeOrderService) AdminMarkRechargeOrderPaid(ctx context.Context, id int64) error {
+	order, err := s.rechargeOrderRepo.GetByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	if order.Status != RechargeOrderStatusPending {
+		return ErrRechargeOrderNotPending
+	}
+	return s.rechargeOrderRepo.MarkManualPaid(ctx, id)
+}
+
+// FirstRechargeStatus 首充资格状态
+type FirstRechargeStatus struct {
+	Eligible bool    `json:"eligible"`
+	Price    float64 `json:"price"`
+	Credit   float64 `json:"credit"`
+}
+
+// CheckFirstRechargeEligibility 检查用户 ¥1 特惠资格（所有用户可用一次）
+func (s *RechargeOrderService) CheckFirstRechargeEligibility(ctx context.Context, userID int64) (*FirstRechargeStatus, error) {
+	hasPaid, err := s.rechargeOrderRepo.HasPaidOrder(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("check paid orders: %w", err)
+	}
+
+	return &FirstRechargeStatus{
+		Eligible: !hasPaid,
+		Price:    1.0,
+		Credit:   5.0,
+	}, nil
 }
 
 // generateRechargeOrderNo generates a unique recharge order number

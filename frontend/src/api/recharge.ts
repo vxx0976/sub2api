@@ -16,6 +16,12 @@ export interface RechargeConfig {
   tiers: RechargeTier[]
 }
 
+export interface FirstRechargeStatus {
+  eligible: boolean
+  price: number
+  credit: number
+}
+
 export interface RechargeOrder {
   id: number
   order_no: string
@@ -59,6 +65,14 @@ export interface CreateRechargeOrderResponse {
  */
 export async function getRechargeConfig(): Promise<RechargeConfig> {
   const response = await apiClient.get<RechargeConfig>('/recharge/config')
+  return response.data
+}
+
+/**
+ * 获取首充特惠状态
+ */
+export async function getFirstRechargeStatus(): Promise<FirstRechargeStatus> {
+  const response = await apiClient.get<FirstRechargeStatus>('/recharge/first-recharge-status')
   return response.data
 }
 
@@ -137,14 +151,31 @@ export async function getAllRechargeOrders(
   return response.data
 }
 
+/**
+ * 删除待支付充值订单（管理员）
+ */
+export async function deleteRechargeOrder(id: number): Promise<void> {
+  await apiClient.delete(`/admin/recharge/orders/${id}`)
+}
+
+/**
+ * 将待支付充值订单标记为已支付（管理员）
+ */
+export async function markRechargeOrderPaid(id: number): Promise<void> {
+  await apiClient.post(`/admin/recharge/orders/${id}/mark-paid`)
+}
+
 export const rechargeAPI = {
   getConfig: getRechargeConfig,
+  getFirstRechargeStatus: getFirstRechargeStatus,
   createOrder: createRechargeOrder,
   getOrders: getRechargeOrders,
   repayOrder: repayRechargeOrder,
   getConfigAdmin: getRechargeConfigAdmin,
   updateConfig: updateRechargeConfig,
-  getAllOrders: getAllRechargeOrders
+  getAllOrders: getAllRechargeOrders,
+  deleteOrder: deleteRechargeOrder,
+  markOrderPaid: markRechargeOrderPaid
 }
 
 export default rechargeAPI

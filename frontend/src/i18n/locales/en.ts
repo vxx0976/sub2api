@@ -520,7 +520,8 @@ export default {
     resellerSites: 'Site Management',
     resellerRedeem: 'Redeem Codes',
     resellerAnnouncements: 'Announcements',
-    resellerSettings: 'Settings'
+    resellerSettings: 'Settings',
+    recharge: 'Recharge'
   },
 
   // Docs
@@ -2011,7 +2012,15 @@ export default {
         paid: 'Paid',
         expired: 'Expired',
         refunded: 'Refunded'
-      }
+      },
+      deleteOrder: 'Delete Order',
+      deleteOrderConfirm: 'Are you sure you want to delete this pending order?',
+      markAsPaid: 'Mark as Paid',
+      markAsPaidConfirm: 'Are you sure you want to mark this order as paid? (No renewal will be triggered)',
+      deleteSuccess: 'Order deleted',
+      markPaidSuccess: 'Order marked as paid',
+      deleteFailed: 'Failed to delete order',
+      markPaidFailed: 'Failed to mark order as paid'
     },
 
     // Referrals Management
@@ -4639,6 +4648,26 @@ export default {
   // Recharge
   recharge: {
     title: 'Recharge Account',
+    pageTitle: 'Recharge',
+    pageSubtitle: 'Select an amount to top up your balance',
+    selectAmount: 'Recharge Amount',
+    customAmount: 'Custom Amount',
+    amountRangeHint: 'Amount range: ${min} - ${max}',
+    createOrder: 'Create Order',
+    notesTitle: 'Important Notes',
+    noteAlipay: 'Please use Alipay to scan the QR code to complete the payment',
+    noteAmountMatch: 'The payment amount must exactly match the displayed amount for automatic processing',
+    noteAutoCredit: 'After successful payment, the balance will be credited within 1-2 minutes',
+    noteContact: 'If you encounter any issues, please contact support with your order number',
+    youWillReceive: 'You will receive',
+    payAmount: 'Amount to pay',
+    firstRecharge: {
+      title: 'First Recharge Special',
+      description: 'First recharge only ¥1, get $5 balance',
+      button: 'Get it now',
+      badge: 'Limited',
+      limitOnce: 'One-time per user'
+    },
     rechargeNow: 'Recharge Now',
     paymentClosedHint: 'Online payment is not available. Please contact support to recharge.',
     rechargeAmount: 'Amount',

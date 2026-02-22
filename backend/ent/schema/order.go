@@ -42,6 +42,10 @@ func (Order) Fields() []ent.Field {
 		field.Float("amount").
 			SchemaType(map[string]string{dialect.Postgres: "decimal(10,2)"}).
 			Comment("订单金额"),
+		field.Float("payment_amount").
+			SchemaType(map[string]string{dialect.Postgres: "decimal(10,2)"}).
+			Optional().
+			Comment("实际支付金额（唯一金额，用于匹配账单）"),
 		field.String("status").
 			MaxLen(20).
 			Default("pending").

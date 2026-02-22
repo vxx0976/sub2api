@@ -11,7 +11,7 @@
         >
           <Icon name="refresh" size="md" :class="loading ? 'animate-spin' : ''" />
         </button>
-        <button @click="showCreateModal = true" class="btn btn-primary" data-tour="keys-create-btn">
+        <button @click="openCreateModal" class="btn btn-primary" data-tour="keys-create-btn">
           <Icon name="plus" size="md" class="mr-2" />
           {{ t('keys.createKey') }}
         </button>
@@ -870,6 +870,15 @@ const handlePageSizeChange = (pageSize: number) => {
   pagination.value.page_size = pageSize
   pagination.value.page = 1
   loadApiKeys()
+}
+
+const openCreateModal = () => {
+  // Default to the first standard (paygo) group
+  const paygoGroup = groups.value.find(g => g.subscription_type === 'standard')
+  if (paygoGroup) {
+    formData.value.group_id = paygoGroup.id
+  }
+  showCreateModal.value = true
 }
 
 const editKey = (key: ApiKey) => {

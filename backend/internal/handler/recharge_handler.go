@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"strconv"
+
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
 	"github.com/Wei-Shaw/sub2api/internal/server/middleware"
@@ -186,6 +188,26 @@ func (h *RechargeHandler) UpdateRechargeConfig(c *gin.Context) {
 	response.Success(c, config)
 }
 
+// GetFirstRechargeStatus 获取首充特惠资格状态
+func (h *RechargeHandler) GetFirstRechargeStatus(c *gin.Context) {
+	subject, ok := middleware.GetAuthSubjectFromContext(c)
+	if !ok {
+		response.Unauthorized(c, "User not found in context")
+		return
+	}
+
+	status, err := h.rechargeOrderService.CheckFirstRechargeEligibility(
+		c.Request.Context(),
+		subject.UserID,
+	)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+
+	response.Success(c, status)
+}
+
 // GetAllRechargeOrders 获取所有充值订单（管理员）
 func (h *RechargeHandler) GetAllRechargeOrders(c *gin.Context) {
 	page, pageSize := response.ParsePagination(c)
@@ -211,4 +233,38 @@ func (h *RechargeHandler) GetAllRechargeOrders(c *gin.Context) {
 	}
 
 	response.Paginated(c, orders, paginationResult.Total, page, pageSize)
+}
+
+// DeleteRechargeOrder 删除待支付充值订单（管理员）
+func (h *RechargeHandler) DeleteRechargeOrder(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		response.BadRequest(c, "invalid order id")
+		return
+	}
+
+	if err := h.rechargeOrderService.DeleteRechargeOrder(c.Request.Context(), id); err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+
+	response.Success(c, nil)
+}
+
+// MarkRechargeOrderPaid 将待支付充值订单标记为已支付（管理员，不触发充值逻辑）
+func (h *RechargeHandler) MarkRechargeOrderPaid(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		response.BadRequest(c, "invalid order id")
+		return
+	}
+
+	if err := h.rechargeOrderService.AdminMarkRechargeOrderPaid(c.Request.Context(), id); err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+
+	response.Success(c, nil)
 }

@@ -72,7 +72,7 @@ func (s *OrderService) CreateOrder(ctx context.Context, input *CreateOrderInput)
 		return nil, err
 	}
 
-	if !group.IsPurchasable || group.Price == nil || *group.Price <= 0 {
+	if group.Price == nil || *group.Price <= 0 {
 		return nil, ErrGroupNotPurchasable
 	}
 
@@ -82,24 +82,26 @@ func (s *OrderService) CreateOrder(ctx context.Context, input *CreateOrderInput)
 	// Calculate expiration time (30 minutes)
 	expiredAt := time.Now().Add(30 * time.Minute)
 
-	// Create order
-	order := &Order{
-		OrderNo:   orderNo,
-		UserID:    input.UserID,
-		GroupID:   input.GroupID,
-		Amount:    *group.Price,
-		Status:    OrderStatusPending,
-		ExpiredAt: &expiredAt,
-	}
-
-	if err := s.orderRepo.Create(ctx, order); err != nil {
-		return nil, fmt.Errorf("create order: %w", err)
-	}
-
-	// Generate payment info (QR code)
+	// Generate payment info first to get the unique payment amount
 	payInfo, err := s.alipayPayment.GeneratePaymentInfo(orderNo, *group.Price)
 	if err != nil {
 		return nil, fmt.Errorf("generate payment info: %w", err)
+	}
+
+	// Create order with the actual payment amount stored for later matching
+	order := &Order{
+		OrderNo:       orderNo,
+		UserID:        input.UserID,
+		GroupID:       input.GroupID,
+		Amount:        *group.Price,
+		PaymentAmount: payInfo.PaymentAmount,
+		Status:        OrderStatusPending,
+		ExpiredAt:     &expiredAt,
+	}
+
+	if err := s.orderRepo.Create(ctx, order); err != nil {
+		s.alipayPayment.ReleaseAmount(payInfo.PaymentAmount)
+		return nil, fmt.Errorf("create order: %w", err)
 	}
 
 	qrCodeBase64, err := payment.GenerateQRCodeBase64(payInfo.QRCodeURL, 256)
@@ -147,14 +149,27 @@ func (s *OrderService) ConfirmOrderPaid(ctx context.Context, orderNo string, tra
 		validityDays = 30 // Default to 30 days
 	}
 
-	sub, isNewSubscription, err := s.subscriptionService.AssignOrExtendSubscription(ctx, &AssignSubscriptionInput{
-		UserID:       order.UserID,
-		GroupID:      order.GroupID,
-		ValidityDays: validityDays,
-		Notes:        fmt.Sprintf("订单支付: %s", order.OrderNo),
-	})
-	if err != nil {
-		return fmt.Errorf("assign subscription: %w", err)
+	var sub *UserSubscription
+	var isNewSubscription bool
+
+	// Idempotency: if subscription_id is already set, the subscription was already
+	// extended in a previous attempt (partial failure). Skip re-extending.
+	if order.SubscriptionID != nil {
+		sub, err = s.subscriptionService.GetByID(ctx, *order.SubscriptionID)
+		if err != nil {
+			return fmt.Errorf("get subscription: %w", err)
+		}
+		isNewSubscription = false
+	} else {
+		sub, isNewSubscription, err = s.subscriptionService.AssignOrExtendSubscription(ctx, &AssignSubscriptionInput{
+			UserID:       order.UserID,
+			GroupID:      order.GroupID,
+			ValidityDays: validityDays,
+			Notes:        fmt.Sprintf("订单支付: %s", order.OrderNo),
+		})
+		if err != nil {
+			return fmt.Errorf("assign subscription: %w", err)
+		}
 	}
 
 	// Update order status
@@ -206,12 +221,18 @@ func (s *OrderService) GetPendingOrdersForMonitor(ctx context.Context) ([]paymen
 
 	result := make([]payment.PendingOrder, 0, len(orders))
 	for _, o := range orders {
+		hasPaymentAmount := o.PaymentAmount > 0
+		paymentAmount := o.PaymentAmount
+		if !hasPaymentAmount {
+			paymentAmount = o.Amount
+		}
 		result = append(result, payment.PendingOrder{
-			OrderNo:       o.OrderNo,
-			Amount:        o.Amount,
-			PaymentAmount: o.Amount,
-			CreatedAt:     o.CreatedAt,
-			ExpiredAt:     o.ExpiredAt,
+			OrderNo:          o.OrderNo,
+			Amount:           o.Amount,
+			PaymentAmount:    paymentAmount,
+			HasPaymentAmount: hasPaymentAmount,
+			CreatedAt:        o.CreatedAt,
+			ExpiredAt:        o.ExpiredAt,
 		})
 	}
 	return result, nil
@@ -242,6 +263,30 @@ func (s *OrderService) GetPurchasablePlans(ctx context.Context) ([]Group, error)
 // GetPurchasablePlansForReseller retrieves purchasable plans owned by the given reseller
 func (s *OrderService) GetPurchasablePlansForReseller(ctx context.Context, ownerID int64) ([]Group, error) {
 	return s.groupRepo.ListPurchasableByOwnerID(ctx, ownerID)
+}
+
+// DeleteOrder deletes a pending order (admin only)
+func (s *OrderService) DeleteOrder(ctx context.Context, id int64) error {
+	order, err := s.orderRepo.GetByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	if order.Status != OrderStatusPending {
+		return ErrOrderNotPending
+	}
+	return s.orderRepo.Delete(ctx, id)
+}
+
+// AdminMarkOrderPaid marks a pending order as paid manually (admin only, no business logic triggered)
+func (s *OrderService) AdminMarkOrderPaid(ctx context.Context, id int64) error {
+	order, err := s.orderRepo.GetByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	if order.Status != OrderStatusPending {
+		return ErrOrderNotPending
+	}
+	return s.orderRepo.MarkManualPaid(ctx, id)
 }
 
 // RepayOrder generates a new payment QR code for an existing pending order
@@ -277,10 +322,21 @@ func (s *OrderService) RepayOrder(ctx context.Context, userID int64, orderNo str
 		return nil, ErrOrderExpired
 	}
 
+	// Release old payment amount before allocating a new one
+	if order.PaymentAmount > 0 {
+		s.alipayPayment.ReleaseAmount(order.PaymentAmount)
+	}
+
 	// Generate payment info
 	payInfo, err := s.alipayPayment.GeneratePaymentInfo(order.OrderNo, order.Amount)
 	if err != nil {
 		return nil, fmt.Errorf("generate payment info: %w", err)
+	}
+
+	// Persist the new payment_amount so the monitor can match correctly
+	if err := s.orderRepo.UpdatePaymentAmount(ctx, order.ID, payInfo.PaymentAmount); err != nil {
+		s.alipayPayment.ReleaseAmount(payInfo.PaymentAmount)
+		return nil, fmt.Errorf("update payment amount: %w", err)
 	}
 
 	qrCodeBase64, err := payment.GenerateQRCodeBase64(payInfo.QRCodeURL, 256)

@@ -66,8 +66,18 @@ export async function list(
   return data
 }
 
+export async function deleteOrder(id: number): Promise<void> {
+  await apiClient.delete(`/admin/orders/${id}`)
+}
+
+export async function markOrderPaid(id: number): Promise<void> {
+  await apiClient.post(`/admin/orders/${id}/mark-paid`)
+}
+
 export const ordersAPI = {
-  list
+  list,
+  deleteOrder,
+  markOrderPaid
 }
 
 export default ordersAPI

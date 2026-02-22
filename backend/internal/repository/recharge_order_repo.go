@@ -193,6 +193,41 @@ func (r *rechargeOrderRepository) ListPending(ctx context.Context) ([]service.Re
 	return rechargeOrderEntitiesToService(orders), nil
 }
 
+func (r *rechargeOrderRepository) HasPaidOrder(ctx context.Context, userID int64) (bool, error) {
+	client := clientFromContext(ctx, r.client)
+	count, err := client.RechargeOrder.Query().
+		Where(
+			rechargeorder.UserIDEQ(userID),
+			rechargeorder.StatusEQ(service.RechargeOrderStatusPaid),
+		).
+		Limit(1).
+		Count(ctx)
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
+func (r *rechargeOrderRepository) Delete(ctx context.Context, id int64) error {
+	client := clientFromContext(ctx, r.client)
+	err := client.RechargeOrder.DeleteOneID(id).Exec(ctx)
+	return translatePersistenceError(err, service.ErrRechargeOrderNotFound, nil)
+}
+
+func (r *rechargeOrderRepository) MarkManualPaid(ctx context.Context, id int64) error {
+	client := clientFromContext(ctx, r.client)
+	now := time.Now()
+	tradeNo := "manual"
+	payType := "alipay"
+	_, err := client.RechargeOrder.UpdateOneID(id).
+		SetStatus(service.RechargeOrderStatusPaid).
+		SetTradeNo(tradeNo).
+		SetPayType(payType).
+		SetPaidAt(now).
+		Save(ctx)
+	return translatePersistenceError(err, service.ErrRechargeOrderNotFound, nil)
+}
+
 func rechargeOrderEntityToService(m *dbent.RechargeOrder) *service.RechargeOrder {
 	if m == nil {
 		return nil

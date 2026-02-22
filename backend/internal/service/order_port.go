@@ -40,4 +40,13 @@ type OrderRepository interface {
 
 	// BatchUpdateExpired updates expired pending orders
 	BatchUpdateExpired(ctx context.Context) (int64, error)
+
+	// UpdatePaymentAmount updates the payment_amount for a pending order
+	UpdatePaymentAmount(ctx context.Context, id int64, paymentAmount float64) error
+
+	// Delete deletes a pending order
+	Delete(ctx context.Context, id int64) error
+
+	// MarkManualPaid marks an order as paid manually (without triggering business logic)
+	MarkManualPaid(ctx context.Context, id int64) error
 }

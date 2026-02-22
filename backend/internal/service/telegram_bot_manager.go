@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"sync"
-	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -261,10 +260,10 @@ func ProvideTelegramBotManager(
 	resellerSvc *ResellerService,
 ) *TelegramBotManager {
 	mgr := NewTelegramBotManager(settingRepo, apiKeyRepo, resellerSvc)
-	// Delay startup slightly to let other services initialize
-	go func() {
-		time.Sleep(3 * time.Second)
-		mgr.Start()
-	}()
+	// TG Bot temporarily disabled
+	// go func() {
+	// 	time.Sleep(3 * time.Second)
+	// 	mgr.Start()
+	// }()
 	return mgr
 }

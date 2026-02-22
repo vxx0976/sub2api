@@ -31,6 +31,8 @@ type Order struct {
 	GroupID int64 `json:"group_id,omitempty"`
 	// 订单金额
 	Amount float64 `json:"amount,omitempty"`
+	// 实际支付金额（唯一金额，用于匹配账单）
+	PaymentAmount float64 `json:"payment_amount,omitempty"`
 	// 订单状态: pending/paid/expired/refunded
 	Status string `json:"status,omitempty"`
 	// 支付方式: alipay/wxpay
@@ -115,7 +117,7 @@ func (*Order) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case order.FieldAmount:
+		case order.FieldAmount, order.FieldPaymentAmount:
 			values[i] = new(sql.NullFloat64)
 		case order.FieldID, order.FieldUserID, order.FieldGroupID, order.FieldSubscriptionID:
 			values[i] = new(sql.NullInt64)
@@ -174,6 +176,12 @@ func (_m *Order) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field amount", values[i])
 			} else if value.Valid {
 				_m.Amount = value.Float64
+			}
+		case order.FieldPaymentAmount:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field payment_amount", values[i])
+			} else if value.Valid {
+				_m.PaymentAmount = value.Float64
 			}
 		case order.FieldStatus:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -293,6 +301,9 @@ func (_m *Order) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("amount=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Amount))
+	builder.WriteString(", ")
+	builder.WriteString("payment_amount=")
+	builder.WriteString(fmt.Sprintf("%v", _m.PaymentAmount))
 	builder.WriteString(", ")
 	builder.WriteString("status=")
 	builder.WriteString(_m.Status)

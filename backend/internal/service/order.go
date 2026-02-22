@@ -7,10 +7,11 @@ import (
 )
 
 var (
-	ErrOrderNotFound      = infraerrors.NotFound("ORDER_NOT_FOUND", "order not found")
-	ErrOrderAlreadyPaid   = infraerrors.Conflict("ORDER_ALREADY_PAID", "order has already been paid")
-	ErrOrderExpired       = infraerrors.BadRequest("ORDER_EXPIRED", "order has expired")
-	ErrPaymentDisabled    = infraerrors.BadRequest("PAYMENT_DISABLED", "payment feature is disabled")
+	ErrOrderNotFound       = infraerrors.NotFound("ORDER_NOT_FOUND", "order not found")
+	ErrOrderAlreadyPaid    = infraerrors.Conflict("ORDER_ALREADY_PAID", "order has already been paid")
+	ErrOrderExpired        = infraerrors.BadRequest("ORDER_EXPIRED", "order has expired")
+	ErrOrderNotPending     = infraerrors.BadRequest("ORDER_NOT_PENDING", "order is not in pending status")
+	ErrPaymentDisabled     = infraerrors.BadRequest("PAYMENT_DISABLED", "payment feature is disabled")
 	ErrGroupNotPurchasable = infraerrors.BadRequest("GROUP_NOT_PURCHASABLE", "group is not available for purchase")
 )
 
@@ -30,6 +31,7 @@ type Order struct {
 	UserID         int64      `json:"user_id"`
 	GroupID        int64      `json:"group_id"`
 	Amount         float64    `json:"amount"`
+	PaymentAmount  float64    `json:"payment_amount"`
 	Status         string     `json:"status"`
 	PayType        *string    `json:"pay_type,omitempty"`
 	PaidAt         *time.Time `json:"paid_at,omitempty"`

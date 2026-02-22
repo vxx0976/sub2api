@@ -494,6 +494,7 @@ var (
 		{Name: "order_no", Type: field.TypeString, Unique: true, Size: 64},
 		{Name: "trade_no", Type: field.TypeString, Nullable: true, Size: 64},
 		{Name: "amount", Type: field.TypeFloat64, SchemaType: map[string]string{"postgres": "decimal(10,2)"}},
+		{Name: "payment_amount", Type: field.TypeFloat64, Nullable: true, SchemaType: map[string]string{"postgres": "decimal(10,2)"}},
 		{Name: "status", Type: field.TypeString, Size: 20, Default: "pending"},
 		{Name: "pay_type", Type: field.TypeString, Nullable: true, Size: 20},
 		{Name: "paid_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
@@ -512,19 +513,19 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "orders_groups_orders",
-				Columns:    []*schema.Column{OrdersColumns[10]},
+				Columns:    []*schema.Column{OrdersColumns[11]},
 				RefColumns: []*schema.Column{GroupsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "orders_users_orders",
-				Columns:    []*schema.Column{OrdersColumns[11]},
+				Columns:    []*schema.Column{OrdersColumns[12]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "orders_user_subscriptions_orders",
-				Columns:    []*schema.Column{OrdersColumns[12]},
+				Columns:    []*schema.Column{OrdersColumns[13]},
 				RefColumns: []*schema.Column{UserSubscriptionsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -533,17 +534,17 @@ var (
 			{
 				Name:    "order_user_id",
 				Unique:  false,
-				Columns: []*schema.Column{OrdersColumns[11]},
+				Columns: []*schema.Column{OrdersColumns[12]},
 			},
 			{
 				Name:    "order_group_id",
 				Unique:  false,
-				Columns: []*schema.Column{OrdersColumns[10]},
+				Columns: []*schema.Column{OrdersColumns[11]},
 			},
 			{
 				Name:    "order_status",
 				Unique:  false,
-				Columns: []*schema.Column{OrdersColumns[4]},
+				Columns: []*schema.Column{OrdersColumns[5]},
 			},
 			{
 				Name:    "order_order_no",
@@ -553,7 +554,7 @@ var (
 			{
 				Name:    "order_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{OrdersColumns[7]},
+				Columns: []*schema.Column{OrdersColumns[8]},
 			},
 		},
 	}

@@ -16,11 +16,14 @@ const (
 
 // 错误定义
 var (
-	ErrRechargeDisabled      = infraerrors.BadRequest("RECHARGE_DISABLED", "recharge feature is disabled")
-	ErrInvalidRechargeAmount = infraerrors.BadRequest("INVALID_RECHARGE_AMOUNT", "recharge amount must be between min and max")
-	ErrRechargeOrderNotFound = infraerrors.NotFound("RECHARGE_ORDER_NOT_FOUND", "recharge order not found")
-	ErrRechargeOrderExpired  = infraerrors.BadRequest("RECHARGE_ORDER_EXPIRED", "recharge order has expired")
-	ErrRechargeOrderPaid     = infraerrors.Conflict("RECHARGE_ORDER_PAID", "recharge order has already been paid")
+	ErrRechargeDisabled           = infraerrors.BadRequest("RECHARGE_DISABLED", "recharge feature is disabled")
+	ErrInvalidRechargeAmount      = infraerrors.BadRequest("INVALID_RECHARGE_AMOUNT", "recharge amount must be between min and max")
+	ErrRechargeOrderNotFound      = infraerrors.NotFound("RECHARGE_ORDER_NOT_FOUND", "recharge order not found")
+	ErrRechargeOrderExpired       = infraerrors.BadRequest("RECHARGE_ORDER_EXPIRED", "recharge order has expired")
+	ErrRechargeOrderPaid          = infraerrors.Conflict("RECHARGE_ORDER_PAID", "recharge order has already been paid")
+	ErrRechargeOrderNotPending    = infraerrors.BadRequest("RECHARGE_ORDER_NOT_PENDING", "recharge order is not in pending status")
+	ErrFirstRechargeAlreadyUsed   = infraerrors.Conflict("FIRST_RECHARGE_ALREADY_USED", "first recharge offer has already been used")
+	ErrFirstRechargeNotAvailable  = infraerrors.BadRequest("FIRST_RECHARGE_NOT_AVAILABLE", "first recharge offer is not available")
 )
 
 // 充值订单模型

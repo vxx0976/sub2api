@@ -279,6 +279,17 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/recharge',
+    name: 'Recharge',
+    component: () => import('@/views/user/RechargeView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: false,
+      title: 'Recharge',
+      titleKey: 'recharge.pageTitle',
+    }
+  },
+  {
     path: '/orders',
     name: 'Orders',
     component: () => import('@/views/user/OrdersView.vue'),
@@ -694,7 +705,7 @@ router.beforeEach((to, _from, next) => {
 
   // On reseller domains, redirect subscription-related routes (except /plans which handles it internally)
   if (appStore.isResellerDomain) {
-    const subscriptionPaths = ['/subscriptions', '/orders', '/purchase']
+    const subscriptionPaths = ['/subscriptions', '/orders', '/purchase', '/recharge']
     if (subscriptionPaths.includes(to.path)) {
       next('/console-home')
       return

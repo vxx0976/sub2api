@@ -268,7 +268,7 @@ const config = ref<RechargeConfig>({
   min_amount: 10,
   max_amount: 10000,
   usd_cny_rate: 7.0,
-  tiers: []
+  tiers: [],
 })
 
 const originalConfig = ref<RechargeConfig | null>(null)

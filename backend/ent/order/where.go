@@ -80,6 +80,11 @@ func Amount(v float64) predicate.Order {
 	return predicate.Order(sql.FieldEQ(FieldAmount, v))
 }
 
+// PaymentAmount applies equality check predicate on the "payment_amount" field. It's identical to PaymentAmountEQ.
+func PaymentAmount(v float64) predicate.Order {
+	return predicate.Order(sql.FieldEQ(FieldPaymentAmount, v))
+}
+
 // Status applies equality check predicate on the "status" field. It's identical to StatusEQ.
 func Status(v string) predicate.Order {
 	return predicate.Order(sql.FieldEQ(FieldStatus, v))
@@ -333,6 +338,56 @@ func AmountLT(v float64) predicate.Order {
 // AmountLTE applies the LTE predicate on the "amount" field.
 func AmountLTE(v float64) predicate.Order {
 	return predicate.Order(sql.FieldLTE(FieldAmount, v))
+}
+
+// PaymentAmountEQ applies the EQ predicate on the "payment_amount" field.
+func PaymentAmountEQ(v float64) predicate.Order {
+	return predicate.Order(sql.FieldEQ(FieldPaymentAmount, v))
+}
+
+// PaymentAmountNEQ applies the NEQ predicate on the "payment_amount" field.
+func PaymentAmountNEQ(v float64) predicate.Order {
+	return predicate.Order(sql.FieldNEQ(FieldPaymentAmount, v))
+}
+
+// PaymentAmountIn applies the In predicate on the "payment_amount" field.
+func PaymentAmountIn(vs ...float64) predicate.Order {
+	return predicate.Order(sql.FieldIn(FieldPaymentAmount, vs...))
+}
+
+// PaymentAmountNotIn applies the NotIn predicate on the "payment_amount" field.
+func PaymentAmountNotIn(vs ...float64) predicate.Order {
+	return predicate.Order(sql.FieldNotIn(FieldPaymentAmount, vs...))
+}
+
+// PaymentAmountGT applies the GT predicate on the "payment_amount" field.
+func PaymentAmountGT(v float64) predicate.Order {
+	return predicate.Order(sql.FieldGT(FieldPaymentAmount, v))
+}
+
+// PaymentAmountGTE applies the GTE predicate on the "payment_amount" field.
+func PaymentAmountGTE(v float64) predicate.Order {
+	return predicate.Order(sql.FieldGTE(FieldPaymentAmount, v))
+}
+
+// PaymentAmountLT applies the LT predicate on the "payment_amount" field.
+func PaymentAmountLT(v float64) predicate.Order {
+	return predicate.Order(sql.FieldLT(FieldPaymentAmount, v))
+}
+
+// PaymentAmountLTE applies the LTE predicate on the "payment_amount" field.
+func PaymentAmountLTE(v float64) predicate.Order {
+	return predicate.Order(sql.FieldLTE(FieldPaymentAmount, v))
+}
+
+// PaymentAmountIsNil applies the IsNil predicate on the "payment_amount" field.
+func PaymentAmountIsNil() predicate.Order {
+	return predicate.Order(sql.FieldIsNull(FieldPaymentAmount))
+}
+
+// PaymentAmountNotNil applies the NotNil predicate on the "payment_amount" field.
+func PaymentAmountNotNil() predicate.Order {
+	return predicate.Order(sql.FieldNotNull(FieldPaymentAmount))
 }
 
 // StatusEQ applies the EQ predicate on the "status" field.

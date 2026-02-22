@@ -24,6 +24,8 @@ const (
 	FieldGroupID = "group_id"
 	// FieldAmount holds the string denoting the amount field in the database.
 	FieldAmount = "amount"
+	// FieldPaymentAmount holds the string denoting the payment_amount field in the database.
+	FieldPaymentAmount = "payment_amount"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
 	// FieldPayType holds the string denoting the pay_type field in the database.
@@ -86,6 +88,7 @@ var Columns = []string{
 	FieldUserID,
 	FieldGroupID,
 	FieldAmount,
+	FieldPaymentAmount,
 	FieldStatus,
 	FieldPayType,
 	FieldPaidAt,
@@ -155,6 +158,11 @@ func ByGroupID(opts ...sql.OrderTermOption) OrderOption {
 // ByAmount orders the results by the amount field.
 func ByAmount(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldAmount, opts...).ToFunc()
+}
+
+// ByPaymentAmount orders the results by the payment_amount field.
+func ByPaymentAmount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPaymentAmount, opts...).ToFunc()
 }
 
 // ByStatus orders the results by the status field.

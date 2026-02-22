@@ -8,17 +8,6 @@
             <!-- Tabs -->
             <div class="flex rounded-lg bg-gray-100 p-1 dark:bg-dark-700">
               <button
-                @click="activeTab = 'subscription'"
-                :class="[
-                  'px-4 py-1.5 text-sm font-medium rounded-md transition-colors',
-                  activeTab === 'subscription'
-                    ? 'bg-white text-primary-600 shadow dark:bg-dark-600 dark:text-primary-400'
-                    : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
-                ]"
-              >
-                {{ t('admin.orders.tabs.subscription') }}
-              </button>
-              <button
                 @click="activeTab = 'recharge'"
                 :class="[
                   'px-4 py-1.5 text-sm font-medium rounded-md transition-colors',
@@ -28,6 +17,17 @@
                 ]"
               >
                 {{ t('admin.orders.tabs.recharge') }}
+              </button>
+              <button
+                @click="activeTab = 'subscription'"
+                :class="[
+                  'px-4 py-1.5 text-sm font-medium rounded-md transition-colors',
+                  activeTab === 'subscription'
+                    ? 'bg-white text-primary-600 shadow dark:bg-dark-600 dark:text-primary-400'
+                    : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
+                ]"
+              >
+                {{ t('admin.orders.tabs.subscription') }}
               </button>
             </div>
 
@@ -143,6 +143,25 @@
             <span v-else class="text-sm text-gray-400 dark:text-dark-500">-</span>
           </template>
 
+          <template #cell-actions="{ row }">
+            <div v-if="row.status === 'pending'" class="flex items-center gap-1">
+              <button
+                @click="handleMarkOrderPaid(row)"
+                class="rounded p-1 text-green-600 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-900/20"
+                :title="t('admin.orders.markAsPaid')"
+              >
+                <Icon name="check" size="sm" />
+              </button>
+              <button
+                @click="handleDeleteOrder(row)"
+                class="rounded p-1 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
+                :title="t('admin.orders.deleteOrder')"
+              >
+                <Icon name="trash" size="sm" />
+              </button>
+            </div>
+          </template>
+
           <template #empty>
             <EmptyState
               :title="t('admin.orders.noOrdersYet')"
@@ -241,6 +260,25 @@
             </div>
           </template>
 
+          <template #cell-actions="{ row }">
+            <div v-if="row.status === 'pending'" class="flex items-center gap-1">
+              <button
+                @click="handleMarkRechargeOrderPaid(row)"
+                class="rounded p-1 text-green-600 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-900/20"
+                :title="t('admin.orders.markAsPaid')"
+              >
+                <Icon name="check" size="sm" />
+              </button>
+              <button
+                @click="handleDeleteRechargeOrder(row)"
+                class="rounded p-1 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
+                :title="t('admin.orders.deleteOrder')"
+              >
+                <Icon name="trash" size="sm" />
+              </button>
+            </div>
+          </template>
+
           <template #empty>
             <EmptyState
               :title="t('admin.rechargeOrders.noOrders')"
@@ -264,6 +302,38 @@
     </TablePageLayout>
 
   </AppLayout>
+
+  <!-- Confirm Dialog -->
+  <div
+    v-if="confirmDialog.visible"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+    @click.self="confirmDialog.visible = false"
+  >
+    <div class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl dark:bg-dark-800">
+      <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
+        {{ confirmDialog.title }}
+      </h3>
+      <p class="mb-6 text-sm text-gray-600 dark:text-gray-400">
+        {{ confirmDialog.message }}
+      </p>
+      <div class="flex justify-end gap-3">
+        <button
+          @click="confirmDialog.visible = false"
+          class="btn btn-secondary"
+          :disabled="actionLoading"
+        >
+          {{ t('common.cancel') }}
+        </button>
+        <button
+          @click="confirmDialog.onConfirm()"
+          class="btn btn-danger"
+          :disabled="actionLoading"
+        >
+          {{ t('common.confirm') }}
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -271,7 +341,7 @@ import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
 import { adminAPI } from '@/api/admin'
-import { getAllRechargeOrders, type RechargeOrder } from '@/api/recharge'
+import { getAllRechargeOrders, deleteRechargeOrder, markRechargeOrderPaid, type RechargeOrder } from '@/api/recharge'
 import type { AdminOrder } from '@/api/admin/orders'
 import type { Column } from '@/components/common/types'
 import AppLayout from '@/components/layout/AppLayout.vue'
@@ -286,7 +356,7 @@ const { t } = useI18n()
 const appStore = useAppStore()
 
 // Active tab state
-const activeTab = ref<'subscription' | 'recharge'>('subscription')
+const activeTab = ref<'subscription' | 'recharge'>('recharge')
 
 // Subscription order columns
 const subscriptionColumns = computed<Column[]>(() => [
@@ -297,7 +367,8 @@ const subscriptionColumns = computed<Column[]>(() => [
   { key: 'status', label: t('admin.orders.columns.status'), sortable: true },
   { key: 'pay_type', label: t('admin.orders.columns.payType'), sortable: false },
   { key: 'created_at', label: t('admin.orders.columns.createdAt'), sortable: true },
-  { key: 'paid_at', label: t('admin.orders.columns.paidAt'), sortable: true }
+  { key: 'paid_at', label: t('admin.orders.columns.paidAt'), sortable: true },
+  { key: 'actions', label: '', sortable: false }
 ])
 
 // Recharge order columns
@@ -309,7 +380,8 @@ const rechargeColumns = computed<Column[]>(() => [
   { key: 'multiplier', label: t('recharge.multiplier'), sortable: true },
   { key: 'status', label: t('recharge.status'), sortable: true },
   { key: 'pay_type', label: t('admin.rechargeOrders.payMethod'), sortable: false },
-  { key: 'created_at', label: t('recharge.createdAt'), sortable: true }
+  { key: 'created_at', label: t('recharge.createdAt'), sortable: true },
+  { key: 'actions', label: '', sortable: false }
 ])
 
 const statusOptions = computed(() => [
@@ -326,6 +398,15 @@ const loading = ref(false)
 const searchKeyword = ref('')
 let abortController: AbortController | null = null
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
+
+// Confirm dialog state
+const confirmDialog = reactive({
+  visible: false,
+  title: '',
+  message: '',
+  onConfirm: () => {}
+})
+const actionLoading = ref(false)
 
 const filters = reactive({
   status: '',
@@ -453,6 +534,82 @@ const formatDate = (dateStr: string): string => {
   const date = new Date(adjustedDateStr)
   if (isNaN(date.getTime())) return '-'
   return date.toLocaleString()
+}
+
+const handleDeleteOrder = (order: AdminOrder) => {
+  confirmDialog.title = t('admin.orders.deleteOrder')
+  confirmDialog.message = t('admin.orders.deleteOrderConfirm')
+  confirmDialog.onConfirm = async () => {
+    actionLoading.value = true
+    try {
+      await adminAPI.orders.deleteOrder(order.id)
+      appStore.showSuccess(t('admin.orders.deleteSuccess'))
+      confirmDialog.visible = false
+      loadData()
+    } catch {
+      appStore.showError(t('admin.orders.deleteFailed'))
+    } finally {
+      actionLoading.value = false
+    }
+  }
+  confirmDialog.visible = true
+}
+
+const handleMarkOrderPaid = (order: AdminOrder) => {
+  confirmDialog.title = t('admin.orders.markAsPaid')
+  confirmDialog.message = t('admin.orders.markAsPaidConfirm')
+  confirmDialog.onConfirm = async () => {
+    actionLoading.value = true
+    try {
+      await adminAPI.orders.markOrderPaid(order.id)
+      appStore.showSuccess(t('admin.orders.markPaidSuccess'))
+      confirmDialog.visible = false
+      loadData()
+    } catch {
+      appStore.showError(t('admin.orders.markPaidFailed'))
+    } finally {
+      actionLoading.value = false
+    }
+  }
+  confirmDialog.visible = true
+}
+
+const handleDeleteRechargeOrder = (order: RechargeOrder) => {
+  confirmDialog.title = t('admin.orders.deleteOrder')
+  confirmDialog.message = t('admin.orders.deleteOrderConfirm')
+  confirmDialog.onConfirm = async () => {
+    actionLoading.value = true
+    try {
+      await deleteRechargeOrder(order.id)
+      appStore.showSuccess(t('admin.orders.deleteSuccess'))
+      confirmDialog.visible = false
+      loadData()
+    } catch {
+      appStore.showError(t('admin.orders.deleteFailed'))
+    } finally {
+      actionLoading.value = false
+    }
+  }
+  confirmDialog.visible = true
+}
+
+const handleMarkRechargeOrderPaid = (order: RechargeOrder) => {
+  confirmDialog.title = t('admin.orders.markAsPaid')
+  confirmDialog.message = t('admin.orders.markAsPaidConfirm')
+  confirmDialog.onConfirm = async () => {
+    actionLoading.value = true
+    try {
+      await markRechargeOrderPaid(order.id)
+      appStore.showSuccess(t('admin.orders.markPaidSuccess'))
+      confirmDialog.visible = false
+      loadData()
+    } catch {
+      appStore.showError(t('admin.orders.markPaidFailed'))
+    } finally {
+      actionLoading.value = false
+    }
+  }
+  confirmDialog.visible = true
 }
 
 // Watch tab changes to reload data

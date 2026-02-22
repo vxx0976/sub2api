@@ -964,11 +964,11 @@ func (s *SettingService) UpdateRechargeConfig(ctx context.Context, config *Recha
 	}
 
 	updates := map[string]string{
-		"recharge_enabled":      strconv.FormatBool(config.Enabled),
-		"recharge_min_amount":   fmt.Sprintf("%.2f", config.MinAmount),
-		"recharge_max_amount":   fmt.Sprintf("%.2f", config.MaxAmount),
-		"recharge_usd_cny_rate": fmt.Sprintf("%.4f", config.UsdCnyRate),
-		"recharge_tiers":        string(tiersJSON),
+		"recharge_enabled":       strconv.FormatBool(config.Enabled),
+		"recharge_min_amount":    fmt.Sprintf("%.2f", config.MinAmount),
+		"recharge_max_amount":    fmt.Sprintf("%.2f", config.MaxAmount),
+		"recharge_usd_cny_rate":  fmt.Sprintf("%.4f", config.UsdCnyRate),
+		"recharge_tiers":         string(tiersJSON),
 	}
 
 	err = s.settingRepo.SetMultiple(ctx, updates)

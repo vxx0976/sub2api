@@ -395,6 +395,8 @@ func registerOrderRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 	orders := admin.Group("/orders")
 	{
 		orders.GET("", h.Admin.Order.List)
+		orders.DELETE("/:id", h.Admin.Order.Delete)
+		orders.POST("/:id/mark-paid", h.Admin.Order.MarkPaid)
 	}
 }
 

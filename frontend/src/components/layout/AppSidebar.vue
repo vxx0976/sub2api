@@ -145,6 +145,7 @@ import { computed, h, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAdminSettingsStore, useAppStore, useAuthStore, useOnboardingStore } from '@/stores'
+import { getMySubscriptions } from '@/api/subscriptions'
 import VersionBadge from '@/components/common/VersionBadge.vue'
 
 const { t } = useI18n()
@@ -160,6 +161,7 @@ const mobileOpen = computed(() => appStore.mobileOpen)
 const isAdmin = computed(() => authStore.isAdmin)
 const isReseller = computed(() => authStore.isReseller)
 const isDark = ref(document.documentElement.classList.contains('dark'))
+const hasSubscriptions = ref(false)
 
 // Site settings from appStore (cached, no flicker)
 const siteName = computed(() => appStore.siteName)
@@ -228,20 +230,20 @@ const ChartIcon = {
     )
 }
 
-const GiftIcon = {
-  render: () =>
-    h(
-      'svg',
-      { fill: 'none', viewBox: '0 0 24 24', stroke: 'currentColor', 'stroke-width': '1.5' },
-      [
-        h('path', {
-          'stroke-linecap': 'round',
-          'stroke-linejoin': 'round',
-          d: 'M21 11.25v8.25a1.5 1.5 0 01-1.5 1.5H5.25a1.5 1.5 0 01-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 109.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1114.625 7.5H12m0 0V21m-8.625-9.75h18c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125h-18c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z'
-        })
-      ]
-    )
-}
+// const GiftIcon = {
+//   render: () =>
+//     h(
+//       'svg',
+//       { fill: 'none', viewBox: '0 0 24 24', stroke: 'currentColor', 'stroke-width': '1.5' },
+//       [
+//         h('path', {
+//           'stroke-linecap': 'round',
+//           'stroke-linejoin': 'round',
+//           d: 'M21 11.25v8.25a1.5 1.5 0 01-1.5 1.5H5.25a1.5 1.5 0 01-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 109.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1114.625 7.5H12m0 0V21m-8.625-9.75h18c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125h-18c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z'
+//         })
+//       ]
+//     )
+// }
 
 // const UserPlusIcon = {
 //   render: () =>
@@ -481,8 +483,9 @@ const userNavItems = computed(() => {
     { path: '/dashboard', label: t('nav.dashboard'), icon: DashboardIcon },
     { path: '/keys', label: t('nav.apiKeys'), icon: KeyIcon },
     { path: '/usage', label: t('nav.usage'), icon: ChartIcon, hideInSimpleMode: true },
-    { path: '/subscriptions', label: t('nav.mySubscriptions'), icon: CreditCardIcon, hideInSimpleMode: true },
-    { path: '/plans', label: t('nav.plans'), icon: GiftIcon, hideInSimpleMode: true },
+    ...(hasSubscriptions.value ? [{ path: '/subscriptions', label: t('nav.mySubscriptions'), icon: CreditCardIcon, hideInSimpleMode: true }] : []),
+    // { path: '/plans', label: t('nav.plans'), icon: GiftIcon, hideInSimpleMode: true },
+    { path: '/recharge', label: t('nav.recharge'), icon: WalletIcon },
     { path: '/orders', label: t('nav.orders'), icon: OrdersIcon, hideInSimpleMode: true },
     ...((appStore.cachedPublicSettings?.purchase_subscription_enabled || appStore.cachedPublicSettings?.purchase_enabled)
       ? [
@@ -500,7 +503,7 @@ const userNavItems = computed(() => {
   let filtered = authStore.isSimpleMode ? items.filter(item => !item.hideInSimpleMode) : items
   if (appStore.isResellerDomain) {
     const hasPurchaseUrl = !!(appStore.cachedPublicSettings?.purchase_enabled && appStore.cachedPublicSettings?.purchase_url)
-    const hiddenOnResellerDomain = ['/subscriptions', '/orders', '/purchase']
+    const hiddenOnResellerDomain = ['/subscriptions', '/orders', '/purchase', '/recharge']
     if (!hasPurchaseUrl) {
       hiddenOnResellerDomain.push('/plans')
     }
@@ -612,9 +615,18 @@ watch(
   { immediate: true }
 )
 
-onMounted(() => {
+onMounted(async () => {
   if (isAdmin.value) {
     adminSettingsStore.fetch()
+  }
+  // Check if regular user has active subscriptions
+  if (!isAdmin.value && !isReseller.value && authStore.isAuthenticated) {
+    try {
+      const subs = await getMySubscriptions()
+      hasSubscriptions.value = subs.length > 0
+    } catch {
+      // Silently ignore - default to hidden
+    }
   }
 })
 </script>

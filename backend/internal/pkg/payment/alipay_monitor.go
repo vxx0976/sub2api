@@ -18,11 +18,12 @@ type OrderMatcher interface {
 
 // PendingOrder represents a pending order for matching
 type PendingOrder struct {
-	OrderNo       string
-	Amount        float64
-	PaymentAmount float64
-	CreatedAt     time.Time
-	ExpiredAt     *time.Time
+	OrderNo          string
+	Amount           float64
+	PaymentAmount    float64
+	HasPaymentAmount bool // true if payment_amount was explicitly stored (reliable for tight matching)
+	CreatedAt        time.Time
+	ExpiredAt        *time.Time
 }
 
 // AlipayMonitor monitors Alipay account for incoming payments
@@ -193,7 +194,11 @@ func (m *AlipayMonitor) matchBusinessQRBills(ctx context.Context, orders []Pendi
 		}
 
 		for _, order := range orders {
-			if math.Abs(amount-order.PaymentAmount) > 0.001 {
+			tol := 0.001
+			if !order.HasPaymentAmount {
+				tol = 0.1 // wider tolerance for legacy orders without stored payment_amount
+			}
+			if math.Abs(amount-order.PaymentAmount) > tol {
 				continue
 			}
 

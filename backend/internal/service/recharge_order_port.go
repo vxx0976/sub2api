@@ -16,4 +16,11 @@ type RechargeOrderRepository interface {
 	ListByUserID(ctx context.Context, userID int64, params pagination.PaginationParams) ([]RechargeOrder, *pagination.PaginationResult, error)
 	ListAll(ctx context.Context, params pagination.PaginationParams, keyword string, status string) ([]RechargeOrder, *pagination.PaginationResult, error)
 	ListPending(ctx context.Context) ([]RechargeOrder, error)
+	HasPaidOrder(ctx context.Context, userID int64) (bool, error)
+
+	// Delete deletes a pending recharge order
+	Delete(ctx context.Context, id int64) error
+
+	// MarkManualPaid marks a recharge order as paid manually (without triggering business logic)
+	MarkManualPaid(ctx context.Context, id int64) error
 }

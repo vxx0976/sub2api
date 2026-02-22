@@ -35,21 +35,6 @@
         </button>
       </div>
 
-      <!-- Empty State -->
-      <div v-else-if="plans.length === 0" class="card p-12 text-center">
-        <div
-          class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 dark:bg-dark-700"
-        >
-          <Icon name="gift" size="xl" class="text-gray-400" />
-        </div>
-        <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
-          {{ t('plans.noPlans') }}
-        </h3>
-        <p class="text-gray-500 dark:text-dark-400">
-          {{ t('plans.noPlansDesc') }}
-        </p>
-      </div>
-
       <!-- Plans Grid -->
       <div v-else>
         <!-- Header -->

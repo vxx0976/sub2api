@@ -22,6 +22,7 @@ func RegisterRechargeRoutes(
 		authenticated.GET("/recharge/orders", h.Recharge.GetRechargeOrders)
 		authenticated.POST("/recharge/orders/:order_no/repay", h.Recharge.RepayRechargeOrder)
 		authenticated.GET("/recharge/config", h.Recharge.GetRechargeConfig)
+		authenticated.GET("/recharge/first-recharge-status", h.Recharge.GetFirstRechargeStatus)
 	}
 
 	// 管理员接口
@@ -29,6 +30,8 @@ func RegisterRechargeRoutes(
 	admin.Use(gin.HandlerFunc(adminAuth))
 	{
 		admin.GET("/recharge/orders", h.Recharge.GetAllRechargeOrders)
+		admin.DELETE("/recharge/orders/:id", h.Recharge.DeleteRechargeOrder)
+		admin.POST("/recharge/orders/:id/mark-paid", h.Recharge.MarkRechargeOrderPaid)
 		admin.GET("/settings/recharge", h.Recharge.GetRechargeConfigAdmin)
 		admin.PUT("/settings/recharge", h.Recharge.UpdateRechargeConfig)
 	}

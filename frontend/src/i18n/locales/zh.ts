@@ -519,7 +519,8 @@ export default {
     resellerSites: '站点管理',
     resellerRedeem: '兑换码',
     resellerAnnouncements: '公告管理',
-    resellerSettings: '系统设置'
+    resellerSettings: '系统设置',
+    recharge: '充值'
   },
 
   // Docs
@@ -2014,7 +2015,15 @@ export default {
         paid: '已支付',
         expired: '已过期',
         refunded: '已退款'
-      }
+      },
+      deleteOrder: '删除订单',
+      deleteOrderConfirm: '确定要删除此待支付订单吗？',
+      markAsPaid: '标记已支付',
+      markAsPaidConfirm: '确定要将此订单标记为已支付吗？（不会执行续期操作）',
+      deleteSuccess: '订单已删除',
+      markPaidSuccess: '订单已标记为已支付',
+      deleteFailed: '删除订单失败',
+      markPaidFailed: '标记已支付失败'
     },
 
     // Referrals Management
@@ -4627,6 +4636,26 @@ export default {
   // Recharge
   recharge: {
     title: '账户充值',
+    pageTitle: '充值中心',
+    pageSubtitle: '选择充值金额，快速到账',
+    selectAmount: '充值金额',
+    customAmount: '自定义金额',
+    amountRangeHint: '金额范围：${min} - ${max}',
+    createOrder: '创建订单',
+    notesTitle: '充值须知',
+    noteAlipay: '请使用支付宝扫描二维码完成支付',
+    noteAmountMatch: '支付金额必须与显示金额完全一致，否则无法自动到账',
+    noteAutoCredit: '支付成功后，余额将在 1-2 分钟内自动到账',
+    noteContact: '如遇问题，请联系客服并提供订单号',
+    youWillReceive: '到账余额',
+    payAmount: '需支付',
+    firstRecharge: {
+      title: '首充特惠',
+      description: '首次充值仅需 ¥1，即可获得 $5 余额',
+      button: '立即抢购',
+      badge: '限时',
+      limitOnce: '每位用户限一次'
+    },
     rechargeNow: '立即充值',
     paymentClosedHint: '在线支付暂未开放，请联系客服充值',
     rechargeAmount: '充值金额',

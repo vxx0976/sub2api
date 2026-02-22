@@ -115,6 +115,33 @@ func (_u *OrderUpdate) AddAmount(v float64) *OrderUpdate {
 	return _u
 }
 
+// SetPaymentAmount sets the "payment_amount" field.
+func (_u *OrderUpdate) SetPaymentAmount(v float64) *OrderUpdate {
+	_u.mutation.ResetPaymentAmount()
+	_u.mutation.SetPaymentAmount(v)
+	return _u
+}
+
+// SetNillablePaymentAmount sets the "payment_amount" field if the given value is not nil.
+func (_u *OrderUpdate) SetNillablePaymentAmount(v *float64) *OrderUpdate {
+	if v != nil {
+		_u.SetPaymentAmount(*v)
+	}
+	return _u
+}
+
+// AddPaymentAmount adds value to the "payment_amount" field.
+func (_u *OrderUpdate) AddPaymentAmount(v float64) *OrderUpdate {
+	_u.mutation.AddPaymentAmount(v)
+	return _u
+}
+
+// ClearPaymentAmount clears the value of the "payment_amount" field.
+func (_u *OrderUpdate) ClearPaymentAmount() *OrderUpdate {
+	_u.mutation.ClearPaymentAmount()
+	return _u
+}
+
 // SetStatus sets the "status" field.
 func (_u *OrderUpdate) SetStatus(v string) *OrderUpdate {
 	_u.mutation.SetStatus(v)
@@ -372,6 +399,15 @@ func (_u *OrderUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.AddedAmount(); ok {
 		_spec.AddField(order.FieldAmount, field.TypeFloat64, value)
 	}
+	if value, ok := _u.mutation.PaymentAmount(); ok {
+		_spec.SetField(order.FieldPaymentAmount, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedPaymentAmount(); ok {
+		_spec.AddField(order.FieldPaymentAmount, field.TypeFloat64, value)
+	}
+	if _u.mutation.PaymentAmountCleared() {
+		_spec.ClearField(order.FieldPaymentAmount, field.TypeFloat64)
+	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(order.FieldStatus, field.TypeString, value)
 	}
@@ -612,6 +648,33 @@ func (_u *OrderUpdateOne) SetNillableAmount(v *float64) *OrderUpdateOne {
 // AddAmount adds value to the "amount" field.
 func (_u *OrderUpdateOne) AddAmount(v float64) *OrderUpdateOne {
 	_u.mutation.AddAmount(v)
+	return _u
+}
+
+// SetPaymentAmount sets the "payment_amount" field.
+func (_u *OrderUpdateOne) SetPaymentAmount(v float64) *OrderUpdateOne {
+	_u.mutation.ResetPaymentAmount()
+	_u.mutation.SetPaymentAmount(v)
+	return _u
+}
+
+// SetNillablePaymentAmount sets the "payment_amount" field if the given value is not nil.
+func (_u *OrderUpdateOne) SetNillablePaymentAmount(v *float64) *OrderUpdateOne {
+	if v != nil {
+		_u.SetPaymentAmount(*v)
+	}
+	return _u
+}
+
+// AddPaymentAmount adds value to the "payment_amount" field.
+func (_u *OrderUpdateOne) AddPaymentAmount(v float64) *OrderUpdateOne {
+	_u.mutation.AddPaymentAmount(v)
+	return _u
+}
+
+// ClearPaymentAmount clears the value of the "payment_amount" field.
+func (_u *OrderUpdateOne) ClearPaymentAmount() *OrderUpdateOne {
+	_u.mutation.ClearPaymentAmount()
 	return _u
 }
 
@@ -901,6 +964,15 @@ func (_u *OrderUpdateOne) sqlSave(ctx context.Context) (_node *Order, err error)
 	}
 	if value, ok := _u.mutation.AddedAmount(); ok {
 		_spec.AddField(order.FieldAmount, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.PaymentAmount(); ok {
+		_spec.SetField(order.FieldPaymentAmount, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedPaymentAmount(); ok {
+		_spec.AddField(order.FieldPaymentAmount, field.TypeFloat64, value)
+	}
+	if _u.mutation.PaymentAmountCleared() {
+		_spec.ClearField(order.FieldPaymentAmount, field.TypeFloat64)
 	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(order.FieldStatus, field.TypeString, value)

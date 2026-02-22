@@ -32,42 +32,42 @@
           :href="docUrl"
           target="_blank"
           rel="noopener noreferrer"
-          class="group card flex items-center gap-3 p-4 transition-all hover:shadow-lg hover:ring-2 hover:ring-primary-500/50"
+          class="group card flex items-center gap-4 p-5 transition-all hover:shadow-lg hover:ring-2 hover:ring-primary-500/50"
         >
-          <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 shadow shadow-blue-500/30 transition-transform group-hover:scale-105">
-            <Icon name="book" size="md" class="text-white" />
+          <div class="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 shadow shadow-blue-500/30 transition-transform group-hover:scale-105">
+            <Icon name="book" size="lg" class="text-white" />
           </div>
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2">
-              <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
+              <h3 class="text-base font-bold text-gray-900 dark:text-white">
                 {{ t('consoleHome.gettingStarted.title') }}
               </h3>
-              <span class="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+              <span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
                 {{ t('consoleHome.gettingStarted.badge') }}
               </span>
             </div>
-            <p class="mt-0.5 text-xs text-gray-500 dark:text-dark-400 truncate">
+            <p class="mt-1 text-sm text-gray-500 dark:text-dark-400 truncate">
               {{ t('consoleHome.gettingStarted.description') }}
             </p>
           </div>
-          <Icon name="externalLink" size="sm" class="flex-shrink-0 text-gray-400 transition-colors group-hover:text-primary-500 dark:text-dark-500" />
+          <Icon name="externalLink" size="md" class="flex-shrink-0 text-gray-400 transition-colors group-hover:text-primary-500 dark:text-dark-500" />
         </a>
 
         <!-- Contact Us -->
-        <div v-if="hasContactInfo" class="card p-4">
-          <div class="mb-2 flex items-center gap-2">
-            <Icon name="chat" size="sm" class="text-sky-500" />
-            <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
+        <div v-if="hasContactInfo" class="card p-5">
+          <div class="mb-3 flex items-center gap-2">
+            <Icon name="chat" size="md" class="text-sky-500" />
+            <h3 class="text-base font-bold text-gray-900 dark:text-white">
               {{ t('consoleHome.contact.title') }}
             </h3>
           </div>
-          <div class="flex-1 space-y-1.5">
+          <div class="flex-1 space-y-2">
               <!-- WeChat -->
               <div v-if="contactWechat" class="flex items-center gap-2">
-                <svg class="h-3.5 w-3.5 flex-shrink-0 text-green-500" viewBox="0 0 24 24" fill="currentColor">
+                <svg class="h-4 w-4 flex-shrink-0 text-green-500" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M8.691 2.188C3.891 2.188 0 5.476 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 01.213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.29.295a.326.326 0 00.167-.054l1.903-1.114a.864.864 0 01.717-.098 10.16 10.16 0 002.837.403c.276 0 .543-.027.811-.05-.857-2.578.157-4.972 1.932-6.446 1.703-1.415 3.882-1.98 5.853-1.838-.576-3.583-4.196-6.348-8.596-6.348zM5.785 5.991c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 01-1.162 1.178A1.17 1.17 0 014.623 7.17c0-.651.52-1.18 1.162-1.18zm5.813 0c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 01-1.162 1.178 1.17 1.17 0 01-1.162-1.178c0-.651.52-1.18 1.162-1.18zm5.34 2.867c-1.797-.052-3.746.512-5.28 1.786-1.72 1.428-2.687 3.72-1.78 6.22.942 2.453 3.666 4.229 6.884 4.229.826 0 1.622-.12 2.361-.336a.722.722 0 01.598.082l1.584.926a.272.272 0 00.14.045c.134 0 .24-.109.24-.245 0-.06-.024-.12-.04-.177l-.325-1.233a.493.493 0 01.177-.554C23.04 18.423 24 16.837 24 15.069c0-3.07-3.022-5.997-7.062-6.21zM13.544 12.5c.535 0 .969.44.969.982a.976.976 0 01-.969.983.976.976 0 01-.969-.983c0-.542.434-.982.97-.982zm4.844 0c.535 0 .969.44.969.982a.976.976 0 01-.969.983.976.976 0 01-.969-.983c0-.542.434-.982.969-.982z"/>
                 </svg>
-                <span class="text-xs text-gray-700 dark:text-dark-300">{{ t('consoleHome.contact.wechat') }}: {{ contactWechat }}</span>
+                <span class="text-sm font-medium text-gray-700 dark:text-dark-300">{{ t('consoleHome.contact.wechat') }}: {{ contactWechat }}</span>
               </div>
               <!-- Telegram -->
               <a
@@ -77,10 +77,10 @@
                 rel="noopener noreferrer"
                 class="flex items-center gap-2 transition-colors hover:text-blue-700"
               >
-                <svg class="h-3.5 w-3.5 flex-shrink-0 text-blue-500" viewBox="0 0 24 24" fill="currentColor">
+                <svg class="h-4 w-4 flex-shrink-0 text-blue-500" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M11.944 0A12 12 0 000 12a12 12 0 0012 12 12 12 0 0012-12A12 12 0 0012 0a12 12 0 00-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 01.171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.479.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
                 </svg>
-                <span class="text-xs text-gray-700 dark:text-dark-300">{{ t('consoleHome.contact.telegram') }}: @{{ contactTelegram }}</span>
+                <span class="text-sm font-medium text-gray-700 dark:text-dark-300">{{ t('consoleHome.contact.telegram') }}: @{{ contactTelegram }}</span>
               </a>
             </div>
         </div>
@@ -141,28 +141,18 @@ const announcements = computed(() => appStore.cachedPublicSettings?.announcement
 const quickLinks = computed(() => {
   const links = [
     {
-      path: '/subscriptions',
-      icon: 'creditCard' as const,
-      label: t('consoleHome.links.subscriptions'),
-      bgClass: 'bg-gradient-to-br from-blue-500 to-blue-600'
-    },
-    {
-      path: '/plans',
-      icon: 'gift' as const,
-      label: t('consoleHome.links.plans'),
-      bgClass: 'bg-gradient-to-br from-emerald-500 to-emerald-600'
-    },
-    {
       path: '/keys',
       icon: 'key' as const,
       label: t('consoleHome.links.apiKeys'),
       bgClass: 'bg-gradient-to-br from-amber-500 to-amber-600'
     },
+    ...(!appStore.isResellerDomain ? [{
+      path: '/recharge',
+      icon: 'plus' as const,
+      label: t('nav.recharge'),
+      bgClass: 'bg-gradient-to-br from-emerald-500 to-emerald-600'
+    }] : []),
   ]
-  if (appStore.isResellerDomain) {
-    const hiddenPaths = ['/subscriptions', '/plans']
-    return links.filter(link => !hiddenPaths.includes(link.path))
-  }
   return links
 })
 </script>
