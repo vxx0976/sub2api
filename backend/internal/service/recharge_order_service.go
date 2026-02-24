@@ -249,8 +249,13 @@ func (s *RechargeOrderService) GetPendingRechargeOrdersForMonitor(ctx context.Co
 		return nil, err
 	}
 
+	now := time.Now()
 	result := make([]payment.PendingOrder, 0, len(orders))
 	for _, o := range orders {
+		// Skip expired orders to prevent amount collisions
+		if o.ExpiredAt != nil && o.ExpiredAt.Before(now) {
+			continue
+		}
 		result = append(result, payment.PendingOrder{
 			OrderNo:       o.OrderNo,
 			Amount:        o.Amount,

@@ -483,10 +483,10 @@ const userNavItems = computed(() => {
     { path: '/dashboard', label: t('nav.dashboard'), icon: DashboardIcon },
     { path: '/keys', label: t('nav.apiKeys'), icon: KeyIcon },
     { path: '/usage', label: t('nav.usage'), icon: ChartIcon, hideInSimpleMode: true },
-    ...(hasSubscriptions.value ? [{ path: '/subscriptions', label: t('nav.mySubscriptions'), icon: CreditCardIcon, hideInSimpleMode: true }] : []),
+    ...(hasSubscriptions.value ? [{ path: '/subscriptions', label: t('nav.mySubscriptions'), icon: CreditCardIcon }] : []),
     // { path: '/plans', label: t('nav.plans'), icon: GiftIcon, hideInSimpleMode: true },
     { path: '/recharge', label: t('nav.recharge'), icon: WalletIcon },
-    { path: '/orders', label: t('nav.orders'), icon: OrdersIcon, hideInSimpleMode: true },
+    ...(hasSubscriptions.value ? [{ path: '/orders', label: t('nav.orders'), icon: OrdersIcon }] : []),
     ...((appStore.cachedPublicSettings?.purchase_subscription_enabled || appStore.cachedPublicSettings?.purchase_enabled)
       ? [
           {

@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
@@ -214,13 +215,25 @@ func (s *OrderService) GetOrderPaymentStatus(ctx context.Context, userID int64, 
 
 // GetPendingOrdersForMonitor returns all pending orders for payment matching
 func (s *OrderService) GetPendingOrdersForMonitor(ctx context.Context) ([]payment.PendingOrder, error) {
+	// Clean up expired pending orders first to prevent amount collisions
+	if n, err := s.orderRepo.BatchUpdateExpired(ctx); err != nil {
+		log.Printf("[OrderService] Failed to batch update expired orders: %v", err)
+	} else if n > 0 {
+		log.Printf("[OrderService] Expired %d pending orders", n)
+	}
+
 	orders, err := s.orderRepo.ListPending(ctx)
 	if err != nil {
 		return nil, err
 	}
 
+	now := time.Now()
 	result := make([]payment.PendingOrder, 0, len(orders))
 	for _, o := range orders {
+		// Skip orders that are already past their expiry (safety net)
+		if o.ExpiredAt != nil && o.ExpiredAt.Before(now) {
+			continue
+		}
 		hasPaymentAmount := o.PaymentAmount > 0
 		paymentAmount := o.PaymentAmount
 		if !hasPaymentAmount {

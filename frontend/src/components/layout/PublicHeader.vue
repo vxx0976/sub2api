@@ -25,19 +25,6 @@
             class="transition-colors"
             :class="isActive('/') ? 'text-gray-900 dark:text-white' : 'text-gray-600 hover:text-gray-900 dark:text-dark-300 dark:hover:text-white'"
           >{{ t('home.nav.home') }}</router-link>
-          <!-- Pricing: shown if reseller has purchase_url or not reseller domain -->
-          <router-link
-            v-if="isResellerDomain && resellerPurchaseUrl"
-            to="/pricing"
-            class="transition-colors"
-            :class="isActive('/pricing') ? 'text-gray-900 dark:text-white' : 'text-gray-600 hover:text-gray-900 dark:text-dark-300 dark:hover:text-white'"
-          >{{ t('home.nav.pricing') }}</router-link>
-          <router-link
-            v-else-if="!isResellerDomain"
-            to="/pricing"
-            class="transition-colors"
-            :class="isActive('/pricing') ? 'text-gray-900 dark:text-white' : 'text-gray-600 hover:text-gray-900 dark:text-dark-300 dark:hover:text-white'"
-          >{{ t('home.nav.pricing') }}</router-link>
           <!-- Key Query: shown on reseller domains -->
           <router-link
             v-if="isResellerDomain"
@@ -138,10 +125,6 @@ const siteSubtitle = computed(() => appStore.cachedPublicSettings?.site_subtitle
 
 // Reseller domain detection
 const isResellerDomain = computed(() => !!appStore.cachedPublicSettings?.reseller_id)
-const resellerPurchaseUrl = computed(() => {
-  const s = appStore.cachedPublicSettings
-  return (s?.purchase_enabled && s?.purchase_url) ? s.purchase_url : ''
-})
 const resellerDocUrl = computed(() => appStore.cachedPublicSettings?.doc_url || '')
 
 const isAuthenticated = computed(() => authStore.isAuthenticated)

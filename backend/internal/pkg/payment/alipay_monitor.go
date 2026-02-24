@@ -119,7 +119,15 @@ func (m *AlipayMonitor) runCycle() {
 	}
 
 	if len(bills) == 0 {
+		log.Printf("[AlipayMonitor] No bills found in range %s ~ %s, pending orders: %d",
+			startTime.Format("15:04:05"), endTime.Format("15:04:05"), len(orders))
 		return
+	}
+
+	log.Printf("[AlipayMonitor] Found %d bills, %d pending orders, mode=%s", len(bills), len(orders), m.alipay.cfg.Mode)
+	for i, b := range bills {
+		log.Printf("[AlipayMonitor] Bill[%d]: orderNo=%s, amount=%s, direction=%s, type=%s, memo=%s, time=%s",
+			i, b.AlipayOrderNo, b.TransAmount, b.Direction, b.Type, b.TransMemo, b.TransDt)
 	}
 
 	// Clean up old matched bill records (older than query window)
@@ -171,14 +179,30 @@ func (m *AlipayMonitor) matchBusinessQRBills(ctx context.Context, orders []Pendi
 		return orders[i].CreatedAt.After(orders[j].CreatedAt)
 	})
 
+	// Log pending orders for debugging
+	for _, o := range orders {
+		expStr := "nil"
+		if o.ExpiredAt != nil {
+			expStr = o.ExpiredAt.Format(time.RFC3339)
+		}
+		log.Printf("[AlipayMonitor] PendingOrder: %s, paymentAmount=%.2f, created=%s, expired=%s",
+			o.OrderNo, o.PaymentAmount, o.CreatedAt.Format(time.RFC3339), expStr)
+	}
+
+	// Alipay API returns CST timestamps
+	loc := time.FixedZone("CST", 8*3600)
+
 	for _, bill := range bills {
 		// Skip already matched bills
 		if m.isMatched(bill.AlipayOrderNo) {
 			continue
 		}
 
-		// Only process income bills
-		if bill.Direction != "" && bill.Direction != "收入" {
+		// Skip expense bills - only process income/payment-received bills.
+		// Accept: empty Direction, "收入", or any non-"支出" direction,
+		// because QR code payments may have different Direction/Type values
+		// (e.g. "交易收入" vs "转账收入") depending on the payment method.
+		if bill.Direction == "支出" {
 			continue
 		}
 
@@ -187,12 +211,12 @@ func (m *AlipayMonitor) matchBusinessQRBills(ctx context.Context, orders []Pendi
 			continue
 		}
 
-		// Parse bill time without timezone - DB stores CST times as +0000
-		billTime, err := time.Parse("2006-01-02 15:04:05", bill.TransDt)
+		billTime, err := time.ParseInLocation("2006-01-02 15:04:05", bill.TransDt, loc)
 		if err != nil {
 			continue
 		}
 
+		matched := false
 		for _, order := range orders {
 			tol := 0.001
 			if !order.HasPaymentAmount {
@@ -203,21 +227,31 @@ func (m *AlipayMonitor) matchBusinessQRBills(ctx context.Context, orders []Pendi
 			}
 
 			if billTime.Before(order.CreatedAt.Add(-tolerance)) {
+				log.Printf("[AlipayMonitor] Bill %s (%.2f) skipped for order %s: bill time %s before order created %s - tolerance",
+					bill.AlipayOrderNo, amount, order.OrderNo, billTime.Format(time.RFC3339), order.CreatedAt.Format(time.RFC3339))
 				continue
 			}
 
 			if order.ExpiredAt != nil && billTime.After(*order.ExpiredAt) {
+				log.Printf("[AlipayMonitor] Bill %s (%.2f) skipped for order %s: bill time %s after order expired %s",
+					bill.AlipayOrderNo, amount, order.OrderNo, billTime.Format(time.RFC3339), order.ExpiredAt.Format(time.RFC3339))
 				continue
 			}
 
-			log.Printf("[AlipayMonitor] Matched order %s: amount=%.2f, bill=%s, billTime=%s", order.OrderNo, amount, bill.AlipayOrderNo, bill.TransDt)
+			log.Printf("[AlipayMonitor] Matched order %s: amount=%.2f, bill=%s, type=%s, direction=%s, billTime=%s",
+				order.OrderNo, amount, bill.AlipayOrderNo, bill.Type, bill.Direction, bill.TransDt)
 			if err := m.orderMatcher.ConfirmOrderPaid(ctx, order.OrderNo, bill.AlipayOrderNo, "alipay"); err != nil {
 				log.Printf("[AlipayMonitor] Failed to confirm order %s: %v", order.OrderNo, err)
 			} else {
 				m.alipay.ReleaseAmount(order.PaymentAmount)
 				m.markMatched(bill.AlipayOrderNo)
 			}
+			matched = true
 			break
+		}
+
+		if !matched {
+			log.Printf("[AlipayMonitor] Bill %s (%.2f) could not match any pending order", bill.AlipayOrderNo, amount)
 		}
 	}
 }

@@ -137,17 +137,6 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
-    path: '/pricing',
-    name: 'Pricing',
-    component: () => import('@/views/PricingView.vue'),
-    meta: {
-      requiresAuth: false,
-      title: 'Pricing',
-      titleKey: 'home.pricing.title',
-      descriptionKey: 'home.pricing.subtitle'
-    }
-  },
-  {
     path: '/docs',
     name: 'Docs',
     component: () => import('@/views/user/DocsView.vue'),
@@ -692,7 +681,6 @@ router.beforeEach((to, _from, next) => {
       '/admin/groups',
       '/admin/subscriptions',
       '/admin/redeem',
-      '/subscriptions',
       '/redeem'
     ]
 

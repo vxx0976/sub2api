@@ -26,16 +26,7 @@
           {{ appStore.cachedPublicSettings.site_subtitle }}
         </p>
         <div class="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-          <!-- Reseller domain: purchase link instead of login -->
-          <router-link
-            v-if="isResellerDomain && resellerPurchaseUrl"
-            to="/pricing"
-            class="btn btn-primary btn-lg px-8"
-          >
-            {{ t('home.getStarted') }}
-            <Icon name="arrowRight" size="md" :stroke-width="2" />
-          </router-link>
-          <router-link v-else :to="isAuthenticated ? dashboardPath : loginPath" class="btn btn-primary btn-lg px-8">
+          <router-link :to="isAuthenticated ? dashboardPath : loginPath" class="btn btn-primary btn-lg px-8">
             {{ isAuthenticated ? t('home.goToDashboard') : t('home.getStarted') }}
             <Icon name="arrowRight" size="md" :stroke-width="2" />
           </router-link>
@@ -122,16 +113,7 @@
               </p>
 
               <div class="mt-7 flex flex-col items-center gap-3 sm:flex-row lg:justify-start">
-                <!-- Reseller domain: purchase link instead of login -->
-                <router-link
-                  v-if="isResellerDomain && resellerPurchaseUrl"
-                  to="/pricing"
-                  class="btn btn-primary btn-lg px-7"
-                >
-                  {{ t('home.getStarted') }}
-                  <Icon name="arrowRight" size="md" :stroke-width="2" />
-                </router-link>
-                <router-link v-else :to="isAuthenticated ? dashboardPath : loginPath" class="btn btn-primary btn-lg px-7">
+                <router-link :to="isAuthenticated ? dashboardPath : loginPath" class="btn btn-primary btn-lg px-7">
                   {{ isAuthenticated ? t('home.goToDashboard') : t('home.getStarted') }}
                   <Icon name="arrowRight" size="md" :stroke-width="2" />
                 </router-link>
@@ -142,19 +124,6 @@
                   {{ t('keyQuery.title') }}
                 </router-link>
 
-                <!-- Pricing: internal route for both reseller and non-reseller -->
-                <router-link
-                  v-if="isResellerDomain && resellerPurchaseUrl"
-                  to="/pricing"
-                  class="btn btn-secondary btn-lg px-7"
-                >
-                  <Icon name="dollar" size="md" />
-                  {{ t('home.hero.viewPricing') }}
-                </router-link>
-                <router-link v-else-if="!isResellerDomain" to="/pricing" class="btn btn-secondary btn-lg px-7">
-                  <Icon name="dollar" size="md" />
-                  {{ t('home.hero.viewPricing') }}
-                </router-link>
 
                 <!-- Docs: in-app for reseller, external for main site -->
                 <router-link
@@ -588,15 +557,6 @@
 
             <div class="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
               <router-link
-                v-if="isResellerDomain && resellerPurchaseUrl"
-                to="/pricing"
-                class="btn btn-primary btn-lg w-full px-7 sm:w-auto"
-              >
-                {{ t('home.getStarted') }}
-                <Icon name="arrowRight" size="md" :stroke-width="2" />
-              </router-link>
-              <router-link
-                v-else
                 :to="isAuthenticated ? dashboardPath : loginPath"
                 class="btn btn-primary btn-lg w-full px-7 sm:w-auto"
               >
@@ -692,10 +652,6 @@ const apiBaseRoot = computed(() => {
 
 // Reseller domain detection
 const isResellerDomain = computed(() => !!appStore.cachedPublicSettings?.reseller_id)
-const resellerPurchaseUrl = computed(() => {
-  const s = appStore.cachedPublicSettings
-  return (s?.purchase_enabled && s?.purchase_url) ? s.purchase_url : ''
-})
 
 // Auth state
 const isAuthenticated = computed(() => authStore.isAuthenticated)
