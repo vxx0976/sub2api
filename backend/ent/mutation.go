@@ -26241,6 +26241,7 @@ type UserMutation struct {
 	totp_secret_encrypted           *string
 	totp_enabled                    *bool
 	totp_enabled_at                 *time.Time
+	register_domain                 *string
 	token_version                   *int64
 	addtoken_version                *int64
 	role_version                    *int64
@@ -27132,6 +27133,55 @@ func (m *UserMutation) TotpEnabledAtCleared() bool {
 func (m *UserMutation) ResetTotpEnabledAt() {
 	m.totp_enabled_at = nil
 	delete(m.clearedFields, user.FieldTotpEnabledAt)
+}
+
+// SetRegisterDomain sets the "register_domain" field.
+func (m *UserMutation) SetRegisterDomain(s string) {
+	m.register_domain = &s
+}
+
+// RegisterDomain returns the value of the "register_domain" field in the mutation.
+func (m *UserMutation) RegisterDomain() (r string, exists bool) {
+	v := m.register_domain
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRegisterDomain returns the old "register_domain" field's value of the User entity.
+// If the User object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserMutation) OldRegisterDomain(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRegisterDomain is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRegisterDomain requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRegisterDomain: %w", err)
+	}
+	return oldValue.RegisterDomain, nil
+}
+
+// ClearRegisterDomain clears the value of the "register_domain" field.
+func (m *UserMutation) ClearRegisterDomain() {
+	m.register_domain = nil
+	m.clearedFields[user.FieldRegisterDomain] = struct{}{}
+}
+
+// RegisterDomainCleared returns if the "register_domain" field was cleared in this mutation.
+func (m *UserMutation) RegisterDomainCleared() bool {
+	_, ok := m.clearedFields[user.FieldRegisterDomain]
+	return ok
+}
+
+// ResetRegisterDomain resets all changes to the "register_domain" field.
+func (m *UserMutation) ResetRegisterDomain() {
+	m.register_domain = nil
+	delete(m.clearedFields, user.FieldRegisterDomain)
 }
 
 // SetParentID sets the "parent_id" field.
@@ -28166,7 +28216,7 @@ func (m *UserMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UserMutation) Fields() []string {
-	fields := make([]string, 0, 20)
+	fields := make([]string, 0, 21)
 	if m.created_at != nil {
 		fields = append(fields, user.FieldCreatedAt)
 	}
@@ -28217,6 +28267,9 @@ func (m *UserMutation) Fields() []string {
 	}
 	if m.totp_enabled_at != nil {
 		fields = append(fields, user.FieldTotpEnabledAt)
+	}
+	if m.register_domain != nil {
+		fields = append(fields, user.FieldRegisterDomain)
 	}
 	if m.parent != nil {
 		fields = append(fields, user.FieldParentID)
@@ -28269,6 +28322,8 @@ func (m *UserMutation) Field(name string) (ent.Value, bool) {
 		return m.TotpEnabled()
 	case user.FieldTotpEnabledAt:
 		return m.TotpEnabledAt()
+	case user.FieldRegisterDomain:
+		return m.RegisterDomain()
 	case user.FieldParentID:
 		return m.ParentID()
 	case user.FieldTokenVersion:
@@ -28318,6 +28373,8 @@ func (m *UserMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldTotpEnabled(ctx)
 	case user.FieldTotpEnabledAt:
 		return m.OldTotpEnabledAt(ctx)
+	case user.FieldRegisterDomain:
+		return m.OldRegisterDomain(ctx)
 	case user.FieldParentID:
 		return m.OldParentID(ctx)
 	case user.FieldTokenVersion:
@@ -28452,6 +28509,13 @@ func (m *UserMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetTotpEnabledAt(v)
 		return nil
+	case user.FieldRegisterDomain:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRegisterDomain(v)
+		return nil
 	case user.FieldParentID:
 		v, ok := value.(int64)
 		if !ok {
@@ -28581,6 +28645,9 @@ func (m *UserMutation) ClearedFields() []string {
 	if m.FieldCleared(user.FieldTotpEnabledAt) {
 		fields = append(fields, user.FieldTotpEnabledAt)
 	}
+	if m.FieldCleared(user.FieldRegisterDomain) {
+		fields = append(fields, user.FieldRegisterDomain)
+	}
 	if m.FieldCleared(user.FieldParentID) {
 		fields = append(fields, user.FieldParentID)
 	}
@@ -28612,6 +28679,9 @@ func (m *UserMutation) ClearField(name string) error {
 		return nil
 	case user.FieldTotpEnabledAt:
 		m.ClearTotpEnabledAt()
+		return nil
+	case user.FieldRegisterDomain:
+		m.ClearRegisterDomain()
 		return nil
 	case user.FieldParentID:
 		m.ClearParentID()
@@ -28674,6 +28744,9 @@ func (m *UserMutation) ResetField(name string) error {
 		return nil
 	case user.FieldTotpEnabledAt:
 		m.ResetTotpEnabledAt()
+		return nil
+	case user.FieldRegisterDomain:
+		m.ResetRegisterDomain()
 		return nil
 	case user.FieldParentID:
 		m.ResetParentID()

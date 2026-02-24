@@ -256,6 +256,20 @@ func (_c *UserCreate) SetNillableTotpEnabledAt(v *time.Time) *UserCreate {
 	return _c
 }
 
+// SetRegisterDomain sets the "register_domain" field.
+func (_c *UserCreate) SetRegisterDomain(v string) *UserCreate {
+	_c.mutation.SetRegisterDomain(v)
+	return _c
+}
+
+// SetNillableRegisterDomain sets the "register_domain" field if the given value is not nil.
+func (_c *UserCreate) SetNillableRegisterDomain(v *string) *UserCreate {
+	if v != nil {
+		_c.SetRegisterDomain(*v)
+	}
+	return _c
+}
+
 // SetParentID sets the "parent_id" field.
 func (_c *UserCreate) SetParentID(v int64) *UserCreate {
 	_c.mutation.SetParentID(v)
@@ -611,6 +625,10 @@ func (_c *UserCreate) defaults() error {
 		v := user.DefaultTotpEnabled
 		_c.mutation.SetTotpEnabled(v)
 	}
+	if _, ok := _c.mutation.RegisterDomain(); !ok {
+		v := user.DefaultRegisterDomain
+		_c.mutation.SetRegisterDomain(v)
+	}
 	if _, ok := _c.mutation.TokenVersion(); !ok {
 		v := user.DefaultTokenVersion
 		_c.mutation.SetTokenVersion(v)
@@ -689,6 +707,11 @@ func (_c *UserCreate) check() error {
 	}
 	if _, ok := _c.mutation.TotpEnabled(); !ok {
 		return &ValidationError{Name: "totp_enabled", err: errors.New(`ent: missing required field "User.totp_enabled"`)}
+	}
+	if v, ok := _c.mutation.RegisterDomain(); ok {
+		if err := user.RegisterDomainValidator(v); err != nil {
+			return &ValidationError{Name: "register_domain", err: fmt.Errorf(`ent: validator failed for field "User.register_domain": %w`, err)}
+		}
 	}
 	if _, ok := _c.mutation.TokenVersion(); !ok {
 		return &ValidationError{Name: "token_version", err: errors.New(`ent: missing required field "User.token_version"`)}
@@ -790,6 +813,10 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.TotpEnabledAt(); ok {
 		_spec.SetField(user.FieldTotpEnabledAt, field.TypeTime, value)
 		_node.TotpEnabledAt = &value
+	}
+	if value, ok := _c.mutation.RegisterDomain(); ok {
+		_spec.SetField(user.FieldRegisterDomain, field.TypeString, value)
+		_node.RegisterDomain = value
 	}
 	if value, ok := _c.mutation.TokenVersion(); ok {
 		_spec.SetField(user.FieldTokenVersion, field.TypeInt64, value)
@@ -1352,6 +1379,24 @@ func (u *UserUpsert) ClearTotpEnabledAt() *UserUpsert {
 	return u
 }
 
+// SetRegisterDomain sets the "register_domain" field.
+func (u *UserUpsert) SetRegisterDomain(v string) *UserUpsert {
+	u.Set(user.FieldRegisterDomain, v)
+	return u
+}
+
+// UpdateRegisterDomain sets the "register_domain" field to the value that was provided on create.
+func (u *UserUpsert) UpdateRegisterDomain() *UserUpsert {
+	u.SetExcluded(user.FieldRegisterDomain)
+	return u
+}
+
+// ClearRegisterDomain clears the value of the "register_domain" field.
+func (u *UserUpsert) ClearRegisterDomain() *UserUpsert {
+	u.SetNull(user.FieldRegisterDomain)
+	return u
+}
+
 // SetParentID sets the "parent_id" field.
 func (u *UserUpsert) SetParentID(v int64) *UserUpsert {
 	u.Set(user.FieldParentID, v)
@@ -1728,6 +1773,27 @@ func (u *UserUpsertOne) UpdateTotpEnabledAt() *UserUpsertOne {
 func (u *UserUpsertOne) ClearTotpEnabledAt() *UserUpsertOne {
 	return u.Update(func(s *UserUpsert) {
 		s.ClearTotpEnabledAt()
+	})
+}
+
+// SetRegisterDomain sets the "register_domain" field.
+func (u *UserUpsertOne) SetRegisterDomain(v string) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.SetRegisterDomain(v)
+	})
+}
+
+// UpdateRegisterDomain sets the "register_domain" field to the value that was provided on create.
+func (u *UserUpsertOne) UpdateRegisterDomain() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateRegisterDomain()
+	})
+}
+
+// ClearRegisterDomain clears the value of the "register_domain" field.
+func (u *UserUpsertOne) ClearRegisterDomain() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearRegisterDomain()
 	})
 }
 
@@ -2282,6 +2348,27 @@ func (u *UserUpsertBulk) UpdateTotpEnabledAt() *UserUpsertBulk {
 func (u *UserUpsertBulk) ClearTotpEnabledAt() *UserUpsertBulk {
 	return u.Update(func(s *UserUpsert) {
 		s.ClearTotpEnabledAt()
+	})
+}
+
+// SetRegisterDomain sets the "register_domain" field.
+func (u *UserUpsertBulk) SetRegisterDomain(v string) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.SetRegisterDomain(v)
+	})
+}
+
+// UpdateRegisterDomain sets the "register_domain" field to the value that was provided on create.
+func (u *UserUpsertBulk) UpdateRegisterDomain() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateRegisterDomain()
+	})
+}
+
+// ClearRegisterDomain clears the value of the "register_domain" field.
+func (u *UserUpsertBulk) ClearRegisterDomain() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearRegisterDomain()
 	})
 }
 

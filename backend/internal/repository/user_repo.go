@@ -72,6 +72,9 @@ func (r *userRepository) Create(ctx context.Context, userIn *service.User) error
 	if userIn.ReferredBy != nil {
 		createBuilder = createBuilder.SetReferredBy(*userIn.ReferredBy)
 	}
+	if userIn.RegisterDomain != "" {
+		createBuilder = createBuilder.SetRegisterDomain(userIn.RegisterDomain)
+	}
 	if userIn.ParentID != nil {
 		createBuilder = createBuilder.SetParentID(*userIn.ParentID)
 	}

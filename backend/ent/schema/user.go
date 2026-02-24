@@ -88,6 +88,13 @@ func (User) Fields() []ent.Field {
 			Optional().
 			Nillable(),
 
+		// 注册来源域名
+		field.String("register_domain").
+			Optional().
+			MaxLen(255).
+			Default("").
+			Comment("用户注册时的域名"),
+
 		// 分销商层级关系
 		field.Int64("parent_id").
 			Optional().

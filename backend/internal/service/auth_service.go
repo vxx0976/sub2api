@@ -98,12 +98,12 @@ func NewAuthService(
 
 // Register 用户注册，返回token和用户
 func (s *AuthService) Register(ctx context.Context, email, password string) (string, *User, error) {
-	return s.RegisterWithVerification(ctx, email, password, "", "", "", nil)
+	return s.RegisterWithVerification(ctx, email, password, "", "", "", nil, "")
 }
 
 
 // RegisterWithVerification 用户注册（支持邮件验证、优惠码、邀请码和上级分销商），返回token和用户
-func (s *AuthService) RegisterWithVerification(ctx context.Context, email, password, verifyCode, promoCode, invitationCode string, parentID *int64) (string, *User, error) {
+func (s *AuthService) RegisterWithVerification(ctx context.Context, email, password, verifyCode, promoCode, invitationCode string, parentID *int64, registerDomain string) (string, *User, error) {
 	if s.settingService == nil || !s.settingService.IsRegistrationEnabled(ctx) {
 		return "", nil, ErrRegDisabled
 	}
@@ -211,15 +211,16 @@ func (s *AuthService) RegisterWithVerification(ctx context.Context, email, passw
 
 	// 创建用户
 	user := &User{
-		Email:        email,
-		PasswordHash: hashedPassword,
-		Role:         RoleUser,
-		Balance:      defaultBalance,
-		Concurrency:  defaultConcurrency,
-		Status:       StatusActive,
-		ReferralCode: userReferralCode,
-		ReferredBy:   referrerID,
-		ParentID:     parentID,
+		Email:          email,
+		PasswordHash:   hashedPassword,
+		Role:           RoleUser,
+		Balance:        defaultBalance,
+		Concurrency:    defaultConcurrency,
+		Status:         StatusActive,
+		ReferralCode:   userReferralCode,
+		ReferredBy:     referrerID,
+		ParentID:       parentID,
+		RegisterDomain: registerDomain,
 	}
 
 	if err := s.userRepo.Create(ctx, user); err != nil {
@@ -442,7 +443,7 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (string
 //
 // 注意：该函数用于 LinuxDo OAuth 登录场景（不同于上游账号的 OAuth，例如 Claude/OpenAI/Gemini）。
 // 为了满足现有数据库约束（需要密码哈希），新用户会生成随机密码并进行哈希保存。
-func (s *AuthService) LoginOrRegisterOAuth(ctx context.Context, email, username string) (string, *User, error) {
+func (s *AuthService) LoginOrRegisterOAuth(ctx context.Context, email, username, registerDomain string) (string, *User, error) {
 	email = strings.TrimSpace(email)
 	if email == "" || len(email) > 255 {
 		return "", nil, infraerrors.BadRequest("INVALID_EMAIL", "invalid email")
@@ -483,13 +484,14 @@ func (s *AuthService) LoginOrRegisterOAuth(ctx context.Context, email, username 
 			}
 
 			newUser := &User{
-				Email:        email,
-				Username:     username,
-				PasswordHash: hashedPassword,
-				Role:         RoleUser,
-				Balance:      defaultBalance,
-				Concurrency:  defaultConcurrency,
-				Status:       StatusActive,
+				Email:          email,
+				Username:       username,
+				PasswordHash:   hashedPassword,
+				Role:           RoleUser,
+				Balance:        defaultBalance,
+				Concurrency:    defaultConcurrency,
+				Status:         StatusActive,
+				RegisterDomain: registerDomain,
 			}
 
 			if err := s.userRepo.Create(ctx, newUser); err != nil {
@@ -534,7 +536,7 @@ func (s *AuthService) LoginOrRegisterOAuth(ctx context.Context, email, username 
 
 // LoginOrRegisterOAuthWithTokenPair 用于第三方 OAuth/SSO 登录，返回完整的 TokenPair
 // 与 LoginOrRegisterOAuth 功能相同，但返回 TokenPair 而非单个 token
-func (s *AuthService) LoginOrRegisterOAuthWithTokenPair(ctx context.Context, email, username string) (*TokenPair, *User, error) {
+func (s *AuthService) LoginOrRegisterOAuthWithTokenPair(ctx context.Context, email, username, registerDomain string) (*TokenPair, *User, error) {
 	// 检查 refreshTokenCache 是否可用
 	if s.refreshTokenCache == nil {
 		return nil, nil, errors.New("refresh token cache not configured")
@@ -579,13 +581,14 @@ func (s *AuthService) LoginOrRegisterOAuthWithTokenPair(ctx context.Context, ema
 			}
 
 			newUser := &User{
-				Email:        email,
-				Username:     username,
-				PasswordHash: hashedPassword,
-				Role:         RoleUser,
-				Balance:      defaultBalance,
-				Concurrency:  defaultConcurrency,
-				Status:       StatusActive,
+				Email:          email,
+				Username:       username,
+				PasswordHash:   hashedPassword,
+				Role:           RoleUser,
+				Balance:        defaultBalance,
+				Concurrency:    defaultConcurrency,
+				Status:         StatusActive,
+				RegisterDomain: registerDomain,
 			}
 
 			if err := s.userRepo.Create(ctx, newUser); err != nil {

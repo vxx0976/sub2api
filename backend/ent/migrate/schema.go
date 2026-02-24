@@ -1112,6 +1112,7 @@ var (
 		{Name: "totp_secret_encrypted", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "totp_enabled", Type: field.TypeBool, Default: false},
 		{Name: "totp_enabled_at", Type: field.TypeTime, Nullable: true},
+		{Name: "register_domain", Type: field.TypeString, Nullable: true, Size: 255, Default: ""},
 		{Name: "token_version", Type: field.TypeInt64, Default: 0},
 		{Name: "role_version", Type: field.TypeInt64, Default: 0},
 		{Name: "parent_id", Type: field.TypeInt64, Nullable: true},
@@ -1124,7 +1125,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "users_users_sub_users",
-				Columns:    []*schema.Column{UsersColumns[20]},
+				Columns:    []*schema.Column{UsersColumns[21]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -1143,7 +1144,7 @@ var (
 			{
 				Name:    "user_parent_id",
 				Unique:  false,
-				Columns: []*schema.Column{UsersColumns[20]},
+				Columns: []*schema.Column{UsersColumns[21]},
 			},
 		},
 	}

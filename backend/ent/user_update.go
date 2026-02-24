@@ -307,6 +307,26 @@ func (_u *UserUpdate) ClearTotpEnabledAt() *UserUpdate {
 	return _u
 }
 
+// SetRegisterDomain sets the "register_domain" field.
+func (_u *UserUpdate) SetRegisterDomain(v string) *UserUpdate {
+	_u.mutation.SetRegisterDomain(v)
+	return _u
+}
+
+// SetNillableRegisterDomain sets the "register_domain" field if the given value is not nil.
+func (_u *UserUpdate) SetNillableRegisterDomain(v *string) *UserUpdate {
+	if v != nil {
+		_u.SetRegisterDomain(*v)
+	}
+	return _u
+}
+
+// ClearRegisterDomain clears the value of the "register_domain" field.
+func (_u *UserUpdate) ClearRegisterDomain() *UserUpdate {
+	_u.mutation.ClearRegisterDomain()
+	return _u
+}
+
 // SetParentID sets the "parent_id" field.
 func (_u *UserUpdate) SetParentID(v int64) *UserUpdate {
 	_u.mutation.SetParentID(v)
@@ -999,6 +1019,11 @@ func (_u *UserUpdate) check() error {
 			return &ValidationError{Name: "referral_code", err: fmt.Errorf(`ent: validator failed for field "User.referral_code": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.RegisterDomain(); ok {
+		if err := user.RegisterDomainValidator(v); err != nil {
+			return &ValidationError{Name: "register_domain", err: fmt.Errorf(`ent: validator failed for field "User.register_domain": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -1085,6 +1110,12 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.TotpEnabledAtCleared() {
 		_spec.ClearField(user.FieldTotpEnabledAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.RegisterDomain(); ok {
+		_spec.SetField(user.FieldRegisterDomain, field.TypeString, value)
+	}
+	if _u.mutation.RegisterDomainCleared() {
+		_spec.ClearField(user.FieldRegisterDomain, field.TypeString)
 	}
 	if value, ok := _u.mutation.TokenVersion(); ok {
 		_spec.SetField(user.FieldTokenVersion, field.TypeInt64, value)
@@ -2101,6 +2132,26 @@ func (_u *UserUpdateOne) ClearTotpEnabledAt() *UserUpdateOne {
 	return _u
 }
 
+// SetRegisterDomain sets the "register_domain" field.
+func (_u *UserUpdateOne) SetRegisterDomain(v string) *UserUpdateOne {
+	_u.mutation.SetRegisterDomain(v)
+	return _u
+}
+
+// SetNillableRegisterDomain sets the "register_domain" field if the given value is not nil.
+func (_u *UserUpdateOne) SetNillableRegisterDomain(v *string) *UserUpdateOne {
+	if v != nil {
+		_u.SetRegisterDomain(*v)
+	}
+	return _u
+}
+
+// ClearRegisterDomain clears the value of the "register_domain" field.
+func (_u *UserUpdateOne) ClearRegisterDomain() *UserUpdateOne {
+	_u.mutation.ClearRegisterDomain()
+	return _u
+}
+
 // SetParentID sets the "parent_id" field.
 func (_u *UserUpdateOne) SetParentID(v int64) *UserUpdateOne {
 	_u.mutation.SetParentID(v)
@@ -2806,6 +2857,11 @@ func (_u *UserUpdateOne) check() error {
 			return &ValidationError{Name: "referral_code", err: fmt.Errorf(`ent: validator failed for field "User.referral_code": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.RegisterDomain(); ok {
+		if err := user.RegisterDomainValidator(v); err != nil {
+			return &ValidationError{Name: "register_domain", err: fmt.Errorf(`ent: validator failed for field "User.register_domain": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -2909,6 +2965,12 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 	}
 	if _u.mutation.TotpEnabledAtCleared() {
 		_spec.ClearField(user.FieldTotpEnabledAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.RegisterDomain(); ok {
+		_spec.SetField(user.FieldRegisterDomain, field.TypeString, value)
+	}
+	if _u.mutation.RegisterDomainCleared() {
+		_spec.ClearField(user.FieldRegisterDomain, field.TypeString)
 	}
 	if value, ok := _u.mutation.TokenVersion(); ok {
 		_spec.SetField(user.FieldTokenVersion, field.TypeInt64, value)

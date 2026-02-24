@@ -49,6 +49,8 @@ const (
 	FieldTotpEnabled = "totp_enabled"
 	// FieldTotpEnabledAt holds the string denoting the totp_enabled_at field in the database.
 	FieldTotpEnabledAt = "totp_enabled_at"
+	// FieldRegisterDomain holds the string denoting the register_domain field in the database.
+	FieldRegisterDomain = "register_domain"
 	// FieldParentID holds the string denoting the parent_id field in the database.
 	FieldParentID = "parent_id"
 	// FieldTokenVersion holds the string denoting the token_version field in the database.
@@ -224,6 +226,7 @@ var Columns = []string{
 	FieldTotpSecretEncrypted,
 	FieldTotpEnabled,
 	FieldTotpEnabledAt,
+	FieldRegisterDomain,
 	FieldParentID,
 	FieldTokenVersion,
 	FieldRoleVersion,
@@ -287,6 +290,10 @@ var (
 	DefaultReferralRewarded bool
 	// DefaultTotpEnabled holds the default value on creation for the "totp_enabled" field.
 	DefaultTotpEnabled bool
+	// DefaultRegisterDomain holds the default value on creation for the "register_domain" field.
+	DefaultRegisterDomain string
+	// RegisterDomainValidator is a validator for the "register_domain" field. It is called by the builders before save.
+	RegisterDomainValidator func(string) error
 	// DefaultTokenVersion holds the default value on creation for the "token_version" field.
 	DefaultTokenVersion int64
 	// DefaultRoleVersion holds the default value on creation for the "role_version" field.
@@ -384,6 +391,11 @@ func ByTotpEnabled(opts ...sql.OrderTermOption) OrderOption {
 // ByTotpEnabledAt orders the results by the totp_enabled_at field.
 func ByTotpEnabledAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTotpEnabledAt, opts...).ToFunc()
+}
+
+// ByRegisterDomain orders the results by the register_domain field.
+func ByRegisterDomain(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRegisterDomain, opts...).ToFunc()
 }
 
 // ByParentID orders the results by the parent_id field.

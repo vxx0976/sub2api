@@ -27,6 +27,9 @@ type User struct {
 	ReferredBy       *int64  `json:"-"` // Internal use only
 	ReferralRewarded bool    `json:"-"` // Internal use only
 
+	// 注册来源域名
+	RegisterDomain string `json:"register_domain,omitempty"`
+
 	// 分销商层级
 	ParentID *int64 `json:"parent_id,omitempty"` // 上级分销商用户 ID
 

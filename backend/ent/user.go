@@ -51,6 +51,8 @@ type User struct {
 	TotpEnabled bool `json:"totp_enabled,omitempty"`
 	// TotpEnabledAt holds the value of the "totp_enabled_at" field.
 	TotpEnabledAt *time.Time `json:"totp_enabled_at,omitempty"`
+	// 用户注册时的域名
+	RegisterDomain string `json:"register_domain,omitempty"`
 	// 上级分销商用户 ID
 	ParentID *int64 `json:"parent_id,omitempty"`
 	// Token 版本号，密码修改时递增
@@ -270,7 +272,7 @@ func (*User) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullFloat64)
 		case user.FieldID, user.FieldConcurrency, user.FieldReferredBy, user.FieldParentID, user.FieldTokenVersion, user.FieldRoleVersion:
 			values[i] = new(sql.NullInt64)
-		case user.FieldEmail, user.FieldPasswordHash, user.FieldRole, user.FieldStatus, user.FieldUsername, user.FieldNotes, user.FieldReferralCode, user.FieldTotpSecretEncrypted:
+		case user.FieldEmail, user.FieldPasswordHash, user.FieldRole, user.FieldStatus, user.FieldUsername, user.FieldNotes, user.FieldReferralCode, user.FieldTotpSecretEncrypted, user.FieldRegisterDomain:
 			values[i] = new(sql.NullString)
 		case user.FieldCreatedAt, user.FieldUpdatedAt, user.FieldDeletedAt, user.FieldTotpEnabledAt:
 			values[i] = new(sql.NullTime)
@@ -401,6 +403,12 @@ func (_m *User) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.TotpEnabledAt = new(time.Time)
 				*_m.TotpEnabledAt = value.Time
+			}
+		case user.FieldRegisterDomain:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field register_domain", values[i])
+			} else if value.Valid {
+				_m.RegisterDomain = value.String
 			}
 		case user.FieldParentID:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -602,6 +610,9 @@ func (_m *User) String() string {
 		builder.WriteString("totp_enabled_at=")
 		builder.WriteString(v.Format(time.ANSIC))
 	}
+	builder.WriteString(", ")
+	builder.WriteString("register_domain=")
+	builder.WriteString(_m.RegisterDomain)
 	builder.WriteString(", ")
 	if v := _m.ParentID; v != nil {
 		builder.WriteString("parent_id=")

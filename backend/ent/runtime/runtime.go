@@ -1253,12 +1253,18 @@ func init() {
 	userDescTotpEnabled := userFields[12].Descriptor()
 	// user.DefaultTotpEnabled holds the default value on creation for the totp_enabled field.
 	user.DefaultTotpEnabled = userDescTotpEnabled.Default.(bool)
+	// userDescRegisterDomain is the schema descriptor for register_domain field.
+	userDescRegisterDomain := userFields[14].Descriptor()
+	// user.DefaultRegisterDomain holds the default value on creation for the register_domain field.
+	user.DefaultRegisterDomain = userDescRegisterDomain.Default.(string)
+	// user.RegisterDomainValidator is a validator for the "register_domain" field. It is called by the builders before save.
+	user.RegisterDomainValidator = userDescRegisterDomain.Validators[0].(func(string) error)
 	// userDescTokenVersion is the schema descriptor for token_version field.
-	userDescTokenVersion := userFields[15].Descriptor()
+	userDescTokenVersion := userFields[16].Descriptor()
 	// user.DefaultTokenVersion holds the default value on creation for the token_version field.
 	user.DefaultTokenVersion = userDescTokenVersion.Default.(int64)
 	// userDescRoleVersion is the schema descriptor for role_version field.
-	userDescRoleVersion := userFields[16].Descriptor()
+	userDescRoleVersion := userFields[17].Descriptor()
 	// user.DefaultRoleVersion holds the default value on creation for the role_version field.
 	user.DefaultRoleVersion = userDescRoleVersion.Default.(int64)
 	userallowedgroupFields := schema.UserAllowedGroup{}.Fields()

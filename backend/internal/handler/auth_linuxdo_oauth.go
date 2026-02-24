@@ -211,7 +211,12 @@ func (h *AuthHandler) LinuxDoOAuthCallback(c *gin.Context) {
 		email = linuxDoSyntheticEmail(subject)
 	}
 
-	tokenPair, _, err := h.authService.LoginOrRegisterOAuthWithTokenPair(c.Request.Context(), email, username)
+	// 获取注册来源域名
+	oauthDomain := c.Request.Host
+	if idx := strings.LastIndex(oauthDomain, ":"); idx != -1 {
+		oauthDomain = oauthDomain[:idx]
+	}
+	tokenPair, _, err := h.authService.LoginOrRegisterOAuthWithTokenPair(c.Request.Context(), email, username, oauthDomain)
 	if err != nil {
 		// 避免把内部细节泄露给客户端；给前端保留结构化原因与提示信息即可。
 		redirectOAuthError(c, frontendCallback, "login_failed", infraerrors.Reason(err), infraerrors.Message(err))

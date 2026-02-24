@@ -2,6 +2,7 @@ package handler
 
 import (
 	"log/slog"
+	"strings"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/Wei-Shaw/sub2api/internal/handler/dto"
@@ -153,7 +154,14 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		}
 	}
 
-	_, user, err := h.authService.RegisterWithVerification(c.Request.Context(), req.Email, req.Password, req.VerifyCode, req.PromoCode, req.InvitationCode, parentID)
+	// 获取注册来源域名
+	registerDomain := c.Request.Host
+	// 去掉端口号
+	if idx := strings.LastIndex(registerDomain, ":"); idx != -1 {
+		registerDomain = registerDomain[:idx]
+	}
+
+	_, user, err := h.authService.RegisterWithVerification(c.Request.Context(), req.Email, req.Password, req.VerifyCode, req.PromoCode, req.InvitationCode, parentID, registerDomain)
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return

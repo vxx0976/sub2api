@@ -274,7 +274,7 @@
             <span v-if="row.parent_id" class="text-sm text-gray-700 dark:text-gray-300">
               {{ row.parent_domain || `#${row.parent_id}` }}
             </span>
-            <span v-else class="text-sm text-gray-400 dark:text-dark-500">{{ t('admin.users.mainSite') }}</span>
+            <span v-else class="text-sm text-gray-400 dark:text-dark-500">{{ row.register_domain || t('admin.users.mainSite') }}</span>
           </template>
 
           <template #cell-role="{ value }">
@@ -571,7 +571,6 @@ import UserBalanceModal from '@/components/admin/user/UserBalanceModal.vue'
 import UserBalanceHistoryModal from '@/components/admin/user/UserBalanceHistoryModal.vue'
 
 const appStore = useAppStore()
-
 // Generate dynamic attribute columns from enabled definitions
 const attributeColumns = computed<Column[]>(() =>
   attributeDefinitions.value

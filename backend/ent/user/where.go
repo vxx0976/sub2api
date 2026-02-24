@@ -140,6 +140,11 @@ func TotpEnabledAt(v time.Time) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldTotpEnabledAt, v))
 }
 
+// RegisterDomain applies equality check predicate on the "register_domain" field. It's identical to RegisterDomainEQ.
+func RegisterDomain(v string) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldRegisterDomain, v))
+}
+
 // ParentID applies equality check predicate on the "parent_id" field. It's identical to ParentIDEQ.
 func ParentID(v int64) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldParentID, v))
@@ -1023,6 +1028,81 @@ func TotpEnabledAtIsNil() predicate.User {
 // TotpEnabledAtNotNil applies the NotNil predicate on the "totp_enabled_at" field.
 func TotpEnabledAtNotNil() predicate.User {
 	return predicate.User(sql.FieldNotNull(FieldTotpEnabledAt))
+}
+
+// RegisterDomainEQ applies the EQ predicate on the "register_domain" field.
+func RegisterDomainEQ(v string) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldRegisterDomain, v))
+}
+
+// RegisterDomainNEQ applies the NEQ predicate on the "register_domain" field.
+func RegisterDomainNEQ(v string) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldRegisterDomain, v))
+}
+
+// RegisterDomainIn applies the In predicate on the "register_domain" field.
+func RegisterDomainIn(vs ...string) predicate.User {
+	return predicate.User(sql.FieldIn(FieldRegisterDomain, vs...))
+}
+
+// RegisterDomainNotIn applies the NotIn predicate on the "register_domain" field.
+func RegisterDomainNotIn(vs ...string) predicate.User {
+	return predicate.User(sql.FieldNotIn(FieldRegisterDomain, vs...))
+}
+
+// RegisterDomainGT applies the GT predicate on the "register_domain" field.
+func RegisterDomainGT(v string) predicate.User {
+	return predicate.User(sql.FieldGT(FieldRegisterDomain, v))
+}
+
+// RegisterDomainGTE applies the GTE predicate on the "register_domain" field.
+func RegisterDomainGTE(v string) predicate.User {
+	return predicate.User(sql.FieldGTE(FieldRegisterDomain, v))
+}
+
+// RegisterDomainLT applies the LT predicate on the "register_domain" field.
+func RegisterDomainLT(v string) predicate.User {
+	return predicate.User(sql.FieldLT(FieldRegisterDomain, v))
+}
+
+// RegisterDomainLTE applies the LTE predicate on the "register_domain" field.
+func RegisterDomainLTE(v string) predicate.User {
+	return predicate.User(sql.FieldLTE(FieldRegisterDomain, v))
+}
+
+// RegisterDomainContains applies the Contains predicate on the "register_domain" field.
+func RegisterDomainContains(v string) predicate.User {
+	return predicate.User(sql.FieldContains(FieldRegisterDomain, v))
+}
+
+// RegisterDomainHasPrefix applies the HasPrefix predicate on the "register_domain" field.
+func RegisterDomainHasPrefix(v string) predicate.User {
+	return predicate.User(sql.FieldHasPrefix(FieldRegisterDomain, v))
+}
+
+// RegisterDomainHasSuffix applies the HasSuffix predicate on the "register_domain" field.
+func RegisterDomainHasSuffix(v string) predicate.User {
+	return predicate.User(sql.FieldHasSuffix(FieldRegisterDomain, v))
+}
+
+// RegisterDomainIsNil applies the IsNil predicate on the "register_domain" field.
+func RegisterDomainIsNil() predicate.User {
+	return predicate.User(sql.FieldIsNull(FieldRegisterDomain))
+}
+
+// RegisterDomainNotNil applies the NotNil predicate on the "register_domain" field.
+func RegisterDomainNotNil() predicate.User {
+	return predicate.User(sql.FieldNotNull(FieldRegisterDomain))
+}
+
+// RegisterDomainEqualFold applies the EqualFold predicate on the "register_domain" field.
+func RegisterDomainEqualFold(v string) predicate.User {
+	return predicate.User(sql.FieldEqualFold(FieldRegisterDomain, v))
+}
+
+// RegisterDomainContainsFold applies the ContainsFold predicate on the "register_domain" field.
+func RegisterDomainContainsFold(v string) predicate.User {
+	return predicate.User(sql.FieldContainsFold(FieldRegisterDomain, v))
 }
 
 // ParentIDEQ applies the EQ predicate on the "parent_id" field.
