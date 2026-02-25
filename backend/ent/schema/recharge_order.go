@@ -49,18 +49,22 @@ func (RechargeOrder) Fields() []ent.Field {
 		field.Time("paid_at").
 			Optional().
 			Nillable().
+			SchemaType(map[string]string{dialect.Postgres: "timestamptz"}).
 			Comment("支付时间"),
 		field.Time("created_at").
 			Immutable().
 			Default(time.Now).
+			SchemaType(map[string]string{dialect.Postgres: "timestamptz"}).
 			Comment("创建时间"),
 		field.Time("updated_at").
 			Default(time.Now).
 			UpdateDefault(time.Now).
+			SchemaType(map[string]string{dialect.Postgres: "timestamptz"}).
 			Comment("更新时间"),
 		field.Time("expired_at").
 			Optional().
 			Nillable().
+			SchemaType(map[string]string{dialect.Postgres: "timestamptz"}).
 			Comment("过期时间"),
 	}
 }
