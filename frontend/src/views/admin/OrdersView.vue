@@ -144,8 +144,9 @@
           </template>
 
           <template #cell-actions="{ row }">
-            <div v-if="row.status === 'pending'" class="flex items-center gap-1">
+            <div v-if="row.status === 'pending' || row.status === 'expired'" class="flex items-center gap-1">
               <button
+                v-if="row.status === 'pending'"
                 @click="handleMarkOrderPaid(row)"
                 class="rounded p-1 text-green-600 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-900/20"
                 :title="t('admin.orders.markAsPaid')"

@@ -13,7 +13,7 @@
 
       <!-- First Recharge Special Offer Card -->
       <div
-        v-if="firstRechargeEligible"
+        v-if="firstRechargeEligible && isChinese"
         class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 p-6 text-white shadow-lg shadow-orange-500/20"
       >
         <div class="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-white/10"></div>
@@ -143,6 +143,9 @@
           <span v-if="contactWechat" class="inline-flex items-center gap-1 text-gray-500 dark:text-gray-400">
             WeChat: {{ contactWechat }}
           </span>
+          <a href="mailto:vanxuehan@gmail.com" class="inline-flex items-center gap-1 font-medium text-red-500 hover:text-red-600 dark:text-red-400">
+            vanxuehan@gmail.com
+          </a>
         </div>
       </div>
 

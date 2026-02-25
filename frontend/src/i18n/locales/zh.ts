@@ -218,6 +218,7 @@ export default {
       title: '联系我们',
       wechat: '微信',
       telegram: 'Telegram',
+      email: '邮箱',
       scanQr: '微信：mayione1'
     },
     links: {

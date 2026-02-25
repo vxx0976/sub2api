@@ -284,7 +284,7 @@ func (s *OrderService) DeleteOrder(ctx context.Context, id int64) error {
 	if err != nil {
 		return err
 	}
-	if order.Status != OrderStatusPending {
+	if order.Status != OrderStatusPending && order.Status != OrderStatusExpired {
 		return ErrOrderNotPending
 	}
 	return s.orderRepo.Delete(ctx, id)

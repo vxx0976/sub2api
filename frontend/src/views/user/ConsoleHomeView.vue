@@ -82,6 +82,18 @@
                 </svg>
                 <span class="text-sm font-medium text-gray-700 dark:text-dark-300">{{ t('consoleHome.contact.telegram') }}: @{{ contactTelegram }}</span>
               </a>
+              <!-- Email -->
+              <a
+                v-if="contactEmail"
+                :href="`mailto:${contactEmail}`"
+                class="flex items-center gap-2 transition-colors hover:text-red-700"
+              >
+                <svg class="h-4 w-4 flex-shrink-0 text-red-500" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M1.5 8.67v8.58a3 3 0 003 3h15a3 3 0 003-3V8.67l-8.928 5.493a3 3 0 01-3.144 0L1.5 8.67z" />
+                  <path d="M22.5 6.908V6.75a3 3 0 00-3-3h-15a3 3 0 00-3 3v.158l9.714 5.978a1.5 1.5 0 001.572 0L22.5 6.908z" />
+                </svg>
+                <span class="text-sm font-medium text-gray-700 dark:text-dark-300">{{ t('consoleHome.contact.email') }}: {{ contactEmail }}</span>
+              </a>
             </div>
         </div>
       </div>
@@ -132,11 +144,12 @@ const docUrl = computed(() => appStore.cachedPublicSettings?.doc_url || '')
 // Dynamic contact info — from public settings (main site or reseller)
 const contactWechat = computed(() => appStore.cachedPublicSettings?.contact_wechat || '')
 const contactTelegram = computed(() => appStore.cachedPublicSettings?.contact_telegram || '')
-const hasContactInfo = computed(() => !!contactWechat.value || !!contactTelegram.value)
+const contactEmail = computed(() => appStore.isResellerDomain ? '' : 'vanxuehan@gmail.com')
+const hasContactInfo = computed(() => !!contactWechat.value || !!contactTelegram.value || !!contactEmail.value)
 
 // Announcements from cachedPublicSettings (injected via __APP_CONFIG__).
 // On reseller domains, embed_on.go replaces system announcements with the reseller's own.
-const announcements = computed(() => appStore.cachedPublicSettings?.announcements ?? [])
+const announcements = computed(() => [...(appStore.cachedPublicSettings?.announcements ?? [])].reverse())
 
 const quickLinks = computed(() => {
   const links = [

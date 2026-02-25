@@ -219,6 +219,7 @@ export default {
       title: 'Contact Us',
       wechat: 'WeChat',
       telegram: 'Telegram',
+      email: 'Email',
       scanQr: 'WeChat: mayione1'
     },
     links: {

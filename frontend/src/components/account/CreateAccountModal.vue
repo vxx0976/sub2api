@@ -2164,7 +2164,6 @@ import { useAntigravityOAuth } from '@/composables/useAntigravityOAuth'
 import type {
   Proxy,
   Group,
-  AdminGroup,
   AccountPlatform,
   AccountType,
   CheckMixedChannelResponse,
