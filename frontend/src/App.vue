@@ -114,6 +114,7 @@ watch(
   { immediate: true }
 )
 
+
 // Watch for authentication state and manage subscription data
 watch(
   () => authStore.isAuthenticated,

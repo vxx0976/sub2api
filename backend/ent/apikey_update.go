@@ -246,6 +246,26 @@ func (_u *APIKeyUpdate) ClearExpiresAt() *APIKeyUpdate {
 	return _u
 }
 
+// SetLastUsedAt sets the "last_used_at" field.
+func (_u *APIKeyUpdate) SetLastUsedAt(v time.Time) *APIKeyUpdate {
+	_u.mutation.SetLastUsedAt(v)
+	return _u
+}
+
+// SetNillableLastUsedAt sets the "last_used_at" field if the given value is not nil.
+func (_u *APIKeyUpdate) SetNillableLastUsedAt(v *time.Time) *APIKeyUpdate {
+	if v != nil {
+		_u.SetLastUsedAt(*v)
+	}
+	return _u
+}
+
+// ClearLastUsedAt clears the value of the "last_used_at" field.
+func (_u *APIKeyUpdate) ClearLastUsedAt() *APIKeyUpdate {
+	_u.mutation.ClearLastUsedAt()
+	return _u
+}
+
 // SetTgChatID sets the "tg_chat_id" field.
 func (_u *APIKeyUpdate) SetTgChatID(v int64) *APIKeyUpdate {
 	_u.mutation.ResetTgChatID()
@@ -478,6 +498,12 @@ func (_u *APIKeyUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.ExpiresAtCleared() {
 		_spec.ClearField(apikey.FieldExpiresAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.LastUsedAt(); ok {
+		_spec.SetField(apikey.FieldLastUsedAt, field.TypeTime, value)
+	}
+	if _u.mutation.LastUsedAtCleared() {
+		_spec.ClearField(apikey.FieldLastUsedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.TgChatID(); ok {
 		_spec.SetField(apikey.FieldTgChatID, field.TypeInt64, value)
@@ -825,6 +851,26 @@ func (_u *APIKeyUpdateOne) ClearExpiresAt() *APIKeyUpdateOne {
 	return _u
 }
 
+// SetLastUsedAt sets the "last_used_at" field.
+func (_u *APIKeyUpdateOne) SetLastUsedAt(v time.Time) *APIKeyUpdateOne {
+	_u.mutation.SetLastUsedAt(v)
+	return _u
+}
+
+// SetNillableLastUsedAt sets the "last_used_at" field if the given value is not nil.
+func (_u *APIKeyUpdateOne) SetNillableLastUsedAt(v *time.Time) *APIKeyUpdateOne {
+	if v != nil {
+		_u.SetLastUsedAt(*v)
+	}
+	return _u
+}
+
+// ClearLastUsedAt clears the value of the "last_used_at" field.
+func (_u *APIKeyUpdateOne) ClearLastUsedAt() *APIKeyUpdateOne {
+	_u.mutation.ClearLastUsedAt()
+	return _u
+}
+
 // SetTgChatID sets the "tg_chat_id" field.
 func (_u *APIKeyUpdateOne) SetTgChatID(v int64) *APIKeyUpdateOne {
 	_u.mutation.ResetTgChatID()
@@ -1087,6 +1133,12 @@ func (_u *APIKeyUpdateOne) sqlSave(ctx context.Context) (_node *APIKey, err erro
 	}
 	if _u.mutation.ExpiresAtCleared() {
 		_spec.ClearField(apikey.FieldExpiresAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.LastUsedAt(); ok {
+		_spec.SetField(apikey.FieldLastUsedAt, field.TypeTime, value)
+	}
+	if _u.mutation.LastUsedAtCleared() {
+		_spec.ClearField(apikey.FieldLastUsedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.TgChatID(); ok {
 		_spec.SetField(apikey.FieldTgChatID, field.TypeInt64, value)

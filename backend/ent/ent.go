@@ -20,6 +20,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/channel"
 	"github.com/Wei-Shaw/sub2api/ent/errorpassthroughrule"
 	"github.com/Wei-Shaw/sub2api/ent/group"
+	"github.com/Wei-Shaw/sub2api/ent/idempotencyrecord"
 	"github.com/Wei-Shaw/sub2api/ent/order"
 	"github.com/Wei-Shaw/sub2api/ent/promocode"
 	"github.com/Wei-Shaw/sub2api/ent/promocodeusage"
@@ -29,6 +30,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/referralreward"
 	"github.com/Wei-Shaw/sub2api/ent/resellerdomain"
 	"github.com/Wei-Shaw/sub2api/ent/resellersetting"
+	"github.com/Wei-Shaw/sub2api/ent/securitysecret"
 	"github.com/Wei-Shaw/sub2api/ent/setting"
 	"github.com/Wei-Shaw/sub2api/ent/usagecleanuptask"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
@@ -105,6 +107,7 @@ func checkColumn(t, c string) error {
 			channel.Table:                 channel.ValidColumn,
 			errorpassthroughrule.Table:    errorpassthroughrule.ValidColumn,
 			group.Table:                   group.ValidColumn,
+			idempotencyrecord.Table:       idempotencyrecord.ValidColumn,
 			order.Table:                   order.ValidColumn,
 			promocode.Table:               promocode.ValidColumn,
 			promocodeusage.Table:          promocodeusage.ValidColumn,
@@ -114,6 +117,7 @@ func checkColumn(t, c string) error {
 			referralreward.Table:          referralreward.ValidColumn,
 			resellerdomain.Table:          resellerdomain.ValidColumn,
 			resellersetting.Table:         resellersetting.ValidColumn,
+			securitysecret.Table:          securitysecret.ValidColumn,
 			setting.Table:                 setting.ValidColumn,
 			usagecleanuptask.Table:        usagecleanuptask.ValidColumn,
 			usagelog.Table:                usagelog.ValidColumn,

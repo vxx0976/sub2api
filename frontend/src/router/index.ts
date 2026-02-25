@@ -8,6 +8,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useAppStore } from '@/stores/app'
 import { useNavigationLoadingState } from '@/composables/useNavigationLoading'
 import { useRoutePrefetch } from '@/composables/useRoutePrefetch'
+import { resolveDocumentTitle } from './title'
 
 /**
  * Route definitions with lazy loading
@@ -183,13 +184,12 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/status',
     name: 'Status',
-    component: () => import('@/views/StatusView.vue'),
-    meta: {
-      requiresAuth: false,
-      title: 'System Status',
-      titleKey: 'status.title',
-      descriptionKey: 'status.description'
-    }
+    beforeEnter() {
+      window.location.href = 'https://status.claude.com'
+      return false
+    },
+    component: () => import('@/views/HomeView.vue'), // placeholder, never rendered
+    meta: { requiresAuth: false }
   },
   {
     path: '/keys',
@@ -621,13 +621,7 @@ router.beforeEach((to, _from, next) => {
     return
   }
 
-  // Set page title
-  const siteName = appStore.siteName || '码驿站'
-  if (to.meta.title) {
-    document.title = `${to.meta.title} - ${siteName}`
-  } else {
-    document.title = siteName
-  }
+  document.title = resolveDocumentTitle(to.meta.title, appStore.siteName)
 
   // Check if route requires authentication
   const requiresAuth = to.meta.requiresAuth !== false // Default to true

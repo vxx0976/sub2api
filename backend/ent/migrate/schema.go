@@ -24,6 +24,7 @@ var (
 		{Name: "quota", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
 		{Name: "quota_used", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
 		{Name: "expires_at", Type: field.TypeTime, Nullable: true},
+		{Name: "last_used_at", Type: field.TypeTime, Nullable: true},
 		{Name: "tg_chat_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "group_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "user_id", Type: field.TypeInt64},
@@ -36,13 +37,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "api_keys_groups_api_keys",
-				Columns:    []*schema.Column{APIKeysColumns[14]},
+				Columns:    []*schema.Column{APIKeysColumns[15]},
 				RefColumns: []*schema.Column{GroupsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "api_keys_users_api_keys",
-				Columns:    []*schema.Column{APIKeysColumns[15]},
+				Columns:    []*schema.Column{APIKeysColumns[16]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -51,12 +52,12 @@ var (
 			{
 				Name:    "apikey_user_id",
 				Unique:  false,
-				Columns: []*schema.Column{APIKeysColumns[15]},
+				Columns: []*schema.Column{APIKeysColumns[16]},
 			},
 			{
 				Name:    "apikey_group_id",
 				Unique:  false,
-				Columns: []*schema.Column{APIKeysColumns[14]},
+				Columns: []*schema.Column{APIKeysColumns[15]},
 			},
 			{
 				Name:    "apikey_status",
@@ -79,9 +80,14 @@ var (
 				Columns: []*schema.Column{APIKeysColumns[12]},
 			},
 			{
-				Name:    "apikey_tg_chat_id",
+				Name:    "apikey_last_used_at",
 				Unique:  false,
 				Columns: []*schema.Column{APIKeysColumns[13]},
+			},
+			{
+				Name:    "apikey_tg_chat_id",
+				Unique:  false,
+				Columns: []*schema.Column{APIKeysColumns[14]},
 			},
 		},
 	}
@@ -429,6 +435,10 @@ var (
 		{Name: "image_price_1k", Type: field.TypeFloat64, Nullable: true, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
 		{Name: "image_price_2k", Type: field.TypeFloat64, Nullable: true, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
 		{Name: "image_price_4k", Type: field.TypeFloat64, Nullable: true, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
+		{Name: "sora_image_price_360", Type: field.TypeFloat64, Nullable: true, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
+		{Name: "sora_image_price_540", Type: field.TypeFloat64, Nullable: true, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
+		{Name: "sora_video_price_per_request", Type: field.TypeFloat64, Nullable: true, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
+		{Name: "sora_video_price_per_request_hd", Type: field.TypeFloat64, Nullable: true, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
 		{Name: "claude_code_only", Type: field.TypeBool, Default: false},
 		{Name: "fallback_group_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "fallback_group_id_on_invalid_request", Type: field.TypeInt64, Nullable: true},
@@ -479,12 +489,50 @@ var (
 			{
 				Name:    "group_sort_order",
 				Unique:  false,
-				Columns: []*schema.Column{GroupsColumns[27]},
+				Columns: []*schema.Column{GroupsColumns[31]},
 			},
 			{
 				Name:    "group_owner_id",
 				Unique:  false,
-				Columns: []*schema.Column{GroupsColumns[30]},
+				Columns: []*schema.Column{GroupsColumns[34]},
+			},
+		},
+	}
+	// IdempotencyRecordsColumns holds the columns for the "idempotency_records" table.
+	IdempotencyRecordsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "scope", Type: field.TypeString, Size: 128},
+		{Name: "idempotency_key_hash", Type: field.TypeString, Size: 64},
+		{Name: "request_fingerprint", Type: field.TypeString, Size: 64},
+		{Name: "status", Type: field.TypeString, Size: 32},
+		{Name: "response_status", Type: field.TypeInt, Nullable: true},
+		{Name: "response_body", Type: field.TypeString, Nullable: true},
+		{Name: "error_reason", Type: field.TypeString, Nullable: true, Size: 128},
+		{Name: "locked_until", Type: field.TypeTime, Nullable: true},
+		{Name: "expires_at", Type: field.TypeTime},
+	}
+	// IdempotencyRecordsTable holds the schema information for the "idempotency_records" table.
+	IdempotencyRecordsTable = &schema.Table{
+		Name:       "idempotency_records",
+		Columns:    IdempotencyRecordsColumns,
+		PrimaryKey: []*schema.Column{IdempotencyRecordsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "idempotencyrecord_scope_idempotency_key_hash",
+				Unique:  true,
+				Columns: []*schema.Column{IdempotencyRecordsColumns[3], IdempotencyRecordsColumns[4]},
+			},
+			{
+				Name:    "idempotencyrecord_expires_at",
+				Unique:  false,
+				Columns: []*schema.Column{IdempotencyRecordsColumns[11]},
+			},
+			{
+				Name:    "idempotencyrecord_status_locked_until",
+				Unique:  false,
+				Columns: []*schema.Column{IdempotencyRecordsColumns[6], IdempotencyRecordsColumns[10]},
 			},
 		},
 	}
@@ -909,6 +957,20 @@ var (
 				Columns: []*schema.Column{ResellerSettingsColumns[1], ResellerSettingsColumns[2]},
 			},
 		},
+	}
+	// SecuritySecretsColumns holds the columns for the "security_secrets" table.
+	SecuritySecretsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "key", Type: field.TypeString, Unique: true, Size: 100},
+		{Name: "value", Type: field.TypeString, SchemaType: map[string]string{"postgres": "text"}},
+	}
+	// SecuritySecretsTable holds the schema information for the "security_secrets" table.
+	SecuritySecretsTable = &schema.Table{
+		Name:       "security_secrets",
+		Columns:    SecuritySecretsColumns,
+		PrimaryKey: []*schema.Column{SecuritySecretsColumns[0]},
 	}
 	// SettingsColumns holds the columns for the "settings" table.
 	SettingsColumns = []*schema.Column{
@@ -1361,6 +1423,7 @@ var (
 		ChannelsTable,
 		ErrorPassthroughRulesTable,
 		GroupsTable,
+		IdempotencyRecordsTable,
 		OrdersTable,
 		PromoCodesTable,
 		PromoCodeUsagesTable,
@@ -1370,6 +1433,7 @@ var (
 		ReferralRewardsTable,
 		ResellerDomainsTable,
 		ResellerSettingsTable,
+		SecuritySecretsTable,
 		SettingsTable,
 		UsageCleanupTasksTable,
 		UsageLogsTable,
@@ -1413,6 +1477,9 @@ func init() {
 	GroupsTable.Annotation = &entsql.Annotation{
 		Table: "groups",
 	}
+	IdempotencyRecordsTable.Annotation = &entsql.Annotation{
+		Table: "idempotency_records",
+	}
 	OrdersTable.ForeignKeys[0].RefTable = GroupsTable
 	OrdersTable.ForeignKeys[1].RefTable = UsersTable
 	OrdersTable.ForeignKeys[2].RefTable = UserSubscriptionsTable
@@ -1448,6 +1515,9 @@ func init() {
 	}
 	ResellerSettingsTable.Annotation = &entsql.Annotation{
 		Table: "reseller_settings",
+	}
+	SecuritySecretsTable.Annotation = &entsql.Annotation{
+		Table: "security_secrets",
 	}
 	SettingsTable.Annotation = &entsql.Annotation{
 		Table: "settings",

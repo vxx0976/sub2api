@@ -75,6 +75,11 @@ func (APIKey) Fields() []ent.Field {
 			Nillable().
 			Comment("Expiration time for this API key (null = never expires)"),
 
+		field.Time("last_used_at").
+			Optional().
+			Nillable().
+			Comment("Last usage time of this API key"),
+
 		// Telegram chat ID for user binding (nil = not bound)
 		field.Int64("tg_chat_id").
 			Optional().
@@ -108,6 +113,7 @@ func (APIKey) Indexes() []ent.Index {
 		// Index for quota queries
 		index.Fields("quota", "quota_used"),
 		index.Fields("expires_at"),
+		index.Fields("last_used_at"),
 		index.Fields("tg_chat_id"),
 	}
 }

@@ -43,6 +43,8 @@ const (
 	FieldQuotaUsed = "quota_used"
 	// FieldExpiresAt holds the string denoting the expires_at field in the database.
 	FieldExpiresAt = "expires_at"
+	// FieldLastUsedAt holds the string denoting the last_used_at field in the database.
+	FieldLastUsedAt = "last_used_at"
 	// FieldTgChatID holds the string denoting the tg_chat_id field in the database.
 	FieldTgChatID = "tg_chat_id"
 	// EdgeUser holds the string denoting the user edge name in mutations.
@@ -93,6 +95,7 @@ var Columns = []string{
 	FieldQuota,
 	FieldQuotaUsed,
 	FieldExpiresAt,
+	FieldLastUsedAt,
 	FieldTgChatID,
 }
 
@@ -204,6 +207,11 @@ func ByQuotaUsed(opts ...sql.OrderTermOption) OrderOption {
 // ByExpiresAt orders the results by the expires_at field.
 func ByExpiresAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldExpiresAt, opts...).ToFunc()
+}
+
+// ByLastUsedAt orders the results by the last_used_at field.
+func ByLastUsedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLastUsedAt, opts...).ToFunc()
 }
 
 // ByTgChatID orders the results by the tg_chat_id field.

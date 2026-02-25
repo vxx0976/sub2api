@@ -45,18 +45,19 @@
             class="transition-colors"
             :class="isActive('/docs') ? 'text-gray-900 dark:text-white' : 'text-gray-600 hover:text-gray-900 dark:text-dark-300 dark:hover:text-white'"
           >{{ t('home.nav.docs') }}</router-link>
-          <router-link
+          <a
             v-if="!isResellerDomain"
-            to="/status"
-            class="flex items-center gap-1.5 transition-colors"
-            :class="isActive('/status') ? 'text-gray-900 dark:text-white' : 'text-gray-600 hover:text-gray-900 dark:text-dark-300 dark:hover:text-white'"
+            href="https://status.claude.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="flex items-center gap-1.5 transition-colors text-gray-600 hover:text-gray-900 dark:text-dark-300 dark:hover:text-white"
           >
             {{ t('home.nav.status') }}
             <span class="relative flex h-2 w-2">
               <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
               <span class="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
             </span>
-          </router-link>
+          </a>
         </div>
 
         <!-- Actions -->

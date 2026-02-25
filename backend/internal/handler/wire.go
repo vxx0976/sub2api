@@ -83,8 +83,8 @@ func ProvideResellerHandlers(
 }
 
 // ProvideSystemHandler creates admin.SystemHandler with UpdateService
-func ProvideSystemHandler(updateService *service.UpdateService) *admin.SystemHandler {
-	return admin.NewSystemHandler(updateService)
+func ProvideSystemHandler(updateService *service.UpdateService, lockService *service.SystemOperationLockService) *admin.SystemHandler {
+	return admin.NewSystemHandler(updateService, lockService)
 }
 
 // ProvideSettingHandler creates SettingHandler with version from BuildInfo
@@ -107,10 +107,13 @@ func ProvideHandlers(
 	resellerHandlers *ResellerHandlers,
 	gatewayHandler *GatewayHandler,
 	openaiGatewayHandler *OpenAIGatewayHandler,
+	soraGatewayHandler *SoraGatewayHandler,
 	settingHandler *SettingHandler,
 	referralHandler *ReferralHandler,
 	totpHandler *TotpHandler,
 	keyQueryHandler *KeyQueryHandler,
+	_ *service.IdempotencyCoordinator,
+	_ *service.IdempotencyCleanupService,
 ) *Handlers {
 	return &Handlers{
 		Auth:          authHandler,
@@ -126,6 +129,7 @@ func ProvideHandlers(
 		Reseller:      resellerHandlers,
 		Gateway:       gatewayHandler,
 		OpenAIGateway: openaiGatewayHandler,
+		SoraGateway:   soraGatewayHandler,
 		Setting:       settingHandler,
 		Referral:      referralHandler,
 		Totp:          totpHandler,
@@ -147,6 +151,7 @@ var ProviderSet = wire.NewSet(
 	NewAnnouncementHandler,
 	NewGatewayHandler,
 	NewOpenAIGatewayHandler,
+	NewSoraGatewayHandler,
 	NewTotpHandler,
 	ProvideSettingHandler,
 	NewReferralHandler,

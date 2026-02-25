@@ -30,6 +30,9 @@ type ErrorPassthroughRule func(*sql.Selector)
 // Group is the predicate function for group builders.
 type Group func(*sql.Selector)
 
+// IdempotencyRecord is the predicate function for idempotencyrecord builders.
+type IdempotencyRecord func(*sql.Selector)
+
 // Order is the predicate function for order builders.
 type Order func(*sql.Selector)
 
@@ -56,6 +59,9 @@ type ResellerDomain func(*sql.Selector)
 
 // ResellerSetting is the predicate function for resellersetting builders.
 type ResellerSetting func(*sql.Selector)
+
+// SecuritySecret is the predicate function for securitysecret builders.
+type SecuritySecret func(*sql.Selector)
 
 // Setting is the predicate function for setting builders.
 type Setting func(*sql.Selector)

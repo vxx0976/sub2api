@@ -30,6 +30,8 @@ type Tx struct {
 	ErrorPassthroughRule *ErrorPassthroughRuleClient
 	// Group is the client for interacting with the Group builders.
 	Group *GroupClient
+	// IdempotencyRecord is the client for interacting with the IdempotencyRecord builders.
+	IdempotencyRecord *IdempotencyRecordClient
 	// Order is the client for interacting with the Order builders.
 	Order *OrderClient
 	// PromoCode is the client for interacting with the PromoCode builders.
@@ -48,6 +50,8 @@ type Tx struct {
 	ResellerDomain *ResellerDomainClient
 	// ResellerSetting is the client for interacting with the ResellerSetting builders.
 	ResellerSetting *ResellerSettingClient
+	// SecuritySecret is the client for interacting with the SecuritySecret builders.
+	SecuritySecret *SecuritySecretClient
 	// Setting is the client for interacting with the Setting builders.
 	Setting *SettingClient
 	// UsageCleanupTask is the client for interacting with the UsageCleanupTask builders.
@@ -203,6 +207,7 @@ func (tx *Tx) init() {
 	tx.Channel = NewChannelClient(tx.config)
 	tx.ErrorPassthroughRule = NewErrorPassthroughRuleClient(tx.config)
 	tx.Group = NewGroupClient(tx.config)
+	tx.IdempotencyRecord = NewIdempotencyRecordClient(tx.config)
 	tx.Order = NewOrderClient(tx.config)
 	tx.PromoCode = NewPromoCodeClient(tx.config)
 	tx.PromoCodeUsage = NewPromoCodeUsageClient(tx.config)
@@ -212,6 +217,7 @@ func (tx *Tx) init() {
 	tx.ReferralReward = NewReferralRewardClient(tx.config)
 	tx.ResellerDomain = NewResellerDomainClient(tx.config)
 	tx.ResellerSetting = NewResellerSettingClient(tx.config)
+	tx.SecuritySecret = NewSecuritySecretClient(tx.config)
 	tx.Setting = NewSettingClient(tx.config)
 	tx.UsageCleanupTask = NewUsageCleanupTaskClient(tx.config)
 	tx.UsageLog = NewUsageLogClient(tx.config)

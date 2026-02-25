@@ -2,6 +2,7 @@
 package dto
 
 import (
+	"strconv"
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/service"
@@ -80,6 +81,7 @@ func APIKeyFromService(k *service.APIKey) *APIKey {
 		Status:      k.Status,
 		IPWhitelist: k.IPWhitelist,
 		IPBlacklist: k.IPBlacklist,
+		LastUsedAt:  k.LastUsedAt,
 		Quota:       k.Quota,
 		QuotaUsed:   k.QuotaUsed,
 		ExpiresAt:   k.ExpiresAt,
@@ -146,6 +148,10 @@ func groupFromServiceBase(g *service.Group) Group {
 		ImagePrice1K:                    g.ImagePrice1K,
 		ImagePrice2K:                    g.ImagePrice2K,
 		ImagePrice4K:                    g.ImagePrice4K,
+		SoraImagePrice360:               g.SoraImagePrice360,
+		SoraImagePrice540:               g.SoraImagePrice540,
+		SoraVideoPricePerRequest:        g.SoraVideoPricePerRequest,
+		SoraVideoPricePerRequestHD:      g.SoraVideoPricePerRequestHD,
 		ClaudeCodeOnly:                  g.ClaudeCodeOnly,
 		FallbackGroupID:                 g.FallbackGroupID,
 		FallbackGroupIDOnInvalidRequest: g.FallbackGroupIDOnInvalidRequest,
@@ -309,6 +315,11 @@ func ProxyWithAccountCountFromService(p *service.ProxyWithAccountCount) *ProxyWi
 		CountryCode:    p.CountryCode,
 		Region:         p.Region,
 		City:           p.City,
+		QualityStatus:  p.QualityStatus,
+		QualityScore:   p.QualityScore,
+		QualityGrade:   p.QualityGrade,
+		QualitySummary: p.QualitySummary,
+		QualityChecked: p.QualityChecked,
 	}
 }
 
@@ -413,6 +424,7 @@ func usageLogFromServiceUser(l *service.UsageLog) UsageLog {
 		FirstTokenMs:          l.FirstTokenMs,
 		ImageCount:            l.ImageCount,
 		ImageSize:             l.ImageSize,
+		MediaType:             l.MediaType,
 		UserAgent:             l.UserAgent,
 		CacheTTLOverridden:    l.CacheTTLOverridden,
 		CreatedAt:             l.CreatedAt,
@@ -541,11 +553,18 @@ func BulkAssignResultFromService(r *service.BulkAssignResult) *BulkAssignResult 
 	for i := range r.Subscriptions {
 		subs = append(subs, *UserSubscriptionFromServiceAdmin(&r.Subscriptions[i]))
 	}
+	statuses := make(map[string]string, len(r.Statuses))
+	for userID, status := range r.Statuses {
+		statuses[strconv.FormatInt(userID, 10)] = status
+	}
 	return &BulkAssignResult{
 		SuccessCount:  r.SuccessCount,
+		CreatedCount:  r.CreatedCount,
+		ReusedCount:   r.ReusedCount,
 		FailedCount:   r.FailedCount,
 		Subscriptions: subs,
 		Errors:        r.Errors,
+		Statuses:      statuses,
 	}
 }
 

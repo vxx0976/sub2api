@@ -48,6 +48,8 @@ type APIKey struct {
 	QuotaUsed float64 `json:"quota_used,omitempty"`
 	// Expiration time for this API key (null = never expires)
 	ExpiresAt *time.Time `json:"expires_at,omitempty"`
+	// Last usage time of this API key
+	LastUsedAt *time.Time `json:"last_used_at,omitempty"`
 	// Telegram chat ID for the key holder (null = not bound)
 	TgChatID *int64 `json:"tg_chat_id,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -113,7 +115,7 @@ func (*APIKey) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case apikey.FieldKey, apikey.FieldName, apikey.FieldNotes, apikey.FieldStatus:
 			values[i] = new(sql.NullString)
-		case apikey.FieldCreatedAt, apikey.FieldUpdatedAt, apikey.FieldDeletedAt, apikey.FieldExpiresAt:
+		case apikey.FieldCreatedAt, apikey.FieldUpdatedAt, apikey.FieldDeletedAt, apikey.FieldExpiresAt, apikey.FieldLastUsedAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -227,6 +229,13 @@ func (_m *APIKey) assignValues(columns []string, values []any) error {
 				_m.ExpiresAt = new(time.Time)
 				*_m.ExpiresAt = value.Time
 			}
+		case apikey.FieldLastUsedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field last_used_at", values[i])
+			} else if value.Valid {
+				_m.LastUsedAt = new(time.Time)
+				*_m.LastUsedAt = value.Time
+			}
 		case apikey.FieldTgChatID:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field tg_chat_id", values[i])
@@ -330,6 +339,11 @@ func (_m *APIKey) String() string {
 	builder.WriteString(", ")
 	if v := _m.ExpiresAt; v != nil {
 		builder.WriteString("expires_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.LastUsedAt; v != nil {
+		builder.WriteString("last_used_at=")
 		builder.WriteString(v.Format(time.ANSIC))
 	}
 	builder.WriteString(", ")

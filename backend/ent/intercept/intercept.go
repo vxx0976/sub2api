@@ -16,6 +16,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/channel"
 	"github.com/Wei-Shaw/sub2api/ent/errorpassthroughrule"
 	"github.com/Wei-Shaw/sub2api/ent/group"
+	"github.com/Wei-Shaw/sub2api/ent/idempotencyrecord"
 	"github.com/Wei-Shaw/sub2api/ent/order"
 	"github.com/Wei-Shaw/sub2api/ent/predicate"
 	"github.com/Wei-Shaw/sub2api/ent/promocode"
@@ -26,6 +27,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/referralreward"
 	"github.com/Wei-Shaw/sub2api/ent/resellerdomain"
 	"github.com/Wei-Shaw/sub2api/ent/resellersetting"
+	"github.com/Wei-Shaw/sub2api/ent/securitysecret"
 	"github.com/Wei-Shaw/sub2api/ent/setting"
 	"github.com/Wei-Shaw/sub2api/ent/usagecleanuptask"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
@@ -308,6 +310,33 @@ func (f TraverseGroup) Traverse(ctx context.Context, q ent.Query) error {
 	return fmt.Errorf("unexpected query type %T. expect *ent.GroupQuery", q)
 }
 
+// The IdempotencyRecordFunc type is an adapter to allow the use of ordinary function as a Querier.
+type IdempotencyRecordFunc func(context.Context, *ent.IdempotencyRecordQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f IdempotencyRecordFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.IdempotencyRecordQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.IdempotencyRecordQuery", q)
+}
+
+// The TraverseIdempotencyRecord type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseIdempotencyRecord func(context.Context, *ent.IdempotencyRecordQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseIdempotencyRecord) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseIdempotencyRecord) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.IdempotencyRecordQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.IdempotencyRecordQuery", q)
+}
+
 // The OrderFunc type is an adapter to allow the use of ordinary function as a Querier.
 type OrderFunc func(context.Context, *ent.OrderQuery) (ent.Value, error)
 
@@ -551,6 +580,33 @@ func (f TraverseResellerSetting) Traverse(ctx context.Context, q ent.Query) erro
 	return fmt.Errorf("unexpected query type %T. expect *ent.ResellerSettingQuery", q)
 }
 
+// The SecuritySecretFunc type is an adapter to allow the use of ordinary function as a Querier.
+type SecuritySecretFunc func(context.Context, *ent.SecuritySecretQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f SecuritySecretFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.SecuritySecretQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.SecuritySecretQuery", q)
+}
+
+// The TraverseSecuritySecret type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseSecuritySecret func(context.Context, *ent.SecuritySecretQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseSecuritySecret) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseSecuritySecret) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.SecuritySecretQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.SecuritySecretQuery", q)
+}
+
 // The SettingFunc type is an adapter to allow the use of ordinary function as a Querier.
 type SettingFunc func(context.Context, *ent.SettingQuery) (ent.Value, error)
 
@@ -786,6 +842,8 @@ func NewQuery(q ent.Query) (Query, error) {
 		return &query[*ent.ErrorPassthroughRuleQuery, predicate.ErrorPassthroughRule, errorpassthroughrule.OrderOption]{typ: ent.TypeErrorPassthroughRule, tq: q}, nil
 	case *ent.GroupQuery:
 		return &query[*ent.GroupQuery, predicate.Group, group.OrderOption]{typ: ent.TypeGroup, tq: q}, nil
+	case *ent.IdempotencyRecordQuery:
+		return &query[*ent.IdempotencyRecordQuery, predicate.IdempotencyRecord, idempotencyrecord.OrderOption]{typ: ent.TypeIdempotencyRecord, tq: q}, nil
 	case *ent.OrderQuery:
 		return &query[*ent.OrderQuery, predicate.Order, order.OrderOption]{typ: ent.TypeOrder, tq: q}, nil
 	case *ent.PromoCodeQuery:
@@ -804,6 +862,8 @@ func NewQuery(q ent.Query) (Query, error) {
 		return &query[*ent.ResellerDomainQuery, predicate.ResellerDomain, resellerdomain.OrderOption]{typ: ent.TypeResellerDomain, tq: q}, nil
 	case *ent.ResellerSettingQuery:
 		return &query[*ent.ResellerSettingQuery, predicate.ResellerSetting, resellersetting.OrderOption]{typ: ent.TypeResellerSetting, tq: q}, nil
+	case *ent.SecuritySecretQuery:
+		return &query[*ent.SecuritySecretQuery, predicate.SecuritySecret, securitysecret.OrderOption]{typ: ent.TypeSecuritySecret, tq: q}, nil
 	case *ent.SettingQuery:
 		return &query[*ent.SettingQuery, predicate.Setting, setting.OrderOption]{typ: ent.TypeSetting, tq: q}, nil
 	case *ent.UsageCleanupTaskQuery:

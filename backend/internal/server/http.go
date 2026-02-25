@@ -56,6 +56,9 @@ func ProvideRouter(
 		if err := r.SetTrustedProxies(nil); err != nil {
 			log.Printf("Failed to disable trusted proxies: %v", err)
 		}
+		if cfg.Server.Mode == "release" {
+			log.Printf("Warning: server.trusted_proxies is empty in release mode; client IP trust chain is disabled")
+		}
 	}
 
 	return SetupRouter(r, handlers, jwtAuth, adminAuth, apiKeyAuth, resellerAuth, apiKeyService, subscriptionService, opsService, settingService, domainRepo, settingRepo, cfg, redisClient, db)

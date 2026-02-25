@@ -181,6 +181,20 @@ func (_c *APIKeyCreate) SetNillableExpiresAt(v *time.Time) *APIKeyCreate {
 	return _c
 }
 
+// SetLastUsedAt sets the "last_used_at" field.
+func (_c *APIKeyCreate) SetLastUsedAt(v time.Time) *APIKeyCreate {
+	_c.mutation.SetLastUsedAt(v)
+	return _c
+}
+
+// SetNillableLastUsedAt sets the "last_used_at" field if the given value is not nil.
+func (_c *APIKeyCreate) SetNillableLastUsedAt(v *time.Time) *APIKeyCreate {
+	if v != nil {
+		_c.SetLastUsedAt(*v)
+	}
+	return _c
+}
+
 // SetTgChatID sets the "tg_chat_id" field.
 func (_c *APIKeyCreate) SetTgChatID(v int64) *APIKeyCreate {
 	_c.mutation.SetTgChatID(v)
@@ -416,6 +430,10 @@ func (_c *APIKeyCreate) createSpec() (*APIKey, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.ExpiresAt(); ok {
 		_spec.SetField(apikey.FieldExpiresAt, field.TypeTime, value)
 		_node.ExpiresAt = &value
+	}
+	if value, ok := _c.mutation.LastUsedAt(); ok {
+		_spec.SetField(apikey.FieldLastUsedAt, field.TypeTime, value)
+		_node.LastUsedAt = &value
 	}
 	if value, ok := _c.mutation.TgChatID(); ok {
 		_spec.SetField(apikey.FieldTgChatID, field.TypeInt64, value)
@@ -721,6 +739,24 @@ func (u *APIKeyUpsert) ClearExpiresAt() *APIKeyUpsert {
 	return u
 }
 
+// SetLastUsedAt sets the "last_used_at" field.
+func (u *APIKeyUpsert) SetLastUsedAt(v time.Time) *APIKeyUpsert {
+	u.Set(apikey.FieldLastUsedAt, v)
+	return u
+}
+
+// UpdateLastUsedAt sets the "last_used_at" field to the value that was provided on create.
+func (u *APIKeyUpsert) UpdateLastUsedAt() *APIKeyUpsert {
+	u.SetExcluded(apikey.FieldLastUsedAt)
+	return u
+}
+
+// ClearLastUsedAt clears the value of the "last_used_at" field.
+func (u *APIKeyUpsert) ClearLastUsedAt() *APIKeyUpsert {
+	u.SetNull(apikey.FieldLastUsedAt)
+	return u
+}
+
 // SetTgChatID sets the "tg_chat_id" field.
 func (u *APIKeyUpsert) SetTgChatID(v int64) *APIKeyUpsert {
 	u.Set(apikey.FieldTgChatID, v)
@@ -1018,6 +1054,27 @@ func (u *APIKeyUpsertOne) UpdateExpiresAt() *APIKeyUpsertOne {
 func (u *APIKeyUpsertOne) ClearExpiresAt() *APIKeyUpsertOne {
 	return u.Update(func(s *APIKeyUpsert) {
 		s.ClearExpiresAt()
+	})
+}
+
+// SetLastUsedAt sets the "last_used_at" field.
+func (u *APIKeyUpsertOne) SetLastUsedAt(v time.Time) *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.SetLastUsedAt(v)
+	})
+}
+
+// UpdateLastUsedAt sets the "last_used_at" field to the value that was provided on create.
+func (u *APIKeyUpsertOne) UpdateLastUsedAt() *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.UpdateLastUsedAt()
+	})
+}
+
+// ClearLastUsedAt clears the value of the "last_used_at" field.
+func (u *APIKeyUpsertOne) ClearLastUsedAt() *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.ClearLastUsedAt()
 	})
 }
 
@@ -1488,6 +1545,27 @@ func (u *APIKeyUpsertBulk) UpdateExpiresAt() *APIKeyUpsertBulk {
 func (u *APIKeyUpsertBulk) ClearExpiresAt() *APIKeyUpsertBulk {
 	return u.Update(func(s *APIKeyUpsert) {
 		s.ClearExpiresAt()
+	})
+}
+
+// SetLastUsedAt sets the "last_used_at" field.
+func (u *APIKeyUpsertBulk) SetLastUsedAt(v time.Time) *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.SetLastUsedAt(v)
+	})
+}
+
+// UpdateLastUsedAt sets the "last_used_at" field to the value that was provided on create.
+func (u *APIKeyUpsertBulk) UpdateLastUsedAt() *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.UpdateLastUsedAt()
+	})
+}
+
+// ClearLastUsedAt clears the value of the "last_used_at" field.
+func (u *APIKeyUpsertBulk) ClearLastUsedAt() *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.ClearLastUsedAt()
 	})
 }
 

@@ -138,12 +138,11 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	// Turnstile 验证（当提供了邮箱验证码时跳过，因为发送验证码时已验证过）
-	if req.VerifyCode == "" {
-		if err := h.authService.VerifyTurnstile(c.Request.Context(), req.TurnstileToken, ip.GetClientIP(c)); err != nil {
-			response.ErrorFrom(c, err)
-			return
-		}
+	// Turnstile 验证 — 始终执行，防止绕过
+	// TODO: 确认前端在提交邮箱验证码注册时也传递了 turnstile_token
+	if err := h.authService.VerifyTurnstile(c.Request.Context(), req.TurnstileToken, ip.GetClientIP(c)); err != nil {
+		response.ErrorFrom(c, err)
+		return
 	}
 
 	// Determine parentID: explicit request field takes priority, then reseller domain context
@@ -527,17 +526,12 @@ func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 		return
 	}
 
-	// Build frontend base URL from request
-	scheme := "https"
-	if c.Request.TLS == nil {
-		// Check X-Forwarded-Proto header (common in reverse proxy setups)
-		if proto := c.GetHeader("X-Forwarded-Proto"); proto != "" {
-			scheme = proto
-		} else {
-			scheme = "http"
-		}
+	frontendBaseURL := strings.TrimSpace(h.cfg.Server.FrontendURL)
+	if frontendBaseURL == "" {
+		slog.Error("server.frontend_url not configured; cannot build password reset link")
+		response.InternalError(c, "Password reset is not configured")
+		return
 	}
-	frontendBaseURL := scheme + "://" + c.Request.Host
 
 	// 构建邮件选项：商户域名覆盖发件人和站点名称，用户语言
 	emailOpts := h.buildEmailOptions(c)
