@@ -183,7 +183,6 @@
           <Icon name="infoCircle" size="sm" class="mt-0.5 text-gray-400 dark:text-gray-500" />
           <div class="flex-1 text-xs text-gray-500 dark:text-gray-400">
             <p v-if="isChinese">{{ t('recharge.rateDescCny', { multiplier: MULTIPLIER.toFixed(1) }) }}</p>
-            <p v-else>{{ t('recharge.rateDescUsd', { rate: '7.0', multiplier: MULTIPLIER.toFixed(1), total: (7 * MULTIPLIER).toFixed(2) }) }}</p>
             <p class="mt-1">{{ t('recharge.balanceNeverExpires') }}</p>
           </div>
         </div>
@@ -231,7 +230,8 @@ const currencySymbol = computed(() => isChinese.value ? '¥' : '$')
 const quickAmounts = computed(() => isChinese.value ? [10, 50, 200, 500] : [10, 50, 100, 500])
 const minAmount = computed(() => isChinese.value ? 10 : 1)
 const maxAmount = computed(() => isChinese.value ? 500 : 0) // 0 = no limit
-const unitRate = computed(() => isChinese.value ? MULTIPLIER : 7 * MULTIPLIER)
+const USD_RATE = 10 // 1 USDT = $10 platform balance
+const unitRate = computed(() => isChinese.value ? MULTIPLIER : USD_RATE)
 
 // Contact info
 const contactTelegram = computed(() => appStore.cachedPublicSettings?.contact_telegram || '')
@@ -278,7 +278,7 @@ const inputAmount = computed(() => {
 const cnyAmount = computed(() => isChinese.value ? inputAmount.value : inputAmount.value * 7)
 
 // Computed: platform balance received
-const platformBalance = computed(() => cnyAmount.value * MULTIPLIER)
+const platformBalance = computed(() => isChinese.value ? cnyAmount.value * MULTIPLIER : inputAmount.value * USD_RATE)
 
 // Validation
 const isValidAmount = computed(() => {
