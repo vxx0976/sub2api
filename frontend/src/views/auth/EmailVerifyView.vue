@@ -10,6 +10,9 @@
           {{ t('auth.sendCodeTo') }}
           <span class="font-medium text-gray-700 dark:text-gray-300">{{ email }}</span>
         </p>
+        <p class="mt-1 text-xs text-gray-400 dark:text-dark-500">
+          {{ t('auth.checkSpamFolder') }}
+        </p>
       </div>
 
       <!-- No Data Warning -->

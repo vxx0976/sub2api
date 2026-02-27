@@ -925,6 +925,7 @@ export default {
     invalidOrExpiredToken: '密码重置链接无效或已过期。请重新请求一个新链接。',
     // 邮箱验证页面
     sendCodeTo: '我们将发送验证码到',
+    checkSpamFolder: '如果没有收到邮件，请检查垃圾邮件文件夹',
     codeSentSuccess: '验证码已发送！请检查您的收件箱。',
     verifying: '验证中...',
     verifyAndCreate: '验证并创建账户',

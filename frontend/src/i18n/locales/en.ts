@@ -925,6 +925,7 @@ export default {
     invalidOrExpiredToken: 'The password reset link is invalid or has expired. Please request a new one.',
     // Email verification page
     sendCodeTo: "We'll send a verification code to",
+    checkSpamFolder: "If you don't receive the email, please check your spam folder",
     codeSentSuccess: 'Verification code sent! Please check your inbox.',
     verifying: 'Verifying...',
     verifyAndCreate: 'Verify & Create Account',
