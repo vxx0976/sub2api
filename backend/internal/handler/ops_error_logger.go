@@ -749,7 +749,10 @@ func OpsErrorLoggerMiddleware(ops *service.OpsService) gin.HandlerFunc {
 		if entry.UpstreamErrorMessage != nil && *entry.UpstreamErrorMessage != "" {
 			filterMsg = filterMsg + " " + *entry.UpstreamErrorMessage
 		}
-		if shouldSkipOpsErrorLog(c.Request.Context(), ops, filterMsg, string(body), c.Request.URL.Path) {
+		// Use context.Background() instead of the request context because
+		// the request context may already be canceled (client disconnect),
+		// which would cause the settings query to fail and bypass the filter.
+		if shouldSkipOpsErrorLog(context.Background(), ops, filterMsg, string(body), c.Request.URL.Path) {
 			return
 		}
 
