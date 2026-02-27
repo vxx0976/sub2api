@@ -590,10 +590,7 @@ func OpsErrorLoggerMiddleware(ops *service.OpsService) gin.HandlerFunc {
 			}
 		}
 
-		// Skip logging if the error should be filtered based on settings
-		if shouldSkipOpsErrorLog(c.Request.Context(), ops, parsed.Message, string(body), c.Request.URL.Path) {
-			return
-		}
+		// Note: context-canceled filter is applied after upstream error context is attached (below).
 
 		apiKey, _ := middleware2.GetAPIKeyFromContext(c)
 
@@ -744,6 +741,17 @@ func OpsErrorLoggerMiddleware(ops *service.OpsService) gin.HandlerFunc {
 		// Do NOT store Authorization/Cookie/etc.
 		entry.RequestHeadersJSON = extractOpsRetryRequestHeaders(c)
 		attachOpsRequestBodyToEntry(c, entry)
+
+		// Build a combined message that includes upstream error info for filter matching.
+		// The response body (parsed.Message) may not contain "context canceled" —
+		// it's typically in the upstream error events/messages.
+		filterMsg := parsed.Message
+		if entry.UpstreamErrorMessage != nil && *entry.UpstreamErrorMessage != "" {
+			filterMsg = filterMsg + " " + *entry.UpstreamErrorMessage
+		}
+		if shouldSkipOpsErrorLog(c.Request.Context(), ops, filterMsg, string(body), c.Request.URL.Path) {
+			return
+		}
 
 		enqueueOpsErrorLog(ops, entry)
 	}
@@ -1091,9 +1099,12 @@ func shouldSkipOpsErrorLog(ctx context.Context, ops *service.OpsService, message
 		}
 	}
 
-	// Check if invalid/missing API key errors should be ignored (user misconfiguration)
+	// Check if API key errors should be ignored (user misconfiguration: invalid, expired, quota exhausted, etc.)
 	if settings.IgnoreInvalidApiKeyErrors {
-		if strings.Contains(bodyLower, "invalid_api_key") || strings.Contains(bodyLower, "api_key_required") {
+		if strings.Contains(bodyLower, "invalid_api_key") || strings.Contains(bodyLower, "api_key_required") ||
+			strings.Contains(bodyLower, "api_key_quota_exhausted") || strings.Contains(bodyLower, "api_key_expired") ||
+			strings.Contains(bodyLower, "api_key_inactive") || strings.Contains(bodyLower, "api_key_not_found") ||
+			strings.Contains(bodyLower, "api_key_rate_limited") {
 			return true
 		}
 	}
