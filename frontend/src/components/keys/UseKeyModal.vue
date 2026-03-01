@@ -487,6 +487,7 @@ requires_openai_auth = true`
   ]
 }
 
+
 const copyContent = async (content: string, index: number) => {
   const success = await clipboardCopy(content, t('keys.copied'))
   if (success) {

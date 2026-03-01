@@ -182,7 +182,7 @@
         <div class="flex items-start gap-2">
           <Icon name="infoCircle" size="sm" class="mt-0.5 text-gray-400 dark:text-gray-500" />
           <div class="flex-1 text-xs text-gray-500 dark:text-gray-400">
-            <p v-if="isChinese">{{ t('recharge.rateDescCny', { multiplier: MULTIPLIER.toFixed(1) }) }}</p>
+            <p v-if="isChinese">{{ t('recharge.rateDescCny', { multiplier: cnyMultiplier.toFixed(2) }) }}</p>
             <p class="mt-1">{{ t('recharge.balanceNeverExpires') }}</p>
           </div>
         </div>
@@ -209,7 +209,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
 import { useAuthStore } from '@/stores/auth'
-import { createRechargeOrder } from '@/api/recharge'
+import { createRechargeOrder, getRechargeConfig } from '@/api/recharge'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import Icon from '@/components/icons/Icon.vue'
 import PaymentQRCodeModal from '@/components/common/PaymentQRCodeModal.vue'
@@ -222,7 +222,8 @@ const authStore = useAuthStore()
 const isChinese = computed(() => locale.value.startsWith('zh'))
 
 // Constants
-const MULTIPLIER = 2 // 1 CNY = $2 platform balance
+const USD_RATE = 10 // 1 USDT = $10 platform balance
+const usdCnyRate = ref(7.0) // fetched from backend
 
 // Locale-aware amounts
 const currency = computed(() => isChinese.value ? 'CNY' : 'USDT')
@@ -230,8 +231,9 @@ const currencySymbol = computed(() => isChinese.value ? '¥' : '$')
 const quickAmounts = computed(() => isChinese.value ? [10, 50, 200, 500] : [10, 50, 100, 500])
 const minAmount = computed(() => isChinese.value ? 10 : 1)
 const maxAmount = computed(() => isChinese.value ? 500 : 0) // 0 = no limit
-const USD_RATE = 10 // 1 USDT = $10 platform balance
-const unitRate = computed(() => isChinese.value ? MULTIPLIER : USD_RATE)
+// CNY rate derived from USD_RATE: ¥1 = $USD_RATE / usdCnyRate
+const cnyMultiplier = computed(() => USD_RATE / usdCnyRate.value)
+const unitRate = computed(() => isChinese.value ? cnyMultiplier.value : USD_RATE)
 
 // Contact info
 const contactTelegram = computed(() => appStore.cachedPublicSettings?.contact_telegram || '')
@@ -275,10 +277,10 @@ const inputAmount = computed(() => {
 })
 
 // Computed: CNY equivalent (for order creation)
-const cnyAmount = computed(() => isChinese.value ? inputAmount.value : inputAmount.value * 7)
+const cnyAmount = computed(() => isChinese.value ? inputAmount.value : inputAmount.value * usdCnyRate.value)
 
 // Computed: platform balance received
-const platformBalance = computed(() => isChinese.value ? cnyAmount.value * MULTIPLIER : inputAmount.value * USD_RATE)
+const platformBalance = computed(() => inputAmount.value * unitRate.value)
 
 // Validation
 const isValidAmount = computed(() => {
@@ -361,7 +363,19 @@ async function checkFirstRecharge() {
   }
 }
 
+async function loadRechargeConfig() {
+  try {
+    const config = await getRechargeConfig()
+    if (config.usd_cny_rate > 0) {
+      usdCnyRate.value = config.usd_cny_rate
+    }
+  } catch {
+    // Use default rate
+  }
+}
+
 onMounted(() => {
   checkFirstRecharge()
+  loadRechargeConfig()
 })
 </script>

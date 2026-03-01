@@ -620,7 +620,7 @@
                 step="0.001"
                 min="0"
                 class="input"
-                placeholder="0.134"
+                placeholder="0.201"
               />
             </div>
             <div>
@@ -1433,7 +1433,7 @@
                 step="0.001"
                 min="0"
                 class="input"
-                placeholder="0.134"
+                placeholder="0.201"
               />
             </div>
             <div>

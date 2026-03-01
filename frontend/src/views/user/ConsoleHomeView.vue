@@ -2,24 +2,24 @@
   <AppLayout>
     <div class="space-y-6">
       <!-- Announcements (compact, at top) -->
-      <div v-if="announcements.length > 0" class="card p-4">
-        <div class="mb-2 flex items-center gap-2">
-          <Icon name="chatBubble" size="sm" class="text-amber-500" />
-          <h2 class="text-sm font-semibold text-gray-900 dark:text-white">
+      <div v-if="announcements.length > 0" class="card p-5">
+        <div class="mb-3 flex items-center gap-2">
+          <Icon name="chatBubble" size="md" class="text-amber-500" />
+          <h2 class="text-base font-semibold text-gray-900 dark:text-white">
             {{ t('consoleHome.announcements') }}
           </h2>
         </div>
-        <div class="space-y-1.5">
+        <div class="space-y-2">
           <div
             v-for="(announcement, index) in announcements"
             :key="index"
-            class="flex items-center gap-2 rounded-lg bg-gray-50 px-3 py-2 dark:bg-dark-800"
+            class="flex items-center gap-3 rounded-lg bg-gray-50 px-4 py-2.5 dark:bg-dark-800"
           >
-            <div class="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30">
-              <Icon name="infoCircle" size="xs" class="text-amber-600 dark:text-amber-400" />
+            <div class="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30">
+              <Icon name="infoCircle" size="sm" class="text-amber-600 dark:text-amber-400" />
             </div>
-            <p class="flex-1 text-xs font-medium text-gray-900 dark:text-white">{{ announcement.title }}</p>
-            <span v-if="announcement.date" class="flex-shrink-0 text-[11px] text-gray-400 dark:text-dark-500">{{ announcement.date }}</span>
+            <p class="flex-1 text-sm font-medium text-gray-900 dark:text-white">{{ announcement.title }}</p>
+            <span v-if="announcement.date" class="flex-shrink-0 text-xs text-gray-400 dark:text-dark-500">{{ announcement.date }}</span>
           </div>
         </div>
       </div>
@@ -111,15 +111,15 @@
             v-for="link in quickLinks"
             :key="link.path"
             :to="link.path"
-            class="card card-hover flex flex-col items-center gap-3 p-5 text-center"
+            class="card card-hover flex flex-col items-center gap-4 p-6 text-center"
           >
             <div
-              class="flex h-12 w-12 items-center justify-center rounded-xl"
+              class="flex h-14 w-14 items-center justify-center rounded-xl"
               :class="link.bgClass"
             >
-              <Icon :name="link.icon" size="lg" class="text-white" />
+              <Icon :name="link.icon" size="xl" class="text-white" />
             </div>
-            <span class="text-sm font-medium text-gray-900 dark:text-white">{{ link.label }}</span>
+            <span class="text-base font-semibold text-gray-900 dark:text-white">{{ link.label }}</span>
           </router-link>
         </div>
       </div>
