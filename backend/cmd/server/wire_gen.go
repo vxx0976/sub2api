@@ -94,9 +94,10 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	}
 	orderService := service.NewOrderService(orderRepository, groupRepository, subscriptionService, alipayPayment, configConfig, referralService)
 	rechargeOrderRepository := repository.NewRechargeOrderRepository(client)
-	rechargeOrderService := service.NewRechargeOrderService(rechargeOrderRepository, userRepository, settingService, alipayPayment, configConfig)
+	exchangeRateService := service.NewExchangeRateService()
+	rechargeOrderService := service.NewRechargeOrderService(rechargeOrderRepository, redeemCodeRepository, userRepository, settingService, exchangeRateService, alipayPayment, configConfig)
 	paymentHandler := handler.NewPaymentHandler(orderService, rechargeOrderService, alipayPayment, configConfig)
-	rechargeHandler := handler.NewRechargeHandler(rechargeOrderService, settingService)
+	rechargeHandler := handler.NewRechargeHandler(rechargeOrderService, settingService, exchangeRateService)
 	announcementRepository := repository.NewAnnouncementRepository(client)
 	announcementReadRepository := repository.NewAnnouncementReadRepository(client)
 	announcementService := service.NewAnnouncementService(announcementRepository, announcementReadRepository, userRepository, userSubscriptionRepository)

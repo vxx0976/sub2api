@@ -130,12 +130,13 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useAppStore } from '@/stores'
+import { useAppStore, useAuthStore } from '@/stores'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import Icon from '@/components/icons/Icon.vue'
 
 const { t } = useI18n()
 const appStore = useAppStore()
+const authStore = useAuthStore()
 
 // Doc URL from settings
 const docUrl = computed(() => appStore.cachedPublicSettings?.doc_url || '')
@@ -144,7 +145,7 @@ const docUrl = computed(() => appStore.cachedPublicSettings?.doc_url || '')
 // Dynamic contact info — from public settings (main site or reseller)
 const contactWechat = computed(() => appStore.cachedPublicSettings?.contact_wechat || '')
 const contactTelegram = computed(() => appStore.cachedPublicSettings?.contact_telegram || '')
-const contactEmail = computed(() => appStore.isResellerDomain ? '' : 'vanxuehan@gmail.com')
+const contactEmail = computed(() => (appStore.isResellerDomain || authStore.isResellerUser) ? '' : 'vanxuehan@gmail.com')
 const hasContactInfo = computed(() => !!contactWechat.value || !!contactTelegram.value || !!contactEmail.value)
 
 // Announcements from cachedPublicSettings (injected via __APP_CONFIG__).
@@ -159,7 +160,7 @@ const quickLinks = computed(() => {
       label: t('consoleHome.links.apiKeys'),
       bgClass: 'bg-gradient-to-br from-amber-500 to-amber-600'
     },
-    ...(!appStore.isResellerDomain ? [{
+    ...(!appStore.isResellerDomain && !authStore.isResellerUser ? [{
       path: '/recharge',
       icon: 'plus' as const,
       label: t('nav.recharge'),

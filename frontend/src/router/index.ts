@@ -688,8 +688,8 @@ router.beforeEach((to, _from, next) => {
     }
   }
 
-  // On reseller domains, redirect subscription-related routes (except /plans which handles it internally)
-  if (appStore.isResellerDomain) {
+  // On reseller domains or for reseller's sub-users, redirect subscription-related routes
+  if (appStore.isResellerDomain || authStore.isResellerUser) {
     const subscriptionPaths = ['/subscriptions', '/orders', '/purchase', '/recharge']
     if (subscriptionPaths.includes(to.path)) {
       next('/console-home')

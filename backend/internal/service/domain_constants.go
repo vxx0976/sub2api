@@ -55,6 +55,7 @@ const (
 	AdjustmentTypeAdminBalance      = domain.AdjustmentTypeAdminBalance      // 管理员调整余额
 	AdjustmentTypeAdminConcurrency  = domain.AdjustmentTypeAdminConcurrency  // 管理员调整并发数
 	AdjustmentTypeResellerTransfer  = domain.AdjustmentTypeResellerTransfer  // 分销商余额转移
+	AdjustmentTypeRecharge          = domain.AdjustmentTypeRecharge          // 用户主动充值
 )
 
 // Group subscription type constants

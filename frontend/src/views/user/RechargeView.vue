@@ -110,7 +110,10 @@
       >
         <div class="flex items-center justify-between">
           <div class="text-sm text-gray-500 dark:text-gray-400">{{ t('recharge.youWillReceive') }}</div>
-          <div class="text-xs text-gray-400 dark:text-gray-500">1 {{ currency }} = ${{ unitRate.toFixed(2) }}</div>
+          <div class="text-xs text-gray-400 dark:text-gray-500">
+            <template v-if="isChinese">$1 = ¥{{ cnyPerDollar.toFixed(2) }}</template>
+            <template v-else>$1 USDT = ${{ USD_RATE }}</template>
+          </div>
         </div>
         <div class="mt-1 text-2xl font-bold text-primary-600 dark:text-primary-400">
           ${{ platformBalance.toFixed(2) }}
@@ -182,7 +185,7 @@
         <div class="flex items-start gap-2">
           <Icon name="infoCircle" size="sm" class="mt-0.5 text-gray-400 dark:text-gray-500" />
           <div class="flex-1 text-xs text-gray-500 dark:text-gray-400">
-            <p v-if="isChinese">{{ t('recharge.rateDescCny', { multiplier: cnyMultiplier.toFixed(2) }) }}</p>
+            <p v-if="isChinese">{{ t('recharge.rateDescCny', { cnyPerDollar: cnyPerDollar.toFixed(2), rate: usdCnyRate.toFixed(2) }) }}</p>
             <p class="mt-1">{{ t('recharge.balanceNeverExpires') }}</p>
           </div>
         </div>
@@ -234,6 +237,8 @@ const maxAmount = computed(() => isChinese.value ? 500 : 0) // 0 = no limit
 // CNY rate derived from USD_RATE: ¥1 = $USD_RATE / usdCnyRate
 const cnyMultiplier = computed(() => USD_RATE / usdCnyRate.value)
 const unitRate = computed(() => isChinese.value ? cnyMultiplier.value : USD_RATE)
+// ¥X = $1 platform balance (how many CNY per $1 platform balance)
+const cnyPerDollar = computed(() => usdCnyRate.value / USD_RATE)
 
 // Contact info
 const contactTelegram = computed(() => appStore.cachedPublicSettings?.contact_telegram || '')

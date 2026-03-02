@@ -41,6 +41,11 @@ export const useAuthStore = defineStore('auth', () => {
     return user.value?.role === 'reseller'
   })
 
+  // 是否为商户的子用户（parent_id 不为空）
+  const isResellerUser = computed(() => {
+    return !!user.value?.parent_id
+  })
+
   const isSimpleMode = computed(() => runMode.value === 'simple')
 
   // ==================== Actions ====================
@@ -406,6 +411,7 @@ export const useAuthStore = defineStore('auth', () => {
     isAuthenticated,
     isAdmin,
     isReseller,
+    isResellerUser,
     isSimpleMode,
 
     // Actions

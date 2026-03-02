@@ -34,6 +34,7 @@ export interface User {
   concurrency: number // Allowed concurrent requests
   status: 'active' | 'disabled' // Account status
   allowed_groups: number[] | null // Allowed group IDs (null = all non-exclusive groups)
+  parent_id?: number | null // 父用户ID（商户的子用户才有此字段）
   subscriptions?: UserSubscription[] // User's active subscriptions
   created_at: string
   updated_at: string

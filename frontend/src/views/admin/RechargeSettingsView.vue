@@ -102,129 +102,6 @@
           </div>
         </div>
 
-        <!-- Tier Settings -->
-        <div class="card">
-          <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
-            <div class="flex items-center justify-between">
-              <div>
-                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
-                  {{ t('admin.settings.recharge.tiers') }}
-                </h2>
-                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                  {{ t('admin.settings.recharge.tiersHint') }}
-                </p>
-              </div>
-              <button
-                type="button"
-                @click="addTier"
-                class="btn btn-secondary btn-sm"
-              >
-                <Icon name="plus" size="sm" />
-                {{ t('admin.settings.recharge.addTier') }}
-              </button>
-            </div>
-          </div>
-          <div class="p-6">
-            <div v-if="config.tiers.length === 0" class="text-center py-8 text-gray-500">
-              {{ t('admin.settings.recharge.noTiers') }}
-            </div>
-            <div v-else class="space-y-4">
-              <div
-                v-for="(tier, index) in config.tiers"
-                :key="index"
-                class="rounded-lg border border-gray-200 p-4 dark:border-dark-600"
-              >
-                <div class="mb-3 flex items-center justify-between">
-                  <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {{ t('admin.settings.recharge.tier') }} {{ index + 1 }}
-                  </span>
-                  <button
-                    type="button"
-                    @click="removeTier(index)"
-                    class="text-red-600 hover:text-red-700 dark:text-red-400"
-                  >
-                    <Icon name="trash" size="sm" />
-                  </button>
-                </div>
-                <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
-                  <div>
-                    <label class="mb-1 block text-xs text-gray-600 dark:text-gray-400">
-                      {{ t('admin.settings.recharge.tierMin') }}
-                    </label>
-                    <input
-                      v-model.number="tier.min"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      class="input input-sm"
-                      placeholder="0"
-                    />
-                  </div>
-                  <div>
-                    <label class="mb-1 block text-xs text-gray-600 dark:text-gray-400">
-                      {{ t('admin.settings.recharge.tierMax') }}
-                      <span class="text-gray-400">({{ t('common.optional') }})</span>
-                    </label>
-                    <input
-                      v-model.number="tier.max"
-                      type="number"
-                      :min="tier.min"
-                      step="0.01"
-                      class="input input-sm"
-                      :placeholder="t('admin.settings.recharge.tierMaxPlaceholder')"
-                    />
-                  </div>
-                  <div>
-                    <label class="mb-1 block text-xs text-gray-600 dark:text-gray-400">
-                      {{ t('admin.settings.recharge.tierMultiplier') }}
-                    </label>
-                    <input
-                      v-model.number="tier.multiplier"
-                      type="number"
-                      min="1"
-                      max="10"
-                      step="0.01"
-                      class="input input-sm"
-                      placeholder="1.0"
-                    />
-                  </div>
-                </div>
-                <p v-if="tierErrors[index]" class="mt-2 text-xs text-red-600 dark:text-red-400">
-                  {{ tierErrors[index] }}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Preview -->
-        <div v-if="config.tiers.length > 0" class="card">
-          <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
-              {{ t('admin.settings.recharge.preview') }}
-            </h2>
-          </div>
-          <div class="p-6">
-            <div class="space-y-2">
-              <div
-                v-for="(tier, index) in sortedTiers"
-                :key="index"
-                class="flex items-center justify-between rounded-lg bg-gray-50 px-4 py-3 dark:bg-dark-700"
-              >
-                <span class="text-sm text-gray-700 dark:text-gray-300">
-                  ¥{{ tier.min }} {{ tier.max ? `- ¥${tier.max}` : '+' }}
-                </span>
-                <span class="font-semibold text-primary-600 dark:text-primary-400">
-                  {{ tier.multiplier }}×
-                  <span v-if="tier.multiplier > 1.0" class="ml-2 text-xs text-green-600 dark:text-green-400">
-                    (+{{ ((tier.multiplier - 1) * 100).toFixed(0) }}%)
-                  </span>
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <!-- Actions -->
         <div class="flex justify-end gap-3">
           <button
@@ -255,7 +132,6 @@ import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores'
 import { getRechargeConfigAdmin, updateRechargeConfig, type RechargeConfig } from '@/api/recharge'
 import AppLayout from '@/components/layout/AppLayout.vue'
-import Icon from '@/components/icons/Icon.vue'
 
 const { t } = useI18n()
 const appStore = useAppStore()
@@ -268,51 +144,14 @@ const config = ref<RechargeConfig>({
   min_amount: 10,
   max_amount: 10000,
   usd_cny_rate: 7.0,
-  tiers: [],
 })
 
 const originalConfig = ref<RechargeConfig | null>(null)
-
-// Tier validation errors
-const tierErrors = computed(() => {
-  const errors: { [key: number]: string } = {}
-
-  config.value.tiers.forEach((tier, index) => {
-    // Check min < max
-    if (tier.max !== null && tier.max !== undefined && tier.max <= tier.min) {
-      errors[index] = t('admin.settings.recharge.tierValidation.maxGreaterThanMin')
-    }
-
-    // Check multiplier range
-    if (tier.multiplier < 1.0 || tier.multiplier > 10.0) {
-      errors[index] = t('admin.settings.recharge.tierValidation.multiplierRange')
-    }
-
-    // Check for overlaps with previous tiers
-    for (let i = 0; i < index; i++) {
-      const prevTier = config.value.tiers[i]
-      const prevMax = prevTier.max ?? Infinity
-
-      if (tier.min < prevMax && (tier.max === null || tier.max > prevTier.min)) {
-        errors[index] = t('admin.settings.recharge.tierValidation.overlap')
-        break
-      }
-    }
-  })
-
-  return errors
-})
-
-// Sorted tiers for preview
-const sortedTiers = computed(() => {
-  return [...config.value.tiers].sort((a, b) => a.min - b.min)
-})
 
 // Form validation
 const isValid = computed(() => {
   if (config.value.min_amount >= config.value.max_amount) return false
   if (config.value.min_amount < 1) return false
-  if (Object.keys(tierErrors.value).length > 0) return false
   return true
 })
 
@@ -342,21 +181,6 @@ async function saveSettings() {
   } finally {
     saving.value = false
   }
-}
-
-function addTier() {
-  const lastTier = config.value.tiers[config.value.tiers.length - 1]
-  const newMin = lastTier ? (lastTier.max ?? lastTier.min + 100) : config.value.min_amount
-
-  config.value.tiers.push({
-    min: newMin,
-    max: null,
-    multiplier: 1.0
-  })
-}
-
-function removeTier(index: number) {
-  config.value.tiers.splice(index, 1)
 }
 
 function resetForm() {

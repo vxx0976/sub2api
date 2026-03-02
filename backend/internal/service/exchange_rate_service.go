@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -12,85 +11,61 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
 )
 
-// ExchangeRateService periodically fetches the USD/CNY exchange rate
-// and updates the recharge config.
+// ExchangeRateService fetches and caches the USD/CNY exchange rate.
+// Rate is fetched on demand and cached for 10 minutes.
 type ExchangeRateService struct {
-	settingService *SettingService
-	httpClient     *http.Client
-	stopCh         chan struct{}
-	mu             sync.Mutex
-	lastRate       float64
+	httpClient *http.Client
+	mu         sync.RWMutex
+	cachedRate float64
+	cachedAt   time.Time
+	cacheTTL   time.Duration
 }
 
-func NewExchangeRateService(settingService *SettingService) *ExchangeRateService {
+func NewExchangeRateService() *ExchangeRateService {
 	return &ExchangeRateService{
-		settingService: settingService,
 		httpClient: &http.Client{
 			Timeout: 10 * time.Second,
 		},
-		stopCh: make(chan struct{}),
+		cacheTTL: 10 * time.Minute,
 	}
 }
 
-// Start begins the periodic exchange rate update (every 6 hours).
-func (s *ExchangeRateService) Start() {
-	go s.run()
-}
-
-func (s *ExchangeRateService) Stop() {
-	close(s.stopCh)
-}
-
-func (s *ExchangeRateService) run() {
-	// Fetch immediately on startup.
-	s.updateRate()
-
-	ticker := time.NewTicker(6 * time.Hour)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ticker.C:
-			s.updateRate()
-		case <-s.stopCh:
-			return
-		}
+// GetUsdCnyRate returns the current USD/CNY rate.
+// Uses a cached value if fresh enough, otherwise fetches from external API.
+// Returns 0 if fetch fails and no cached value exists.
+func (s *ExchangeRateService) GetUsdCnyRate() float64 {
+	s.mu.RLock()
+	if s.cachedRate > 0 && time.Since(s.cachedAt) < s.cacheTTL {
+		rate := s.cachedRate
+		s.mu.RUnlock()
+		return rate
 	}
-}
+	s.mu.RUnlock()
 
-func (s *ExchangeRateService) updateRate() {
 	rate, err := s.fetchUsdCnyRate()
 	if err != nil {
 		logger.LegacyPrintf("service.exchange_rate", "Failed to fetch USD/CNY rate: %v", err)
-		return
+		// Return stale cache if available
+		s.mu.RLock()
+		defer s.mu.RUnlock()
+		return s.cachedRate
 	}
 
-	// Sanity check: rate should be in a reasonable range.
+	// Sanity check
 	if rate < 5.0 || rate > 10.0 {
-		logger.LegacyPrintf("service.exchange_rate", "Fetched rate %.4f is out of reasonable range [5, 10], skipping", rate)
-		return
+		logger.LegacyPrintf("service.exchange_rate", "Fetched rate %.4f out of range [5, 10], using cached", rate)
+		s.mu.RLock()
+		defer s.mu.RUnlock()
+		return s.cachedRate
 	}
 
 	s.mu.Lock()
-	s.lastRate = rate
+	s.cachedRate = rate
+	s.cachedAt = time.Now()
 	s.mu.Unlock()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	config, err := s.settingService.GetRechargeConfig(ctx)
-	if err != nil {
-		logger.LegacyPrintf("service.exchange_rate", "Failed to get recharge config: %v", err)
-		return
-	}
-
-	config.UsdCnyRate = rate
-	if err := s.settingService.UpdateRechargeConfig(ctx, config); err != nil {
-		logger.LegacyPrintf("service.exchange_rate", "Failed to update recharge config with rate %.4f: %v", rate, err)
-		return
-	}
-
-	logger.LegacyPrintf("service.exchange_rate", "Updated USD/CNY rate to %.4f", rate)
+	logger.LegacyPrintf("service.exchange_rate", "Fetched USD/CNY rate: %.4f", rate)
+	return rate
 }
 
 // exchangeRateResponse is the response from the exchange rate API.

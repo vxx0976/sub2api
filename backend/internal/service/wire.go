@@ -285,13 +285,6 @@ func ProvideAPIKeyAuthCacheInvalidator(apiKeyService *APIKeyService) APIKeyAuthC
 	return apiKeyService
 }
 
-// ProvideExchangeRateService creates and starts ExchangeRateService.
-func ProvideExchangeRateService(settingService *SettingService) *ExchangeRateService {
-	svc := NewExchangeRateService(settingService)
-	svc.Start()
-	return svc
-}
-
 // ProviderSet is the Wire provider set for all services
 var ProviderSet = wire.NewSet(
 	// Core services
@@ -377,5 +370,5 @@ var ProviderSet = wire.NewSet(
 	ProvideIdempotencyCleanupService,
 	NewPaymentMonitorService,
 	wire.Bind(new(payment.OrderMatcher), new(*PaymentMonitorService)),
-	ProvideExchangeRateService,
+	NewExchangeRateService,
 )

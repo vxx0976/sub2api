@@ -197,6 +197,7 @@ const typeOptions = computed(() => [
   { value: 'admin_balance', label: t('admin.users.typeAdminBalance') },
   { value: 'concurrency', label: t('admin.users.typeConcurrency') },
   { value: 'admin_concurrency', label: t('admin.users.typeAdminConcurrency') },
+  { value: 'recharge', label: t('admin.users.typeRecharge') },
   { value: 'subscription', label: t('admin.users.typeSubscription') }
 ])
 
@@ -232,8 +233,8 @@ const loadHistory = async (page: number) => {
 // Helper: check if admin type
 const isAdminType = (type: string) => type === 'admin_balance' || type === 'admin_concurrency'
 
-// Helper: check if balance type (includes admin_balance)
-const isBalanceType = (type: string) => type === 'balance' || type === 'admin_balance'
+// Helper: check if balance type (includes admin_balance, recharge)
+const isBalanceType = (type: string) => type === 'balance' || type === 'admin_balance' || type === 'recharge'
 
 // Helper: check if subscription type
 const isSubscriptionType = (type: string) => type === 'subscription'
@@ -291,6 +292,8 @@ const getItemTitle = (item: BalanceHistoryItem) => {
       return t('redeem.balanceAddedRedeem')
     case 'admin_balance':
       return item.value >= 0 ? t('redeem.balanceAddedAdmin') : t('redeem.balanceDeductedAdmin')
+    case 'recharge':
+      return t('redeem.balanceAddedRecharge')
     case 'concurrency':
       return t('redeem.concurrencyAddedRedeem')
     case 'admin_concurrency':

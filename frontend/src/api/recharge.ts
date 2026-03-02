@@ -2,18 +2,11 @@ import { apiClient } from './client'
 
 // ========== 数据类型 ==========
 
-export interface RechargeTier {
-  min: number
-  max: number | null
-  multiplier: number
-}
-
 export interface RechargeConfig {
   enabled: boolean
   min_amount: number
   max_amount: number
   usd_cny_rate: number
-  tiers: RechargeTier[]
 }
 
 export interface FirstRechargeStatus {
@@ -55,7 +48,6 @@ export interface CreateRechargeOrderResponse {
   qr_code: string
   mode: string
   credit_amount: number
-  multiplier: number
 }
 
 // ========== API 函数 ==========

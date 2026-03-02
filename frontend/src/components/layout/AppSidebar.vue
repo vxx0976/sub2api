@@ -501,13 +501,13 @@ const userNavItems = computed(() => {
     // { path: '/referral', label: t('nav.referral'), icon: UserPlusIcon, hideInSimpleMode: true }
   ]
   let filtered = authStore.isSimpleMode ? items.filter(item => !item.hideInSimpleMode) : items
-  if (appStore.isResellerDomain) {
+  if (appStore.isResellerDomain || authStore.isResellerUser) {
     const hasPurchaseUrl = !!(appStore.cachedPublicSettings?.purchase_enabled && appStore.cachedPublicSettings?.purchase_url)
-    const hiddenOnResellerDomain = ['/subscriptions', '/orders', '/purchase', '/recharge']
+    const hiddenPaths = ['/subscriptions', '/orders', '/purchase', '/recharge']
     if (!hasPurchaseUrl) {
-      hiddenOnResellerDomain.push('/plans')
+      hiddenPaths.push('/plans')
     }
-    filtered = filtered.filter(item => !hiddenOnResellerDomain.includes(item.path))
+    filtered = filtered.filter(item => !hiddenPaths.includes(item.path))
   }
   return filtered
 })

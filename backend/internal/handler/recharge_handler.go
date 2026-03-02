@@ -13,15 +13,18 @@ import (
 type RechargeHandler struct {
 	rechargeOrderService *service.RechargeOrderService
 	settingService       *service.SettingService
+	exchangeRateService  *service.ExchangeRateService
 }
 
 func NewRechargeHandler(
 	rechargeOrderService *service.RechargeOrderService,
 	settingService *service.SettingService,
+	exchangeRateService *service.ExchangeRateService,
 ) *RechargeHandler {
 	return &RechargeHandler{
 		rechargeOrderService: rechargeOrderService,
 		settingService:       settingService,
+		exchangeRateService:  exchangeRateService,
 	}
 }
 
@@ -156,6 +159,11 @@ func (h *RechargeHandler) GetRechargeConfig(c *gin.Context) {
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return
+	}
+
+	// Override with live exchange rate (10min cache)
+	if rate := h.exchangeRateService.GetUsdCnyRate(); rate > 0 {
+		config.UsdCnyRate = rate
 	}
 
 	response.Success(c, config)

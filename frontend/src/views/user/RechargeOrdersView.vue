@@ -54,9 +54,6 @@
                   {{ t('recharge.creditAmount') }}
                 </th>
                 <th class="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-dark-400">
-                  {{ t('recharge.multiplier') }}
-                </th>
-                <th class="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-dark-400">
                   {{ t('recharge.status') }}
                 </th>
                 <th class="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-dark-400">
@@ -77,12 +74,6 @@
                 </td>
                 <td class="px-4 py-3 text-sm font-semibold text-primary-600 dark:text-primary-400">
                   ¥{{ order.credit_amount.toFixed(2) }}
-                </td>
-                <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
-                  {{ order.multiplier.toFixed(1) }}×
-                  <span v-if="order.multiplier > 1.0" class="text-xs text-green-600 dark:text-green-400">
-                    (+{{ ((order.multiplier - 1) * 100).toFixed(0) }}%)
-                  </span>
                 </td>
                 <td class="px-4 py-3">
                   <span :class="['badge', getStatusClass(order.status)]">

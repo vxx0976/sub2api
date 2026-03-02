@@ -90,9 +90,6 @@
                   {{ t('recharge.creditAmount') }}
                 </th>
                 <th class="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-dark-400">
-                  {{ t('recharge.multiplier') }}
-                </th>
-                <th class="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-dark-400">
                   {{ t('recharge.status') }}
                 </th>
                 <th class="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-dark-400">
@@ -132,17 +129,6 @@
                   ¥{{ order.credit_amount.toFixed(2) }}
                 </td>
                 <td class="px-4 py-3">
-                  <span class="text-sm text-gray-700 dark:text-gray-300">
-                    {{ order.multiplier.toFixed(1) }}×
-                  </span>
-                  <span
-                    v-if="order.multiplier > 1.0"
-                    class="ml-1 text-xs text-green-600 dark:text-green-400"
-                  >
-                    (+{{ ((order.multiplier - 1) * 100).toFixed(0) }}%)
-                  </span>
-                </td>
-                <td class="px-4 py-3">
                   <span :class="['badge', getStatusClass(order.status)]">
                     {{ t(`recharge.statusLabels.${order.status}`) }}
                   </span>
@@ -178,7 +164,7 @@
       </div>
 
       <!-- Statistics -->
-      <div v-if="!loading && orders.length > 0" class="grid grid-cols-1 gap-6 md:grid-cols-4">
+      <div v-if="!loading && orders.length > 0" class="grid grid-cols-1 gap-6 md:grid-cols-3">
         <div class="card p-6">
           <div class="text-sm text-gray-500 dark:text-gray-400">
             {{ t('admin.rechargeOrders.totalOrders') }}
@@ -201,14 +187,6 @@
           </div>
           <div class="mt-2 text-2xl font-bold text-green-600 dark:text-green-400">
             ¥{{ calculateTotalCredit().toFixed(2) }}
-          </div>
-        </div>
-        <div class="card p-6">
-          <div class="text-sm text-gray-500 dark:text-gray-400">
-            {{ t('admin.rechargeOrders.averageMultiplier') }}
-          </div>
-          <div class="mt-2 text-2xl font-bold text-purple-600 dark:text-purple-400">
-            {{ calculateAvgMultiplier().toFixed(2) }}×
           </div>
         </div>
       </div>
@@ -318,13 +296,6 @@ function calculateTotalCredit(): number {
   return orders.value
     .filter(o => o.status === 'paid')
     .reduce((sum, o) => sum + o.credit_amount, 0)
-}
-
-function calculateAvgMultiplier(): number {
-  const paidOrders = orders.value.filter(o => o.status === 'paid')
-  if (paidOrders.length === 0) return 0
-  const sum = paidOrders.reduce((sum, o) => sum + o.multiplier, 0)
-  return sum / paidOrders.length
 }
 
 onMounted(() => {

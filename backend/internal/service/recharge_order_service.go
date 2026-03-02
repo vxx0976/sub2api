@@ -12,27 +12,35 @@ import (
 	"github.com/google/uuid"
 )
 
+const platformUsdRate = 10.0 // 1 USDT = $10 platform balance
+
 type RechargeOrderService struct {
-	rechargeOrderRepo RechargeOrderRepository
-	userRepo          UserRepository
-	settingService    *SettingService
-	alipayPayment     *payment.AlipayPayment
-	cfg               *config.Config
+	rechargeOrderRepo   RechargeOrderRepository
+	redeemCodeRepo      RedeemCodeRepository
+	userRepo            UserRepository
+	settingService      *SettingService
+	exchangeRateService *ExchangeRateService
+	alipayPayment       *payment.AlipayPayment
+	cfg                 *config.Config
 }
 
 func NewRechargeOrderService(
 	rechargeOrderRepo RechargeOrderRepository,
+	redeemCodeRepo RedeemCodeRepository,
 	userRepo UserRepository,
 	settingService *SettingService,
+	exchangeRateService *ExchangeRateService,
 	alipayPayment *payment.AlipayPayment,
 	cfg *config.Config,
 ) *RechargeOrderService {
 	return &RechargeOrderService{
-		rechargeOrderRepo: rechargeOrderRepo,
-		userRepo:          userRepo,
-		settingService:    settingService,
-		alipayPayment:     alipayPayment,
-		cfg:               cfg,
+		rechargeOrderRepo:   rechargeOrderRepo,
+		redeemCodeRepo:      redeemCodeRepo,
+		userRepo:            userRepo,
+		settingService:      settingService,
+		exchangeRateService: exchangeRateService,
+		alipayPayment:       alipayPayment,
+		cfg:                 cfg,
 	}
 }
 
@@ -73,9 +81,13 @@ func (s *RechargeOrderService) CreateRechargeOrder(ctx context.Context, userID i
 		if amount < config.MinAmount || amount > config.MaxAmount {
 			return nil, ErrInvalidRechargeAmount
 		}
-		// 计算倍率和到账金额
-		multiplier = s.calculateMultiplier(amount, config.Tiers)
-		creditAmount = amount * multiplier
+		// 获取实时汇率，计算到账金额：CNY → USD → 平台余额
+		usdCnyRate := s.exchangeRateService.GetUsdCnyRate()
+		if usdCnyRate <= 0 {
+			usdCnyRate = config.UsdCnyRate // fallback to DB config
+		}
+		creditAmount = (amount / usdCnyRate) * platformUsdRate
+		multiplier = creditAmount / amount // 记录实际换算比率
 	}
 
 	// 4. 生成订单号（加 R 前缀区分充值订单）
@@ -122,18 +134,6 @@ func (s *RechargeOrderService) CreateRechargeOrder(ctx context.Context, userID i
 	}, nil
 }
 
-// calculateMultiplier 根据金额计算倍率
-func (s *RechargeOrderService) calculateMultiplier(amount float64, tiers []RechargeTier) float64 {
-	for _, tier := range tiers {
-		if amount >= tier.Min {
-			if tier.Max == nil || amount <= *tier.Max {
-				return tier.Multiplier
-			}
-		}
-	}
-	return 1.0 // 默认倍率
-}
-
 // HandleRechargeNotify 处理充值回调（由监控服务调用）
 func (s *RechargeOrderService) HandleRechargeNotify(ctx context.Context, orderNo string, tradeNo string, payType string) error {
 	// 1. 获取订单
@@ -159,6 +159,26 @@ func (s *RechargeOrderService) HandleRechargeNotify(ctx context.Context, orderNo
 	// 4. 更新订单状态
 	if err := s.rechargeOrderRepo.SetPaid(ctx, order.ID, tradeNo, payType); err != nil {
 		return fmt.Errorf("update order status: %w", err)
+	}
+
+	// 5. 创建余额变更记录（用于管理员查看充值历史）
+	code, err := GenerateRedeemCode()
+	if err == nil {
+		now := time.Now()
+		notes := fmt.Sprintf("充值订单 %s，支付 ¥%.2f", orderNo, order.Amount)
+		record := &RedeemCode{
+			Code:   code,
+			Type:   AdjustmentTypeRecharge,
+			Value:  order.CreditAmount,
+			Status: StatusUsed,
+			UsedBy: &order.UserID,
+			UsedAt: &now,
+			Notes:  notes,
+		}
+		if err := s.redeemCodeRepo.Create(ctx, record); err != nil {
+			// 不影响主流程，仅记录日志
+			fmt.Printf("[RechargeOrder] failed to create balance history record: %v\n", err)
+		}
 	}
 
 	return nil
