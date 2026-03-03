@@ -12,6 +12,7 @@ type AdminHandlers struct {
 	Group            *admin.GroupHandler
 	Account          *admin.AccountHandler
 	Announcement     *admin.AnnouncementHandler
+	DataManagement   *admin.DataManagementHandler
 	OAuth            *admin.OAuthHandler
 	OpenAIOAuth      *admin.OpenAIOAuthHandler
 	GeminiOAuth      *admin.GeminiOAuthHandler
@@ -29,6 +30,7 @@ type AdminHandlers struct {
 	Referral         *admin.ReferralHandler
 	Channel          *admin.ChannelHandler
 	ErrorPassthrough *admin.ErrorPassthroughHandler
+	APIKey           *admin.AdminAPIKeyHandler
 }
 
 // ResellerHandlers contains all reseller-related HTTP handlers
@@ -59,6 +61,7 @@ type Handlers struct {
 	Gateway       *GatewayHandler
 	OpenAIGateway *OpenAIGatewayHandler
 	SoraGateway   *SoraGatewayHandler
+	SoraClient    *SoraClientHandler
 	Setting       *SettingHandler
 	Referral      *ReferralHandler
 	Totp          *TotpHandler

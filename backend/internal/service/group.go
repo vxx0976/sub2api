@@ -32,6 +32,9 @@ type Group struct {
 	SoraVideoPricePerRequest   *float64
 	SoraVideoPricePerRequestHD *float64
 
+	// Sora 存储配额
+	SoraStorageQuotaBytes int64
+
 	// Claude Code 客户端限制
 	ClaudeCodeOnly  bool   `json:"claude_code_only"`
 	FallbackGroupID *int64 `json:"fallback_group_id"`

@@ -246,7 +246,10 @@
               {{ t('admin.dashboard.recentUsage') }} (Top 12)
             </h3>
             <div class="h-64">
-              <Line v-if="userTrendChartData" :data="userTrendChartData" :options="lineOptions" />
+              <div v-if="userTrendLoading" class="flex h-full items-center justify-center">
+                <LoadingSpinner size="md" />
+              </div>
+              <Line v-else-if="userTrendChartData" :data="userTrendChartData" :options="lineOptions" />
               <div
                 v-else
                 class="flex h-full items-center justify-center text-sm text-gray-500 dark:text-gray-400"
@@ -315,6 +318,7 @@ const appStore = useAppStore()
 const stats = ref<DashboardStats | null>(null)
 const loading = ref(false)
 const chartsLoading = ref(false)
+const userTrendLoading = ref(false)
 
 // Chart data
 const trendData = ref<TrendDataPoint[]>([])
@@ -322,6 +326,7 @@ const modelStats = ref<ModelStat[]>([])
 const userTrend = ref<UserUsageTrendPoint[]>([])
 const geoDistribution = ref<GeoDistributionItem[]>([])
 const geoTotal = ref(0)
+let chartLoadSeq = 0
 
 // Helper function to format date in local timezone
 const formatLocalDate = (date: Date): string => {
@@ -377,6 +382,11 @@ const lineOptions = computed(() => ({
       }
     },
     tooltip: {
+      itemSort: (a: any, b: any) => {
+        const aValue = typeof a?.raw === 'number' ? a.raw : Number(a?.parsed?.y ?? 0)
+        const bValue = typeof b?.raw === 'number' ? b.raw : Number(b?.parsed?.y ?? 0)
+        return bValue - aValue
+      },
       callbacks: {
         label: (context: any) => {
           return `${context.dataset.label}: ${formatTokens(context.raw)}`
@@ -537,7 +547,9 @@ const loadDashboardStats = async () => {
 }
 
 const loadChartData = async () => {
+  const currentSeq = ++chartLoadSeq
   chartsLoading.value = true
+  userTrendLoading.value = true
   try {
     const params = {
       start_date: startDate.value,
@@ -552,15 +564,36 @@ const loadChartData = async () => {
       adminAPI.dashboard.getGeoDistribution({ start_date: startDate.value, end_date: endDate.value })
     ])
 
+    if (currentSeq !== chartLoadSeq) return
     trendData.value = trendResponse.trend || []
     modelStats.value = modelResponse.models || []
     userTrend.value = userResponse.trend || []
     geoDistribution.value = geoResponse.distribution || []
     geoTotal.value = geoResponse.total || 0
   } catch (error) {
+    if (currentSeq !== chartLoadSeq) return
     console.error('Error loading chart data:', error)
   } finally {
+    if (currentSeq !== chartLoadSeq) return
     chartsLoading.value = false
+  }
+
+  try {
+    const params = {
+      start_date: startDate.value,
+      end_date: endDate.value,
+      granularity: granularity.value,
+      limit: 12
+    }
+    const userResponse = await adminAPI.dashboard.getUserUsageTrend(params)
+    if (currentSeq !== chartLoadSeq) return
+    userTrend.value = userResponse.trend || []
+  } catch (error) {
+    if (currentSeq !== chartLoadSeq) return
+    console.error('Error loading user trend:', error)
+  } finally {
+    if (currentSeq !== chartLoadSeq) return
+    userTrendLoading.value = false
   }
 }
 

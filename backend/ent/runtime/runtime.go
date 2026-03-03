@@ -114,6 +114,30 @@ func init() {
 	apikeyDescQuotaUsed := apikeyFields[9].Descriptor()
 	// apikey.DefaultQuotaUsed holds the default value on creation for the quota_used field.
 	apikey.DefaultQuotaUsed = apikeyDescQuotaUsed.Default.(float64)
+	// apikeyDescRateLimit5h is the schema descriptor for rate_limit_5h field.
+	apikeyDescRateLimit5h := apikeyFields[13].Descriptor()
+	// apikey.DefaultRateLimit5h holds the default value on creation for the rate_limit_5h field.
+	apikey.DefaultRateLimit5h = apikeyDescRateLimit5h.Default.(float64)
+	// apikeyDescRateLimit1d is the schema descriptor for rate_limit_1d field.
+	apikeyDescRateLimit1d := apikeyFields[14].Descriptor()
+	// apikey.DefaultRateLimit1d holds the default value on creation for the rate_limit_1d field.
+	apikey.DefaultRateLimit1d = apikeyDescRateLimit1d.Default.(float64)
+	// apikeyDescRateLimit7d is the schema descriptor for rate_limit_7d field.
+	apikeyDescRateLimit7d := apikeyFields[15].Descriptor()
+	// apikey.DefaultRateLimit7d holds the default value on creation for the rate_limit_7d field.
+	apikey.DefaultRateLimit7d = apikeyDescRateLimit7d.Default.(float64)
+	// apikeyDescUsage5h is the schema descriptor for usage_5h field.
+	apikeyDescUsage5h := apikeyFields[16].Descriptor()
+	// apikey.DefaultUsage5h holds the default value on creation for the usage_5h field.
+	apikey.DefaultUsage5h = apikeyDescUsage5h.Default.(float64)
+	// apikeyDescUsage1d is the schema descriptor for usage_1d field.
+	apikeyDescUsage1d := apikeyFields[17].Descriptor()
+	// apikey.DefaultUsage1d holds the default value on creation for the usage_1d field.
+	apikey.DefaultUsage1d = apikeyDescUsage1d.Default.(float64)
+	// apikeyDescUsage7d is the schema descriptor for usage_7d field.
+	apikeyDescUsage7d := apikeyFields[18].Descriptor()
+	// apikey.DefaultUsage7d holds the default value on creation for the usage_7d field.
+	apikey.DefaultUsage7d = apikeyDescUsage7d.Default.(float64)
 	accountMixin := schema.Account{}.Mixin()
 	accountMixinHooks1 := accountMixin[1].Hooks()
 	account.Hooks[0] = accountMixinHooks1[0]
@@ -222,7 +246,7 @@ func init() {
 	// account.DefaultSchedulable holds the default value on creation for the schedulable field.
 	account.DefaultSchedulable = accountDescSchedulable.Default.(bool)
 	// accountDescSessionWindowStatus is the schema descriptor for session_window_status field.
-	accountDescSessionWindowStatus := accountFields[21].Descriptor()
+	accountDescSessionWindowStatus := accountFields[23].Descriptor()
 	// account.SessionWindowStatusValidator is a validator for the "session_window_status" field. It is called by the builders before save.
 	account.SessionWindowStatusValidator = accountDescSessionWindowStatus.Validators[0].(func(string) error)
 	accountgroupFields := schema.AccountGroup{}.Fields()
@@ -486,36 +510,40 @@ func init() {
 	groupDescDefaultValidityDays := groupFields[10].Descriptor()
 	// group.DefaultDefaultValidityDays holds the default value on creation for the default_validity_days field.
 	group.DefaultDefaultValidityDays = groupDescDefaultValidityDays.Default.(int)
+	// groupDescSoraStorageQuotaBytes is the schema descriptor for sora_storage_quota_bytes field.
+	groupDescSoraStorageQuotaBytes := groupFields[18].Descriptor()
+	// group.DefaultSoraStorageQuotaBytes holds the default value on creation for the sora_storage_quota_bytes field.
+	group.DefaultSoraStorageQuotaBytes = groupDescSoraStorageQuotaBytes.Default.(int64)
 	// groupDescClaudeCodeOnly is the schema descriptor for claude_code_only field.
-	groupDescClaudeCodeOnly := groupFields[18].Descriptor()
+	groupDescClaudeCodeOnly := groupFields[19].Descriptor()
 	// group.DefaultClaudeCodeOnly holds the default value on creation for the claude_code_only field.
 	group.DefaultClaudeCodeOnly = groupDescClaudeCodeOnly.Default.(bool)
 	// groupDescModelRoutingEnabled is the schema descriptor for model_routing_enabled field.
-	groupDescModelRoutingEnabled := groupFields[22].Descriptor()
+	groupDescModelRoutingEnabled := groupFields[23].Descriptor()
 	// group.DefaultModelRoutingEnabled holds the default value on creation for the model_routing_enabled field.
 	group.DefaultModelRoutingEnabled = groupDescModelRoutingEnabled.Default.(bool)
 	// groupDescMcpXMLInject is the schema descriptor for mcp_xml_inject field.
-	groupDescMcpXMLInject := groupFields[23].Descriptor()
+	groupDescMcpXMLInject := groupFields[24].Descriptor()
 	// group.DefaultMcpXMLInject holds the default value on creation for the mcp_xml_inject field.
 	group.DefaultMcpXMLInject = groupDescMcpXMLInject.Default.(bool)
 	// groupDescSupportedModelScopes is the schema descriptor for supported_model_scopes field.
-	groupDescSupportedModelScopes := groupFields[24].Descriptor()
+	groupDescSupportedModelScopes := groupFields[25].Descriptor()
 	// group.DefaultSupportedModelScopes holds the default value on creation for the supported_model_scopes field.
 	group.DefaultSupportedModelScopes = groupDescSupportedModelScopes.Default.([]string)
 	// groupDescIsPurchasable is the schema descriptor for is_purchasable field.
-	groupDescIsPurchasable := groupFields[26].Descriptor()
+	groupDescIsPurchasable := groupFields[27].Descriptor()
 	// group.DefaultIsPurchasable holds the default value on creation for the is_purchasable field.
 	group.DefaultIsPurchasable = groupDescIsPurchasable.Default.(bool)
 	// groupDescSortOrder is the schema descriptor for sort_order field.
-	groupDescSortOrder := groupFields[27].Descriptor()
+	groupDescSortOrder := groupFields[28].Descriptor()
 	// group.DefaultSortOrder holds the default value on creation for the sort_order field.
 	group.DefaultSortOrder = groupDescSortOrder.Default.(int)
 	// groupDescIsRecommended is the schema descriptor for is_recommended field.
-	groupDescIsRecommended := groupFields[28].Descriptor()
+	groupDescIsRecommended := groupFields[29].Descriptor()
 	// group.DefaultIsRecommended holds the default value on creation for the is_recommended field.
 	group.DefaultIsRecommended = groupDescIsRecommended.Default.(bool)
 	// groupDescResellerTemplate is the schema descriptor for reseller_template field.
-	groupDescResellerTemplate := groupFields[32].Descriptor()
+	groupDescResellerTemplate := groupFields[33].Descriptor()
 	// group.DefaultResellerTemplate holds the default value on creation for the reseller_template field.
 	group.DefaultResellerTemplate = groupDescResellerTemplate.Default.(bool)
 	idempotencyrecordMixin := schema.IdempotencyRecord{}.Mixin()
@@ -1341,6 +1369,14 @@ func init() {
 	userDescRoleVersion := userFields[17].Descriptor()
 	// user.DefaultRoleVersion holds the default value on creation for the role_version field.
 	user.DefaultRoleVersion = userDescRoleVersion.Default.(int64)
+	// userDescSoraStorageQuotaBytes is the schema descriptor for sora_storage_quota_bytes field.
+	userDescSoraStorageQuotaBytes := userFields[18].Descriptor()
+	// user.DefaultSoraStorageQuotaBytes holds the default value on creation for the sora_storage_quota_bytes field.
+	user.DefaultSoraStorageQuotaBytes = userDescSoraStorageQuotaBytes.Default.(int64)
+	// userDescSoraStorageUsedBytes is the schema descriptor for sora_storage_used_bytes field.
+	userDescSoraStorageUsedBytes := userFields[19].Descriptor()
+	// user.DefaultSoraStorageUsedBytes holds the default value on creation for the sora_storage_used_bytes field.
+	user.DefaultSoraStorageUsedBytes = userDescSoraStorageUsedBytes.Default.(int64)
 	userallowedgroupFields := schema.UserAllowedGroup{}.Fields()
 	_ = userallowedgroupFields
 	// userallowedgroupDescCreatedAt is the schema descriptor for created_at field.

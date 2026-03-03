@@ -110,6 +110,12 @@ func (User) Fields() []ent.Field {
 		field.Int64("role_version").
 			Default(0).
 			Comment("角色版本号，角色变更时递增"),
+
+		// Sora 存储配额
+		field.Int64("sora_storage_quota_bytes").
+			Default(0),
+		field.Int64("sora_storage_used_bytes").
+			Default(0),
 	}
 }
 

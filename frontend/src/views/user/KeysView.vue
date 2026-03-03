@@ -137,6 +137,97 @@
             </div>
           </template>
 
+          <template #cell-rate_limit="{ row }">
+            <div v-if="row.rate_limit_5h > 0 || row.rate_limit_1d > 0 || row.rate_limit_7d > 0" class="space-y-1.5 min-w-[140px]">
+              <!-- 5h window -->
+              <div v-if="row.rate_limit_5h > 0">
+                <div class="flex items-center justify-between text-xs">
+                  <span class="text-gray-500 dark:text-gray-400">5h</span>
+                  <span :class="[
+                    'font-medium tabular-nums',
+                    row.usage_5h >= row.rate_limit_5h ? 'text-red-500' :
+                    row.usage_5h >= row.rate_limit_5h * 0.8 ? 'text-yellow-500' :
+                    'text-gray-700 dark:text-gray-300'
+                  ]">
+                    ${{ row.usage_5h?.toFixed(2) || '0.00' }}/${{ row.rate_limit_5h?.toFixed(2) }}
+                  </span>
+                </div>
+                <div class="h-1 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-dark-600">
+                  <div
+                    :class="[
+                      'h-full rounded-full transition-all',
+                      row.usage_5h >= row.rate_limit_5h ? 'bg-red-500' :
+                      row.usage_5h >= row.rate_limit_5h * 0.8 ? 'bg-yellow-500' :
+                      'bg-emerald-500'
+                    ]"
+                    :style="{ width: Math.min((row.usage_5h / row.rate_limit_5h) * 100, 100) + '%' }"
+                  />
+                </div>
+              </div>
+              <!-- 1d window -->
+              <div v-if="row.rate_limit_1d > 0">
+                <div class="flex items-center justify-between text-xs">
+                  <span class="text-gray-500 dark:text-gray-400">1d</span>
+                  <span :class="[
+                    'font-medium tabular-nums',
+                    row.usage_1d >= row.rate_limit_1d ? 'text-red-500' :
+                    row.usage_1d >= row.rate_limit_1d * 0.8 ? 'text-yellow-500' :
+                    'text-gray-700 dark:text-gray-300'
+                  ]">
+                    ${{ row.usage_1d?.toFixed(2) || '0.00' }}/${{ row.rate_limit_1d?.toFixed(2) }}
+                  </span>
+                </div>
+                <div class="h-1 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-dark-600">
+                  <div
+                    :class="[
+                      'h-full rounded-full transition-all',
+                      row.usage_1d >= row.rate_limit_1d ? 'bg-red-500' :
+                      row.usage_1d >= row.rate_limit_1d * 0.8 ? 'bg-yellow-500' :
+                      'bg-emerald-500'
+                    ]"
+                    :style="{ width: Math.min((row.usage_1d / row.rate_limit_1d) * 100, 100) + '%' }"
+                  />
+                </div>
+              </div>
+              <!-- 7d window -->
+              <div v-if="row.rate_limit_7d > 0">
+                <div class="flex items-center justify-between text-xs">
+                  <span class="text-gray-500 dark:text-gray-400">7d</span>
+                  <span :class="[
+                    'font-medium tabular-nums',
+                    row.usage_7d >= row.rate_limit_7d ? 'text-red-500' :
+                    row.usage_7d >= row.rate_limit_7d * 0.8 ? 'text-yellow-500' :
+                    'text-gray-700 dark:text-gray-300'
+                  ]">
+                    ${{ row.usage_7d?.toFixed(2) || '0.00' }}/${{ row.rate_limit_7d?.toFixed(2) }}
+                  </span>
+                </div>
+                <div class="h-1 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-dark-600">
+                  <div
+                    :class="[
+                      'h-full rounded-full transition-all',
+                      row.usage_7d >= row.rate_limit_7d ? 'bg-red-500' :
+                      row.usage_7d >= row.rate_limit_7d * 0.8 ? 'bg-yellow-500' :
+                      'bg-emerald-500'
+                    ]"
+                    :style="{ width: Math.min((row.usage_7d / row.rate_limit_7d) * 100, 100) + '%' }"
+                  />
+                </div>
+              </div>
+              <!-- Reset button -->
+              <button
+                v-if="row.usage_5h > 0 || row.usage_1d > 0 || row.usage_7d > 0"
+                @click.stop="confirmResetRateLimitFromTable(row)"
+                class="mt-0.5 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-gray-500 transition-colors hover:bg-gray-100 hover:text-primary-600 dark:hover:bg-dark-700 dark:hover:text-primary-400"
+                :title="t('keys.resetRateLimitUsage')"
+              >
+                <Icon name="refresh" size="xs" />
+                {{ t('keys.resetUsage') }}
+              </button>
+            </div>
+            <span v-else class="text-sm text-gray-400 dark:text-dark-500">-</span>
+          </template>
+
           <template #cell-expires_at="{ value }">
             <span v-if="value" :class="[
               'text-sm',
@@ -179,6 +270,15 @@
               >
                 <Icon name="terminal" size="sm" />
                 <span class="text-xs">{{ t('keys.useKey') }}</span>
+              </button>
+              <!-- Import to CC Switch Button -->
+              <button
+                v-if="!publicSettings?.hide_ccs_import_button"
+                @click="importToCcswitch(row)"
+                class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20 dark:hover:text-blue-400"
+              >
+                <Icon name="upload" size="sm" />
+                <span class="text-xs">{{ t('keys.importToCcSwitch') }}</span>
               </button>
               <!-- Toggle Status Button -->
               <button
@@ -420,6 +520,180 @@
           </div>
         </div>
 
+        <!-- Rate Limit Section -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <label class="input-label mb-0">{{ t('keys.rateLimitSection') }}</label>
+            <button
+              type="button"
+              @click="formData.enable_rate_limit = !formData.enable_rate_limit"
+              :class="[
+                'relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
+                formData.enable_rate_limit ? 'bg-primary-600' : 'bg-gray-200 dark:bg-dark-600'
+              ]"
+            >
+              <span
+                :class="[
+                  'pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+                  formData.enable_rate_limit ? 'translate-x-4' : 'translate-x-0'
+                ]"
+              />
+            </button>
+          </div>
+
+          <div v-if="formData.enable_rate_limit" class="space-y-4 pt-2">
+            <p class="input-hint -mt-2">{{ t('keys.rateLimitHint') }}</p>
+            <!-- 5-Hour Limit -->
+            <div>
+              <label class="input-label">{{ t('keys.rateLimit5h') }}</label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                <input
+                  v-model.number="formData.rate_limit_5h"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  class="input pl-7"
+                  :placeholder="'0'"
+                />
+              </div>
+              <!-- Usage info (edit mode only) -->
+              <div v-if="showEditModal && selectedKey && selectedKey.rate_limit_5h > 0" class="mt-2">
+                <div class="flex items-center gap-2">
+                  <div class="flex-1 rounded-lg bg-gray-100 px-3 py-2 dark:bg-dark-700 text-sm">
+                    <span :class="[
+                      'font-medium',
+                      selectedKey.usage_5h >= selectedKey.rate_limit_5h ? 'text-red-500' :
+                      selectedKey.usage_5h >= selectedKey.rate_limit_5h * 0.8 ? 'text-yellow-500' :
+                      'text-gray-900 dark:text-white'
+                    ]">
+                      ${{ selectedKey.usage_5h?.toFixed(4) || '0.0000' }}
+                    </span>
+                    <span class="mx-2 text-gray-400">/</span>
+                    <span class="text-gray-500 dark:text-gray-400">
+                      ${{ selectedKey.rate_limit_5h?.toFixed(2) || '0.00' }}
+                    </span>
+                  </div>
+                </div>
+                <div class="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-dark-600">
+                  <div
+                    :class="[
+                      'h-full rounded-full transition-all',
+                      selectedKey.usage_5h >= selectedKey.rate_limit_5h ? 'bg-red-500' :
+                      selectedKey.usage_5h >= selectedKey.rate_limit_5h * 0.8 ? 'bg-yellow-500' :
+                      'bg-green-500'
+                    ]"
+                    :style="{ width: Math.min((selectedKey.usage_5h / selectedKey.rate_limit_5h) * 100, 100) + '%' }"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- Daily Limit -->
+            <div>
+              <label class="input-label">{{ t('keys.rateLimit1d') }}</label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                <input
+                  v-model.number="formData.rate_limit_1d"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  class="input pl-7"
+                  :placeholder="'0'"
+                />
+              </div>
+              <!-- Usage info (edit mode only) -->
+              <div v-if="showEditModal && selectedKey && selectedKey.rate_limit_1d > 0" class="mt-2">
+                <div class="flex items-center gap-2">
+                  <div class="flex-1 rounded-lg bg-gray-100 px-3 py-2 dark:bg-dark-700 text-sm">
+                    <span :class="[
+                      'font-medium',
+                      selectedKey.usage_1d >= selectedKey.rate_limit_1d ? 'text-red-500' :
+                      selectedKey.usage_1d >= selectedKey.rate_limit_1d * 0.8 ? 'text-yellow-500' :
+                      'text-gray-900 dark:text-white'
+                    ]">
+                      ${{ selectedKey.usage_1d?.toFixed(4) || '0.0000' }}
+                    </span>
+                    <span class="mx-2 text-gray-400">/</span>
+                    <span class="text-gray-500 dark:text-gray-400">
+                      ${{ selectedKey.rate_limit_1d?.toFixed(2) || '0.00' }}
+                    </span>
+                  </div>
+                </div>
+                <div class="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-dark-600">
+                  <div
+                    :class="[
+                      'h-full rounded-full transition-all',
+                      selectedKey.usage_1d >= selectedKey.rate_limit_1d ? 'bg-red-500' :
+                      selectedKey.usage_1d >= selectedKey.rate_limit_1d * 0.8 ? 'bg-yellow-500' :
+                      'bg-green-500'
+                    ]"
+                    :style="{ width: Math.min((selectedKey.usage_1d / selectedKey.rate_limit_1d) * 100, 100) + '%' }"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- 7-Day Limit -->
+            <div>
+              <label class="input-label">{{ t('keys.rateLimit7d') }}</label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                <input
+                  v-model.number="formData.rate_limit_7d"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  class="input pl-7"
+                  :placeholder="'0'"
+                />
+              </div>
+              <!-- Usage info (edit mode only) -->
+              <div v-if="showEditModal && selectedKey && selectedKey.rate_limit_7d > 0" class="mt-2">
+                <div class="flex items-center gap-2">
+                  <div class="flex-1 rounded-lg bg-gray-100 px-3 py-2 dark:bg-dark-700 text-sm">
+                    <span :class="[
+                      'font-medium',
+                      selectedKey.usage_7d >= selectedKey.rate_limit_7d ? 'text-red-500' :
+                      selectedKey.usage_7d >= selectedKey.rate_limit_7d * 0.8 ? 'text-yellow-500' :
+                      'text-gray-900 dark:text-white'
+                    ]">
+                      ${{ selectedKey.usage_7d?.toFixed(4) || '0.0000' }}
+                    </span>
+                    <span class="mx-2 text-gray-400">/</span>
+                    <span class="text-gray-500 dark:text-gray-400">
+                      ${{ selectedKey.rate_limit_7d?.toFixed(2) || '0.00' }}
+                    </span>
+                  </div>
+                </div>
+                <div class="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-dark-600">
+                  <div
+                    :class="[
+                      'h-full rounded-full transition-all',
+                      selectedKey.usage_7d >= selectedKey.rate_limit_7d ? 'bg-red-500' :
+                      selectedKey.usage_7d >= selectedKey.rate_limit_7d * 0.8 ? 'bg-yellow-500' :
+                      'bg-green-500'
+                    ]"
+                    :style="{ width: Math.min((selectedKey.usage_7d / selectedKey.rate_limit_7d) * 100, 100) + '%' }"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- Reset Rate Limit button (edit mode only) -->
+            <div v-if="showEditModal && selectedKey && (selectedKey.rate_limit_5h > 0 || selectedKey.rate_limit_1d > 0 || selectedKey.rate_limit_7d > 0)">
+              <button
+                type="button"
+                @click="confirmResetRateLimit"
+                class="btn btn-secondary text-sm"
+              >
+                {{ t('keys.resetRateLimitUsage') }}
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- Expiration Section (hidden for regular users when creating) -->
         <div v-if="!isRegularUser || showEditModal" class="space-y-3">
           <div class="flex items-center justify-between">
@@ -561,6 +835,18 @@
       @cancel="showResetQuotaDialog = false"
     />
 
+    <!-- Reset Rate Limit Confirmation Dialog -->
+    <ConfirmDialog
+      :show="showResetRateLimitDialog"
+      :title="t('keys.resetRateLimitTitle')"
+      :message="t('keys.resetRateLimitConfirmMessage', { name: selectedKey?.name })"
+      :confirm-text="t('keys.reset')"
+      :cancel-text="t('common.cancel')"
+      :danger="true"
+      @confirm="resetRateLimitUsage"
+      @cancel="showResetRateLimitDialog = false"
+    />
+
     <!-- Use Key Modal -->
     <UseKeyModal
       :show="showUseKeyModal"
@@ -569,6 +855,53 @@
       :platform="selectedKey?.group?.platform || null"
       @close="closeUseKeyModal"
     />
+
+    <!-- CCS Client Selection Dialog for Antigravity -->
+    <BaseDialog
+      :show="showCcsClientSelect"
+      :title="t('keys.ccsClientSelect.title')"
+      width="narrow"
+      @close="closeCcsClientSelect"
+    >
+      <div class="space-y-4">
+        <p class="text-sm text-gray-600 dark:text-gray-400">
+          {{ t('keys.ccsClientSelect.description') }}
+        </p>
+        <div class="grid grid-cols-2 gap-3">
+          <button
+            @click="handleCcsClientSelect('claude')"
+            class="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-gray-200 dark:border-dark-600 hover:border-primary-500 dark:hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-all"
+          >
+            <Icon name="terminal" size="xl" class="text-gray-600 dark:text-gray-400" />
+            <span class="font-medium text-gray-900 dark:text-white">{{
+              t('keys.ccsClientSelect.claudeCode')
+            }}</span>
+            <span class="text-xs text-gray-500 dark:text-gray-400">{{
+              t('keys.ccsClientSelect.claudeCodeDesc')
+            }}</span>
+          </button>
+          <button
+            @click="handleCcsClientSelect('gemini')"
+            class="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-gray-200 dark:border-dark-600 hover:border-primary-500 dark:hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-all"
+          >
+            <Icon name="sparkles" size="xl" class="text-gray-600 dark:text-gray-400" />
+            <span class="font-medium text-gray-900 dark:text-white">{{
+              t('keys.ccsClientSelect.geminiCli')
+            }}</span>
+            <span class="text-xs text-gray-500 dark:text-gray-400">{{
+              t('keys.ccsClientSelect.geminiCliDesc')
+            }}</span>
+          </button>
+        </div>
+      </div>
+      <template #footer>
+        <div class="flex justify-end">
+          <button @click="closeCcsClientSelect" class="btn btn-secondary">
+            {{ t('common.cancel') }}
+          </button>
+        </div>
+      </template>
+    </BaseDialog>
 
     <!-- Group Selector Dropdown (Teleported to body to avoid overflow clipping) -->
     <Teleport to="body">
@@ -670,6 +1003,7 @@ const columns = computed<Column[]>(() => {
     { key: 'key', label: t('keys.apiKey'), sortable: false },
     { key: 'group', label: t('keys.group'), sortable: false },
     { key: 'usage', label: t('keys.usage'), sortable: false },
+    { key: 'rate_limit', label: t('keys.rateLimitColumn'), sortable: false },
     ...(!isRegularUser.value ? [{ key: 'expires_at', label: t('keys.expiresAt'), sortable: true }] : []),
     { key: 'status', label: t('common.status'), sortable: true },
     { key: 'last_used_at', label: t('keys.lastUsedAt'), sortable: true },
@@ -697,6 +1031,7 @@ const showCreateModal = ref(false)
 const showEditModal = ref(false)
 const showDeleteDialog = ref(false)
 const showResetQuotaDialog = ref(false)
+const showResetRateLimitDialog = ref(false)
 const showUseKeyModal = ref(false)
 const selectedKey = ref<ApiKey | null>(null)
 const copiedKeyId = ref<number | null>(null)
@@ -705,6 +1040,8 @@ const publicSettings = ref<PublicSettings | null>(null)
 const dropdownRef = ref<HTMLElement | null>(null)
 const dropdownPosition = ref<{ top: number; left: number } | null>(null)
 const groupButtonRefs = ref<Map<number, HTMLElement>>(new Map())
+const pendingCcsRow = ref<ApiKey | null>(null)
+const showCcsClientSelect = ref(false)
 let abortController: AbortController | null = null
 
 // Get the currently selected key for group change
@@ -734,6 +1071,11 @@ const formData = ref({
   // Quota settings (empty = unlimited)
   enable_quota: false,
   quota: null as number | null,
+  // Rate limit settings
+  enable_rate_limit: false,
+  rate_limit_5h: null as number | null,
+  rate_limit_1d: null as number | null,
+  rate_limit_7d: null as number | null,
   enable_expiration: false,
   expiration_preset: '30' as '7' | '30' | '90' | 'custom',
   expiration_date: ''
@@ -905,6 +1247,10 @@ const editKey = (key: ApiKey) => {
     ip_blacklist: (key.ip_blacklist || []).join('\n'),
     enable_quota: key.quota > 0,
     quota: key.quota > 0 ? key.quota : null,
+    enable_rate_limit: (key.rate_limit_5h > 0) || (key.rate_limit_1d > 0) || (key.rate_limit_7d > 0),
+    rate_limit_5h: key.rate_limit_5h || null,
+    rate_limit_1d: key.rate_limit_1d || null,
+    rate_limit_7d: key.rate_limit_7d || null,
     enable_expiration: hasExpiration,
     expiration_preset: 'custom',
     expiration_date: key.expires_at ? formatDateTimeLocal(key.expires_at) : ''
@@ -1017,6 +1363,13 @@ const handleSubmit = async () => {
     expiresAt = ''
   }
 
+  // Calculate rate limit values (send 0 when toggle is off)
+  const rateLimitData = formData.value.enable_rate_limit ? {
+    rate_limit_5h: formData.value.rate_limit_5h && formData.value.rate_limit_5h > 0 ? formData.value.rate_limit_5h : 0,
+    rate_limit_1d: formData.value.rate_limit_1d && formData.value.rate_limit_1d > 0 ? formData.value.rate_limit_1d : 0,
+    rate_limit_7d: formData.value.rate_limit_7d && formData.value.rate_limit_7d > 0 ? formData.value.rate_limit_7d : 0,
+  } : { rate_limit_5h: 0, rate_limit_1d: 0, rate_limit_7d: 0 }
+
   submitting.value = true
   try {
     if (showEditModal.value && selectedKey.value) {
@@ -1028,7 +1381,10 @@ const handleSubmit = async () => {
         ip_blacklist: ipBlacklist,
         quota: quota,
         expires_at: expiresAt,
-        notes: formData.value.notes
+        notes: formData.value.notes,
+        rate_limit_5h: rateLimitData.rate_limit_5h,
+        rate_limit_1d: rateLimitData.rate_limit_1d,
+        rate_limit_7d: rateLimitData.rate_limit_7d,
       })
       appStore.showSuccess(t('keys.keyUpdatedSuccess'))
     } else {
@@ -1041,7 +1397,8 @@ const handleSubmit = async () => {
         ipBlacklist,
         quota,
         expiresInDays,
-        formData.value.notes || undefined
+        formData.value.notes || undefined,
+        rateLimitData
       )
       appStore.showSuccess(t('keys.keyCreatedSuccess'))
       // Only advance tour if active, on submit step, and creation succeeded
@@ -1096,6 +1453,10 @@ const closeModals = () => {
     ip_blacklist: '',
     enable_quota: false,
     quota: null,
+    enable_rate_limit: false,
+    rate_limit_5h: null,
+    rate_limit_1d: null,
+    rate_limit_7d: null,
     enable_expiration: false,
     expiration_preset: '30',
     expiration_date: ''
@@ -1130,6 +1491,135 @@ const resetQuotaUsed = async () => {
     const errorMsg = error.response?.data?.detail || t('keys.failedToResetQuota')
     appStore.showError(errorMsg)
   }
+}
+
+// Show reset rate limit confirmation dialog (from edit modal)
+const confirmResetRateLimit = () => {
+  showResetRateLimitDialog.value = true
+}
+
+// Show reset rate limit confirmation dialog (from table row)
+const confirmResetRateLimitFromTable = (row: ApiKey) => {
+  selectedKey.value = row
+  showResetRateLimitDialog.value = true
+}
+
+// Reset rate limit usage for an API key
+const resetRateLimitUsage = async () => {
+  if (!selectedKey.value) return
+  showResetRateLimitDialog.value = false
+  try {
+    await keysAPI.update(selectedKey.value.id, { reset_rate_limit_usage: true })
+    appStore.showSuccess(t('keys.rateLimitResetSuccess'))
+    // Refresh key data
+    await loadApiKeys()
+    // Update the editing key with fresh data
+    const refreshedKey = apiKeys.value.find(k => k.id === selectedKey.value!.id)
+    if (refreshedKey) {
+      selectedKey.value = refreshedKey
+    }
+  } catch (error: any) {
+    const errorMsg = error.response?.data?.detail || t('keys.failedToResetRateLimit')
+    appStore.showError(errorMsg)
+  }
+}
+
+const importToCcswitch = (row: ApiKey) => {
+  const platform = row.group?.platform || 'anthropic'
+
+  // For antigravity platform, show client selection dialog
+  if (platform === 'antigravity') {
+    pendingCcsRow.value = row
+    showCcsClientSelect.value = true
+    return
+  }
+
+  // For other platforms, execute directly
+  executeCcsImport(row, platform === 'gemini' ? 'gemini' : 'claude')
+}
+
+const executeCcsImport = (row: ApiKey, clientType: 'claude' | 'gemini') => {
+  const baseUrl = publicSettings.value?.api_base_url || window.location.origin
+  const platform = row.group?.platform || 'anthropic'
+
+  // Determine app name and endpoint based on platform and client type
+  let app: string
+  let endpoint: string
+
+  if (platform === 'antigravity') {
+    // Antigravity always uses /antigravity suffix
+    app = clientType === 'gemini' ? 'gemini' : 'claude'
+    endpoint = `${baseUrl}/antigravity`
+  } else {
+    switch (platform) {
+      case 'openai':
+        app = 'codex'
+        endpoint = baseUrl
+        break
+      case 'gemini':
+        app = 'gemini'
+        endpoint = baseUrl
+        break
+      default: // anthropic
+        app = 'claude'
+        endpoint = baseUrl
+    }
+  }
+
+  const usageScript = `({
+    request: {
+      url: "{{baseUrl}}/v1/usage",
+      method: "GET",
+      headers: { "Authorization": "Bearer {{apiKey}}" }
+    },
+    extractor: function(response) {
+      return {
+        isValid: response.is_active || true,
+        remaining: response.balance,
+        unit: "USD"
+      };
+    }
+  })`
+  const params = new URLSearchParams({
+    resource: 'provider',
+    app: app,
+    name: 'sub2api',
+    homepage: baseUrl,
+    endpoint: endpoint,
+    apiKey: row.key,
+    configFormat: 'json',
+    usageEnabled: 'true',
+    usageScript: btoa(usageScript),
+    usageAutoInterval: '30'
+  })
+  const deeplink = `ccswitch://v1/import?${params.toString()}`
+
+  try {
+    window.open(deeplink, '_self')
+
+    // Check if the protocol handler worked by detecting if we're still focused
+    setTimeout(() => {
+      if (document.hasFocus()) {
+        // Still focused means the protocol handler likely failed
+        appStore.showError(t('keys.ccSwitchNotInstalled'))
+      }
+    }, 100)
+  } catch (error) {
+    appStore.showError(t('keys.ccSwitchNotInstalled'))
+  }
+}
+
+const handleCcsClientSelect = (clientType: 'claude' | 'gemini') => {
+  if (pendingCcsRow.value) {
+    executeCcsImport(pendingCcsRow.value, clientType)
+  }
+  showCcsClientSelect.value = false
+  pendingCcsRow.value = null
+}
+
+const closeCcsClientSelect = () => {
+  showCcsClientSelect.value = false
+  pendingCcsRow.value = null
 }
 
 onMounted(() => {

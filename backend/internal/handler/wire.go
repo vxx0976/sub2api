@@ -15,6 +15,7 @@ func ProvideAdminHandlers(
 	groupHandler *admin.GroupHandler,
 	accountHandler *admin.AccountHandler,
 	announcementHandler *admin.AnnouncementHandler,
+	dataManagementHandler *admin.DataManagementHandler,
 	oauthHandler *admin.OAuthHandler,
 	openaiOAuthHandler *admin.OpenAIOAuthHandler,
 	geminiOAuthHandler *admin.GeminiOAuthHandler,
@@ -32,6 +33,7 @@ func ProvideAdminHandlers(
 	referralHandler *admin.ReferralHandler,
 	channelHandler *admin.ChannelHandler,
 	errorPassthroughHandler *admin.ErrorPassthroughHandler,
+	apiKeyHandler *admin.AdminAPIKeyHandler,
 ) *AdminHandlers {
 	return &AdminHandlers{
 		Dashboard:        dashboardHandler,
@@ -39,6 +41,7 @@ func ProvideAdminHandlers(
 		Group:            groupHandler,
 		Account:          accountHandler,
 		Announcement:     announcementHandler,
+		DataManagement:   dataManagementHandler,
 		OAuth:            oauthHandler,
 		OpenAIOAuth:      openaiOAuthHandler,
 		GeminiOAuth:      geminiOAuthHandler,
@@ -56,6 +59,7 @@ func ProvideAdminHandlers(
 		Referral:         referralHandler,
 		Channel:          channelHandler,
 		ErrorPassthrough: errorPassthroughHandler,
+		APIKey:           apiKeyHandler,
 	}
 }
 
@@ -108,6 +112,7 @@ func ProvideHandlers(
 	gatewayHandler *GatewayHandler,
 	openaiGatewayHandler *OpenAIGatewayHandler,
 	soraGatewayHandler *SoraGatewayHandler,
+	soraClientHandler *SoraClientHandler,
 	settingHandler *SettingHandler,
 	referralHandler *ReferralHandler,
 	totpHandler *TotpHandler,
@@ -130,6 +135,7 @@ func ProvideHandlers(
 		Gateway:       gatewayHandler,
 		OpenAIGateway: openaiGatewayHandler,
 		SoraGateway:   soraGatewayHandler,
+		SoraClient:    soraClientHandler,
 		Setting:       settingHandler,
 		Referral:      referralHandler,
 		Totp:          totpHandler,
@@ -163,6 +169,7 @@ var ProviderSet = wire.NewSet(
 	admin.NewGroupHandler,
 	admin.NewAccountHandler,
 	admin.NewAnnouncementHandler,
+	admin.NewDataManagementHandler,
 	admin.NewOAuthHandler,
 	admin.NewOpenAIOAuthHandler,
 	admin.NewGeminiOAuthHandler,
@@ -180,6 +187,7 @@ var ProviderSet = wire.NewSet(
 	admin.NewReferralHandler,
 	admin.NewChannelHandler,
 	admin.NewErrorPassthroughHandler,
+	admin.NewAdminAPIKeyHandler,
 
 	// Reseller handlers
 	reseller.NewDashboardHandler,

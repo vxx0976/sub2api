@@ -23,6 +23,8 @@ import ordersAPI from './orders'
 import * as referralsAPI from './referrals'
 import channelsAPI from './channels'
 import errorPassthroughAPI from './errorPassthrough'
+import dataManagementAPI from './dataManagement'
+import apiKeysAPI from './apiKeys'
 
 /**
  * Unified admin API object for convenient access
@@ -47,7 +49,9 @@ export const adminAPI = {
   orders: ordersAPI,
   referrals: referralsAPI,
   channels: channelsAPI,
-  errorPassthrough: errorPassthroughAPI
+  errorPassthrough: errorPassthroughAPI,
+  dataManagement: dataManagementAPI,
+  apiKeys: apiKeysAPI
 }
 
 export {
@@ -70,7 +74,9 @@ export {
   ordersAPI,
   referralsAPI,
   channelsAPI,
-  errorPassthroughAPI
+  errorPassthroughAPI,
+  dataManagementAPI,
+  apiKeysAPI
 }
 
 export default adminAPI
@@ -78,3 +84,4 @@ export default adminAPI
 // Re-export types used by components
 export type { BalanceHistoryItem } from './users'
 export type { ErrorPassthroughRule, CreateRuleRequest, UpdateRuleRequest } from './errorPassthrough'
+export type { BackupAgentHealth, DataManagementConfig } from './dataManagement'

@@ -26,6 +26,15 @@ var (
 		{Name: "expires_at", Type: field.TypeTime, Nullable: true},
 		{Name: "last_used_at", Type: field.TypeTime, Nullable: true},
 		{Name: "tg_chat_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "rate_limit_5h", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
+		{Name: "rate_limit_1d", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
+		{Name: "rate_limit_7d", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
+		{Name: "usage_5h", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
+		{Name: "usage_1d", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
+		{Name: "usage_7d", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
+		{Name: "window_5h_start", Type: field.TypeTime, Nullable: true},
+		{Name: "window_1d_start", Type: field.TypeTime, Nullable: true},
+		{Name: "window_7d_start", Type: field.TypeTime, Nullable: true},
 		{Name: "group_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "user_id", Type: field.TypeInt64},
 	}
@@ -37,13 +46,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "api_keys_groups_api_keys",
-				Columns:    []*schema.Column{APIKeysColumns[15]},
+				Columns:    []*schema.Column{APIKeysColumns[24]},
 				RefColumns: []*schema.Column{GroupsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "api_keys_users_api_keys",
-				Columns:    []*schema.Column{APIKeysColumns[16]},
+				Columns:    []*schema.Column{APIKeysColumns[25]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -52,12 +61,12 @@ var (
 			{
 				Name:    "apikey_user_id",
 				Unique:  false,
-				Columns: []*schema.Column{APIKeysColumns[16]},
+				Columns: []*schema.Column{APIKeysColumns[25]},
 			},
 			{
 				Name:    "apikey_group_id",
 				Unique:  false,
-				Columns: []*schema.Column{APIKeysColumns[15]},
+				Columns: []*schema.Column{APIKeysColumns[24]},
 			},
 			{
 				Name:    "apikey_status",
@@ -115,6 +124,8 @@ var (
 		{Name: "rate_limited_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
 		{Name: "rate_limit_reset_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
 		{Name: "overload_until", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "temp_unschedulable_until", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "temp_unschedulable_reason", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "session_window_start", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
 		{Name: "session_window_end", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
 		{Name: "session_window_status", Type: field.TypeString, Nullable: true, Size: 20},
@@ -128,7 +139,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "accounts_proxies_proxy",
-				Columns:    []*schema.Column{AccountsColumns[25]},
+				Columns:    []*schema.Column{AccountsColumns[27]},
 				RefColumns: []*schema.Column{ProxiesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -152,7 +163,7 @@ var (
 			{
 				Name:    "account_proxy_id",
 				Unique:  false,
-				Columns: []*schema.Column{AccountsColumns[25]},
+				Columns: []*schema.Column{AccountsColumns[27]},
 			},
 			{
 				Name:    "account_priority",
@@ -183,6 +194,16 @@ var (
 				Name:    "account_overload_until",
 				Unique:  false,
 				Columns: []*schema.Column{AccountsColumns[21]},
+			},
+			{
+				Name:    "account_platform_priority",
+				Unique:  false,
+				Columns: []*schema.Column{AccountsColumns[6], AccountsColumns[11]},
+			},
+			{
+				Name:    "account_priority_status",
+				Unique:  false,
+				Columns: []*schema.Column{AccountsColumns[11], AccountsColumns[13]},
 			},
 			{
 				Name:    "account_deleted_at",
@@ -439,6 +460,7 @@ var (
 		{Name: "sora_image_price_540", Type: field.TypeFloat64, Nullable: true, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
 		{Name: "sora_video_price_per_request", Type: field.TypeFloat64, Nullable: true, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
 		{Name: "sora_video_price_per_request_hd", Type: field.TypeFloat64, Nullable: true, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
+		{Name: "sora_storage_quota_bytes", Type: field.TypeInt64, Default: 0},
 		{Name: "claude_code_only", Type: field.TypeBool, Default: false},
 		{Name: "fallback_group_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "fallback_group_id_on_invalid_request", Type: field.TypeInt64, Nullable: true},
@@ -489,12 +511,12 @@ var (
 			{
 				Name:    "group_sort_order",
 				Unique:  false,
-				Columns: []*schema.Column{GroupsColumns[31]},
+				Columns: []*schema.Column{GroupsColumns[32]},
 			},
 			{
 				Name:    "group_owner_id",
 				Unique:  false,
-				Columns: []*schema.Column{GroupsColumns[34]},
+				Columns: []*schema.Column{GroupsColumns[35]},
 			},
 		},
 	}
@@ -1152,6 +1174,11 @@ var (
 				Unique:  false,
 				Columns: []*schema.Column{UsageLogsColumns[23], UsageLogsColumns[27]},
 			},
+			{
+				Name:    "usagelog_group_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{UsageLogsColumns[30], UsageLogsColumns[27]},
+			},
 		},
 	}
 	// UsersColumns holds the columns for the "users" table.
@@ -1177,6 +1204,8 @@ var (
 		{Name: "register_domain", Type: field.TypeString, Nullable: true, Size: 255, Default: ""},
 		{Name: "token_version", Type: field.TypeInt64, Default: 0},
 		{Name: "role_version", Type: field.TypeInt64, Default: 0},
+		{Name: "sora_storage_quota_bytes", Type: field.TypeInt64, Default: 0},
+		{Name: "sora_storage_used_bytes", Type: field.TypeInt64, Default: 0},
 		{Name: "parent_id", Type: field.TypeInt64, Nullable: true},
 	}
 	// UsersTable holds the schema information for the "users" table.
@@ -1187,7 +1216,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "users_users_sub_users",
-				Columns:    []*schema.Column{UsersColumns[21]},
+				Columns:    []*schema.Column{UsersColumns[23]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -1206,7 +1235,7 @@ var (
 			{
 				Name:    "user_parent_id",
 				Unique:  false,
-				Columns: []*schema.Column{UsersColumns[21]},
+				Columns: []*schema.Column{UsersColumns[23]},
 			},
 		},
 	}
@@ -1395,6 +1424,11 @@ var (
 				Name:    "usersubscription_expires_at",
 				Unique:  false,
 				Columns: []*schema.Column{UserSubscriptionsColumns[5]},
+			},
+			{
+				Name:    "usersubscription_user_id_status_expires_at",
+				Unique:  false,
+				Columns: []*schema.Column{UserSubscriptionsColumns[16], UserSubscriptionsColumns[6], UserSubscriptionsColumns[5]},
 			},
 			{
 				Name:    "usersubscription_assigned_by",
