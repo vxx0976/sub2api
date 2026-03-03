@@ -239,7 +239,7 @@
               </div>
             </div>
 
-            <!-- Renewal Button -->
+            <!-- Renewal Button (hidden)
             <div
               v-if="subscription.group?.price"
               class="mt-4 border-t border-gray-100 pt-4 dark:border-dark-700"
@@ -260,6 +260,7 @@
                 </button>
               </div>
             </div>
+            -->
           </div>
         </div>
         </div>
@@ -286,7 +287,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
 import subscriptionsAPI from '@/api/subscriptions'
-import plansAPI from '@/api/plans'
+// import plansAPI from '@/api/plans'
 import type { UserSubscription } from '@/types'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import Icon from '@/components/icons/Icon.vue'
@@ -298,7 +299,7 @@ const appStore = useAppStore()
 
 const subscriptions = ref<UserSubscription[]>([])
 const loading = ref(true)
-const renewingId = ref<number | null>(null)
+// const renewingId = ref<number | null>(null)
 
 // Payment modal state
 const showPaymentModal = ref(false)
@@ -422,26 +423,26 @@ function formatResetTime(windowStart: string | null, windowHours: number): strin
   return `${minutes}m`
 }
 
-async function handleRenew(subscription: UserSubscription) {
-  if (!subscription.group || !subscription.group.price) return
-
-  try {
-    renewingId.value = subscription.id
-    const result = await plansAPI.createOrder(subscription.group_id)
-    paymentInfo.orderNo = result.order_no
-    paymentInfo.amount = result.amount
-    paymentInfo.paymentAmount = result.payment_amount
-    paymentInfo.qrCode = result.qr_code
-    paymentInfo.qrCodeUrl = result.qr_code_url
-    paymentInfo.mode = result.mode
-    showPaymentModal.value = true
-  } catch (error) {
-    console.error('Failed to renew subscription:', error)
-    appStore.showError(t('userSubscriptions.renewError'))
-  } finally {
-    renewingId.value = null
-  }
-}
+// async function handleRenew(subscription: UserSubscription) {
+//   if (!subscription.group || !subscription.group.price) return
+//
+//   try {
+//     renewingId.value = subscription.id
+//     const result = await plansAPI.createOrder(subscription.group_id)
+//     paymentInfo.orderNo = result.order_no
+//     paymentInfo.amount = result.amount
+//     paymentInfo.paymentAmount = result.payment_amount
+//     paymentInfo.qrCode = result.qr_code
+//     paymentInfo.qrCodeUrl = result.qr_code_url
+//     paymentInfo.mode = result.mode
+//     showPaymentModal.value = true
+//   } catch (error) {
+//     console.error('Failed to renew subscription:', error)
+//     appStore.showError(t('userSubscriptions.renewError'))
+//   } finally {
+//     renewingId.value = null
+//   }
+// }
 
 function handlePaymentSuccess() {
   showPaymentModal.value = false
