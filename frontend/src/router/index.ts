@@ -152,39 +152,6 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
-    path: '/docs/vscode',
-    name: 'DocsVscode',
-    component: () => import('@/views/user/DocsVscodeView.vue'),
-    meta: {
-      requiresAuth: false,
-      title: 'VSCode Setup',
-      titleKey: 'docs.vscode.title',
-      descriptionKey: 'docs.vscode.subtitle'
-    }
-  },
-  {
-    path: '/docs/cli',
-    name: 'DocsCli',
-    component: () => import('@/views/user/DocsCliView.vue'),
-    meta: {
-      requiresAuth: false,
-      title: 'Claude Code CLI',
-      titleKey: 'docs.cli.title',
-      descriptionKey: 'docs.cli.subtitle'
-    }
-  },
-  {
-    path: '/docs/tips',
-    name: 'DocsTips',
-    component: () => import('@/views/user/DocsTipsView.vue'),
-    meta: {
-      requiresAuth: false,
-      title: 'Tips & Tricks',
-      titleKey: 'docs.tips.title',
-      descriptionKey: 'docs.tips.subtitle'
-    }
-  },
-  {
     path: '/status',
     name: 'Status',
     beforeEnter() {

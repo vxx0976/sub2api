@@ -582,7 +582,7 @@ export default {
     },
     guide: {
       title: 'Claude Code 接入指南',
-      subtitle: '仅需三步，让官方工具连接加速网络',
+      subtitle: '完整教程：从安装到配置，一页搞定',
       note: '本文档适用于 Claude Code（CLI）用户，基于 Anthropic 官方接口协议。',
       warning: {
         title: '重要提示',
@@ -625,6 +625,14 @@ export default {
         tipPS: '建议将命令添加到 PowerShell 配置文件',
         tipPSSuffix: '实现永久配置',
         tipCMD: '建议通过「系统属性 → 环境变量」设置永久环境变量',
+        permanent: {
+          title: '永久配置环境变量（推荐）',
+          desc: '上面的命令仅在当前终端窗口有效，关闭后需要重新设置。以下方法可以永久保存环境变量：',
+          macComment: '# 写入 ~/.zshrc，重启终端自动生效',
+          linuxComment: '# 写入 ~/.bashrc，重启终端自动生效',
+          psComment: '# 永久设置用户级环境变量（需重启终端生效）',
+          note: '设置完成后需要重新打开终端窗口，或执行 source 命令使配置立即生效。'
+        },
         verify: '验证配置',
         verifyComment: '# 验证环境变量是否生效',
         verifyCMDComment: ':: 验证环境变量是否生效',
@@ -653,6 +661,18 @@ export default {
         a2: '请确认 ANTHROPIC_BASE_URL 配置正确，且本地网络可访问该地址。',
         q3: 'Q：Claude 能启动，但无法正常对话？',
         a3: '请检查是否使用的是最新版本的 claude-code，并确认未使用 Web 登录模式。'
+      },
+      createKey: {
+        title: '创建 API 密钥',
+        description: '登录后台获取你的 API 密钥：'
+      },
+      configEnv: {
+        title: '配置环境变量',
+        description: '将密钥和地址配置到环境变量，让 Claude 连接到加速网络：'
+      },
+      vscodeStep: {
+        title: '配置 VSCode 插件（可选）',
+        description: '如果你使用 VSCode 开发，可以安装官方插件获得集成开发体验：'
       }
     },
     // 返回按钮
@@ -680,7 +700,7 @@ export default {
       faq: {
         title: '常见问题',
         q1: '不知道选哪个工具？',
-        a1: '如果你是新手，推荐使用 Cursor，它提供了图形化界面，上手简单。如果你习惯命令行操作，可以尝试 Claude Code CLI。',
+        a1: '如果你喜欢在 VSCode 中使用，推荐安装 Claude Code for VS Code 插件。如果你习惯命令行操作，可以使用 Claude Code CLI。',
         q2: '需要付费吗？',
         a2: '本服务采用按量计费模式，不同模型有不同的价格。你可以在「套餐计划」页面查看具体价格。',
         q3: '支持哪些模型？',
@@ -695,8 +715,7 @@ export default {
       subtitle: '使用插件在 Visual Studio Code 中接入 Claude',
       plugins: {
         title: '推荐插件',
-        desc: '以下是两款常用的 Claude 插件，选择其中一款安装即可：',
-        cline: '功能强大的 AI 编程助手，支持自主编码、文件操作等',
+        desc: 'Anthropic 官方出品的 VSCode 插件，与 CLI 体验一致：',
         claudeCode: 'Anthropic 官方 VSCode 插件，与 CLI 体验一致',
         official: '官方',
         install: '前往安装'
@@ -704,9 +723,8 @@ export default {
       step1: {
         title: '安装插件',
         instruction1: '打开 VSCode 扩展市场（Ctrl+Shift+X）',
-        instruction2: '搜索 "Cline" 或 "Claude Code"',
+        instruction2: '搜索 "Claude Code"',
         instruction3: '点击安装按钮',
-        tip: '两款插件功能类似，Cline 社区活跃功能丰富，Claude Code 是官方出品体验统一'
       },
       step2: {
         title: '获取 API 密钥',
@@ -718,12 +736,6 @@ export default {
       },
       step3: {
         title: '配置插件',
-        selectPlugin: '根据你安装的插件，选择对应的配置方式：',
-        clineTitle: 'Cline 配置：',
-        cline1: '点击侧边栏的 Cline 图标，选择「Bring my own API key」，点击 Continue',
-        cline2: '配置 API Provider，填入以下信息后点击 Continue：',
-        cline3: '配置成功！现在可以开始使用了',
-        claudeCodeTitle: 'Claude Code 配置：',
         claudeCodeDesc: 'Claude Code 插件使用环境变量配置，与 CLI 配置方式相同：',
         claudeCode1: '设置环境变量 ANTHROPIC_BASE_URL 为本站地址',
         claudeCode2: '设置环境变量 ANTHROPIC_AUTH_TOKEN 为你的密钥',

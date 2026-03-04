@@ -1045,7 +1045,7 @@
               </label>
               <input
                 v-model="form.doc_url"
-                type="url"
+                type="text"
                 class="input font-mono text-sm"
                 :placeholder="t('admin.settings.site.docUrlPlaceholder')"
               />

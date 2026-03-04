@@ -583,7 +583,7 @@ export default {
     },
     guide: {
       title: 'Claude Code Setup Guide',
-      subtitle: 'Three simple steps to connect to the accelerated network',
+      subtitle: 'Complete guide: from installation to configuration, all in one page',
       note: 'This guide is for Claude Code (CLI) users, based on the Anthropic native API protocol.',
       warning: {
         title: 'Important',
@@ -626,6 +626,14 @@ export default {
         tipPS: 'We recommend adding these to your PowerShell profile',
         tipPSSuffix: 'for permanent configuration',
         tipCMD: 'We recommend setting permanent environment variables via System Properties → Environment Variables',
+        permanent: {
+          title: 'Permanent Environment Variables (Recommended)',
+          desc: 'The commands above only apply to the current terminal session. Use the following methods to save them permanently:',
+          macComment: '# Write to ~/.zshrc, takes effect on terminal restart',
+          linuxComment: '# Write to ~/.bashrc, takes effect on terminal restart',
+          psComment: '# Set permanent user-level environment variables (restart terminal to take effect)',
+          note: 'After setting, reopen your terminal window, or run the source command to apply immediately.'
+        },
         verify: 'Verify Configuration',
         verifyComment: '# Verify environment variables are set',
         verifyCMDComment: ':: Verify environment variables are set',
@@ -654,6 +662,18 @@ export default {
         a2: 'Verify that ANTHROPIC_BASE_URL is correct and accessible from your network.',
         q3: 'Q: Claude starts but conversations fail?',
         a3: 'Make sure you have the latest version of claude-code and are not using Web login mode.'
+      },
+      createKey: {
+        title: 'Create API Key',
+        description: 'Log in and get your API key from the dashboard:'
+      },
+      configEnv: {
+        title: 'Configure Environment Variables',
+        description: 'Set up your key and site URL as environment variables so Claude can connect:'
+      },
+      vscodeStep: {
+        title: 'Configure VSCode Plugin (Optional)',
+        description: 'If you use VSCode, install the official plugin for an integrated experience:'
       }
     },
     // Back button
@@ -681,7 +701,7 @@ export default {
       faq: {
         title: 'FAQ',
         q1: 'Not sure which tool to choose?',
-        a1: 'If you are a beginner, we recommend Cursor as it provides a graphical interface and is easy to get started. If you prefer command-line, try Claude Code CLI.',
+        a1: 'If you prefer working in VSCode, we recommend installing the Claude Code for VS Code plugin. If you prefer command-line, use Claude Code CLI.',
         q2: 'Is it paid?',
         a2: 'This service uses pay-as-you-go pricing with different rates for different models. Check the "Plans" page for specific pricing.',
         q3: 'Which models are supported?',
@@ -695,9 +715,8 @@ export default {
       title: 'VSCode Setup Guide',
       subtitle: 'Use plugins to integrate Claude in Visual Studio Code',
       plugins: {
-        title: 'Recommended Plugins',
-        desc: 'Here are two popular Claude plugins, install one of them:',
-        cline: 'Powerful AI coding assistant with autonomous coding, file operations, etc.',
+        title: 'Recommended Plugin',
+        desc: 'Official Anthropic VSCode plugin, consistent with CLI experience:',
         claudeCode: 'Official Anthropic VSCode plugin, consistent with CLI experience',
         official: 'Official',
         install: 'Install'
@@ -705,9 +724,8 @@ export default {
       step1: {
         title: 'Install Plugin',
         instruction1: 'Open VSCode Extensions (Ctrl+Shift+X)',
-        instruction2: 'Search for "Cline" or "Claude Code"',
+        instruction2: 'Search for "Claude Code"',
         instruction3: 'Click the Install button',
-        tip: 'Both plugins are similar. Cline has active community and rich features, Claude Code is official with unified experience'
       },
       step2: {
         title: 'Get API Key',
@@ -719,12 +737,6 @@ export default {
       },
       step3: {
         title: 'Configure Plugin',
-        selectPlugin: 'Choose the configuration for your installed plugin:',
-        clineTitle: 'Cline Configuration:',
-        cline1: 'Click the Cline icon in the sidebar, select "Bring my own API key", then click Continue',
-        cline2: 'Configure API Provider with the following settings, then click Continue:',
-        cline3: 'Configuration complete! You can now start using it',
-        claudeCodeTitle: 'Claude Code Configuration:',
         claudeCodeDesc: 'Claude Code plugin uses environment variables, same as CLI configuration:',
         claudeCode1: 'Set environment variable ANTHROPIC_BASE_URL to this site address',
         claudeCode2: 'Set environment variable ANTHROPIC_AUTH_TOKEN to your key',

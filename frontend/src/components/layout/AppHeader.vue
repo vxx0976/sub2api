@@ -48,37 +48,6 @@
           <span class="hidden sm:inline">{{ t('nav.redeem') }}</span>
         </router-link>
 
-        <!-- Channel Balances for Admin -->
-        <div v-if="isAdmin && channels.length > 0" class="hidden items-center gap-2 sm:flex">
-          <a
-            v-for="ch in channels"
-            :key="ch.id"
-            :href="ch.website_url || '/admin/channels'"
-            :target="ch.website_url ? '_blank' : '_self'"
-            rel="noopener noreferrer"
-            class="flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium transition-colors"
-            :class="(ch.cached_balance || 0) < 20
-              ? 'bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30'
-              : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-400 dark:hover:bg-emerald-900/30'"
-          >
-            <span class="font-semibold">{{ ch.name }}</span>
-            <span>{{ ch.balance_unit }}{{ (ch.cached_balance || 0).toFixed(2) }}</span>
-          </a>
-          <!-- Refresh Button -->
-          <button
-            @click="handleRefreshChannels"
-            :disabled="channelsRefreshing"
-            class="flex h-6 w-6 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 disabled:opacity-50 dark:hover:bg-dark-700 dark:hover:text-gray-300"
-            :title="t('common.refresh')"
-          >
-            <Icon
-              name="refresh"
-              size="sm"
-              :class="{ 'animate-spin': channelsRefreshing }"
-            />
-          </button>
-        </div>
-
         <!-- Language Switcher -->
         <LocaleSwitcher />
 
@@ -231,7 +200,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAppStore, useAuthStore, useOnboardingStore } from '@/stores'
@@ -239,8 +208,6 @@ import LocaleSwitcher from '@/components/common/LocaleSwitcher.vue'
 import SubscriptionProgressMini from '@/components/common/SubscriptionProgressMini.vue'
 import AnnouncementBell from '@/components/common/AnnouncementBell.vue'
 import Icon from '@/components/icons/Icon.vue'
-import { channelsAPI } from '@/api/admin/channels'
-import type { Channel } from '@/types'
 
 const router = useRouter()
 const route = useRoute()
@@ -257,44 +224,6 @@ const dropdownRef = ref<HTMLElement | null>(null)
 const contactInfo = computed(() => appStore.contactInfo)
 const docUrl = computed(() => appStore.docUrl)
 
-// Channel balance for admin
-const channels = ref<Channel[]>([])
-const channelsRefreshing = ref(false)
-
-async function loadChannels() {
-  if (!isAdmin.value) return
-  try {
-    const response = await channelsAPI.list(1, 100)
-    channels.value = response.items || []
-  } catch (error) {
-    console.error('Failed to load channels:', error)
-  }
-}
-
-async function handleRefreshChannels() {
-  if (!isAdmin.value || channels.value.length === 0) return
-  channelsRefreshing.value = true
-  try {
-    // Call check-balance for each channel to get real-time balance
-    const results = await Promise.all(
-      channels.value.map(ch => channelsAPI.checkBalance(ch.id).catch(() => ch))
-    )
-    channels.value = results
-  } catch (error) {
-    console.error('Failed to refresh channel balances:', error)
-  } finally {
-    channelsRefreshing.value = false
-  }
-}
-
-// Load channels once on admin login
-watch(isAdmin, (newVal) => {
-  if (newVal) {
-    loadChannels()
-  } else {
-    channels.value = []
-  }
-}, { immediate: true })
 
 // 只在标准模式的管理员下显示新手引导按钮
 const showOnboardingButton = computed(() => {
