@@ -97,32 +97,6 @@
             </div>
         </div>
       </div>
-
-      <!-- Quick Links -->
-      <div>
-        <div class="mb-4 flex items-center gap-2">
-          <Icon name="bolt" size="md" class="text-blue-500" />
-          <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
-            {{ t('consoleHome.quickLinks') }}
-          </h2>
-        </div>
-        <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <router-link
-            v-for="link in quickLinks"
-            :key="link.path"
-            :to="link.path"
-            class="card card-hover flex flex-col items-center gap-4 p-6 text-center"
-          >
-            <div
-              class="flex h-14 w-14 items-center justify-center rounded-xl"
-              :class="link.bgClass"
-            >
-              <Icon :name="link.icon" size="xl" class="text-white" />
-            </div>
-            <span class="text-base font-semibold text-gray-900 dark:text-white">{{ link.label }}</span>
-          </router-link>
-        </div>
-      </div>
     </div>
   </AppLayout>
 </template>
@@ -141,7 +115,6 @@ const authStore = useAuthStore()
 // Doc URL from settings
 const docUrl = computed(() => appStore.cachedPublicSettings?.doc_url || '')
 
-
 // Dynamic contact info — from public settings (main site or reseller)
 const contactWechat = computed(() => appStore.cachedPublicSettings?.contact_wechat || '')
 const contactTelegram = computed(() => appStore.cachedPublicSettings?.contact_telegram || '')
@@ -151,16 +124,4 @@ const hasContactInfo = computed(() => !!contactWechat.value || !!contactTelegram
 // Announcements from cachedPublicSettings (injected via __APP_CONFIG__).
 // On reseller domains, embed_on.go replaces system announcements with the reseller's own.
 const announcements = computed(() => [...(appStore.cachedPublicSettings?.announcements ?? [])].reverse())
-
-const quickLinks = computed(() => {
-  const links = [
-    {
-      path: '/keys',
-      icon: 'key' as const,
-      label: t('consoleHome.links.apiKeys'),
-      bgClass: 'bg-gradient-to-br from-amber-500 to-amber-600'
-    },
-  ]
-  return links
-})
 </script>
