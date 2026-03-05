@@ -1,24 +1,39 @@
 import { createI18n } from 'vue-i18n'
 
-type LocaleCode = 'en' | 'zh' | 'ja' | 'ko' | 'zh-TW' | 'ru' | 'fr' | 'de' | 'es' | 'pt'
+type LocaleCode = 'en' | 'zh' | 'ru'
 
 type LocaleMessages = Record<string, any>
 
 const LOCALE_KEY = 'sub2api_locale'
 const DEFAULT_LOCALE: LocaleCode = 'en'
-const SUPPORTED_LOCALES: LocaleCode[] = ['en', 'zh', 'ja', 'ko', 'zh-TW', 'ru', 'fr', 'de', 'es', 'pt']
+const SUPPORTED_LOCALES: LocaleCode[] = ['en', 'zh', 'ru']
+
+/** Deep merge custom translations over base (custom keys override base) */
+function deepMerge(base: LocaleMessages, custom: LocaleMessages): LocaleMessages {
+  const result = { ...base }
+  for (const key of Object.keys(custom)) {
+    if (
+      result[key] && typeof result[key] === 'object' && !Array.isArray(result[key]) &&
+      typeof custom[key] === 'object' && !Array.isArray(custom[key])
+    ) {
+      result[key] = deepMerge(result[key], custom[key])
+    } else {
+      result[key] = custom[key]
+    }
+  }
+  return result
+}
+
+/** Custom locale loaders (dev-only translations, separated to reduce merge conflicts) */
+const customLocaleLoaders: Partial<Record<LocaleCode, () => Promise<{ default: LocaleMessages }>>> = {
+  en: () => import('./locales/en.custom'),
+  zh: () => import('./locales/zh.custom'),
+}
 
 const localeLoaders: Record<LocaleCode, () => Promise<{ default: LocaleMessages }>> = {
   en: () => import('./locales/en'),
   zh: () => import('./locales/zh'),
-  ja: () => import('./locales/ja'),
-  ko: () => import('./locales/ko'),
-  'zh-TW': () => import('./locales/zhTW'),
-  ru: () => import('./locales/ru'),
-  fr: () => import('./locales/fr'),
-  de: () => import('./locales/de'),
-  es: () => import('./locales/es'),
-  pt: () => import('./locales/pt')
+  ru: () => import('./locales/ru')
 }
 
 function isLocaleCode(value: string): value is LocaleCode {
@@ -43,29 +58,8 @@ function getDefaultLocale(): LocaleCode {
   if (browserLang.startsWith('en')) {
     return 'en'
   }
-  if (browserLang.startsWith('ja')) {
-    return 'ja'
-  }
-  if (browserLang.startsWith('ko')) {
-    return 'ko'
-  }
-  if (browserLang === 'zh-tw' || browserLang === 'zh-hant') {
-    return 'zh-TW'
-  }
   if (browserLang.startsWith('ru')) {
     return 'ru'
-  }
-  if (browserLang.startsWith('fr')) {
-    return 'fr'
-  }
-  if (browserLang.startsWith('de')) {
-    return 'de'
-  }
-  if (browserLang.startsWith('es')) {
-    return 'es'
-  }
-  if (browserLang.startsWith('pt')) {
-    return 'pt'
   }
 
   // 默认中文
@@ -91,7 +85,16 @@ export async function loadLocaleMessages(locale: LocaleCode): Promise<void> {
 
   const loader = localeLoaders[locale]
   const module = await loader()
-  i18n.global.setLocaleMessage(locale, module.default)
+  let messages = module.default
+
+  // Merge custom translations if available
+  const customLoader = customLocaleLoaders[locale]
+  if (customLoader) {
+    const customModule = await customLoader()
+    messages = deepMerge(messages, customModule.default)
+  }
+
+  i18n.global.setLocaleMessage(locale, messages)
   loadedLocales.add(locale)
 }
 
@@ -101,14 +104,7 @@ export async function initI18n(): Promise<void> {
   const langMap: Record<string, string> = {
     zh: 'zh-CN',
     en: 'en',
-    ja: 'ja',
-    ko: 'ko',
-    'zh-TW': 'zh-TW',
-    ru: 'ru',
-    fr: 'fr',
-    de: 'de',
-    es: 'es',
-    pt: 'pt-BR'
+    ru: 'ru'
   }
   document.documentElement.setAttribute('lang', langMap[current] || current)
 }
@@ -124,14 +120,7 @@ export async function setLocale(locale: string): Promise<void> {
   const langMap: Record<string, string> = {
     zh: 'zh-CN',
     en: 'en',
-    ja: 'ja',
-    ko: 'ko',
-    'zh-TW': 'zh-TW',
-    ru: 'ru',
-    fr: 'fr',
-    de: 'de',
-    es: 'es',
-    pt: 'pt-BR'
+    ru: 'ru'
   }
   document.documentElement.setAttribute('lang', langMap[locale] || locale)
 
@@ -152,14 +141,7 @@ export function getLocale(): LocaleCode {
 export const availableLocales = [
   { code: 'en', name: 'English' },
   { code: 'zh', name: '中文' },
-  { code: 'zh-TW', name: '繁體中文' },
-  { code: 'ja', name: '日本語' },
-  { code: 'ko', name: '한국어' },
-  { code: 'ru', name: 'Русский' },
-  { code: 'fr', name: 'Français' },
-  { code: 'de', name: 'Deutsch' },
-  { code: 'es', name: 'Español' },
-  { code: 'pt', name: 'Português' }
+  { code: 'ru', name: 'Русский' }
 ]
 
 export default i18n

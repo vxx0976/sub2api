@@ -1,0 +1,883 @@
+export default {
+  // Console Home Page
+  consoleHome: {
+    title: 'Home',
+    description: 'Console Home',
+    welcome: 'Welcome back',
+    balance: 'Balance',
+    gettingStarted: {
+      title: 'Getting Started',
+      badge: 'Recommended',
+      description: 'Learn how to use this platform in 3 minutes'
+    },
+    announcements: 'Announcements',
+    promotions: 'Promotions',
+    quickLinks: 'Quick Links',
+    announcement1: 'Limited offer: All plans with bonus credits, up to $40 extra',
+    announcement2: 'Recharge tier upgrade: up to 2.2x multiplier',
+    rechargeBonus: {
+      title: 'Recharge Bonus',
+      description: 'Tiered multiplier - more you recharge, higher the rate',
+      tier1: '¥10~199.99 = 2.0x',
+      tier2: '¥200~499.99 = 2.1x',
+      tier3: '¥500+ = 2.2x',
+      action: 'Recharge Now',
+      perDollar: '/dollar'
+    },
+    contact: {
+      title: 'Contact Us',
+      wechat: 'WeChat',
+      telegram: 'Telegram',
+      email: 'Email',
+      scanQr: 'WeChat: mayione1'
+    },
+    links: {
+      subscriptions: 'Subscriptions',
+      apiKeys: 'API Keys'
+    }
+  },
+
+  // Status Page
+  status: {
+    title: 'System Status',
+    description: 'View the status of system services',
+    allOperational: 'All Systems Operational',
+    partialOutage: 'Partial System Outage',
+    majorOutage: 'Major System Outage',
+    checking: 'Loading',
+    operational: 'Operational',
+    degraded: 'Degraded Performance',
+    down: 'Service Disruption',
+    unknown: 'Unknown',
+    uptime: 'uptime',
+    daysAgo: '{days} days ago',
+    today: 'Today',
+    lastUpdated: 'Last updated',
+    dataFrom: 'status data from',
+    loadFailed: 'Failed to load status page',
+    goToStatusPage: 'Go to status.claude.com'
+  },
+
+  // Docs
+  docs: {
+    title: 'Documentation',
+    subtitle: 'Learn how to configure and use the service',
+    copy: 'Copy',
+    copied: 'Copied',
+    quickStart: {
+      title: 'Quick Start',
+      step1: {
+        title: 'Get API Key',
+        desc: 'Create a new API key in the "API Keys" page of your dashboard'
+      },
+      step2: {
+        title: 'Configure Environment',
+        desc: 'Set up the API Key and Base URL in your tool'
+      },
+      step3: {
+        title: 'Start Coding',
+        desc: 'Launch your tool and start your AI coding journey'
+      }
+    },
+    claudeCode: {
+      title: 'Claude Code Configuration',
+      desc: 'Set the following environment variables in your terminal, then launch Claude Code:',
+      replaceKey: 'Replace with your API Key'
+    },
+    models: {
+      title: 'Supported Models',
+      opus: 'Most powerful model for complex tasks',
+      sonnet: 'Balanced performance and cost',
+      sonnet4: 'Cost-effective coding assistant',
+      haiku: 'Fast and lightweight for simple tasks'
+    },
+    faq: {
+      title: 'FAQ',
+      q1: {
+        question: 'How is balance calculated?',
+        answer: 'Balance is charged based on actual token usage. Different models have different price multipliers. Check the "Plans" page for specific pricing.'
+      },
+      q2: {
+        question: 'Which tools are supported?',
+        answer: 'We support Claude Code, Codex CLI, Gemini CLI and other mainstream AI coding tools. Any tool that supports custom API endpoints can be used.'
+      },
+      q3: {
+        question: 'What if I encounter problems?',
+        answer: 'Please first check if your API Key and Base URL are correctly configured. If the issue persists, contact support for help.'
+      }
+    },
+    contact: {
+      title: 'Need Help?',
+      desc: 'If you have any questions, please contact support or submit a ticket in the dashboard.'
+    },
+    guide: {
+      title: 'Claude Code Setup Guide',
+      subtitle: 'Complete guide: from installation to configuration, all in one page',
+      note: 'This guide is for Claude Code (CLI) users, based on the Anthropic native API protocol.',
+      warning: {
+        title: 'Important',
+        intro: 'This API uses the Anthropic native protocol:',
+        item1: 'Only works with claude-code CLI and related development tools',
+        item2: 'Does not support claude.ai web interface',
+        item3: 'Does not support tools that rely on OpenAI API (e.g., Cursor)'
+      },
+      step1: {
+        title: 'Install Claude CLI',
+        description: 'Choose the installation method for your operating system:',
+        commentBash: '# Download and install Claude CLI',
+        commentPS: '# Download and install Claude CLI',
+        commentCMD: ':: Install Claude CLI via npm',
+        tipMac: 'You may need to restart your terminal or run',
+        tipPS: 'You may need to restart PowerShell after installation',
+        tipCMD: 'Make sure Node.js is installed, then restart CMD',
+        verify: 'Verify Installation',
+        verifySuccess: 'If a version number is displayed, installation was successful',
+        networkTip: 'If installation is slow, verify you can access claude.ai'
+      },
+      step2: {
+        title: 'Create API Key and Configure',
+        instruction1: 'Log in and go to',
+        instruction1Link: 'Dashboard → API Keys',
+        instruction2: 'Click "Create Key" in the top right, enter a name and confirm',
+        instruction3Pre: 'Click the',
+        instruction3Button: 'Use Key',
+        instruction3Post: 'button next to the new key',
+        instruction4: 'Select your operating system and copy the environment variable commands',
+        instruction5: 'Paste and run the commands in your terminal',
+        exampleTitle: '"Use Key" dialog example:',
+        commentBash: '# Copy and run in terminal',
+        commentPS: '# Copy and run in PowerShell',
+        commentCMD: ':: Copy and run in CMD',
+        yourKey: 'sk-your-key',
+        tipMac: 'We recommend adding these to',
+        tipMacSuffix: 'for permanent configuration',
+        tipMacOr: 'or',
+        tipPS: 'We recommend adding these to your PowerShell profile',
+        tipPSSuffix: 'for permanent configuration',
+        tipCMD: 'We recommend setting permanent environment variables via System Properties → Environment Variables',
+        permanent: {
+          title: 'Permanent Environment Variables (Recommended)',
+          desc: 'The commands above only apply to the current terminal session. Use the following methods to save them permanently:',
+          macComment: '# Write to ~/.zshrc, takes effect on terminal restart',
+          linuxComment: '# Write to ~/.bashrc, takes effect on terminal restart',
+          psComment: '# Set permanent user-level environment variables (restart terminal to take effect)',
+          note: 'After setting, reopen your terminal window, or run the source command to apply immediately.'
+        },
+        verify: 'Verify Configuration',
+        verifyComment: '# Verify environment variables are set',
+        verifyCMDComment: ':: Verify environment variables are set',
+        verifyFail: 'If no output, the environment variables are not set. Check configuration or restart terminal.'
+      },
+      step3: {
+        title: 'Start Claude',
+        description: 'After configuration, run the following command to start Claude:',
+        tip: 'First run may take a few seconds to initialize',
+        debugTip: 'If startup fails, try using',
+        debugTipSuffix: 'to see detailed error info'
+      },
+      tips: {
+        title: 'Tips',
+        tip1: 'Environment variables take effect immediately, no terminal restart needed',
+        tip2: 'We recommend setting permanent environment variables to avoid reconfiguration',
+        tip3Pre: 'Having issues? Check the',
+        tip3Link: 'System Status',
+        tip3Post: 'or contact support'
+      },
+      faq: {
+        title: 'FAQ',
+        q1: 'Q: Getting 401 / Unauthorized?',
+        a1: 'Verify that ANTHROPIC_AUTH_TOKEN is correct and has no extra spaces.',
+        q2: 'Q: Connection timeout / network error?',
+        a2: 'Verify that ANTHROPIC_BASE_URL is correct and accessible from your network.',
+        q3: 'Q: Claude starts but conversations fail?',
+        a3: 'Make sure you have the latest version of claude-code and are not using Web login mode.'
+      },
+      createKey: {
+        title: 'Create API Key',
+        description: 'Log in and get your API key from the dashboard:'
+      },
+      configEnv: {
+        title: 'Configure Environment Variables',
+        description: 'Set up your key and site URL as environment variables so Claude can connect:'
+      },
+      vscodeStep: {
+        title: 'Configure VSCode Plugin (Optional)',
+        description: 'If you use VSCode, install the official plugin for an integrated experience:'
+      }
+    },
+    // Back button
+    backToList: 'Back to docs',
+    // Entry page
+    entry: {
+      title: 'Choose Your Setup Method',
+      subtitle: 'Select the configuration guide for your preferred tool',
+      recommended: 'Recommended',
+      advanced: 'Advanced',
+      viewGuide: 'View Guide',
+      vscodeDesc: 'Use Claude for coding in VSCode with plugins',
+      cliDesc: 'Use Claude Code command-line tool in your terminal',
+      tipsTitle: 'Tips & Tricks',
+      tipsDesc: 'Common commands, shortcuts, and best practices',
+      quickInfo: {
+        title: 'Get Started in 3 Steps',
+        step1Title: 'Get API Key',
+        step1Desc: 'Create your API key in the dashboard',
+        step2Title: 'Configure Tool',
+        step2Desc: 'Set up Base URL and API Key',
+        step3Title: 'Start Coding',
+        step3Desc: 'Launch your tool and enjoy AI coding'
+      },
+      faq: {
+        title: 'FAQ',
+        q1: 'Not sure which tool to choose?',
+        a1: 'If you prefer working in VSCode, we recommend installing the Claude Code for VS Code plugin. If you prefer command-line, use Claude Code CLI.',
+        q2: 'Is it paid?',
+        a2: 'This service uses pay-as-you-go pricing with different rates for different models. Check the "Plans" page for specific pricing.',
+        q3: 'Which models are supported?',
+        a3: 'We support Claude Opus 4.5, Sonnet 4.5 and other mainstream models. You can switch models using the /model command.',
+        q4: 'What if I encounter problems?',
+        a4: 'First check if your API Key and Base URL are correctly configured. If issues persist, check the "System Status" page or contact support.'
+      }
+    },
+    // VSCode setup guide
+    vscode: {
+      title: 'VSCode Setup Guide',
+      subtitle: 'Use plugins to integrate Claude in Visual Studio Code',
+      plugins: {
+        title: 'Recommended Plugin',
+        desc: 'Official Anthropic VSCode plugin, consistent with CLI experience:',
+        claudeCode: 'Official Anthropic VSCode plugin, consistent with CLI experience',
+        official: 'Official',
+        install: 'Install'
+      },
+      step1: {
+        title: 'Install Plugin',
+        instruction1: 'Open VSCode Extensions (Ctrl+Shift+X)',
+        instruction2: 'Search for "Claude Code"',
+        instruction3: 'Click the Install button',
+      },
+      step2: {
+        title: 'Get API Key',
+        instruction1: 'Log in and go to',
+        instruction1Link: 'API Key Management',
+        instruction2: 'Create and copy your API Key',
+        infoTitle: 'You need to note the following:',
+        yourKey: 'sk-your-key'
+      },
+      step3: {
+        title: 'Configure Plugin',
+        claudeCodeDesc: 'Claude Code plugin uses environment variables, same as CLI configuration:',
+        claudeCode1: 'Set environment variable ANTHROPIC_BASE_URL to this site address',
+        claudeCode2: 'Set environment variable ANTHROPIC_AUTH_TOKEN to your key',
+        claudeCode3: 'Restart VSCode for environment variables to take effect',
+        claudeCodeTipTitle: 'Tip: ',
+        claudeCodeTip: 'See CLI setup guide for environment variable configuration. The VSCode plugin will automatically read them'
+      },
+      step4: {
+        title: 'Verify Configuration',
+        desc: 'Enter a message in the plugin chat window to test if it responds correctly.',
+        success: 'If you receive a response, the configuration is successful!'
+      },
+      faq: {
+        title: 'FAQ',
+        q1: 'Plugin cannot connect?',
+        a1: 'Check if the Base URL format is correct (no trailing slashes), and verify the API Key is valid.',
+        q2: 'How to use different models?',
+        a2: 'Modify the model field in the plugin configuration. Options include claude-sonnet-4-20250514, claude-opus-4-20250514, etc.'
+      }
+    },
+    // CLI setup guide
+    cli: {
+      title: 'Claude Code CLI Setup',
+      subtitle: 'Use the official Claude Code command-line tool in your terminal',
+      note: 'This guide is for claude-code CLI users, based on the Anthropic native API protocol.',
+      prereq: {
+        title: 'Prerequisites',
+        windows: 'Windows Users:',
+        windowsNode: 'Need to install Node.js first:',
+        windowsTerminal: 'Recommend using PowerShell or Windows Terminal',
+        mac: 'macOS / Linux Users:',
+        macTerminal: 'Open Terminal (Spotlight search "Terminal")'
+      }
+    },
+    // Tips page
+    tips: {
+      title: 'Tips & Tricks',
+      subtitle: 'Master these commands and tips for more efficient AI coding',
+      commands: {
+        title: 'Command Reference',
+        command: 'Command',
+        function: 'Function',
+        usage: 'When to Use',
+        modelFunc: 'Switch model',
+        modelUsage: 'Use Opus for complex tasks, Sonnet for daily use',
+        compactFunc: 'Compress context',
+        compactUsage: 'When conversation is too long, saves tokens',
+        clearFunc: 'Clear conversation',
+        clearUsage: 'When starting a new topic',
+        costFunc: 'View cost',
+        costUsage: 'Check token usage for current session',
+        helpFunc: 'Show help',
+        helpUsage: 'View all available commands'
+      },
+      shortcuts: {
+        title: 'Keyboard Shortcuts',
+        shortcut: 'Shortcut',
+        function: 'Function',
+        escFunc: 'Interrupt current operation',
+        shiftTabFunc: 'Exit Plan Mode',
+        ctrlCFunc: 'Force terminate'
+      },
+      models: {
+        title: 'Model Selection Tips',
+        desc: 'Choose the right model based on task complexity to balance performance and cost:',
+        sonnetLabel: 'Daily Choice',
+        sonnetDesc: 'Fast response, cost-effective, suitable for most coding tasks',
+        sonnetUse1: 'Daily code writing',
+        sonnetUse2: 'Code review and refactoring',
+        sonnetUse3: 'Quick Q&A and debugging',
+        opusLabel: 'Premium Choice',
+        opusDesc: 'Stronger reasoning, suitable for complex tasks',
+        opusUse1: 'Complex architecture design',
+        opusUse2: 'Difficult problem solving',
+        opusUse3: 'Long text analysis',
+        switchTip: 'Tip:',
+        switchDesc: 'Use command to quickly switch models'
+      },
+      practices: {
+        title: 'Best Practices',
+        tip1Title: 'Provide Clear Context',
+        tip1Desc: 'Before asking, explain your project background, tech stack, and specific needs. The AI will give more accurate answers.',
+        tip2Title: 'Use /compact Wisely',
+        tip2Desc: 'When conversations get long, use /compact to compress history. This saves tokens and maintains response speed.',
+        tip3Title: 'Share Code Snippets',
+        tip3Desc: 'Pasting relevant code snippets for the AI to reference is more effective than just describing the problem.',
+        tip4Title: 'Iterative Development',
+        tip4Desc: 'Break large tasks into smaller steps and collaborate with the AI gradually. This works better than requesting complex features all at once.'
+      },
+      links: {
+        title: 'Quick Links',
+        keys: 'API Key Management',
+        usage: 'View Usage',
+        status: 'System Status'
+      }
+    }
+  },
+
+  // Referral code validation (used in registration)
+  referral: {
+    referralCodeValid: 'Referral code valid',
+    referralCodeHint: 'Get 10% of plan price as bonus after your first purchase',
+    referralCodeInvalid: 'Referral code is invalid or expired',
+    referralCodeSelf: 'You cannot use your own referral code'
+  },
+
+  // Recharge (minimal - only keys still referenced)
+  recharge: {
+    rechargeNow: 'Recharge Now',
+  },
+
+  keyQuery: {
+    title: 'API Key Query',
+    placeholder: 'Enter your API Key',
+    submit: 'Query',
+    querying: 'Querying...',
+    invalidKey: 'Invalid API Key',
+    keyInfo: 'Key Information',
+    keyName: 'Name',
+    status: 'Status',
+    quota: 'Quota',
+    used: 'Used',
+    remaining: 'Remaining',
+    unlimited: 'Unlimited',
+    expiresAt: 'Expires At',
+    neverExpires: 'Never Expires',
+    daysRemaining: 'Expires in {days} days',
+    subscription: 'Subscription',
+    noSubscription: 'No Active Subscription',
+    dailyUsage: 'Daily Usage',
+    weeklyUsage: 'Weekly Usage',
+    monthlyUsage: 'Monthly Usage',
+    usageSummary: 'Usage Summary (7 Days)',
+    totalCost: 'Total Cost',
+    requestCount: 'Requests',
+    topModels: 'Top Models',
+    statusActive: 'Active',
+    statusInactive: 'Inactive',
+    statusExpired: 'Expired',
+    statusExhausted: 'Quota Exhausted',
+    noLimit: 'No Limit',
+    requests: 'requests',
+    tabs: {
+      overview: 'Overview',
+      usageDetails: 'Usage Details'
+    },
+    timeRange: {
+      today: 'Today',
+      thisMonth: 'This Month',
+      all: 'All',
+      custom: 'Custom'
+    },
+    stats: {
+      totalTokens: 'Total Tokens',
+      inputTokens: 'Input Tokens',
+      outputTokens: 'Output Tokens',
+      cacheTokens: 'Cache Tokens',
+      avgDuration: 'Avg Duration'
+    },
+    models: {
+      title: 'Model Usage',
+      requests: 'Requests',
+      tokens: 'Tokens',
+      cost: 'Cost'
+    },
+    usage: {
+      time: 'Time',
+      model: 'Model',
+      inputTokens: 'Input',
+      outputTokens: 'Output',
+      cacheTokens: 'Cache',
+      cost: 'Cost',
+      duration: 'Duration',
+      noData: 'No data',
+      prev: 'Previous',
+      next: 'Next'
+    },
+    trend: {
+      title: 'Usage Trend'
+    },
+    language: 'Language'
+  },
+
+  // Reseller
+  reseller: {
+    dashboard: {
+      title: 'Merchant Dashboard',
+      myBalance: 'My Balance',
+      domains: 'Custom Domains',
+      verifiedDomains: 'Verified Domains',
+      groups: 'Packages',
+      keyCount: 'Total Keys',
+      activeKeys: 'Active Keys',
+      totalQuotaUsed: 'Quota Used',
+      quickActions: 'Quick Actions',
+      manageDomains: 'Manage Domains',
+      manageDomainsDesc: 'Configure custom domains and branding',
+      apiKeys: 'API Keys',
+      apiKeysDesc: 'Manage your API keys'
+    },
+    keys: {
+      title: 'API Key Management',
+      create: 'Create Key',
+      edit: 'Edit Key',
+      delete: 'Delete Key',
+      name: 'Name',
+      notes: 'Notes',
+      key: 'Key',
+      group: 'Package',
+      status: 'Status',
+      quota: 'Quota',
+      quotaUsed: 'Quota Used',
+      expiresAt: 'Expires At',
+      ipWhitelist: 'IP Whitelist',
+      ipBlacklist: 'IP Blacklist',
+      customKey: 'Custom Key',
+      expiresInDays: 'Expires In Days',
+      expiresInDaysHint: '(auto-filled from plan)',
+      expiresInDaysPlaceholder: '0 = no expiry',
+      quotaHint: '(auto-filled from plan)',
+      quotaPlaceholder: '0 = unlimited',
+      resetQuota: 'Reset Quota',
+      copyKey: 'Copy Key',
+      noKeys: 'No API keys yet',
+      confirmDelete: 'Are you sure you want to delete this key?',
+      actions: 'Actions',
+      active: 'Active',
+      disabled: 'Disabled',
+      unlimited: 'Unlimited',
+      noExpiry: 'No Expiry',
+      createSuccess: 'Key created successfully',
+      updateSuccess: 'Key updated successfully',
+      deleteSuccess: 'Key deleted',
+      resetSuccess: 'Quota reset successfully',
+      keyCopied: 'Key copied to clipboard'
+    },
+    domains: {
+      title: 'Domain Management',
+      description: 'Configure custom domains for your brand',
+      add: 'Add Domain',
+      addTitle: 'Add Domain',
+      editTitle: 'Edit Domain',
+      domainName: 'Domain',
+      siteName: 'Site Name',
+      siteLogo: 'Site Logo URL',
+      brandColor: 'Brand Color',
+      verified: 'Verified',
+      unverified: 'Unverified',
+      verify: 'Verify',
+      verifyNow: 'Verify Now',
+      verifying: 'Verifying...',
+      verifyInstructions: 'Add the following DNS records at your DNS provider:',
+      verifyStep1_dns: 'Step 1: Add A Record (point domain to server)',
+      verifyStep1_hint: `Use {'@'} as HOST for the root domain. If your DNS provider auto-appends the domain suffix, just enter {'@'}.`,
+      verifyStep2_txt: 'Step 2: Add TXT Record (verify domain ownership)',
+      verifyStep2_hint: 'HOST should only be _domain-verify without the domain suffix. VALUE must include the domain-verify= prefix.',
+      verifyStep3: 'Step 3: Wait for DNS propagation (usually a few minutes), then click "Verify Now"',
+      dnsType: 'Type',
+      dnsHost: 'HOST',
+      dnsValue: 'VALUE',
+      verifySuccess: 'Domain verified successfully',
+      verifyFailed: 'Domain verification failed. Please check your DNS records.',
+      createSuccess: 'Domain added successfully',
+      deleteSuccess: 'Domain deleted',
+      deleteConfirm: 'Are you sure you want to delete domain {domain}?',
+      empty: 'No custom domains yet',
+      subtitle: 'Subtitle',
+      homeContent: 'Home Content',
+      homeContentPlaceholder: 'Supports HTML',
+      docUrl: 'Documentation URL',
+      customCSS: 'Custom CSS',
+      customCSSPlaceholder: 'Enter custom CSS styles'
+    },
+    sites: {
+      title: 'Site Management',
+      description: 'Manage your sites, configure domains, branding, and homepage',
+      add: 'Add Site',
+      addTitle: 'Add Site',
+      backToList: 'Back to List',
+      editSite: 'Site Settings',
+      tabs: {
+        basic: 'Basic Info',
+        homepage: 'Homepage',
+        docs: 'Docs',
+        purchase: 'Purchase',
+        seo: 'SEO'
+      },
+      domainName: 'Domain',
+      siteName: 'Site Name',
+      siteNamePlaceholder: 'Enter site name',
+      subtitle: 'Subtitle',
+      subtitlePlaceholder: 'Enter site subtitle',
+      siteLogo: 'Logo URL',
+      siteLogoPlaceholder: 'Enter logo image URL',
+      homeTemplate: 'Homepage Template',
+      homeTemplateDefault: 'Follow System Default',
+      homeTemplateMinimal: 'Minimal',
+      homeTemplateCustom: 'Custom HTML',
+      homeTemplateExternal: 'External URL',
+      homeTemplateDefaultHint: 'Uses the homepage configured by the system administrator',
+      homeTemplateMinimalHint: 'A simple homepage showing only the site name and login entry',
+      homeContent: 'Homepage Content',
+      homeContentHtmlPlaceholder: 'Enter custom HTML content',
+      homeContentUrlPlaceholder: 'Enter external page URL, will be embedded as iframe',
+      preview: 'Preview Site',
+      defaultLocale: 'Default Language',
+      defaultLocaleBrowser: 'Follow Browser',
+      defaultLocaleHint: 'Users visiting this site will see this language by default',
+      docUrl: 'Documentation URL',
+      docUrlPlaceholder: 'Enter documentation page URL',
+      purchaseEnabled: 'Enable Purchase Page',
+      purchaseEnabledHint: 'When enabled, users can purchase subscriptions on this site',
+      purchaseUrl: 'Purchase Page URL',
+      purchaseUrlPlaceholder: 'Enter custom purchase page URL',
+      purchaseUrlHint: 'Leave empty to use system default purchase page',
+      seoSection: 'SEO',
+      seoTitle: 'SEO Title',
+      seoTitlePlaceholder: 'Custom search engine title',
+      seoDescription: 'SEO Description',
+      seoDescriptionPlaceholder: 'Custom search engine description',
+      seoKeywords: 'SEO Keywords',
+      seoKeywordsPlaceholder: 'Separate with commas',
+      empty: 'No sites yet',
+      verificationStatus: 'Verification Status'
+    },
+    groups: {
+      title: 'Package Management',
+      description: 'Create and manage your packages',
+      create: 'Create Package',
+      createTitle: 'Create Package',
+      editTitle: 'Edit Package',
+      template: 'Package Template',
+      selectTemplate: 'Select a template...',
+      price: 'Price',
+      validityDays: 'Validity Days',
+      dailyLimit: 'Daily Limit',
+      weeklyLimit: 'Weekly Limit',
+      monthlyLimit: 'Monthly Limit',
+      noLimit: 'No limit',
+      unlimited: 'Unlimited',
+      purchasable: 'Purchasable',
+      createSuccess: 'Package created successfully',
+      deleteSuccess: 'Package deleted',
+      deleteConfirm: 'Are you sure you want to delete package "{name}"?',
+      empty: 'No packages yet'
+    },
+    users: {
+      title: 'Users',
+      description: 'View users belonging to your platform',
+      search: 'Search email or username',
+      email: 'Email',
+      username: 'Username',
+      balance: 'Balance',
+      status: 'Status',
+      createdAt: 'Registered',
+      active: 'Active',
+      disabled: 'Disabled',
+      empty: 'No users yet',
+      actions: 'Actions',
+      more: 'More',
+      deposit: 'Deposit',
+      withdraw: 'Refund',
+      depositAmount: 'Deposit Amount',
+      withdrawAmount: 'Refund Amount',
+      withdrawAll: 'Refund All',
+      currentBalance: 'Current Balance',
+      newBalance: 'New Balance',
+      notes: 'Notes',
+      totalRecharged: 'Total Recharged',
+      noHistory: 'No records',
+      insufficientBalance: 'Insufficient balance',
+      amountRequired: 'Amount required',
+      balanceUpdated: 'Balance updated',
+      balanceHistory: 'Balance History',
+      balanceHistoryTitle: 'User Balance History',
+      allTypes: 'All Types',
+      typeBalance: 'Balance (Redeem)',
+      typeAdminBalance: 'Balance (Admin)',
+      balanceAddedRedeem: 'Balance Added (Redeem)',
+      balanceAddedAdmin: 'Balance Added (Admin)',
+      balanceDeductedAdmin: 'Balance Deducted (Admin)',
+      adminAdjustment: 'Admin Adjustment',
+      depositNotesPlaceholder: 'e.g., New user bonus, promotional credit',
+      withdrawNotesPlaceholder: 'e.g., Service issue refund, incorrect charge'
+    },
+    redeem: {
+      title: 'Redeem Code Management',
+      description: 'Generate and manage balance redeem codes',
+      generate: 'Generate Codes',
+      count: 'Count',
+      value: 'Value',
+      totalCost: 'Total Cost',
+      generateSuccess: 'Redeem codes generated',
+      deleteSuccess: 'Redeem code deleted',
+      deleteConfirm: 'Are you sure you want to delete this redeem code?',
+      export: 'Export',
+      copy: 'Copy',
+      copied: 'Copied',
+      empty: 'No redeem codes yet'
+    },
+    announcements: {
+      title: 'Announcement Management',
+      description: 'Manage your announcements',
+      create: 'Create Announcement',
+      editTitle: 'Edit Announcement',
+      createTitle: 'Create Announcement',
+      titleLabel: 'Title',
+      content: 'Content',
+      status: 'Status',
+      startsAt: 'Start Time',
+      endsAt: 'End Time',
+      createSuccess: 'Announcement created',
+      updateSuccess: 'Announcement updated',
+      deleteSuccess: 'Announcement deleted',
+      deleteConfirm: 'Are you sure you want to delete this announcement?',
+      empty: 'No announcements yet',
+      statusDraft: 'Draft',
+      statusActive: 'Active',
+      statusArchived: 'Archived'
+    },
+    settings: {
+      title: 'Settings',
+      description: 'Configure your merchant site',
+      contactSection: 'Contact Info',
+      contactWechat: 'WeChat ID',
+      contactTelegram: 'Telegram',
+      announcementsSection: 'Homepage Announcements',
+      announcementsHint: 'Short announcements shown at the top of the user console home page',
+      announcementTitle: 'Title',
+      announcementDate: 'Date (optional)',
+      addAnnouncement: 'Add Announcement',
+      brand: 'Brand Settings',
+      siteName: 'Site Name',
+      siteLogo: 'Site Logo URL',
+      siteSubtitle: 'Site Subtitle',
+      brandColor: 'Brand Color',
+      customCSS: 'Custom CSS',
+      customCSSPlaceholder: 'Enter custom CSS code...',
+      homeContent: 'Home Content',
+      homeContentPlaceholder: 'Enter custom home page content (HTML supported)...',
+      registration: 'Registration Settings',
+      registrationEnabled: 'Open Registration',
+      emailVerifyEnabled: 'Email Verification',
+      invitationCodeEnabled: 'Invitation Code Required',
+      defaultBalance: 'Default Balance',
+      defaultConcurrency: 'Default Concurrency',
+      defaultLocale: 'Default Language',
+      defaultLocaleBrowser: 'Follow Browser',
+      defaultLocaleHint: 'Users accessing via your domain will see this language by default',
+      other: 'Other Settings',
+      docUrl: 'Documentation URL',
+      contactInfo: 'Contact Info',
+      cryptoPlaceholder: 'One per line, format: COIN:address'
+    }
+  },
+
+  // Admin sub-sections
+  admin: {
+    // Channel Management
+    channels: {
+      title: 'Channel Management',
+      description: 'Configure channels and query balances',
+      createChannel: 'Create Channel',
+      editChannel: 'Edit Channel',
+      deleteChannel: 'Delete Channel',
+      searchChannels: 'Search channels...',
+      allPlatforms: 'All Platforms',
+      allStatus: 'All Status',
+      noPlatform: 'No Platform',
+      other: 'Other',
+      noChannels: 'No channels yet',
+      name: 'Channel Name',
+      namePlaceholder: 'Enter channel name',
+      descriptionLabel: 'Description',
+      descriptionPlaceholder: 'Enter channel description',
+      platform: 'Platform',
+      selectPlatform: 'Select platform',
+      status: {
+        active: 'Active',
+        inactive: 'Inactive',
+        error: 'Error'
+      },
+      balanceConfig: 'Balance Query Configuration',
+      balanceUrl: 'Query URL',
+      balanceUrlPlaceholder: 'https://api.example.com/balance',
+      balanceMethod: 'Request Method',
+      balanceUnit: 'Balance Unit',
+      balancePath: 'Balance Field Path',
+      balancePathPlaceholder: 'data.balance',
+      balanceHeaders: 'Request Headers',
+      balanceHeadersPlaceholder: '"Authorization": "Bearer sk-xxx"',
+      balanceHeadersHint: 'Enter JSON format request headers',
+      balanceBody: 'Request Body',
+      balanceBodyPlaceholder: '"key": "value"',
+      lastUpdated: 'Updated',
+      refreshBalance: 'Refresh Balance',
+      balanceRefreshed: 'Balance refreshed',
+      balanceCheckFailed: 'Balance check failed',
+      balanceCheckError: 'Balance check error',
+      invalidHeadersJson: 'Invalid JSON format for headers',
+      loadError: 'Failed to load channels',
+      createSuccess: 'Channel created successfully',
+      createError: 'Failed to create channel',
+      updateSuccess: 'Channel updated successfully',
+      updateError: 'Failed to update channel',
+      deleteSuccess: 'Channel deleted successfully',
+      deleteError: 'Failed to delete channel',
+      deleteConfirmMessage: 'Are you sure you want to delete channel "{name}"?',
+      importCurl: 'Import cURL',
+      curlCommand: 'cURL Command',
+      curlPlaceholder: 'Paste cURL command from browser dev tools...',
+      curlImportHint: 'Copy cURL command from browser dev tools (Network panel) to auto-parse URL and headers.',
+      curlEmpty: 'Please enter a cURL command',
+      parseCurl: 'Parse & Fill',
+      autoRefresh: 'Auto Refresh',
+      balance: 'Balance',
+      iconUrl: 'Icon URL',
+      iconUrlPlaceholder: 'https://example.com/icon.png',
+      iconUrlHint: 'Channel icon URL, supports PNG, JPG formats',
+      websiteUrl: 'Website URL',
+      websiteUrlPlaceholder: 'https://example.com',
+      websiteUrlHint: 'Channel website or top-up page URL',
+      recharge: 'Top-up',
+      visitWebsite: 'Visit Website',
+      lastChecked: 'Last Checked'
+    },
+
+    // Referrals Management
+    referrals: {
+      title: 'Referral Management',
+      description: 'View all user referral records',
+      searchPlaceholder: 'Search email...',
+      noRecords: 'No referral records',
+      stats: {
+        totalRecords: 'Total Referrals',
+        totalReferrers: 'Referrers',
+        pending: 'Pending',
+        rewarded: 'Rewarded',
+        referrerPaid: 'Referrer Rewards',
+        inviteePaid: 'Invitee Rewards'
+      },
+      table: {
+        referrer: 'Referrer',
+        invitee: 'Invitee',
+        status: 'Status',
+        referrerReward: 'Referrer Reward',
+        inviteeReward: 'Invitee Reward',
+        createdAt: 'Time'
+      },
+      status: {
+        pending: 'Pending',
+        rewarded: 'Rewarded'
+      }
+    },
+
+    // Promo Codes
+    promo: {
+      title: 'Promo Code Management',
+      description: 'Create and manage registration promo codes',
+      createCode: 'Create Promo Code',
+      editCode: 'Edit Promo Code',
+      deleteCode: 'Delete Promo Code',
+      searchCodes: 'Search codes...',
+      allStatus: 'All Status',
+      columns: {
+        code: 'Code',
+        bonusAmount: 'Bonus Amount',
+        maxUses: 'Max Uses',
+        usedCount: 'Used',
+        usage: 'Usage',
+        status: 'Status',
+        expiresAt: 'Expires At',
+        createdAt: 'Created At',
+        actions: 'Actions'
+      },
+      // Form labels (flat structure for template usage)
+      code: 'Promo Code',
+      autoGenerate: 'auto-generate if empty',
+      codePlaceholder: 'Enter promo code or leave empty',
+      bonusAmount: 'Bonus Amount ($)',
+      maxUses: 'Max Uses',
+      zeroUnlimited: '0 = unlimited',
+      expiresAt: 'Expires At',
+      notes: 'Notes',
+      notesPlaceholder: 'Optional notes for this code',
+      status: 'Status',
+      neverExpires: 'Never expires',
+      // Status labels
+      statusActive: 'Active',
+      statusDisabled: 'Disabled',
+      statusExpired: 'Expired',
+      statusMaxUsed: 'Used Up',
+      // Usage records
+      usageRecords: 'Usage Records',
+      viewUsages: 'View Usages',
+      noUsages: 'No usage records yet',
+      userPrefix: 'User #{id}',
+      copied: 'Copied!',
+      // Messages
+      noCodesYet: 'No promo codes yet',
+      createFirstCode: 'Create your first promo code to offer registration bonuses.',
+      codeCreated: 'Promo code created successfully',
+      codeUpdated: 'Promo code updated successfully',
+      codeDeleted: 'Promo code deleted successfully',
+      deleteCodeConfirm: 'Are you sure you want to delete this promo code? This action cannot be undone.',
+      copyRegisterLink: 'Copy register link',
+      registerLinkCopied: 'Register link copied to clipboard',
+      failedToLoad: 'Failed to load promo codes',
+      failedToCreate: 'Failed to create promo code',
+      failedToUpdate: 'Failed to update promo code',
+      failedToDelete: 'Failed to delete promo code',
+      failedToLoadUsages: 'Failed to load usage records'
+    },
+  },
+} as const
