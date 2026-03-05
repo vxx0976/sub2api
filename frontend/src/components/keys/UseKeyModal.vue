@@ -110,6 +110,66 @@
           </div>
         </div>
 
+        <!-- Persistent Configuration -->
+        <div v-if="showPersistentSection" class="rounded-xl border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-900/20 overflow-hidden">
+          <div class="px-4 pt-3 pb-2">
+            <h4 class="text-sm font-semibold text-purple-800 dark:text-purple-200 flex items-center gap-2">
+              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+              {{ t('keys.useKeyModal.persistent.title') }}
+            </h4>
+            <p class="mt-1 text-xs text-purple-700 dark:text-purple-300">{{ t('keys.useKeyModal.persistent.desc') }}</p>
+          </div>
+
+          <!-- Persistent OS Tabs -->
+          <div class="px-4 pb-2 flex gap-2">
+            <button
+              v-for="tab in persistentTabs"
+              :key="tab.id"
+              @click="activePersistentTab = tab.id"
+              :class="[
+                'rounded-md px-3 py-1 text-xs font-medium transition-colors',
+                activePersistentTab === tab.id
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-purple-200 text-purple-700 hover:bg-purple-300 dark:bg-purple-900/40 dark:text-purple-300 dark:hover:bg-purple-900/60'
+              ]"
+            >
+              {{ tab.label }}
+            </button>
+          </div>
+
+          <!-- Persistent Code Block -->
+          <div class="px-4 pb-3">
+            <div
+              v-for="(file, index) in persistentFiles"
+              :key="'p-' + index"
+              class="bg-gray-900 dark:bg-dark-900 rounded-lg overflow-hidden"
+            >
+              <div class="flex items-center justify-between px-4 py-2 bg-gray-800 dark:bg-dark-800 border-b border-gray-700 dark:border-dark-700">
+                <span class="text-xs text-gray-400 font-mono">{{ file.path }}</span>
+                <button
+                  @click="copyContent(file.content, 100 + index)"
+                  class="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg transition-colors"
+                  :class="copiedIndex === 100 + index
+                    ? 'bg-green-500/20 text-green-400'
+                    : 'bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white'"
+                >
+                  <svg v-if="copiedIndex === 100 + index" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <svg v-else class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" />
+                  </svg>
+                  {{ copiedIndex === 100 + index ? t('keys.useKeyModal.copied') : t('keys.useKeyModal.copy') }}
+                </button>
+              </div>
+              <pre class="p-4 text-sm font-mono text-gray-100 overflow-x-auto"><code v-text="file.content"></code></pre>
+            </div>
+            <p class="mt-2 text-xs text-purple-600 dark:text-purple-400">{{ t('keys.useKeyModal.persistent.note') }}</p>
+          </div>
+        </div>
+
         <!-- Usage Note -->
         <div v-if="showPlatformNote" class="flex items-start gap-3 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800">
           <Icon name="infoCircle" size="md" class="text-blue-500 flex-shrink-0 mt-0.5" />
@@ -174,6 +234,7 @@ const { copyToClipboard: clipboardCopy } = useClipboard()
 const copiedIndex = ref<number | null>(null)
 const activeTab = ref<string>('unix')
 const activeClientTab = ref<string>('claude')
+const activePersistentTab = ref<string>('macos')
 
 // Reset tabs when platform changes
 const defaultClientTab = computed(() => {
@@ -341,6 +402,65 @@ const platformNote = computed(() => {
 })
 
 const showPlatformNote = computed(() => true)
+
+// Persistent configuration
+const persistentTabs = [
+  { id: 'macos', label: 'macOS' },
+  { id: 'linux', label: 'Linux' },
+  { id: 'powershell', label: 'Windows PowerShell' }
+]
+
+const showPersistentSection = computed(() => {
+  return props.platform && props.platform !== 'openai'
+})
+
+function getPersistentEnvVars(): { name: string; value: string }[] {
+  const baseUrl = props.baseUrl || window.location.origin
+  const apiKey = props.apiKey
+
+  if (props.platform === 'gemini') {
+    return [
+      { name: 'GOOGLE_GEMINI_BASE_URL', value: baseUrl },
+      { name: 'GEMINI_API_KEY', value: apiKey },
+    ]
+  }
+  if (props.platform === 'antigravity' && activeClientTab.value === 'gemini') {
+    return [
+      { name: 'GOOGLE_GEMINI_BASE_URL', value: `${baseUrl}/antigravity` },
+      { name: 'GEMINI_API_KEY', value: apiKey },
+    ]
+  }
+  const actualBaseUrl = props.platform === 'antigravity' ? `${baseUrl}/antigravity` : baseUrl
+  return [
+    { name: 'ANTHROPIC_BASE_URL', value: actualBaseUrl },
+    { name: 'ANTHROPIC_AUTH_TOKEN', value: apiKey },
+  ]
+}
+
+const persistentFiles = computed((): FileConfig[] => {
+  const envVars = getPersistentEnvVars()
+
+  switch (activePersistentTab.value) {
+    case 'macos': {
+      const lines = envVars.map(v => `echo 'export ${v.name}="${v.value}"' >> ~/.zshrc`)
+      lines.push('source ~/.zshrc')
+      return [{ path: 'Terminal (zsh)', content: lines.join('\n') }]
+    }
+    case 'linux': {
+      const lines = envVars.map(v => `echo 'export ${v.name}="${v.value}"' >> ~/.bashrc`)
+      lines.push('source ~/.bashrc')
+      return [{ path: 'Terminal (bash)', content: lines.join('\n') }]
+    }
+    case 'powershell': {
+      const lines = envVars.map(v =>
+        `[System.Environment]::SetEnvironmentVariable("${v.name}", "${v.value}", [System.EnvironmentVariableTarget]::User)`
+      )
+      return [{ path: 'PowerShell', content: lines.join('\n') }]
+    }
+    default:
+      return []
+  }
+})
 
 const escapeHtml = (value: string) => value
   .replace(/&/g, '&amp;')

@@ -636,7 +636,12 @@ export default {
         title: 'OpenCode 配置示例',
         subtitle: 'opencode.json',
         hint: '配置文件路径：~/.config/opencode/opencode.json（或 opencode.jsonc），不存在需手动创建。可使用默认 provider（openai/anthropic/google）或自定义 provider_id。API Key 支持直接配置或通过客户端 /connect 命令配置。示例仅供参考，模型与选项可按需调整。'
-      }
+      },
+      persistent: {
+        title: '永久配置（推荐）',
+        desc: '上面的命令仅在当前终端窗口有效，关闭后将失效。使用以下方法可永久保存：',
+        note: '设置完成后请重新打开终端窗口以使配置生效。',
+      },
     },
     customKeyLabel: '自定义密钥',
     customKeyPlaceholder: '输入自定义密钥（至少16个字符）',

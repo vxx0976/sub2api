@@ -543,8 +543,8 @@
           </div>
         </div>
 
-        <!-- Rate Limit Section -->
-        <div class="space-y-3">
+        <!-- Rate Limit Section (hidden for regular users when creating) -->
+        <div v-if="!isRegularUser || showEditModal" class="space-y-3">
           <div class="flex items-center justify-between">
             <label class="input-label mb-0">{{ t('keys.rateLimitSection') }}</label>
             <button
@@ -1027,7 +1027,7 @@ const columns = computed<Column[]>(() => {
     { key: 'key', label: t('keys.apiKey'), sortable: false },
     { key: 'group', label: t('keys.group'), sortable: false },
     { key: 'usage', label: t('keys.usage'), sortable: false },
-    { key: 'rate_limit', label: t('keys.rateLimitColumn'), sortable: false },
+    ...(!isRegularUser.value ? [{ key: 'rate_limit', label: t('keys.rateLimitColumn'), sortable: false }] : []),
     ...(!isRegularUser.value ? [{ key: 'expires_at', label: t('keys.expiresAt'), sortable: true }] : []),
     { key: 'status', label: t('common.status'), sortable: true },
     { key: 'last_used_at', label: t('keys.lastUsedAt'), sortable: true },

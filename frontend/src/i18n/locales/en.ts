@@ -634,6 +634,11 @@ export default {
         subtitle: 'opencode.json',
         hint: 'Config path: ~/.config/opencode/opencode.json (or opencode.jsonc), create if not exists. Use default providers (openai/anthropic/google) or custom provider_id. API Key can be configured directly or via /connect command. This is an example, adjust models and options as needed.',
       },
+      persistent: {
+        title: 'Permanent Configuration (Recommended)',
+        desc: 'The commands above only apply to the current terminal session and will be lost when the window is closed. Use the following methods to save permanently:',
+        note: 'After setting, please reopen your terminal window for changes to take effect.',
+      },
     },
     customKeyLabel: 'Custom Key',
     customKeyPlaceholder: 'Enter your custom key (min 16 chars)',
