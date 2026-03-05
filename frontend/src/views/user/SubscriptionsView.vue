@@ -21,9 +21,6 @@
         <p class="text-gray-500 dark:text-dark-400">
           {{ t('userSubscriptions.noActiveSubscriptionsDesc') }}
         </p>
-        <router-link to="/plans" class="btn btn-primary mt-4">
-          {{ t('userSubscriptions.purchasePlan') }}
-        </router-link>
       </div>
 
       <!-- Subscriptions List -->
@@ -33,10 +30,6 @@
           <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
             {{ t('userSubscriptions.mySubscriptions') }}
           </h2>
-          <router-link to="/plans" class="btn btn-primary">
-            <Icon name="plus" size="sm" />
-            {{ t('userSubscriptions.purchasePlan') }}
-          </router-link>
         </div>
 
         <!-- Subscriptions Grid -->
@@ -267,31 +260,17 @@
       </div>
     </div>
 
-    <!-- Payment QR Code Modal -->
-    <PaymentQRCodeModal
-      :show="showPaymentModal"
-      :order-no="paymentInfo.orderNo"
-      :amount="paymentInfo.amount"
-      :payment-amount="paymentInfo.paymentAmount"
-      :qr-code="paymentInfo.qrCode"
-      :qr-code-url="paymentInfo.qrCodeUrl"
-      :mode="paymentInfo.mode"
-      @close="showPaymentModal = false"
-      @paid="handlePaymentSuccess"
-    />
   </AppLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
 import subscriptionsAPI from '@/api/subscriptions'
-// import plansAPI from '@/api/plans'
 import type { UserSubscription } from '@/types'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import Icon from '@/components/icons/Icon.vue'
-import PaymentQRCodeModal from '@/components/common/PaymentQRCodeModal.vue'
 import { formatDateOnly } from '@/utils/format'
 
 const { t } = useI18n()
@@ -299,18 +278,6 @@ const appStore = useAppStore()
 
 const subscriptions = ref<UserSubscription[]>([])
 const loading = ref(true)
-// const renewingId = ref<number | null>(null)
-
-// Payment modal state
-const showPaymentModal = ref(false)
-const paymentInfo = reactive({
-  orderNo: '',
-  amount: 0,
-  paymentAmount: 0,
-  qrCode: '',
-  qrCodeUrl: '',
-  mode: ''
-})
 
 async function loadSubscriptions() {
   try {
@@ -421,33 +388,6 @@ function formatResetTime(windowStart: string | null, windowHours: number): strin
   }
 
   return `${minutes}m`
-}
-
-// async function handleRenew(subscription: UserSubscription) {
-//   if (!subscription.group || !subscription.group.price) return
-//
-//   try {
-//     renewingId.value = subscription.id
-//     const result = await plansAPI.createOrder(subscription.group_id)
-//     paymentInfo.orderNo = result.order_no
-//     paymentInfo.amount = result.amount
-//     paymentInfo.paymentAmount = result.payment_amount
-//     paymentInfo.qrCode = result.qr_code
-//     paymentInfo.qrCodeUrl = result.qr_code_url
-//     paymentInfo.mode = result.mode
-//     showPaymentModal.value = true
-//   } catch (error) {
-//     console.error('Failed to renew subscription:', error)
-//     appStore.showError(t('userSubscriptions.renewError'))
-//   } finally {
-//     renewingId.value = null
-//   }
-// }
-
-function handlePaymentSuccess() {
-  showPaymentModal.value = false
-  appStore.showSuccess(t('payment.paymentSuccess'))
-  loadSubscriptions()
 }
 
 onMounted(async () => {

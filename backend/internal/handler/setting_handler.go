@@ -44,33 +44,32 @@ func (h *SettingHandler) GetPublicSettings(c *gin.Context) {
 	}
 
 	result := dto.PublicSettings{
-		RegistrationEnabled:         settings.RegistrationEnabled,
-		EmailVerifyEnabled:          settings.EmailVerifyEnabled,
-		PromoCodeEnabled:            settings.PromoCodeEnabled,
-		PasswordResetEnabled:        settings.PasswordResetEnabled,
-		InvitationCodeEnabled:       settings.InvitationCodeEnabled,
-		TotpEnabled:                 settings.TotpEnabled,
-		TurnstileEnabled:            settings.TurnstileEnabled,
-		TurnstileSiteKey:            settings.TurnstileSiteKey,
-		SiteName:                    settings.SiteName,
-		SiteLogo:                    settings.SiteLogo,
-		SiteSubtitle:                settings.SiteSubtitle,
-		APIBaseURL:                  settings.APIBaseURL,
-		ContactInfo:                 settings.ContactInfo,
-		DocURL:                      settings.DocURL,
-		HomeContent:                 settings.HomeContent,
-		HideCcsImportButton:         settings.HideCcsImportButton,
-		PurchaseSubscriptionEnabled: settings.PurchaseSubscriptionEnabled,
-		PurchaseSubscriptionURL:     settings.PurchaseSubscriptionURL,
-		CustomMenuItems:             dto.ParseUserVisibleMenuItems(settings.CustomMenuItems),
-		LinuxDoOAuthEnabled:         settings.LinuxDoOAuthEnabled,
-		SoraClientEnabled:           settings.SoraClientEnabled,
-		Version:                     h.version,
-		Announcements:               announcements,
-		CryptoAddresses:             settings.CryptoAddresses,
-		QueryDomain:                 settings.QueryDomain,
-		ContactWechat:               settings.ContactWechat,
-		ContactTelegram:             settings.ContactTelegram,
+		RegistrationEnabled:              settings.RegistrationEnabled,
+		EmailVerifyEnabled:               settings.EmailVerifyEnabled,
+		RegistrationEmailSuffixWhitelist: settings.RegistrationEmailSuffixWhitelist,
+		PromoCodeEnabled:                 settings.PromoCodeEnabled,
+		PasswordResetEnabled:             settings.PasswordResetEnabled,
+		InvitationCodeEnabled:            settings.InvitationCodeEnabled,
+		TotpEnabled:                      settings.TotpEnabled,
+		TurnstileEnabled:                 settings.TurnstileEnabled,
+		TurnstileSiteKey:                 settings.TurnstileSiteKey,
+		SiteName:                         settings.SiteName,
+		SiteLogo:                         settings.SiteLogo,
+		SiteSubtitle:                     settings.SiteSubtitle,
+		APIBaseURL:                       settings.APIBaseURL,
+		ContactInfo:                      settings.ContactInfo,
+		DocURL:                           settings.DocURL,
+		HomeContent:                      settings.HomeContent,
+		HideCcsImportButton:              settings.HideCcsImportButton,
+		PurchaseSubscriptionEnabled:      settings.PurchaseSubscriptionEnabled,
+		PurchaseSubscriptionURL:          settings.PurchaseSubscriptionURL,
+		CustomMenuItems:                  dto.ParseUserVisibleMenuItems(settings.CustomMenuItems),
+		LinuxDoOAuthEnabled:              settings.LinuxDoOAuthEnabled,
+		SoraClientEnabled:                settings.SoraClientEnabled,
+		Version:                          h.version,
+		Announcements:                    announcements,
+		ContactWechat:                    settings.ContactWechat,
+		ContactTelegram:                  settings.ContactTelegram,
 	}
 
 	// If accessed via a reseller's custom domain, overlay reseller branding
@@ -138,9 +137,6 @@ func (h *SettingHandler) GetPublicSettings(c *gin.Context) {
 		if rs := info.ResellerSettings; rs != nil {
 			if v := rs["contact_info"]; v != "" {
 				result.ContactInfo = v
-			}
-			if v := rs["crypto_addresses"]; v != "" {
-				result.CryptoAddresses = v
 			}
 			if v := rs["default_locale"]; v != "" {
 				result.DefaultLocale = v

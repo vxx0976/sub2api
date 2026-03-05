@@ -164,16 +164,6 @@ export default {
       a5: 'Check host URL, API key, and network connectivity first, then look at the dashboard or contact the admin.',
       more: 'Read the docs'
     },
-    referral: {
-      badge: 'Referral Bonus',
-      title: 'Invite Friends, Share Rewards',
-      description: 'Invite friends to make their first purchase, both get 10% of the plan price as bonus',
-      registerNow: 'Register Now',
-      goInvite: 'Invite',
-      feature1: 'Unlimited invites',
-      feature2: 'Instant credit',
-      feature3: 'Rewards scale with plan'
-    },
     cta: {
       title: 'Ready to try it?',
       description: 'Sign in, generate an API key, copy the tool config, and start coding.'
@@ -208,13 +198,6 @@ export default {
       action: 'Recharge Now',
       perDollar: '/dollar'
     },
-    referralReward: {
-      title: 'Referral Reward',
-      description: 'Invite friends to make their first purchase, both get 10% of plan price',
-      planItem: '¥{price} plan = ${reward} each',
-      moreInfo: 'Contact support for more plans',
-      action: 'Invite Friends'
-    },
     contact: {
       title: 'Contact Us',
       wechat: 'WeChat',
@@ -224,78 +207,7 @@ export default {
     },
     links: {
       subscriptions: 'Subscriptions',
-      plans: 'Buy Plans',
-      apiKeys: 'API Keys',
-      referral: 'Invite Friends'
-    }
-  },
-
-  // Pricing Page
-  pricing: {
-    subscriptionPlans: 'Subscription Plans',
-    otherPlans: 'Other Options',
-    perDollar: '/dollar',
-    plans: {
-      starter: {
-        name: 'Starter',
-        credit: '$22 credits',
-        unitPrice: '¥0.45/dollar',
-        f1: '~50+ coding tasks',
-        f2: '30-day validity',
-        f3: 'All models supported',
-        f4: 'Perfect for light usage'
-      },
-      lite: {
-        name: 'Lite',
-        credit: '$45 credits',
-        unitPrice: '¥0.44/dollar',
-        f1: '~120+ coding tasks',
-        f2: '30-day validity',
-        f3: 'All models supported',
-        f4: 'For daily development needs'
-      },
-      standard: {
-        name: 'Standard',
-        credit: '$120 credits',
-        unitPrice: '¥0.42/dollar',
-        f1: '~300+ coding tasks',
-        f2: '30-day validity',
-        f3: 'All models supported',
-        f4: 'Most popular, best value'
-      },
-      pro: {
-        name: 'Pro',
-        credit: '$240 credits',
-        unitPrice: '¥0.42/dollar',
-        f1: '~600+ coding tasks',
-        f2: '30-day validity',
-        f3: 'All models supported',
-        f4: 'For heavy usage'
-      }
-    },
-    paygo: {
-      name: 'Pay As You Go',
-      tagline: 'Flexible Usage',
-      asLowAs: 'As low as',
-      description: 'No subscription required, pay only for what you use, balance never expires',
-      feature1: 'Top up and use, more you add more you get',
-      feature2: 'Balance never expires',
-      feature3: 'All models supported',
-      feature4: 'Perfect for occasional use',
-      action: 'Top Up Now'
-    },
-    custom: {
-      name: 'Dedicated Line',
-      tagline: 'Enterprise Solution',
-      price: 'Custom Pricing',
-      description: 'Dedicated account pool and exclusive line for enterprise users',
-      feature1: 'Dedicated account pool',
-      feature2: 'Exclusive high-speed line',
-      feature3: 'Higher concurrency support',
-      feature4: 'Dedicated technical support',
-      action: 'Contact Us',
-      wechatTitle: 'Add WeChat',
-      wechatDesc: 'Add our WeChat to inquire about dedicated line service'
+      apiKeys: 'API Keys'
     }
   },
 
@@ -384,6 +296,7 @@ export default {
 
   // Common
   common: {
+    login: 'Login',
     loading: 'Loading...',
     save: 'Save',
     cancel: 'Cancel',
@@ -507,15 +420,8 @@ export default {
     logout: 'Logout',
     github: 'GitHub',
     mySubscriptions: 'My Subscriptions',
-    plans: 'Plans',
-    orders: 'My Orders',
-    adminOrders: 'Order Management',
-    adminReferrals: 'Referral Management',
-    adminRechargeOrders: 'Recharge Management',
-    rechargeSettings: 'Recharge Settings',
     buySubscription: 'Recharge / Subscription',
     docs: 'Docs',
-    referral: 'Invite Friends',
     resellerDashboard: 'Merchant Dashboard',
     resellerGroups: 'Packages',
     resellerKeys: 'API Keys',
@@ -525,7 +431,6 @@ export default {
     resellerRedeem: 'Redeem Codes',
     resellerAnnouncements: 'Announcements',
     resellerSettings: 'Settings',
-    recharge: 'Recharge',
     sora: 'Sora Studio'
   },
 
@@ -862,6 +767,9 @@ export default {
     passwordMinLength: 'Password must be at least 6 characters',
     loginFailed: 'Login failed. Please check your credentials and try again.',
     registrationFailed: 'Registration failed. Please try again.',
+    emailSuffixNotAllowed: 'This email domain is not allowed for registration.',
+    emailSuffixNotAllowedWithAllowed:
+      'This email domain is not allowed. Allowed domains: {suffixes}',
     loginSuccess: 'Login successful! Welcome back.',
     accountCreatedSuccess: 'Account created successfully! Welcome to {siteName}.',
     reloginRequired: 'Session expired. Please log in again.',
@@ -876,6 +784,16 @@ export default {
     sendingCode: 'Sending...',
     clickToResend: 'Click to resend code',
     resendCode: 'Resend verification code',
+    sendCodeDesc: "We'll send a verification code to",
+    codeSentSuccess: 'Verification code sent! Please check your inbox.',
+    verifying: 'Verifying...',
+    verifyAndCreate: 'Verify & Create Account',
+    resendCountdown: 'Resend code in {countdown}s',
+    backToRegistration: 'Back to registration',
+    sendCodeFailed: 'Failed to send verification code. Please try again.',
+    verifyFailed: 'Verification failed. Please try again.',
+    codeRequired: 'Verification code is required',
+    invalidCode: 'Please enter a valid 6-digit code',
     promoCodeLabel: 'Promo Code',
     promoCodePlaceholder: 'Enter promo code (optional)',
     promoCodeValid: 'Valid! You will receive ${amount} bonus balance',
@@ -937,19 +855,6 @@ export default {
     invalidResetLinkHint: 'This password reset link is invalid or has expired. Please request a new one.',
     requestNewResetLink: 'Request New Reset Link',
     invalidOrExpiredToken: 'The password reset link is invalid or has expired. Please request a new one.',
-    // Email verification page
-    sendCodeTo: "We'll send a verification code to",
-    checkSpamFolder: "If you don't receive the email, please check your spam folder",
-    codeSentSuccess: 'Verification code sent! Please check your inbox.',
-    verifying: 'Verifying...',
-    verifyAndCreate: 'Verify & Create Account',
-    resendCodeIn: 'Resend code in {seconds}s',
-    backToRegistration: 'Back to registration',
-    sendCodeFailed: 'Failed to send verification code. Please try again.',
-    pleaseCompleteVerification: 'Please complete the verification',
-    codeRequired: 'Verification code is required',
-    codeInvalid: 'Please enter a valid 6-digit code',
-    verificationFailed: 'Verification failed. Please try again.'
   },
 
   // Dashboard
@@ -1009,6 +914,9 @@ export default {
   keys: {
     title: 'API Keys',
     description: 'Manage your API keys and access tokens',
+    searchPlaceholder: 'Search name or key...',
+    allGroups: 'All Groups',
+    allStatus: 'All Status',
     createKey: 'Create API Key',
     editKey: 'Edit API Key',
     deleteKey: 'Delete API Key',
@@ -1263,32 +1171,8 @@ export default {
     pleaseEnterCode: 'Please enter a redeem code'
   },
 
-  // Referral
+  // Referral code validation (used in registration)
   referral: {
-    title: 'Invite Friends',
-    subtitle: 'Invite friends to join and both get rewards',
-    yourCode: 'Your Referral Code',
-    shareCodeHint: 'Share this code with friends, they can use it when registering',
-    totalInvited: 'Total Invited',
-    totalRewarded: 'Rewarded',
-    pendingPayment: 'Pending Payment',
-    totalEarnings: 'Total Earnings',
-    rewardRules: 'Reward Rules',
-    rule1: 'Friends enter your referral code when registering (in the promo code field)',
-    rule2: 'When friends make their first purchase, both parties receive 10% of the plan price as bonus',
-    rule3: 'Rewards are credited to your account balance immediately',
-    rule4: 'Rewards are only issued on first payment; recharges and redeem codes do not count',
-    inviteeList: 'Invitation Records',
-    noInvitees: 'No invitation records yet',
-    inviteeEmail: 'Email',
-    joinedAt: 'Joined At',
-    status: 'Status',
-    yourEarning: 'Your Earning',
-    statusRewarded: 'Rewarded',
-    statusPending: 'Pending',
-    showingPage: 'Page {current} of {total}',
-    loadCodeFailed: 'Failed to load referral code',
-    linkCopied: 'Referral link copied',
     referralCodeValid: 'Referral code valid',
     referralCodeHint: 'Get 10% of plan price as bonus after your first purchase',
     referralCodeInvalid: 'Referral code is invalid or expired',
@@ -1483,13 +1367,7 @@ export default {
       ok: 'ok',
       err: 'err',
       create: 'Create',
-      failedToLoad: 'Failed to load dashboard statistics',
-      geoDistribution: 'Geographic Distribution',
-      country: 'Country/Region',
-      geoBackfill: 'Backfill Geo Data',
-      geoBackfilling: 'Backfilling...',
-      geoBackfillDone: 'Backfill complete',
-      geoBackfillFailed: 'Backfill failed'
+      failedToLoad: 'Failed to load dashboard statistics'
     },
 
     dataManagement: {
@@ -2216,47 +2094,6 @@ export default {
         "Are you sure you want to revoke the subscription for '{user}'? This action cannot be undone."
     },
 
-    // Orders Management
-    orders: {
-      title: 'Order Management',
-      description: 'Manage all user orders',
-      searchPlaceholder: 'Search order number...',
-      allStatus: 'All Status',
-      noOrdersYet: 'No orders yet',
-      noOrdersDesc: 'There are no order records yet.',
-      failedToLoad: 'Failed to load orders',
-      userPrefix: 'User #{id}',
-      rechargeSettings: 'Recharge Settings',
-      tabs: {
-        subscription: 'Subscription Orders',
-        recharge: 'Recharge Orders'
-      },
-      columns: {
-        orderNo: 'Order No',
-        user: 'User',
-        group: 'Plan',
-        amount: 'Amount',
-        status: 'Status',
-        payType: 'Payment',
-        createdAt: 'Created',
-        paidAt: 'Paid At'
-      },
-      statusLabels: {
-        pending: 'Pending',
-        paid: 'Paid',
-        expired: 'Expired',
-        refunded: 'Refunded'
-      },
-      deleteOrder: 'Delete Order',
-      deleteOrderConfirm: 'Are you sure you want to delete this pending order?',
-      markAsPaid: 'Mark as Paid',
-      markAsPaidConfirm: 'Are you sure you want to mark this order as paid? (No renewal will be triggered)',
-      deleteSuccess: 'Order deleted',
-      markPaidSuccess: 'Order marked as paid',
-      deleteFailed: 'Failed to delete order',
-      markPaidFailed: 'Failed to mark order as paid'
-    },
-
     // Referrals Management
     referrals: {
       title: 'Referral Management',
@@ -2283,25 +2120,6 @@ export default {
         pending: 'Pending',
         rewarded: 'Rewarded'
       }
-    },
-
-    // Recharge Orders Management
-    rechargeOrders: {
-      title: 'Recharge Management',
-      description: 'Manage all user recharge orders',
-      searchPlaceholder: 'Search order number, user...',
-      allStatus: 'All Status',
-      noOrders: 'No Recharge Records',
-      noOrdersDesc: 'No recharge orders yet.',
-      failedToLoad: 'Failed to load recharge orders',
-      user: 'User',
-      tradeNo: 'Transaction No.',
-      payMethod: 'Payment Method',
-      paidAt: 'Paid At',
-      totalOrders: 'Total Orders',
-      totalAmount: 'Total Amount',
-      totalCredit: 'Total Credit',
-      averageMultiplier: 'Avg Multiplier'
     },
 
     // Accounts
@@ -3540,7 +3358,8 @@ export default {
         // Admin adjustment types (created when admin modifies user balance/concurrency)
         admin_balance: 'Balance (Admin)',
         admin_concurrency: 'Concurrency (Admin)',
-        reseller_transfer: 'Reseller Transfer'
+        reseller_transfer: 'Reseller Transfer',
+        recharge: 'Recharge'
       },
       selectGroup: 'Select Group',
       selectGroupPlaceholder: 'Choose a subscription group',
@@ -4517,6 +4336,15 @@ export default {
     settings: {
       title: 'System Settings',
       description: 'Manage registration, email verification, default values, and SMTP settings',
+      tabs: {
+        general: 'General',
+        security: 'Security',
+        users: 'Users',
+        gateway: 'Gateway',
+        email: 'Email',
+      },
+      emailTabDisabledTitle: 'Email Verification Not Enabled',
+      emailTabDisabledHint: 'Enable email verification in the Security tab to configure SMTP settings.',
       registration: {
         title: 'Registration Settings',
         description: 'Control user registration and verification',
@@ -4524,6 +4352,11 @@ export default {
         enableRegistrationHint: 'Allow new users to register',
         emailVerification: 'Email Verification',
         emailVerificationHint: 'Require email verification for new registrations',
+        emailSuffixWhitelist: 'Email Domain Whitelist',
+        emailSuffixWhitelistHint:
+          "Only email addresses from the specified domains can register (for example, {'@'}qq.com, {'@'}gmail.com)",
+        emailSuffixWhitelistPlaceholder: 'example.com',
+        emailSuffixWhitelistInputHint: 'Leave empty for no restriction',
         promoCode: 'Promo Code',
         promoCodeHint: 'Allow users to use promo codes during registration',
         invitationCode: 'Invitation Code Registration',
@@ -4621,8 +4454,6 @@ export default {
         docUrlPlaceholder: 'https://docs.example.com',
         docUrlHint: 'Link to your documentation site. Leave empty to hide the documentation link.',
         tawkToHint: 'Get from Tawk.to, format: property_id/widget_id. Shows live chat button when set.',
-        queryDomain: 'Query Domain',
-        queryDomainHint: 'When configured, this domain shows the API Key query page',
         siteLogo: 'Site Logo',
         uploadImage: 'Upload Image',
         remove: 'Remove',
@@ -4636,11 +4467,6 @@ export default {
         homeContentIframeWarning: '⚠️ iframe mode note: Some websites have X-Frame-Options or CSP security policies that prevent embedding in iframes. If the page appears blank or shows an error, please verify the target website allows embedding, or consider using HTML mode to build your own content.',
         hideCcsImportButton: 'Hide CCS Import Button',
         hideCcsImportButtonHint: 'When enabled, the "Import CCS" button will be hidden on the API Keys page',
-        cryptoAddresses: 'Crypto Addresses',
-        cryptoAddressesHint: 'Configure cryptocurrency receiving addresses, displayed on the plans page',
-        addCryptoAddress: 'Add Address',
-        chainName: 'Chain',
-        walletAddress: 'Address'
       },
       purchase: {
         title: 'Recharge / Subscription Page',
@@ -4839,39 +4665,6 @@ export default {
         empty: 'No announcements',
         saved: 'Announcements saved',
         saveFailed: 'Failed to save announcements'
-      },
-      recharge: {
-        title: 'Recharge Settings',
-        description: 'Configure recharge functionality and tier multipliers',
-        basicSettings: 'Basic Settings',
-        enabled: 'Enable Recharge',
-        enabledHint: 'Allow users to recharge account balance',
-        minAmount: 'Minimum Amount',
-        minAmountPlaceholder: '10',
-        minAmountHint: 'Minimum recharge amount per transaction (¥)',
-        maxAmount: 'Maximum Amount',
-        maxAmountPlaceholder: '10000',
-        maxAmountHint: 'Maximum recharge amount per transaction (¥)',
-        usdCnyRate: 'USD/CNY Rate',
-        usdCnyRateHint: 'Exchange rate for international users to display USD pricing',
-        tiers: 'Tier Multipliers',
-        tiersHint: 'Set multiplier bonuses for different amounts',
-        tier: 'Tier',
-        tierMin: 'Min Amount',
-        tierMax: 'Max Amount',
-        tierMaxPlaceholder: 'Leave empty for unlimited',
-        tierMultiplier: 'Multiplier',
-        addTier: 'Add Tier',
-        noTiers: 'No tiers configured',
-        preview: 'Preview',
-        tierValidation: {
-          maxGreaterThanMin: 'Max amount must be greater than min',
-          multiplierRange: 'Multiplier must be between 1.0 and 10.0',
-          overlap: 'Tier ranges cannot overlap'
-        },
-        loadFailed: 'Failed to load recharge config',
-        saveSuccess: 'Recharge settings saved successfully',
-        saveFailed: 'Failed to save recharge settings'
       },
       saveSettings: 'Save Settings',
       saving: 'Saving...',
@@ -5089,193 +4882,9 @@ export default {
     renewError: 'Failed to renew, please try again'
   },
 
-  // Plans (user purchase page)
-  plans: {
-    title: 'Plans',
-    description: 'Choose your plan',
-    subtitle: 'Select the plan that fits your needs',
-    loadError: 'Failed to load plans',
-    noPlans: 'No Plans Available',
-    noPlansDesc: 'No purchasable plans are configured. Please check back later.',
-    recommended: 'Recommended',
-    validityPeriod: '{days} days validity',
-    validFor: 'Valid for {days} days',
-    dailyLimit: 'Daily limit ${amount}',
-    weeklyLimit: 'Weekly limit ${amount}',
-    monthlyLimit: 'Monthly limit ${amount}',
-    unlimited: 'Unlimited',
-    processing: 'Processing...',
-    purchase: 'Purchase Now',
-    purchaseError: 'Failed to create order. Please try again.',
-    buyOnTaobao: 'Buy on Taobao',
-    pricePerDollar: 'Only ¥{price}/dollar',
-    estimatedUsage: '~{count} calls (mixed usage)',
-    estimatedTokens: '~{tokens} tokens',
-    paygo: {
-      title: 'PayGo Pay-As-You-Go',
-      description: 'Flexible recharge, use as you need',
-      features: {
-        anyAmount: 'Recharge any amount',
-        payAsYouGo: 'Pay only for what you use',
-        neverExpires: 'Balance never expires'
-      }
-    },
-    cryptoBanner: {
-      title: 'Crypto Payment Available',
-      descriptionPrefix: 'Contact us via',
-      descriptionSuffix: 'after transfer to confirm your order',
-      copySuccess: 'Address copied'
-    },
-    enterprise: {
-      badge: 'Premium',
-      name: 'Enterprise',
-      description: 'Dedicated line, ultimate experience, tailored for enterprise users',
-      contactUs: 'Contact Us',
-      customized: 'Customized solutions',
-      contact: 'Contact Sales',
-      contactMessage: 'Please contact us for a custom plan: WeChat mayione1',
-      features: {
-        dedicated: 'Dedicated private line',
-        unlimited: 'Unlimited quota',
-        priority: 'Priority support',
-        sla: '99.9% SLA guarantee'
-      },
-      dialog: {
-        title: 'Contact Us',
-        subtitle: 'Add WeChat mayione1 for custom solutions',
-        tip: 'Business hours: Mon-Sun 9:00-22:00'
-      }
-    }
-  },
-
-  // Recharge
+  // Recharge (minimal - only keys still referenced)
   recharge: {
-    title: 'Recharge Account',
-    pageTitle: 'Recharge',
-    pageSubtitle: 'Select an amount to top up your balance',
-    selectAmount: 'Recharge Amount',
-    customAmount: 'Custom Amount',
-    amountRangeHint: 'Amount range: ${min} - ${max}',
-    createOrder: 'Create Order',
-    notesTitle: 'Important Notes',
-    noteAlipay: 'Please use Alipay to scan the QR code to complete the payment',
-    noteAmountMatch: 'The payment amount must exactly match the displayed amount for automatic processing',
-    noteAutoCredit: 'After successful payment, the balance will be credited within 1-2 minutes',
-    noteContact: 'If you encounter any issues, please contact support with your order number',
-    youWillReceive: 'You will receive',
-    payAmount: 'Amount to pay',
-    firstRecharge: {
-      title: 'First Recharge Special',
-      description: 'First recharge only ¥1, get $5 balance',
-      button: 'Get it now',
-      badge: 'Limited',
-      limitOnce: 'One-time per user'
-    },
     rechargeNow: 'Recharge Now',
-    paymentClosedHint: 'Online payment is not available. Please contact support to recharge.',
-    rechargeAmount: 'Amount',
-    enterAmount: 'Enter amount',
-    quickAmounts: 'Quick Amounts',
-    youPay: 'You Pay',
-    youReceive: 'You Receive',
-    platformBalance: 'Platform Balance',
-    rateDescCny: '$1 Platform Balance ≈ ¥{cnyPerDollar} (based on live rate 1 USD ≈ {rate} CNY), charged by actual usage',
-    rateDescUsd: '$1 = ¥{rate} × {multiplier} = ${total} Platform Balance',
-    balanceNeverExpires: 'Balance never expires, pay as you use',
-    amountRange: 'Range: {symbol}{min} - {symbol}{max}',
-    invalidAmountRange: 'Amount must be between {symbol}{min} and {symbol}{max}',
-    cryptoPayment: 'Crypto Payment',
-    cryptoHint: 'Please contact support after transfer to confirm receipt',
-    copySuccess: 'Address copied',
-    currentBalance: 'Current Balance',
-    bonus: 'Recharge Bonus',
-    actualCredit: 'Actual Credit',
-    multiplier: 'Multiplier',
-    multiplierInfo: '{multiplier}× multiplier',
-    tierInfo: 'Recharge Tiers',
-    bonusTip: 'Recharge more, get more bonus!',
-    minAmount: 'Min Amount',
-    maxAmount: 'Max Amount',
-    confirmRecharge: 'Confirm Recharge',
-    processing: 'Processing...',
-    rechargeFailed: 'Recharge failed',
-    invalidAmount: 'Amount must be between ¥{min} and ¥{max}',
-    rechargeSuccess: 'Recharge successful',
-
-    // Promotional copy
-    promoTitle: '💰 Recharge for bonus! More recharge, more bonus',
-    promoSubtitle: 'Balance never expires, pay as you use, great value',
-    quickTip: 'Recommended: ¥200+ for better value',
-    moreGetMore: 'More recharge, more bonus',
-    usageRuleTitle: '💡 Usage Rules',
-    usageRuleDesc: 'Balance is consumed at ¥1 = $1. Higher multiplier = lower unit price',
-    benefitTitle: '✨ Balance never expires',
-    benefitDesc: 'Recharged balance is permanent, charged by actual usage, no waste',
-
-    // Order related
-    myOrders: 'Recharge History',
-    orderNo: 'Order No.',
-    amount: 'Payment Amount',
-    creditAmount: 'Credit Amount',
-    status: 'Status',
-    createdAt: 'Created At',
-    paidAt: 'Paid At',
-    continuePay: 'Continue Payment',
-    paying: 'Processing...',
-    expired: 'Expired',
-    statusLabels: {
-      pending: 'Pending',
-      paid: 'Paid',
-      expired: 'Expired',
-      refunded: 'Refunded'
-    },
-    noOrders: 'No Recharge Records',
-    noOrdersDesc: "You haven't recharged yet",
-    failedToLoad: 'Failed to load recharge records',
-    repayFailed: 'Failed to get payment link'
-  },
-
-  // Payment QR Code Modal
-  payment: {
-    scanToPay: 'Scan to Pay',
-    transferToPay: 'Transfer to Pay',
-    qrCodeAlt: 'Payment QR Code',
-    amountToPay: 'Amount to Pay',
-    businessQrInstruction: 'Please scan the QR code above with Alipay to complete payment',
-    transferInstruction: 'Please transfer to the specified account via Alipay. Be sure to include the following memo',
-    transferMemo: 'Transfer Memo',
-    openAlipay: 'Open Alipay',
-    waitingForPayment: 'Waiting for payment...',
-    paymentSuccess: 'Payment successful',
-  },
-
-  // User Orders
-  userOrders: {
-    title: 'My Orders',
-    description: 'View your order history',
-    myOrders: 'My Orders',
-    noOrders: 'No Orders',
-    noOrdersDesc: "You haven't purchased any plans yet",
-    purchasePlan: 'Purchase a Plan',
-    orderNo: 'Order No.',
-    planName: 'Plan',
-    amount: 'Amount',
-    status: 'Status',
-    createdAt: 'Created At',
-    failedToLoad: 'Failed to load orders',
-    statusLabels: {
-      pending: 'Pending',
-      paid: 'Paid',
-      expired: 'Expired',
-      refunded: 'Refunded'
-    },
-    actions: 'Actions',
-    continuePay: 'Pay Now',
-    paying: 'Processing...',
-    expired: 'Expired',
-    repayFailed: 'Failed to get payment link',
-    planOrders: 'Plan Orders',
-    rechargeOrders: 'Recharge Orders'
   },
 
   // Onboarding Tour
@@ -5763,23 +5372,7 @@ export default {
       other: 'Other Settings',
       docUrl: 'Documentation URL',
       contactInfo: 'Contact Info',
-      cryptoAddresses: 'Crypto Addresses',
-      cryptoPlaceholder: 'One per line, format: COIN:address',
-      telegram: {
-        title: 'Telegram Bot',
-        botToken: 'Bot Token',
-        botTokenPlaceholder: `Enter token from {'@'}BotFather`,
-        botTokenHint: `Get it from Telegram {'@'}BotFather`,
-        bindStatus: 'Bind Status',
-        bound: 'Bound',
-        unbound: 'Not Bound',
-        generateBindCode: 'Generate Bind Code',
-        bindInstructions: 'Send this command to your Bot to bind:',
-        unbind: 'Unbind',
-        saveTokenFirst: 'Please enter Bot Token and save settings first',
-        waitingForBind: 'Waiting for bind, please send the command to your Bot...',
-        bindSuccess: 'Telegram bound successfully!'
-      }
+      cryptoPlaceholder: 'One per line, format: COIN:address'
     }
   },
 

@@ -319,50 +319,6 @@
         </div>
       </section>
 
-      <!-- Referral Reward Section (hidden) -->
-      <section v-if="false" class="relative overflow-hidden py-16">
-        <div class="absolute inset-0 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20"></div>
-        <div class="pointer-events-none absolute inset-0">
-          <div class="absolute -left-20 top-0 h-64 w-64 rounded-full bg-purple-400/20 blur-3xl"></div>
-          <div class="absolute -right-20 bottom-0 h-64 w-64 rounded-full bg-blue-400/20 blur-3xl"></div>
-        </div>
-        <div class="relative mx-auto max-w-4xl px-6 text-center">
-          <div class="inline-flex items-center gap-2 rounded-full border border-purple-200/60 bg-white/70 px-4 py-1.5 text-sm font-semibold text-purple-700 shadow-sm backdrop-blur dark:border-purple-800/60 dark:bg-purple-900/40 dark:text-purple-300">
-            <Icon name="gift" size="sm" />
-            <span>{{ t('home.referral.badge') }}</span>
-          </div>
-          <h2 class="mt-6 text-2xl font-semibold tracking-tight text-gray-900 dark:text-white sm:text-3xl">
-            {{ t('home.referral.title') }}
-          </h2>
-          <p class="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-gray-600 dark:text-dark-400">
-            {{ t('home.referral.description') }}
-          </p>
-          <div class="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <router-link
-              :to="isAuthenticated ? '/referral' : registerPath"
-              class="btn btn-primary btn-lg px-8"
-            >
-              <Icon name="userPlus" size="md" />
-              {{ isAuthenticated ? t('home.referral.goInvite') : t('home.referral.registerNow') }}
-            </router-link>
-          </div>
-          <div class="mt-6 flex flex-wrap items-center justify-center gap-4 text-sm text-gray-500 dark:text-dark-400">
-            <div class="flex items-center gap-1.5">
-              <Icon name="check" size="sm" class="text-emerald-500" />
-              <span>{{ t('home.referral.feature1') }}</span>
-            </div>
-            <div class="flex items-center gap-1.5">
-              <Icon name="check" size="sm" class="text-emerald-500" />
-              <span>{{ t('home.referral.feature2') }}</span>
-            </div>
-            <div class="flex items-center gap-1.5">
-              <Icon name="check" size="sm" class="text-emerald-500" />
-              <span>{{ t('home.referral.feature3') }}</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
       <!-- Metrics -->
       <section class="mx-auto max-w-7xl px-6 pb-12 pt-2 lg:pb-16">
         <div class="mx-auto max-w-3xl text-center">

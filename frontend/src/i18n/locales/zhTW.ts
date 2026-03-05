@@ -4141,8 +4141,6 @@ export default {
         contactTelegram: 'Telegram',
         docUrl: '文檔連結',
         docUrlHint: '文檔網站的連結。留空則隱藏文檔連結。',
-        queryDomain: '查詢域名',
-        queryDomainHint: '配置後該域名將顯示 API Key 查詢頁面',
         docUrlPlaceholder: 'https://docs.example.com',
         siteLogo: '站點Logo',
         uploadImage: '上傳圖片',
@@ -4157,10 +4155,6 @@ export default {
         homeContentIframeWarning: '⚠️ iframe 模式提示：部分網站設定了 X-Frame-Options 或 CSP 安全策略，禁止被嵌入到 iframe 中。如果頁面顯示空白或報錯，請確認目標網站允許被嵌入，或考慮使用 HTML 模式自行構建頁面內容。',
         hideCcsImportButton: '隱藏 CCS 匯入按鈕',
         hideCcsImportButtonHint: '啟用後將在 API Keys 頁面隱藏「匯入 CCS」按鈕',
-        cryptoAddresses: '虛擬貨幣地址',
-        cryptoAddressesHint: '設定收款的虛擬貨幣地址，將展示在方案購買頁面',
-        addCryptoAddress: '新增地址',
-        chainName: '鏈名稱',
         walletAddress: '錢包地址'
       },
       purchase: {
@@ -5125,23 +5119,7 @@ export default {
       other: '其他設定',
       docUrl: '文件 URL',
       contactInfo: '聯絡方式',
-      cryptoAddresses: '虛擬貨幣地址',
-      cryptoPlaceholder: '每行一個地址，格式：幣種:地址',
-      telegram: {
-        title: 'Telegram 機器人',
-        botToken: 'Bot Token',
-        botTokenPlaceholder: `輸入從 {'@'}BotFather 取得的 Token`,
-        botTokenHint: `從 Telegram {'@'}BotFather 取得`,
-        bindStatus: '綁定狀態',
-        bound: '已綁定',
-        unbound: '未綁定',
-        generateBindCode: '產生綁定碼',
-        bindInstructions: '請向 Bot 傳送此命令來綁定：',
-        unbind: '解除綁定',
-        saveTokenFirst: '請先填寫 Bot Token 並儲存設定',
-        waitingForBind: '等待綁定中，請向 Bot 傳送上方指令...',
-        bindSuccess: 'Telegram 綁定成功！'
-      }
+      cryptoPlaceholder: '每行一個地址，格式：幣種:地址'
     }
   }
 }

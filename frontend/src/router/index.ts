@@ -6,6 +6,7 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useAppStore } from '@/stores/app'
+import { useAdminSettingsStore } from '@/stores/adminSettings'
 import { useNavigationLoadingState } from '@/composables/useNavigationLoading'
 import { useRoutePrefetch } from '@/composables/useRoutePrefetch'
 import { resolveDocumentTitle } from './title'
@@ -198,10 +199,6 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
-    path: '/referral',
-    redirect: '/console-home'
-  },
-  {
     path: '/profile',
     name: 'Profile',
     component: () => import('@/views/user/ProfileView.vue'),
@@ -224,45 +221,6 @@ const routes: RouteRecordRaw[] = [
       titleKey: 'userSubscriptions.title',
       descriptionKey: 'userSubscriptions.description'
     }
-  },
-  {
-    path: '/plans',
-    name: 'Plans',
-    component: () => import('@/views/user/PlansView.vue'),
-    meta: {
-      requiresAuth: true,
-      requiresAdmin: false,
-      title: 'Purchase Plans',
-      titleKey: 'plans.title',
-      descriptionKey: 'plans.description'
-    }
-  },
-  {
-    path: '/recharge',
-    name: 'Recharge',
-    component: () => import('@/views/user/RechargeView.vue'),
-    meta: {
-      requiresAuth: true,
-      requiresAdmin: false,
-      title: 'Recharge',
-      titleKey: 'recharge.pageTitle',
-    }
-  },
-  {
-    path: '/orders',
-    name: 'Orders',
-    component: () => import('@/views/user/OrdersView.vue'),
-    meta: {
-      requiresAuth: true,
-      requiresAdmin: false,
-      title: 'My Orders',
-      titleKey: 'userOrders.title',
-      descriptionKey: 'userOrders.description'
-    }
-  },
-  {
-    path: '/recharge-orders',
-    redirect: '/orders'
   },
   {
     path: '/purchase',
@@ -480,7 +438,15 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/admin/promo-codes',
-    redirect: '/admin/redeem'
+    name: 'AdminPromoCodes',
+    component: () => import('@/views/admin/PromoCodesView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: 'Promo Code Management',
+      titleKey: 'admin.promo.title',
+      descriptionKey: 'admin.promo.description'
+    }
   },
   {
     path: '/admin/data-management',
@@ -519,22 +485,6 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
-    path: '/admin/orders',
-    name: 'AdminOrders',
-    component: () => import('@/views/admin/OrdersView.vue'),
-    meta: {
-      requiresAuth: true,
-      requiresAdmin: true,
-      title: 'Order Management',
-      titleKey: 'admin.orders.title',
-      descriptionKey: 'admin.orders.description'
-    }
-  },
-  {
-    path: '/admin/referrals',
-    redirect: '/admin/dashboard'
-  },
-  {
     path: '/admin/channels',
     name: 'AdminChannels',
     component: () => import('@/views/admin/ChannelsView.vue'),
@@ -545,14 +495,6 @@ const routes: RouteRecordRaw[] = [
       titleKey: 'admin.channels.title',
       descriptionKey: 'admin.channels.description'
     }
-  },
-  {
-    path: '/admin/recharge-orders',
-    redirect: '/admin/orders'
-  },
-  {
-    path: '/admin/recharge-settings',
-    redirect: '/admin/orders'
   },
 
   // ==================== Public Key Query ====================
@@ -618,19 +560,14 @@ router.beforeEach((to, _from, next) => {
     authInitialized = true
   }
 
-  // Domain-based redirect: if hostname matches query_domain, force key-query page
-  const appStore = useAppStore()
-  const queryDomain = appStore.cachedPublicSettings?.query_domain
-  if (queryDomain && window.location.hostname === queryDomain && to.path !== '/key-query') {
-    next('/key-query')
-    return
-  }
-
   // For custom pages, use menu item label as document title
+  const appStore = useAppStore()
   if (to.name === 'CustomPage') {
     const id = to.params.id as string
-    const items = appStore.cachedPublicSettings?.custom_menu_items ?? []
-    const menuItem = items.find((item) => item.id === id)
+    const publicItems = appStore.cachedPublicSettings?.custom_menu_items ?? []
+    const adminSettingsStore = useAdminSettingsStore()
+    const menuItem = publicItems.find((item) => item.id === id)
+      ?? (authStore.isAdmin ? adminSettingsStore.customMenuItems.find((item) => item.id === id) : undefined)
     if (menuItem?.label) {
       const siteName = appStore.siteName || 'Sub2API'
       document.title = `${menuItem.label} - ${siteName}`
@@ -705,13 +642,8 @@ router.beforeEach((to, _from, next) => {
 
   // On reseller domains or for reseller's sub-users, redirect subscription-related routes
   if (appStore.isResellerDomain || authStore.isResellerUser) {
-    const subscriptionPaths = ['/subscriptions', '/orders', '/purchase', '/recharge']
+    const subscriptionPaths = ['/subscriptions', '/purchase']
     if (subscriptionPaths.includes(to.path)) {
-      next('/console-home')
-      return
-    }
-    // /plans: if no purchase_url configured, redirect to console-home
-    if (to.path === '/plans' && !(appStore.cachedPublicSettings?.purchase_enabled && appStore.cachedPublicSettings?.purchase_url)) {
       next('/console-home')
       return
     }

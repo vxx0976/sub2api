@@ -7,7 +7,7 @@
           {{ t('auth.verifyYourEmail') }}
         </h2>
         <p class="mt-2 text-sm text-gray-500 dark:text-dark-400">
-          {{ t('auth.sendCodeTo') }}
+          {{ t('auth.sendCodeDesc') }}
           <span class="font-medium text-gray-700 dark:text-gray-300">{{ email }}</span>
         </p>
         <p class="mt-1 text-xs text-gray-400 dark:text-dark-500">
@@ -137,7 +137,7 @@
             disabled
             class="cursor-not-allowed text-sm text-gray-400 dark:text-dark-500"
           >
-            {{ t('auth.resendCodeIn', { seconds: countdown }) }}
+            {{ t('auth.resendCountdown', { countdown }) }}
           </button>
           <button
             v-else
@@ -180,8 +180,13 @@ import Icon from '@/components/icons/Icon.vue'
 import TurnstileWidget from '@/components/TurnstileWidget.vue'
 import { useAuthStore, useAppStore } from '@/stores'
 import { getPublicSettings, sendVerifyCode } from '@/api/auth'
+import { buildAuthErrorMessage } from '@/utils/authError'
+import {
+  isRegistrationEmailSuffixAllowed,
+  normalizeRegistrationEmailSuffixWhitelist
+} from '@/utils/registrationEmailPolicy'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 // ==================== Router & Stores ====================
 
@@ -211,6 +216,8 @@ const hasRegisterData = ref<boolean>(false)
 const turnstileEnabled = ref<boolean>(false)
 const turnstileSiteKey = ref<string>('')
 const siteName = computed(() => appStore.cachedPublicSettings?.site_name || appStore.siteName || '码驿站')
+const registrationEmailSuffixWhitelist = ref<string[]>([])
+
 
 // Turnstile for resend
 const turnstileRef = ref<InstanceType<typeof TurnstileWidget> | null>(null)
@@ -246,6 +253,9 @@ onMounted(async () => {
     const settings = await getPublicSettings()
     turnstileEnabled.value = settings.turnstile_enabled
     turnstileSiteKey.value = settings.turnstile_site_key || ''
+    registrationEmailSuffixWhitelist.value = normalizeRegistrationEmailSuffixWhitelist(
+      settings.registration_email_suffix_whitelist || []
+    )
   } catch (error) {
     console.error('Failed to load public settings:', error)
   }
@@ -308,6 +318,12 @@ async function sendCode(): Promise<void> {
   errorMessage.value = ''
 
   try {
+    if (!isRegistrationEmailSuffixAllowed(email.value, registrationEmailSuffixWhitelist.value)) {
+      errorMessage.value = buildEmailSuffixNotAllowedMessage()
+      appStore.showError(errorMessage.value)
+      return
+    }
+
     const response = await sendVerifyCode({
       email: email.value,
       // 优先使用重发时新获取的 token（因为初始 token 可能已被使用）
@@ -322,15 +338,9 @@ async function sendCode(): Promise<void> {
     showResendTurnstile.value = false
     resendTurnstileToken.value = ''
   } catch (error: unknown) {
-    const err = error as { message?: string; response?: { data?: { detail?: string } } }
-
-    if (err.response?.data?.detail) {
-      errorMessage.value = err.response.data.detail
-    } else if (err.message) {
-      errorMessage.value = err.message
-    } else {
-      errorMessage.value = t('auth.sendCodeFailed')
-    }
+    errorMessage.value = buildAuthErrorMessage(error, {
+      fallback: t('auth.sendCodeFailed')
+    })
 
     appStore.showError(errorMessage.value)
   } finally {
@@ -349,7 +359,7 @@ async function handleResendCode(): Promise<void> {
 
   // If turnstile is enabled but no token yet, wait
   if (turnstileEnabled.value && !resendTurnstileToken.value) {
-    errors.value.turnstile = t('auth.pleaseCompleteVerification')
+    errors.value.turnstile = t('auth.completeVerification')
     return
   }
 
@@ -365,7 +375,7 @@ function validateForm(): boolean {
   }
 
   if (!/^\d{6}$/.test(verifyCode.value.trim())) {
-    errors.value.code = t('auth.codeInvalid')
+    errors.value.code = t('auth.invalidCode')
     return false
   }
 
@@ -382,6 +392,12 @@ async function handleVerify(): Promise<void> {
   isLoading.value = true
 
   try {
+    if (!isRegistrationEmailSuffixAllowed(email.value, registrationEmailSuffixWhitelist.value)) {
+      errorMessage.value = buildEmailSuffixNotAllowedMessage()
+      appStore.showError(errorMessage.value)
+      return
+    }
+
     // Register with verification code
     await authStore.register({
       email: email.value,
@@ -401,15 +417,9 @@ async function handleVerify(): Promise<void> {
     // Redirect to dashboard
     await router.push('/dashboard')
   } catch (error: unknown) {
-    const err = error as { message?: string; response?: { data?: { detail?: string } } }
-
-    if (err.response?.data?.detail) {
-      errorMessage.value = err.response.data.detail
-    } else if (err.message) {
-      errorMessage.value = err.message
-    } else {
-      errorMessage.value = t('auth.verificationFailed')
-    }
+    errorMessage.value = buildAuthErrorMessage(error, {
+      fallback: t('auth.verifyFailed')
+    })
 
     appStore.showError(errorMessage.value)
   } finally {
@@ -423,6 +433,19 @@ function handleBack(): void {
 
   // Go back to registration
   router.push('/register')
+}
+
+function buildEmailSuffixNotAllowedMessage(): string {
+  const normalizedWhitelist = normalizeRegistrationEmailSuffixWhitelist(
+    registrationEmailSuffixWhitelist.value
+  )
+  if (normalizedWhitelist.length === 0) {
+    return t('auth.emailSuffixNotAllowed')
+  }
+  const separator = String(locale.value || '').toLowerCase().startsWith('zh') ? '、' : ', '
+  return t('auth.emailSuffixNotAllowedWithAllowed', {
+    suffixes: normalizedWhitelist.join(separator)
+  })
 }
 </script>
 

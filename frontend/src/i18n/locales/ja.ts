@@ -4139,8 +4139,6 @@ export default {
         contactTelegram: 'Telegram',
         docUrl: 'ドキュメントリンク',
         docUrlHint: 'ドキュメントサイトのリンク。空欄の場合はドキュメントリンクを非表示にします。',
-        queryDomain: 'クエリドメイン',
-        queryDomainHint: '設定するとこのドメインで API Key 照会ページが表示されます',
         docUrlPlaceholder: 'https://docs.example.com',
         siteLogo: 'サイトロゴ',
         uploadImage: '画像をアップロード',
@@ -4155,10 +4153,6 @@ export default {
         homeContentIframeWarning: '⚠️ iframeモードの注意：一部のWebサイトはX-Frame-OptionsまたはCSPセキュリティポリシーを設定しており、iframeへの埋め込みを禁止しています。ページが空白またはエラーが表示される場合は、対象サイトが埋め込みを許可しているか確認するか、HTMLモードでページコンテンツを自作してください。',
         hideCcsImportButton: 'CCSインポートボタンを非表示',
         hideCcsImportButtonHint: '有効にすると、APIキーページの「CCSインポート」ボタンが非表示になります',
-        cryptoAddresses: '暗号通貨アドレス',
-        cryptoAddressesHint: '暗号通貨の受取アドレスを設定します。プランページに表示されます',
-        addCryptoAddress: 'アドレスを追加',
-        chainName: 'チェーン',
         walletAddress: 'アドレス'
       },
       purchase: {
@@ -5123,23 +5117,7 @@ export default {
       other: 'その他の設定',
       docUrl: 'ドキュメントURL',
       contactInfo: '連絡先',
-      cryptoAddresses: '暗号通貨アドレス',
-      cryptoPlaceholder: '1行に1つ、形式：通貨:アドレス',
-      telegram: {
-        title: 'Telegram ボット',
-        botToken: 'ボットトークン',
-        botTokenPlaceholder: `{'@'}BotFather から取得したトークンを入力`,
-        botTokenHint: `Telegram {'@'}BotFather から取得してください`,
-        bindStatus: 'バインド状態',
-        bound: 'バインド済み',
-        unbound: '未バインド',
-        generateBindCode: 'バインドコードを生成',
-        bindInstructions: 'このコマンドを Bot に送信してバインドしてください：',
-        unbind: 'バインド解除',
-        saveTokenFirst: 'Bot Tokenを入力して設定を保存してください',
-        waitingForBind: 'バインド待機中、Botにコマンドを送信してください...',
-        bindSuccess: 'Telegramバインド成功！'
-      }
+      cryptoPlaceholder: '1行に1つ、形式：通貨:アドレス'
     }
   }
 }

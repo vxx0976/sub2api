@@ -259,13 +259,7 @@
             </div>
           </div>
 
-          <!-- Geo Distribution (Full Width) -->
-          <GeoDistributionChart
-            :distribution="geoDistribution"
-            :total="geoTotal"
-            :loading="chartsLoading"
-            @backfill-done="loadChartData"
-          />
+
         </div>
       </template>
     </div>
@@ -279,7 +273,7 @@ import { useAppStore } from '@/stores/app'
 
 const { t } = useI18n()
 import { adminAPI } from '@/api/admin'
-import type { DashboardStats, TrendDataPoint, ModelStat, UserUsageTrendPoint, GeoDistributionItem } from '@/types'
+import type { DashboardStats, TrendDataPoint, ModelStat, UserUsageTrendPoint } from '@/types'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import Icon from '@/components/icons/Icon.vue'
@@ -287,7 +281,7 @@ import DateRangePicker from '@/components/common/DateRangePicker.vue'
 import Select from '@/components/common/Select.vue'
 import ModelDistributionChart from '@/components/charts/ModelDistributionChart.vue'
 import TokenUsageTrend from '@/components/charts/TokenUsageTrend.vue'
-import GeoDistributionChart from '@/components/charts/GeoDistributionChart.vue'
+
 
 import {
   Chart as ChartJS,
@@ -324,9 +318,8 @@ const userTrendLoading = ref(false)
 const trendData = ref<TrendDataPoint[]>([])
 const modelStats = ref<ModelStat[]>([])
 const userTrend = ref<UserUsageTrendPoint[]>([])
-const geoDistribution = ref<GeoDistributionItem[]>([])
-const geoTotal = ref(0)
 let chartLoadSeq = 0
+let usersTrendLoadSeq = 0
 
 // Helper function to format date in local timezone
 const formatLocalDate = (date: Date): string => {
@@ -534,72 +527,74 @@ const onDateRangeChange = (range: {
 }
 
 // Load data
-const loadDashboardStats = async () => {
-  loading.value = true
+const loadDashboardSnapshot = async (includeStats: boolean) => {
+  const currentSeq = ++chartLoadSeq
+  if (includeStats && !stats.value) {
+    loading.value = true
+  }
+  chartsLoading.value = true
   try {
-    stats.value = await adminAPI.dashboard.getStats()
+    const response = await adminAPI.dashboard.getSnapshotV2({
+      start_date: startDate.value,
+      end_date: endDate.value,
+      granularity: granularity.value,
+      include_stats: includeStats,
+      include_trend: true,
+      include_model_stats: true,
+      include_group_stats: false,
+      include_users_trend: false
+    })
+    if (currentSeq !== chartLoadSeq) return
+    if (includeStats && response.stats) {
+      stats.value = response.stats
+    }
+    trendData.value = response.trend || []
+    modelStats.value = response.models || []
   } catch (error) {
+    if (currentSeq !== chartLoadSeq) return
     appStore.showError(t('admin.dashboard.failedToLoad'))
-    console.error('Error loading dashboard stats:', error)
+    console.error('Error loading dashboard snapshot:', error)
   } finally {
+    if (currentSeq !== chartLoadSeq) return
     loading.value = false
+    chartsLoading.value = false
   }
 }
 
-const loadChartData = async () => {
-  const currentSeq = ++chartLoadSeq
-  chartsLoading.value = true
+const loadUsersTrend = async () => {
+  const currentSeq = ++usersTrendLoadSeq
   userTrendLoading.value = true
   try {
-    const params = {
-      start_date: startDate.value,
-      end_date: endDate.value,
-      granularity: granularity.value
-    }
-
-    const [trendResponse, modelResponse, userResponse, geoResponse] = await Promise.all([
-      adminAPI.dashboard.getUsageTrend(params),
-      adminAPI.dashboard.getModelStats({ start_date: startDate.value, end_date: endDate.value }),
-      adminAPI.dashboard.getUserUsageTrend({ ...params, limit: 12 }),
-      adminAPI.dashboard.getGeoDistribution({ start_date: startDate.value, end_date: endDate.value })
-    ])
-
-    if (currentSeq !== chartLoadSeq) return
-    trendData.value = trendResponse.trend || []
-    modelStats.value = modelResponse.models || []
-    userTrend.value = userResponse.trend || []
-    geoDistribution.value = geoResponse.distribution || []
-    geoTotal.value = geoResponse.total || 0
-  } catch (error) {
-    if (currentSeq !== chartLoadSeq) return
-    console.error('Error loading chart data:', error)
-  } finally {
-    if (currentSeq !== chartLoadSeq) return
-    chartsLoading.value = false
-  }
-
-  try {
-    const params = {
+    const response = await adminAPI.dashboard.getUserUsageTrend({
       start_date: startDate.value,
       end_date: endDate.value,
       granularity: granularity.value,
       limit: 12
-    }
-    const userResponse = await adminAPI.dashboard.getUserUsageTrend(params)
-    if (currentSeq !== chartLoadSeq) return
-    userTrend.value = userResponse.trend || []
+    })
+    if (currentSeq !== usersTrendLoadSeq) return
+    userTrend.value = response.trend || []
   } catch (error) {
-    if (currentSeq !== chartLoadSeq) return
-    console.error('Error loading user trend:', error)
+    if (currentSeq !== usersTrendLoadSeq) return
+    console.error('Error loading users trend:', error)
+    userTrend.value = []
   } finally {
-    if (currentSeq !== chartLoadSeq) return
+    if (currentSeq !== usersTrendLoadSeq) return
     userTrendLoading.value = false
   }
 }
 
+const loadDashboardStats = async () => {
+  await loadDashboardSnapshot(true)
+  void loadUsersTrend()
+}
+
+const loadChartData = async () => {
+  await loadDashboardSnapshot(false)
+  void loadUsersTrend()
+}
+
 onMounted(() => {
   loadDashboardStats()
-  loadChartData()
 })
 </script>
 

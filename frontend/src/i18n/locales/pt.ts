@@ -4175,8 +4175,6 @@ export default {
         docUrl: 'URL da Documentacao',
         docUrlPlaceholder: 'https://docs.example.com',
         docUrlHint: 'Link para seu site de documentacao. Deixe vazio para ocultar o link da documentacao.',
-        queryDomain: 'Dominio de consulta',
-        queryDomainHint: 'Quando configurado, este dominio exibira a pagina de consulta de API Key',
         siteLogo: 'Logo do Site',
         uploadImage: 'Enviar Imagem',
         remove: 'Remover',
@@ -4190,11 +4188,6 @@ export default {
         homeContentIframeWarning: '⚠️ Nota do modo iframe: Alguns sites tem politicas de seguranca X-Frame-Options ou CSP que impedem a incorporacao em iframes. Se a pagina aparecer em branco ou mostrar erro, verifique se o site de destino permite incorporacao, ou considere usar o modo HTML para criar seu proprio conteudo.',
         hideCcsImportButton: 'Ocultar Botao de Importacao CCS',
         hideCcsImportButtonHint: 'Quando ativado, o botao "Importar CCS" sera ocultado na pagina de Chaves API',
-        cryptoAddresses: 'Enderecos de criptomoedas',
-        cryptoAddressesHint: 'Configure os enderecos de recebimento de criptomoedas, exibidos na pagina de planos',
-        addCryptoAddress: 'Adicionar endereco',
-        chainName: 'Rede',
-        walletAddress: 'Endereco'
       },
       purchase: {
         title: 'Pagina de Compra',
@@ -5159,23 +5152,7 @@ export default {
       other: 'Outras configurações',
       docUrl: 'URL de documentação',
       contactInfo: 'Informações de contacto',
-      cryptoAddresses: 'Endereços de criptomoedas',
-      cryptoPlaceholder: 'Um por linha, formato: MOEDA:endereço',
-      telegram: {
-        title: 'Bot do Telegram',
-        botToken: 'Token do Bot',
-        botTokenPlaceholder: `Introduza o token do {'@'}BotFather`,
-        botTokenHint: `Obtenha-o no Telegram {'@'}BotFather`,
-        bindStatus: 'Estado de vinculação',
-        bound: 'Vinculado',
-        unbound: 'Não vinculado',
-        generateBindCode: 'Gerar código de vinculação',
-        bindInstructions: 'Envie este comando ao seu Bot para vincular:',
-        unbind: 'Desvincular',
-        saveTokenFirst: 'Por favor, insira o Bot Token e salve as configurações primeiro',
-        waitingForBind: 'Aguardando vinculação, envie o comando ao seu Bot...',
-        bindSuccess: 'Telegram vinculado com sucesso!'
-      }
+      cryptoPlaceholder: 'Um por linha, formato: MOEDA:endereço'
     }
   }
 }

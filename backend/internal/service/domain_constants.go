@@ -77,11 +77,12 @@ const LinuxDoConnectSyntheticEmailDomain = "@linuxdo-connect.invalid"
 // Setting keys
 const (
 	// 注册设置
-	SettingKeyRegistrationEnabled   = "registration_enabled"    // 是否开放注册
-	SettingKeyEmailVerifyEnabled    = "email_verify_enabled"    // 是否开启邮件验证
-	SettingKeyPromoCodeEnabled      = "promo_code_enabled"      // 是否启用优惠码功能
-	SettingKeyPasswordResetEnabled  = "password_reset_enabled"  // 是否启用忘记密码功能（需要先开启邮件验证）
-	SettingKeyInvitationCodeEnabled = "invitation_code_enabled" // 是否启用邀请码注册
+	SettingKeyRegistrationEnabled              = "registration_enabled"                // 是否开放注册
+	SettingKeyEmailVerifyEnabled               = "email_verify_enabled"                // 是否开启邮件验证
+	SettingKeyRegistrationEmailSuffixWhitelist = "registration_email_suffix_whitelist" // 注册邮箱后缀白名单（JSON 数组）
+	SettingKeyPromoCodeEnabled                 = "promo_code_enabled"                  // 是否启用优惠码功能
+	SettingKeyPasswordResetEnabled             = "password_reset_enabled"              // 是否启用忘记密码功能（需要先开启邮件验证）
+	SettingKeyInvitationCodeEnabled            = "invitation_code_enabled"             // 是否启用邀请码注册
 
 	// 邮件服务设置
 	SettingKeySMTPHost     = "smtp_host"      // SMTP服务器地址
@@ -119,8 +120,6 @@ const (
 	SettingKeyPurchaseSubscriptionEnabled = "purchase_subscription_enabled" // 是否展示"购买订阅"页面入口
 	SettingKeyPurchaseSubscriptionURL     = "purchase_subscription_url"     // "购买订阅"页面 URL（作为 iframe src）
 	SettingKeyAnnouncements               = "announcements"                 // 系统公告列表（JSON 数组）
-	SettingKeyCryptoAddresses             = "crypto_addresses"              // 虚拟货币收款地址（JSON 数组）
-	SettingKeyQueryDomain                = "query_domain"                  // Key 查询页面独立域名
 	SettingKeyCustomMenuItems             = "custom_menu_items"             // 自定义菜单项（JSON 数组）
 
 	// 默认配置

@@ -100,6 +100,7 @@ export interface CustomMenuItem {
 export interface PublicSettings {
   registration_enabled: boolean
   email_verify_enabled: boolean
+  registration_email_suffix_whitelist: string[]
   promo_code_enabled: boolean
   password_reset_enabled: boolean
   invitation_code_enabled: boolean
@@ -121,8 +122,6 @@ export interface PublicSettings {
   sora_client_enabled: boolean
   version: string
   announcements?: SimpleAnnouncement[]
-  crypto_addresses?: string
-  query_domain?: string
   default_locale?: string
   contact_wechat?: string
   contact_telegram?: string
@@ -1185,18 +1184,6 @@ export interface ApiKeyUsageTrendPoint {
   key_name: string
   requests: number
   tokens: number
-}
-
-export interface GeoDistributionItem {
-  country_code: string
-  count: number
-}
-
-export interface GeoDistributionResponse {
-  distribution: GeoDistributionItem[]
-  total: number
-  start_date: string
-  end_date: string
 }
 
 // ==================== Admin User Management ====================

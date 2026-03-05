@@ -70,8 +70,6 @@ func registerResellerSettingRoutes(reseller *gin.RouterGroup, h *handler.Handler
 	{
 		settings.GET("", h.Reseller.Setting.Get)
 		settings.PUT("", h.Reseller.Setting.Update)
-		settings.POST("/tg-bind-code", h.Reseller.Setting.GenerateBindCode)
-		settings.DELETE("/tg-bind", h.Reseller.Setting.UnbindTelegram)
 	}
 }
 

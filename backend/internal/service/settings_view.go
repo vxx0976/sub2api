@@ -1,12 +1,13 @@
 package service
 
 type SystemSettings struct {
-	RegistrationEnabled   bool
-	EmailVerifyEnabled    bool
-	PromoCodeEnabled      bool
-	PasswordResetEnabled  bool
-	InvitationCodeEnabled bool
-	TotpEnabled           bool // TOTP 双因素认证
+	RegistrationEnabled              bool
+	EmailVerifyEnabled               bool
+	RegistrationEmailSuffixWhitelist []string
+	PromoCodeEnabled                 bool
+	PasswordResetEnabled             bool
+	InvitationCodeEnabled            bool
+	TotpEnabled                      bool // TOTP 双因素认证
 
 	SMTPHost               string
 	SMTPPort               int
@@ -39,8 +40,6 @@ type SystemSettings struct {
 	HideCcsImportButton         bool
 	PurchaseSubscriptionEnabled bool
 	PurchaseSubscriptionURL     string
-	CryptoAddresses             string
-	QueryDomain                 string
 	SoraClientEnabled           bool
 	CustomMenuItems             string // JSON array of custom menu items
 
@@ -91,22 +90,24 @@ type DefaultSubscriptionSetting struct {
 }
 
 type PublicSettings struct {
-	RegistrationEnabled   bool
-	EmailVerifyEnabled    bool
-	PromoCodeEnabled      bool
-	PasswordResetEnabled  bool
-	InvitationCodeEnabled bool
-	TotpEnabled           bool // TOTP 双因素认证
-	TurnstileEnabled      bool
-	TurnstileSiteKey      string
-	SiteName              string
-	SiteLogo              string
-	SiteSubtitle          string
-	APIBaseURL            string
-	ContactInfo           string
-	DocURL                string
-	HomeContent           string
-	HideCcsImportButton   bool
+	RegistrationEnabled              bool
+	EmailVerifyEnabled               bool
+	RegistrationEmailSuffixWhitelist []string
+	PromoCodeEnabled                 bool
+	PasswordResetEnabled             bool
+	InvitationCodeEnabled            bool
+	TotpEnabled                      bool // TOTP 双因素认证
+	TurnstileEnabled                 bool
+	TurnstileSiteKey                 string
+	SiteName                         string
+	SiteLogo                         string
+	SiteSubtitle                     string
+	APIBaseURL                       string
+	ContactInfo                      string
+	DocURL                           string
+	HomeContent                      string
+	HideCcsImportButton              bool
+
 	PurchaseSubscriptionEnabled bool
 	PurchaseSubscriptionURL     string
 	SoraClientEnabled           bool
@@ -114,8 +115,6 @@ type PublicSettings struct {
 	LinuxDoOAuthEnabled         bool
 	Version                     string
 	Announcements               []SimpleAnnouncement
-	CryptoAddresses             string
-	QueryDomain                 string
 	DefaultLocale               string
 	ContactWechat               string
 	ContactTelegram             string

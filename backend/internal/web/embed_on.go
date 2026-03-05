@@ -280,13 +280,10 @@ func mergeResellerBranding(baseJSON []byte, info *middleware.ResellerDomainConte
 	delete(m, "contact_wechat")
 	delete(m, "contact_telegram")
 
-	// Override from reseller-global settings (contact_info, crypto_addresses, default_locale, etc.)
+	// Override from reseller-global settings (contact_info, default_locale, etc.)
 	if rs := info.ResellerSettings; rs != nil {
 		if v := rs["contact_info"]; v != "" {
 			m["contact_info"] = v
-		}
-		if v := rs["crypto_addresses"]; v != "" {
-			m["crypto_addresses"] = v
 		}
 		if v := rs["default_locale"]; v != "" {
 			m["default_locale"] = v

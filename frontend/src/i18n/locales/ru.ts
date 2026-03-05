@@ -4174,8 +4174,6 @@ export default {
         docUrl: 'URL документации',
         docUrlPlaceholder: 'https://docs.example.com',
         docUrlHint: 'Ссылка на ваш сайт документации. Оставьте пустым, чтобы скрыть ссылку на документацию.',
-        queryDomain: 'Домен запросов',
-        queryDomainHint: 'После настройки этот домен будет показывать страницу запроса API Key',
         siteLogo: 'Логотип сайта',
         uploadImage: 'Загрузить изображение',
         remove: 'Удалить',
@@ -4189,11 +4187,6 @@ export default {
         homeContentIframeWarning: '⚠️ Примечание о режиме iframe: Некоторые веб-сайты имеют политики безопасности X-Frame-Options или CSP, которые предотвращают встраивание в iframe. Если страница пуста или показывает ошибку, проверьте, разрешает ли целевой сайт встраивание, или используйте режим HTML для создания собственного содержимого.',
         hideCcsImportButton: 'Скрыть кнопку импорта CCS',
         hideCcsImportButtonHint: 'Если включено, кнопка «Импорт CCS» будет скрыта на странице API ключей',
-        cryptoAddresses: 'Криптовалютные адреса',
-        cryptoAddressesHint: 'Настройте адреса для получения криптовалюты, отображаемые на странице тарифов',
-        addCryptoAddress: 'Добавить адрес',
-        chainName: 'Сеть',
-        walletAddress: 'Адрес'
       },
       purchase: {
         title: 'Страница покупки',
@@ -5159,23 +5152,7 @@ export default {
       other: 'Прочие настройки',
       docUrl: 'URL документации',
       contactInfo: 'Контактная информация',
-      cryptoAddresses: 'Крипто-адреса',
-      cryptoPlaceholder: 'По одному на строку, формат: МОНЕТА:адрес',
-      telegram: {
-        title: 'Telegram бот',
-        botToken: 'Токен бота',
-        botTokenPlaceholder: `Введите токен от {'@'}BotFather`,
-        botTokenHint: `Получите в Telegram {'@'}BotFather`,
-        bindStatus: 'Статус привязки',
-        bound: 'Привязан',
-        unbound: 'Не привязан',
-        generateBindCode: 'Сгенерировать код привязки',
-        bindInstructions: 'Отправьте эту команду боту для привязки:',
-        unbind: 'Отвязать',
-        saveTokenFirst: 'Сначала введите Bot Token и сохраните настройки',
-        waitingForBind: 'Ожидание привязки, отправьте команду вашему боту...',
-        bindSuccess: 'Telegram успешно привязан!'
-      }
+      cryptoPlaceholder: 'По одному на строку, формат: МОНЕТА:адрес'
     }
   }
 }

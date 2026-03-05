@@ -160,12 +160,6 @@ const quickLinks = computed(() => {
       label: t('consoleHome.links.apiKeys'),
       bgClass: 'bg-gradient-to-br from-amber-500 to-amber-600'
     },
-    ...(!appStore.isResellerDomain && !authStore.isResellerUser ? [{
-      path: '/recharge',
-      icon: 'plus' as const,
-      label: t('nav.recharge'),
-      bgClass: 'bg-gradient-to-br from-emerald-500 to-emerald-600'
-    }] : []),
   ]
   return links
 })

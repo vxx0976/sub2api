@@ -163,16 +163,6 @@ export default {
       a5: '先检查站点地址、API Key、网络是否通，再到控制台看报错或联系管理员。',
       more: '查看文档'
     },
-    referral: {
-      badge: '邀请有礼',
-      title: '邀请好友，共享奖励',
-      description: '邀请好友首次购买任意套餐，双方各得套餐价格 10% 的额度奖励',
-      registerNow: '立即注册',
-      goInvite: '去邀请',
-      feature1: '无上限邀请',
-      feature2: '即时到账',
-      feature3: '奖励随套餐递增'
-    },
     cta: {
       title: '准备试试了吗？',
       description: '登录后生成一个 API Key，选择工具复制配置，就能开始写代码。'
@@ -207,13 +197,6 @@ export default {
       action: '去充值',
       perDollar: '/刀'
     },
-    referralReward: {
-      title: '邀请奖励',
-      description: '邀请好友首次购买套餐，双方各得套餐价格 10% 额度',
-      planItem: '买 ¥{price} 套餐各得 ${reward}',
-      moreInfo: '更多套餐详情请咨询客服',
-      action: '去邀请'
-    },
     contact: {
       title: '联系我们',
       wechat: '微信',
@@ -223,78 +206,7 @@ export default {
     },
     links: {
       subscriptions: '我的订阅',
-      plans: '购买套餐',
-      apiKeys: 'API 密钥',
-      referral: '邀请好友'
-    }
-  },
-
-  // Pricing Page
-  pricing: {
-    subscriptionPlans: '订阅套餐',
-    otherPlans: '其他方案',
-    perDollar: '/刀',
-    plans: {
-      starter: {
-        name: '体验版',
-        credit: '$22 额度',
-        unitPrice: '¥0.45/刀',
-        f1: '约 50+ 次代码任务',
-        f2: '30 天有效期',
-        f3: '支持全模型',
-        f4: '适合轻度使用、快速体验'
-      },
-      lite: {
-        name: '基础版',
-        credit: '$45 额度',
-        unitPrice: '¥0.44/刀',
-        f1: '约 120+ 次代码任务',
-        f2: '30 天有效期',
-        f3: '支持全模型',
-        f4: '满足日常开发需求'
-      },
-      standard: {
-        name: '标准版',
-        credit: '$120 额度',
-        unitPrice: '¥0.42/刀',
-        f1: '约 300+ 次代码任务',
-        f2: '30 天有效期',
-        f3: '支持全模型',
-        f4: '最受欢迎，性价比最高'
-      },
-      pro: {
-        name: '专业版',
-        credit: '$240 额度',
-        unitPrice: '¥0.42/刀',
-        f1: '约 600+ 次代码任务',
-        f2: '30 天有效期',
-        f3: '支持全模型',
-        f4: '适合重度使用'
-      }
-    },
-    paygo: {
-      name: '按量付费',
-      tagline: 'Pay As You Go',
-      asLowAs: '低至',
-      description: '无需订阅，按实际使用量计费，余额永不过期',
-      feature1: '充值即用，多充多送',
-      feature2: '余额永不过期',
-      feature3: '支持全模型',
-      feature4: '适合不定期使用',
-      action: '去充值'
-    },
-    custom: {
-      name: '定制专线',
-      tagline: 'Dedicated Line',
-      price: '按需定价',
-      description: '独立账号池、专属线路，适合企业级用户',
-      feature1: '独立账号池，不共享',
-      feature2: '专属高速线路',
-      feature3: '更高并发支持',
-      feature4: '专属技术支持',
-      action: '联系咨询',
-      wechatTitle: '添加微信',
-      wechatDesc: '添加客服微信咨询定制专线服务'
+      apiKeys: 'API 密钥'
     }
   },
 
@@ -383,6 +295,7 @@ export default {
 
   // Common
   common: {
+    login: '登录',
     loading: '加载中...',
     save: '保存',
     cancel: '取消',
@@ -506,15 +419,8 @@ export default {
     logout: '退出登录',
     github: 'GitHub',
     mySubscriptions: '我的订阅',
-    plans: '套餐计划',
-    orders: '我的订单',
-    adminOrders: '订单管理',
-    adminReferrals: '邀请管理',
-    adminRechargeOrders: '充值管理',
-    rechargeSettings: '充值配置',
     buySubscription: '充值/订阅',
     docs: '文档',
-    referral: '邀请好友',
     resellerDashboard: '商户概览',
     resellerGroups: '套餐管理',
     resellerKeys: 'API 密钥',
@@ -524,7 +430,6 @@ export default {
     resellerRedeem: '兑换码',
     resellerAnnouncements: '公告管理',
     resellerSettings: '系统设置',
-    recharge: '充值',
     sora: 'Sora 创作'
   },
 
@@ -861,6 +766,8 @@ export default {
     passwordMinLength: '密码至少需要 6 个字符',
     loginFailed: '登录失败，请检查您的凭据后重试。',
     registrationFailed: '注册失败，请重试。',
+    emailSuffixNotAllowed: '该邮箱域名不在允许注册范围内。',
+    emailSuffixNotAllowedWithAllowed: '该邮箱域名不被允许。可用域名：{suffixes}',
     loginSuccess: '登录成功！欢迎回来。',
     accountCreatedSuccess: '账户创建成功！欢迎使用 {siteName}。',
     reloginRequired: '会话已过期，请重新登录。',
@@ -875,6 +782,16 @@ export default {
     sendingCode: '发送中...',
     clickToResend: '点击重新发送验证码',
     resendCode: '重新发送验证码',
+    sendCodeDesc: '我们将发送验证码到',
+    codeSentSuccess: '验证码已发送！请查收您的邮箱。',
+    verifying: '验证中...',
+    verifyAndCreate: '验证并创建账户',
+    resendCountdown: '{countdown}秒后可重新发送',
+    backToRegistration: '返回注册',
+    sendCodeFailed: '发送验证码失败，请重试。',
+    verifyFailed: '验证失败，请重试。',
+    codeRequired: '请输入验证码',
+    invalidCode: '请输入有效的6位验证码',
     promoCodeLabel: '优惠码',
     promoCodePlaceholder: '输入优惠码（可选）',
     promoCodeValid: '有效！注册后将获得 ${amount} 赠送余额',
@@ -937,19 +854,6 @@ export default {
     invalidResetLinkHint: '此密码重置链接无效或已过期。请重新请求一个新链接。',
     requestNewResetLink: '请求新的重置链接',
     invalidOrExpiredToken: '密码重置链接无效或已过期。请重新请求一个新链接。',
-    // 邮箱验证页面
-    sendCodeTo: '我们将发送验证码到',
-    checkSpamFolder: '如果没有收到邮件，请检查垃圾邮件文件夹',
-    codeSentSuccess: '验证码已发送！请检查您的收件箱。',
-    verifying: '验证中...',
-    verifyAndCreate: '验证并创建账户',
-    resendCodeIn: '{seconds}秒后可重新发送',
-    backToRegistration: '返回注册',
-    sendCodeFailed: '发送验证码失败，请重试。',
-    pleaseCompleteVerification: '请完成验证',
-    codeRequired: '请输入验证码',
-    codeInvalid: '请输入有效的6位验证码',
-    verificationFailed: '验证失败，请重试。'
   },
 
   // Dashboard
@@ -1009,6 +913,9 @@ export default {
   keys: {
     title: 'API 密钥',
     description: '管理您的 API 密钥和访问令牌',
+    searchPlaceholder: '搜索名称或Key...',
+    allGroups: '全部分组',
+    allStatus: '全部状态',
     createKey: '创建密钥',
     editKey: '编辑密钥',
     deleteKey: '删除密钥',
@@ -1268,32 +1175,8 @@ export default {
     pleaseEnterCode: '请输入兑换码'
   },
 
-  // Referral
+  // Referral code validation (used in registration)
   referral: {
-    title: '邀请好友',
-    subtitle: '邀请好友加入，双方均可获得奖励',
-    yourCode: '您的邀请码',
-    shareCodeHint: '分享此邀请码给好友，好友注册时输入即可',
-    totalInvited: '已邀请',
-    totalRewarded: '已发放',
-    pendingPayment: '待付费',
-    totalEarnings: '累计收益',
-    rewardRules: '奖励规则',
-    rule1: '好友注册时输入您的邀请码（在优惠码输入框中输入）',
-    rule2: '好友首次购买任意套餐后，双方各获得套餐价格 10% 的额度奖励',
-    rule3: '奖励直接充入账户余额，即时到账',
-    rule4: '每位好友仅限首次付费时发放奖励，充值和兑换码不计入',
-    inviteeList: '邀请记录',
-    noInvitees: '暂无邀请记录',
-    inviteeEmail: '邮箱',
-    joinedAt: '注册时间',
-    status: '状态',
-    yourEarning: '您的收益',
-    statusRewarded: '已发放',
-    statusPending: '待付费',
-    showingPage: '第 {current} 页，共 {total} 页',
-    loadCodeFailed: '获取邀请码失败',
-    linkCopied: '邀请链接已复制',
     referralCodeValid: '邀请码有效',
     referralCodeHint: '首次购买套餐后可获得套餐价格 10% 的额度奖励',
     referralCodeInvalid: '邀请码无效或已失效',
@@ -1488,13 +1371,7 @@ export default {
       configureAiAccounts: '配置 AI 平台账号',
       systemSettings: '系统设置',
       configureSystem: '配置系统设置',
-      failedToLoad: '加载仪表盘数据失败',
-      geoDistribution: '用户地理分布',
-      country: '国家/地区',
-      geoBackfill: '回填地理数据',
-      geoBackfilling: '正在回填...',
-      geoBackfillDone: '回填完成',
-      geoBackfillFailed: '回填失败'
+      failedToLoad: '加载仪表盘数据失败'
     },
 
     dataManagement: {
@@ -2219,47 +2096,6 @@ export default {
       revokeConfirm: "确定要撤销 '{user}' 的订阅吗？此操作无法撤销。"
     },
 
-    // Orders Management
-    orders: {
-      title: '订单管理',
-      description: '管理所有用户的订单记录',
-      searchPlaceholder: '搜索订单号...',
-      allStatus: '全部状态',
-      noOrdersYet: '暂无订单',
-      noOrdersDesc: '还没有任何订单记录。',
-      failedToLoad: '加载订单列表失败',
-      userPrefix: '用户 #{id}',
-      rechargeSettings: '充值配置',
-      tabs: {
-        subscription: '套餐订单',
-        recharge: '充值订单'
-      },
-      columns: {
-        orderNo: '订单号',
-        user: '用户',
-        group: '套餐',
-        amount: '金额',
-        status: '状态',
-        payType: '支付方式',
-        createdAt: '创建时间',
-        paidAt: '支付时间'
-      },
-      statusLabels: {
-        pending: '待支付',
-        paid: '已支付',
-        expired: '已过期',
-        refunded: '已退款'
-      },
-      deleteOrder: '删除订单',
-      deleteOrderConfirm: '确定要删除此待支付订单吗？',
-      markAsPaid: '标记已支付',
-      markAsPaidConfirm: '确定要将此订单标记为已支付吗？（不会执行续期操作）',
-      deleteSuccess: '订单已删除',
-      markPaidSuccess: '订单已标记为已支付',
-      deleteFailed: '删除订单失败',
-      markPaidFailed: '标记已支付失败'
-    },
-
     // Referrals Management
     referrals: {
       title: '邀请管理',
@@ -2286,25 +2122,6 @@ export default {
         pending: '待支付',
         rewarded: '已奖励'
       }
-    },
-
-    // Recharge Orders Management
-    rechargeOrders: {
-      title: '充值管理',
-      description: '管理所有用户的充值订单',
-      searchPlaceholder: '搜索订单号、用户...',
-      allStatus: '全部状态',
-      noOrders: '暂无充值记录',
-      noOrdersDesc: '还没有任何充值订单。',
-      failedToLoad: '加载充值订单失败',
-      user: '用户',
-      tradeNo: '交易号',
-      payMethod: '支付方式',
-      paidAt: '支付时间',
-      totalOrders: '订单总数',
-      totalAmount: '收款总额',
-      totalCredit: '到账总额',
-      averageMultiplier: '平均倍率'
     },
 
     // Accounts Management
@@ -3452,7 +3269,8 @@ export default {
         // 管理员在用户管理页面调整余额/并发时产生的记录
         admin_balance: '余额（管理员）',
         admin_concurrency: '并发数（管理员）',
-        reseller_transfer: '商户转赠'
+        reseller_transfer: '商户转赠',
+        recharge: '充值'
       },
       // 用于选择器和筛选器的直接键
       balance: '余额',
@@ -4502,6 +4320,15 @@ export default {
     settings: {
       title: '系统设置',
       description: '管理注册、邮箱验证、默认值和 SMTP 设置',
+      tabs: {
+        general: '通用设置',
+        security: '安全与认证',
+        users: '用户默认值',
+        gateway: '网关服务',
+        email: '邮件设置',
+      },
+      emailTabDisabledTitle: '邮箱验证未启用',
+      emailTabDisabledHint: '请在「安全与认证」选项卡中启用邮箱验证后，再配置 SMTP 设置。',
       registration: {
         title: '注册设置',
         description: '控制用户注册和验证',
@@ -4509,6 +4336,11 @@ export default {
         enableRegistrationHint: '允许新用户注册',
         emailVerification: '邮箱验证',
         emailVerificationHint: '新用户注册时需要验证邮箱',
+        emailSuffixWhitelist: '邮箱域名白名单',
+        emailSuffixWhitelistHint:
+          "仅允许使用指定域名的邮箱注册账号（例如 {'@'}qq.com, {'@'}gmail.com）",
+        emailSuffixWhitelistPlaceholder: 'example.com',
+        emailSuffixWhitelistInputHint: '留空则不限制',
         promoCode: '优惠码',
         promoCodeHint: '允许用户在注册时使用优惠码',
         invitationCode: '邀请码注册',
@@ -4602,8 +4434,6 @@ export default {
         docUrl: '文档链接',
         docUrlHint: '文档网站的链接。留空则隐藏文档链接。',
         tawkToHint: '从 Tawk.to 获取，格式: property_id/widget_id。填写后右下角显示在线客服按钮。',
-        queryDomain: '查询域名',
-        queryDomainHint: '配置后该域名将显示 API Key 查询页面',
         docUrlPlaceholder: 'https://docs.example.com',
         siteLogo: '站点Logo',
         uploadImage: '上传图片',
@@ -4621,11 +4451,6 @@ export default {
           '⚠️ iframe 模式提示：部分网站设置了 X-Frame-Options 或 CSP 安全策略，禁止被嵌入到 iframe 中。如果页面显示空白或报错，请确认目标网站允许被嵌入，或考虑使用 HTML 模式自行构建页面内容。',
         hideCcsImportButton: '隐藏 CCS 导入按钮',
         hideCcsImportButtonHint: '启用后将在 API Keys 页面隐藏"导入 CCS"按钮',
-        cryptoAddresses: '虚拟货币地址',
-        cryptoAddressesHint: '配置收款的虚拟货币地址，将展示在套餐购买页面',
-        addCryptoAddress: '添加地址',
-        chainName: '链名称',
-        walletAddress: '钱包地址'
       },
       purchase: {
         title: '充值/订阅页面',
@@ -4823,39 +4648,6 @@ export default {
         empty: '暂无公告',
         saved: '公告保存成功',
         saveFailed: '保存公告失败'
-      },
-      recharge: {
-        title: '充值配置',
-        description: '配置用户充值功能和阶梯倍率',
-        basicSettings: '基础设置',
-        enabled: '启用充值功能',
-        enabledHint: '允许用户充值账户余额',
-        minAmount: '最小充值金额',
-        minAmountPlaceholder: '10',
-        minAmountHint: '用户单次充值的最小金额（元）',
-        maxAmount: '最大充值金额',
-        maxAmountPlaceholder: '10000',
-        maxAmountHint: '用户单次充值的最大金额（元）',
-        usdCnyRate: 'USD/CNY 汇率',
-        usdCnyRateHint: '用于国际用户显示美元价格换算',
-        tiers: '阶梯倍率',
-        tiersHint: '设置不同充值金额的倍率优惠',
-        tier: '阶梯',
-        tierMin: '最小金额',
-        tierMax: '最大金额',
-        tierMaxPlaceholder: '留空表示无上限',
-        tierMultiplier: '倍率',
-        addTier: '添加阶梯',
-        noTiers: '暂无阶梯配置',
-        preview: '预览',
-        tierValidation: {
-          maxGreaterThanMin: '最大金额必须大于最小金额',
-          multiplierRange: '倍率必须在 1.0 到 10.0 之间',
-          overlap: '阶梯区间不能与其他阶梯重叠'
-        },
-        loadFailed: '加载充值配置失败',
-        saveSuccess: '保存充值配置成功',
-        saveFailed: '保存充值配置失败'
       },
       saveSettings: '保存设置',
       saving: '保存中...',
@@ -5071,193 +4863,9 @@ export default {
     renewError: '续费失败，请稍后重试'
   },
 
-  // Plans (user purchase page)
-  plans: {
-    title: '套餐计划',
-    description: '选择适合您的套餐计划',
-    subtitle: '选择适合您的套餐，立即开始使用',
-    loadError: '加载套餐列表失败',
-    noPlans: '暂无可购买套餐',
-    noPlansDesc: '管理员尚未配置可购买的套餐，请稍后再来',
-    recommended: '推荐',
-    validityPeriod: '{days} 天有效期',
-    validFor: '有效期 {days} 天',
-    dailyLimit: '每日限额 ${amount}',
-    weeklyLimit: '每周限额 ${amount}',
-    monthlyLimit: '每月限额 ${amount}',
-    unlimited: '无限额',
-    processing: '处理中...',
-    purchase: '立即购买',
-    purchaseError: '创建订单失败，请稍后重试',
-    buyOnTaobao: '去淘宝购买',
-    pricePerDollar: '仅 ¥{price}/刀',
-    estimatedUsage: '约可调用 {count} 次（混合使用）',
-    estimatedTokens: '约 {tokens} tokens',
-    paygo: {
-      title: 'PayGo 按量付费',
-      description: '随充随用，灵活便捷',
-      features: {
-        anyAmount: '充值任意金额',
-        payAsYouGo: '按实际使用扣费',
-        neverExpires: '余额永久有效'
-      }
-    },
-    cryptoBanner: {
-      title: '支持虚拟货币支付',
-      descriptionPrefix: '转账后请通过',
-      descriptionSuffix: '联系我们确认订单',
-      copySuccess: '地址已复制'
-    },
-    enterprise: {
-      badge: '高端定制',
-      name: '定制专线',
-      description: '专属通道，极致体验，为企业级用户量身打造',
-      contactUs: '联系客服',
-      customized: '根据需求定制方案',
-      contact: '联系客服咨询',
-      contactMessage: '请联系客服获取定制方案：微信 mayione1',
-      features: {
-        dedicated: '独享专属线路',
-        unlimited: '无限额度配置',
-        priority: '优先响应支持',
-        sla: '99.9% SLA 保障'
-      },
-      dialog: {
-        title: '联系客服',
-        subtitle: '添加微信 mayione1，获取定制方案',
-        tip: '工作时间：周一至周日 9:00-22:00'
-      }
-    }
-  },
-
-  // Recharge
+  // Recharge (minimal - only keys still referenced)
   recharge: {
-    title: '账户充值',
-    pageTitle: '充值中心',
-    pageSubtitle: '选择充值金额，快速到账',
-    selectAmount: '充值金额',
-    customAmount: '自定义金额',
-    amountRangeHint: '金额范围：${min} - ${max}',
-    createOrder: '创建订单',
-    notesTitle: '充值须知',
-    noteAlipay: '请使用支付宝扫描二维码完成支付',
-    noteAmountMatch: '支付金额必须与显示金额完全一致，否则无法自动到账',
-    noteAutoCredit: '支付成功后，余额将在 1-2 分钟内自动到账',
-    noteContact: '如遇问题，请联系客服并提供订单号',
-    youWillReceive: '到账余额',
-    payAmount: '需支付',
-    firstRecharge: {
-      title: '首充特惠',
-      description: '首次充值仅需 ¥1，即可获得 $5 余额',
-      button: '立即抢购',
-      badge: '限时',
-      limitOnce: '每位用户限一次'
-    },
     rechargeNow: '立即充值',
-    paymentClosedHint: '在线支付暂未开放，请联系客服充值',
-    rechargeAmount: '充值金额',
-    enterAmount: '请输入金额',
-    quickAmounts: '快捷金额',
-    youPay: '支付金额',
-    youReceive: '到账金额',
-    platformBalance: '平台余额',
-    rateDescCny: '$1 平台余额 ≈ ¥{cnyPerDollar}（基于实时汇率 1 USD ≈ {rate} CNY），余额按实际消费扣费',
-    rateDescUsd: '$1 = ¥{rate} × {multiplier} = ${total} 平台余额',
-    balanceNeverExpires: '充值余额永久有效，用多少扣多少',
-    amountRange: '充值范围：{symbol}{min} - {symbol}{max}',
-    invalidAmountRange: '金额必须在 {symbol}{min} 到 {symbol}{max} 之间',
-    cryptoPayment: '虚拟币支付',
-    cryptoHint: '转账后请联系客服确认到账',
-    copySuccess: '地址已复制',
-    currentBalance: '当前余额',
-    bonus: '充值优惠',
-    actualCredit: '实际到账',
-    multiplier: '充值倍率',
-    multiplierInfo: '倍率 {multiplier}×',
-    tierInfo: '充值阶梯',
-    bonusTip: '充值越多，赠送越多！',
-    minAmount: '最小充值',
-    maxAmount: '最大充值',
-    confirmRecharge: '确认充值',
-    processing: '处理中...',
-    rechargeFailed: '充值失败',
-    invalidAmount: '充值金额必须在 ¥{min} 到 ¥{max} 之间',
-    rechargeSuccess: '充值成功',
-
-    // 促销文案
-    promoTitle: '💰 充值送额外余额！充得越多，送得越多',
-    promoSubtitle: '余额永久有效，按实际使用扣费，超值划算',
-    quickTip: '推荐充值 ¥200 以上更划算',
-    moreGetMore: '充得多送得多',
-    usageRuleTitle: '💡 使用规则说明',
-    usageRuleDesc: '余额按 ¥1 = $1 消耗，充值倍率越高单价越低',
-    benefitTitle: '✨ 余额永不过期，随时可用',
-    benefitDesc: '充值余额永久有效，按实际消费扣费，用多少扣多少，不用担心浪费',
-
-    // 订单相关
-    myOrders: '充值记录',
-    orderNo: '订单号',
-    amount: '支付金额',
-    creditAmount: '到账金额',
-    status: '状态',
-    createdAt: '创建时间',
-    paidAt: '支付时间',
-    continuePay: '继续支付',
-    paying: '支付中...',
-    expired: '已过期',
-    statusLabels: {
-      pending: '待支付',
-      paid: '已支付',
-      expired: '已过期',
-      refunded: '已退款'
-    },
-    noOrders: '暂无充值记录',
-    noOrdersDesc: '您还没有充值过',
-    failedToLoad: '加载充值记录失败',
-    repayFailed: '获取支付链接失败'
-  },
-
-  // Payment QR Code Modal
-  payment: {
-    scanToPay: '扫码支付',
-    transferToPay: '转账支付',
-    qrCodeAlt: '支付二维码',
-    amountToPay: '支付金额',
-    businessQrInstruction: '请使用支付宝扫描上方二维码完成支付',
-    transferInstruction: '请使用支付宝向指定账户转账，转账时请务必填写以下备注信息',
-    transferMemo: '转账备注',
-    openAlipay: '打开支付宝',
-    waitingForPayment: '等待支付中...',
-    paymentSuccess: '支付成功',
-  },
-
-  // User Orders
-  userOrders: {
-    title: '我的订单',
-    description: '查看您的订单记录',
-    myOrders: '我的订单',
-    noOrders: '暂无订单',
-    noOrdersDesc: '您还没有购买过任何套餐',
-    purchasePlan: '购买套餐',
-    orderNo: '订单号',
-    planName: '套餐名称',
-    amount: '金额',
-    status: '状态',
-    createdAt: '创建时间',
-    failedToLoad: '加载订单列表失败',
-    statusLabels: {
-      pending: '待支付',
-      paid: '已支付',
-      expired: '已过期',
-      refunded: '已退款'
-    },
-    actions: '操作',
-    continuePay: '继续支付',
-    paying: '支付中...',
-    expired: '已过期',
-    repayFailed: '获取支付链接失败',
-    planOrders: '套餐订单',
-    rechargeOrders: '充值订单'
   },
 
   // Onboarding Tour
@@ -5773,23 +5381,7 @@ export default {
       other: '其他设置',
       docUrl: '文档 URL',
       contactInfo: '联系方式',
-      cryptoAddresses: '虚拟货币地址',
-      cryptoPlaceholder: '每行一个地址，格式：币种:地址',
-      telegram: {
-        title: 'Telegram 机器人',
-        botToken: 'Bot Token',
-        botTokenPlaceholder: `输入从 {'@'}BotFather 获取的 Token`,
-        botTokenHint: `从 Telegram {'@'}BotFather 获取`,
-        bindStatus: '绑定状态',
-        bound: '已绑定',
-        unbound: '未绑定',
-        generateBindCode: '生成绑定码',
-        bindInstructions: '请向 Bot 发送此命令来绑定：',
-        unbind: '解除绑定',
-        saveTokenFirst: '请先填写 Bot Token 并保存设置',
-        waitingForBind: '等待绑定中，请向 Bot 发送上方命令...',
-        bindSuccess: 'Telegram 绑定成功！'
-      }
+      cryptoPlaceholder: '每行一个地址，格式：币种:地址'
     }
   },
 

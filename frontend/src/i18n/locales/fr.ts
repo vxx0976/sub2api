@@ -4175,8 +4175,6 @@ export default {
         docUrl: 'URL de documentation',
         docUrlPlaceholder: 'https://docs.example.com',
         docUrlHint: 'Lien vers votre site de documentation. Laissez vide pour masquer le lien de documentation.',
-        queryDomain: 'Domaine de requete',
-        queryDomainHint: 'Une fois configure, ce domaine affichera la page de requete API Key',
         siteLogo: 'Logo du site',
         uploadImage: 'Télécharger une image',
         remove: 'Supprimer',
@@ -4190,11 +4188,6 @@ export default {
         homeContentIframeWarning: '⚠️ Note mode iframe : Certains sites web ont des politiques de sécurité X-Frame-Options ou CSP qui empêchent l\'intégration en iframe. Si la page apparaît vide ou affiche une erreur, veuillez vérifier que le site cible autorise l\'intégration, ou envisagez d\'utiliser le mode HTML pour construire votre propre contenu.',
         hideCcsImportButton: 'Masquer le bouton d\'import CCS',
         hideCcsImportButtonHint: 'Lorsqu\'activé, le bouton « Importer CCS » sera masqué sur la page des clés API',
-        cryptoAddresses: 'Adresses crypto',
-        cryptoAddressesHint: 'Configurez les adresses de réception de cryptomonnaie, affichées sur la page des forfaits',
-        addCryptoAddress: 'Ajouter une adresse',
-        chainName: 'Chaîne',
-        walletAddress: 'Adresse'
       },
       purchase: {
         title: 'Page d\'achat',
@@ -5159,23 +5152,7 @@ export default {
       other: 'Autres paramètres',
       docUrl: 'URL de documentation',
       contactInfo: 'Informations de contact',
-      cryptoAddresses: 'Adresses crypto',
-      cryptoPlaceholder: 'Une par ligne, format : MONNAIE:adresse',
-      telegram: {
-        title: 'Bot Telegram',
-        botToken: 'Jeton du bot',
-        botTokenPlaceholder: `Entrez le jeton obtenu de {'@'}BotFather`,
-        botTokenHint: `Obtenez-le depuis Telegram {'@'}BotFather`,
-        bindStatus: 'Statut de liaison',
-        bound: 'Lié',
-        unbound: 'Non lié',
-        generateBindCode: 'Générer un code de liaison',
-        bindInstructions: 'Envoyez cette commande à votre Bot pour le lier :',
-        unbind: 'Délier',
-        saveTokenFirst: 'Veuillez entrer le Bot Token et enregistrer les paramètres d\'abord',
-        waitingForBind: 'En attente de liaison, veuillez envoyer la commande à votre Bot...',
-        bindSuccess: 'Telegram lié avec succès !'
-      }
+      cryptoPlaceholder: 'Une par ligne, format : MONNAIE:adresse'
     }
   }
 }

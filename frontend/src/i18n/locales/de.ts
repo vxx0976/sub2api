@@ -4345,8 +4345,6 @@ export default {
         docUrl: 'Documentation URL',
         docUrlPlaceholder: 'https://docs.example.com',
         docUrlHint: 'Link zu Ihrer Dokumentationsseite. Leer lassen, um den Dokumentationslink auszublenden.',
-        queryDomain: 'Abfrage-Domain',
-        queryDomainHint: 'Nach der Konfiguration zeigt diese Domain die API Key Abfrageseite an',
         siteLogo: 'Site Logo',
         uploadImage: 'Upload Image',
         remove: 'Remove',
@@ -4360,11 +4358,6 @@ export default {
         homeContentIframeWarning: '⚠️ iframe mode note: Some websites have X-Frame-Options or CSP security policies that prevent embedding in iframes. If the page appears blank or shows an error, please verify the target website allows embedding, or consider using HTML mode to build your own content.',
         hideCcsImportButton: 'Hide CCS Import Button',
         hideCcsImportButtonHint: 'When enabled, the "Import CCS" button will be hidden on the API Keys page',
-        cryptoAddresses: 'Kryptowährungsadressen',
-        cryptoAddressesHint: 'Konfigurieren Sie Empfangsadressen für Kryptowährungen, die auf der Tarifseite angezeigt werden',
-        addCryptoAddress: 'Adresse hinzufügen',
-        chainName: 'Netzwerk',
-        walletAddress: 'Adresse'
       },
       purchase: {
         title: 'Purchase Page',
@@ -5357,23 +5350,7 @@ export default {
       other: 'Sonstige Einstellungen',
       docUrl: 'Dokumentations-URL',
       contactInfo: 'Kontaktinformationen',
-      cryptoAddresses: 'Krypto-Adressen',
-      cryptoPlaceholder: 'Eine pro Zeile, Format: COIN:Adresse',
-      telegram: {
-        title: 'Telegram Bot',
-        botToken: 'Bot-Token',
-        botTokenPlaceholder: `Token von {'@'}BotFather eingeben`,
-        botTokenHint: `Erhalten Sie es von Telegram {'@'}BotFather`,
-        bindStatus: 'Bindungsstatus',
-        bound: 'Gebunden',
-        unbound: 'Nicht gebunden',
-        generateBindCode: 'Bindungscode generieren',
-        bindInstructions: 'Senden Sie diesen Befehl an Ihren Bot zum Binden:',
-        unbind: 'Bindung aufheben',
-        saveTokenFirst: 'Bitte Bot Token eingeben und Einstellungen zuerst speichern',
-        waitingForBind: 'Warte auf Bindung, bitte senden Sie den Befehl an Ihren Bot...',
-        bindSuccess: 'Telegram erfolgreich gebunden!'
-      }
+      cryptoPlaceholder: 'Eine pro Zeile, Format: COIN:Adresse'
     }
   }
 }

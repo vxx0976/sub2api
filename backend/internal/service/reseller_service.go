@@ -23,23 +23,6 @@ var (
 	ErrGroupNotOwned      = infraerrors.Forbidden("GROUP_NOT_OWNED", "group does not belong to this reseller")
 )
 
-// Reseller Telegram setting keys
-const (
-	ResellerSettingTgBotToken = "tg_bot_token"
-	ResellerSettingTgChatID   = "tg_chat_id"  // reseller's own chat_id
-	ResellerSettingTgBindCode = "tg_bind_code" // temporary bind code
-)
-
-// Protected reseller setting keys that cannot be set directly via API
-var protectedResellerSettingKeys = map[string]bool{
-	ResellerSettingTgChatID:   true,
-	ResellerSettingTgBindCode: true,
-}
-
-// IsProtectedResellerSetting returns true if the setting key is protected.
-func IsProtectedResellerSetting(key string) bool {
-	return protectedResellerSettingKeys[key]
-}
 
 // ResellerSettingRepository defines the interface for reseller settings data access
 type ResellerSettingRepository interface {
@@ -262,7 +245,7 @@ func (s *ResellerService) GetDashboardStats(ctx context.Context, resellerID int6
 	}
 
 	// Count API keys owned by reseller
-	keys, _, err := s.apiKeyRepo.ListByUserID(ctx, resellerID, pagination.PaginationParams{Page: 1, PageSize: 10000})
+	keys, _, err := s.apiKeyRepo.ListByUserID(ctx, resellerID, pagination.PaginationParams{Page: 1, PageSize: 10000}, APIKeyListFilters{})
 	var keyCount, activeKeyCount int
 	var totalQuotaUsed float64
 	if err == nil {
@@ -620,7 +603,7 @@ func (s *ResellerService) DeleteGroup(ctx context.Context, resellerID, groupID i
 
 // ListKeys returns API keys owned by the reseller
 func (s *ResellerService) ListKeys(ctx context.Context, resellerID int64, page, pageSize int) ([]APIKey, *pagination.PaginationResult, error) {
-	return s.apiKeyRepo.ListByUserID(ctx, resellerID, pagination.PaginationParams{Page: page, PageSize: pageSize})
+	return s.apiKeyRepo.ListByUserID(ctx, resellerID, pagination.PaginationParams{Page: page, PageSize: pageSize}, APIKeyListFilters{})
 }
 
 // CreateKey creates a new API key for the reseller

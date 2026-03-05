@@ -19,8 +19,6 @@ import geminiAPI from './gemini'
 import antigravityAPI from './antigravity'
 import userAttributesAPI from './userAttributes'
 import opsAPI from './ops'
-import ordersAPI from './orders'
-import * as referralsAPI from './referrals'
 import channelsAPI from './channels'
 import errorPassthroughAPI from './errorPassthrough'
 import dataManagementAPI from './dataManagement'
@@ -46,8 +44,6 @@ export const adminAPI = {
   antigravity: antigravityAPI,
   userAttributes: userAttributesAPI,
   ops: opsAPI,
-  orders: ordersAPI,
-  referrals: referralsAPI,
   channels: channelsAPI,
   errorPassthrough: errorPassthroughAPI,
   dataManagement: dataManagementAPI,
@@ -71,8 +67,6 @@ export {
   antigravityAPI,
   userAttributesAPI,
   opsAPI,
-  ordersAPI,
-  referralsAPI,
   channelsAPI,
   errorPassthroughAPI,
   dataManagementAPI,

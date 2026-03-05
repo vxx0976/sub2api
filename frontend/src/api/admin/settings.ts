@@ -18,6 +18,7 @@ export interface SystemSettings {
   // Registration settings
   registration_enabled: boolean
   email_verify_enabled: boolean
+  registration_email_suffix_whitelist: string[]
   promo_code_enabled: boolean
   password_reset_enabled: boolean
   invitation_code_enabled: boolean
@@ -38,8 +39,6 @@ export interface SystemSettings {
   hide_ccs_import_button: boolean
   purchase_subscription_enabled: boolean
   purchase_subscription_url: string
-  crypto_addresses: string
-  query_domain: string
   default_locale: string
   contact_wechat: string
   contact_telegram: string
@@ -91,6 +90,7 @@ export interface SystemSettings {
 export interface UpdateSettingsRequest {
   registration_enabled?: boolean
   email_verify_enabled?: boolean
+  registration_email_suffix_whitelist?: string[]
   promo_code_enabled?: boolean
   password_reset_enabled?: boolean
   invitation_code_enabled?: boolean
@@ -108,8 +108,6 @@ export interface UpdateSettingsRequest {
   hide_ccs_import_button?: boolean
   purchase_subscription_enabled?: boolean
   purchase_subscription_url?: string
-  crypto_addresses?: string
-  query_domain?: string
   default_locale?: string
   contact_wechat?: string
   contact_telegram?: string

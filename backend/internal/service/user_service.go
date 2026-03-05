@@ -23,6 +23,10 @@ type UserListFilters struct {
 	Search     string           // Search in email, username
 	Attributes map[int64]string // Custom attribute filters: attributeID -> value
 	ParentID   *int64           // Filter by parent reseller ID
+	// IncludeSubscriptions controls whether ListWithFilters should load active subscriptions.
+	// For large datasets this can be expensive; admin list pages should enable it on demand.
+	// nil means not specified (default: load subscriptions for backward compatibility).
+	IncludeSubscriptions *bool
 }
 
 type UserRepository interface {

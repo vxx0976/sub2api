@@ -4154,8 +4154,6 @@ export default {
         contactTelegram: 'Telegram',
         docUrl: '문서 링크',
         docUrlHint: '문서 웹사이트 링크입니다. 비우면 문서 링크가 숨겨집니다.',
-        queryDomain: '조회 도메인',
-        queryDomainHint: '설정하면 해당 도메인에서 API Key 조회 페이지가 표시됩니다',
         docUrlPlaceholder: 'https://docs.example.com',
         siteLogo: '사이트 Logo',
         uploadImage: '이미지 업로드',
@@ -4170,10 +4168,6 @@ export default {
         homeContentIframeWarning: '⚠️ iframe 모드 안내: 일부 웹사이트는 X-Frame-Options 또는 CSP 보안 정책을 설정하여 iframe에 삽입되는 것을 금지합니다. 페이지가 빈 화면으로 표시되거나 오류가 발생하면 대상 웹사이트가 삽입을 허용하는지 확인하거나 HTML 모드로 페이지 콘텐츠를 직접 구성하는 것을 고려하세요.',
         hideCcsImportButton: 'CCS 가져오기 버튼 숨기기',
         hideCcsImportButtonHint: '활성화하면 API Keys 페이지에서 "CCS 가져오기" 버튼이 숨겨집니다',
-        cryptoAddresses: '암호화폐 주소',
-        cryptoAddressesHint: '암호화폐 수신 주소를 설정하며, 요금제 페이지에 표시됩니다',
-        addCryptoAddress: '주소 추가',
-        chainName: '체인',
         walletAddress: '주소'
       },
       smtp: {
@@ -5127,23 +5121,7 @@ export default {
       other: '기타 설정',
       docUrl: '문서 URL',
       contactInfo: '연락처',
-      cryptoAddresses: '암호화폐 주소',
-      cryptoPlaceholder: '한 줄에 하나씩, 형식: 코인:주소',
-      telegram: {
-        title: 'Telegram 봇',
-        botToken: '봇 토큰',
-        botTokenPlaceholder: `{'@'}BotFather에서 받은 토큰 입력`,
-        botTokenHint: `Telegram {'@'}BotFather에서 받으세요`,
-        bindStatus: '바인딩 상태',
-        bound: '바인딩됨',
-        unbound: '미바인딩',
-        generateBindCode: '바인딩 코드 생성',
-        bindInstructions: '이 명령을 봇에게 보내 바인딩하세요:',
-        unbind: '바인딩 해제',
-        saveTokenFirst: 'Bot Token을 입력하고 설정을 먼저 저장하세요',
-        waitingForBind: '바인딩 대기 중, Bot에 명령을 보내주세요...',
-        bindSuccess: 'Telegram 바인딩 성공!'
-      }
+      cryptoPlaceholder: '한 줄에 하나씩, 형식: 코인:주소'
     }
   }
 }
