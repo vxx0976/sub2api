@@ -65,7 +65,6 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	userGroupRateRepository := repository.NewUserGroupRateRepository(db)
 	apiKeyCache := repository.NewAPIKeyCache(redisClient)
 	apiKeyService := service.NewAPIKeyService(apiKeyRepository, userRepository, groupRepository, userSubscriptionRepository, userGroupRateRepository, apiKeyCache, configConfig)
-	apiKeyService.SetRateLimitCacheInvalidator(billingCache)
 	apiKeyAuthCacheInvalidator := service.ProvideAPIKeyAuthCacheInvalidator(apiKeyService)
 	promoService := service.NewPromoService(promoCodeRepository, userRepository, billingCacheService, client, apiKeyAuthCacheInvalidator)
 	referralRepository := repository.NewReferralRepository(client)
@@ -185,10 +184,6 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	opsSystemLogSink := service.ProvideOpsSystemLogSink(opsRepository)
 	opsService := service.NewOpsService(opsRepository, settingRepository, configConfig, accountRepository, userRepository, concurrencyService, gatewayService, openAIGatewayService, geminiMessagesCompatService, antigravityGatewayService, opsSystemLogSink)
 	soraS3Storage := service.NewSoraS3Storage(settingService)
-	settingService.SetOnS3UpdateCallback(soraS3Storage.RefreshClient)
-	soraGenerationRepository := repository.NewSoraGenerationRepository(db)
-	soraQuotaService := service.NewSoraQuotaService(userRepository, groupRepository, settingService)
-	soraGenerationService := service.NewSoraGenerationService(soraGenerationRepository, soraS3Storage, soraQuotaService)
 	settingHandler := admin.NewSettingHandler(settingService, emailService, turnstileService, opsService, soraS3Storage)
 	opsHandler := admin.NewOpsHandler(opsService)
 	updateCache := repository.NewUpdateCache(redisClient)
@@ -216,7 +211,11 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	errorPassthroughService := service.NewErrorPassthroughService(errorPassthroughRepository, errorPassthroughCache)
 	errorPassthroughHandler := admin.NewErrorPassthroughHandler(errorPassthroughService)
 	adminAPIKeyHandler := admin.NewAdminAPIKeyHandler(adminService)
-	adminHandlers := handler.ProvideAdminHandlers(dashboardHandler, adminUserHandler, groupHandler, accountHandler, adminAnnouncementHandler, dataManagementHandler, oAuthHandler, openAIOAuthHandler, geminiOAuthHandler, antigravityOAuthHandler, proxyHandler, adminRedeemHandler, promoHandler, settingHandler, opsHandler, systemHandler, adminSubscriptionHandler, orderHandler, adminUsageHandler, userAttributeHandler, referralHandler, channelHandler, errorPassthroughHandler, adminAPIKeyHandler)
+	scheduledTestPlanRepository := repository.NewScheduledTestPlanRepository(db)
+	scheduledTestResultRepository := repository.NewScheduledTestResultRepository(db)
+	scheduledTestService := service.ProvideScheduledTestService(scheduledTestPlanRepository, scheduledTestResultRepository)
+	scheduledTestHandler := admin.NewScheduledTestHandler(scheduledTestService)
+	adminHandlers := handler.ProvideAdminHandlers(dashboardHandler, adminUserHandler, groupHandler, accountHandler, adminAnnouncementHandler, dataManagementHandler, oAuthHandler, openAIOAuthHandler, geminiOAuthHandler, antigravityOAuthHandler, proxyHandler, adminRedeemHandler, promoHandler, settingHandler, opsHandler, systemHandler, adminSubscriptionHandler, orderHandler, adminUsageHandler, userAttributeHandler, referralHandler, channelHandler, errorPassthroughHandler, adminAPIKeyHandler, scheduledTestHandler)
 	resellerSettingRepository := repository.NewResellerSettingRepository(client)
 	resellerService := service.NewResellerService(userRepository, resellerDomainRepository, groupRepository, resellerSettingRepository, apiKeyRepository, apiKeyService, redeemCodeRepository, announcementRepository)
 	resellerDashboardHandler := reseller.NewDashboardHandler(resellerService)
@@ -234,10 +233,13 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	gatewayHandler := handler.NewGatewayHandler(gatewayService, geminiMessagesCompatService, antigravityGatewayService, userService, concurrencyService, billingCacheService, usageService, apiKeyService, usageRecordWorkerPool, errorPassthroughService, userMessageQueueService, configConfig, settingService)
 	openAIGatewayHandler := handler.NewOpenAIGatewayHandler(openAIGatewayService, concurrencyService, billingCacheService, apiKeyService, usageRecordWorkerPool, errorPassthroughService, configConfig)
 	soraSDKClient := service.ProvideSoraSDKClient(configConfig, httpUpstream, openAITokenProvider, accountRepository, soraAccountRepository)
-	soraMediaStorage := service.ProvideSoraMediaStorage(configConfig)
 	soraGatewayService := service.NewSoraGatewayService(soraSDKClient, rateLimitService, httpUpstream, configConfig)
-	soraClientHandler := handler.NewSoraClientHandler(soraGenerationService, soraQuotaService, soraS3Storage, soraGatewayService, gatewayService, soraMediaStorage, apiKeyService)
 	soraGatewayHandler := handler.NewSoraGatewayHandler(gatewayService, soraGatewayService, concurrencyService, billingCacheService, usageRecordWorkerPool, configConfig)
+	soraGenerationRepository := repository.NewSoraGenerationRepository(db)
+	soraQuotaService := service.NewSoraQuotaService(userRepository, groupRepository, settingService)
+	soraGenerationService := service.NewSoraGenerationService(soraGenerationRepository, soraS3Storage, soraQuotaService)
+	soraMediaStorage := service.ProvideSoraMediaStorage(configConfig)
+	soraClientHandler := handler.NewSoraClientHandler(soraGenerationService, soraQuotaService, soraS3Storage, soraGatewayService, gatewayService, soraMediaStorage, apiKeyService)
 	handlerSettingHandler := handler.ProvideSettingHandler(settingService, buildInfo)
 	handlerReferralHandler := handler.NewReferralHandler(referralService)
 	totpHandler := handler.NewTotpHandler(totpService)
@@ -262,7 +264,8 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	subscriptionExpiryService := service.ProvideSubscriptionExpiryService(userSubscriptionRepository)
 	paymentMonitorService := service.NewPaymentMonitorService(orderService, rechargeOrderService)
 	alipayMonitor := payment.ProvideAlipayMonitor(alipayPayment, paymentMonitorService, configConfig)
-	v := provideCleanup(client, redisClient, opsMetricsCollector, opsAggregationService, opsAlertEvaluatorService, opsCleanupService, opsScheduledReportService, opsSystemLogSink, soraMediaCleanupService, schedulerSnapshotService, tokenRefreshService, accountExpiryService, subscriptionExpiryService, usageCleanupService, idempotencyCleanupService, pricingService, emailQueueService, billingCacheService, usageRecordWorkerPool, subscriptionService, oAuthService, openAIOAuthService, geminiOAuthService, antigravityOAuthService, alipayMonitor, openAIGatewayService)
+	scheduledTestRunnerService := service.ProvideScheduledTestRunnerService(scheduledTestPlanRepository, scheduledTestService, accountTestService, configConfig)
+	v := provideCleanup(client, redisClient, opsMetricsCollector, opsAggregationService, opsAlertEvaluatorService, opsCleanupService, opsScheduledReportService, opsSystemLogSink, soraMediaCleanupService, schedulerSnapshotService, tokenRefreshService, accountExpiryService, subscriptionExpiryService, usageCleanupService, idempotencyCleanupService, pricingService, emailQueueService, billingCacheService, usageRecordWorkerPool, subscriptionService, oAuthService, openAIOAuthService, geminiOAuthService, antigravityOAuthService, alipayMonitor, openAIGatewayService, scheduledTestRunnerService)
 	application := &Application{
 		Server:  httpServer,
 		Cleanup: v,
@@ -311,6 +314,7 @@ func provideCleanup(
 	antigravityOAuth *service.AntigravityOAuthService,
 	alipayMonitor *payment.AlipayMonitor,
 	openAIGateway *service.OpenAIGatewayService,
+	scheduledTestRunner *service.ScheduledTestRunnerService,
 ) func() {
 	return func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -443,6 +447,12 @@ func provideCleanup(
 			{"OpenAIWSPool", func() error {
 				if openAIGateway != nil {
 					openAIGateway.CloseOpenAIWSPool()
+				}
+				return nil
+			}},
+			{"ScheduledTestRunnerService", func() error {
+				if scheduledTestRunner != nil {
+					scheduledTestRunner.Stop()
 				}
 				return nil
 			}},

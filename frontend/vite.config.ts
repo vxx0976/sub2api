@@ -125,6 +125,10 @@ export default defineConfig(({ mode, command }) => {
           target: backendUrl,
           changeOrigin: true
         },
+        '/v1': {
+          target: backendUrl,
+          changeOrigin: true
+        },
         '/setup': {
           target: backendUrl,
           changeOrigin: true

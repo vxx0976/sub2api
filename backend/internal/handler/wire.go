@@ -34,6 +34,7 @@ func ProvideAdminHandlers(
 	channelHandler *admin.ChannelHandler,
 	errorPassthroughHandler *admin.ErrorPassthroughHandler,
 	apiKeyHandler *admin.AdminAPIKeyHandler,
+	scheduledTestHandler *admin.ScheduledTestHandler,
 ) *AdminHandlers {
 	return &AdminHandlers{
 		Dashboard:        dashboardHandler,
@@ -60,6 +61,7 @@ func ProvideAdminHandlers(
 		Channel:          channelHandler,
 		ErrorPassthrough: errorPassthroughHandler,
 		APIKey:           apiKeyHandler,
+		ScheduledTest:    scheduledTestHandler,
 	}
 }
 
@@ -158,6 +160,7 @@ var ProviderSet = wire.NewSet(
 	NewGatewayHandler,
 	NewOpenAIGatewayHandler,
 	NewSoraGatewayHandler,
+	NewSoraClientHandler,
 	NewTotpHandler,
 	ProvideSettingHandler,
 	NewReferralHandler,
@@ -188,6 +191,7 @@ var ProviderSet = wire.NewSet(
 	admin.NewChannelHandler,
 	admin.NewErrorPassthroughHandler,
 	admin.NewAdminAPIKeyHandler,
+	admin.NewScheduledTestHandler,
 
 	// Reseller handlers
 	reseller.NewDashboardHandler,

@@ -23,6 +23,7 @@ import channelsAPI from './channels'
 import errorPassthroughAPI from './errorPassthrough'
 import dataManagementAPI from './dataManagement'
 import apiKeysAPI from './apiKeys'
+import scheduledTestsAPI from './scheduledTests'
 
 /**
  * Unified admin API object for convenient access
@@ -47,7 +48,8 @@ export const adminAPI = {
   channels: channelsAPI,
   errorPassthrough: errorPassthroughAPI,
   dataManagement: dataManagementAPI,
-  apiKeys: apiKeysAPI
+  apiKeys: apiKeysAPI,
+  scheduledTests: scheduledTestsAPI
 }
 
 export {
@@ -70,7 +72,8 @@ export {
   channelsAPI,
   errorPassthroughAPI,
   dataManagementAPI,
-  apiKeysAPI
+  apiKeysAPI,
+  scheduledTestsAPI
 }
 
 export default adminAPI

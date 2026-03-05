@@ -91,6 +91,7 @@ func provideCleanup(
 	antigravityOAuth *service.AntigravityOAuthService,
 	alipayMonitor *payment.AlipayMonitor,
 	openAIGateway *service.OpenAIGatewayService,
+	scheduledTestRunner *service.ScheduledTestRunnerService,
 ) func() {
 	return func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -224,6 +225,12 @@ func provideCleanup(
 			{"OpenAIWSPool", func() error {
 				if openAIGateway != nil {
 					openAIGateway.CloseOpenAIWSPool()
+				}
+				return nil
+			}},
+			{"ScheduledTestRunnerService", func() error {
+				if scheduledTestRunner != nil {
+					scheduledTestRunner.Stop()
 				}
 				return nil
 			}},

@@ -31,6 +31,7 @@ type AdminHandlers struct {
 	Channel          *admin.ChannelHandler
 	ErrorPassthrough *admin.ErrorPassthroughHandler
 	APIKey           *admin.AdminAPIKeyHandler
+	ScheduledTest    *admin.ScheduledTestHandler
 }
 
 // ResellerHandlers contains all reseller-related HTTP handlers
