@@ -31,6 +31,13 @@ const (
 
 	// 窗口费用缓存 TTL（30秒）
 	windowCostCacheTTL = 30 * time.Second
+
+	// 每日费用缓存键前缀
+	// 格式: daily_cost:account:{accountID}
+	dailyCostKeyPrefix = "daily_cost:account:"
+
+	// 每日费用缓存 TTL（30秒）
+	dailyCostCacheTTL = 30 * time.Second
 )
 
 var (
@@ -330,6 +337,66 @@ func (c *sessionLimitCache) GetWindowCostBatch(ctx context.Context, accountIDs [
 			continue // 缓存未命中
 		}
 		// 尝试解析为 float64
+		switch v := val.(type) {
+		case string:
+			if cost, err := strconv.ParseFloat(v, 64); err == nil {
+				results[accountIDs[i]] = cost
+			}
+		case float64:
+			results[accountIDs[i]] = v
+		}
+	}
+
+	return results, nil
+}
+
+// ========== 每日费用缓存实现 ==========
+
+// dailyCostKey 生成每日费用缓存的 Redis 键
+func dailyCostKey(accountID int64) string {
+	return fmt.Sprintf("%s%d", dailyCostKeyPrefix, accountID)
+}
+
+// GetDailyCost 获取缓存的每日费用
+func (c *sessionLimitCache) GetDailyCost(ctx context.Context, accountID int64) (float64, bool, error) {
+	key := dailyCostKey(accountID)
+	val, err := c.rdb.Get(ctx, key).Float64()
+	if err == redis.Nil {
+		return 0, false, nil // 缓存未命中
+	}
+	if err != nil {
+		return 0, false, err
+	}
+	return val, true, nil
+}
+
+// SetDailyCost 设置每日费用缓存
+func (c *sessionLimitCache) SetDailyCost(ctx context.Context, accountID int64, cost float64) error {
+	key := dailyCostKey(accountID)
+	return c.rdb.Set(ctx, key, cost, dailyCostCacheTTL).Err()
+}
+
+// GetDailyCostBatch 批量获取每日费用缓存
+func (c *sessionLimitCache) GetDailyCostBatch(ctx context.Context, accountIDs []int64) (map[int64]float64, error) {
+	if len(accountIDs) == 0 {
+		return make(map[int64]float64), nil
+	}
+
+	keys := make([]string, len(accountIDs))
+	for i, accountID := range accountIDs {
+		keys[i] = dailyCostKey(accountID)
+	}
+
+	vals, err := c.rdb.MGet(ctx, keys...).Result()
+	if err != nil {
+		return nil, err
+	}
+
+	results := make(map[int64]float64, len(accountIDs))
+	for i, val := range vals {
+		if val == nil {
+			continue
+		}
 		switch v := val.(type) {
 		case string:
 			if cost, err := strconv.ParseFloat(v, 64); err == nil {

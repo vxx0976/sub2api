@@ -23,6 +23,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/claude"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/timezone"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/geoip"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/usagestats"
@@ -75,6 +76,12 @@ var (
 	windowCostPrefetchBatchSQLTotal  atomic.Int64
 	windowCostPrefetchFallbackTotal  atomic.Int64
 	windowCostPrefetchErrorTotal     atomic.Int64
+
+	dailyCostPrefetchCacheHitTotal  atomic.Int64
+	dailyCostPrefetchCacheMissTotal atomic.Int64
+	dailyCostPrefetchBatchSQLTotal  atomic.Int64
+	dailyCostPrefetchFallbackTotal  atomic.Int64
+	dailyCostPrefetchErrorTotal     atomic.Int64
 
 	userGroupRateCacheHitTotal      atomic.Int64
 	userGroupRateCacheMissTotal     atomic.Int64
@@ -1158,6 +1165,7 @@ func (s *GatewayService) SelectAccountWithLoadAwareness(ctx context.Context, gro
 		return nil, errors.New("no available accounts")
 	}
 	ctx = s.withWindowCostPrefetch(ctx, accounts)
+	ctx = s.withDailyCostPrefetch(ctx, accounts)
 	ctx = s.withRPMPrefetch(ctx, accounts)
 
 	isExcluded := func(accountID int64) bool {
@@ -1234,6 +1242,10 @@ func (s *GatewayService) SelectAccountWithLoadAwareness(ctx context.Context, gro
 				filteredWindowCost++
 				continue
 			}
+			// 每日费用检查
+			if !s.isAccountSchedulableForDailyCost(ctx, account) {
+				continue
+			}
 			// RPM 检查（非粘性会话路径）
 			if !s.isAccountSchedulableForRPM(ctx, account, false) {
 				continue
@@ -1262,8 +1274,8 @@ func (s *GatewayService) SelectAccountWithLoadAwareness(ctx context.Context, gro
 							(requestedModel == "" || s.isModelSupportedByAccountWithContext(ctx, stickyAccount, requestedModel)) &&
 							s.isAccountSchedulableForModelSelection(ctx, stickyAccount, requestedModel) &&
 							s.isAccountSchedulableForWindowCost(ctx, stickyAccount, true) &&
-
-							s.isAccountSchedulableForRPM(ctx, stickyAccount, true) { // 粘性会话窗口费用+RPM 检查
+							s.isAccountSchedulableForDailyCost(ctx, stickyAccount) &&
+							s.isAccountSchedulableForRPM(ctx, stickyAccount, true) { // 粘性会话窗口费用+每日费用+RPM 检查
 							result, err := s.tryAcquireAccountSlot(ctx, stickyAccountID, stickyAccount.Concurrency)
 							if err == nil && result.Acquired {
 								// 会话数量限制检查
@@ -1418,8 +1430,8 @@ func (s *GatewayService) SelectAccountWithLoadAwareness(ctx context.Context, gro
 					(requestedModel == "" || s.isModelSupportedByAccountWithContext(ctx, account, requestedModel)) &&
 					s.isAccountSchedulableForModelSelection(ctx, account, requestedModel) &&
 					s.isAccountSchedulableForWindowCost(ctx, account, true) &&
-
-					s.isAccountSchedulableForRPM(ctx, account, true) { // 粘性会话窗口费用+RPM 检查
+					s.isAccountSchedulableForDailyCost(ctx, account) &&
+					s.isAccountSchedulableForRPM(ctx, account, true) { // 粘性会话窗口费用+每日费用+RPM 检查
 					result, err := s.tryAcquireAccountSlot(ctx, accountID, account.Concurrency)
 					if err == nil && result.Acquired {
 						// 会话数量限制检查
@@ -1483,6 +1495,9 @@ func (s *GatewayService) SelectAccountWithLoadAwareness(ctx context.Context, gro
 		}
 		// 窗口费用检查（非粘性会话路径）
 		if !s.isAccountSchedulableForWindowCost(ctx, acc, false) {
+			continue
+		}
+		if !s.isAccountSchedulableForDailyCost(ctx, acc) {
 			continue
 		}
 		// RPM 检查（非粘性会话路径）
@@ -2175,6 +2190,149 @@ checkSchedulability:
 	return true
 }
 
+// ========== 每日费用预取与调度检查 ==========
+
+type dailyCostPrefetchContextKeyType struct{}
+
+var dailyCostPrefetchContextKey = dailyCostPrefetchContextKeyType{}
+
+func dailyCostFromPrefetchContext(ctx context.Context, accountID int64) (float64, bool) {
+	if ctx == nil || accountID <= 0 {
+		return 0, false
+	}
+	m, ok := ctx.Value(dailyCostPrefetchContextKey).(map[int64]float64)
+	if !ok || len(m) == 0 {
+		return 0, false
+	}
+	v, exists := m[accountID]
+	return v, exists
+}
+
+func (s *GatewayService) withDailyCostPrefetch(ctx context.Context, accounts []Account) context.Context {
+	if ctx == nil || len(accounts) == 0 || s.sessionLimitCache == nil || s.usageLogRepo == nil {
+		return ctx
+	}
+
+	accountIDs := make([]int64, 0, len(accounts))
+	for i := range accounts {
+		account := &accounts[i]
+		if account == nil || !account.IsAnthropic() {
+			continue
+		}
+		if account.GetDailyCostLimit() <= 0 {
+			continue
+		}
+		accountIDs = append(accountIDs, account.ID)
+	}
+	if len(accountIDs) == 0 {
+		return ctx
+	}
+
+	costs := make(map[int64]float64, len(accountIDs))
+	cacheValues, err := s.sessionLimitCache.GetDailyCostBatch(ctx, accountIDs)
+	if err == nil {
+		for accountID, cost := range cacheValues {
+			costs[accountID] = cost
+		}
+		dailyCostPrefetchCacheHitTotal.Add(int64(len(cacheValues)))
+	} else {
+		dailyCostPrefetchErrorTotal.Add(1)
+		logger.LegacyPrintf("service.gateway", "daily_cost batch cache read failed: %v", err)
+	}
+	cacheMissCount := len(accountIDs) - len(costs)
+	if cacheMissCount < 0 {
+		cacheMissCount = 0
+	}
+	dailyCostPrefetchCacheMissTotal.Add(int64(cacheMissCount))
+
+	// 收集缓存未命中的账号，统一使用 timezone.Today() 作为 startTime
+	var missingIDs []int64
+	for _, accountID := range accountIDs {
+		if _, ok := costs[accountID]; !ok {
+			missingIDs = append(missingIDs, accountID)
+		}
+	}
+	if len(missingIDs) == 0 {
+		return context.WithValue(ctx, dailyCostPrefetchContextKey, costs)
+	}
+
+	startTime := timezone.Today()
+	batchReader, hasBatch := s.usageLogRepo.(usageLogWindowStatsBatchProvider)
+	if hasBatch {
+		dailyCostPrefetchBatchSQLTotal.Add(1)
+		statsByAccount, err := batchReader.GetAccountWindowStatsBatch(ctx, missingIDs, startTime)
+		if err == nil {
+			for _, accountID := range missingIDs {
+				stats := statsByAccount[accountID]
+				cost := 0.0
+				if stats != nil {
+					cost = stats.StandardCost
+				}
+				costs[accountID] = cost
+				_ = s.sessionLimitCache.SetDailyCost(ctx, accountID, cost)
+			}
+			return context.WithValue(ctx, dailyCostPrefetchContextKey, costs)
+		}
+		dailyCostPrefetchErrorTotal.Add(1)
+		logger.LegacyPrintf("service.gateway", "daily_cost batch db query failed: %v", err)
+	}
+
+	// 回退路径：逐个查询
+	dailyCostPrefetchFallbackTotal.Add(int64(len(missingIDs)))
+	for _, accountID := range missingIDs {
+		stats, err := s.usageLogRepo.GetAccountWindowStats(ctx, accountID, startTime)
+		if err != nil {
+			dailyCostPrefetchErrorTotal.Add(1)
+			continue
+		}
+		cost := stats.StandardCost
+		costs[accountID] = cost
+		_ = s.sessionLimitCache.SetDailyCost(ctx, accountID, cost)
+	}
+
+	return context.WithValue(ctx, dailyCostPrefetchContextKey, costs)
+}
+
+// isAccountSchedulableForDailyCost 检查账号是否可根据每日费用进行调度
+// 适用于所有 Anthropic 账号，二元检查（无粘性中间态）
+func (s *GatewayService) isAccountSchedulableForDailyCost(ctx context.Context, account *Account) bool {
+	if !account.IsAnthropic() {
+		return true
+	}
+
+	limit := account.GetDailyCostLimit()
+	if limit <= 0 {
+		return true
+	}
+
+	var currentCost float64
+	if cost, ok := dailyCostFromPrefetchContext(ctx, account.ID); ok {
+		currentCost = cost
+		goto check
+	}
+	if s.sessionLimitCache != nil {
+		if cost, hit, err := s.sessionLimitCache.GetDailyCost(ctx, account.ID); err == nil && hit {
+			currentCost = cost
+			goto check
+		}
+	}
+
+	{
+		startTime := timezone.Today()
+		stats, err := s.usageLogRepo.GetAccountWindowStats(ctx, account.ID, startTime)
+		if err != nil {
+			return true // 失败开放
+		}
+		currentCost = stats.StandardCost
+		if s.sessionLimitCache != nil {
+			_ = s.sessionLimitCache.SetDailyCost(ctx, account.ID, currentCost)
+		}
+	}
+
+check:
+	return account.CheckDailyCostSchedulability(currentCost)
+}
+
 // rpmPrefetchContextKey is the context key for prefetched RPM counts.
 type rpmPrefetchContextKeyType struct{}
 
@@ -2591,7 +2749,7 @@ func (s *GatewayService) selectAccountForModelWithPlatform(ctx context.Context, 
 						if clearSticky {
 							_ = s.cache.DeleteSessionAccountID(ctx, derefGroupID(groupID), sessionHash)
 						}
-						if !clearSticky && s.isAccountInGroup(account, groupID) && account.Platform == platform && (requestedModel == "" || s.isModelSupportedByAccountWithContext(ctx, account, requestedModel)) && s.isAccountSchedulableForModelSelection(ctx, account, requestedModel) && s.isAccountSchedulableForWindowCost(ctx, account, true) && s.isAccountSchedulableForRPM(ctx, account, true) {
+						if !clearSticky && s.isAccountInGroup(account, groupID) && account.Platform == platform && (requestedModel == "" || s.isModelSupportedByAccountWithContext(ctx, account, requestedModel)) && s.isAccountSchedulableForModelSelection(ctx, account, requestedModel) && s.isAccountSchedulableForWindowCost(ctx, account, true) && s.isAccountSchedulableForDailyCost(ctx, account) && s.isAccountSchedulableForRPM(ctx, account, true) {
 							if s.debugModelRoutingEnabled() {
 								logger.LegacyPrintf("service.gateway", "[ModelRoutingDebug] legacy routed sticky hit: group_id=%v model=%s session=%s account=%d", derefGroupID(groupID), requestedModel, shortSessionHash(sessionHash), accountID)
 							}
@@ -2701,7 +2859,7 @@ func (s *GatewayService) selectAccountForModelWithPlatform(ctx context.Context, 
 					if clearSticky {
 						_ = s.cache.DeleteSessionAccountID(ctx, derefGroupID(groupID), sessionHash)
 					}
-					if !clearSticky && s.isAccountInGroup(account, groupID) && account.Platform == platform && (requestedModel == "" || s.isModelSupportedByAccountWithContext(ctx, account, requestedModel)) && s.isAccountSchedulableForModelSelection(ctx, account, requestedModel) && s.isAccountSchedulableForWindowCost(ctx, account, true) && s.isAccountSchedulableForRPM(ctx, account, true) {
+					if !clearSticky && s.isAccountInGroup(account, groupID) && account.Platform == platform && (requestedModel == "" || s.isModelSupportedByAccountWithContext(ctx, account, requestedModel)) && s.isAccountSchedulableForModelSelection(ctx, account, requestedModel) && s.isAccountSchedulableForWindowCost(ctx, account, true) && s.isAccountSchedulableForDailyCost(ctx, account) && s.isAccountSchedulableForRPM(ctx, account, true) {
 						return account, nil
 					}
 				}
@@ -2724,6 +2882,7 @@ func (s *GatewayService) selectAccountForModelWithPlatform(ctx context.Context, 
 
 	// 批量预取窗口费用+RPM 计数，避免逐个账号查询（N+1）
 	ctx = s.withWindowCostPrefetch(ctx, accounts)
+	ctx = s.withDailyCostPrefetch(ctx, accounts)
 	ctx = s.withRPMPrefetch(ctx, accounts)
 
 	// 3. 按优先级+最久未用选择（考虑模型支持）
@@ -2745,6 +2904,9 @@ func (s *GatewayService) selectAccountForModelWithPlatform(ctx context.Context, 
 			continue
 		}
 		if !s.isAccountSchedulableForWindowCost(ctx, acc, false) {
+			continue
+		}
+		if !s.isAccountSchedulableForDailyCost(ctx, acc) {
 			continue
 		}
 		if !s.isAccountSchedulableForRPM(ctx, acc, false) {
@@ -2819,7 +2981,7 @@ func (s *GatewayService) selectAccountWithMixedScheduling(ctx context.Context, g
 						if clearSticky {
 							_ = s.cache.DeleteSessionAccountID(ctx, derefGroupID(groupID), sessionHash)
 						}
-						if !clearSticky && s.isAccountInGroup(account, groupID) && (requestedModel == "" || s.isModelSupportedByAccountWithContext(ctx, account, requestedModel)) && s.isAccountSchedulableForModelSelection(ctx, account, requestedModel) && s.isAccountSchedulableForWindowCost(ctx, account, true) && s.isAccountSchedulableForRPM(ctx, account, true) {
+						if !clearSticky && s.isAccountInGroup(account, groupID) && (requestedModel == "" || s.isModelSupportedByAccountWithContext(ctx, account, requestedModel)) && s.isAccountSchedulableForModelSelection(ctx, account, requestedModel) && s.isAccountSchedulableForWindowCost(ctx, account, true) && s.isAccountSchedulableForDailyCost(ctx, account) && s.isAccountSchedulableForRPM(ctx, account, true) {
 							if account.Platform == nativePlatform || (account.Platform == PlatformAntigravity && account.IsMixedSchedulingEnabled()) {
 								if s.debugModelRoutingEnabled() {
 									logger.LegacyPrintf("service.gateway", "[ModelRoutingDebug] legacy mixed routed sticky hit: group_id=%v model=%s session=%s account=%d", derefGroupID(groupID), requestedModel, shortSessionHash(sessionHash), accountID)
@@ -2931,7 +3093,7 @@ func (s *GatewayService) selectAccountWithMixedScheduling(ctx context.Context, g
 					if clearSticky {
 						_ = s.cache.DeleteSessionAccountID(ctx, derefGroupID(groupID), sessionHash)
 					}
-					if !clearSticky && s.isAccountInGroup(account, groupID) && (requestedModel == "" || s.isModelSupportedByAccountWithContext(ctx, account, requestedModel)) && s.isAccountSchedulableForModelSelection(ctx, account, requestedModel) && s.isAccountSchedulableForWindowCost(ctx, account, true) && s.isAccountSchedulableForRPM(ctx, account, true) {
+					if !clearSticky && s.isAccountInGroup(account, groupID) && (requestedModel == "" || s.isModelSupportedByAccountWithContext(ctx, account, requestedModel)) && s.isAccountSchedulableForModelSelection(ctx, account, requestedModel) && s.isAccountSchedulableForWindowCost(ctx, account, true) && s.isAccountSchedulableForDailyCost(ctx, account) && s.isAccountSchedulableForRPM(ctx, account, true) {
 						if account.Platform == nativePlatform || (account.Platform == PlatformAntigravity && account.IsMixedSchedulingEnabled()) {
 							return account, nil
 						}
@@ -2952,6 +3114,7 @@ func (s *GatewayService) selectAccountWithMixedScheduling(ctx context.Context, g
 
 	// 批量预取窗口费用+RPM 计数，避免逐个账号查询（N+1）
 	ctx = s.withWindowCostPrefetch(ctx, accounts)
+	ctx = s.withDailyCostPrefetch(ctx, accounts)
 	ctx = s.withRPMPrefetch(ctx, accounts)
 
 	// 3. 按优先级+最久未用选择（考虑模型支持和混合调度）
@@ -2977,6 +3140,9 @@ func (s *GatewayService) selectAccountWithMixedScheduling(ctx context.Context, g
 			continue
 		}
 		if !s.isAccountSchedulableForWindowCost(ctx, acc, false) {
+			continue
+		}
+		if !s.isAccountSchedulableForDailyCost(ctx, acc) {
 			continue
 		}
 		if !s.isAccountSchedulableForRPM(ctx, acc, false) {

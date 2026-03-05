@@ -1129,6 +1129,29 @@ func (a *Account) GetWindowCostLimit() float64 {
 	return 0
 }
 
+// GetDailyCostLimit 获取每日费用限额（美元）
+// 适用于所有 Anthropic 账号类型
+// 返回 0 表示未启用
+func (a *Account) GetDailyCostLimit() float64 {
+	if a.Extra == nil {
+		return 0
+	}
+	if v, ok := a.Extra["daily_cost_limit"]; ok {
+		return parseExtraFloat64(v)
+	}
+	return 0
+}
+
+// CheckDailyCostSchedulability 根据当前每日费用检查是否可调度
+// 二元检查：费用 < 限额可调度，否则不可调度
+func (a *Account) CheckDailyCostSchedulability(currentDailyCost float64) bool {
+	limit := a.GetDailyCostLimit()
+	if limit <= 0 {
+		return true
+	}
+	return currentDailyCost < limit
+}
+
 // GetWindowCostStickyReserve 获取粘性会话预留额度（美元）
 // 默认值为 10
 func (a *Account) GetWindowCostStickyReserve() float64 {

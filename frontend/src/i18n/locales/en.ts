@@ -1922,6 +1922,10 @@ export default {
       },
       // Capacity status tooltips
       capacity: {
+        dailyCost: {
+          blocked: 'Daily cost limit reached, account scheduling paused until midnight',
+          normal: 'Daily cost normal'
+        },
         windowCost: {
           blocked: '5h window cost exceeded, account scheduling paused',
           stickyOnly: '5h window cost at threshold, only sticky sessions allowed',
@@ -2197,6 +2201,13 @@ export default {
       quotaControl: {
         title: 'Quota Control',
         hint: 'Only applies to Anthropic OAuth/Setup Token accounts',
+        dailyCost: {
+          label: 'Daily Cost Limit',
+          hint: 'Limit account daily cost usage (resets at midnight server time)',
+          limit: 'Daily Limit',
+          limitPlaceholder: '100',
+          limitHint: 'Account will not be scheduled after reaching daily limit'
+        },
         windowCost: {
           label: '5h Window Cost Limit',
           hint: 'Limit account cost usage within the 5-hour window',

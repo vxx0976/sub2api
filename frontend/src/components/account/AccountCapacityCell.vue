@@ -17,6 +17,25 @@
       </span>
     </div>
 
+    <!-- 每日费用限额（所有 Anthropic 账号且启用时显示） -->
+    <div v-if="showDailyCost" class="flex items-center gap-1">
+      <span
+        :class="[
+          'inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium',
+          dailyCostClass
+        ]"
+        :title="dailyCostTooltip"
+      >
+        <svg class="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+        </svg>
+        <span class="font-mono">${{ formatCost(currentDailyCost) }}</span>
+        <span class="text-gray-400 dark:text-gray-500">/</span>
+        <span class="font-mono">${{ formatCost(account.daily_cost_limit) }}</span>
+        <span class="text-[9px] opacity-60">/d</span>
+      </span>
+    </div>
+
     <!-- 5h窗口费用限制（仅 Anthropic OAuth/SetupToken 且启用时显示） -->
     <div v-if="showWindowCost" class="flex items-center gap-1">
       <span
@@ -88,12 +107,57 @@ const { t } = useI18n()
 // 当前并发数
 const currentConcurrency = computed(() => props.account.current_concurrency || 0)
 
+// 是否为 Anthropic 账号
+const isAnthropic = computed(() => props.account.platform === 'anthropic')
+
 // 是否为 Anthropic OAuth/SetupToken 账号
 const isAnthropicOAuthOrSetupToken = computed(() => {
   return (
-    props.account.platform === 'anthropic' &&
+    isAnthropic.value &&
     (props.account.type === 'oauth' || props.account.type === 'setup-token')
   )
+})
+
+// 是否显示每日费用限额
+const showDailyCost = computed(() => {
+  return (
+    isAnthropic.value &&
+    props.account.daily_cost_limit !== undefined &&
+    props.account.daily_cost_limit !== null &&
+    props.account.daily_cost_limit > 0
+  )
+})
+
+// 当前每日费用
+const currentDailyCost = computed(() => props.account.current_daily_cost ?? 0)
+
+// 每日费用状态样式
+const dailyCostClass = computed(() => {
+  if (!showDailyCost.value) return ''
+
+  const current = currentDailyCost.value
+  const limit = props.account.daily_cost_limit || 0
+
+  if (current >= limit) {
+    return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+  }
+  if (current >= limit * 0.8) {
+    return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+  }
+  return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+})
+
+// 每日费用提示文字
+const dailyCostTooltip = computed(() => {
+  if (!showDailyCost.value) return ''
+
+  const current = currentDailyCost.value
+  const limit = props.account.daily_cost_limit || 0
+
+  if (current >= limit) {
+    return t('admin.accounts.capacity.dailyCost.blocked')
+  }
+  return t('admin.accounts.capacity.dailyCost.normal')
 })
 
 // 是否显示窗口费用限制

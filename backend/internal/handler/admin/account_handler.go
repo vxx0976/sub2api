@@ -158,6 +158,7 @@ type AccountWithConcurrency struct {
 	CurrentWindowCost *float64 `json:"current_window_cost,omitempty"` // 当前窗口费用
 	ActiveSessions    *int     `json:"active_sessions,omitempty"`     // 当前活跃会话数
 	CurrentRPM        *int     `json:"current_rpm,omitempty"`         // 当前分钟 RPM 计数
+	CurrentDailyCost  *float64 `json:"current_daily_cost,omitempty"`  // 当前每日费用
 }
 
 func (h *AccountHandler) buildAccountResponseWithRuntime(ctx context.Context, account *service.Account) AccountWithConcurrency {
@@ -172,6 +173,15 @@ func (h *AccountHandler) buildAccountResponseWithRuntime(ctx context.Context, ac
 	if h.concurrencyService != nil {
 		if counts, err := h.concurrencyService.GetAccountConcurrencyBatch(ctx, []int64{account.ID}); err == nil {
 			item.CurrentConcurrency = counts[account.ID]
+		}
+	}
+
+	// 每日费用查询（所有 Anthropic 账号）
+	if account.IsAnthropic() && h.accountUsageService != nil && account.GetDailyCostLimit() > 0 {
+		todayStart := timezone.Today()
+		if stats, err := h.accountUsageService.GetAccountWindowStats(ctx, account.ID, todayStart); err == nil && stats != nil {
+			cost := stats.StandardCost
+			item.CurrentDailyCost = &cost
 		}
 	}
 
@@ -238,6 +248,7 @@ func (h *AccountHandler) List(c *gin.Context) {
 
 	concurrencyCounts := make(map[int64]int)
 	var windowCosts map[int64]float64
+	var dailyCosts map[int64]float64
 	var activeSessions map[int64]int
 	var rpmCounts map[int64]int
 
@@ -248,6 +259,8 @@ func (h *AccountHandler) List(c *gin.Context) {
 		}
 	}
 
+	// 识别需要查询每日费用的账号（所有 Anthropic 且启用了每日限额）
+	dailyCostAccountIDs := make([]int64, 0)
 	// 识别需要查询窗口费用、会话数和 RPM 的账号（Anthropic OAuth/SetupToken 且启用了相应功能）
 	windowCostAccountIDs := make([]int64, 0)
 	sessionLimitAccountIDs := make([]int64, 0)
@@ -255,6 +268,9 @@ func (h *AccountHandler) List(c *gin.Context) {
 	sessionIdleTimeouts := make(map[int64]time.Duration) // 各账号的会话空闲超时配置
 	for i := range accounts {
 		acc := &accounts[i]
+		if acc.IsAnthropic() && acc.GetDailyCostLimit() > 0 {
+			dailyCostAccountIDs = append(dailyCostAccountIDs, acc.ID)
+		}
 		if acc.IsAnthropicOAuthOrSetupToken() {
 			if acc.GetWindowCostLimit() > 0 {
 				windowCostAccountIDs = append(windowCostAccountIDs, acc.ID)
@@ -283,6 +299,29 @@ func (h *AccountHandler) List(c *gin.Context) {
 		if activeSessions == nil {
 			activeSessions = make(map[int64]int)
 		}
+	}
+
+	// 仅非 lite 模式获取每日费用（PostgreSQL 聚合查询，高开销）
+	if !lite && len(dailyCostAccountIDs) > 0 {
+		dailyCosts = make(map[int64]float64)
+		var mu sync.Mutex
+		g, gctx := errgroup.WithContext(c.Request.Context())
+		g.SetLimit(10)
+
+		todayStart := timezone.Today()
+		for _, accID := range dailyCostAccountIDs {
+			accID := accID
+			g.Go(func() error {
+				stats, err := h.accountUsageService.GetAccountWindowStats(gctx, accID, todayStart)
+				if err == nil && stats != nil {
+					mu.Lock()
+					dailyCosts[accID] = stats.StandardCost
+					mu.Unlock()
+				}
+				return nil
+			})
+		}
+		_ = g.Wait()
 	}
 
 	// 仅非 lite 模式获取窗口费用（PostgreSQL 聚合查询，高开销）
@@ -320,6 +359,13 @@ func (h *AccountHandler) List(c *gin.Context) {
 		item := AccountWithConcurrency{
 			Account:            dto.AccountFromService(acc),
 			CurrentConcurrency: concurrencyCounts[acc.ID],
+		}
+
+		// 添加每日费用（仅当启用时）
+		if dailyCosts != nil {
+			if cost, ok := dailyCosts[acc.ID]; ok {
+				item.CurrentDailyCost = &cost
+			}
 		}
 
 		// 添加窗口费用（仅当启用时）

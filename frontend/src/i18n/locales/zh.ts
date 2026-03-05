@@ -1887,6 +1887,10 @@ export default {
       },
       // 容量状态提示
       capacity: {
+        dailyCost: {
+          blocked: '每日费用超限，账号暂停调度至次日午夜',
+          normal: '每日费用正常'
+        },
         windowCost: {
           blocked: '5h窗口费用超限，账号暂停调度',
           stickyOnly: '5h窗口费用达阈值，仅允许粘性会话',
@@ -2218,6 +2222,13 @@ export default {
       quotaControl: {
         title: '配额控制',
         hint: '仅适用于 Anthropic OAuth/Setup Token 账号',
+        dailyCost: {
+          label: '每日费用限额',
+          hint: '限制账号每日费用使用（服务器时区午夜重置）',
+          limit: '每日限额',
+          limitPlaceholder: '100',
+          limitHint: '达到每日限额后不参与调度'
+        },
         windowCost: {
           label: '5h窗口费用控制',
           hint: '限制账号在5小时窗口内的费用使用',

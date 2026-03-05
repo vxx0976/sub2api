@@ -215,6 +215,13 @@ func AccountFromServiceShallow(a *service.Account) *Account {
 		GroupIDs:                a.GroupIDs,
 	}
 
+	// 每日费用限额（所有 Anthropic 账号有效）
+	if a.IsAnthropic() {
+		if limit := a.GetDailyCostLimit(); limit > 0 {
+			out.DailyCostLimit = &limit
+		}
+	}
+
 	// 提取 5h 窗口费用控制和会话数量控制配置（仅 Anthropic OAuth/SetupToken 账号有效）
 	if a.IsAnthropicOAuthOrSetupToken() {
 		if limit := a.GetWindowCostLimit(); limit > 0 {

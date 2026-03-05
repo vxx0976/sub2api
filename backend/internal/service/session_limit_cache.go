@@ -61,4 +61,17 @@ type SessionLimitCache interface {
 	// GetWindowCostBatch 批量获取窗口费用缓存
 	// 返回 map[accountID]cost，缓存未命中的账号不在 map 中
 	GetWindowCostBatch(ctx context.Context, accountIDs []int64) (map[int64]float64, error)
+
+	// ========== 每日费用缓存 ==========
+	// Key 格式: daily_cost:account:{accountID}
+	// 用于缓存账号当日的标准费用，减少数据库聚合查询压力
+
+	// GetDailyCost 获取缓存的每日费用
+	GetDailyCost(ctx context.Context, accountID int64) (cost float64, hit bool, err error)
+
+	// SetDailyCost 设置每日费用缓存
+	SetDailyCost(ctx context.Context, accountID int64, cost float64) error
+
+	// GetDailyCostBatch 批量获取每日费用缓存
+	GetDailyCostBatch(ctx context.Context, accountIDs []int64) (map[int64]float64, error)
 }

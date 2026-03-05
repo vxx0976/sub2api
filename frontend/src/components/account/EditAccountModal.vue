@@ -817,6 +817,56 @@
         </div>
       </div>
 
+      <!-- Daily Cost Limit Section (all Anthropic accounts) -->
+      <div
+        v-if="account?.platform === 'anthropic'"
+        class="border-t border-gray-200 pt-4 dark:border-dark-600 space-y-4"
+      >
+        <div class="rounded-lg border border-gray-200 p-4 dark:border-dark-600">
+          <div class="mb-3 flex items-center justify-between">
+            <div>
+              <label class="input-label mb-0">{{ t('admin.accounts.quotaControl.dailyCost.label') }}</label>
+              <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                {{ t('admin.accounts.quotaControl.dailyCost.hint') }}
+              </p>
+            </div>
+            <button
+              type="button"
+              @click="dailyCostEnabled = !dailyCostEnabled"
+              :class="[
+                'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
+                dailyCostEnabled ? 'bg-primary-600' : 'bg-gray-200 dark:bg-dark-600'
+              ]"
+            >
+              <span
+                :class="[
+                  'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+                  dailyCostEnabled ? 'translate-x-5' : 'translate-x-0'
+                ]"
+              />
+            </button>
+          </div>
+
+          <div v-if="dailyCostEnabled" class="grid grid-cols-1 gap-4">
+            <div>
+              <label class="input-label">{{ t('admin.accounts.quotaControl.dailyCost.limit') }}</label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">$</span>
+                <input
+                  v-model.number="dailyCostLimit"
+                  type="number"
+                  min="0"
+                  step="1"
+                  class="input pl-7"
+                  :placeholder="t('admin.accounts.quotaControl.dailyCost.limitPlaceholder')"
+                />
+              </div>
+              <p class="input-hint">{{ t('admin.accounts.quotaControl.dailyCost.limitHint') }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Quota Control Section (Anthropic OAuth/SetupToken only) -->
       <div
         v-if="account?.platform === 'anthropic' && (account?.type === 'oauth' || account?.type === 'setup-token')"
@@ -1358,6 +1408,10 @@ const mixedChannelWarningRawMessage = ref('')
 const mixedChannelWarningAction = ref<(() => Promise<void>) | null>(null)
 const antigravityMixedChannelConfirmed = ref(false)
 
+// Daily cost limit state (all Anthropic accounts)
+const dailyCostEnabled = ref(false)
+const dailyCostLimit = ref<number | null>(null)
+
 // Quota control state (Anthropic OAuth/SetupToken only)
 const windowCostEnabled = ref(false)
 const windowCostLimit = ref<number | null>(null)
@@ -1847,6 +1901,16 @@ function loadQuotaControlSettings(account: Account) {
   sessionIdMaskingEnabled.value = false
   cacheTTLOverrideEnabled.value = false
   cacheTTLOverrideTarget.value = '5m'
+  dailyCostEnabled.value = false
+  dailyCostLimit.value = null
+
+  // Daily cost limit applies to all Anthropic accounts
+  if (account.platform === 'anthropic') {
+    if (account.daily_cost_limit != null && account.daily_cost_limit > 0) {
+      dailyCostEnabled.value = true
+      dailyCostLimit.value = account.daily_cost_limit
+    }
+  }
 
   // Only applies to Anthropic OAuth/SetupToken accounts
   if (account.platform !== 'anthropic' || (account.type !== 'oauth' && account.type !== 'setup-token')) {
@@ -2164,9 +2228,23 @@ const handleSubmit = async () => {
       updatePayload.extra = newExtra
     }
 
+    // For all Anthropic accounts, handle daily cost limit in extra
+    if (props.account.platform === 'anthropic') {
+      const currentExtra = (updatePayload.extra as Record<string, unknown>) || (props.account.extra as Record<string, unknown>) || {}
+      const newExtra: Record<string, unknown> = { ...currentExtra }
+
+      if (dailyCostEnabled.value && dailyCostLimit.value != null && dailyCostLimit.value > 0) {
+        newExtra.daily_cost_limit = dailyCostLimit.value
+      } else {
+        delete newExtra.daily_cost_limit
+      }
+
+      updatePayload.extra = newExtra
+    }
+
     // For Anthropic OAuth/SetupToken accounts, handle quota control settings in extra
     if (props.account.platform === 'anthropic' && (props.account.type === 'oauth' || props.account.type === 'setup-token')) {
-      const currentExtra = (props.account.extra as Record<string, unknown>) || {}
+      const currentExtra = (updatePayload.extra as Record<string, unknown>) || (props.account.extra as Record<string, unknown>) || {}
       const newExtra: Record<string, unknown> = { ...currentExtra }
 
       // Window cost limit settings
