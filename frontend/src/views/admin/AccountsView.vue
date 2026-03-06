@@ -369,8 +369,10 @@ const exportingData = ref(false)
 const showColumnDropdown = ref(false)
 const columnDropdownRef = ref<HTMLElement | null>(null)
 const hiddenColumns = reactive<Set<string>>(new Set())
-const DEFAULT_HIDDEN_COLUMNS = ['today_stats', 'proxy', 'notes', 'priority', 'rate_multiplier']
+const DEFAULT_HIDDEN_COLUMNS = ['proxy', 'notes', 'priority', 'rate_multiplier']
 const HIDDEN_COLUMNS_KEY = 'account-hidden-columns'
+const HIDDEN_COLUMNS_VERSION_KEY = 'account-hidden-columns-v'
+const HIDDEN_COLUMNS_CURRENT_VERSION = 2
 
 // Sorting settings
 const ACCOUNT_SORT_STORAGE_KEY = 'account-table-sort'
@@ -456,8 +458,16 @@ const loadSavedColumns = () => {
     if (saved) {
       const parsed = JSON.parse(saved) as string[]
       parsed.forEach(key => hiddenColumns.add(key))
+      // 版本迁移：自动移除旧版默认隐藏的列
+      const savedVer = Number(localStorage.getItem(HIDDEN_COLUMNS_VERSION_KEY) || '0')
+      if (savedVer < HIDDEN_COLUMNS_CURRENT_VERSION) {
+        hiddenColumns.delete('today_stats')
+        saveColumnsToStorage()
+        localStorage.setItem(HIDDEN_COLUMNS_VERSION_KEY, String(HIDDEN_COLUMNS_CURRENT_VERSION))
+      }
     } else {
       DEFAULT_HIDDEN_COLUMNS.forEach(key => hiddenColumns.add(key))
+      localStorage.setItem(HIDDEN_COLUMNS_VERSION_KEY, String(HIDDEN_COLUMNS_CURRENT_VERSION))
     }
   } catch (e) {
     console.error('Failed to load saved columns:', e)
