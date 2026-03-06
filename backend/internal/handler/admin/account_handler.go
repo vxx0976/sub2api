@@ -159,6 +159,7 @@ type AccountWithConcurrency struct {
 	ActiveSessions    *int     `json:"active_sessions,omitempty"`     // 当前活跃会话数
 	CurrentRPM        *int     `json:"current_rpm,omitempty"`         // 当前分钟 RPM 计数
 	CurrentDailyCost  *float64 `json:"current_daily_cost,omitempty"`  // 当前每日费用
+	CurrentWeeklyCost *float64 `json:"current_weekly_cost,omitempty"` // 当前每周费用
 }
 
 func (h *AccountHandler) buildAccountResponseWithRuntime(ctx context.Context, account *service.Account) AccountWithConcurrency {
@@ -182,6 +183,15 @@ func (h *AccountHandler) buildAccountResponseWithRuntime(ctx context.Context, ac
 		if stats, err := h.accountUsageService.GetAccountWindowStats(ctx, account.ID, todayStart); err == nil && stats != nil {
 			cost := stats.StandardCost
 			item.CurrentDailyCost = &cost
+		}
+	}
+
+	// 每周费用查询（所有 Anthropic 账号）
+	if account.IsAnthropic() && h.accountUsageService != nil && account.GetWeeklyCostLimit() > 0 {
+		weekStart := timezone.StartOfWeek(timezone.Now())
+		if stats, err := h.accountUsageService.GetAccountWindowStats(ctx, account.ID, weekStart); err == nil && stats != nil {
+			cost := stats.StandardCost
+			item.CurrentWeeklyCost = &cost
 		}
 	}
 
@@ -249,6 +259,7 @@ func (h *AccountHandler) List(c *gin.Context) {
 	concurrencyCounts := make(map[int64]int)
 	var windowCosts map[int64]float64
 	var dailyCosts map[int64]float64
+	var weeklyCosts map[int64]float64
 	var activeSessions map[int64]int
 	var rpmCounts map[int64]int
 
@@ -259,8 +270,9 @@ func (h *AccountHandler) List(c *gin.Context) {
 		}
 	}
 
-	// 识别需要查询每日费用的账号（所有 Anthropic 且启用了每日限额）
+	// 识别需要查询每日/周费用的账号（所有 Anthropic 且启用了相应限额）
 	dailyCostAccountIDs := make([]int64, 0)
+	weeklyCostAccountIDs := make([]int64, 0)
 	// 识别需要查询窗口费用、会话数和 RPM 的账号（Anthropic OAuth/SetupToken 且启用了相应功能）
 	windowCostAccountIDs := make([]int64, 0)
 	sessionLimitAccountIDs := make([]int64, 0)
@@ -270,6 +282,9 @@ func (h *AccountHandler) List(c *gin.Context) {
 		acc := &accounts[i]
 		if acc.IsAnthropic() && acc.GetDailyCostLimit() > 0 {
 			dailyCostAccountIDs = append(dailyCostAccountIDs, acc.ID)
+		}
+		if acc.IsAnthropic() && acc.GetWeeklyCostLimit() > 0 {
+			weeklyCostAccountIDs = append(weeklyCostAccountIDs, acc.ID)
 		}
 		if acc.IsAnthropicOAuthOrSetupToken() {
 			if acc.GetWindowCostLimit() > 0 {
@@ -324,6 +339,29 @@ func (h *AccountHandler) List(c *gin.Context) {
 		_ = g.Wait()
 	}
 
+	// 仅非 lite 模式获取每周费用（PostgreSQL 聚合查询，高开销）
+	if !lite && len(weeklyCostAccountIDs) > 0 {
+		weeklyCosts = make(map[int64]float64)
+		var mu sync.Mutex
+		g, gctx := errgroup.WithContext(c.Request.Context())
+		g.SetLimit(10)
+
+		weekStart := timezone.StartOfWeek(timezone.Now())
+		for _, accID := range weeklyCostAccountIDs {
+			accID := accID
+			g.Go(func() error {
+				stats, err := h.accountUsageService.GetAccountWindowStats(gctx, accID, weekStart)
+				if err == nil && stats != nil {
+					mu.Lock()
+					weeklyCosts[accID] = stats.StandardCost
+					mu.Unlock()
+				}
+				return nil
+			})
+		}
+		_ = g.Wait()
+	}
+
 	// 仅非 lite 模式获取窗口费用（PostgreSQL 聚合查询，高开销）
 	if !lite && len(windowCostAccountIDs) > 0 {
 		windowCosts = make(map[int64]float64)
@@ -365,6 +403,13 @@ func (h *AccountHandler) List(c *gin.Context) {
 		if dailyCosts != nil {
 			if cost, ok := dailyCosts[acc.ID]; ok {
 				item.CurrentDailyCost = &cost
+			}
+		}
+
+		// 添加每周费用（仅当启用时）
+		if weeklyCosts != nil {
+			if cost, ok := weeklyCosts[acc.ID]; ok {
+				item.CurrentWeeklyCost = &cost
 			}
 		}
 

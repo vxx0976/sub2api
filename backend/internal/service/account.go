@@ -12,6 +12,7 @@ import (
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/Wei-Shaw/sub2api/internal/domain"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/timezone"
 )
 
 type Account struct {
@@ -1150,6 +1151,61 @@ func (a *Account) CheckDailyCostSchedulability(currentDailyCost float64) bool {
 		return true
 	}
 	return currentDailyCost < limit
+}
+
+// GetWeeklyCostLimit 获取每周费用限额（美元）
+// 适用于所有 Anthropic 账号类型
+// 返回 0 表示未启用
+func (a *Account) GetWeeklyCostLimit() float64 {
+	if a.Extra == nil {
+		return 0
+	}
+	if v, ok := a.Extra["weekly_cost_limit"]; ok {
+		return parseExtraFloat64(v)
+	}
+	return 0
+}
+
+// CheckWeeklyCostSchedulability 根据当前每周费用检查是否可调度
+// 二元检查：费用 < 限额可调度，否则不可调度
+func (a *Account) CheckWeeklyCostSchedulability(currentWeeklyCost float64) bool {
+	limit := a.GetWeeklyCostLimit()
+	if limit <= 0 {
+		return true
+	}
+	return currentWeeklyCost < limit
+}
+
+// ComputeWeeklyUrgency 计算周费用紧迫度
+// 紧迫度 = timeRatio × remainingRatio
+// timeRatio: 本周已过时间比例 (0.0=周一凌晨, 1.0=周日深夜)
+// remainingRatio: 剩余额度比例 (1.0=未使用, 0.0=已用完)
+// 返回 0 表示无周限额
+func (a *Account) ComputeWeeklyUrgency(currentWeeklyCost float64) float64 {
+	limit := a.GetWeeklyCostLimit()
+	if limit <= 0 {
+		return 0
+	}
+	// 计算时间比例：本周已过多少小时 / 168
+	now := timezone.Now()
+	weekStart := timezone.StartOfWeek(now)
+	hoursSinceMonday := now.Sub(weekStart).Hours()
+	timeRatio := hoursSinceMonday / 168.0
+	if timeRatio > 1.0 {
+		timeRatio = 1.0
+	}
+	if timeRatio < 0 {
+		timeRatio = 0
+	}
+	// 计算剩余额度比例
+	remainingRatio := (limit - currentWeeklyCost) / limit
+	if remainingRatio < 0 {
+		remainingRatio = 0
+	}
+	if remainingRatio > 1.0 {
+		remainingRatio = 1.0
+	}
+	return timeRatio * remainingRatio
 }
 
 // GetWindowCostStickyReserve 获取粘性会话预留额度（美元）

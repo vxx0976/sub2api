@@ -175,6 +175,9 @@
           <template #cell-capacity="{ row }">
             <AccountCapacityCell :account="row" />
           </template>
+          <template #cell-cost_limits="{ row }">
+            <AccountCostLimitsCell :account="row" />
+          </template>
           <template #cell-status="{ row }">
             <AccountStatusIndicator :account="row" @show-temp-unsched="handleShowTempUnsched" />
           </template>
@@ -306,6 +309,7 @@ import AccountUsageCell from '@/components/account/AccountUsageCell.vue'
 import AccountTodayStatsCell from '@/components/account/AccountTodayStatsCell.vue'
 import AccountGroupsCell from '@/components/account/AccountGroupsCell.vue'
 import AccountCapacityCell from '@/components/account/AccountCapacityCell.vue'
+import AccountCostLimitsCell from '@/components/account/AccountCostLimitsCell.vue'
 import PlatformTypeBadge from '@/components/common/PlatformTypeBadge.vue'
 import Icon from '@/components/icons/Icon.vue'
 import ErrorPassthroughRulesModal from '@/components/admin/ErrorPassthroughRulesModal.vue'
@@ -565,6 +569,7 @@ const load = async () => {
   hasPendingListSync.value = false
   resetAutoRefreshCache()
   pendingTodayStatsRefresh.value = false
+  const wasFirstLoad = isFirstLoad.value
   if (isFirstLoad.value) {
     ;(params as any).lite = '1'
   }
@@ -574,6 +579,10 @@ const load = async () => {
     delete (params as any).lite
   }
   await refreshTodayStatsBatch()
+  // 首次 lite 加载后立即触发一次非 lite 刷新，补全费用数据
+  if (wasFirstLoad) {
+    refreshAccountsIncrementally()
+  }
 }
 
 const reload = async () => {
@@ -646,6 +655,7 @@ const shouldReplaceAutoRefreshRow = (current: Account, next: Account) => {
     current.updated_at !== next.updated_at ||
     current.current_concurrency !== next.current_concurrency ||
     current.current_daily_cost !== next.current_daily_cost ||
+    current.current_weekly_cost !== next.current_weekly_cost ||
     current.current_window_cost !== next.current_window_cost ||
     current.active_sessions !== next.active_sessions ||
     current.schedulable !== next.schedulable ||
@@ -772,6 +782,7 @@ const allColumns = computed(() => {
     { key: 'name', label: t('admin.accounts.columns.name'), sortable: true },
     { key: 'platform_type', label: t('admin.accounts.columns.platformType'), sortable: false },
     { key: 'capacity', label: t('admin.accounts.columns.capacity'), sortable: false },
+    { key: 'cost_limits', label: t('admin.accounts.columns.costLimits'), sortable: false },
     { key: 'status', label: t('admin.accounts.columns.status'), sortable: true },
     { key: 'schedulable', label: t('admin.accounts.columns.schedulable'), sortable: true },
     { key: 'today_stats', label: t('admin.accounts.columns.todayStats'), sortable: false }
@@ -996,6 +1007,7 @@ const mergeRuntimeFields = (oldAccount: Account, updatedAccount: Account): Accou
   ...updatedAccount,
   current_concurrency: updatedAccount.current_concurrency ?? oldAccount.current_concurrency,
   current_daily_cost: updatedAccount.current_daily_cost ?? oldAccount.current_daily_cost,
+  current_weekly_cost: updatedAccount.current_weekly_cost ?? oldAccount.current_weekly_cost,
   current_window_cost: updatedAccount.current_window_cost ?? oldAccount.current_window_cost,
   active_sessions: updatedAccount.active_sessions ?? oldAccount.active_sessions
 })

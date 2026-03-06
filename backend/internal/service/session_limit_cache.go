@@ -74,4 +74,17 @@ type SessionLimitCache interface {
 
 	// GetDailyCostBatch 批量获取每日费用缓存
 	GetDailyCostBatch(ctx context.Context, accountIDs []int64) (map[int64]float64, error)
+
+	// ========== 每周费用缓存 ==========
+	// Key 格式: weekly_cost:account:{accountID}
+	// 用于缓存账号本周的标准费用，减少数据库聚合查询压力
+
+	// GetWeeklyCost 获取缓存的每周费用
+	GetWeeklyCost(ctx context.Context, accountID int64) (cost float64, hit bool, err error)
+
+	// SetWeeklyCost 设置每周费用缓存
+	SetWeeklyCost(ctx context.Context, accountID int64, cost float64) error
+
+	// GetWeeklyCostBatch 批量获取每周费用缓存
+	GetWeeklyCostBatch(ctx context.Context, accountIDs []int64) (map[int64]float64, error)
 }

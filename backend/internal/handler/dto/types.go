@@ -176,6 +176,9 @@ type Account struct {
 	// 每日费用限额（所有 Anthropic 账号有效）
 	DailyCostLimit *float64 `json:"daily_cost_limit,omitempty"`
 
+	// 每周费用限额（所有 Anthropic 账号有效）
+	WeeklyCostLimit *float64 `json:"weekly_cost_limit,omitempty"`
+
 	// 会话数量控制（仅 Anthropic OAuth/SetupToken 账号有效）
 	// 从 extra 字段提取，方便前端显示和编辑
 	MaxSessions           *int `json:"max_sessions,omitempty"`

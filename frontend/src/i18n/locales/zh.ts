@@ -1871,6 +1871,7 @@ export default {
         platform: '平台',
         type: '类型',
         capacity: '容量',
+        costLimits: '费用限额',
         notes: '备注',
         priority: '优先级',
         billingRateMultiplier: '账号倍率',
@@ -1890,6 +1891,10 @@ export default {
         dailyCost: {
           blocked: '每日费用超限，账号暂停调度至次日午夜',
           normal: '每日费用正常'
+        },
+        weeklyCost: {
+          blocked: '每周费用超限，账号暂停调度至下周一',
+          normal: '每周费用正常'
         },
         windowCost: {
           blocked: '5h窗口费用超限，账号暂停调度',
@@ -2228,6 +2233,13 @@ export default {
           limit: '每日限额',
           limitPlaceholder: '100',
           limitHint: '达到每日限额后不参与调度'
+        },
+        weeklyCost: {
+          label: '每周费用限额',
+          hint: '限制账号每周费用使用（服务器时区周一 00:00 重置）。紧迫度高的账号优先调度，避免预算浪费。',
+          limit: '每周限额',
+          limitPlaceholder: '500',
+          limitHint: '达到每周限额后不参与调度'
         },
         windowCost: {
           label: '5h窗口费用控制',

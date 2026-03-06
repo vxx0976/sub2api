@@ -1906,6 +1906,7 @@ export default {
         platform: 'Platform',
         type: 'Type',
         capacity: 'Capacity',
+        costLimits: 'Cost Limits',
         notes: 'Notes',
         priority: 'Priority',
         billingRateMultiplier: 'Billing Rate',
@@ -1925,6 +1926,10 @@ export default {
         dailyCost: {
           blocked: 'Daily cost limit reached, account scheduling paused until midnight',
           normal: 'Daily cost normal'
+        },
+        weeklyCost: {
+          blocked: 'Weekly cost limit reached, account scheduling paused until next Monday',
+          normal: 'Weekly cost normal'
         },
         windowCost: {
           blocked: '5h window cost exceeded, account scheduling paused',
@@ -2207,6 +2212,13 @@ export default {
           limit: 'Daily Limit',
           limitPlaceholder: '100',
           limitHint: 'Account will not be scheduled after reaching daily limit'
+        },
+        weeklyCost: {
+          label: 'Weekly Cost Limit',
+          hint: 'Limit account weekly cost usage (resets Monday 00:00 server time). Higher urgency accounts are prioritized to avoid budget waste.',
+          limit: 'Weekly Limit',
+          limitPlaceholder: '500',
+          limitHint: 'Account will not be scheduled after reaching weekly limit'
         },
         windowCost: {
           label: '5h Window Cost Limit',

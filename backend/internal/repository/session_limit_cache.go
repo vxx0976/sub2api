@@ -38,6 +38,13 @@ const (
 
 	// 每日费用缓存 TTL（30秒）
 	dailyCostCacheTTL = 30 * time.Second
+
+	// 每周费用缓存键前缀
+	// 格式: weekly_cost:account:{accountID}
+	weeklyCostKeyPrefix = "weekly_cost:account:"
+
+	// 每周费用缓存 TTL（30秒）
+	weeklyCostCacheTTL = 30 * time.Second
 )
 
 var (
@@ -385,6 +392,66 @@ func (c *sessionLimitCache) GetDailyCostBatch(ctx context.Context, accountIDs []
 	keys := make([]string, len(accountIDs))
 	for i, accountID := range accountIDs {
 		keys[i] = dailyCostKey(accountID)
+	}
+
+	vals, err := c.rdb.MGet(ctx, keys...).Result()
+	if err != nil {
+		return nil, err
+	}
+
+	results := make(map[int64]float64, len(accountIDs))
+	for i, val := range vals {
+		if val == nil {
+			continue
+		}
+		switch v := val.(type) {
+		case string:
+			if cost, err := strconv.ParseFloat(v, 64); err == nil {
+				results[accountIDs[i]] = cost
+			}
+		case float64:
+			results[accountIDs[i]] = v
+		}
+	}
+
+	return results, nil
+}
+
+// ========== 每周费用缓存实现 ==========
+
+// weeklyCostKey 生成每周费用缓存的 Redis 键
+func weeklyCostKey(accountID int64) string {
+	return fmt.Sprintf("%s%d", weeklyCostKeyPrefix, accountID)
+}
+
+// GetWeeklyCost 获取缓存的每周费用
+func (c *sessionLimitCache) GetWeeklyCost(ctx context.Context, accountID int64) (float64, bool, error) {
+	key := weeklyCostKey(accountID)
+	val, err := c.rdb.Get(ctx, key).Float64()
+	if err == redis.Nil {
+		return 0, false, nil // 缓存未命中
+	}
+	if err != nil {
+		return 0, false, err
+	}
+	return val, true, nil
+}
+
+// SetWeeklyCost 设置每周费用缓存
+func (c *sessionLimitCache) SetWeeklyCost(ctx context.Context, accountID int64, cost float64) error {
+	key := weeklyCostKey(accountID)
+	return c.rdb.Set(ctx, key, cost, weeklyCostCacheTTL).Err()
+}
+
+// GetWeeklyCostBatch 批量获取每周费用缓存
+func (c *sessionLimitCache) GetWeeklyCostBatch(ctx context.Context, accountIDs []int64) (map[int64]float64, error) {
+	if len(accountIDs) == 0 {
+		return make(map[int64]float64), nil
+	}
+
+	keys := make([]string, len(accountIDs))
+	for i, accountID := range accountIDs {
+		keys[i] = weeklyCostKey(accountID)
 	}
 
 	vals, err := c.rdb.MGet(ctx, keys...).Result()

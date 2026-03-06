@@ -64,8 +64,9 @@ type forceCacheBillingKeyType struct{}
 
 // accountWithLoad 账号与负载信息的组合，用于负载感知调度
 type accountWithLoad struct {
-	account  *Account
-	loadInfo *AccountLoadInfo
+	account       *Account
+	loadInfo      *AccountLoadInfo
+	weeklyUrgency float64 // 周费用紧迫度（高=快到期且余额多，应优先使用）
 }
 
 var ForceCacheBillingContextKey = forceCacheBillingKeyType{}
@@ -82,6 +83,12 @@ var (
 	dailyCostPrefetchBatchSQLTotal  atomic.Int64
 	dailyCostPrefetchFallbackTotal  atomic.Int64
 	dailyCostPrefetchErrorTotal     atomic.Int64
+
+	weeklyCostPrefetchCacheHitTotal  atomic.Int64
+	weeklyCostPrefetchCacheMissTotal atomic.Int64
+	weeklyCostPrefetchBatchSQLTotal  atomic.Int64
+	weeklyCostPrefetchFallbackTotal  atomic.Int64
+	weeklyCostPrefetchErrorTotal     atomic.Int64
 
 	userGroupRateCacheHitTotal      atomic.Int64
 	userGroupRateCacheMissTotal     atomic.Int64
@@ -1166,6 +1173,7 @@ func (s *GatewayService) SelectAccountWithLoadAwareness(ctx context.Context, gro
 	}
 	ctx = s.withWindowCostPrefetch(ctx, accounts)
 	ctx = s.withDailyCostPrefetch(ctx, accounts)
+	ctx = s.withWeeklyCostPrefetch(ctx, accounts)
 	ctx = s.withRPMPrefetch(ctx, accounts)
 
 	isExcluded := func(accountID int64) bool {
@@ -1246,6 +1254,10 @@ func (s *GatewayService) SelectAccountWithLoadAwareness(ctx context.Context, gro
 			if !s.isAccountSchedulableForDailyCost(ctx, account) {
 				continue
 			}
+			// 每周费用检查
+			if !s.isAccountSchedulableForWeeklyCost(ctx, account) {
+				continue
+			}
 			// RPM 检查（非粘性会话路径）
 			if !s.isAccountSchedulableForRPM(ctx, account, false) {
 				continue
@@ -1275,7 +1287,8 @@ func (s *GatewayService) SelectAccountWithLoadAwareness(ctx context.Context, gro
 							s.isAccountSchedulableForModelSelection(ctx, stickyAccount, requestedModel) &&
 							s.isAccountSchedulableForWindowCost(ctx, stickyAccount, true) &&
 							s.isAccountSchedulableForDailyCost(ctx, stickyAccount) &&
-							s.isAccountSchedulableForRPM(ctx, stickyAccount, true) { // 粘性会话窗口费用+每日费用+RPM 检查
+							s.isAccountSchedulableForWeeklyCost(ctx, stickyAccount) &&
+							s.isAccountSchedulableForRPM(ctx, stickyAccount, true) { // 粘性会话窗口费用+每日/周费用+RPM 检查
 							result, err := s.tryAcquireAccountSlot(ctx, stickyAccountID, stickyAccount.Concurrency)
 							if err == nil && result.Acquired {
 								// 会话数量限制检查
@@ -1337,12 +1350,12 @@ func (s *GatewayService) SelectAccountWithLoadAwareness(ctx context.Context, gro
 					loadInfo = &AccountLoadInfo{AccountID: acc.ID}
 				}
 				if loadInfo.LoadRate < 100 {
-					routingAvailable = append(routingAvailable, accountWithLoad{account: acc, loadInfo: loadInfo})
+					routingAvailable = append(routingAvailable, accountWithLoad{account: acc, loadInfo: loadInfo, weeklyUrgency: s.getWeeklyUrgency(ctx, acc)})
 				}
 			}
 
 			if len(routingAvailable) > 0 {
-				// 排序：优先级 > 负载率 > 最后使用时间
+				// 排序：优先级(asc) > 负载率(asc) > 周紧迫度(desc) > 最后使用时间(asc)
 				sort.SliceStable(routingAvailable, func(i, j int) bool {
 					a, b := routingAvailable[i], routingAvailable[j]
 					if a.account.Priority != b.account.Priority {
@@ -1350,6 +1363,9 @@ func (s *GatewayService) SelectAccountWithLoadAwareness(ctx context.Context, gro
 					}
 					if a.loadInfo.LoadRate != b.loadInfo.LoadRate {
 						return a.loadInfo.LoadRate < b.loadInfo.LoadRate
+					}
+					if a.weeklyUrgency != b.weeklyUrgency {
+						return a.weeklyUrgency > b.weeklyUrgency // 紧迫度高优先
 					}
 					switch {
 					case a.account.LastUsedAt == nil && b.account.LastUsedAt != nil:
@@ -1431,7 +1447,8 @@ func (s *GatewayService) SelectAccountWithLoadAwareness(ctx context.Context, gro
 					s.isAccountSchedulableForModelSelection(ctx, account, requestedModel) &&
 					s.isAccountSchedulableForWindowCost(ctx, account, true) &&
 					s.isAccountSchedulableForDailyCost(ctx, account) &&
-					s.isAccountSchedulableForRPM(ctx, account, true) { // 粘性会话窗口费用+每日费用+RPM 检查
+					s.isAccountSchedulableForWeeklyCost(ctx, account) &&
+					s.isAccountSchedulableForRPM(ctx, account, true) { // 粘性会话窗口费用+每日/周费用+RPM 检查
 					result, err := s.tryAcquireAccountSlot(ctx, accountID, account.Concurrency)
 					if err == nil && result.Acquired {
 						// 会话数量限制检查
@@ -1500,6 +1517,9 @@ func (s *GatewayService) SelectAccountWithLoadAwareness(ctx context.Context, gro
 		if !s.isAccountSchedulableForDailyCost(ctx, acc) {
 			continue
 		}
+		if !s.isAccountSchedulableForWeeklyCost(ctx, acc) {
+			continue
+		}
 		// RPM 检查（非粘性会话路径）
 		if !s.isAccountSchedulableForRPM(ctx, acc, false) {
 			continue
@@ -1533,19 +1553,22 @@ func (s *GatewayService) SelectAccountWithLoadAwareness(ctx context.Context, gro
 			}
 			if loadInfo.LoadRate < 100 {
 				available = append(available, accountWithLoad{
-					account:  acc,
-					loadInfo: loadInfo,
+					account:       acc,
+					loadInfo:      loadInfo,
+					weeklyUrgency: s.getWeeklyUrgency(ctx, acc),
 				})
 			}
 		}
 
-		// 分层过滤选择：优先级 → 负载率 → LRU
+		// 分层过滤选择：优先级 → 负载率 → 周紧迫度 → LRU
 		for len(available) > 0 {
 			// 1. 取优先级最小的集合
 			candidates := filterByMinPriority(available)
 			// 2. 取负载率最低的集合
 			candidates = filterByMinLoadRate(candidates)
-			// 3. LRU 选择最久未用的账号
+			// 3. 取周紧迫度最高的集合
+			candidates = filterByMaxWeeklyUrgency(candidates)
+			// 4. LRU 选择最久未用的账号
 			selected := selectByLRU(candidates, preferOAuth)
 			if selected == nil {
 				break
@@ -2333,6 +2356,195 @@ check:
 	return account.CheckDailyCostSchedulability(currentCost)
 }
 
+// ========== 每周费用预取与调度检查 ==========
+
+type weeklyCostPrefetchData struct {
+	cost    float64
+	urgency float64
+}
+
+type weeklyCostPrefetchContextKeyType struct{}
+
+var weeklyCostPrefetchContextKey = weeklyCostPrefetchContextKeyType{}
+
+func weeklyCostFromPrefetchContext(ctx context.Context, accountID int64) (*weeklyCostPrefetchData, bool) {
+	if ctx == nil || accountID <= 0 {
+		return nil, false
+	}
+	m, ok := ctx.Value(weeklyCostPrefetchContextKey).(map[int64]*weeklyCostPrefetchData)
+	if !ok || len(m) == 0 {
+		return nil, false
+	}
+	v, exists := m[accountID]
+	return v, exists
+}
+
+func (s *GatewayService) withWeeklyCostPrefetch(ctx context.Context, accounts []Account) context.Context {
+	if ctx == nil || len(accounts) == 0 || s.sessionLimitCache == nil || s.usageLogRepo == nil {
+		return ctx
+	}
+
+	// 筛选需要周费用检查的账号
+	type accountRef struct {
+		id    int64
+		index int // 在 accounts 中的索引
+	}
+	var refs []accountRef
+	for i := range accounts {
+		account := &accounts[i]
+		if account == nil || !account.IsAnthropic() {
+			continue
+		}
+		if account.GetWeeklyCostLimit() <= 0 {
+			continue
+		}
+		refs = append(refs, accountRef{id: account.ID, index: i})
+	}
+	if len(refs) == 0 {
+		return ctx
+	}
+
+	accountIDs := make([]int64, len(refs))
+	for i, ref := range refs {
+		accountIDs[i] = ref.id
+	}
+
+	// 尝试缓存
+	rawCosts := make(map[int64]float64, len(accountIDs))
+	cacheValues, err := s.sessionLimitCache.GetWeeklyCostBatch(ctx, accountIDs)
+	if err == nil {
+		for accountID, cost := range cacheValues {
+			rawCosts[accountID] = cost
+		}
+		weeklyCostPrefetchCacheHitTotal.Add(int64(len(cacheValues)))
+	} else {
+		weeklyCostPrefetchErrorTotal.Add(1)
+		logger.LegacyPrintf("service.gateway", "weekly_cost batch cache read failed: %v", err)
+	}
+	cacheMissCount := len(accountIDs) - len(rawCosts)
+	if cacheMissCount < 0 {
+		cacheMissCount = 0
+	}
+	weeklyCostPrefetchCacheMissTotal.Add(int64(cacheMissCount))
+
+	// 收集缓存未命中的账号
+	var missingIDs []int64
+	for _, accountID := range accountIDs {
+		if _, ok := rawCosts[accountID]; !ok {
+			missingIDs = append(missingIDs, accountID)
+		}
+	}
+
+	// 查询数据库（缓存未命中部分）
+	if len(missingIDs) > 0 {
+		startTime := timezone.StartOfWeek(timezone.Now())
+		batchReader, hasBatch := s.usageLogRepo.(usageLogWindowStatsBatchProvider)
+		if hasBatch {
+			weeklyCostPrefetchBatchSQLTotal.Add(1)
+			statsByAccount, err := batchReader.GetAccountWindowStatsBatch(ctx, missingIDs, startTime)
+			if err == nil {
+				for _, accountID := range missingIDs {
+					stats := statsByAccount[accountID]
+					cost := 0.0
+					if stats != nil {
+						cost = stats.StandardCost
+					}
+					rawCosts[accountID] = cost
+					_ = s.sessionLimitCache.SetWeeklyCost(ctx, accountID, cost)
+				}
+			} else {
+				weeklyCostPrefetchErrorTotal.Add(1)
+				logger.LegacyPrintf("service.gateway", "weekly_cost batch db query failed: %v", err)
+				// 回退路径：逐个查询
+				weeklyCostPrefetchFallbackTotal.Add(int64(len(missingIDs)))
+				for _, accountID := range missingIDs {
+					stats, err := s.usageLogRepo.GetAccountWindowStats(ctx, accountID, startTime)
+					if err != nil {
+						weeklyCostPrefetchErrorTotal.Add(1)
+						continue
+					}
+					cost := stats.StandardCost
+					rawCosts[accountID] = cost
+					_ = s.sessionLimitCache.SetWeeklyCost(ctx, accountID, cost)
+				}
+			}
+		} else {
+			// 回退路径：逐个查询
+			weeklyCostPrefetchFallbackTotal.Add(int64(len(missingIDs)))
+			for _, accountID := range missingIDs {
+				stats, err := s.usageLogRepo.GetAccountWindowStats(ctx, accountID, startTime)
+				if err != nil {
+					weeklyCostPrefetchErrorTotal.Add(1)
+					continue
+				}
+				cost := stats.StandardCost
+				rawCosts[accountID] = cost
+				_ = s.sessionLimitCache.SetWeeklyCost(ctx, accountID, cost)
+			}
+		}
+	}
+
+	// 构建 prefetch data（包含 urgency）
+	prefetchData := make(map[int64]*weeklyCostPrefetchData, len(refs))
+	for _, ref := range refs {
+		cost := rawCosts[ref.id]
+		account := &accounts[ref.index]
+		prefetchData[ref.id] = &weeklyCostPrefetchData{
+			cost:    cost,
+			urgency: account.ComputeWeeklyUrgency(cost),
+		}
+	}
+
+	return context.WithValue(ctx, weeklyCostPrefetchContextKey, prefetchData)
+}
+
+// isAccountSchedulableForWeeklyCost 检查账号是否可根据每周费用进行调度
+func (s *GatewayService) isAccountSchedulableForWeeklyCost(ctx context.Context, account *Account) bool {
+	if !account.IsAnthropic() {
+		return true
+	}
+
+	limit := account.GetWeeklyCostLimit()
+	if limit <= 0 {
+		return true
+	}
+
+	var currentCost float64
+	if data, ok := weeklyCostFromPrefetchContext(ctx, account.ID); ok {
+		currentCost = data.cost
+		goto check
+	}
+	if s.sessionLimitCache != nil {
+		if cost, hit, err := s.sessionLimitCache.GetWeeklyCost(ctx, account.ID); err == nil && hit {
+			currentCost = cost
+			goto check
+		}
+	}
+
+	{
+		startTime := timezone.StartOfWeek(timezone.Now())
+		stats, err := s.usageLogRepo.GetAccountWindowStats(ctx, account.ID, startTime)
+		if err != nil {
+			return true // 失败开放
+		}
+		currentCost = stats.StandardCost
+		if s.sessionLimitCache != nil {
+			_ = s.sessionLimitCache.SetWeeklyCost(ctx, account.ID, currentCost)
+		}
+	}
+
+check:
+	return account.CheckWeeklyCostSchedulability(currentCost)
+}
+
+// getWeeklyUrgency 从 prefetch context 读取紧迫度
+func (s *GatewayService) getWeeklyUrgency(ctx context.Context, account *Account) float64 {
+	if data, ok := weeklyCostFromPrefetchContext(ctx, account.ID); ok {
+		return data.urgency
+	}
+	return 0
+}
+
 // rpmPrefetchContextKey is the context key for prefetched RPM counts.
 type rpmPrefetchContextKeyType struct{}
 
@@ -2485,6 +2697,34 @@ func filterByMinLoadRate(accounts []accountWithLoad) []accountWithLoad {
 	result := make([]accountWithLoad, 0, len(accounts))
 	for _, acc := range accounts {
 		if acc.loadInfo.LoadRate == minLoadRate {
+			result = append(result, acc)
+		}
+	}
+	return result
+}
+
+// filterByMaxWeeklyUrgency 过滤出周费用紧迫度最高的账号集合
+// 如果存在 urgency > 0 的账号，筛选 urgency 最大的子集
+// 否则返回全部（无周限额的账号不受影响）
+func filterByMaxWeeklyUrgency(accounts []accountWithLoad) []accountWithLoad {
+	if len(accounts) == 0 {
+		return accounts
+	}
+	// 找出最大 urgency
+	maxUrgency := 0.0
+	for _, acc := range accounts {
+		if acc.weeklyUrgency > maxUrgency {
+			maxUrgency = acc.weeklyUrgency
+		}
+	}
+	// 如果没有任何账号有紧迫度，返回全部
+	if maxUrgency <= 0 {
+		return accounts
+	}
+	// 筛选紧迫度等于最大值的子集
+	result := make([]accountWithLoad, 0, len(accounts))
+	for _, acc := range accounts {
+		if acc.weeklyUrgency == maxUrgency {
 			result = append(result, acc)
 		}
 	}
@@ -2749,7 +2989,7 @@ func (s *GatewayService) selectAccountForModelWithPlatform(ctx context.Context, 
 						if clearSticky {
 							_ = s.cache.DeleteSessionAccountID(ctx, derefGroupID(groupID), sessionHash)
 						}
-						if !clearSticky && s.isAccountInGroup(account, groupID) && account.Platform == platform && (requestedModel == "" || s.isModelSupportedByAccountWithContext(ctx, account, requestedModel)) && s.isAccountSchedulableForModelSelection(ctx, account, requestedModel) && s.isAccountSchedulableForWindowCost(ctx, account, true) && s.isAccountSchedulableForDailyCost(ctx, account) && s.isAccountSchedulableForRPM(ctx, account, true) {
+						if !clearSticky && s.isAccountInGroup(account, groupID) && account.Platform == platform && (requestedModel == "" || s.isModelSupportedByAccountWithContext(ctx, account, requestedModel)) && s.isAccountSchedulableForModelSelection(ctx, account, requestedModel) && s.isAccountSchedulableForWindowCost(ctx, account, true) && s.isAccountSchedulableForDailyCost(ctx, account) && s.isAccountSchedulableForWeeklyCost(ctx, account) && s.isAccountSchedulableForRPM(ctx, account, true) {
 							if s.debugModelRoutingEnabled() {
 								logger.LegacyPrintf("service.gateway", "[ModelRoutingDebug] legacy routed sticky hit: group_id=%v model=%s session=%s account=%d", derefGroupID(groupID), requestedModel, shortSessionHash(sessionHash), accountID)
 							}
@@ -2859,7 +3099,7 @@ func (s *GatewayService) selectAccountForModelWithPlatform(ctx context.Context, 
 					if clearSticky {
 						_ = s.cache.DeleteSessionAccountID(ctx, derefGroupID(groupID), sessionHash)
 					}
-					if !clearSticky && s.isAccountInGroup(account, groupID) && account.Platform == platform && (requestedModel == "" || s.isModelSupportedByAccountWithContext(ctx, account, requestedModel)) && s.isAccountSchedulableForModelSelection(ctx, account, requestedModel) && s.isAccountSchedulableForWindowCost(ctx, account, true) && s.isAccountSchedulableForDailyCost(ctx, account) && s.isAccountSchedulableForRPM(ctx, account, true) {
+					if !clearSticky && s.isAccountInGroup(account, groupID) && account.Platform == platform && (requestedModel == "" || s.isModelSupportedByAccountWithContext(ctx, account, requestedModel)) && s.isAccountSchedulableForModelSelection(ctx, account, requestedModel) && s.isAccountSchedulableForWindowCost(ctx, account, true) && s.isAccountSchedulableForDailyCost(ctx, account) && s.isAccountSchedulableForWeeklyCost(ctx, account) && s.isAccountSchedulableForRPM(ctx, account, true) {
 						return account, nil
 					}
 				}
@@ -2883,6 +3123,7 @@ func (s *GatewayService) selectAccountForModelWithPlatform(ctx context.Context, 
 	// 批量预取窗口费用+RPM 计数，避免逐个账号查询（N+1）
 	ctx = s.withWindowCostPrefetch(ctx, accounts)
 	ctx = s.withDailyCostPrefetch(ctx, accounts)
+	ctx = s.withWeeklyCostPrefetch(ctx, accounts)
 	ctx = s.withRPMPrefetch(ctx, accounts)
 
 	// 3. 按优先级+最久未用选择（考虑模型支持）
@@ -2907,6 +3148,9 @@ func (s *GatewayService) selectAccountForModelWithPlatform(ctx context.Context, 
 			continue
 		}
 		if !s.isAccountSchedulableForDailyCost(ctx, acc) {
+			continue
+		}
+		if !s.isAccountSchedulableForWeeklyCost(ctx, acc) {
 			continue
 		}
 		if !s.isAccountSchedulableForRPM(ctx, acc, false) {
@@ -2981,7 +3225,7 @@ func (s *GatewayService) selectAccountWithMixedScheduling(ctx context.Context, g
 						if clearSticky {
 							_ = s.cache.DeleteSessionAccountID(ctx, derefGroupID(groupID), sessionHash)
 						}
-						if !clearSticky && s.isAccountInGroup(account, groupID) && (requestedModel == "" || s.isModelSupportedByAccountWithContext(ctx, account, requestedModel)) && s.isAccountSchedulableForModelSelection(ctx, account, requestedModel) && s.isAccountSchedulableForWindowCost(ctx, account, true) && s.isAccountSchedulableForDailyCost(ctx, account) && s.isAccountSchedulableForRPM(ctx, account, true) {
+						if !clearSticky && s.isAccountInGroup(account, groupID) && (requestedModel == "" || s.isModelSupportedByAccountWithContext(ctx, account, requestedModel)) && s.isAccountSchedulableForModelSelection(ctx, account, requestedModel) && s.isAccountSchedulableForWindowCost(ctx, account, true) && s.isAccountSchedulableForDailyCost(ctx, account) && s.isAccountSchedulableForWeeklyCost(ctx, account) && s.isAccountSchedulableForRPM(ctx, account, true) {
 							if account.Platform == nativePlatform || (account.Platform == PlatformAntigravity && account.IsMixedSchedulingEnabled()) {
 								if s.debugModelRoutingEnabled() {
 									logger.LegacyPrintf("service.gateway", "[ModelRoutingDebug] legacy mixed routed sticky hit: group_id=%v model=%s session=%s account=%d", derefGroupID(groupID), requestedModel, shortSessionHash(sessionHash), accountID)
@@ -3093,7 +3337,7 @@ func (s *GatewayService) selectAccountWithMixedScheduling(ctx context.Context, g
 					if clearSticky {
 						_ = s.cache.DeleteSessionAccountID(ctx, derefGroupID(groupID), sessionHash)
 					}
-					if !clearSticky && s.isAccountInGroup(account, groupID) && (requestedModel == "" || s.isModelSupportedByAccountWithContext(ctx, account, requestedModel)) && s.isAccountSchedulableForModelSelection(ctx, account, requestedModel) && s.isAccountSchedulableForWindowCost(ctx, account, true) && s.isAccountSchedulableForDailyCost(ctx, account) && s.isAccountSchedulableForRPM(ctx, account, true) {
+					if !clearSticky && s.isAccountInGroup(account, groupID) && (requestedModel == "" || s.isModelSupportedByAccountWithContext(ctx, account, requestedModel)) && s.isAccountSchedulableForModelSelection(ctx, account, requestedModel) && s.isAccountSchedulableForWindowCost(ctx, account, true) && s.isAccountSchedulableForDailyCost(ctx, account) && s.isAccountSchedulableForWeeklyCost(ctx, account) && s.isAccountSchedulableForRPM(ctx, account, true) {
 						if account.Platform == nativePlatform || (account.Platform == PlatformAntigravity && account.IsMixedSchedulingEnabled()) {
 							return account, nil
 						}
@@ -3115,6 +3359,7 @@ func (s *GatewayService) selectAccountWithMixedScheduling(ctx context.Context, g
 	// 批量预取窗口费用+RPM 计数，避免逐个账号查询（N+1）
 	ctx = s.withWindowCostPrefetch(ctx, accounts)
 	ctx = s.withDailyCostPrefetch(ctx, accounts)
+	ctx = s.withWeeklyCostPrefetch(ctx, accounts)
 	ctx = s.withRPMPrefetch(ctx, accounts)
 
 	// 3. 按优先级+最久未用选择（考虑模型支持和混合调度）
@@ -3143,6 +3388,9 @@ func (s *GatewayService) selectAccountWithMixedScheduling(ctx context.Context, g
 			continue
 		}
 		if !s.isAccountSchedulableForDailyCost(ctx, acc) {
+			continue
+		}
+		if !s.isAccountSchedulableForWeeklyCost(ctx, acc) {
 			continue
 		}
 		if !s.isAccountSchedulableForRPM(ctx, acc, false) {
