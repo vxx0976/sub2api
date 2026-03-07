@@ -198,6 +198,38 @@ func (h *AuthHandler) SendVerifyCode(c *gin.Context) {
 	})
 }
 
+// checkLoginDomain verifies that the user is logging in from the correct domain.
+// Admin and reseller roles are exempt and can log in from anywhere.
+// Regular users with no parent must log in from the main site.
+// Regular users with a parent (merchant sub-users) must log in from their merchant's domain.
+func (h *AuthHandler) checkLoginDomain(c *gin.Context, user *service.User) bool {
+	if user.Role == service.RoleAdmin || user.Role == service.RoleReseller {
+		return true
+	}
+
+	resellerCtx := middleware2.GetResellerDomainFromContext(c)
+
+	if user.ParentID == nil {
+		// Main-site user: must log in from main site (no reseller context)
+		if resellerCtx != nil {
+			response.Forbidden(c, "此账号只能在码驿站登录，请前往码驿站登录页")
+			return false
+		}
+	} else {
+		// Merchant sub-user: must log in from their own merchant's domain
+		if resellerCtx == nil {
+			response.Forbidden(c, "此账号只能在所属商户站点登录，请联系商户获取登录地址")
+			return false
+		}
+		if resellerCtx.ResellerID != *user.ParentID {
+			response.Forbidden(c, "此账号只能在所属商户站点登录，请使用您注册时使用的站点")
+			return false
+		}
+	}
+
+	return true
+}
+
 // Login handles user login
 // POST /api/v1/auth/login
 func (h *AuthHandler) Login(c *gin.Context) {
@@ -219,6 +251,11 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 	_ = token // token 由 authService.Login 返回但此处由 respondWithTokenPair 重新生成
+
+	// Enforce login domain restriction
+	if !h.checkLoginDomain(c, user) {
+		return
+	}
 
 	// Check if TOTP 2FA is enabled for this user
 	if h.totpService != nil && h.settingSvc.IsTotpEnabled(c.Request.Context()) && user.TotpEnabled {
@@ -300,6 +337,11 @@ func (h *AuthHandler) Login2FA(c *gin.Context) {
 	user, err := h.userService.GetByID(c.Request.Context(), session.UserID)
 	if err != nil {
 		response.ErrorFrom(c, err)
+		return
+	}
+
+	// Enforce login domain restriction
+	if !h.checkLoginDomain(c, user) {
 		return
 	}
 
