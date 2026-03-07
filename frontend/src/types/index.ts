@@ -432,7 +432,6 @@ export interface Group {
   is_purchasable: boolean
   sort_order: number
   is_recommended: boolean
-  reseller_template: boolean
   external_buy_url?: string | null
   account_count?: number
   account_groups?: GroupAccountInfo[]

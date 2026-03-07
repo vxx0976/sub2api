@@ -38,14 +38,6 @@
           <!-- Right: actions -->
           <div class="flex w-full flex-shrink-0 flex-wrap items-center justify-end gap-3 lg:w-auto">
             <button
-              @click="showPlanPreview = true"
-              class="btn btn-secondary"
-              :title="t('admin.groups.planPreview.title')"
-            >
-              <Icon name="eye" size="md" class="mr-2" />
-              {{ t('admin.groups.planPreview.button') }}
-            </button>
-            <button
               @click="loadGroups"
               :disabled="loading"
               class="btn btn-secondary"
@@ -455,39 +447,6 @@
                 class="input"
                 :placeholder="t('admin.groups.subscription.noLimit')"
               />
-            </div>
-          </div>
-        </div>
-
-        <!-- Reseller Template (always visible) -->
-        <div class="border-t pt-4">
-          <div class="space-y-4">
-            <div>
-              <div class="mb-1.5 flex items-center gap-1">
-                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {{ t('admin.groups.payment.resellerTemplate') }}
-                </label>
-              </div>
-              <div class="flex items-center gap-3">
-                <button
-                  type="button"
-                  @click="createForm.reseller_template = !createForm.reseller_template"
-                  :class="[
-                    'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
-                    createForm.reseller_template ? 'bg-primary-500' : 'bg-gray-300 dark:bg-dark-600'
-                  ]"
-                >
-                  <span
-                    :class="[
-                      'inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform',
-                      createForm.reseller_template ? 'translate-x-6' : 'translate-x-1'
-                    ]"
-                  />
-                </button>
-                <span class="text-sm text-gray-500 dark:text-gray-400">
-                  {{ t('admin.groups.payment.resellerTemplateHint') }}
-                </span>
-              </div>
             </div>
           </div>
         </div>
@@ -1289,39 +1248,6 @@
           </div>
         </div>
 
-        <!-- Reseller Template (always visible) -->
-        <div class="border-t pt-4">
-          <div class="space-y-4">
-            <div>
-              <div class="mb-1.5 flex items-center gap-1">
-                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {{ t('admin.groups.payment.resellerTemplate') }}
-                </label>
-              </div>
-              <div class="flex items-center gap-3">
-                <button
-                  type="button"
-                  @click="editForm.reseller_template = !editForm.reseller_template"
-                  :class="[
-                    'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
-                    editForm.reseller_template ? 'bg-primary-500' : 'bg-gray-300 dark:bg-dark-600'
-                  ]"
-                >
-                  <span
-                    :class="[
-                      'inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform',
-                      editForm.reseller_template ? 'translate-x-6' : 'translate-x-1'
-                    ]"
-                  />
-                </button>
-                <span class="text-sm text-gray-500 dark:text-gray-400">
-                  {{ t('admin.groups.payment.resellerTemplateHint') }}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <!-- Payment Settings (only show when subscription type is selected) -->
         <div v-if="editForm.subscription_type === 'subscription'" class="border-t pt-4">
           <label class="block mb-2 font-medium text-gray-700 dark:text-gray-300">
@@ -1908,12 +1834,6 @@
       @cancel="showDeleteDialog = false"
     />
 
-    <!-- Plan Preview Modal -->
-    <PlanPreviewModal
-      :show="showPlanPreview"
-      @close="showPlanPreview = false"
-    />
-
     <!-- Sort Order Modal -->
     <BaseDialog
       :show="showSortModal"
@@ -2016,7 +1936,6 @@ import DataTable from '@/components/common/DataTable.vue'
 import Pagination from '@/components/common/Pagination.vue'
 import BaseDialog from '@/components/common/BaseDialog.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
-import PlanPreviewModal from '@/components/admin/PlanPreviewModal.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import Select from '@/components/common/Select.vue'
 import PlatformIcon from '@/components/common/PlatformIcon.vue'
@@ -2181,7 +2100,6 @@ let abortController: AbortController | null = null
 const showCreateModal = ref(false)
 const showEditModal = ref(false)
 const showDeleteDialog = ref(false)
-const showPlanPreview = ref(false)
 const showSortModal = ref(false)
 const submitting = ref(false)
 const sortSubmitting = ref(false)
@@ -2222,8 +2140,6 @@ const createForm = reactive({
   sort_order: 0,
   is_recommended: false,
   external_buy_url: '' as string,
-  // 商户模板
-  reseller_template: false,
   // 支持的模型系列（仅 antigravity 平台）
   supported_model_scopes: ['claude', 'gemini_text', 'gemini_image'] as string[],
   // MCP XML 协议注入开关（仅 antigravity 平台）
@@ -2472,8 +2388,6 @@ const editForm = reactive({
   sort_order: 0,
   is_recommended: false,
   external_buy_url: '' as string,
-  // 商户模板
-  reseller_template: false,
   // 支持的模型系列（仅 antigravity 平台）
   supported_model_scopes: ['claude', 'gemini_text', 'gemini_image'] as string[],
   // MCP XML 协议注入开关（仅 antigravity 平台）
@@ -2574,7 +2488,6 @@ const closeCreateModal = () => {
   createForm.is_purchasable = false
   createForm.sort_order = 0
   createForm.is_recommended = false
-  createForm.reseller_template = false
   createForm.external_buy_url = ''
   createForm.fallback_group_id_on_invalid_request = null
   createForm.supported_model_scopes = ['claude', 'gemini_text', 'gemini_image']
@@ -2643,7 +2556,6 @@ const handleEdit = async (group: AdminGroup) => {
   editForm.is_purchasable = group.is_purchasable || false
   editForm.sort_order = group.sort_order || 0
   editForm.is_recommended = group.is_recommended || false
-  editForm.reseller_template = group.reseller_template || false
   editForm.external_buy_url = group.external_buy_url || ''
   editForm.supported_model_scopes = group.supported_model_scopes || ['claude', 'gemini_text', 'gemini_image']
   editForm.mcp_xml_inject = group.mcp_xml_inject ?? true

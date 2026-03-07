@@ -67,7 +67,6 @@ func (r *groupRepository) Create(ctx context.Context, groupIn *service.Group) er
 		SetNillableExternalBuyURL(groupIn.ExternalBuyURL).
 		SetNillableOwnerID(groupIn.OwnerID).
 		SetNillableSourceGroupID(groupIn.SourceGroupID).
-		SetResellerTemplate(groupIn.ResellerTemplate).
 		SetSoraStorageQuotaBytes(groupIn.SoraStorageQuotaBytes)
 
 	// 设置模型路由配置
@@ -139,7 +138,6 @@ func (r *groupRepository) Update(ctx context.Context, groupIn *service.Group) er
 		SetSortOrder(groupIn.SortOrder).
 		SetIsRecommended(groupIn.IsRecommended).
 		SetNillableExternalBuyURL(groupIn.ExternalBuyURL).
-		SetResellerTemplate(groupIn.ResellerTemplate).
 		SetSoraStorageQuotaBytes(groupIn.SoraStorageQuotaBytes)
 
 	// 处理 OwnerID

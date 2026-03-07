@@ -19,9 +19,6 @@ func RegisterResellerRoutes(
 		// 仪表盘
 		reseller.GET("/dashboard", h.Reseller.Dashboard.GetStats)
 
-		// 套餐（分组）管理
-		registerResellerGroupRoutes(reseller, h)
-
 		// API Key 管理
 		registerResellerKeyRoutes(reseller, h)
 
@@ -39,18 +36,6 @@ func RegisterResellerRoutes(
 
 		// 公告管理
 		registerResellerAnnouncementRoutes(reseller, h)
-	}
-}
-
-func registerResellerGroupRoutes(reseller *gin.RouterGroup, h *handler.Handlers) {
-	groups := reseller.Group("/groups")
-	{
-		groups.GET("", h.Reseller.Group.List)
-		groups.GET("/templates", h.Reseller.Group.ListTemplates)
-		groups.GET("/:id", h.Reseller.Group.GetByID)
-		groups.POST("", h.Reseller.Group.Create)
-		groups.PUT("/:id", h.Reseller.Group.Update)
-		groups.DELETE("/:id", h.Reseller.Group.Delete)
 	}
 }
 

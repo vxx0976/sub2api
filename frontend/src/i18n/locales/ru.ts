@@ -513,7 +513,6 @@ export default {
     docs: 'Документация',
     referral: 'Пригласить друзей',
     resellerDashboard: 'Панель продавца',
-    resellerGroups: 'Пакеты',
     resellerKeys: 'API-ключи',
     resellerDomains: 'Домены',
     resellerSettings: 'Настройки',
@@ -1869,19 +1868,9 @@ export default {
         sortOrderHint: 'Более высокие значения отображаются первыми в списке',
         isRecommended: 'Рекомендуемый',
         isRecommendedHint: 'Показывать значок «Рекомендуем» на странице тарифов',
-        resellerTemplate: 'Шаблон продавца',
-        resellerTemplateHint: 'При включении продавцы могут использовать этот план как шаблон для своих пользователей',
         externalBuyUrl: 'Внешняя ссылка покупки',
         externalBuyUrlPlaceholder: 'https://item.taobao.com/item.htm?id=...',
         externalBuyUrlHint: 'Необязательно. При настройке пользователи могут перейти для покупки на внешних площадках'
-      },
-      planPreview: {
-        title: 'Предварительный просмотр тарифов',
-        button: 'Предпросмотр тарифов',
-        noPlans: 'Нет тарифов для отображения',
-        noPlansDesc: 'Сначала создайте группы типа подписки и включите покупку.',
-        notPurchasable: 'Недоступен для покупки',
-        previewOnly: 'Только предпросмотр'
       },
       mcpXml: {
         title: 'Инъекция XML-протокола MCP',

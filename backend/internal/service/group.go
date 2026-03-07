@@ -62,9 +62,8 @@ type Group struct {
 	ExternalBuyURL *string  `json:"external_buy_url"`
 
 	// 分销商所有权
-	OwnerID          *int64 `json:"owner_id"`
-	SourceGroupID    *int64 `json:"source_group_id"`
-	ResellerTemplate bool   `json:"reseller_template"`
+	OwnerID       *int64 `json:"owner_id"`
+	SourceGroupID *int64 `json:"source_group_id"`
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`

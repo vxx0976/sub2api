@@ -104,7 +104,6 @@ type Group struct {
 	IsPurchasable       bool     `json:"is_purchasable"`
 	SortOrder           int      `json:"sort_order"`
 	IsRecommended       bool     `json:"is_recommended"`
-	ResellerTemplate    bool     `json:"reseller_template"`
 	ExternalBuyURL      *string  `json:"external_buy_url"`
 
 	// Sora 存储配额

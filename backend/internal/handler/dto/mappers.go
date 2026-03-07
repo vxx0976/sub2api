@@ -172,7 +172,6 @@ func groupFromServiceBase(g *service.Group) Group {
 		IsPurchasable:                   g.IsPurchasable,
 		SortOrder:                       g.SortOrder,
 		IsRecommended:                   g.IsRecommended,
-		ResellerTemplate:                g.ResellerTemplate,
 		ExternalBuyURL:                  g.ExternalBuyURL,
 		SoraStorageQuotaBytes:           g.SoraStorageQuotaBytes,
 		CreatedAt:                       g.CreatedAt,

@@ -659,10 +659,9 @@ func groupEntityToService(g *dbent.Group) *service.Group {
 		SortOrder:                       g.SortOrder,
 		IsRecommended:                   g.IsRecommended,
 		ExternalBuyURL:                  g.ExternalBuyURL,
-		OwnerID:                         g.OwnerID,
-		SourceGroupID:                   g.SourceGroupID,
-		ResellerTemplate:                g.ResellerTemplate,
-		CreatedAt:                       g.CreatedAt,
+		OwnerID:       g.OwnerID,
+		SourceGroupID: g.SourceGroupID,
+		CreatedAt:     g.CreatedAt,
 		UpdatedAt:                       g.UpdatedAt,
 	}
 }

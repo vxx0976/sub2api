@@ -433,7 +433,6 @@ export default {
     buySubscription: 'Recharge / Subscription',
     docs: 'Docs',
     resellerDashboard: 'Merchant Dashboard',
-    resellerGroups: 'Packages',
     resellerKeys: 'API Keys',
     resellerDomains: 'Domains',
     resellerUsers: 'Users',
@@ -1690,19 +1689,9 @@ export default {
         sortOrderHint: 'Higher values appear first in the list',
         isRecommended: 'Recommended',
         isRecommendedHint: 'Show recommended badge on the plans page',
-        resellerTemplate: 'Merchant Template',
-        resellerTemplateHint: 'When enabled, merchants can use this plan as a template for their users',
         externalBuyUrl: 'External Buy URL',
         externalBuyUrlPlaceholder: 'https://item.taobao.com/item.htm?id=...',
         externalBuyUrlHint: 'Optional. When configured, users can click to purchase on external platforms'
-      },
-      planPreview: {
-        title: 'Plan Preview',
-        button: 'Preview Plans',
-        noPlans: 'No plans to display',
-        noPlansDesc: 'Please create subscription-type groups and enable purchasing first.',
-        notPurchasable: 'Not Purchasable',
-        previewOnly: 'Preview Only'
       },
       mcpXml: {
         title: 'MCP XML Protocol Injection',

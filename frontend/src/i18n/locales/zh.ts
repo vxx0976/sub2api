@@ -432,7 +432,6 @@ export default {
     buySubscription: '充值/订阅',
     docs: '文档',
     resellerDashboard: '商户概览',
-    resellerGroups: '套餐管理',
     resellerKeys: 'API 密钥',
     resellerDomains: '域名管理',
     resellerUsers: '用户列表',
@@ -1693,19 +1692,9 @@ export default {
         sortOrderHint: '数值越大排序越靠前',
         isRecommended: '推荐套餐',
         isRecommendedHint: '在套餐页面显示推荐标识',
-        resellerTemplate: '商户模板',
-        resellerTemplateHint: '启用后，商户可选择此套餐作为模板分配给用户',
         externalBuyUrl: '外部购买链接',
         externalBuyUrlPlaceholder: 'https://item.taobao.com/item.htm?id=...',
         externalBuyUrlHint: '可选，配置后用户可通过此链接跳转到外部平台购买'
-      },
-      planPreview: {
-        title: '套餐预览',
-        button: '预览套餐',
-        noPlans: '暂无可展示的套餐',
-        noPlansDesc: '请先创建订阅类型的分组并启用购买功能。',
-        notPurchasable: '未开放购买',
-        previewOnly: '仅供预览'
       },
       mcpXml: {
         title: 'MCP XML 协议注入',

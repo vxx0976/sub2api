@@ -38,7 +38,6 @@ type AdminHandlers struct {
 type ResellerHandlers struct {
 	Dashboard    *reseller.DashboardHandler
 	Domain       *reseller.DomainHandler
-	Group        *reseller.GroupHandler
 	Setting      *reseller.SettingHandler
 	Key          *reseller.KeyHandler
 	Redeem       *reseller.RedeemHandler

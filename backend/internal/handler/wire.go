@@ -69,7 +69,6 @@ func ProvideAdminHandlers(
 func ProvideResellerHandlers(
 	dashboardHandler *reseller.DashboardHandler,
 	domainHandler *reseller.DomainHandler,
-	groupHandler *reseller.GroupHandler,
 	settingHandler *reseller.SettingHandler,
 	keyHandler *reseller.KeyHandler,
 	redeemHandler *reseller.RedeemHandler,
@@ -79,7 +78,6 @@ func ProvideResellerHandlers(
 	return &ResellerHandlers{
 		Dashboard:    dashboardHandler,
 		Domain:       domainHandler,
-		Group:        groupHandler,
 		Setting:      settingHandler,
 		Key:          keyHandler,
 		Redeem:       redeemHandler,
@@ -196,7 +194,6 @@ var ProviderSet = wire.NewSet(
 	// Reseller handlers
 	reseller.NewDashboardHandler,
 	reseller.NewDomainHandler,
-	reseller.NewGroupHandler,
 	reseller.NewSettingHandler,
 	reseller.NewKeyHandler,
 	reseller.NewRedeemHandler,

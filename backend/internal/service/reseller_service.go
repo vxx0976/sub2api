@@ -18,9 +18,8 @@ var (
 	ErrDomainExists       = infraerrors.Conflict("DOMAIN_EXISTS", "domain already registered")
 	ErrDomainNotFound     = infraerrors.NotFound("DOMAIN_NOT_FOUND", "domain not found")
 	ErrDomainNotVerified  = infraerrors.BadRequest("DOMAIN_NOT_VERIFIED", "domain is not verified")
-	ErrVerifyFailed       = infraerrors.BadRequest("VERIFY_FAILED", "domain verification failed")
-	ErrTemplateNotFound   = infraerrors.NotFound("TEMPLATE_NOT_FOUND", "template group not found")
-	ErrGroupNotOwned      = infraerrors.Forbidden("GROUP_NOT_OWNED", "group does not belong to this reseller")
+	ErrVerifyFailed  = infraerrors.BadRequest("VERIFY_FAILED", "domain verification failed")
+	ErrGroupNotOwned = infraerrors.Forbidden("GROUP_NOT_OWNED", "group does not belong to this reseller")
 )
 
 
@@ -123,34 +122,6 @@ type UpdateDomainInput struct {
 	SEODescription  *string `json:"seo_description"`
 	SEOKeywords     *string `json:"seo_keywords"`
 	LoginRedirect   *string `json:"login_redirect"`
-}
-
-// CreateResellerGroupInput represents the input for creating a reseller group (package)
-type CreateResellerGroupInput struct {
-	Name                string   `json:"name" binding:"required"`
-	Description         string   `json:"description"`
-	SourceGroupID       int64    `json:"source_group_id" binding:"required"`
-	Price               *float64 `json:"price"`
-	DailyLimitUSD       *float64 `json:"daily_limit_usd"`
-	WeeklyLimitUSD      *float64 `json:"weekly_limit_usd"`
-	MonthlyLimitUSD     *float64 `json:"monthly_limit_usd"`
-	DefaultValidityDays int      `json:"default_validity_days"`
-	IsPurchasable       bool     `json:"is_purchasable"`
-	SortOrder           int      `json:"sort_order"`
-}
-
-// UpdateResellerGroupInput represents the input for updating a reseller group
-type UpdateResellerGroupInput struct {
-	Name                *string  `json:"name"`
-	Description         *string  `json:"description"`
-	Price               *float64 `json:"price"`
-	DailyLimitUSD       *float64 `json:"daily_limit_usd"`
-	WeeklyLimitUSD      *float64 `json:"weekly_limit_usd"`
-	MonthlyLimitUSD     *float64 `json:"monthly_limit_usd"`
-	DefaultValidityDays *int     `json:"default_validity_days"`
-	IsPurchasable       *bool    `json:"is_purchasable"`
-	SortOrder           *int     `json:"sort_order"`
-	Status              *string  `json:"status"`
 }
 
 // CreateResellerKeyInput represents the input for creating an API key for the reseller
@@ -427,176 +398,6 @@ func (s *ResellerService) VerifyDomain(ctx context.Context, resellerID, domainID
 	}
 
 	return domain, nil
-}
-
-// --- Group (Package) management ---
-
-// ListTemplates returns admin groups marked as reseller templates
-func (s *ResellerService) ListTemplates(ctx context.Context) ([]Group, error) {
-	groups, _, err := s.groupRepo.ListWithFilters(ctx, pagination.PaginationParams{Page: 1, PageSize: 1000}, "", "", "", nil, nil)
-	if err != nil {
-		return nil, fmt.Errorf("list groups: %w", err)
-	}
-	var templates []Group
-	for _, g := range groups {
-		if g.ResellerTemplate && g.OwnerID == nil {
-			templates = append(templates, Group{
-				ID:          g.ID,
-				Name:        g.Name,
-				Description: g.Description,
-			})
-		}
-	}
-	return templates, nil
-}
-
-// CreateGroup creates a new group (package) for the reseller
-func (s *ResellerService) CreateGroup(ctx context.Context, resellerID int64, input *CreateResellerGroupInput) (*Group, error) {
-	// Validate source template
-	template, err := s.groupRepo.GetByID(ctx, input.SourceGroupID)
-	if err != nil || template == nil {
-		return nil, ErrTemplateNotFound
-	}
-	if !template.ResellerTemplate || template.OwnerID != nil {
-		return nil, ErrTemplateNotFound
-	}
-
-	// Create a new group based on the template
-	newGroup := &Group{
-		Name:                 input.Name,
-		Description:          input.Description,
-		Platform:             template.Platform,
-		SubscriptionType:     template.SubscriptionType,
-		RateMultiplier:       template.RateMultiplier,
-		ModelRouting:         template.ModelRouting,
-		ModelRoutingEnabled:  template.ModelRoutingEnabled,
-		MCPXMLInject:         template.MCPXMLInject,
-		SupportedModelScopes: template.SupportedModelScopes,
-		Status:               StatusActive,
-		OwnerID:              &resellerID,
-		SourceGroupID:        &input.SourceGroupID,
-		Price:                input.Price,
-		DailyLimitUSD:        input.DailyLimitUSD,
-		WeeklyLimitUSD:       input.WeeklyLimitUSD,
-		MonthlyLimitUSD:      input.MonthlyLimitUSD,
-		DefaultValidityDays:  input.DefaultValidityDays,
-		IsPurchasable:        input.IsPurchasable,
-		SortOrder:            input.SortOrder,
-		IsExclusive:          template.IsExclusive,
-		ClaudeCodeOnly:       template.ClaudeCodeOnly,
-	}
-	if newGroup.DefaultValidityDays <= 0 {
-		newGroup.DefaultValidityDays = 30
-	}
-
-	if err := s.groupRepo.Create(ctx, newGroup); err != nil {
-		return nil, fmt.Errorf("create group: %w", err)
-	}
-
-	// Clone account bindings from template
-	accountIDs, err := s.groupRepo.GetAccountIDsByGroupIDs(ctx, []int64{input.SourceGroupID})
-	if err == nil && len(accountIDs) > 0 {
-		_ = s.groupRepo.BindAccountsToGroup(ctx, newGroup.ID, accountIDs)
-	}
-
-	return newGroup, nil
-}
-
-// ListGroups returns groups owned by the reseller
-func (s *ResellerService) ListGroups(ctx context.Context, resellerID int64, page, pageSize int) ([]Group, *pagination.PaginationResult, error) {
-	groups, _, err := s.groupRepo.ListWithFilters(ctx, pagination.PaginationParams{Page: 1, PageSize: 10000}, "", "", "", nil, nil)
-	if err != nil {
-		return nil, nil, err
-	}
-	// Filter by owner
-	var filtered []Group
-	for _, g := range groups {
-		if g.OwnerID != nil && *g.OwnerID == resellerID {
-			filtered = append(filtered, g)
-		}
-	}
-	total := int64(len(filtered))
-	// Apply pagination on filtered results
-	start := (page - 1) * pageSize
-	end := start + pageSize
-	if start > len(filtered) {
-		start = len(filtered)
-	}
-	if end > len(filtered) {
-		end = len(filtered)
-	}
-	pages := int((total + int64(pageSize) - 1) / int64(pageSize))
-	return filtered[start:end], &pagination.PaginationResult{
-		Total:    total,
-		Page:     page,
-		PageSize: pageSize,
-		Pages:    pages,
-	}, nil
-}
-
-// GetGroup returns a group owned by the reseller
-func (s *ResellerService) GetGroup(ctx context.Context, resellerID, groupID int64) (*Group, error) {
-	g, err := s.groupRepo.GetByID(ctx, groupID)
-	if err != nil {
-		return nil, err
-	}
-	if g.OwnerID == nil || *g.OwnerID != resellerID {
-		return nil, ErrGroupNotOwned
-	}
-	return g, nil
-}
-
-// UpdateGroup updates a group owned by the reseller
-func (s *ResellerService) UpdateGroup(ctx context.Context, resellerID, groupID int64, input *UpdateResellerGroupInput) (*Group, error) {
-	g, err := s.GetGroup(ctx, resellerID, groupID)
-	if err != nil {
-		return nil, err
-	}
-
-	if input.Name != nil {
-		g.Name = *input.Name
-	}
-	if input.Description != nil {
-		g.Description = *input.Description
-	}
-	if input.Price != nil {
-		g.Price = input.Price
-	}
-	if input.DailyLimitUSD != nil {
-		g.DailyLimitUSD = input.DailyLimitUSD
-	}
-	if input.WeeklyLimitUSD != nil {
-		g.WeeklyLimitUSD = input.WeeklyLimitUSD
-	}
-	if input.MonthlyLimitUSD != nil {
-		g.MonthlyLimitUSD = input.MonthlyLimitUSD
-	}
-	if input.DefaultValidityDays != nil {
-		g.DefaultValidityDays = *input.DefaultValidityDays
-	}
-	if input.IsPurchasable != nil {
-		g.IsPurchasable = *input.IsPurchasable
-	}
-	if input.SortOrder != nil {
-		g.SortOrder = *input.SortOrder
-	}
-	if input.Status != nil {
-		g.Status = *input.Status
-	}
-
-	if err := s.groupRepo.Update(ctx, g); err != nil {
-		return nil, fmt.Errorf("update group: %w", err)
-	}
-	return g, nil
-}
-
-// DeleteGroup deletes a group owned by the reseller
-func (s *ResellerService) DeleteGroup(ctx context.Context, resellerID, groupID int64) error {
-	if _, err := s.GetGroup(ctx, resellerID, groupID); err != nil {
-		return err
-	}
-	_, err := s.groupRepo.DeleteCascade(ctx, groupID)
-	return err
 }
 
 // --- API Key management ---
