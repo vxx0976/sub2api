@@ -92,6 +92,10 @@ type Group struct {
 	SourceGroupID *int64 `json:"source_group_id,omitempty"`
 	// 是否标记为分销商可用模板
 	ResellerTemplate bool `json:"reseller_template,omitempty"`
+	// 是否允许 /v1/messages 调度到此 OpenAI 分组
+	AllowMessagesDispatch bool `json:"allow_messages_dispatch,omitempty"`
+	// 默认映射模型 ID，当账号级映射找不到时使用此值
+	DefaultMappedModel string `json:"default_mapped_model,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the GroupQuery when eager-loading is set.
 	Edges        GroupEdges `json:"edges"`
@@ -211,13 +215,13 @@ func (*Group) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case group.FieldModelRouting, group.FieldSupportedModelScopes:
 			values[i] = new([]byte)
-		case group.FieldIsExclusive, group.FieldClaudeCodeOnly, group.FieldModelRoutingEnabled, group.FieldMcpXMLInject, group.FieldIsPurchasable, group.FieldIsRecommended, group.FieldResellerTemplate:
+		case group.FieldIsExclusive, group.FieldClaudeCodeOnly, group.FieldModelRoutingEnabled, group.FieldMcpXMLInject, group.FieldIsPurchasable, group.FieldIsRecommended, group.FieldResellerTemplate, group.FieldAllowMessagesDispatch:
 			values[i] = new(sql.NullBool)
 		case group.FieldRateMultiplier, group.FieldDailyLimitUsd, group.FieldWeeklyLimitUsd, group.FieldMonthlyLimitUsd, group.FieldImagePrice1k, group.FieldImagePrice2k, group.FieldImagePrice4k, group.FieldSoraImagePrice360, group.FieldSoraImagePrice540, group.FieldSoraVideoPricePerRequest, group.FieldSoraVideoPricePerRequestHd, group.FieldPrice:
 			values[i] = new(sql.NullFloat64)
 		case group.FieldID, group.FieldDefaultValidityDays, group.FieldSoraStorageQuotaBytes, group.FieldFallbackGroupID, group.FieldFallbackGroupIDOnInvalidRequest, group.FieldSortOrder, group.FieldOwnerID, group.FieldSourceGroupID:
 			values[i] = new(sql.NullInt64)
-		case group.FieldName, group.FieldDescription, group.FieldStatus, group.FieldPlatform, group.FieldSubscriptionType, group.FieldExternalBuyURL:
+		case group.FieldName, group.FieldDescription, group.FieldStatus, group.FieldPlatform, group.FieldSubscriptionType, group.FieldExternalBuyURL, group.FieldDefaultMappedModel:
 			values[i] = new(sql.NullString)
 		case group.FieldCreatedAt, group.FieldUpdatedAt, group.FieldDeletedAt:
 			values[i] = new(sql.NullTime)
@@ -486,6 +490,18 @@ func (_m *Group) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.ResellerTemplate = value.Bool
 			}
+		case group.FieldAllowMessagesDispatch:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field allow_messages_dispatch", values[i])
+			} else if value.Valid {
+				_m.AllowMessagesDispatch = value.Bool
+			}
+		case group.FieldDefaultMappedModel:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field default_mapped_model", values[i])
+			} else if value.Valid {
+				_m.DefaultMappedModel = value.String
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -713,6 +729,12 @@ func (_m *Group) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("reseller_template=")
 	builder.WriteString(fmt.Sprintf("%v", _m.ResellerTemplate))
+	builder.WriteString(", ")
+	builder.WriteString("allow_messages_dispatch=")
+	builder.WriteString(fmt.Sprintf("%v", _m.AllowMessagesDispatch))
+	builder.WriteString(", ")
+	builder.WriteString("default_mapped_model=")
+	builder.WriteString(_m.DefaultMappedModel)
 	builder.WriteByte(')')
 	return builder.String()
 }

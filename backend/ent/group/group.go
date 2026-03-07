@@ -89,6 +89,10 @@ const (
 	FieldSourceGroupID = "source_group_id"
 	// FieldResellerTemplate holds the string denoting the reseller_template field in the database.
 	FieldResellerTemplate = "reseller_template"
+	// FieldAllowMessagesDispatch holds the string denoting the allow_messages_dispatch field in the database.
+	FieldAllowMessagesDispatch = "allow_messages_dispatch"
+	// FieldDefaultMappedModel holds the string denoting the default_mapped_model field in the database.
+	FieldDefaultMappedModel = "default_mapped_model"
 	// EdgeAPIKeys holds the string denoting the api_keys edge name in mutations.
 	EdgeAPIKeys = "api_keys"
 	// EdgeRedeemCodes holds the string denoting the redeem_codes edge name in mutations.
@@ -210,6 +214,8 @@ var Columns = []string{
 	FieldOwnerID,
 	FieldSourceGroupID,
 	FieldResellerTemplate,
+	FieldAllowMessagesDispatch,
+	FieldDefaultMappedModel,
 }
 
 var (
@@ -283,6 +289,12 @@ var (
 	DefaultIsRecommended bool
 	// DefaultResellerTemplate holds the default value on creation for the "reseller_template" field.
 	DefaultResellerTemplate bool
+	// DefaultAllowMessagesDispatch holds the default value on creation for the "allow_messages_dispatch" field.
+	DefaultAllowMessagesDispatch bool
+	// DefaultDefaultMappedModel holds the default value on creation for the "default_mapped_model" field.
+	DefaultDefaultMappedModel string
+	// DefaultMappedModelValidator is a validator for the "default_mapped_model" field. It is called by the builders before save.
+	DefaultMappedModelValidator func(string) error
 )
 
 // OrderOption defines the ordering options for the Group queries.
@@ -466,6 +478,16 @@ func BySourceGroupID(opts ...sql.OrderTermOption) OrderOption {
 // ByResellerTemplate orders the results by the reseller_template field.
 func ByResellerTemplate(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldResellerTemplate, opts...).ToFunc()
+}
+
+// ByAllowMessagesDispatch orders the results by the allow_messages_dispatch field.
+func ByAllowMessagesDispatch(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAllowMessagesDispatch, opts...).ToFunc()
+}
+
+// ByDefaultMappedModel orders the results by the default_mapped_model field.
+func ByDefaultMappedModel(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDefaultMappedModel, opts...).ToFunc()
 }
 
 // ByAPIKeysCount orders the results by api_keys count.

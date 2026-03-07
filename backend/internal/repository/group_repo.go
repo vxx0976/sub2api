@@ -67,7 +67,9 @@ func (r *groupRepository) Create(ctx context.Context, groupIn *service.Group) er
 		SetNillableExternalBuyURL(groupIn.ExternalBuyURL).
 		SetNillableOwnerID(groupIn.OwnerID).
 		SetNillableSourceGroupID(groupIn.SourceGroupID).
-		SetSoraStorageQuotaBytes(groupIn.SoraStorageQuotaBytes)
+		SetSoraStorageQuotaBytes(groupIn.SoraStorageQuotaBytes).
+		SetAllowMessagesDispatch(groupIn.AllowMessagesDispatch).
+		SetDefaultMappedModel(groupIn.DefaultMappedModel)
 
 	// 设置模型路由配置
 	if groupIn.ModelRouting != nil {
@@ -138,7 +140,9 @@ func (r *groupRepository) Update(ctx context.Context, groupIn *service.Group) er
 		SetSortOrder(groupIn.SortOrder).
 		SetIsRecommended(groupIn.IsRecommended).
 		SetNillableExternalBuyURL(groupIn.ExternalBuyURL).
-		SetSoraStorageQuotaBytes(groupIn.SoraStorageQuotaBytes)
+		SetSoraStorageQuotaBytes(groupIn.SoraStorageQuotaBytes).
+		SetAllowMessagesDispatch(groupIn.AllowMessagesDispatch).
+		SetDefaultMappedModel(groupIn.DefaultMappedModel)
 
 	// 处理 OwnerID
 	if groupIn.OwnerID != nil {

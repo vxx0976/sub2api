@@ -24,6 +24,7 @@ func (r *announcementRepository) Create(ctx context.Context, a *service.Announce
 		SetTitle(a.Title).
 		SetContent(a.Content).
 		SetStatus(a.Status).
+		SetNotifyMode(a.NotifyMode).
 		SetTargeting(a.Targeting)
 
 	if a.StartsAt != nil {
@@ -67,6 +68,7 @@ func (r *announcementRepository) Update(ctx context.Context, a *service.Announce
 		SetTitle(a.Title).
 		SetContent(a.Content).
 		SetStatus(a.Status).
+		SetNotifyMode(a.NotifyMode).
 		SetTargeting(a.Targeting)
 
 	if a.StartsAt != nil {
@@ -189,18 +191,19 @@ func announcementEntityToService(m *dbent.Announcement) *service.Announcement {
 		return nil
 	}
 	return &service.Announcement{
-		ID:        m.ID,
-		Title:     m.Title,
-		Content:   m.Content,
-		Status:    m.Status,
-		Targeting: m.Targeting,
-		StartsAt:  m.StartsAt,
-		EndsAt:    m.EndsAt,
-		CreatedBy: m.CreatedBy,
-		UpdatedBy: m.UpdatedBy,
-		CreatedAt: m.CreatedAt,
-		UpdatedAt: m.UpdatedAt,
-		OwnerID:   m.OwnerID,
+		ID:         m.ID,
+		Title:      m.Title,
+		Content:    m.Content,
+		Status:     m.Status,
+		NotifyMode: m.NotifyMode,
+		Targeting:  m.Targeting,
+		StartsAt:   m.StartsAt,
+		EndsAt:     m.EndsAt,
+		CreatedBy:  m.CreatedBy,
+		UpdatedBy:  m.UpdatedBy,
+		CreatedAt:  m.CreatedAt,
+		UpdatedAt:  m.UpdatedAt,
+		OwnerID:    m.OwnerID,
 	}
 }
 

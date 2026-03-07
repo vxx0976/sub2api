@@ -523,6 +523,34 @@ func (_c *GroupCreate) SetNillableResellerTemplate(v *bool) *GroupCreate {
 	return _c
 }
 
+// SetAllowMessagesDispatch sets the "allow_messages_dispatch" field.
+func (_c *GroupCreate) SetAllowMessagesDispatch(v bool) *GroupCreate {
+	_c.mutation.SetAllowMessagesDispatch(v)
+	return _c
+}
+
+// SetNillableAllowMessagesDispatch sets the "allow_messages_dispatch" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableAllowMessagesDispatch(v *bool) *GroupCreate {
+	if v != nil {
+		_c.SetAllowMessagesDispatch(*v)
+	}
+	return _c
+}
+
+// SetDefaultMappedModel sets the "default_mapped_model" field.
+func (_c *GroupCreate) SetDefaultMappedModel(v string) *GroupCreate {
+	_c.mutation.SetDefaultMappedModel(v)
+	return _c
+}
+
+// SetNillableDefaultMappedModel sets the "default_mapped_model" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableDefaultMappedModel(v *string) *GroupCreate {
+	if v != nil {
+		_c.SetDefaultMappedModel(*v)
+	}
+	return _c
+}
+
 // AddAPIKeyIDs adds the "api_keys" edge to the APIKey entity by IDs.
 func (_c *GroupCreate) AddAPIKeyIDs(ids ...int64) *GroupCreate {
 	_c.mutation.AddAPIKeyIDs(ids...)
@@ -739,6 +767,14 @@ func (_c *GroupCreate) defaults() error {
 		v := group.DefaultResellerTemplate
 		_c.mutation.SetResellerTemplate(v)
 	}
+	if _, ok := _c.mutation.AllowMessagesDispatch(); !ok {
+		v := group.DefaultAllowMessagesDispatch
+		_c.mutation.SetAllowMessagesDispatch(v)
+	}
+	if _, ok := _c.mutation.DefaultMappedModel(); !ok {
+		v := group.DefaultDefaultMappedModel
+		_c.mutation.SetDefaultMappedModel(v)
+	}
 	return nil
 }
 
@@ -817,6 +853,17 @@ func (_c *GroupCreate) check() error {
 	}
 	if _, ok := _c.mutation.ResellerTemplate(); !ok {
 		return &ValidationError{Name: "reseller_template", err: errors.New(`ent: missing required field "Group.reseller_template"`)}
+	}
+	if _, ok := _c.mutation.AllowMessagesDispatch(); !ok {
+		return &ValidationError{Name: "allow_messages_dispatch", err: errors.New(`ent: missing required field "Group.allow_messages_dispatch"`)}
+	}
+	if _, ok := _c.mutation.DefaultMappedModel(); !ok {
+		return &ValidationError{Name: "default_mapped_model", err: errors.New(`ent: missing required field "Group.default_mapped_model"`)}
+	}
+	if v, ok := _c.mutation.DefaultMappedModel(); ok {
+		if err := group.DefaultMappedModelValidator(v); err != nil {
+			return &ValidationError{Name: "default_mapped_model", err: fmt.Errorf(`ent: validator failed for field "Group.default_mapped_model": %w`, err)}
+		}
 	}
 	return nil
 }
@@ -992,6 +1039,14 @@ func (_c *GroupCreate) createSpec() (*Group, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.ResellerTemplate(); ok {
 		_spec.SetField(group.FieldResellerTemplate, field.TypeBool, value)
 		_node.ResellerTemplate = value
+	}
+	if value, ok := _c.mutation.AllowMessagesDispatch(); ok {
+		_spec.SetField(group.FieldAllowMessagesDispatch, field.TypeBool, value)
+		_node.AllowMessagesDispatch = value
+	}
+	if value, ok := _c.mutation.DefaultMappedModel(); ok {
+		_spec.SetField(group.FieldDefaultMappedModel, field.TypeString, value)
+		_node.DefaultMappedModel = value
 	}
 	if nodes := _c.mutation.APIKeysIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -1825,6 +1880,30 @@ func (u *GroupUpsert) UpdateResellerTemplate() *GroupUpsert {
 	return u
 }
 
+// SetAllowMessagesDispatch sets the "allow_messages_dispatch" field.
+func (u *GroupUpsert) SetAllowMessagesDispatch(v bool) *GroupUpsert {
+	u.Set(group.FieldAllowMessagesDispatch, v)
+	return u
+}
+
+// UpdateAllowMessagesDispatch sets the "allow_messages_dispatch" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateAllowMessagesDispatch() *GroupUpsert {
+	u.SetExcluded(group.FieldAllowMessagesDispatch)
+	return u
+}
+
+// SetDefaultMappedModel sets the "default_mapped_model" field.
+func (u *GroupUpsert) SetDefaultMappedModel(v string) *GroupUpsert {
+	u.Set(group.FieldDefaultMappedModel, v)
+	return u
+}
+
+// UpdateDefaultMappedModel sets the "default_mapped_model" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateDefaultMappedModel() *GroupUpsert {
+	u.SetExcluded(group.FieldDefaultMappedModel)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create.
 // Using this option is equivalent to using:
 //
@@ -2637,6 +2716,34 @@ func (u *GroupUpsertOne) SetResellerTemplate(v bool) *GroupUpsertOne {
 func (u *GroupUpsertOne) UpdateResellerTemplate() *GroupUpsertOne {
 	return u.Update(func(s *GroupUpsert) {
 		s.UpdateResellerTemplate()
+	})
+}
+
+// SetAllowMessagesDispatch sets the "allow_messages_dispatch" field.
+func (u *GroupUpsertOne) SetAllowMessagesDispatch(v bool) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetAllowMessagesDispatch(v)
+	})
+}
+
+// UpdateAllowMessagesDispatch sets the "allow_messages_dispatch" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateAllowMessagesDispatch() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateAllowMessagesDispatch()
+	})
+}
+
+// SetDefaultMappedModel sets the "default_mapped_model" field.
+func (u *GroupUpsertOne) SetDefaultMappedModel(v string) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetDefaultMappedModel(v)
+	})
+}
+
+// UpdateDefaultMappedModel sets the "default_mapped_model" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateDefaultMappedModel() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateDefaultMappedModel()
 	})
 }
 
@@ -3618,6 +3725,34 @@ func (u *GroupUpsertBulk) SetResellerTemplate(v bool) *GroupUpsertBulk {
 func (u *GroupUpsertBulk) UpdateResellerTemplate() *GroupUpsertBulk {
 	return u.Update(func(s *GroupUpsert) {
 		s.UpdateResellerTemplate()
+	})
+}
+
+// SetAllowMessagesDispatch sets the "allow_messages_dispatch" field.
+func (u *GroupUpsertBulk) SetAllowMessagesDispatch(v bool) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetAllowMessagesDispatch(v)
+	})
+}
+
+// UpdateAllowMessagesDispatch sets the "allow_messages_dispatch" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateAllowMessagesDispatch() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateAllowMessagesDispatch()
+	})
+}
+
+// SetDefaultMappedModel sets the "default_mapped_model" field.
+func (u *GroupUpsertBulk) SetDefaultMappedModel(v string) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetDefaultMappedModel(v)
+	})
+}
+
+// UpdateDefaultMappedModel sets the "default_mapped_model" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateDefaultMappedModel() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateDefaultMappedModel()
 	})
 }
 

@@ -65,6 +65,10 @@ type Group struct {
 	OwnerID       *int64 `json:"owner_id"`
 	SourceGroupID *int64 `json:"source_group_id"`
 
+	// OpenAI Messages 调度配置（仅 openai 平台使用）
+	AllowMessagesDispatch bool   `json:"allow_messages_dispatch"`
+	DefaultMappedModel    string `json:"default_mapped_model"`
+
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 
