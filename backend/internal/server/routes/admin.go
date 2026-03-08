@@ -412,6 +412,9 @@ func registerSettingsRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 		// 系统公告管理
 		adminSettings.GET("/announcements", h.Admin.Setting.GetAnnouncements)
 		adminSettings.PUT("/announcements", h.Admin.Setting.UpdateAnnouncements)
+		// 请求整流器配置
+		adminSettings.GET("/rectifier", h.Admin.Setting.GetRectifierSettings)
+		adminSettings.PUT("/rectifier", h.Admin.Setting.UpdateRectifierSettings)
 		// Sora S3 存储配置
 		adminSettings.GET("/sora-s3", h.Admin.Setting.GetSoraS3Settings)
 		adminSettings.PUT("/sora-s3", h.Admin.Setting.UpdateSoraS3Settings)

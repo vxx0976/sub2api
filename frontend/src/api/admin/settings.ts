@@ -305,6 +305,41 @@ export async function updateAnnouncements(request: AnnouncementsResponse): Promi
   return data
 }
 
+// ==================== Rectifier Settings ====================
+
+/**
+ * Rectifier settings interface
+ */
+export interface RectifierSettings {
+  enabled: boolean
+  thinking_signature_enabled: boolean
+  thinking_budget_enabled: boolean
+}
+
+/**
+ * Get rectifier settings
+ * @returns Rectifier settings
+ */
+export async function getRectifierSettings(): Promise<RectifierSettings> {
+  const { data } = await apiClient.get<RectifierSettings>('/admin/settings/rectifier')
+  return data
+}
+
+/**
+ * Update rectifier settings
+ * @param settings - Rectifier settings to update
+ * @returns Updated settings
+ */
+export async function updateRectifierSettings(
+  settings: RectifierSettings
+): Promise<RectifierSettings> {
+  const { data } = await apiClient.put<RectifierSettings>(
+    '/admin/settings/rectifier',
+    settings
+  )
+  return data
+}
+
 
 // ==================== Sora S3 Settings ====================
 
@@ -454,6 +489,8 @@ export const settingsAPI = {
   updateStreamTimeoutSettings,
   getAnnouncements,
   updateAnnouncements,
+  getRectifierSettings,
+  updateRectifierSettings,
   getSoraS3Settings,
   updateSoraS3Settings,
   testSoraS3Connection,
