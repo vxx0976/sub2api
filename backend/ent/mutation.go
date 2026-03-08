@@ -31,6 +31,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/referralreward"
 	"github.com/Wei-Shaw/sub2api/ent/resellerdomain"
 	"github.com/Wei-Shaw/sub2api/ent/resellersetting"
+	"github.com/Wei-Shaw/sub2api/ent/resellerwithdrawal"
 	"github.com/Wei-Shaw/sub2api/ent/securitysecret"
 	"github.com/Wei-Shaw/sub2api/ent/setting"
 	"github.com/Wei-Shaw/sub2api/ent/usagecleanuptask"
@@ -70,6 +71,7 @@ const (
 	TypeReferralReward          = "ReferralReward"
 	TypeResellerDomain          = "ResellerDomain"
 	TypeResellerSetting         = "ResellerSetting"
+	TypeResellerWithdrawal      = "ResellerWithdrawal"
 	TypeSecuritySecret          = "SecuritySecret"
 	TypeSetting                 = "Setting"
 	TypeUsageCleanupTask        = "UsageCleanupTask"
@@ -6120,7 +6122,7 @@ func (m *AnnouncementMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *AnnouncementMutation) Fields() []string {
-	fields := make([]string, 0, 11)
+	fields := make([]string, 0, 12)
 	if m.title != nil {
 		fields = append(fields, announcement.FieldTitle)
 	}
@@ -24416,6 +24418,1035 @@ func (m *ResellerSettingMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown ResellerSetting edge %s", name)
 }
 
+// ResellerWithdrawalMutation represents an operation that mutates the ResellerWithdrawal nodes in the graph.
+type ResellerWithdrawalMutation struct {
+	config
+	op              Op
+	typ             string
+	id              *int64
+	reseller_id     *int64
+	addreseller_id  *int64
+	amount          *float64
+	addamount       *float64
+	status          *string
+	payment_method  *string
+	payment_account *string
+	payment_name    *string
+	admin_notes     *string
+	admin_id        *int64
+	addadmin_id     *int64
+	created_at      *time.Time
+	paid_at         *time.Time
+	rejected_at     *time.Time
+	clearedFields   map[string]struct{}
+	done            bool
+	oldValue        func(context.Context) (*ResellerWithdrawal, error)
+	predicates      []predicate.ResellerWithdrawal
+}
+
+var _ ent.Mutation = (*ResellerWithdrawalMutation)(nil)
+
+// resellerwithdrawalOption allows management of the mutation configuration using functional options.
+type resellerwithdrawalOption func(*ResellerWithdrawalMutation)
+
+// newResellerWithdrawalMutation creates new mutation for the ResellerWithdrawal entity.
+func newResellerWithdrawalMutation(c config, op Op, opts ...resellerwithdrawalOption) *ResellerWithdrawalMutation {
+	m := &ResellerWithdrawalMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeResellerWithdrawal,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withResellerWithdrawalID sets the ID field of the mutation.
+func withResellerWithdrawalID(id int64) resellerwithdrawalOption {
+	return func(m *ResellerWithdrawalMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *ResellerWithdrawal
+		)
+		m.oldValue = func(ctx context.Context) (*ResellerWithdrawal, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().ResellerWithdrawal.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withResellerWithdrawal sets the old ResellerWithdrawal of the mutation.
+func withResellerWithdrawal(node *ResellerWithdrawal) resellerwithdrawalOption {
+	return func(m *ResellerWithdrawalMutation) {
+		m.oldValue = func(context.Context) (*ResellerWithdrawal, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ResellerWithdrawalMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ResellerWithdrawalMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *ResellerWithdrawalMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *ResellerWithdrawalMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().ResellerWithdrawal.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetResellerID sets the "reseller_id" field.
+func (m *ResellerWithdrawalMutation) SetResellerID(i int64) {
+	m.reseller_id = &i
+	m.addreseller_id = nil
+}
+
+// ResellerID returns the value of the "reseller_id" field in the mutation.
+func (m *ResellerWithdrawalMutation) ResellerID() (r int64, exists bool) {
+	v := m.reseller_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldResellerID returns the old "reseller_id" field's value of the ResellerWithdrawal entity.
+// If the ResellerWithdrawal object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ResellerWithdrawalMutation) OldResellerID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldResellerID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldResellerID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldResellerID: %w", err)
+	}
+	return oldValue.ResellerID, nil
+}
+
+// AddResellerID adds i to the "reseller_id" field.
+func (m *ResellerWithdrawalMutation) AddResellerID(i int64) {
+	if m.addreseller_id != nil {
+		*m.addreseller_id += i
+	} else {
+		m.addreseller_id = &i
+	}
+}
+
+// AddedResellerID returns the value that was added to the "reseller_id" field in this mutation.
+func (m *ResellerWithdrawalMutation) AddedResellerID() (r int64, exists bool) {
+	v := m.addreseller_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetResellerID resets all changes to the "reseller_id" field.
+func (m *ResellerWithdrawalMutation) ResetResellerID() {
+	m.reseller_id = nil
+	m.addreseller_id = nil
+}
+
+// SetAmount sets the "amount" field.
+func (m *ResellerWithdrawalMutation) SetAmount(f float64) {
+	m.amount = &f
+	m.addamount = nil
+}
+
+// Amount returns the value of the "amount" field in the mutation.
+func (m *ResellerWithdrawalMutation) Amount() (r float64, exists bool) {
+	v := m.amount
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAmount returns the old "amount" field's value of the ResellerWithdrawal entity.
+// If the ResellerWithdrawal object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ResellerWithdrawalMutation) OldAmount(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAmount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAmount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAmount: %w", err)
+	}
+	return oldValue.Amount, nil
+}
+
+// AddAmount adds f to the "amount" field.
+func (m *ResellerWithdrawalMutation) AddAmount(f float64) {
+	if m.addamount != nil {
+		*m.addamount += f
+	} else {
+		m.addamount = &f
+	}
+}
+
+// AddedAmount returns the value that was added to the "amount" field in this mutation.
+func (m *ResellerWithdrawalMutation) AddedAmount() (r float64, exists bool) {
+	v := m.addamount
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetAmount resets all changes to the "amount" field.
+func (m *ResellerWithdrawalMutation) ResetAmount() {
+	m.amount = nil
+	m.addamount = nil
+}
+
+// SetStatus sets the "status" field.
+func (m *ResellerWithdrawalMutation) SetStatus(s string) {
+	m.status = &s
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *ResellerWithdrawalMutation) Status() (r string, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the ResellerWithdrawal entity.
+// If the ResellerWithdrawal object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ResellerWithdrawalMutation) OldStatus(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *ResellerWithdrawalMutation) ResetStatus() {
+	m.status = nil
+}
+
+// SetPaymentMethod sets the "payment_method" field.
+func (m *ResellerWithdrawalMutation) SetPaymentMethod(s string) {
+	m.payment_method = &s
+}
+
+// PaymentMethod returns the value of the "payment_method" field in the mutation.
+func (m *ResellerWithdrawalMutation) PaymentMethod() (r string, exists bool) {
+	v := m.payment_method
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPaymentMethod returns the old "payment_method" field's value of the ResellerWithdrawal entity.
+// If the ResellerWithdrawal object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ResellerWithdrawalMutation) OldPaymentMethod(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPaymentMethod is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPaymentMethod requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPaymentMethod: %w", err)
+	}
+	return oldValue.PaymentMethod, nil
+}
+
+// ResetPaymentMethod resets all changes to the "payment_method" field.
+func (m *ResellerWithdrawalMutation) ResetPaymentMethod() {
+	m.payment_method = nil
+}
+
+// SetPaymentAccount sets the "payment_account" field.
+func (m *ResellerWithdrawalMutation) SetPaymentAccount(s string) {
+	m.payment_account = &s
+}
+
+// PaymentAccount returns the value of the "payment_account" field in the mutation.
+func (m *ResellerWithdrawalMutation) PaymentAccount() (r string, exists bool) {
+	v := m.payment_account
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPaymentAccount returns the old "payment_account" field's value of the ResellerWithdrawal entity.
+// If the ResellerWithdrawal object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ResellerWithdrawalMutation) OldPaymentAccount(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPaymentAccount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPaymentAccount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPaymentAccount: %w", err)
+	}
+	return oldValue.PaymentAccount, nil
+}
+
+// ResetPaymentAccount resets all changes to the "payment_account" field.
+func (m *ResellerWithdrawalMutation) ResetPaymentAccount() {
+	m.payment_account = nil
+}
+
+// SetPaymentName sets the "payment_name" field.
+func (m *ResellerWithdrawalMutation) SetPaymentName(s string) {
+	m.payment_name = &s
+}
+
+// PaymentName returns the value of the "payment_name" field in the mutation.
+func (m *ResellerWithdrawalMutation) PaymentName() (r string, exists bool) {
+	v := m.payment_name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPaymentName returns the old "payment_name" field's value of the ResellerWithdrawal entity.
+// If the ResellerWithdrawal object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ResellerWithdrawalMutation) OldPaymentName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPaymentName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPaymentName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPaymentName: %w", err)
+	}
+	return oldValue.PaymentName, nil
+}
+
+// ResetPaymentName resets all changes to the "payment_name" field.
+func (m *ResellerWithdrawalMutation) ResetPaymentName() {
+	m.payment_name = nil
+}
+
+// SetAdminNotes sets the "admin_notes" field.
+func (m *ResellerWithdrawalMutation) SetAdminNotes(s string) {
+	m.admin_notes = &s
+}
+
+// AdminNotes returns the value of the "admin_notes" field in the mutation.
+func (m *ResellerWithdrawalMutation) AdminNotes() (r string, exists bool) {
+	v := m.admin_notes
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAdminNotes returns the old "admin_notes" field's value of the ResellerWithdrawal entity.
+// If the ResellerWithdrawal object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ResellerWithdrawalMutation) OldAdminNotes(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAdminNotes is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAdminNotes requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAdminNotes: %w", err)
+	}
+	return oldValue.AdminNotes, nil
+}
+
+// ResetAdminNotes resets all changes to the "admin_notes" field.
+func (m *ResellerWithdrawalMutation) ResetAdminNotes() {
+	m.admin_notes = nil
+}
+
+// SetAdminID sets the "admin_id" field.
+func (m *ResellerWithdrawalMutation) SetAdminID(i int64) {
+	m.admin_id = &i
+	m.addadmin_id = nil
+}
+
+// AdminID returns the value of the "admin_id" field in the mutation.
+func (m *ResellerWithdrawalMutation) AdminID() (r int64, exists bool) {
+	v := m.admin_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAdminID returns the old "admin_id" field's value of the ResellerWithdrawal entity.
+// If the ResellerWithdrawal object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ResellerWithdrawalMutation) OldAdminID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAdminID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAdminID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAdminID: %w", err)
+	}
+	return oldValue.AdminID, nil
+}
+
+// AddAdminID adds i to the "admin_id" field.
+func (m *ResellerWithdrawalMutation) AddAdminID(i int64) {
+	if m.addadmin_id != nil {
+		*m.addadmin_id += i
+	} else {
+		m.addadmin_id = &i
+	}
+}
+
+// AddedAdminID returns the value that was added to the "admin_id" field in this mutation.
+func (m *ResellerWithdrawalMutation) AddedAdminID() (r int64, exists bool) {
+	v := m.addadmin_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearAdminID clears the value of the "admin_id" field.
+func (m *ResellerWithdrawalMutation) ClearAdminID() {
+	m.admin_id = nil
+	m.addadmin_id = nil
+	m.clearedFields[resellerwithdrawal.FieldAdminID] = struct{}{}
+}
+
+// AdminIDCleared returns if the "admin_id" field was cleared in this mutation.
+func (m *ResellerWithdrawalMutation) AdminIDCleared() bool {
+	_, ok := m.clearedFields[resellerwithdrawal.FieldAdminID]
+	return ok
+}
+
+// ResetAdminID resets all changes to the "admin_id" field.
+func (m *ResellerWithdrawalMutation) ResetAdminID() {
+	m.admin_id = nil
+	m.addadmin_id = nil
+	delete(m.clearedFields, resellerwithdrawal.FieldAdminID)
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *ResellerWithdrawalMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *ResellerWithdrawalMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the ResellerWithdrawal entity.
+// If the ResellerWithdrawal object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ResellerWithdrawalMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *ResellerWithdrawalMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetPaidAt sets the "paid_at" field.
+func (m *ResellerWithdrawalMutation) SetPaidAt(t time.Time) {
+	m.paid_at = &t
+}
+
+// PaidAt returns the value of the "paid_at" field in the mutation.
+func (m *ResellerWithdrawalMutation) PaidAt() (r time.Time, exists bool) {
+	v := m.paid_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPaidAt returns the old "paid_at" field's value of the ResellerWithdrawal entity.
+// If the ResellerWithdrawal object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ResellerWithdrawalMutation) OldPaidAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPaidAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPaidAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPaidAt: %w", err)
+	}
+	return oldValue.PaidAt, nil
+}
+
+// ClearPaidAt clears the value of the "paid_at" field.
+func (m *ResellerWithdrawalMutation) ClearPaidAt() {
+	m.paid_at = nil
+	m.clearedFields[resellerwithdrawal.FieldPaidAt] = struct{}{}
+}
+
+// PaidAtCleared returns if the "paid_at" field was cleared in this mutation.
+func (m *ResellerWithdrawalMutation) PaidAtCleared() bool {
+	_, ok := m.clearedFields[resellerwithdrawal.FieldPaidAt]
+	return ok
+}
+
+// ResetPaidAt resets all changes to the "paid_at" field.
+func (m *ResellerWithdrawalMutation) ResetPaidAt() {
+	m.paid_at = nil
+	delete(m.clearedFields, resellerwithdrawal.FieldPaidAt)
+}
+
+// SetRejectedAt sets the "rejected_at" field.
+func (m *ResellerWithdrawalMutation) SetRejectedAt(t time.Time) {
+	m.rejected_at = &t
+}
+
+// RejectedAt returns the value of the "rejected_at" field in the mutation.
+func (m *ResellerWithdrawalMutation) RejectedAt() (r time.Time, exists bool) {
+	v := m.rejected_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRejectedAt returns the old "rejected_at" field's value of the ResellerWithdrawal entity.
+// If the ResellerWithdrawal object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ResellerWithdrawalMutation) OldRejectedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRejectedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRejectedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRejectedAt: %w", err)
+	}
+	return oldValue.RejectedAt, nil
+}
+
+// ClearRejectedAt clears the value of the "rejected_at" field.
+func (m *ResellerWithdrawalMutation) ClearRejectedAt() {
+	m.rejected_at = nil
+	m.clearedFields[resellerwithdrawal.FieldRejectedAt] = struct{}{}
+}
+
+// RejectedAtCleared returns if the "rejected_at" field was cleared in this mutation.
+func (m *ResellerWithdrawalMutation) RejectedAtCleared() bool {
+	_, ok := m.clearedFields[resellerwithdrawal.FieldRejectedAt]
+	return ok
+}
+
+// ResetRejectedAt resets all changes to the "rejected_at" field.
+func (m *ResellerWithdrawalMutation) ResetRejectedAt() {
+	m.rejected_at = nil
+	delete(m.clearedFields, resellerwithdrawal.FieldRejectedAt)
+}
+
+// Where appends a list predicates to the ResellerWithdrawalMutation builder.
+func (m *ResellerWithdrawalMutation) Where(ps ...predicate.ResellerWithdrawal) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the ResellerWithdrawalMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *ResellerWithdrawalMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.ResellerWithdrawal, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *ResellerWithdrawalMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *ResellerWithdrawalMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (ResellerWithdrawal).
+func (m *ResellerWithdrawalMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *ResellerWithdrawalMutation) Fields() []string {
+	fields := make([]string, 0, 11)
+	if m.reseller_id != nil {
+		fields = append(fields, resellerwithdrawal.FieldResellerID)
+	}
+	if m.amount != nil {
+		fields = append(fields, resellerwithdrawal.FieldAmount)
+	}
+	if m.status != nil {
+		fields = append(fields, resellerwithdrawal.FieldStatus)
+	}
+	if m.payment_method != nil {
+		fields = append(fields, resellerwithdrawal.FieldPaymentMethod)
+	}
+	if m.payment_account != nil {
+		fields = append(fields, resellerwithdrawal.FieldPaymentAccount)
+	}
+	if m.payment_name != nil {
+		fields = append(fields, resellerwithdrawal.FieldPaymentName)
+	}
+	if m.admin_notes != nil {
+		fields = append(fields, resellerwithdrawal.FieldAdminNotes)
+	}
+	if m.admin_id != nil {
+		fields = append(fields, resellerwithdrawal.FieldAdminID)
+	}
+	if m.created_at != nil {
+		fields = append(fields, resellerwithdrawal.FieldCreatedAt)
+	}
+	if m.paid_at != nil {
+		fields = append(fields, resellerwithdrawal.FieldPaidAt)
+	}
+	if m.rejected_at != nil {
+		fields = append(fields, resellerwithdrawal.FieldRejectedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *ResellerWithdrawalMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case resellerwithdrawal.FieldResellerID:
+		return m.ResellerID()
+	case resellerwithdrawal.FieldAmount:
+		return m.Amount()
+	case resellerwithdrawal.FieldStatus:
+		return m.Status()
+	case resellerwithdrawal.FieldPaymentMethod:
+		return m.PaymentMethod()
+	case resellerwithdrawal.FieldPaymentAccount:
+		return m.PaymentAccount()
+	case resellerwithdrawal.FieldPaymentName:
+		return m.PaymentName()
+	case resellerwithdrawal.FieldAdminNotes:
+		return m.AdminNotes()
+	case resellerwithdrawal.FieldAdminID:
+		return m.AdminID()
+	case resellerwithdrawal.FieldCreatedAt:
+		return m.CreatedAt()
+	case resellerwithdrawal.FieldPaidAt:
+		return m.PaidAt()
+	case resellerwithdrawal.FieldRejectedAt:
+		return m.RejectedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *ResellerWithdrawalMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case resellerwithdrawal.FieldResellerID:
+		return m.OldResellerID(ctx)
+	case resellerwithdrawal.FieldAmount:
+		return m.OldAmount(ctx)
+	case resellerwithdrawal.FieldStatus:
+		return m.OldStatus(ctx)
+	case resellerwithdrawal.FieldPaymentMethod:
+		return m.OldPaymentMethod(ctx)
+	case resellerwithdrawal.FieldPaymentAccount:
+		return m.OldPaymentAccount(ctx)
+	case resellerwithdrawal.FieldPaymentName:
+		return m.OldPaymentName(ctx)
+	case resellerwithdrawal.FieldAdminNotes:
+		return m.OldAdminNotes(ctx)
+	case resellerwithdrawal.FieldAdminID:
+		return m.OldAdminID(ctx)
+	case resellerwithdrawal.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case resellerwithdrawal.FieldPaidAt:
+		return m.OldPaidAt(ctx)
+	case resellerwithdrawal.FieldRejectedAt:
+		return m.OldRejectedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown ResellerWithdrawal field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ResellerWithdrawalMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case resellerwithdrawal.FieldResellerID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetResellerID(v)
+		return nil
+	case resellerwithdrawal.FieldAmount:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAmount(v)
+		return nil
+	case resellerwithdrawal.FieldStatus:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
+		return nil
+	case resellerwithdrawal.FieldPaymentMethod:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPaymentMethod(v)
+		return nil
+	case resellerwithdrawal.FieldPaymentAccount:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPaymentAccount(v)
+		return nil
+	case resellerwithdrawal.FieldPaymentName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPaymentName(v)
+		return nil
+	case resellerwithdrawal.FieldAdminNotes:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAdminNotes(v)
+		return nil
+	case resellerwithdrawal.FieldAdminID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAdminID(v)
+		return nil
+	case resellerwithdrawal.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case resellerwithdrawal.FieldPaidAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPaidAt(v)
+		return nil
+	case resellerwithdrawal.FieldRejectedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRejectedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ResellerWithdrawal field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *ResellerWithdrawalMutation) AddedFields() []string {
+	var fields []string
+	if m.addreseller_id != nil {
+		fields = append(fields, resellerwithdrawal.FieldResellerID)
+	}
+	if m.addamount != nil {
+		fields = append(fields, resellerwithdrawal.FieldAmount)
+	}
+	if m.addadmin_id != nil {
+		fields = append(fields, resellerwithdrawal.FieldAdminID)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *ResellerWithdrawalMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case resellerwithdrawal.FieldResellerID:
+		return m.AddedResellerID()
+	case resellerwithdrawal.FieldAmount:
+		return m.AddedAmount()
+	case resellerwithdrawal.FieldAdminID:
+		return m.AddedAdminID()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ResellerWithdrawalMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case resellerwithdrawal.FieldResellerID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddResellerID(v)
+		return nil
+	case resellerwithdrawal.FieldAmount:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAmount(v)
+		return nil
+	case resellerwithdrawal.FieldAdminID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAdminID(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ResellerWithdrawal numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *ResellerWithdrawalMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(resellerwithdrawal.FieldAdminID) {
+		fields = append(fields, resellerwithdrawal.FieldAdminID)
+	}
+	if m.FieldCleared(resellerwithdrawal.FieldPaidAt) {
+		fields = append(fields, resellerwithdrawal.FieldPaidAt)
+	}
+	if m.FieldCleared(resellerwithdrawal.FieldRejectedAt) {
+		fields = append(fields, resellerwithdrawal.FieldRejectedAt)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *ResellerWithdrawalMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ResellerWithdrawalMutation) ClearField(name string) error {
+	switch name {
+	case resellerwithdrawal.FieldAdminID:
+		m.ClearAdminID()
+		return nil
+	case resellerwithdrawal.FieldPaidAt:
+		m.ClearPaidAt()
+		return nil
+	case resellerwithdrawal.FieldRejectedAt:
+		m.ClearRejectedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown ResellerWithdrawal nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *ResellerWithdrawalMutation) ResetField(name string) error {
+	switch name {
+	case resellerwithdrawal.FieldResellerID:
+		m.ResetResellerID()
+		return nil
+	case resellerwithdrawal.FieldAmount:
+		m.ResetAmount()
+		return nil
+	case resellerwithdrawal.FieldStatus:
+		m.ResetStatus()
+		return nil
+	case resellerwithdrawal.FieldPaymentMethod:
+		m.ResetPaymentMethod()
+		return nil
+	case resellerwithdrawal.FieldPaymentAccount:
+		m.ResetPaymentAccount()
+		return nil
+	case resellerwithdrawal.FieldPaymentName:
+		m.ResetPaymentName()
+		return nil
+	case resellerwithdrawal.FieldAdminNotes:
+		m.ResetAdminNotes()
+		return nil
+	case resellerwithdrawal.FieldAdminID:
+		m.ResetAdminID()
+		return nil
+	case resellerwithdrawal.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case resellerwithdrawal.FieldPaidAt:
+		m.ResetPaidAt()
+		return nil
+	case resellerwithdrawal.FieldRejectedAt:
+		m.ResetRejectedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown ResellerWithdrawal field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *ResellerWithdrawalMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *ResellerWithdrawalMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *ResellerWithdrawalMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *ResellerWithdrawalMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *ResellerWithdrawalMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *ResellerWithdrawalMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *ResellerWithdrawalMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown ResellerWithdrawal unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *ResellerWithdrawalMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown ResellerWithdrawal edge %s", name)
+}
+
 // SecuritySecretMutation represents an operation that mutates the SecuritySecret nodes in the graph.
 type SecuritySecretMutation struct {
 	config
@@ -26457,6 +27488,8 @@ type UsageLogMutation struct {
 	addrate_multiplier          *float64
 	account_rate_multiplier     *float64
 	addaccount_rate_multiplier  *float64
+	merchant_rate_snapshot      *float64
+	addmerchant_rate_snapshot   *float64
 	billing_type                *int8
 	addbilling_type             *int8
 	stream                      *bool
@@ -27662,6 +28695,76 @@ func (m *UsageLogMutation) ResetAccountRateMultiplier() {
 	delete(m.clearedFields, usagelog.FieldAccountRateMultiplier)
 }
 
+// SetMerchantRateSnapshot sets the "merchant_rate_snapshot" field.
+func (m *UsageLogMutation) SetMerchantRateSnapshot(f float64) {
+	m.merchant_rate_snapshot = &f
+	m.addmerchant_rate_snapshot = nil
+}
+
+// MerchantRateSnapshot returns the value of the "merchant_rate_snapshot" field in the mutation.
+func (m *UsageLogMutation) MerchantRateSnapshot() (r float64, exists bool) {
+	v := m.merchant_rate_snapshot
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMerchantRateSnapshot returns the old "merchant_rate_snapshot" field's value of the UsageLog entity.
+// If the UsageLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageLogMutation) OldMerchantRateSnapshot(ctx context.Context) (v *float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMerchantRateSnapshot is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMerchantRateSnapshot requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMerchantRateSnapshot: %w", err)
+	}
+	return oldValue.MerchantRateSnapshot, nil
+}
+
+// AddMerchantRateSnapshot adds f to the "merchant_rate_snapshot" field.
+func (m *UsageLogMutation) AddMerchantRateSnapshot(f float64) {
+	if m.addmerchant_rate_snapshot != nil {
+		*m.addmerchant_rate_snapshot += f
+	} else {
+		m.addmerchant_rate_snapshot = &f
+	}
+}
+
+// AddedMerchantRateSnapshot returns the value that was added to the "merchant_rate_snapshot" field in this mutation.
+func (m *UsageLogMutation) AddedMerchantRateSnapshot() (r float64, exists bool) {
+	v := m.addmerchant_rate_snapshot
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearMerchantRateSnapshot clears the value of the "merchant_rate_snapshot" field.
+func (m *UsageLogMutation) ClearMerchantRateSnapshot() {
+	m.merchant_rate_snapshot = nil
+	m.addmerchant_rate_snapshot = nil
+	m.clearedFields[usagelog.FieldMerchantRateSnapshot] = struct{}{}
+}
+
+// MerchantRateSnapshotCleared returns if the "merchant_rate_snapshot" field was cleared in this mutation.
+func (m *UsageLogMutation) MerchantRateSnapshotCleared() bool {
+	_, ok := m.clearedFields[usagelog.FieldMerchantRateSnapshot]
+	return ok
+}
+
+// ResetMerchantRateSnapshot resets all changes to the "merchant_rate_snapshot" field.
+func (m *UsageLogMutation) ResetMerchantRateSnapshot() {
+	m.merchant_rate_snapshot = nil
+	m.addmerchant_rate_snapshot = nil
+	delete(m.clearedFields, usagelog.FieldMerchantRateSnapshot)
+}
+
 // SetBillingType sets the "billing_type" field.
 func (m *UsageLogMutation) SetBillingType(i int8) {
 	m.billing_type = &i
@@ -28387,7 +29490,7 @@ func (m *UsageLogMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UsageLogMutation) Fields() []string {
-	fields := make([]string, 0, 32)
+	fields := make([]string, 0, 33)
 	if m.user != nil {
 		fields = append(fields, usagelog.FieldUserID)
 	}
@@ -28450,6 +29553,9 @@ func (m *UsageLogMutation) Fields() []string {
 	}
 	if m.account_rate_multiplier != nil {
 		fields = append(fields, usagelog.FieldAccountRateMultiplier)
+	}
+	if m.merchant_rate_snapshot != nil {
+		fields = append(fields, usagelog.FieldMerchantRateSnapshot)
 	}
 	if m.billing_type != nil {
 		fields = append(fields, usagelog.FieldBillingType)
@@ -28534,6 +29640,8 @@ func (m *UsageLogMutation) Field(name string) (ent.Value, bool) {
 		return m.RateMultiplier()
 	case usagelog.FieldAccountRateMultiplier:
 		return m.AccountRateMultiplier()
+	case usagelog.FieldMerchantRateSnapshot:
+		return m.MerchantRateSnapshot()
 	case usagelog.FieldBillingType:
 		return m.BillingType()
 	case usagelog.FieldStream:
@@ -28607,6 +29715,8 @@ func (m *UsageLogMutation) OldField(ctx context.Context, name string) (ent.Value
 		return m.OldRateMultiplier(ctx)
 	case usagelog.FieldAccountRateMultiplier:
 		return m.OldAccountRateMultiplier(ctx)
+	case usagelog.FieldMerchantRateSnapshot:
+		return m.OldMerchantRateSnapshot(ctx)
 	case usagelog.FieldBillingType:
 		return m.OldBillingType(ctx)
 	case usagelog.FieldStream:
@@ -28785,6 +29895,13 @@ func (m *UsageLogMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetAccountRateMultiplier(v)
 		return nil
+	case usagelog.FieldMerchantRateSnapshot:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMerchantRateSnapshot(v)
+		return nil
 	case usagelog.FieldBillingType:
 		v, ok := value.(int8)
 		if !ok {
@@ -28912,6 +30029,9 @@ func (m *UsageLogMutation) AddedFields() []string {
 	if m.addaccount_rate_multiplier != nil {
 		fields = append(fields, usagelog.FieldAccountRateMultiplier)
 	}
+	if m.addmerchant_rate_snapshot != nil {
+		fields = append(fields, usagelog.FieldMerchantRateSnapshot)
+	}
 	if m.addbilling_type != nil {
 		fields = append(fields, usagelog.FieldBillingType)
 	}
@@ -28960,6 +30080,8 @@ func (m *UsageLogMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedRateMultiplier()
 	case usagelog.FieldAccountRateMultiplier:
 		return m.AddedAccountRateMultiplier()
+	case usagelog.FieldMerchantRateSnapshot:
+		return m.AddedMerchantRateSnapshot()
 	case usagelog.FieldBillingType:
 		return m.AddedBillingType()
 	case usagelog.FieldDurationMs:
@@ -29075,6 +30197,13 @@ func (m *UsageLogMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddAccountRateMultiplier(v)
 		return nil
+	case usagelog.FieldMerchantRateSnapshot:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddMerchantRateSnapshot(v)
+		return nil
 	case usagelog.FieldBillingType:
 		v, ok := value.(int8)
 		if !ok {
@@ -29120,6 +30249,9 @@ func (m *UsageLogMutation) ClearedFields() []string {
 	if m.FieldCleared(usagelog.FieldAccountRateMultiplier) {
 		fields = append(fields, usagelog.FieldAccountRateMultiplier)
 	}
+	if m.FieldCleared(usagelog.FieldMerchantRateSnapshot) {
+		fields = append(fields, usagelog.FieldMerchantRateSnapshot)
+	}
 	if m.FieldCleared(usagelog.FieldDurationMs) {
 		fields = append(fields, usagelog.FieldDurationMs)
 	}
@@ -29160,6 +30292,9 @@ func (m *UsageLogMutation) ClearField(name string) error {
 		return nil
 	case usagelog.FieldAccountRateMultiplier:
 		m.ClearAccountRateMultiplier()
+		return nil
+	case usagelog.FieldMerchantRateSnapshot:
+		m.ClearMerchantRateSnapshot()
 		return nil
 	case usagelog.FieldDurationMs:
 		m.ClearDurationMs()
@@ -29249,6 +30384,9 @@ func (m *UsageLogMutation) ResetField(name string) error {
 		return nil
 	case usagelog.FieldAccountRateMultiplier:
 		m.ResetAccountRateMultiplier()
+		return nil
+	case usagelog.FieldMerchantRateSnapshot:
+		m.ResetMerchantRateSnapshot()
 		return nil
 	case usagelog.FieldBillingType:
 		m.ResetBillingType()

@@ -160,6 +160,11 @@ func AccountRateMultiplier(v float64) predicate.UsageLog {
 	return predicate.UsageLog(sql.FieldEQ(FieldAccountRateMultiplier, v))
 }
 
+// MerchantRateSnapshot applies equality check predicate on the "merchant_rate_snapshot" field. It's identical to MerchantRateSnapshotEQ.
+func MerchantRateSnapshot(v float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldEQ(FieldMerchantRateSnapshot, v))
+}
+
 // BillingType applies equality check predicate on the "billing_type" field. It's identical to BillingTypeEQ.
 func BillingType(v int8) predicate.UsageLog {
 	return predicate.UsageLog(sql.FieldEQ(FieldBillingType, v))
@@ -1033,6 +1038,56 @@ func AccountRateMultiplierIsNil() predicate.UsageLog {
 // AccountRateMultiplierNotNil applies the NotNil predicate on the "account_rate_multiplier" field.
 func AccountRateMultiplierNotNil() predicate.UsageLog {
 	return predicate.UsageLog(sql.FieldNotNull(FieldAccountRateMultiplier))
+}
+
+// MerchantRateSnapshotEQ applies the EQ predicate on the "merchant_rate_snapshot" field.
+func MerchantRateSnapshotEQ(v float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldEQ(FieldMerchantRateSnapshot, v))
+}
+
+// MerchantRateSnapshotNEQ applies the NEQ predicate on the "merchant_rate_snapshot" field.
+func MerchantRateSnapshotNEQ(v float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNEQ(FieldMerchantRateSnapshot, v))
+}
+
+// MerchantRateSnapshotIn applies the In predicate on the "merchant_rate_snapshot" field.
+func MerchantRateSnapshotIn(vs ...float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldIn(FieldMerchantRateSnapshot, vs...))
+}
+
+// MerchantRateSnapshotNotIn applies the NotIn predicate on the "merchant_rate_snapshot" field.
+func MerchantRateSnapshotNotIn(vs ...float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNotIn(FieldMerchantRateSnapshot, vs...))
+}
+
+// MerchantRateSnapshotGT applies the GT predicate on the "merchant_rate_snapshot" field.
+func MerchantRateSnapshotGT(v float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldGT(FieldMerchantRateSnapshot, v))
+}
+
+// MerchantRateSnapshotGTE applies the GTE predicate on the "merchant_rate_snapshot" field.
+func MerchantRateSnapshotGTE(v float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldGTE(FieldMerchantRateSnapshot, v))
+}
+
+// MerchantRateSnapshotLT applies the LT predicate on the "merchant_rate_snapshot" field.
+func MerchantRateSnapshotLT(v float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldLT(FieldMerchantRateSnapshot, v))
+}
+
+// MerchantRateSnapshotLTE applies the LTE predicate on the "merchant_rate_snapshot" field.
+func MerchantRateSnapshotLTE(v float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldLTE(FieldMerchantRateSnapshot, v))
+}
+
+// MerchantRateSnapshotIsNil applies the IsNil predicate on the "merchant_rate_snapshot" field.
+func MerchantRateSnapshotIsNil() predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldIsNull(FieldMerchantRateSnapshot))
+}
+
+// MerchantRateSnapshotNotNil applies the NotNil predicate on the "merchant_rate_snapshot" field.
+func MerchantRateSnapshotNotNil() predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNotNull(FieldMerchantRateSnapshot))
 }
 
 // BillingTypeEQ applies the EQ predicate on the "billing_type" field.

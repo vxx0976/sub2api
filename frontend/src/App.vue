@@ -5,7 +5,7 @@ import { useI18n } from 'vue-i18n'
 import Toast from '@/components/common/Toast.vue'
 import NavigationProgress from '@/components/common/NavigationProgress.vue'
 import AnnouncementPopup from '@/components/common/AnnouncementPopup.vue'
-import { useAppStore, useAuthStore, useSubscriptionStore, useAnnouncementStore } from '@/stores'
+import { useAppStore, useAuthStore, useSubscriptionStore, useAnnouncementStore, useResellerSettingsStore } from '@/stores'
 import { getSetupStatus } from '@/api/setup'
 import { applySeoMeta } from '@/utils/seo'
 
@@ -16,6 +16,7 @@ const appStore = useAppStore()
 const authStore = useAuthStore()
 const subscriptionStore = useSubscriptionStore()
 const announcementStore = useAnnouncementStore()
+const resellerSettingsStore = useResellerSettingsStore()
 
 /**
  * Update favicon dynamically
@@ -150,6 +151,7 @@ watch(
       // User logged out: clear data and stop polling
       subscriptionStore.clear()
       announcementStore.reset()
+      resellerSettingsStore.reset()
       document.removeEventListener('visibilitychange', onVisibilityChange)
     }
   },

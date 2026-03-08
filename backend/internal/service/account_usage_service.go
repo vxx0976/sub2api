@@ -75,6 +75,10 @@ type UsageLogRepository interface {
 	GetGeoDistribution(ctx context.Context, startTime, endTime time.Time) ([]GeoDistributionItem, error)
 	GetDistinctIPsWithoutCountry(ctx context.Context, limit int) ([]string, error)
 	BackfillCountryCode(ctx context.Context, ip, countryCode string) (int64, error)
+
+	// Commission queries
+	SumCommissionByUserIDs(ctx context.Context, userIDs []int64) (totalCost float64, totalCommission float64, err error)
+	ListCommissionDetail(ctx context.Context, userIDs []int64, startDate, endDate *time.Time, userIDFilter *int64, limit, offset int) ([]*CommissionDetailItem, int, error)
 }
 
 type accountWindowStatsBatchReader interface {

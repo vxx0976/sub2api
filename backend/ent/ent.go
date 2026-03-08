@@ -30,6 +30,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/referralreward"
 	"github.com/Wei-Shaw/sub2api/ent/resellerdomain"
 	"github.com/Wei-Shaw/sub2api/ent/resellersetting"
+	"github.com/Wei-Shaw/sub2api/ent/resellerwithdrawal"
 	"github.com/Wei-Shaw/sub2api/ent/securitysecret"
 	"github.com/Wei-Shaw/sub2api/ent/setting"
 	"github.com/Wei-Shaw/sub2api/ent/usagecleanuptask"
@@ -117,6 +118,7 @@ func checkColumn(t, c string) error {
 			referralreward.Table:          referralreward.ValidColumn,
 			resellerdomain.Table:          resellerdomain.ValidColumn,
 			resellersetting.Table:         resellersetting.ValidColumn,
+			resellerwithdrawal.Table:      resellerwithdrawal.ValidColumn,
 			securitysecret.Table:          securitysecret.ValidColumn,
 			setting.Table:                 setting.ValidColumn,
 			usagecleanuptask.Table:        usagecleanuptask.ValidColumn,

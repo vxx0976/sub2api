@@ -32,6 +32,8 @@ type AdminHandlers struct {
 	ErrorPassthrough *admin.ErrorPassthroughHandler
 	APIKey           *admin.AdminAPIKeyHandler
 	ScheduledTest    *admin.ScheduledTestHandler
+	Merchant         *admin.MerchantHandler
+	AdminWithdrawal  *admin.AdminWithdrawalHandler
 }
 
 // ResellerHandlers contains all reseller-related HTTP handlers
@@ -43,6 +45,8 @@ type ResellerHandlers struct {
 	Redeem       *reseller.RedeemHandler
 	Announcement *reseller.AnnouncementHandler
 	User         *reseller.UserHandler
+	Commission   *reseller.CommissionHandler
+	Withdrawal   *reseller.WithdrawalHandler
 }
 
 // Handlers contains all HTTP handlers

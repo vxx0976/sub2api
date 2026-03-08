@@ -442,6 +442,33 @@ func (_u *UsageLogUpdate) ClearAccountRateMultiplier() *UsageLogUpdate {
 	return _u
 }
 
+// SetMerchantRateSnapshot sets the "merchant_rate_snapshot" field.
+func (_u *UsageLogUpdate) SetMerchantRateSnapshot(v float64) *UsageLogUpdate {
+	_u.mutation.ResetMerchantRateSnapshot()
+	_u.mutation.SetMerchantRateSnapshot(v)
+	return _u
+}
+
+// SetNillableMerchantRateSnapshot sets the "merchant_rate_snapshot" field if the given value is not nil.
+func (_u *UsageLogUpdate) SetNillableMerchantRateSnapshot(v *float64) *UsageLogUpdate {
+	if v != nil {
+		_u.SetMerchantRateSnapshot(*v)
+	}
+	return _u
+}
+
+// AddMerchantRateSnapshot adds value to the "merchant_rate_snapshot" field.
+func (_u *UsageLogUpdate) AddMerchantRateSnapshot(v float64) *UsageLogUpdate {
+	_u.mutation.AddMerchantRateSnapshot(v)
+	return _u
+}
+
+// ClearMerchantRateSnapshot clears the value of the "merchant_rate_snapshot" field.
+func (_u *UsageLogUpdate) ClearMerchantRateSnapshot() *UsageLogUpdate {
+	_u.mutation.ClearMerchantRateSnapshot()
+	return _u
+}
+
 // SetBillingType sets the "billing_type" field.
 func (_u *UsageLogUpdate) SetBillingType(v int8) *UsageLogUpdate {
 	_u.mutation.ResetBillingType()
@@ -881,6 +908,15 @@ func (_u *UsageLogUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.AccountRateMultiplierCleared() {
 		_spec.ClearField(usagelog.FieldAccountRateMultiplier, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.MerchantRateSnapshot(); ok {
+		_spec.SetField(usagelog.FieldMerchantRateSnapshot, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedMerchantRateSnapshot(); ok {
+		_spec.AddField(usagelog.FieldMerchantRateSnapshot, field.TypeFloat64, value)
+	}
+	if _u.mutation.MerchantRateSnapshotCleared() {
+		_spec.ClearField(usagelog.FieldMerchantRateSnapshot, field.TypeFloat64)
 	}
 	if value, ok := _u.mutation.BillingType(); ok {
 		_spec.SetField(usagelog.FieldBillingType, field.TypeInt8, value)
@@ -1517,6 +1553,33 @@ func (_u *UsageLogUpdateOne) ClearAccountRateMultiplier() *UsageLogUpdateOne {
 	return _u
 }
 
+// SetMerchantRateSnapshot sets the "merchant_rate_snapshot" field.
+func (_u *UsageLogUpdateOne) SetMerchantRateSnapshot(v float64) *UsageLogUpdateOne {
+	_u.mutation.ResetMerchantRateSnapshot()
+	_u.mutation.SetMerchantRateSnapshot(v)
+	return _u
+}
+
+// SetNillableMerchantRateSnapshot sets the "merchant_rate_snapshot" field if the given value is not nil.
+func (_u *UsageLogUpdateOne) SetNillableMerchantRateSnapshot(v *float64) *UsageLogUpdateOne {
+	if v != nil {
+		_u.SetMerchantRateSnapshot(*v)
+	}
+	return _u
+}
+
+// AddMerchantRateSnapshot adds value to the "merchant_rate_snapshot" field.
+func (_u *UsageLogUpdateOne) AddMerchantRateSnapshot(v float64) *UsageLogUpdateOne {
+	_u.mutation.AddMerchantRateSnapshot(v)
+	return _u
+}
+
+// ClearMerchantRateSnapshot clears the value of the "merchant_rate_snapshot" field.
+func (_u *UsageLogUpdateOne) ClearMerchantRateSnapshot() *UsageLogUpdateOne {
+	_u.mutation.ClearMerchantRateSnapshot()
+	return _u
+}
+
 // SetBillingType sets the "billing_type" field.
 func (_u *UsageLogUpdateOne) SetBillingType(v int8) *UsageLogUpdateOne {
 	_u.mutation.ResetBillingType()
@@ -1986,6 +2049,15 @@ func (_u *UsageLogUpdateOne) sqlSave(ctx context.Context) (_node *UsageLog, err 
 	}
 	if _u.mutation.AccountRateMultiplierCleared() {
 		_spec.ClearField(usagelog.FieldAccountRateMultiplier, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.MerchantRateSnapshot(); ok {
+		_spec.SetField(usagelog.FieldMerchantRateSnapshot, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedMerchantRateSnapshot(); ok {
+		_spec.AddField(usagelog.FieldMerchantRateSnapshot, field.TypeFloat64, value)
+	}
+	if _u.mutation.MerchantRateSnapshotCleared() {
+		_spec.ClearField(usagelog.FieldMerchantRateSnapshot, field.TypeFloat64)
 	}
 	if value, ok := _u.mutation.BillingType(); ok {
 		_spec.SetField(usagelog.FieldBillingType, field.TypeInt8, value)

@@ -38,6 +38,8 @@ type GroupRepository interface {
 	BindAccountsToGroup(ctx context.Context, groupID int64, accountIDs []int64) error
 	// UpdateSortOrders 批量更新分组排序
 	UpdateSortOrders(ctx context.Context, updates []GroupSortOrderUpdate) error
+	// CountByOwnerID returns the number of groups owned by the given user.
+	CountByOwnerID(ctx context.Context, ownerID int64) (int64, error)
 }
 
 // GroupSortOrderUpdate 分组排序更新

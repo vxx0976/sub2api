@@ -50,6 +50,8 @@ type Tx struct {
 	ResellerDomain *ResellerDomainClient
 	// ResellerSetting is the client for interacting with the ResellerSetting builders.
 	ResellerSetting *ResellerSettingClient
+	// ResellerWithdrawal is the client for interacting with the ResellerWithdrawal builders.
+	ResellerWithdrawal *ResellerWithdrawalClient
 	// SecuritySecret is the client for interacting with the SecuritySecret builders.
 	SecuritySecret *SecuritySecretClient
 	// Setting is the client for interacting with the Setting builders.
@@ -217,6 +219,7 @@ func (tx *Tx) init() {
 	tx.ReferralReward = NewReferralRewardClient(tx.config)
 	tx.ResellerDomain = NewResellerDomainClient(tx.config)
 	tx.ResellerSetting = NewResellerSettingClient(tx.config)
+	tx.ResellerWithdrawal = NewResellerWithdrawalClient(tx.config)
 	tx.SecuritySecret = NewSecuritySecretClient(tx.config)
 	tx.Setting = NewSettingClient(tx.config)
 	tx.UsageCleanupTask = NewUsageCleanupTaskClient(tx.config)

@@ -36,6 +36,12 @@ func RegisterResellerRoutes(
 
 		// 公告管理
 		registerResellerAnnouncementRoutes(reseller, h)
+
+		// 佣金管理
+		registerResellerCommissionRoutes(reseller, h)
+
+		// 提现管理
+		registerResellerWithdrawalRoutes(reseller, h)
 	}
 }
 
@@ -95,5 +101,22 @@ func registerResellerAnnouncementRoutes(reseller *gin.RouterGroup, h *handler.Ha
 		announcements.POST("", h.Reseller.Announcement.Create)
 		announcements.PUT("/:id", h.Reseller.Announcement.Update)
 		announcements.DELETE("/:id", h.Reseller.Announcement.Delete)
+	}
+}
+
+func registerResellerCommissionRoutes(reseller *gin.RouterGroup, h *handler.Handlers) {
+	commissions := reseller.Group("/commissions")
+	{
+		commissions.GET("/summary", h.Reseller.Commission.GetSummary)
+		commissions.GET("/detail", h.Reseller.Commission.GetDetail)
+	}
+}
+
+func registerResellerWithdrawalRoutes(reseller *gin.RouterGroup, h *handler.Handlers) {
+	withdrawals := reseller.Group("/withdrawals")
+	{
+		withdrawals.GET("", h.Reseller.Withdrawal.List)
+		withdrawals.POST("", h.Reseller.Withdrawal.Create)
+		withdrawals.DELETE("/:id", h.Reseller.Withdrawal.Cancel)
 	}
 }

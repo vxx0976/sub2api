@@ -522,6 +522,7 @@ type GatewayService struct {
 	userRepo              UserRepository
 	userSubRepo           UserSubscriptionRepository
 	userGroupRateRepo     UserGroupRateRepository
+	resellerSettingRepo   ResellerSettingRepository
 	cache                 GatewayCache
 	digestStore           *DigestSessionStore
 	cfg                   *config.Config
@@ -568,6 +569,7 @@ func NewGatewayService(
 	sessionLimitCache SessionLimitCache,
 	rpmCache RPMCache,
 	digestStore *DigestSessionStore,
+	resellerSettingRepo ResellerSettingRepository,
 ) *GatewayService {
 	userGroupRateTTL := resolveUserGroupRateCacheTTL(cfg)
 	modelsListTTL := resolveModelsListCacheTTL(cfg)
@@ -579,6 +581,7 @@ func NewGatewayService(
 		userRepo:             userRepo,
 		userSubRepo:          userSubRepo,
 		userGroupRateRepo:    userGroupRateRepo,
+		resellerSettingRepo:  resellerSettingRepo,
 		cache:                cache,
 		digestStore:          digestStore,
 		cfg:                  cfg,
@@ -608,6 +611,23 @@ func NewGatewayService(
 	svc.debugModelRouting.Store(parseDebugEnvBool(os.Getenv("SUB2API_DEBUG_MODEL_ROUTING")))
 	svc.debugClaudeMimic.Store(parseDebugEnvBool(os.Getenv("SUB2API_DEBUG_CLAUDE_MIMIC")))
 	return svc
+}
+
+// getMerchantRateSnapshot returns the price_multiplier for the reseller that owns this user,
+// or nil if the user has no parent or the setting is absent/invalid.
+func (s *GatewayService) getMerchantRateSnapshot(ctx context.Context, parentID *int64) *float64 {
+	if parentID == nil {
+		return nil
+	}
+	val, err := s.resellerSettingRepo.Get(ctx, *parentID, "price_multiplier")
+	if err != nil || val == "" {
+		return nil
+	}
+	mult, err := strconv.ParseFloat(val, 64)
+	if err != nil || mult <= 0 {
+		return nil
+	}
+	return &mult
 }
 
 // GenerateSessionHash 从预解析请求计算粘性会话 hash
@@ -6983,6 +7003,10 @@ func (s *GatewayService) RecordUsage(ctx context.Context, input *RecordUsageInpu
 		mediaType = &result.MediaType
 	}
 	accountRateMultiplier := account.BillingRateMultiplier()
+
+	// Compute merchant_rate_snapshot if user belongs to a reseller
+	merchantRateSnapshot := s.getMerchantRateSnapshot(ctx, user.ParentID)
+
 	usageLog := &UsageLog{
 		UserID:                user.ID,
 		APIKeyID:              apiKey.ID,
@@ -7003,6 +7027,7 @@ func (s *GatewayService) RecordUsage(ctx context.Context, input *RecordUsageInpu
 		ActualCost:            cost.ActualCost,
 		RateMultiplier:        multiplier,
 		AccountRateMultiplier: &accountRateMultiplier,
+		MerchantRateSnapshot:  merchantRateSnapshot,
 		BillingType:           billingType,
 		Stream:                result.Stream,
 		DurationMs:            &durationMs,
@@ -7161,6 +7186,10 @@ func (s *GatewayService) RecordUsageWithLongContext(ctx context.Context, input *
 		imageSize = &result.ImageSize
 	}
 	accountRateMultiplier := account.BillingRateMultiplier()
+
+	// Compute merchant_rate_snapshot if user belongs to a reseller
+	merchantRateSnapshotLong := s.getMerchantRateSnapshot(ctx, user.ParentID)
+
 	usageLog := &UsageLog{
 		UserID:                user.ID,
 		APIKeyID:              apiKey.ID,
@@ -7181,6 +7210,7 @@ func (s *GatewayService) RecordUsageWithLongContext(ctx context.Context, input *
 		ActualCost:            cost.ActualCost,
 		RateMultiplier:        multiplier,
 		AccountRateMultiplier: &accountRateMultiplier,
+		MerchantRateSnapshot:  merchantRateSnapshotLong,
 		BillingType:           billingType,
 		Stream:                result.Stream,
 		DurationMs:            &durationMs,

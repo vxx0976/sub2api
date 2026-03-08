@@ -2,7 +2,6 @@ package reseller
 
 import (
 	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
-	middleware2 "github.com/Wei-Shaw/sub2api/internal/server/middleware"
 	"github.com/Wei-Shaw/sub2api/internal/service"
 
 	"github.com/gin-gonic/gin"
@@ -36,11 +35,3 @@ func (h *DashboardHandler) GetStats(c *gin.Context) {
 	response.Success(c, stats)
 }
 
-// getResellerIDFromContext extracts the reseller user ID from gin context
-func getResellerIDFromContext(c *gin.Context) int64 {
-	subject, ok := middleware2.GetAuthSubjectFromContext(c)
-	if !ok {
-		return 0
-	}
-	return subject.UserID
-}

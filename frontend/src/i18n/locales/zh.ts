@@ -4047,6 +4047,8 @@ export default {
         contactInfo: '客服联系方式',
         contactInfoPlaceholder: '例如：QQ: 123456789',
         contactInfoHint: '填写客服联系方式，将展示在兑换页面、个人资料等位置',
+        platformCost: '平台进价（每刀）',
+        platformCostHint: '平台向商户收取的成本价，商户据此设定自己的卖价',
         contactWechat: '微信号',
         contactTelegram: 'Telegram',
         docUrl: '文档链接',

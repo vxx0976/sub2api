@@ -90,6 +90,12 @@ func RegisterAdminRoutes(
 
 		// 定时测试计划
 		registerScheduledTestRoutes(admin, h)
+
+		// 商户管理
+		registerAdminMerchantRoutes(admin, h)
+
+		// 提现管理
+		registerAdminWithdrawalRoutes(admin, h)
 	}
 }
 
@@ -545,5 +551,23 @@ func registerErrorPassthroughRoutes(admin *gin.RouterGroup, h *handler.Handlers)
 		rules.POST("", h.Admin.ErrorPassthrough.Create)
 		rules.PUT("/:id", h.Admin.ErrorPassthrough.Update)
 		rules.DELETE("/:id", h.Admin.ErrorPassthrough.Delete)
+	}
+}
+
+func registerAdminMerchantRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
+	merchants := admin.Group("/merchants")
+	{
+		merchants.GET("", h.Admin.Merchant.List)
+		merchants.GET("/:id/settings", h.Admin.Merchant.GetSettings)
+		merchants.PUT("/:id/settings", h.Admin.Merchant.UpdateSettings)
+	}
+}
+
+func registerAdminWithdrawalRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
+	withdrawals := admin.Group("/withdrawals")
+	{
+		withdrawals.GET("", h.Admin.AdminWithdrawal.List)
+		withdrawals.PUT("/:id/pay", h.Admin.AdminWithdrawal.Pay)
+		withdrawals.PUT("/:id/reject", h.Admin.AdminWithdrawal.Reject)
 	}
 }

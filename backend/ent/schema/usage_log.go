@@ -91,6 +91,12 @@ func (UsageLog) Fields() []ent.Field {
 			Nillable().
 			SchemaType(map[string]string{dialect.Postgres: "decimal(10,4)"}),
 
+		// merchant_rate_snapshot: 商户定价倍率快照（NULL 表示非商户用户或商户未配置倍率）
+		field.Float("merchant_rate_snapshot").
+			Optional().
+			Nillable().
+			SchemaType(map[string]string{dialect.Postgres: "decimal(10,4)"}),
+
 		// 其他字段
 		field.Int8("billing_type").
 			Default(0),

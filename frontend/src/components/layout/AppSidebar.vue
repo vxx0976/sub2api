@@ -170,7 +170,7 @@
 import { computed, h, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { useAdminSettingsStore, useAppStore, useAuthStore, useOnboardingStore } from '@/stores'
+import { useAdminSettingsStore, useAppStore, useAuthStore, useOnboardingStore, useResellerSettingsStore } from '@/stores'
 import { getMySubscriptions } from '@/api/subscriptions'
 import VersionBadge from '@/components/common/VersionBadge.vue'
 import { sanitizeSvg } from '@/utils/sanitize'
@@ -190,6 +190,7 @@ const appStore = useAppStore()
 const authStore = useAuthStore()
 const onboardingStore = useOnboardingStore()
 const adminSettingsStore = useAdminSettingsStore()
+const resellerSettingsStore = useResellerSettingsStore()
 
 const sidebarCollapsed = computed(() => appStore.sidebarCollapsed)
 const mobileOpen = computed(() => appStore.mobileOpen)
@@ -605,16 +606,23 @@ const userNavItems = computed((): NavItem[] => {
 })
 
 // Reseller navigation items
-const resellerNavItems = computed(() => [
-  { path: '/dashboard', label: t('nav.dashboard'), icon: DashboardIcon },
-  { path: '/keys', label: t('nav.apiKeys'), icon: KeyIcon },
-  { path: '/usage', label: t('nav.usage'), icon: ChartIcon },
-  { path: '/merchant/users', label: t('nav.resellerUsers'), icon: UsersIcon },
-  { path: '/merchant/sites', label: t('nav.resellerSites'), icon: GlobeIcon },
-  { path: '/merchant/redeem', label: t('nav.resellerRedeem'), icon: TicketIcon },
-  { path: '/merchant/announcements', label: t('nav.resellerAnnouncements'), icon: BellIcon },
-  { path: '/merchant/settings', label: t('nav.resellerSettings'), icon: CogIcon },
-])
+const resellerNavItems = computed(() => {
+  const items = [
+    { path: '/dashboard', label: t('nav.dashboard'), icon: DashboardIcon },
+    { path: '/keys', label: t('nav.apiKeys'), icon: KeyIcon },
+    { path: '/usage', label: t('nav.usage'), icon: ChartIcon },
+    { path: '/merchant/users', label: t('nav.resellerUsers'), icon: UsersIcon },
+    { path: '/merchant/sites', label: t('nav.resellerSites'), icon: GlobeIcon },
+    { path: '/merchant/redeem', label: t('nav.resellerRedeem'), icon: TicketIcon },
+    { path: '/merchant/announcements', label: t('nav.resellerAnnouncements'), icon: BellIcon },
+    ...(resellerSettingsStore.isAgentEnabled ? [
+      { path: '/merchant/commissions', label: t('nav.resellerCommissions'), icon: ChartIcon },
+      { path: '/merchant/withdrawals', label: t('nav.resellerWithdrawals'), icon: CreditCardIcon },
+    ] : []),
+    { path: '/merchant/settings', label: t('nav.resellerSettings'), icon: CogIcon },
+  ]
+  return items
+})
 
 // Personal navigation items (for admin's "My Account" section, without Dashboard)
 const personalNavItems = computed((): NavItem[] => {
@@ -678,6 +686,8 @@ const adminNavItems = computed((): NavItem[] => {
     { path: '/admin/redeem', label: t('nav.redeemCodes'), icon: TicketIcon, hideInSimpleMode: true },
     { path: '/admin/promo-codes', label: t('nav.promoCodes'), icon: GiftIcon, hideInSimpleMode: true },
     { path: '/admin/usage', label: t('nav.usage'), icon: ChartIcon },
+    { path: '/admin/merchants', label: t('nav.adminMerchants'), icon: UsersIcon },
+    { path: '/admin/merchant-withdrawals', label: t('nav.adminMerchantWithdrawals'), icon: CreditCardIcon },
   ]
 
   // 简单模式下，在系统设置前插入 API密钥
@@ -764,6 +774,9 @@ watch(
 onMounted(async () => {
   if (isAdmin.value) {
     adminSettingsStore.fetch()
+  }
+  if (isReseller.value) {
+    resellerSettingsStore.load()
   }
   // Check if regular user has active subscriptions
   if (!isAdmin.value && !isReseller.value && authStore.isAuthenticated) {

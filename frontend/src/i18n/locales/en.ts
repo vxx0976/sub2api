@@ -4066,6 +4066,8 @@ export default {
         contactInfo: 'Contact Info',
         contactInfoPlaceholder: 'e.g., QQ: 123456789',
         contactInfoHint: 'Customer support contact info, displayed on redeem page, profile, etc.',
+        platformCost: 'Platform Cost (per unit)',
+        platformCostHint: 'The cost the platform charges merchants. Merchants use this as reference to set their selling price.',
         contactWechat: 'WeChat ID',
         contactTelegram: 'Telegram',
         docUrl: 'Documentation URL',

@@ -7,6 +7,7 @@ import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useAppStore } from '@/stores/app'
 import { useAdminSettingsStore } from '@/stores/adminSettings'
+import { useResellerSettingsStore } from '@/stores/resellerSettings'
 import { useNavigationLoadingState } from '@/composables/useNavigationLoading'
 import { useRoutePrefetch } from '@/composables/useRoutePrefetch'
 import { resolveDocumentTitle } from './title'
@@ -438,7 +439,7 @@ const navigationLoading = useNavigationLoadingState()
 // 延迟初始化预加载，传入 router 实例
 let routePrefetch: ReturnType<typeof useRoutePrefetch> | null = null
 
-router.beforeEach((to, _from, next) => {
+router.beforeEach(async (to, _from, next) => {
   // 开始导航加载状态
   navigationLoading.startNavigation()
 
@@ -512,6 +513,19 @@ router.beforeEach((to, _from, next) => {
   if (requiresReseller && !authStore.isReseller && !authStore.isAdmin) {
     next('/console-home')
     return
+  }
+
+  // Check agent feature requirement (commissions, withdrawals)
+  if (to.meta.requiresAgentEnabled === true && authStore.isReseller) {
+    const resellerSettingsStore = useResellerSettingsStore()
+    // If settings not yet loaded, load them now
+    if (!resellerSettingsStore.loaded) {
+      await resellerSettingsStore.load()
+    }
+    if (!resellerSettingsStore.isAgentEnabled) {
+      next('/dashboard')
+      return
+    }
   }
 
   // 简易模式下限制访问某些页面

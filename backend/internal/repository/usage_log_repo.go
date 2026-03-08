@@ -22,7 +22,7 @@ import (
 	"github.com/lib/pq"
 )
 
-const usageLogSelectColumns = "id, user_id, api_key_id, account_id, request_id, model, group_id, subscription_id, input_tokens, output_tokens, cache_creation_tokens, cache_read_tokens, cache_creation_5m_tokens, cache_creation_1h_tokens, input_cost, output_cost, cache_creation_cost, cache_read_cost, total_cost, actual_cost, rate_multiplier, account_rate_multiplier, billing_type, request_type, stream, openai_ws_mode, duration_ms, first_token_ms, user_agent, ip_address, country_code, image_count, image_size, media_type, reasoning_effort, cache_ttl_overridden, created_at"
+const usageLogSelectColumns = "id, user_id, api_key_id, account_id, request_id, model, group_id, subscription_id, input_tokens, output_tokens, cache_creation_tokens, cache_read_tokens, cache_creation_5m_tokens, cache_creation_1h_tokens, input_cost, output_cost, cache_creation_cost, cache_read_cost, total_cost, actual_cost, rate_multiplier, account_rate_multiplier, billing_type, request_type, stream, openai_ws_mode, duration_ms, first_token_ms, user_agent, ip_address, country_code, image_count, image_size, media_type, reasoning_effort, cache_ttl_overridden, merchant_rate_snapshot, created_at"
 
 // dateFormatWhitelist 将 granularity 参数映射为 PostgreSQL TO_CHAR 格式字符串，防止外部输入直接拼入 SQL
 var dateFormatWhitelist = map[string]string{
@@ -138,6 +138,7 @@ func (r *usageLogRepository) Create(ctx context.Context, log *service.UsageLog) 
 			media_type,
 			reasoning_effort,
 			cache_ttl_overridden,
+			merchant_rate_snapshot,
 			created_at
 		) VALUES (
 			$1, $2, $3, $4, $5,
@@ -145,7 +146,7 @@ func (r *usageLogRepository) Create(ctx context.Context, log *service.UsageLog) 
 			$8, $9, $10, $11,
 			$12, $13,
 			$14, $15, $16, $17, $18, $19,
-			$20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36
+			$20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37
 		)
 		ON CONFLICT (request_id, api_key_id) DO NOTHING
 		RETURNING id, created_at
@@ -203,6 +204,7 @@ func (r *usageLogRepository) Create(ctx context.Context, log *service.UsageLog) 
 		mediaType,
 		reasoningEffort,
 		log.CacheTTLOverridden,
+		log.MerchantRateSnapshot,
 		createdAt,
 	}
 	if err := scanSingleRow(ctx, sqlq, query, args, &log.ID, &log.CreatedAt); err != nil {
@@ -2574,6 +2576,7 @@ func scanUsageLog(scanner interface{ Scan(...any) error }) (*service.UsageLog, e
 		mediaType             sql.NullString
 		reasoningEffort       sql.NullString
 		cacheTTLOverridden    bool
+		merchantRateSnapshot  sql.NullFloat64
 		createdAt             time.Time
 	)
 
@@ -2614,6 +2617,7 @@ func scanUsageLog(scanner interface{ Scan(...any) error }) (*service.UsageLog, e
 		&mediaType,
 		&reasoningEffort,
 		&cacheTTLOverridden,
+		&merchantRateSnapshot,
 		&createdAt,
 	); err != nil {
 		return nil, err
@@ -2639,6 +2643,7 @@ func scanUsageLog(scanner interface{ Scan(...any) error }) (*service.UsageLog, e
 		ActualCost:            actualCost,
 		RateMultiplier:        rateMultiplier,
 		AccountRateMultiplier: nullFloat64Ptr(accountRateMultiplier),
+		MerchantRateSnapshot:  nullFloat64Ptr(merchantRateSnapshot),
 		BillingType:           int8(billingType),
 		RequestType:           service.RequestTypeFromInt16(requestTypeRaw),
 		ImageCount:            imageCount,
@@ -2828,4 +2833,105 @@ func setToSlice(set map[int64]struct{}) []int64 {
 		out = append(out, id)
 	}
 	return out
+}
+
+// SumCommissionByUserIDs aggregates total_cost and commission for given user IDs.
+// commission = SUM(total_cost * (merchant_rate_snapshot - 1)) WHERE merchant_rate_snapshot IS NOT NULL
+func (r *usageLogRepository) SumCommissionByUserIDs(ctx context.Context, userIDs []int64) (totalCost float64, totalCommission float64, err error) {
+	if len(userIDs) == 0 {
+		return 0, 0, nil
+	}
+	query := `
+		SELECT
+			COALESCE(SUM(total_cost), 0),
+			COALESCE(SUM(total_cost * (merchant_rate_snapshot - 1)), 0)
+		FROM usage_logs
+		WHERE user_id = ANY($1)
+		  AND merchant_rate_snapshot IS NOT NULL
+	`
+	if err := scanSingleRow(ctx, r.sql, query, []any{pq.Array(userIDs)}, &totalCost, &totalCommission); err != nil {
+		return 0, 0, err
+	}
+	return totalCost, totalCommission, nil
+}
+
+// ListCommissionDetail returns paginated usage log items for given user IDs with commission fields.
+func (r *usageLogRepository) ListCommissionDetail(ctx context.Context, userIDs []int64, startDate, endDate *time.Time, userIDFilter *int64, limit, offset int) (results []*service.CommissionDetailItem, total int, err error) {
+	if len(userIDs) == 0 {
+		return nil, 0, nil
+	}
+
+	whereClause := "WHERE user_id = ANY($1)"
+	args := []any{pq.Array(userIDs)}
+
+	if startDate != nil {
+		args = append(args, *startDate)
+		whereClause += fmt.Sprintf(" AND created_at >= $%d", len(args))
+	}
+	if endDate != nil {
+		args = append(args, *endDate)
+		whereClause += fmt.Sprintf(" AND created_at < $%d", len(args))
+	}
+	if userIDFilter != nil {
+		args = append(args, *userIDFilter)
+		whereClause += fmt.Sprintf(" AND user_id = $%d", len(args))
+	}
+
+	countQuery := "SELECT COUNT(*) FROM usage_logs " + whereClause
+	if err := scanSingleRow(ctx, r.sql, countQuery, args, &total); err != nil {
+		return nil, 0, err
+	}
+
+	args = append(args, limit, offset)
+	selectQuery := fmt.Sprintf(`
+		SELECT
+			user_id,
+			model,
+			total_cost,
+			merchant_rate_snapshot,
+			CASE WHEN merchant_rate_snapshot IS NOT NULL
+				THEN total_cost * (merchant_rate_snapshot - 1)
+				ELSE 0
+			END as commission,
+			created_at
+		FROM usage_logs
+		%s
+		ORDER BY created_at DESC
+		LIMIT $%d OFFSET $%d
+	`, whereClause, len(args)-1, len(args))
+
+	rows, err := r.sql.QueryContext(ctx, selectQuery, args...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer func() {
+		if closeErr := rows.Close(); closeErr != nil && err == nil {
+			err = closeErr
+			results = nil
+		}
+	}()
+
+	for rows.Next() {
+		var item service.CommissionDetailItem
+		var merchantRateSnapshot sql.NullFloat64
+		if err := rows.Scan(
+			&item.UserID,
+			&item.Model,
+			&item.TotalCost,
+			&merchantRateSnapshot,
+			&item.Commission,
+			&item.CreatedAt,
+		); err != nil {
+			return nil, 0, err
+		}
+		if merchantRateSnapshot.Valid {
+			v := merchantRateSnapshot.Float64
+			item.MerchantRateSnapshot = &v
+		}
+		results = append(results, &item)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, err
+	}
+	return results, total, nil
 }

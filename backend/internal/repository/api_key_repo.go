@@ -356,6 +356,30 @@ func (r *apiKeyRepository) CountByUserID(ctx context.Context, userID int64) (int
 	return int64(count), err
 }
 
+func (r *apiKeyRepository) CountActiveByUserID(ctx context.Context, userID int64) (int64, error) {
+	count, err := r.activeQuery().
+		Where(apikey.UserIDEQ(userID), apikey.StatusEQ(service.StatusActive)).
+		Count(ctx)
+	return int64(count), err
+}
+
+func (r *apiKeyRepository) SumQuotaUsedByUserID(ctx context.Context, userID int64) (float64, error) {
+	var result []struct {
+		Sum float64 `json:"sum"`
+	}
+	err := r.activeQuery().
+		Where(apikey.UserIDEQ(userID)).
+		Aggregate(dbent.As(dbent.Sum(apikey.FieldQuotaUsed), "sum")).
+		Scan(ctx, &result)
+	if err != nil {
+		return 0, err
+	}
+	if len(result) == 0 {
+		return 0, nil
+	}
+	return result[0].Sum, nil
+}
+
 func (r *apiKeyRepository) ExistsByKey(ctx context.Context, key string) (bool, error) {
 	count, err := r.activeQuery().Where(apikey.KeyEQ(key)).Count(ctx)
 	return count > 0, err

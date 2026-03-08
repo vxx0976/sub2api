@@ -24,6 +24,8 @@ import errorPassthroughAPI from './errorPassthrough'
 import dataManagementAPI from './dataManagement'
 import apiKeysAPI from './apiKeys'
 import scheduledTestsAPI from './scheduledTests'
+import merchantsAPI from './merchants'
+import merchantWithdrawalsAPI from './merchantWithdrawals'
 
 /**
  * Unified admin API object for convenient access
@@ -49,7 +51,9 @@ export const adminAPI = {
   errorPassthrough: errorPassthroughAPI,
   dataManagement: dataManagementAPI,
   apiKeys: apiKeysAPI,
-  scheduledTests: scheduledTestsAPI
+  scheduledTests: scheduledTestsAPI,
+  merchants: merchantsAPI,
+  merchantWithdrawals: merchantWithdrawalsAPI
 }
 
 export {
@@ -73,7 +77,9 @@ export {
   errorPassthroughAPI,
   dataManagementAPI,
   apiKeysAPI,
-  scheduledTestsAPI
+  scheduledTestsAPI,
+  merchantsAPI,
+  merchantWithdrawalsAPI
 }
 
 export default adminAPI
@@ -82,3 +88,5 @@ export default adminAPI
 export type { BalanceHistoryItem } from './users'
 export type { ErrorPassthroughRule, CreateRuleRequest, UpdateRuleRequest } from './errorPassthrough'
 export type { BackupAgentHealth, DataManagementConfig } from './dataManagement'
+export type { MerchantUser, MerchantSettings } from './merchants'
+export type { AdminWithdrawalItem, AdminWithdrawalListResponse } from './merchantWithdrawals'

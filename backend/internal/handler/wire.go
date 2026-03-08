@@ -35,6 +35,8 @@ func ProvideAdminHandlers(
 	errorPassthroughHandler *admin.ErrorPassthroughHandler,
 	apiKeyHandler *admin.AdminAPIKeyHandler,
 	scheduledTestHandler *admin.ScheduledTestHandler,
+	merchantHandler *admin.MerchantHandler,
+	adminWithdrawalHandler *admin.AdminWithdrawalHandler,
 ) *AdminHandlers {
 	return &AdminHandlers{
 		Dashboard:        dashboardHandler,
@@ -62,6 +64,8 @@ func ProvideAdminHandlers(
 		ErrorPassthrough: errorPassthroughHandler,
 		APIKey:           apiKeyHandler,
 		ScheduledTest:    scheduledTestHandler,
+		Merchant:         merchantHandler,
+		AdminWithdrawal:  adminWithdrawalHandler,
 	}
 }
 
@@ -74,6 +78,8 @@ func ProvideResellerHandlers(
 	redeemHandler *reseller.RedeemHandler,
 	announcementHandler *reseller.AnnouncementHandler,
 	userHandler *reseller.UserHandler,
+	commissionHandler *reseller.CommissionHandler,
+	withdrawalHandler *reseller.WithdrawalHandler,
 ) *ResellerHandlers {
 	return &ResellerHandlers{
 		Dashboard:    dashboardHandler,
@@ -83,6 +89,8 @@ func ProvideResellerHandlers(
 		Redeem:       redeemHandler,
 		Announcement: announcementHandler,
 		User:         userHandler,
+		Commission:   commissionHandler,
+		Withdrawal:   withdrawalHandler,
 	}
 }
 
@@ -190,6 +198,8 @@ var ProviderSet = wire.NewSet(
 	admin.NewErrorPassthroughHandler,
 	admin.NewAdminAPIKeyHandler,
 	admin.NewScheduledTestHandler,
+	admin.NewMerchantHandler,
+	admin.NewAdminWithdrawalHandler,
 
 	// Reseller handlers
 	reseller.NewDashboardHandler,
@@ -199,6 +209,8 @@ var ProviderSet = wire.NewSet(
 	reseller.NewRedeemHandler,
 	reseller.NewAnnouncementHandler,
 	reseller.NewUserHandler,
+	reseller.NewCommissionHandler,
+	reseller.NewWithdrawalHandler,
 
 	// AdminHandlers, ResellerHandlers and Handlers constructors
 	ProvideAdminHandlers,

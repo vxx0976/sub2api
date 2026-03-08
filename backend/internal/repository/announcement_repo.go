@@ -144,6 +144,27 @@ func (r *announcementRepository) List(
 	return out, paginationResultFromTotal(int64(total), params), nil
 }
 
+func (r *announcementRepository) ListByOwnerID(ctx context.Context, ownerID int64, params pagination.PaginationParams) ([]service.Announcement, *pagination.PaginationResult, error) {
+	q := r.client.Announcement.Query().
+		Where(announcement.OwnerIDEQ(ownerID))
+
+	total, err := q.Count(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	items, err := q.
+		Offset(params.Offset()).
+		Limit(params.Limit()).
+		Order(dbent.Desc(announcement.FieldID)).
+		All(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return announcementEntitiesToService(items), paginationResultFromTotal(int64(total), params), nil
+}
+
 func (r *announcementRepository) ListActive(ctx context.Context, now time.Time) ([]service.Announcement, error) {
 	q := r.client.Announcement.Query().
 		Where(

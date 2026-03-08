@@ -33,6 +33,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/referralreward"
 	"github.com/Wei-Shaw/sub2api/ent/resellerdomain"
 	"github.com/Wei-Shaw/sub2api/ent/resellersetting"
+	"github.com/Wei-Shaw/sub2api/ent/resellerwithdrawal"
 	"github.com/Wei-Shaw/sub2api/ent/securitysecret"
 	"github.com/Wei-Shaw/sub2api/ent/setting"
 	"github.com/Wei-Shaw/sub2api/ent/usagecleanuptask"
@@ -87,6 +88,8 @@ type Client struct {
 	ResellerDomain *ResellerDomainClient
 	// ResellerSetting is the client for interacting with the ResellerSetting builders.
 	ResellerSetting *ResellerSettingClient
+	// ResellerWithdrawal is the client for interacting with the ResellerWithdrawal builders.
+	ResellerWithdrawal *ResellerWithdrawalClient
 	// SecuritySecret is the client for interacting with the SecuritySecret builders.
 	SecuritySecret *SecuritySecretClient
 	// Setting is the client for interacting with the Setting builders.
@@ -134,6 +137,7 @@ func (c *Client) init() {
 	c.ReferralReward = NewReferralRewardClient(c.config)
 	c.ResellerDomain = NewResellerDomainClient(c.config)
 	c.ResellerSetting = NewResellerSettingClient(c.config)
+	c.ResellerWithdrawal = NewResellerWithdrawalClient(c.config)
 	c.SecuritySecret = NewSecuritySecretClient(c.config)
 	c.Setting = NewSettingClient(c.config)
 	c.UsageCleanupTask = NewUsageCleanupTaskClient(c.config)
@@ -253,6 +257,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		ReferralReward:          NewReferralRewardClient(cfg),
 		ResellerDomain:          NewResellerDomainClient(cfg),
 		ResellerSetting:         NewResellerSettingClient(cfg),
+		ResellerWithdrawal:      NewResellerWithdrawalClient(cfg),
 		SecuritySecret:          NewSecuritySecretClient(cfg),
 		Setting:                 NewSettingClient(cfg),
 		UsageCleanupTask:        NewUsageCleanupTaskClient(cfg),
@@ -299,6 +304,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		ReferralReward:          NewReferralRewardClient(cfg),
 		ResellerDomain:          NewResellerDomainClient(cfg),
 		ResellerSetting:         NewResellerSettingClient(cfg),
+		ResellerWithdrawal:      NewResellerWithdrawalClient(cfg),
 		SecuritySecret:          NewSecuritySecretClient(cfg),
 		Setting:                 NewSettingClient(cfg),
 		UsageCleanupTask:        NewUsageCleanupTaskClient(cfg),
@@ -340,9 +346,10 @@ func (c *Client) Use(hooks ...Hook) {
 		c.APIKey, c.Account, c.AccountGroup, c.Announcement, c.AnnouncementRead,
 		c.Channel, c.ErrorPassthroughRule, c.Group, c.IdempotencyRecord, c.Order,
 		c.PromoCode, c.PromoCodeUsage, c.Proxy, c.RechargeOrder, c.RedeemCode,
-		c.ReferralReward, c.ResellerDomain, c.ResellerSetting, c.SecuritySecret,
-		c.Setting, c.UsageCleanupTask, c.UsageLog, c.User, c.UserAllowedGroup,
-		c.UserAttributeDefinition, c.UserAttributeValue, c.UserSubscription,
+		c.ReferralReward, c.ResellerDomain, c.ResellerSetting, c.ResellerWithdrawal,
+		c.SecuritySecret, c.Setting, c.UsageCleanupTask, c.UsageLog, c.User,
+		c.UserAllowedGroup, c.UserAttributeDefinition, c.UserAttributeValue,
+		c.UserSubscription,
 	} {
 		n.Use(hooks...)
 	}
@@ -355,9 +362,10 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.APIKey, c.Account, c.AccountGroup, c.Announcement, c.AnnouncementRead,
 		c.Channel, c.ErrorPassthroughRule, c.Group, c.IdempotencyRecord, c.Order,
 		c.PromoCode, c.PromoCodeUsage, c.Proxy, c.RechargeOrder, c.RedeemCode,
-		c.ReferralReward, c.ResellerDomain, c.ResellerSetting, c.SecuritySecret,
-		c.Setting, c.UsageCleanupTask, c.UsageLog, c.User, c.UserAllowedGroup,
-		c.UserAttributeDefinition, c.UserAttributeValue, c.UserSubscription,
+		c.ReferralReward, c.ResellerDomain, c.ResellerSetting, c.ResellerWithdrawal,
+		c.SecuritySecret, c.Setting, c.UsageCleanupTask, c.UsageLog, c.User,
+		c.UserAllowedGroup, c.UserAttributeDefinition, c.UserAttributeValue,
+		c.UserSubscription,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -402,6 +410,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.ResellerDomain.mutate(ctx, m)
 	case *ResellerSettingMutation:
 		return c.ResellerSetting.mutate(ctx, m)
+	case *ResellerWithdrawalMutation:
+		return c.ResellerWithdrawal.mutate(ctx, m)
 	case *SecuritySecretMutation:
 		return c.SecuritySecret.mutate(ctx, m)
 	case *SettingMutation:
@@ -3358,6 +3368,139 @@ func (c *ResellerSettingClient) mutate(ctx context.Context, m *ResellerSettingMu
 	}
 }
 
+// ResellerWithdrawalClient is a client for the ResellerWithdrawal schema.
+type ResellerWithdrawalClient struct {
+	config
+}
+
+// NewResellerWithdrawalClient returns a client for the ResellerWithdrawal from the given config.
+func NewResellerWithdrawalClient(c config) *ResellerWithdrawalClient {
+	return &ResellerWithdrawalClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `resellerwithdrawal.Hooks(f(g(h())))`.
+func (c *ResellerWithdrawalClient) Use(hooks ...Hook) {
+	c.hooks.ResellerWithdrawal = append(c.hooks.ResellerWithdrawal, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `resellerwithdrawal.Intercept(f(g(h())))`.
+func (c *ResellerWithdrawalClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ResellerWithdrawal = append(c.inters.ResellerWithdrawal, interceptors...)
+}
+
+// Create returns a builder for creating a ResellerWithdrawal entity.
+func (c *ResellerWithdrawalClient) Create() *ResellerWithdrawalCreate {
+	mutation := newResellerWithdrawalMutation(c.config, OpCreate)
+	return &ResellerWithdrawalCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ResellerWithdrawal entities.
+func (c *ResellerWithdrawalClient) CreateBulk(builders ...*ResellerWithdrawalCreate) *ResellerWithdrawalCreateBulk {
+	return &ResellerWithdrawalCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ResellerWithdrawalClient) MapCreateBulk(slice any, setFunc func(*ResellerWithdrawalCreate, int)) *ResellerWithdrawalCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ResellerWithdrawalCreateBulk{err: fmt.Errorf("calling to ResellerWithdrawalClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ResellerWithdrawalCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ResellerWithdrawalCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ResellerWithdrawal.
+func (c *ResellerWithdrawalClient) Update() *ResellerWithdrawalUpdate {
+	mutation := newResellerWithdrawalMutation(c.config, OpUpdate)
+	return &ResellerWithdrawalUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ResellerWithdrawalClient) UpdateOne(_m *ResellerWithdrawal) *ResellerWithdrawalUpdateOne {
+	mutation := newResellerWithdrawalMutation(c.config, OpUpdateOne, withResellerWithdrawal(_m))
+	return &ResellerWithdrawalUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ResellerWithdrawalClient) UpdateOneID(id int64) *ResellerWithdrawalUpdateOne {
+	mutation := newResellerWithdrawalMutation(c.config, OpUpdateOne, withResellerWithdrawalID(id))
+	return &ResellerWithdrawalUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ResellerWithdrawal.
+func (c *ResellerWithdrawalClient) Delete() *ResellerWithdrawalDelete {
+	mutation := newResellerWithdrawalMutation(c.config, OpDelete)
+	return &ResellerWithdrawalDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ResellerWithdrawalClient) DeleteOne(_m *ResellerWithdrawal) *ResellerWithdrawalDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ResellerWithdrawalClient) DeleteOneID(id int64) *ResellerWithdrawalDeleteOne {
+	builder := c.Delete().Where(resellerwithdrawal.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ResellerWithdrawalDeleteOne{builder}
+}
+
+// Query returns a query builder for ResellerWithdrawal.
+func (c *ResellerWithdrawalClient) Query() *ResellerWithdrawalQuery {
+	return &ResellerWithdrawalQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeResellerWithdrawal},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ResellerWithdrawal entity by its id.
+func (c *ResellerWithdrawalClient) Get(ctx context.Context, id int64) (*ResellerWithdrawal, error) {
+	return c.Query().Where(resellerwithdrawal.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ResellerWithdrawalClient) GetX(ctx context.Context, id int64) *ResellerWithdrawal {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *ResellerWithdrawalClient) Hooks() []Hook {
+	return c.hooks.ResellerWithdrawal
+}
+
+// Interceptors returns the client interceptors.
+func (c *ResellerWithdrawalClient) Interceptors() []Interceptor {
+	return c.inters.ResellerWithdrawal
+}
+
+func (c *ResellerWithdrawalClient) mutate(ctx context.Context, m *ResellerWithdrawalMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ResellerWithdrawalCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ResellerWithdrawalUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ResellerWithdrawalUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ResellerWithdrawalDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ResellerWithdrawal mutation op: %q", m.Op())
+	}
+}
+
 // SecuritySecretClient is a client for the SecuritySecret schema.
 type SecuritySecretClient struct {
 	config
@@ -5030,17 +5173,17 @@ type (
 		APIKey, Account, AccountGroup, Announcement, AnnouncementRead, Channel,
 		ErrorPassthroughRule, Group, IdempotencyRecord, Order, PromoCode,
 		PromoCodeUsage, Proxy, RechargeOrder, RedeemCode, ReferralReward,
-		ResellerDomain, ResellerSetting, SecuritySecret, Setting, UsageCleanupTask,
-		UsageLog, User, UserAllowedGroup, UserAttributeDefinition, UserAttributeValue,
-		UserSubscription []ent.Hook
+		ResellerDomain, ResellerSetting, ResellerWithdrawal, SecuritySecret, Setting,
+		UsageCleanupTask, UsageLog, User, UserAllowedGroup, UserAttributeDefinition,
+		UserAttributeValue, UserSubscription []ent.Hook
 	}
 	inters struct {
 		APIKey, Account, AccountGroup, Announcement, AnnouncementRead, Channel,
 		ErrorPassthroughRule, Group, IdempotencyRecord, Order, PromoCode,
 		PromoCodeUsage, Proxy, RechargeOrder, RedeemCode, ReferralReward,
-		ResellerDomain, ResellerSetting, SecuritySecret, Setting, UsageCleanupTask,
-		UsageLog, User, UserAllowedGroup, UserAttributeDefinition, UserAttributeValue,
-		UserSubscription []ent.Interceptor
+		ResellerDomain, ResellerSetting, ResellerWithdrawal, SecuritySecret, Setting,
+		UsageCleanupTask, UsageLog, User, UserAllowedGroup, UserAttributeDefinition,
+		UserAttributeValue, UserSubscription []ent.Interceptor
 	}
 )
 

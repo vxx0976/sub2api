@@ -28,12 +28,12 @@ func (h *SettingHandler) invalidateAllDomainCaches(c *gin.Context, resellerID in
 	if h.invalidateDomainFunc == nil {
 		return
 	}
-	domains, _, err := h.resellerService.ListDomains(c.Request.Context(), resellerID, 1, 100)
+	names, err := h.resellerService.ListAllDomainNames(c.Request.Context(), resellerID)
 	if err != nil {
 		return
 	}
-	for _, d := range domains {
-		h.invalidateDomainFunc(d.Domain)
+	for _, name := range names {
+		h.invalidateDomainFunc(name)
 	}
 }
 

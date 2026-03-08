@@ -796,3 +796,13 @@ func (r *groupRepository) UpdateSortOrders(ctx context.Context, updates []servic
 	}
 	return nil
 }
+
+func (r *groupRepository) CountByOwnerID(ctx context.Context, ownerID int64) (int64, error) {
+	count, err := r.client.Group.Query().
+		Where(
+			group.OwnerIDEQ(ownerID),
+			group.DeletedAtIsNil(),
+		).
+		Count(ctx)
+	return int64(count), err
+}

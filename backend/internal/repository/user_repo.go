@@ -648,3 +648,67 @@ func (r *userRepository) DisableTotp(ctx context.Context, userID int64) error {
 	}
 	return nil
 }
+
+// ListIDsByParentID returns all user IDs with parent_id = parentID
+func (r *userRepository) ListIDsByParentID(ctx context.Context, parentID int64) ([]int64, error) {
+	rows, err := r.sql.QueryContext(ctx,
+		"SELECT id FROM users WHERE parent_id = $1 AND deleted_at IS NULL",
+		parentID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var ids []int64
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, rows.Err()
+}
+
+// ListResellerUsers returns paginated reseller users with optional search
+func (r *userRepository) ListResellerUsers(ctx context.Context, page, pageSize int, search string) ([]*service.MerchantInfo, int, error) {
+	offset := (page - 1) * pageSize
+
+	whereClause := "WHERE role = 'reseller' AND deleted_at IS NULL"
+	args := []any{}
+	if search != "" {
+		args = append(args, "%"+search+"%")
+		whereClause += fmt.Sprintf(" AND (username ILIKE $%d OR email ILIKE $%d)", len(args), len(args))
+	}
+
+	var total int
+	countQuery := "SELECT COUNT(*) FROM users " + whereClause
+	if err := scanSingleRow(ctx, r.sql, countQuery, args, &total); err != nil {
+		return nil, 0, err
+	}
+
+	args = append(args, pageSize, offset)
+	selectQuery := fmt.Sprintf(
+		"SELECT id, username, email, balance FROM users %s ORDER BY id DESC LIMIT $%d OFFSET $%d",
+		whereClause, len(args)-1, len(args),
+	)
+
+	rows, err := r.sql.QueryContext(ctx, selectQuery, args...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var result []*service.MerchantInfo
+	for rows.Next() {
+		m := &service.MerchantInfo{}
+		if err := rows.Scan(&m.ID, &m.Username, &m.Email, &m.Balance); err != nil {
+			return nil, 0, err
+		}
+		result = append(result, m)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, err
+	}
+	return result, total, nil
+}

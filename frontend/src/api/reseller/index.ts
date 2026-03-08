@@ -9,6 +9,8 @@ import keysAPI from './keys'
 import redeemAPI from './redeem'
 import announcementsAPI from './announcements'
 import usersAPI from './users'
+import commissionsAPI from './commissions'
+import withdrawalsAPI from './withdrawals'
 
 export const resellerAPI = {
   dashboard: dashboardAPI,
@@ -17,7 +19,9 @@ export const resellerAPI = {
   keys: keysAPI,
   redeem: redeemAPI,
   announcements: announcementsAPI,
-  users: usersAPI
+  users: usersAPI,
+  commissions: commissionsAPI,
+  withdrawals: withdrawalsAPI
 }
 
 export {
@@ -27,7 +31,9 @@ export {
   keysAPI,
   redeemAPI,
   announcementsAPI,
-  usersAPI
+  usersAPI,
+  commissionsAPI,
+  withdrawalsAPI
 }
 
 export default resellerAPI
@@ -40,3 +46,5 @@ export type { ResellerKey, CreateResellerKeyRequest, UpdateResellerKeyRequest } 
 export type { ResellerRedeemCode, ResellerRedeemCodeListResponse, GenerateRedeemCodesRequest } from './redeem'
 export type { ResellerAnnouncement, ResellerAnnouncementListResponse, CreateAnnouncementRequest, UpdateAnnouncementRequest } from './announcements'
 export type { ResellerUserListResponse, ResellerBalanceHistoryItem, ResellerBalanceHistoryResponse } from './users'
+export type { CommissionSummary, CommissionDetailItem, CommissionDetailResponse } from './commissions'
+export type { WithdrawalItem, WithdrawalListResponse } from './withdrawals'

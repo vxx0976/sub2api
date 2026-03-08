@@ -252,11 +252,13 @@
             </div>
             <div>
               <label class="label">{{ t('reseller.sites.siteLogo') }}</label>
-              <input
+              <ImageUpload
                 v-model="editForm.site_logo"
-                type="text"
-                class="input"
-                :placeholder="t('reseller.sites.siteLogoPlaceholder')"
+                mode="image"
+                :upload-label="t('reseller.sites.uploadLogo')"
+                :remove-label="t('reseller.sites.removeLogo')"
+                :hint="t('reseller.sites.logoHint')"
+                :max-size="300 * 1024"
               />
             </div>
 
@@ -371,68 +373,241 @@
           </div>
 
           <!-- Tab 3: Homepage -->
-          <div v-if="activeTab === 'homepage'" class="space-y-5">
+          <div v-if="activeTab === 'homepage'" class="space-y-6">
             <div>
-              <label class="label">{{ t('reseller.sites.homeTemplate') }}</label>
-              <div class="space-y-3">
-                <label class="flex items-start gap-3 rounded-lg border border-gray-200 p-3 cursor-pointer transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-dark-800" :class="{ 'border-primary-500 bg-primary-50 dark:bg-primary-900/10': editForm.home_template === '' || editForm.home_template === 'default' }">
-                  <input v-model="editForm.home_template" type="radio" value="default" class="mt-0.5" />
-                  <div>
-                    <span class="text-sm font-medium text-gray-900 dark:text-white">{{ t('reseller.sites.homeTemplateDefault') }}</span>
-                    <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{{ t('reseller.sites.homeTemplateDefaultHint') }}</p>
+              <p class="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('reseller.sites.homeTemplate') }}</p>
+              <!-- Template card grid: 3 cols on mobile, 5 on sm+ -->
+              <div class="grid grid-cols-3 gap-2 sm:grid-cols-5">
+                <button
+                  v-for="tpl in homeTemplates"
+                  :key="tpl.id"
+                  type="button"
+                  @click="editForm.home_template = tpl.id; previewTemplate = tpl.id"
+                  :class="[
+                    'group relative flex flex-col overflow-hidden rounded-xl border-2 text-left transition-all',
+                    editForm.home_template === tpl.id
+                      ? 'border-primary-500 shadow-md'
+                      : 'border-gray-200 hover:border-gray-300 dark:border-dark-600 dark:hover:border-dark-500'
+                  ]"
+                >
+                  <!-- Thumbnail -->
+                  <div class="relative h-20 w-full overflow-hidden">
+                    <template v-if="tpl.id === 'default'">
+                      <div class="h-full bg-slate-50 dark:bg-dark-900">
+                        <div class="flex items-center justify-between bg-white px-2 py-1 shadow-sm dark:bg-dark-800">
+                          <div class="h-1.5 w-8 rounded-full bg-slate-300 dark:bg-dark-600"></div>
+                          <div class="h-3.5 w-7 rounded bg-primary-500 text-[5px] leading-[14px] text-white text-center">Login</div>
+                        </div>
+                        <div class="flex flex-col items-center gap-0.5 px-2 pt-2">
+                          <div class="h-2 w-20 rounded-full bg-slate-700 dark:bg-slate-300"></div>
+                          <div class="h-1 w-24 rounded-full bg-slate-300 dark:bg-dark-600"></div>
+                          <div class="mt-1 h-3.5 w-14 rounded bg-primary-500"></div>
+                        </div>
+                        <div class="mt-1.5 grid grid-cols-3 gap-1 px-2">
+                          <div v-for="i in 3" :key="i" class="rounded bg-white p-1 shadow-sm dark:bg-dark-800">
+                            <div class="mb-0.5 h-2 w-2 rounded-sm bg-primary-200 dark:bg-primary-900"></div>
+                            <div class="h-0.5 w-full rounded-full bg-slate-200 dark:bg-dark-700"></div>
+                          </div>
+                        </div>
+                      </div>
+                    </template>
+                    <template v-else-if="tpl.id === 'hero'">
+                      <div class="flex h-full flex-col bg-gradient-to-br from-slate-900 via-indigo-900 to-slate-800">
+                        <div class="flex items-center justify-between px-2 py-1">
+                          <div class="h-1 w-7 rounded-full bg-white/40"></div>
+                          <div class="h-3 w-6 rounded bg-white/20 text-[5px] leading-3 text-white/70 text-center">Login</div>
+                        </div>
+                        <div class="flex flex-1 flex-col items-center justify-center gap-1 px-2 text-center">
+                          <div class="h-2 w-20 rounded-full bg-white/90"></div>
+                          <div class="h-1 w-24 rounded-full bg-white/40"></div>
+                          <div class="mt-1 flex gap-1">
+                            <div class="h-3.5 w-10 rounded bg-white/90"></div>
+                            <div class="h-3.5 w-8 rounded border border-white/30 bg-white/10"></div>
+                          </div>
+                        </div>
+                      </div>
+                    </template>
+                    <template v-else-if="tpl.id === 'brand'">
+                      <div class="flex h-full flex-col bg-white dark:bg-dark-900">
+                        <div class="flex items-center justify-between px-2 py-1 shadow-sm">
+                          <div class="h-1 w-7 rounded-full bg-slate-300 dark:bg-dark-600"></div>
+                          <div class="h-3 w-6 rounded bg-primary-100 text-[5px] leading-3 text-primary-600 text-center dark:bg-primary-900 dark:text-primary-400">Login</div>
+                        </div>
+                        <div class="flex flex-1 flex-col items-center justify-center gap-1.5 px-2 text-center">
+                          <div class="h-7 w-7 rounded-lg bg-primary-100 dark:bg-primary-900/50"></div>
+                          <div class="h-1.5 w-16 rounded-full bg-slate-700 dark:bg-slate-300"></div>
+                          <div class="h-3.5 w-20 rounded-lg bg-primary-500"></div>
+                        </div>
+                      </div>
+                    </template>
+                    <template v-else-if="tpl.id === 'custom_html'">
+                      <div class="h-full bg-slate-900 p-2 font-mono">
+                        <div class="mb-1 flex gap-0.5">
+                          <div class="h-1.5 w-1.5 rounded-full bg-red-500/70"></div>
+                          <div class="h-1.5 w-1.5 rounded-full bg-yellow-500/70"></div>
+                          <div class="h-1.5 w-1.5 rounded-full bg-green-500/70"></div>
+                        </div>
+                        <div class="space-y-0.5">
+                          <div><span class="text-[6px] text-purple-400">&lt;html&gt;</span></div>
+                          <div class="ml-2"><span class="text-[6px] text-blue-400">&lt;body&gt;</span></div>
+                          <div class="ml-4 h-1 w-16 rounded-full bg-green-500/40"></div>
+                          <div class="ml-4 h-1 w-12 rounded-full bg-yellow-500/40"></div>
+                          <div class="ml-4 h-1 w-14 rounded-full bg-green-500/40"></div>
+                          <div class="ml-2"><span class="text-[6px] text-blue-400">&lt;/body&gt;</span></div>
+                          <div><span class="text-[6px] text-purple-400">&lt;/html&gt;</span></div>
+                        </div>
+                      </div>
+                    </template>
+                    <template v-else-if="tpl.id === 'external_url'">
+                      <div class="h-full bg-slate-100 dark:bg-dark-800">
+                        <div class="flex items-center gap-1 bg-slate-200 px-2 py-1 dark:bg-dark-700">
+                          <div class="h-1 w-1 rounded-full bg-red-400"></div>
+                          <div class="h-1 w-1 rounded-full bg-yellow-400"></div>
+                          <div class="h-1 w-1 rounded-full bg-green-400"></div>
+                          <div class="ml-1 flex flex-1 items-center rounded bg-white px-1 py-0.5 text-[5px] text-slate-400 dark:bg-dark-900">
+                            https://your-site.com
+                          </div>
+                        </div>
+                        <div class="flex h-[calc(100%-20px)] flex-col items-center justify-center gap-1.5">
+                          <svg class="h-6 w-6 text-slate-400 dark:text-dark-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+                          <div class="h-1 w-14 rounded-full bg-slate-300 dark:bg-dark-600"></div>
+                        </div>
+                      </div>
+                    </template>
                   </div>
-                </label>
-                <label class="flex items-start gap-3 rounded-lg border border-gray-200 p-3 cursor-pointer transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-dark-800" :class="{ 'border-primary-500 bg-primary-50 dark:bg-primary-900/10': editForm.home_template === 'minimal' }">
-                  <input v-model="editForm.home_template" type="radio" value="minimal" class="mt-0.5" />
-                  <div>
-                    <span class="text-sm font-medium text-gray-900 dark:text-white">{{ t('reseller.sites.homeTemplateMinimal') }}</span>
-                    <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{{ t('reseller.sites.homeTemplateMinimalHint') }}</p>
+                  <!-- Label -->
+                  <div class="flex items-center justify-between px-2 py-1.5" :class="editForm.home_template === tpl.id ? 'bg-primary-50 dark:bg-primary-900/20' : 'bg-white dark:bg-dark-800'">
+                    <p class="truncate text-[10px] font-semibold" :class="editForm.home_template === tpl.id ? 'text-primary-700 dark:text-primary-400' : 'text-gray-700 dark:text-gray-300'">{{ tpl.name }}</p>
+                    <div v-if="editForm.home_template === tpl.id" class="ml-1 flex h-3.5 w-3.5 flex-shrink-0 items-center justify-center rounded-full bg-primary-500">
+                      <svg class="h-2 w-2" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 3" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
                   </div>
-                </label>
-                <label class="flex items-start gap-3 rounded-lg border border-gray-200 p-3 cursor-pointer transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-dark-800" :class="{ 'border-primary-500 bg-primary-50 dark:bg-primary-900/10': editForm.home_template === 'custom_html' }">
-                  <input v-model="editForm.home_template" type="radio" value="custom_html" class="mt-0.5" />
-                  <div>
-                    <span class="text-sm font-medium text-gray-900 dark:text-white">{{ t('reseller.sites.homeTemplateCustom') }}</span>
-                  </div>
-                </label>
-                <label class="flex items-start gap-3 rounded-lg border border-gray-200 p-3 cursor-pointer transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-dark-800" :class="{ 'border-primary-500 bg-primary-50 dark:bg-primary-900/10': editForm.home_template === 'external_url' }">
-                  <input v-model="editForm.home_template" type="radio" value="external_url" class="mt-0.5" />
-                  <div>
-                    <span class="text-sm font-medium text-gray-900 dark:text-white">{{ t('reseller.sites.homeTemplateExternal') }}</span>
-                  </div>
-                </label>
+                </button>
+              </div>
+
+              <!-- Preview Panel -->
+              <div v-if="previewTemplate" class="mt-3 overflow-hidden rounded-xl border border-gray-200 dark:border-dark-600">
+                <div class="flex items-center justify-between bg-gray-50 px-3 py-2 dark:bg-dark-800/60">
+                  <span class="text-xs font-semibold text-gray-700 dark:text-gray-300">{{ t('reseller.sites.templatePreview') }}：{{ currentPreviewTpl?.name }}</span>
+                  <span class="text-[11px] text-gray-400 dark:text-gray-500">{{ currentPreviewTpl?.hint }}</span>
+                </div>
+                <div class="relative h-52 w-full overflow-hidden">
+                  <!-- Default -->
+                  <template v-if="previewTemplate === 'default'">
+                    <div class="h-full bg-slate-50 dark:bg-dark-900">
+                      <div class="flex items-center justify-between bg-white px-5 py-2.5 shadow-sm dark:bg-dark-800">
+                        <div class="h-3 w-20 rounded-full bg-slate-300 dark:bg-dark-600"></div>
+                        <div class="flex gap-2">
+                          <div class="h-2.5 w-14 rounded-full bg-slate-200 dark:bg-dark-700"></div>
+                          <div class="h-2.5 w-14 rounded-full bg-slate-200 dark:bg-dark-700"></div>
+                          <div class="h-7 w-16 rounded bg-primary-500 text-[9px] leading-7 text-white text-center">Login</div>
+                        </div>
+                      </div>
+                      <div class="flex flex-col items-center gap-2 px-6 pt-5">
+                        <div class="h-4 w-52 rounded-full bg-slate-700 dark:bg-slate-300"></div>
+                        <div class="h-2.5 w-64 rounded-full bg-slate-300 dark:bg-dark-600"></div>
+                        <div class="mt-2 h-8 w-32 rounded-lg bg-primary-500"></div>
+                      </div>
+                      <div class="mt-4 grid grid-cols-3 gap-3 px-5">
+                        <div v-for="i in 3" :key="i" class="rounded-lg bg-white p-3 shadow-sm dark:bg-dark-800">
+                          <div class="mb-2 h-5 w-5 rounded bg-primary-200 dark:bg-primary-900"></div>
+                          <div class="h-2 w-full rounded-full bg-slate-200 dark:bg-dark-700"></div>
+                          <div class="mt-1 h-1.5 w-3/4 rounded-full bg-slate-100 dark:bg-dark-700"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </template>
+                  <!-- Hero -->
+                  <template v-else-if="previewTemplate === 'hero'">
+                    <div class="flex h-full flex-col bg-gradient-to-br from-slate-900 via-indigo-900 to-slate-800">
+                      <div class="flex items-center justify-between px-5 py-3">
+                        <div class="h-2.5 w-16 rounded-full bg-white/40"></div>
+                        <div class="h-6 w-14 rounded bg-white/20 text-[9px] leading-6 text-white/70 text-center">Login</div>
+                      </div>
+                      <div class="flex flex-1 flex-col items-center justify-center gap-2.5 px-6 text-center">
+                        <div class="h-4 w-56 rounded-full bg-white/90"></div>
+                        <div class="h-2.5 w-72 rounded-full bg-white/40"></div>
+                        <div class="mt-2 flex gap-2.5">
+                          <div class="h-8 w-24 rounded-lg bg-white/90"></div>
+                          <div class="h-8 w-20 rounded-lg border border-white/30 bg-white/10"></div>
+                        </div>
+                        <div class="mt-1.5 flex flex-wrap justify-center gap-1.5">
+                          <div v-for="i in 4" :key="i" class="h-5 w-16 rounded-full border border-white/20 bg-white/10"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </template>
+                  <!-- Brand -->
+                  <template v-else-if="previewTemplate === 'brand'">
+                    <div class="flex h-full flex-col bg-white dark:bg-dark-900">
+                      <div class="flex items-center justify-between px-5 py-2.5 shadow-sm">
+                        <div class="h-2.5 w-16 rounded-full bg-slate-300 dark:bg-dark-600"></div>
+                        <div class="h-6 w-14 rounded bg-primary-100 text-[9px] leading-6 text-primary-600 text-center dark:bg-primary-900 dark:text-primary-400">Login</div>
+                      </div>
+                      <div class="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
+                        <div class="h-14 w-14 rounded-2xl bg-primary-100 dark:bg-primary-900/50"></div>
+                        <div class="h-4 w-40 rounded-full bg-slate-700 dark:bg-slate-300"></div>
+                        <div class="h-2.5 w-52 rounded-full bg-slate-200 dark:bg-dark-700"></div>
+                        <div class="h-9 w-48 rounded-xl bg-primary-500"></div>
+                      </div>
+                    </div>
+                  </template>
+                  <!-- Custom HTML -->
+                  <template v-else-if="previewTemplate === 'custom_html'">
+                    <div class="h-full bg-slate-900 p-5 font-mono">
+                      <div class="mb-3 flex gap-1.5">
+                        <div class="h-3 w-3 rounded-full bg-red-500/70"></div>
+                        <div class="h-3 w-3 rounded-full bg-yellow-500/70"></div>
+                        <div class="h-3 w-3 rounded-full bg-green-500/70"></div>
+                      </div>
+                      <div class="space-y-1.5">
+                        <div><span class="text-xs text-purple-400">&lt;html&gt;</span></div>
+                        <div class="ml-5 flex items-center gap-2"><span class="text-xs text-blue-400">&lt;head&gt;</span><div class="h-2 w-24 rounded-full bg-slate-600"></div><span class="text-xs text-blue-400">&lt;/head&gt;</span></div>
+                        <div class="ml-5"><span class="text-xs text-blue-400">&lt;body&gt;</span></div>
+                        <div class="ml-10 h-2 w-40 rounded-full bg-green-500/40"></div>
+                        <div class="ml-10 h-2 w-28 rounded-full bg-yellow-500/40"></div>
+                        <div class="ml-10 h-2 w-36 rounded-full bg-green-500/40"></div>
+                        <div class="ml-5"><span class="text-xs text-blue-400">&lt;/body&gt;</span></div>
+                        <div><span class="text-xs text-purple-400">&lt;/html&gt;</span></div>
+                      </div>
+                    </div>
+                  </template>
+                  <!-- External URL -->
+                  <template v-else-if="previewTemplate === 'external_url'">
+                    <div class="h-full bg-slate-100 dark:bg-dark-800">
+                      <div class="flex items-center gap-2 bg-slate-200 px-4 py-2.5 dark:bg-dark-700">
+                        <div class="h-2.5 w-2.5 rounded-full bg-red-400"></div>
+                        <div class="h-2.5 w-2.5 rounded-full bg-yellow-400"></div>
+                        <div class="h-2.5 w-2.5 rounded-full bg-green-400"></div>
+                        <div class="ml-2 flex flex-1 items-center gap-1.5 rounded-md bg-white px-2.5 py-1 text-[10px] text-slate-400 dark:bg-dark-900 dark:text-dark-400">
+                          <svg class="h-3 w-3 flex-shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="7"/></svg>
+                          https://your-site.com
+                        </div>
+                      </div>
+                      <div class="flex h-[calc(100%-38px)] flex-col items-center justify-center gap-3">
+                        <svg class="h-14 w-14 text-slate-400 dark:text-dark-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+                        <div class="h-2.5 w-36 rounded-full bg-slate-300 dark:bg-dark-600"></div>
+                        <div class="h-2 w-24 rounded-full bg-slate-200 dark:bg-dark-700"></div>
+                      </div>
+                    </div>
+                  </template>
+                </div>
               </div>
             </div>
 
-            <!-- Conditional content area -->
+            <!-- Conditional content input -->
             <div v-if="editForm.home_template === 'custom_html'">
               <label class="label">{{ t('reseller.sites.homeContent') }}</label>
-              <textarea
-                v-model="editForm.home_content"
-                class="input font-mono text-sm"
-                rows="10"
-                :placeholder="t('reseller.sites.homeContentHtmlPlaceholder')"
-              />
+              <textarea v-model="editForm.home_content" class="input font-mono text-sm" rows="10" :placeholder="t('reseller.sites.homeContentHtmlPlaceholder')" />
             </div>
             <div v-else-if="editForm.home_template === 'external_url'">
               <label class="label">{{ t('reseller.sites.homeContent') }}</label>
-              <input
-                v-model="editForm.home_content"
-                type="text"
-                class="input"
-                :placeholder="t('reseller.sites.homeContentUrlPlaceholder')"
-              />
-            </div>
-            <div v-else class="rounded-lg bg-gray-50 p-4 text-sm text-gray-500 dark:bg-dark-800 dark:text-gray-400">
-              {{ t('reseller.sites.homeTemplateDefaultHint') }}
+              <input v-model="editForm.home_content" type="text" class="input" :placeholder="t('reseller.sites.homeContentUrlPlaceholder')" />
             </div>
 
             <!-- Preview button -->
-            <div>
-              <button
-                @click="previewSite"
-                class="btn btn-secondary inline-flex items-center gap-2"
-              >
+            <div v-if="editingSite?.verified">
+              <button @click="previewSite" class="btn btn-secondary inline-flex items-center gap-2">
                 <Icon name="externalLink" size="sm" />
                 {{ t('reseller.sites.preview') }}
               </button>
@@ -586,6 +761,7 @@ import { availableLocales } from '@/i18n'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import Icon from '@/components/icons/Icon.vue'
+import ImageUpload from '@/components/common/ImageUpload.vue'
 
 const { t } = useI18n()
 const appStore = useAppStore()
@@ -609,6 +785,18 @@ const domains = ref<ResellerDomain[]>([])
 // Edit view state
 const editingSite = ref<ResellerDomain | null>(null)
 const activeTab = ref('basic')
+const previewTemplate = ref('default')
+
+// Home template definitions
+const homeTemplates = computed(() => [
+  { id: 'default',      name: t('reseller.sites.homeTemplateDefault'),  hint: t('reseller.sites.homeTemplateDefaultHint')  },
+  { id: 'hero',         name: t('reseller.sites.homeTemplateHero'),     hint: t('reseller.sites.homeTemplateHeroHint')     },
+  { id: 'brand',        name: t('reseller.sites.homeTemplateBrand'),    hint: t('reseller.sites.homeTemplateBrandHint')    },
+  { id: 'custom_html',  name: t('reseller.sites.homeTemplateCustom'),   hint: t('reseller.sites.homeTemplateCustomHint')   },
+  { id: 'external_url', name: t('reseller.sites.homeTemplateExternal'), hint: t('reseller.sites.homeTemplateExternalHint') },
+])
+
+const currentPreviewTpl = computed(() => homeTemplates.value.find(t => t.id === previewTemplate.value))
 
 // Modal state
 const showCreateModal = ref(false)
@@ -666,6 +854,7 @@ function openEditView(domain: ResellerDomain) {
   editingSite.value = domain
   activeTab.value = 'basic'
   verifyInfoDomain.value = null
+  previewTemplate.value = domain.home_template || 'default'
   editForm.value = {
     site_name: domain.site_name || '',
     site_logo: domain.site_logo || '',

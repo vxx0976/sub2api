@@ -157,6 +157,41 @@ func (r *resellerDomainRepository) ListByResellerID(ctx context.Context, reselle
 	return domains, paginationResultFromTotal(int64(total), params), nil
 }
 
+func (r *resellerDomainRepository) ListAllDomainNamesByResellerID(ctx context.Context, resellerID int64) ([]string, error) {
+	entities, err := r.client.ResellerDomain.Query().
+		Where(
+			dbresellerdomain.ResellerIDEQ(resellerID),
+			dbresellerdomain.DeletedAtIsNil(),
+		).
+		Select(dbresellerdomain.FieldDomain).
+		All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("list all domain names: %w", err)
+	}
+	names := make([]string, 0, len(entities))
+	for _, e := range entities {
+		names = append(names, e.Domain)
+	}
+	return names, nil
+}
+
+func (r *resellerDomainRepository) CountByResellerID(ctx context.Context, resellerID int64) (total int, verified int, err error) {
+	q := r.client.ResellerDomain.Query().
+		Where(
+			dbresellerdomain.ResellerIDEQ(resellerID),
+			dbresellerdomain.DeletedAtIsNil(),
+		)
+	total, err = q.Clone().Count(ctx)
+	if err != nil {
+		return 0, 0, fmt.Errorf("count reseller domains: %w", err)
+	}
+	verified, err = q.Clone().Where(dbresellerdomain.VerifiedEQ(true)).Count(ctx)
+	if err != nil {
+		return 0, 0, fmt.Errorf("count verified reseller domains: %w", err)
+	}
+	return total, verified, nil
+}
+
 func (r *resellerDomainRepository) GetDomainsByResellerIDs(ctx context.Context, resellerIDs []int64) (map[int64]string, error) {
 	if len(resellerIDs) == 0 {
 		return map[int64]string{}, nil

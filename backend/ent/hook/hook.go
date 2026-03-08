@@ -225,6 +225,18 @@ func (f ResellerSettingFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Va
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ResellerSettingMutation", m)
 }
 
+// The ResellerWithdrawalFunc type is an adapter to allow the use of ordinary
+// function as ResellerWithdrawal mutator.
+type ResellerWithdrawalFunc func(context.Context, *ent.ResellerWithdrawalMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ResellerWithdrawalFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ResellerWithdrawalMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ResellerWithdrawalMutation", m)
+}
+
 // The SecuritySecretFunc type is an adapter to allow the use of ordinary
 // function as SecuritySecret mutator.
 type SecuritySecretFunc func(context.Context, *ent.SecuritySecretMutation) (ent.Value, error)

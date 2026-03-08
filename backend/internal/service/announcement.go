@@ -58,6 +58,8 @@ type AnnouncementRepository interface {
 	Delete(ctx context.Context, id int64) error
 
 	List(ctx context.Context, params pagination.PaginationParams, filters AnnouncementListFilters) ([]Announcement, *pagination.PaginationResult, error)
+	// ListByOwnerID returns paginated announcements owned by the given reseller.
+	ListByOwnerID(ctx context.Context, ownerID int64, params pagination.PaginationParams) ([]Announcement, *pagination.PaginationResult, error)
 	ListActive(ctx context.Context, now time.Time) ([]Announcement, error)
 	// ListActiveByOwnerID returns active announcements owned by the given reseller.
 	ListActiveByOwnerID(ctx context.Context, ownerID int64, now time.Time) ([]Announcement, error)

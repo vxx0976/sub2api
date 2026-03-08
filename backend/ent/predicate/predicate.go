@@ -60,6 +60,9 @@ type ResellerDomain func(*sql.Selector)
 // ResellerSetting is the predicate function for resellersetting builders.
 type ResellerSetting func(*sql.Selector)
 
+// ResellerWithdrawal is the predicate function for resellerwithdrawal builders.
+type ResellerWithdrawal func(*sql.Selector)
+
 // SecuritySecret is the predicate function for securitysecret builders.
 type SecuritySecret func(*sql.Selector)
 

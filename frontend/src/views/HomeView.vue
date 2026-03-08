@@ -11,6 +11,96 @@
   <!-- Custom HTML mode - SECURITY: homeContent is admin-only setting, XSS risk is acceptable -->
   <div v-else-if="homeTemplate === 'custom_html' && homeContent" class="min-h-screen" v-html="homeContent"></div>
 
+  <!-- Hero template: gradient hero + features + CTA -->
+  <div v-else-if="homeTemplate === 'hero'" class="relative flex min-h-screen flex-col overflow-hidden">
+    <!-- Gradient background -->
+    <div class="pointer-events-none absolute inset-0 bg-gradient-to-br from-slate-900 via-primary-950 to-slate-900"></div>
+    <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(120,119,198,0.25),transparent)]"></div>
+    <PublicHeader class="relative z-10" />
+    <main class="relative z-10 flex flex-1 flex-col items-center justify-center px-6 py-20 text-center">
+      <div v-if="appStore.siteLogo" class="mb-8 flex justify-center">
+        <img :src="appStore.siteLogo" :alt="siteName" class="h-20 w-20 rounded-2xl object-contain shadow-2xl ring-1 ring-white/10" />
+      </div>
+      <h1 class="mx-auto max-w-3xl text-4xl font-bold tracking-tight text-white sm:text-6xl">
+        {{ siteName }}
+      </h1>
+      <p v-if="appStore.cachedPublicSettings?.site_subtitle" class="mx-auto mt-5 max-w-xl text-lg text-slate-300">
+        {{ appStore.cachedPublicSettings.site_subtitle }}
+      </p>
+      <div class="mt-10 flex flex-wrap justify-center gap-3">
+        <router-link :to="isAuthenticated ? dashboardPath : loginPath" class="inline-flex items-center gap-2 rounded-xl bg-white px-7 py-3 text-sm font-semibold text-slate-900 shadow-lg transition hover:bg-slate-100">
+          {{ isAuthenticated ? t('home.goToDashboard') : t('home.getStarted') }}
+          <Icon name="arrowRight" size="sm" :stroke-width="2.5" />
+        </router-link>
+        <router-link v-if="isResellerDomain && docUrl" to="/docs" class="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-7 py-3 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/20">
+          <Icon name="book" size="sm" />
+          {{ t('home.docs') }}
+        </router-link>
+        <a v-else-if="!isResellerDomain && docUrl" :href="docUrl" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-7 py-3 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/20">
+          <Icon name="book" size="sm" />
+          {{ t('home.docs') }}
+        </a>
+        <router-link v-if="isResellerDomain" to="/key-query" class="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-7 py-3 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/20">
+          <Icon name="search" size="sm" />
+          {{ t('keyQuery.title') }}
+        </router-link>
+      </div>
+      <!-- Feature pills -->
+      <div class="mt-16 flex flex-wrap justify-center gap-3">
+        <span v-for="feat in ['OpenAI Compatible', 'Claude / Gemini / GPT', '高并发', '低延迟', '按量计费']" :key="feat"
+          class="rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-medium text-slate-300 backdrop-blur">
+          {{ feat }}
+        </span>
+      </div>
+    </main>
+    <footer class="relative z-10 py-6 text-center text-sm text-slate-500">
+      &copy; {{ currentYear }} {{ siteName }}
+    </footer>
+  </div>
+
+  <!-- Brand template: logo + contact + clean CTA -->
+  <div v-else-if="homeTemplate === 'brand'" class="relative flex min-h-screen flex-col bg-white dark:bg-dark-950">
+    <PublicHeader class="relative z-10" />
+    <main class="flex flex-1 flex-col items-center justify-center px-6 py-20">
+      <div class="mx-auto w-full max-w-md text-center">
+        <div v-if="appStore.siteLogo" class="mb-8 flex justify-center">
+          <img :src="appStore.siteLogo" :alt="siteName" class="h-24 w-24 rounded-3xl object-contain shadow-xl" />
+        </div>
+        <div v-else class="mb-8 flex justify-center">
+          <div class="flex h-24 w-24 items-center justify-center rounded-3xl bg-primary-600 shadow-xl">
+            <span class="text-3xl font-bold text-white">{{ siteName.charAt(0) }}</span>
+          </div>
+        </div>
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-white">{{ siteName }}</h1>
+        <p v-if="appStore.cachedPublicSettings?.site_subtitle" class="mt-3 text-base text-gray-500 dark:text-gray-400">
+          {{ appStore.cachedPublicSettings.site_subtitle }}
+        </p>
+        <router-link :to="isAuthenticated ? dashboardPath : loginPath" class="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-primary-600 py-3.5 text-sm font-semibold text-white shadow-lg transition hover:bg-primary-700">
+          {{ isAuthenticated ? t('home.goToDashboard') : t('home.getStarted') }}
+          <Icon name="arrowRight" size="sm" :stroke-width="2.5" />
+        </router-link>
+        <div class="mt-4 flex flex-col items-center gap-2">
+          <router-link v-if="isResellerDomain" to="/key-query" class="text-sm text-gray-500 transition hover:text-gray-700 dark:text-gray-400 dark:hover:text-white">
+            {{ t('keyQuery.title') }}
+          </router-link>
+          <router-link v-if="isResellerDomain && docUrl" to="/docs" class="text-sm text-gray-500 transition hover:text-gray-700 dark:text-gray-400 dark:hover:text-white">
+            {{ t('home.docs') }}
+          </router-link>
+          <a v-else-if="!isResellerDomain && docUrl" :href="docUrl" target="_blank" rel="noopener noreferrer" class="text-sm text-gray-500 transition hover:text-gray-700 dark:text-gray-400 dark:hover:text-white">
+            {{ t('home.docs') }}
+          </a>
+        </div>
+        <!-- Contact info -->
+        <div v-if="appStore.cachedPublicSettings?.contact_info" class="mt-8 rounded-xl border border-gray-100 bg-gray-50 p-4 text-sm text-gray-500 dark:border-dark-700 dark:bg-dark-800 dark:text-gray-400">
+          {{ appStore.cachedPublicSettings.contact_info }}
+        </div>
+      </div>
+    </main>
+    <footer class="py-6 text-center text-sm text-gray-400 dark:text-gray-600">
+      &copy; {{ currentYear }} {{ siteName }}
+    </footer>
+  </div>
+
   <!-- Minimal template -->
   <div v-else-if="homeTemplate === 'minimal'" class="relative flex min-h-screen flex-col bg-gray-50 dark:bg-dark-950">
     <PublicHeader />

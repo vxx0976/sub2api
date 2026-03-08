@@ -104,6 +104,30 @@ export const customRoutes: RouteRecordRaw[] = [
       titleKey: 'reseller.announcements.title'
     }
   },
+  {
+    path: '/merchant/commissions',
+    name: 'MerchantCommissions',
+    component: () => import('@/views/reseller/CommissionsView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresReseller: true,
+      requiresAgentEnabled: true,
+      title: 'Commission Statistics',
+      titleKey: 'reseller.commissions.title'
+    }
+  },
+  {
+    path: '/merchant/withdrawals',
+    name: 'MerchantWithdrawals',
+    component: () => import('@/views/reseller/WithdrawalsView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresReseller: true,
+      requiresAgentEnabled: true,
+      title: 'Withdrawals',
+      titleKey: 'reseller.withdrawals.title'
+    }
+  },
 
   // ==================== Custom Admin Routes ====================
   {
@@ -116,6 +140,28 @@ export const customRoutes: RouteRecordRaw[] = [
       title: 'Channel Management',
       titleKey: 'admin.channels.title',
       descriptionKey: 'admin.channels.description'
+    }
+  },
+  {
+    path: '/admin/merchants',
+    name: 'AdminMerchants',
+    component: () => import('@/views/admin/MerchantsView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: 'Merchant Management',
+      titleKey: 'admin.merchants.title'
+    }
+  },
+  {
+    path: '/admin/merchant-withdrawals',
+    name: 'AdminMerchantWithdrawals',
+    component: () => import('@/views/admin/MerchantWithdrawalsView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: 'Merchant Withdrawals',
+      titleKey: 'admin.merchantWithdrawals.title'
     }
   },
 

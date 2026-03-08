@@ -53,6 +53,11 @@ type UserRepository interface {
 	UpdateTotpSecret(ctx context.Context, userID int64, encryptedSecret *string) error
 	EnableTotp(ctx context.Context, userID int64) error
 	DisableTotp(ctx context.Context, userID int64) error
+
+	// ListIDsByParentID returns all user IDs with parent_id = parentID
+	ListIDsByParentID(ctx context.Context, parentID int64) ([]int64, error)
+	// ListResellerUsers returns paginated reseller users with optional search
+	ListResellerUsers(ctx context.Context, page, pageSize int, search string) ([]*MerchantInfo, int, error)
 }
 
 // UpdateProfileRequest 更新用户资料请求

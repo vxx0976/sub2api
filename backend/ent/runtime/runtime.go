@@ -23,6 +23,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/referralreward"
 	"github.com/Wei-Shaw/sub2api/ent/resellerdomain"
 	"github.com/Wei-Shaw/sub2api/ent/resellersetting"
+	"github.com/Wei-Shaw/sub2api/ent/resellerwithdrawal"
 	"github.com/Wei-Shaw/sub2api/ent/schema"
 	"github.com/Wei-Shaw/sub2api/ent/securitysecret"
 	"github.com/Wei-Shaw/sub2api/ent/setting"
@@ -1048,6 +1049,36 @@ func init() {
 	resellersetting.DefaultUpdatedAt = resellersettingDescUpdatedAt.Default.(func() time.Time)
 	// resellersetting.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	resellersetting.UpdateDefaultUpdatedAt = resellersettingDescUpdatedAt.UpdateDefault.(func() time.Time)
+	resellerwithdrawalFields := schema.ResellerWithdrawal{}.Fields()
+	_ = resellerwithdrawalFields
+	// resellerwithdrawalDescStatus is the schema descriptor for status field.
+	resellerwithdrawalDescStatus := resellerwithdrawalFields[2].Descriptor()
+	// resellerwithdrawal.DefaultStatus holds the default value on creation for the status field.
+	resellerwithdrawal.DefaultStatus = resellerwithdrawalDescStatus.Default.(string)
+	// resellerwithdrawal.StatusValidator is a validator for the "status" field. It is called by the builders before save.
+	resellerwithdrawal.StatusValidator = resellerwithdrawalDescStatus.Validators[0].(func(string) error)
+	// resellerwithdrawalDescPaymentMethod is the schema descriptor for payment_method field.
+	resellerwithdrawalDescPaymentMethod := resellerwithdrawalFields[3].Descriptor()
+	// resellerwithdrawal.PaymentMethodValidator is a validator for the "payment_method" field. It is called by the builders before save.
+	resellerwithdrawal.PaymentMethodValidator = resellerwithdrawalDescPaymentMethod.Validators[0].(func(string) error)
+	// resellerwithdrawalDescPaymentAccount is the schema descriptor for payment_account field.
+	resellerwithdrawalDescPaymentAccount := resellerwithdrawalFields[4].Descriptor()
+	// resellerwithdrawal.PaymentAccountValidator is a validator for the "payment_account" field. It is called by the builders before save.
+	resellerwithdrawal.PaymentAccountValidator = resellerwithdrawalDescPaymentAccount.Validators[0].(func(string) error)
+	// resellerwithdrawalDescPaymentName is the schema descriptor for payment_name field.
+	resellerwithdrawalDescPaymentName := resellerwithdrawalFields[5].Descriptor()
+	// resellerwithdrawal.PaymentNameValidator is a validator for the "payment_name" field. It is called by the builders before save.
+	resellerwithdrawal.PaymentNameValidator = resellerwithdrawalDescPaymentName.Validators[0].(func(string) error)
+	// resellerwithdrawalDescAdminNotes is the schema descriptor for admin_notes field.
+	resellerwithdrawalDescAdminNotes := resellerwithdrawalFields[6].Descriptor()
+	// resellerwithdrawal.DefaultAdminNotes holds the default value on creation for the admin_notes field.
+	resellerwithdrawal.DefaultAdminNotes = resellerwithdrawalDescAdminNotes.Default.(string)
+	// resellerwithdrawal.AdminNotesValidator is a validator for the "admin_notes" field. It is called by the builders before save.
+	resellerwithdrawal.AdminNotesValidator = resellerwithdrawalDescAdminNotes.Validators[0].(func(string) error)
+	// resellerwithdrawalDescCreatedAt is the schema descriptor for created_at field.
+	resellerwithdrawalDescCreatedAt := resellerwithdrawalFields[8].Descriptor()
+	// resellerwithdrawal.DefaultCreatedAt holds the default value on creation for the created_at field.
+	resellerwithdrawal.DefaultCreatedAt = resellerwithdrawalDescCreatedAt.Default.(func() time.Time)
 	securitysecretMixin := schema.SecuritySecret{}.Mixin()
 	securitysecretMixinFields0 := securitysecretMixin[0].Fields()
 	_ = securitysecretMixinFields0
@@ -1239,39 +1270,39 @@ func init() {
 	// usagelog.DefaultRateMultiplier holds the default value on creation for the rate_multiplier field.
 	usagelog.DefaultRateMultiplier = usagelogDescRateMultiplier.Default.(float64)
 	// usagelogDescBillingType is the schema descriptor for billing_type field.
-	usagelogDescBillingType := usagelogFields[21].Descriptor()
+	usagelogDescBillingType := usagelogFields[22].Descriptor()
 	// usagelog.DefaultBillingType holds the default value on creation for the billing_type field.
 	usagelog.DefaultBillingType = usagelogDescBillingType.Default.(int8)
 	// usagelogDescStream is the schema descriptor for stream field.
-	usagelogDescStream := usagelogFields[22].Descriptor()
+	usagelogDescStream := usagelogFields[23].Descriptor()
 	// usagelog.DefaultStream holds the default value on creation for the stream field.
 	usagelog.DefaultStream = usagelogDescStream.Default.(bool)
 	// usagelogDescUserAgent is the schema descriptor for user_agent field.
-	usagelogDescUserAgent := usagelogFields[25].Descriptor()
+	usagelogDescUserAgent := usagelogFields[26].Descriptor()
 	// usagelog.UserAgentValidator is a validator for the "user_agent" field. It is called by the builders before save.
 	usagelog.UserAgentValidator = usagelogDescUserAgent.Validators[0].(func(string) error)
 	// usagelogDescIPAddress is the schema descriptor for ip_address field.
-	usagelogDescIPAddress := usagelogFields[26].Descriptor()
+	usagelogDescIPAddress := usagelogFields[27].Descriptor()
 	// usagelog.IPAddressValidator is a validator for the "ip_address" field. It is called by the builders before save.
 	usagelog.IPAddressValidator = usagelogDescIPAddress.Validators[0].(func(string) error)
 	// usagelogDescCountryCode is the schema descriptor for country_code field.
-	usagelogDescCountryCode := usagelogFields[27].Descriptor()
+	usagelogDescCountryCode := usagelogFields[28].Descriptor()
 	// usagelog.CountryCodeValidator is a validator for the "country_code" field. It is called by the builders before save.
 	usagelog.CountryCodeValidator = usagelogDescCountryCode.Validators[0].(func(string) error)
 	// usagelogDescImageCount is the schema descriptor for image_count field.
-	usagelogDescImageCount := usagelogFields[28].Descriptor()
+	usagelogDescImageCount := usagelogFields[29].Descriptor()
 	// usagelog.DefaultImageCount holds the default value on creation for the image_count field.
 	usagelog.DefaultImageCount = usagelogDescImageCount.Default.(int)
 	// usagelogDescImageSize is the schema descriptor for image_size field.
-	usagelogDescImageSize := usagelogFields[29].Descriptor()
+	usagelogDescImageSize := usagelogFields[30].Descriptor()
 	// usagelog.ImageSizeValidator is a validator for the "image_size" field. It is called by the builders before save.
 	usagelog.ImageSizeValidator = usagelogDescImageSize.Validators[0].(func(string) error)
 	// usagelogDescCacheTTLOverridden is the schema descriptor for cache_ttl_overridden field.
-	usagelogDescCacheTTLOverridden := usagelogFields[30].Descriptor()
+	usagelogDescCacheTTLOverridden := usagelogFields[31].Descriptor()
 	// usagelog.DefaultCacheTTLOverridden holds the default value on creation for the cache_ttl_overridden field.
 	usagelog.DefaultCacheTTLOverridden = usagelogDescCacheTTLOverridden.Default.(bool)
 	// usagelogDescCreatedAt is the schema descriptor for created_at field.
-	usagelogDescCreatedAt := usagelogFields[31].Descriptor()
+	usagelogDescCreatedAt := usagelogFields[32].Descriptor()
 	// usagelog.DefaultCreatedAt holds the default value on creation for the created_at field.
 	usagelog.DefaultCreatedAt = usagelogDescCreatedAt.Default.(func() time.Time)
 	userMixin := schema.User{}.Mixin()

@@ -5,8 +5,10 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"log/slog"
 	"time"
 
+	dbent "github.com/Wei-Shaw/sub2api/ent"
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
 )
@@ -68,6 +70,10 @@ type ResellerDomainRepository interface {
 	Update(ctx context.Context, domain *ResellerDomain) error
 	Delete(ctx context.Context, id int64) error
 	ListByResellerID(ctx context.Context, resellerID int64, params pagination.PaginationParams) ([]ResellerDomain, *pagination.PaginationResult, error)
+	// ListAllDomainNamesByResellerID returns all non-deleted domain name strings for the given reseller (no pagination).
+	ListAllDomainNamesByResellerID(ctx context.Context, resellerID int64) ([]string, error)
+	// CountByResellerID returns total and verified domain counts for the given reseller.
+	CountByResellerID(ctx context.Context, resellerID int64) (total int, verified int, err error)
 	// GetDomainsByResellerIDs returns a map of resellerID -> first verified domain (or first domain if none verified).
 	GetDomainsByResellerIDs(ctx context.Context, resellerIDs []int64) (map[int64]string, error)
 	// PurgeSoftDeletedByDomain physically deletes soft-deleted records for a given domain name.
@@ -158,6 +164,7 @@ type ResellerService struct {
 	apiKeyService    *APIKeyService
 	redeemRepo       RedeemCodeRepository
 	announcementRepo AnnouncementRepository
+	entClient        *dbent.Client
 }
 
 // NewResellerService creates a new ResellerService
@@ -170,6 +177,7 @@ func NewResellerService(
 	apiKeyService *APIKeyService,
 	redeemRepo RedeemCodeRepository,
 	announcementRepo AnnouncementRepository,
+	client *dbent.Client,
 ) *ResellerService {
 	return &ResellerService{
 		userRepo:         userRepo,
@@ -180,6 +188,7 @@ func NewResellerService(
 		apiKeyService:    apiKeyService,
 		redeemRepo:       redeemRepo,
 		announcementRepo: announcementRepo,
+		entClient:        client,
 	}
 }
 
@@ -192,50 +201,39 @@ func (s *ResellerService) GetDashboardStats(ctx context.Context, resellerID int6
 		return nil, fmt.Errorf("get reseller: %w", err)
 	}
 
-	// Count domains
-	domains, _, err := s.domainRepo.ListByResellerID(ctx, resellerID, pagination.PaginationParams{Page: 1, PageSize: 10000})
+	// Count domains (two COUNT queries instead of full scan)
+	domainTotal, domainVerified, err := s.domainRepo.CountByResellerID(ctx, resellerID)
 	if err != nil {
-		return nil, fmt.Errorf("list domains: %w", err)
-	}
-	var verifiedCount int
-	for _, d := range domains {
-		if d.Verified {
-			verifiedCount++
-		}
+		return nil, fmt.Errorf("count domains: %w", err)
 	}
 
-	// Count groups owned by reseller
-	groups, _, err := s.groupRepo.ListWithFilters(ctx, pagination.PaginationParams{Page: 1, PageSize: 10000}, "", "", "", nil, nil)
-	var groupCount int
-	if err == nil {
-		for _, g := range groups {
-			if g.OwnerID != nil && *g.OwnerID == resellerID {
-				groupCount++
-			}
-		}
+	// Count groups owned by reseller (single COUNT query)
+	groupCount, err := s.groupRepo.CountByOwnerID(ctx, resellerID)
+	if err != nil {
+		groupCount = 0
 	}
 
-	// Count API keys owned by reseller
-	keys, _, err := s.apiKeyRepo.ListByUserID(ctx, resellerID, pagination.PaginationParams{Page: 1, PageSize: 10000}, APIKeyListFilters{})
-	var keyCount, activeKeyCount int
-	var totalQuotaUsed float64
-	if err == nil {
-		keyCount = len(keys)
-		for _, k := range keys {
-			if k.Status == StatusActive {
-				activeKeyCount++
-			}
-			totalQuotaUsed += k.QuotaUsed
-		}
+	// Count and sum API keys owned by reseller (three COUNT/SUM queries instead of full scan)
+	keyCount, err := s.apiKeyRepo.CountByUserID(ctx, resellerID)
+	if err != nil {
+		keyCount = 0
+	}
+	activeKeyCount, err := s.apiKeyRepo.CountActiveByUserID(ctx, resellerID)
+	if err != nil {
+		activeKeyCount = 0
+	}
+	totalQuotaUsed, err := s.apiKeyRepo.SumQuotaUsedByUserID(ctx, resellerID)
+	if err != nil {
+		totalQuotaUsed = 0
 	}
 
 	return &ResellerDashboardStats{
 		MyBalance:       reseller.Balance,
-		DomainCount:     len(domains),
-		VerifiedDomains: verifiedCount,
-		GroupCount:      groupCount,
-		KeyCount:        keyCount,
-		ActiveKeyCount:  activeKeyCount,
+		DomainCount:     domainTotal,
+		VerifiedDomains: domainVerified,
+		GroupCount:      int(groupCount),
+		KeyCount:        int(keyCount),
+		ActiveKeyCount:  int(activeKeyCount),
 		TotalQuotaUsed:  totalQuotaUsed,
 	}, nil
 }
@@ -245,6 +243,11 @@ func (s *ResellerService) GetDashboardStats(ctx context.Context, resellerID int6
 // ListDomains returns the reseller's domains
 func (s *ResellerService) ListDomains(ctx context.Context, resellerID int64, page, pageSize int) ([]ResellerDomain, *pagination.PaginationResult, error) {
 	return s.domainRepo.ListByResellerID(ctx, resellerID, pagination.PaginationParams{Page: page, PageSize: pageSize})
+}
+
+// ListAllDomainNames returns all domain name strings for the reseller without pagination.
+func (s *ResellerService) ListAllDomainNames(ctx context.Context, resellerID int64) ([]string, error) {
+	return s.domainRepo.ListAllDomainNamesByResellerID(ctx, resellerID)
 }
 
 // CreateDomain creates a new domain for the reseller
@@ -541,22 +544,7 @@ func (s *ResellerService) GenerateRedeemCodes(ctx context.Context, resellerID in
 
 	totalCost := value * float64(count)
 
-	// Check reseller balance
-	reseller, err := s.userRepo.GetByID(ctx, resellerID)
-	if err != nil {
-		return nil, fmt.Errorf("get reseller: %w", err)
-	}
-	if reseller.Balance < totalCost {
-		return nil, infraerrors.BadRequest("INSUFFICIENT_BALANCE", "insufficient balance to generate codes")
-	}
-
-	// Deduct balance
-	reseller.Balance -= totalCost
-	if err := s.userRepo.Update(ctx, reseller); err != nil {
-		return nil, fmt.Errorf("deduct balance: %w", err)
-	}
-
-	// Generate codes
+	// Generate code strings before starting the transaction (no DB I/O needed)
 	codes := make([]RedeemCode, count)
 	for i := 0; i < count; i++ {
 		code, err := GenerateRedeemCode()
@@ -572,11 +560,25 @@ func (s *ResellerService) GenerateRedeemCodes(ctx context.Context, resellerID in
 		}
 	}
 
-	if err := s.redeemRepo.CreateBatch(ctx, codes); err != nil {
-		// Attempt to refund balance on failure
-		reseller.Balance += totalCost
-		_ = s.userRepo.Update(ctx, reseller)
+	// Use a transaction: atomically deduct balance and create codes
+	tx, err := s.entClient.Tx(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("begin transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	txCtx := dbent.NewTxContext(ctx, tx)
+
+	if err := s.userRepo.DeductBalanceIfSufficient(txCtx, resellerID, totalCost); err != nil {
+		return nil, fmt.Errorf("deduct balance: %w", err)
+	}
+
+	if err := s.redeemRepo.CreateBatch(txCtx, codes); err != nil {
 		return nil, fmt.Errorf("create codes: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("commit transaction: %w", err)
 	}
 
 	return codes, nil
@@ -584,38 +586,7 @@ func (s *ResellerService) GenerateRedeemCodes(ctx context.Context, resellerID in
 
 // ListRedeemCodes returns redeem codes owned by the reseller
 func (s *ResellerService) ListRedeemCodes(ctx context.Context, resellerID int64, page, pageSize int) ([]RedeemCode, *pagination.PaginationResult, error) {
-	// Use ListWithFilters to get all codes, then filter by OwnerID
-	// Using a large page size to get all, then apply manual pagination
-	all, _, err := s.redeemRepo.ListWithFilters(ctx, pagination.PaginationParams{Page: 1, PageSize: 10000}, RedeemTypeBalance, "", "")
-	if err != nil {
-		return nil, nil, fmt.Errorf("list codes: %w", err)
-	}
-
-	// Filter by owner
-	var filtered []RedeemCode
-	for _, c := range all {
-		if c.OwnerID != nil && *c.OwnerID == resellerID {
-			filtered = append(filtered, c)
-		}
-	}
-
-	total := int64(len(filtered))
-	start := (page - 1) * pageSize
-	end := start + pageSize
-	if start > len(filtered) {
-		start = len(filtered)
-	}
-	if end > len(filtered) {
-		end = len(filtered)
-	}
-	pages := int((total + int64(pageSize) - 1) / int64(pageSize))
-
-	return filtered[start:end], &pagination.PaginationResult{
-		Total:    total,
-		Page:     page,
-		PageSize: pageSize,
-		Pages:    pages,
-	}, nil
+	return s.redeemRepo.ListByOwnerID(ctx, resellerID, pagination.PaginationParams{Page: page, PageSize: pageSize})
 }
 
 // DeleteRedeemCode deletes a redeem code owned by the reseller
@@ -631,13 +602,8 @@ func (s *ResellerService) DeleteRedeemCode(ctx context.Context, resellerID, code
 		return infraerrors.BadRequest("REDEEM_CODE_USED", "cannot delete a used redeem code")
 	}
 
-	// Refund balance
-	reseller, err := s.userRepo.GetByID(ctx, resellerID)
-	if err != nil {
-		return fmt.Errorf("get reseller: %w", err)
-	}
-	reseller.Balance += code.Value
-	if err := s.userRepo.Update(ctx, reseller); err != nil {
+	// Atomically refund balance (ADD operation)
+	if err := s.userRepo.UpdateBalance(ctx, resellerID, code.Value); err != nil {
 		return fmt.Errorf("refund balance: %w", err)
 	}
 
@@ -648,37 +614,7 @@ func (s *ResellerService) DeleteRedeemCode(ctx context.Context, resellerID, code
 
 // ListAnnouncements returns announcements owned by the reseller
 func (s *ResellerService) ListAnnouncements(ctx context.Context, resellerID int64, page, pageSize int) ([]Announcement, *pagination.PaginationResult, error) {
-	all, pag, err := s.announcementRepo.List(ctx, pagination.PaginationParams{Page: 1, PageSize: 10000}, AnnouncementListFilters{})
-	if err != nil {
-		return nil, nil, fmt.Errorf("list announcements: %w", err)
-	}
-
-	// Filter by owner
-	var filtered []Announcement
-	for _, a := range all {
-		if a.OwnerID != nil && *a.OwnerID == resellerID {
-			filtered = append(filtered, a)
-		}
-	}
-	_ = pag
-
-	total := int64(len(filtered))
-	start := (page - 1) * pageSize
-	end := start + pageSize
-	if start > len(filtered) {
-		start = len(filtered)
-	}
-	if end > len(filtered) {
-		end = len(filtered)
-	}
-	pages := int((total + int64(pageSize) - 1) / int64(pageSize))
-
-	return filtered[start:end], &pagination.PaginationResult{
-		Total:    total,
-		Page:     page,
-		PageSize: pageSize,
-		Pages:    pages,
-	}, nil
+	return s.announcementRepo.ListByOwnerID(ctx, resellerID, pagination.PaginationParams{Page: page, PageSize: pageSize})
 }
 
 // CreateAnnouncement creates an announcement owned by the reseller
@@ -771,64 +707,74 @@ func (s *ResellerService) TransferBalance(ctx context.Context, resellerID, userI
 		return nil, ErrOwnershipViolation
 	}
 
-	reseller, err := s.userRepo.GetByID(ctx, resellerID)
-	if err != nil {
-		return nil, fmt.Errorf("get reseller: %w", err)
-	}
-
 	var balanceDiff float64
 	switch operation {
-	case "add":
-		if reseller.Balance < amount {
-			return nil, infraerrors.BadRequest("INSUFFICIENT_BALANCE", "insufficient reseller balance")
-		}
-		reseller.Balance -= amount
-		user.Balance += amount
-		balanceDiff = amount
-	case "subtract":
-		if user.Balance < amount {
-			return nil, infraerrors.BadRequest("INSUFFICIENT_BALANCE", "insufficient user balance")
-		}
-		user.Balance -= amount
-		reseller.Balance += amount
-		balanceDiff = -amount
+	case "add", "subtract":
+		// validated below inside transaction
 	default:
 		return nil, infraerrors.BadRequest("INVALID_OPERATION", "operation must be 'add' or 'subtract'")
 	}
 
-	// Update reseller balance
-	if err := s.userRepo.Update(ctx, reseller); err != nil {
-		return nil, fmt.Errorf("update reseller balance: %w", err)
-	}
-
-	// Update user balance
-	if err := s.userRepo.Update(ctx, user); err != nil {
-		return nil, fmt.Errorf("update user balance: %w", err)
-	}
-
-	// Create audit record
-	code, err := GenerateRedeemCode()
+	// Use a transaction to atomically transfer balance
+	tx, err := s.entClient.Tx(ctx)
 	if err != nil {
-		return user, nil
+		return nil, fmt.Errorf("begin transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	txCtx := dbent.NewTxContext(ctx, tx)
+
+	switch operation {
+	case "add":
+		// Deduct from reseller, add to user
+		if err := s.userRepo.DeductBalanceIfSufficient(txCtx, resellerID, amount); err != nil {
+			return nil, fmt.Errorf("deduct reseller balance: %w", err)
+		}
+		if err := s.userRepo.UpdateBalance(txCtx, userID, amount); err != nil {
+			return nil, fmt.Errorf("add user balance: %w", err)
+		}
+		balanceDiff = amount
+	case "subtract":
+		// Deduct from user, add back to reseller
+		if err := s.userRepo.DeductBalanceIfSufficient(txCtx, userID, amount); err != nil {
+			return nil, fmt.Errorf("deduct user balance: %w", err)
+		}
+		if err := s.userRepo.UpdateBalance(txCtx, resellerID, amount); err != nil {
+			return nil, fmt.Errorf("add reseller balance: %w", err)
+		}
+		balanceDiff = -amount
 	}
 
-	now := time.Now()
-	adjustmentRecord := &RedeemCode{
-		Code:    code,
-		Type:    AdjustmentTypeResellerTransfer,
-		Value:   balanceDiff,
-		Status:  StatusUsed,
-		UsedBy:  &userID,
-		OwnerID: &resellerID,
-		Notes:   notes,
-	}
-	adjustmentRecord.UsedAt = &now
-
-	if err := s.redeemRepo.Create(ctx, adjustmentRecord); err != nil {
-		fmt.Printf("failed to create reseller transfer audit record: %v\n", err)
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("commit transaction: %w", err)
 	}
 
-	return user, nil
+	// Reload updated user to return accurate balance
+	updatedUser, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		updatedUser = user
+	}
+
+	// Create audit record outside transaction; failure only logs a warning
+	code, err := GenerateRedeemCode()
+	if err == nil {
+		now := time.Now()
+		adjustmentRecord := &RedeemCode{
+			Code:    code,
+			Type:    AdjustmentTypeResellerTransfer,
+			Value:   balanceDiff,
+			Status:  StatusUsed,
+			UsedBy:  &userID,
+			OwnerID: &resellerID,
+			Notes:   notes,
+		}
+		adjustmentRecord.UsedAt = &now
+		if err := s.redeemRepo.Create(ctx, adjustmentRecord); err != nil {
+			slog.Warn("failed to create reseller transfer audit record", "error", err)
+		}
+	}
+
+	return updatedUser, nil
 }
 
 // GetUserBalanceHistory returns paginated balance history for a user belonging to the reseller.
