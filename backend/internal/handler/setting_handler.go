@@ -138,6 +138,12 @@ func (h *SettingHandler) GetPublicSettings(c *gin.Context) {
 			// Expose merchant_mode to regular users so sidebar can show subscription menus
 			if rs["merchant_mode"] == "enabled" {
 				result.ResellerAgentEnabled = true
+				// When merchant mode is enabled and pay_url is configured, expose the
+				// payment page so sub-users can recharge at the reseller's price.
+				if payURL := rs["pay_url"]; payURL != "" {
+					result.PurchaseEnabled = true
+					result.PurchaseURL = payURL
+				}
 			}
 			if v := rs["contact_info"]; v != "" {
 				result.ContactInfo = v

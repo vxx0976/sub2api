@@ -137,6 +137,16 @@
           />
           <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('admin.merchants.priceMultiplierReadonlyHint') }}</p>
         </div>
+        <div v-if="settingsForm.merchant_mode === 'enabled'">
+          <label class="input-label">{{ t('admin.merchants.payUrl') }}</label>
+          <input
+            v-model="settingsForm.pay_url"
+            type="url"
+            class="input"
+            placeholder="https://pay.example.com"
+          />
+          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('admin.merchants.payUrlHint') }}</p>
+        </div>
         <div>
           <label class="input-label">{{ t('admin.merchants.minWithdrawal') }}</label>
           <input
@@ -198,6 +208,7 @@ const settingsForm = reactive({
   merchant_mode: '',
   platform_cost: '',
   price_multiplier: '',
+  pay_url: '',
   min_withdrawal: ''
 })
 
@@ -206,6 +217,7 @@ async function openSettingsDialog(merchant: MerchantUser) {
   settingsForm.merchant_mode = ''
   settingsForm.platform_cost = ''
   settingsForm.price_multiplier = ''
+  settingsForm.pay_url = ''
   settingsForm.min_withdrawal = ''
   showSettingsDialog.value = true
   try {
@@ -213,6 +225,7 @@ async function openSettingsDialog(merchant: MerchantUser) {
     settingsForm.merchant_mode = kv.merchant_mode || ''
     settingsForm.platform_cost = kv.platform_cost || ''
     settingsForm.price_multiplier = kv.price_multiplier || ''
+    settingsForm.pay_url = kv.pay_url || ''
     settingsForm.min_withdrawal = kv.min_withdrawal || ''
   } catch {
     // ignore, form stays empty
@@ -231,6 +244,7 @@ async function handleSettingsSubmit() {
     const payload: Record<string, string> = {}
     if (settingsForm.merchant_mode) payload.merchant_mode = settingsForm.merchant_mode
     if (settingsForm.platform_cost) payload.platform_cost = settingsForm.platform_cost
+    if (settingsForm.pay_url) payload.pay_url = settingsForm.pay_url
     if (settingsForm.min_withdrawal) payload.min_withdrawal = settingsForm.min_withdrawal
 
     await adminAPI.merchants.updateMerchantSettings(editingMerchant.value.id, payload)

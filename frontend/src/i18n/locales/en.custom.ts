@@ -969,6 +969,8 @@ export default {
       notSet: 'Not set',
       priceMultiplier: 'Price Multiplier (set by merchant)',
       priceMultiplierReadonlyHint: 'This multiplier is set by the merchant; admin view only',
+      payUrl: 'Payment Page URL (sub2apipay)',
+      payUrlHint: 'When agent mode is enabled, merchant users will recharge at this URL. Must start with https://',
       minWithdrawal: 'Min Withdrawal Amount',
       minWithdrawalPlaceholder: 'e.g. 10',
       empty: 'No merchants found'

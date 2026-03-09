@@ -914,6 +914,8 @@ export default {
       notSet: '未设置',
       priceMultiplier: '价格倍率（商户自设）',
       priceMultiplierReadonlyHint: '此倍率由商户自行设置，管理员只读',
+      payUrl: '支付页面地址（sub2apipay）',
+      payUrlHint: '开启代理模式后，商户用户将在此地址完成充值，地址需带 https://',
       minWithdrawal: '最低提现金额',
       minWithdrawalPlaceholder: '例如：10',
       empty: '暂无商户'
