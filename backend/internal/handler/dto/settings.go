@@ -132,8 +132,9 @@ type PublicSettings struct {
 	ContactTelegram                  string               `json:"contact_telegram,omitempty"`
 
 	// Reseller domain branding (populated when accessed via a reseller's custom domain)
-	ResellerID     int64  `json:"reseller_id,omitempty"`
-	ResellerDomain string `json:"reseller_domain,omitempty"`
+	ResellerID           int64  `json:"reseller_id,omitempty"`
+	ResellerDomain       string `json:"reseller_domain,omitempty"`
+	ResellerAgentEnabled bool   `json:"reseller_agent_enabled,omitempty"`
 	BrandColor     string `json:"brand_color,omitempty"`
 	CustomCSS      string `json:"custom_css,omitempty"`
 	LoginRedirect  string `json:"login_redirect,omitempty"`

@@ -489,6 +489,7 @@ export default {
     clickToResend: 'Click to resend code',
     resendCode: 'Resend verification code',
     sendCodeDesc: "We'll send a verification code to",
+    checkSpamFolder: "If you don't receive the email, please check your spam folder.",
     codeSentSuccess: 'Verification code sent! Please check your inbox.',
     verifying: 'Verifying...',
     verifyAndCreate: 'Verify & Create Account',

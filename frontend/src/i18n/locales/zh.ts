@@ -487,6 +487,7 @@ export default {
     clickToResend: '点击重新发送验证码',
     resendCode: '重新发送验证码',
     sendCodeDesc: '我们将发送验证码到',
+    checkSpamFolder: '如未收到邮件，请检查垃圾邮件文件夹。',
     codeSentSuccess: '验证码已发送！请查收您的邮箱。',
     verifying: '验证中...',
     verifyAndCreate: '验证并创建账户',

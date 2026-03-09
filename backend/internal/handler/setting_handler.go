@@ -135,6 +135,10 @@ func (h *SettingHandler) GetPublicSettings(c *gin.Context) {
 
 		// Override from reseller-global settings
 		if rs := info.ResellerSettings; rs != nil {
+			// Expose merchant_mode to regular users so sidebar can show subscription menus
+			if rs["merchant_mode"] == "enabled" {
+				result.ResellerAgentEnabled = true
+			}
 			if v := rs["contact_info"]; v != "" {
 				result.ContactInfo = v
 			}

@@ -128,6 +128,7 @@ export interface PublicSettings {
   // Reseller domain branding (injected when accessed via a reseller's custom domain)
   reseller_id?: number
   reseller_domain?: string
+  reseller_agent_enabled?: boolean
   brand_color?: string
   custom_css?: string
   purchase_enabled?: boolean

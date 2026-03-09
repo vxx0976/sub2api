@@ -36,6 +36,7 @@ export const useAppStore = defineStore('app', () => {
   const resellerId = ref<number | null>(null)
   const resellerDomain = ref<string>('')
   const brandColor = ref<string>('')
+  const resellerAgentEnabled = ref<boolean>(false)
   const isResellerDomain = computed(() => resellerId.value !== null && resellerId.value > 0)
 
   // Version cache state
@@ -302,6 +303,7 @@ export const useAppStore = defineStore('app', () => {
     resellerId.value = config.reseller_id ?? null
     resellerDomain.value = config.reseller_domain || ''
     brandColor.value = config.brand_color || ''
+    resellerAgentEnabled.value = config.reseller_agent_enabled ?? false
 
     // Apply custom CSS from reseller branding
     if (config.custom_css) {
@@ -428,6 +430,7 @@ export const useAppStore = defineStore('app', () => {
     resellerId,
     resellerDomain,
     brandColor,
+    resellerAgentEnabled,
     isResellerDomain,
 
     // Version state

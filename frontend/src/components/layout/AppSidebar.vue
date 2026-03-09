@@ -599,7 +599,7 @@ const userNavItems = computed((): NavItem[] => {
   ]
   let filtered = authStore.isSimpleMode ? items.filter(item => !item.hideInSimpleMode) : items
   if (appStore.isResellerDomain || authStore.isResellerUser) {
-    const hiddenPaths = ['/subscriptions', '/purchase']
+    const hiddenPaths = appStore.resellerAgentEnabled ? ['/subscriptions'] : ['/subscriptions', '/purchase']
     filtered = filtered.filter(item => !hiddenPaths.includes(item.path))
   }
   return filtered
