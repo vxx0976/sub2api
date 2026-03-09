@@ -376,6 +376,7 @@ func (h *AuthHandler) GetCurrentUser(c *gin.Context) {
 		ResellerPriceMultiplier *float64 `json:"reseller_price_multiplier,omitempty"`
 		ResellerAgentEnabled    bool     `json:"reseller_agent_enabled,omitempty"`
 		ResellerPayURL          string   `json:"reseller_pay_url,omitempty"`
+		ResellerSellingPrice    *float64 `json:"reseller_selling_price,omitempty"`
 	}
 
 	runMode := config.RunModeStandard
@@ -394,6 +395,9 @@ func (h *AuthHandler) GetCurrentUser(c *gin.Context) {
 			resp.ResellerPayURL = rs["pay_url"]
 			if mult, err := strconv.ParseFloat(rs["price_multiplier"], 64); err == nil && mult > 0 {
 				resp.ResellerPriceMultiplier = &mult
+			}
+			if sp, err := strconv.ParseFloat(rs["selling_price"], 64); err == nil && sp > 0 {
+				resp.ResellerSellingPrice = &sp
 			}
 		}
 	}
