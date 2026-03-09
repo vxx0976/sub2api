@@ -79,6 +79,8 @@ var ProviderSet = wire.NewSet(
 	NewErrorPassthroughRepository,
 	NewResellerDomainRepository,
 	NewResellerSettingRepository,
+	NewResellerWithdrawalRepo,
+	wire.Bind(new(service.ResellerWithdrawalRepository), new(*ResellerWithdrawalRepo)),
 
 	// Cache implementations
 	NewGatewayCache,

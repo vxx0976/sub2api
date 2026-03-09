@@ -288,9 +288,10 @@ func ProvideScheduledTestRunnerService(
 	planRepo ScheduledTestPlanRepository,
 	scheduledSvc *ScheduledTestService,
 	accountTestSvc *AccountTestService,
+	rateLimitSvc *RateLimitService,
 	cfg *config.Config,
 ) *ScheduledTestRunnerService {
-	svc := NewScheduledTestRunnerService(planRepo, scheduledSvc, accountTestSvc, cfg)
+	svc := NewScheduledTestRunnerService(planRepo, scheduledSvc, accountTestSvc, rateLimitSvc, cfg)
 	svc.Start()
 	return svc
 }
@@ -402,6 +403,7 @@ var ProviderSet = wire.NewSet(
 	NewChannelService,
 	NewErrorPassthroughService,
 	NewResellerService,
+	NewCommissionService,
 
 	NewDigestSessionStore,
 	ProvideIdempotencyCoordinator,
