@@ -363,7 +363,13 @@ export const useAuthStore = defineStore('auth', () => {
       if (response.data.run_mode) {
         runMode.value = response.data.run_mode
       }
-      const { run_mode: _run_mode, ...userData } = response.data
+      // If sub-user's parent has merchant_mode enabled, update appStore so the
+      // router guard allows /purchase even when accessed via the main domain.
+      if (response.data.reseller_agent_enabled) {
+        const appStore = useAppStore()
+        appStore.resellerAgentEnabled = true
+      }
+      const { run_mode: _run_mode, reseller_agent_enabled: _rae, reseller_price_multiplier: _rpm, ...userData } = response.data
       user.value = userData
 
       // Update localStorage
