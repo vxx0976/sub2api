@@ -287,6 +287,15 @@ func mergeResellerBranding(baseJSON []byte, info *middleware.ResellerDomainConte
 		if v := rs["contact_telegram"]; v != "" {
 			m["contact_telegram"] = v
 		}
+		// When merchant_mode is enabled and pay_url is configured, expose the
+		// payment page so sub-users can recharge at the reseller's markup price.
+		if rs["merchant_mode"] == "enabled" {
+			m["reseller_agent_enabled"] = true
+			if payURL := rs["pay_url"]; payURL != "" {
+				m["purchase_enabled"] = true
+				m["purchase_url"] = payURL
+			}
+		}
 	}
 
 	// Domain-level default_locale overrides reseller-global default_locale
