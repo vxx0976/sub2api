@@ -2,6 +2,7 @@ package handler
 
 import (
 	"log/slog"
+	"strconv"
 	"strings"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
@@ -16,14 +17,20 @@ import (
 
 // AuthHandler handles authentication-related requests
 type AuthHandler struct {
-	cfg             *config.Config
-	authService     *service.AuthService
-	userService     *service.UserService
-	settingSvc      *service.SettingService
-	promoService    *service.PromoService
-	referralService *service.ReferralService
-	redeemService   *service.RedeemService
-	totpService     *service.TotpService
+	cfg                  *config.Config
+	authService          *service.AuthService
+	userService          *service.UserService
+	settingSvc           *service.SettingService
+	promoService         *service.PromoService
+	referralService      *service.ReferralService
+	redeemService        *service.RedeemService
+	totpService          *service.TotpService
+	resellerSettingRepo  service.ResellerSettingRepository
+}
+
+// SetResellerSettingRepo injects reseller setting repository for price_multiplier lookup in auth/me.
+func (h *AuthHandler) SetResellerSettingRepo(repo service.ResellerSettingRepository) {
+	h.resellerSettingRepo = repo
 }
 
 // NewAuthHandler creates a new AuthHandler
@@ -365,7 +372,8 @@ func (h *AuthHandler) GetCurrentUser(c *gin.Context) {
 
 	type UserResponse struct {
 		*dto.User
-		RunMode string `json:"run_mode"`
+		RunMode                 string   `json:"run_mode"`
+		ResellerPriceMultiplier *float64 `json:"reseller_price_multiplier,omitempty"`
 	}
 
 	runMode := config.RunModeStandard
@@ -373,7 +381,20 @@ func (h *AuthHandler) GetCurrentUser(c *gin.Context) {
 		runMode = h.cfg.RunMode
 	}
 
-	response.Success(c, UserResponse{User: dto.UserFromService(user), RunMode: runMode})
+	resp := UserResponse{User: dto.UserFromService(user), RunMode: runMode}
+
+	// If the user belongs to a reseller with merchant_mode enabled, expose the
+	// reseller's price_multiplier so the payment service can apply the correct
+	// balance ratio. Requires merchant_mode == "enabled" as the guard.
+	if user.ParentID != nil && h.resellerSettingRepo != nil {
+		if rs, err := h.resellerSettingRepo.GetAll(c.Request.Context(), *user.ParentID); err == nil && rs["merchant_mode"] == "enabled" {
+			if mult, err := strconv.ParseFloat(rs["price_multiplier"], 64); err == nil && mult > 0 {
+				resp.ResellerPriceMultiplier = &mult
+			}
+		}
+	}
+
+	response.Success(c, resp)
 }
 
 // ValidatePromoCodeRequest 验证优惠码请求
