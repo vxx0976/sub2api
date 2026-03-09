@@ -13,6 +13,7 @@ const AUTH_TOKEN_KEY = 'auth_token'
 const AUTH_USER_KEY = 'auth_user'
 const REFRESH_TOKEN_KEY = 'refresh_token'
 const TOKEN_EXPIRES_AT_KEY = 'token_expires_at' // 存储过期时间戳而非有效期
+const RESELLER_AGENT_ENABLED_KEY = 'reseller_agent_enabled'
 const AUTO_REFRESH_INTERVAL = 60 * 1000 // 60 seconds for user data refresh
 const TOKEN_REFRESH_BUFFER = 120 * 1000 // 120 seconds before expiry to refresh token
 
@@ -67,6 +68,12 @@ export const useAuthStore = defineStore('auth', () => {
         user.value = JSON.parse(savedUser)
         refreshTokenValue.value = savedRefreshToken
         tokenExpiresAt.value = savedExpiresAt ? parseInt(savedExpiresAt, 10) : null
+
+        // Synchronously restore reseller_agent_enabled so the router guard sees it immediately
+        if (localStorage.getItem(RESELLER_AGENT_ENABLED_KEY) === 'true') {
+          const appStore = useAppStore()
+          appStore.resellerAgentEnabled = true
+        }
 
         // Immediately refresh user data from backend (async, don't block)
         refreshUser().catch((error) => {
@@ -365,11 +372,26 @@ export const useAuthStore = defineStore('auth', () => {
       }
       // If sub-user's parent has merchant_mode enabled, update appStore so the
       // router guard allows /purchase even when accessed via the main domain.
+      // Also persist to localStorage so checkAuth() can restore it synchronously on next page load.
+      const appStore = useAppStore()
       if (response.data.reseller_agent_enabled) {
-        const appStore = useAppStore()
         appStore.resellerAgentEnabled = true
+        localStorage.setItem(RESELLER_AGENT_ENABLED_KEY, 'true')
+        // Also patch cachedPublicSettings so the sidebar shows the /purchase link
+        if (appStore.cachedPublicSettings) {
+          appStore.cachedPublicSettings.purchase_enabled = true
+          if (response.data.reseller_pay_url) {
+            appStore.cachedPublicSettings.purchase_url = response.data.reseller_pay_url
+          }
+        }
+      } else {
+        localStorage.removeItem(RESELLER_AGENT_ENABLED_KEY)
+        // Only clear if we're on a non-reseller domain (don't override domain-level setting)
+        if (!appStore.isResellerDomain) {
+          appStore.resellerAgentEnabled = false
+        }
       }
-      const { run_mode: _run_mode, reseller_agent_enabled: _rae, reseller_price_multiplier: _rpm, ...userData } = response.data
+      const { run_mode: _run_mode, reseller_agent_enabled: _rae, reseller_price_multiplier: _rpm, reseller_pay_url: _rpu, ...userData } = response.data
       user.value = userData
 
       // Update localStorage
@@ -403,6 +425,7 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem(AUTH_USER_KEY)
     localStorage.removeItem(REFRESH_TOKEN_KEY)
     localStorage.removeItem(TOKEN_EXPIRES_AT_KEY)
+    localStorage.removeItem(RESELLER_AGENT_ENABLED_KEY)
   }
 
   // ==================== Return Store API ====================

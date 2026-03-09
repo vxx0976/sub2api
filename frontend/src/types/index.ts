@@ -151,6 +151,7 @@ export interface CurrentUserResponse extends User {
   run_mode?: 'standard' | 'simple'
   reseller_agent_enabled?: boolean
   reseller_price_multiplier?: number
+  reseller_pay_url?: string
 }
 
 // ==================== Subscription Types ====================
