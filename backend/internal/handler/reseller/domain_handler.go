@@ -126,6 +126,31 @@ func (h *DomainHandler) Delete(c *gin.Context) {
 // ServerInfo returns the main site's domain and resolved IP for DNS setup guidance
 // GET /api/v1/reseller/domains/server-info
 func (h *DomainHandler) ServerInfo(c *gin.Context) {
+	// Check reseller_server_ip first — if set, skip DNS resolution entirely
+	if h.settingService != nil {
+		settings, err := h.settingService.GetPublicSettings(c.Request.Context())
+		if err == nil && strings.TrimSpace(settings.ResellerServerIP) != "" {
+			serverIP := strings.TrimSpace(settings.ResellerServerIP)
+			host := ""
+			if settings.APIBaseURL != "" {
+				if u, err := url.Parse(settings.APIBaseURL); err == nil && u.Hostname() != "" {
+					host = u.Hostname()
+				}
+			}
+			if host == "" {
+				host = c.Request.Host
+				if idx := strings.Index(host, ":"); idx != -1 {
+					host = host[:idx]
+				}
+			}
+			response.Success(c, gin.H{
+				"domain": host,
+				"ip":     serverIP,
+			})
+			return
+		}
+	}
+
 	// Prefer api_base_url from system settings (resolves to the public IP)
 	host := ""
 	if h.settingService != nil {

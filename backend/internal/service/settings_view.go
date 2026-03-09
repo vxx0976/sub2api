@@ -34,6 +34,7 @@ type SystemSettings struct {
 	SiteLogo                    string
 	SiteSubtitle                string
 	APIBaseURL                  string
+	ResellerServerIP            string
 	ContactInfo                 string
 	DocURL                      string
 	HomeContent                 string
@@ -103,6 +104,7 @@ type PublicSettings struct {
 	SiteLogo                         string
 	SiteSubtitle                     string
 	APIBaseURL                       string
+	ResellerServerIP                 string
 	ContactInfo                      string
 	DocURL                           string
 	HomeContent                      string

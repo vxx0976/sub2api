@@ -1005,6 +1005,13 @@ export default {
       bank: 'Bank Transfer',
       empty: 'No withdrawal requests'
     },
+    settings: {
+      site: {
+        resellerServerIp: 'Reseller Server IP',
+        resellerServerIpPlaceholder: '1.2.3.4',
+        resellerServerIpHint: 'The IP address that resellers should point their custom domain A record to. If set, the ServerInfo API will return this IP directly instead of resolving api_base_url.',
+      },
+    },
   },
 
   // Nav additions

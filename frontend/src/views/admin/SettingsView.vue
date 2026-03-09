@@ -1135,6 +1135,22 @@
               </p>
             </div>
 
+            <!-- Reseller Server IP -->
+            <div>
+              <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                {{ t('admin.settings.site.resellerServerIp') }}
+              </label>
+              <input
+                v-model="form.reseller_server_ip"
+                type="text"
+                class="input font-mono text-sm"
+                :placeholder="t('admin.settings.site.resellerServerIpPlaceholder')"
+              />
+              <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                {{ t('admin.settings.site.resellerServerIpHint') }}
+              </p>
+            </div>
+
             <!-- Contact Info -->
             <div>
               <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -1811,6 +1827,7 @@ const form = reactive<SettingsForm>({
   site_subtitle: 'Subscription to API Conversion Platform',
   default_locale: '',
   api_base_url: '',
+  reseller_server_ip: '',
   contact_info: '',
   contact_wechat: '',
   contact_telegram: '',
@@ -2088,6 +2105,7 @@ async function saveSettings() {
       site_logo: form.site_logo,
       site_subtitle: form.site_subtitle,
       api_base_url: form.api_base_url,
+      reseller_server_ip: form.reseller_server_ip,
       contact_info: form.contact_info,
       contact_wechat: form.contact_wechat,
       contact_telegram: form.contact_telegram,

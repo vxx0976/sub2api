@@ -1011,6 +1011,13 @@ export default {
       failedToDelete: '删除优惠码失败',
       failedToLoadUsages: '加载使用记录失败'
     },
+    settings: {
+      site: {
+        resellerServerIp: '商户服务器 IP',
+        resellerServerIpPlaceholder: '1.2.3.4',
+        resellerServerIpHint: '商户自定义域名的 A 记录应指向的 IP 地址。填写后 ServerInfo 接口将直接返回此 IP，不再解析 api_base_url。',
+      },
+    },
   },
 
   // Nav additions
