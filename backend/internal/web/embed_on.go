@@ -243,6 +243,10 @@ func mergeResellerBranding(baseJSON []byte, info *middleware.ResellerDomainConte
 	if info.HomeTemplate != "" {
 		m["home_template"] = info.HomeTemplate
 	}
+	// Capture system purchase settings before clearing them (used as fallback for merchant_mode)
+	sysPurchaseEnabled, _ := m["purchase_subscription_enabled"].(bool)
+	sysPurchaseURL, _ := m["purchase_subscription_url"].(string)
+
 	if info.PurchaseEnabled {
 		m["purchase_enabled"] = true
 		if info.PurchaseURL != "" {
@@ -287,13 +291,19 @@ func mergeResellerBranding(baseJSON []byte, info *middleware.ResellerDomainConte
 		if v := rs["contact_telegram"]; v != "" {
 			m["contact_telegram"] = v
 		}
-		// When merchant_mode is enabled and pay_url is configured, expose the
-		// payment page so sub-users can recharge at the reseller's markup price.
+		// When merchant_mode is enabled, expose the payment page.
+		// Use reseller's own pay_url if configured, otherwise fall back to main site URL.
 		if rs["merchant_mode"] == "enabled" {
 			m["reseller_agent_enabled"] = true
-			if payURL := rs["pay_url"]; payURL != "" {
+			payURL := rs["pay_url"]
+			if payURL == "" {
+				payURL = sysPurchaseURL
+			}
+			if payURL != "" {
 				m["purchase_enabled"] = true
 				m["purchase_url"] = payURL
+			} else if sysPurchaseEnabled {
+				m["purchase_enabled"] = true
 			}
 		}
 	}

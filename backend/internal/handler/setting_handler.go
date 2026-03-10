@@ -107,6 +107,10 @@ func (h *SettingHandler) GetPublicSettings(c *gin.Context) {
 			result.DocURL = ""
 		}
 
+		// Capture system purchase settings before clearing them (used as fallback for merchant_mode)
+		sysPurchaseEnabled := result.PurchaseSubscriptionEnabled
+		sysPurchaseURL := result.PurchaseSubscriptionURL
+
 		// Purchase: use reseller's or clear system defaults
 		if info.PurchaseEnabled {
 			result.PurchaseEnabled = true
@@ -138,11 +142,17 @@ func (h *SettingHandler) GetPublicSettings(c *gin.Context) {
 			// Expose merchant_mode to regular users so sidebar can show subscription menus
 			if rs["merchant_mode"] == "enabled" {
 				result.ResellerAgentEnabled = true
-				// When merchant mode is enabled and pay_url is configured, expose the
-				// payment page so sub-users can recharge at the reseller's price.
-				if payURL := rs["pay_url"]; payURL != "" {
+				// When merchant mode is enabled, expose the payment page.
+				// Use reseller's own pay_url if configured, otherwise fall back to main site URL.
+				payURL := rs["pay_url"]
+				if payURL == "" {
+					payURL = sysPurchaseURL
+				}
+				if payURL != "" {
 					result.PurchaseEnabled = true
 					result.PurchaseURL = payURL
+				} else if sysPurchaseEnabled {
+					result.PurchaseEnabled = true
 				}
 			}
 			if v := rs["contact_info"]; v != "" {
