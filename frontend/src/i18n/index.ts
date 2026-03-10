@@ -41,6 +41,13 @@ function isLocaleCode(value: string): value is LocaleCode {
 }
 
 function getDefaultLocale(): LocaleCode {
+  // Check URL ?lang= param first (highest priority, enables hreflang SEO)
+  // Not persisted to localStorage — avoids overriding user's own preference
+  const urlLang = new URLSearchParams(window.location.search).get('lang')
+  if (urlLang && isLocaleCode(urlLang)) {
+    return urlLang
+  }
+
   // Check localStorage first (user manual selection)
   const saved = localStorage.getItem(LOCALE_KEY)
   if (saved && isLocaleCode(saved)) {

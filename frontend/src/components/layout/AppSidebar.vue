@@ -619,6 +619,9 @@ const resellerNavItems = computed(() => {
       { path: '/merchant/commissions', label: t('nav.resellerCommissions'), icon: ChartIcon },
       { path: '/merchant/withdrawals', label: t('nav.resellerWithdrawals'), icon: CreditCardIcon },
     ] : []),
+    ...(appStore.cachedPublicSettings?.purchase_subscription_enabled || appStore.cachedPublicSettings?.purchase_enabled ? [
+      { path: '/purchase', label: t('nav.buySubscription'), icon: RechargeSubscriptionIcon },
+    ] : []),
     { path: '/merchant/settings', label: t('nav.resellerSettings'), icon: CogIcon },
   ]
   return items
