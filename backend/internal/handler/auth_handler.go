@@ -392,13 +392,21 @@ func (h *AuthHandler) GetCurrentUser(c *gin.Context) {
 	if user.ParentID != nil && h.resellerSettingRepo != nil {
 		if rs, err := h.resellerSettingRepo.GetAll(c.Request.Context(), *user.ParentID); err == nil && rs["merchant_mode"] == "enabled" {
 			resp.ResellerAgentEnabled = true
-			resp.ResellerPayURL = rs["pay_url"]
+			// pay_url is no longer per-merchant; purchase URL comes from main site config
 			if mult, err := strconv.ParseFloat(rs["price_multiplier"], 64); err == nil && mult > 0 {
 				resp.ResellerPriceMultiplier = &mult
 			}
 			if sp, err := strconv.ParseFloat(rs["selling_price"], 64); err == nil && sp > 0 {
 				resp.ResellerSellingPrice = &sp
 			}
+		}
+	}
+
+	// If the user IS a reseller themselves and merchant_mode is enabled, also set ResellerAgentEnabled.
+	// This makes the dashboard stats visible to the reseller owner as well.
+	if user.Role == service.RoleReseller && h.resellerSettingRepo != nil {
+		if rs, err := h.resellerSettingRepo.GetAll(c.Request.Context(), user.ID); err == nil && rs["merchant_mode"] == "enabled" {
+			resp.ResellerAgentEnabled = true
 		}
 	}
 

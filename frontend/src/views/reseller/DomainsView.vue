@@ -806,14 +806,18 @@ const deleteTarget = ref<ResellerDomain | null>(null)
 const verifyInfoDomain = ref<ResellerDomain | null>(null)
 const verifying = ref(false)
 
-// Tabs definition
-const tabs = computed(() => [
-  { id: 'basic', label: t('reseller.sites.tabs.basic') },
-  { id: 'homepage', label: t('reseller.sites.tabs.homepage') },
-  { id: 'docs', label: t('reseller.sites.tabs.docs') },
-  { id: 'purchase', label: t('reseller.sites.tabs.purchase') },
-  { id: 'seo', label: t('reseller.sites.tabs.seo') }
-])
+// Tabs definition — hide purchase tab when merchant agent mode is enabled
+// (purchase URL is managed globally by sub2apipay, not per-domain)
+const tabs = computed(() => {
+  const all = [
+    { id: 'basic', label: t('reseller.sites.tabs.basic') },
+    { id: 'homepage', label: t('reseller.sites.tabs.homepage') },
+    { id: 'docs', label: t('reseller.sites.tabs.docs') },
+    { id: 'purchase', label: t('reseller.sites.tabs.purchase') },
+    { id: 'seo', label: t('reseller.sites.tabs.seo') }
+  ]
+  return appStore.resellerAgentEnabled ? all.filter(tab => tab.id !== 'purchase') : all
+})
 
 // Create form (simplified)
 const createForm = ref({
