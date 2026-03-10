@@ -705,7 +705,7 @@ func (r *userRepository) ListResellerUsers(ctx context.Context, page, pageSize i
 			COUNT(DISTINCT ak.id) AS key_count
 		FROM users u
 		LEFT JOIN users uc ON uc.parent_id = u.id AND uc.deleted_at IS NULL
-		LEFT JOIN api_keys ak ON ak.user_id = uc.id AND ak.deleted_at IS NULL
+		LEFT JOIN api_keys ak ON ak.deleted_at IS NULL AND (ak.user_id = u.id OR ak.user_id = uc.id)
 		%s GROUP BY u.id, u.username, u.email, u.balance
 		ORDER BY u.id DESC LIMIT $%d OFFSET $%d`,
 		whereClause, len(args)-1, len(args),
