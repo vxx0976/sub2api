@@ -2943,3 +2943,21 @@ func (r *usageLogRepository) ListCommissionDetail(ctx context.Context, userIDs [
 	}
 	return results, total, nil
 }
+
+// SumTodayCostByUserIDs returns today's total_cost for the given user IDs.
+func (r *usageLogRepository) SumTodayCostByUserIDs(ctx context.Context, userIDs []int64) (float64, error) {
+	if len(userIDs) == 0 {
+		return 0, nil
+	}
+	query := `
+		SELECT COALESCE(SUM(total_cost), 0)
+		FROM usage_logs
+		WHERE user_id = ANY($1)
+		  AND created_at >= CURRENT_DATE
+	`
+	var total float64
+	if err := scanSingleRow(ctx, r.sql, query, []any{pq.Array(userIDs)}, &total); err != nil {
+		return 0, err
+	}
+	return total, nil
+}

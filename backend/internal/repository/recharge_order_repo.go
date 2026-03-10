@@ -263,6 +263,26 @@ func rechargeOrderEntitiesToService(models []*dbent.RechargeOrder) []service.Rec
 	return out
 }
 
+func (r *rechargeOrderRepository) SumCreditByUserIDs(ctx context.Context, userIDs []int64) (float64, error) {
+	if len(userIDs) == 0 {
+		return 0, nil
+	}
+	var result []struct {
+		Sum float64 `json:"sum"`
+	}
+	err := clientFromContext(ctx, r.client).RechargeOrder.Query().
+		Where(rechargeorder.UserIDIn(userIDs...), rechargeorder.StatusEQ(service.RechargeOrderStatusPaid)).
+		Aggregate(dbent.As(dbent.Sum(rechargeorder.FieldCreditAmount), "sum")).
+		Scan(ctx, &result)
+	if err != nil {
+		return 0, translatePersistenceError(err, nil, nil)
+	}
+	if len(result) == 0 {
+		return 0, nil
+	}
+	return result[0].Sum, nil
+}
+
 func applyRechargeOrderEntityToService(dst *service.RechargeOrder, src *dbent.RechargeOrder) {
 	if dst == nil || src == nil {
 		return

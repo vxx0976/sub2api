@@ -56,6 +56,10 @@ type CommissionSummary struct {
 	PriceMultiplier float64 `json:"price_multiplier"`
 	TotalCost       float64 `json:"total_cost"`
 	TotalCommission float64 `json:"total_commission"`
+	TotalRecharge   float64 `json:"total_recharge"`
+	TotalUsers      int64   `json:"total_users"`
+	TodayNewUsers   int64   `json:"today_new_users"`
+	TodayCost       float64 `json:"today_cost"`
 	Withdrawn       float64 `json:"withdrawn"`
 	Pending         float64 `json:"pending"`
 	Available       float64 `json:"available"`
@@ -94,10 +98,11 @@ type ResellerWithdrawalRepository interface {
 
 // CommissionService handles commission calculation and withdrawal operations
 type CommissionService struct {
-	withdrawalRepo ResellerWithdrawalRepository
-	usageLogRepo   UsageLogRepository
-	userRepo       UserRepository
-	settingRepo    ResellerSettingRepository
+	withdrawalRepo     ResellerWithdrawalRepository
+	usageLogRepo       UsageLogRepository
+	userRepo           UserRepository
+	settingRepo        ResellerSettingRepository
+	rechargeOrderRepo  RechargeOrderRepository
 }
 
 func NewCommissionService(
@@ -105,12 +110,14 @@ func NewCommissionService(
 	usageLogRepo UsageLogRepository,
 	userRepo UserRepository,
 	settingRepo ResellerSettingRepository,
+	rechargeOrderRepo RechargeOrderRepository,
 ) *CommissionService {
 	return &CommissionService{
-		withdrawalRepo: withdrawalRepo,
-		usageLogRepo:   usageLogRepo,
-		userRepo:       userRepo,
-		settingRepo:    settingRepo,
+		withdrawalRepo:    withdrawalRepo,
+		usageLogRepo:      usageLogRepo,
+		userRepo:          userRepo,
+		settingRepo:       settingRepo,
+		rechargeOrderRepo: rechargeOrderRepo,
 	}
 }
 
@@ -152,6 +159,29 @@ func (s *CommissionService) GetSummary(ctx context.Context, resellerID int64) (*
 		}
 	}
 
+	var totalRecharge float64
+	if len(userIDs) > 0 {
+		totalRecharge, err = s.rechargeOrderRepo.SumCreditByUserIDs(ctx, userIDs)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	totalUsers := int64(len(userIDs))
+
+	todayNewUsers, err := s.userRepo.CountByParentIDToday(ctx, resellerID)
+	if err != nil {
+		return nil, err
+	}
+
+	var todayCost float64
+	if len(userIDs) > 0 {
+		todayCost, err = s.usageLogRepo.SumTodayCostByUserIDs(ctx, userIDs)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	withdrawn, err := s.withdrawalRepo.SumPaidByResellerID(ctx, resellerID)
 	if err != nil {
 		return nil, err
@@ -172,6 +202,10 @@ func (s *CommissionService) GetSummary(ctx context.Context, resellerID int64) (*
 		PriceMultiplier: mult,
 		TotalCost:       totalCost,
 		TotalCommission: totalCommission,
+		TotalRecharge:   totalRecharge,
+		TotalUsers:      totalUsers,
+		TodayNewUsers:   todayNewUsers,
+		TodayCost:       todayCost,
 		Withdrawn:       withdrawn,
 		Pending:         pending,
 		Available:       available,

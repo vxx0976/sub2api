@@ -23,4 +23,7 @@ type RechargeOrderRepository interface {
 
 	// MarkManualPaid marks a recharge order as paid manually (without triggering business logic)
 	MarkManualPaid(ctx context.Context, id int64) error
+
+	// SumCreditByUserIDs returns the total credit_amount for paid orders of given user IDs
+	SumCreditByUserIDs(ctx context.Context, userIDs []int64) (float64, error)
 }

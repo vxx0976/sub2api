@@ -8,6 +8,10 @@ export interface CommissionSummary {
   price_multiplier: string
   total_cost: string
   total_commission: string
+  total_recharge: string
+  total_users: number
+  today_new_users: number
+  today_cost: number
   withdrawn: string
   pending: string
   available: string

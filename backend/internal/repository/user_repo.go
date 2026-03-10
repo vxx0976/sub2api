@@ -670,6 +670,16 @@ func (r *userRepository) ListIDsByParentID(ctx context.Context, parentID int64) 
 	return ids, rows.Err()
 }
 
+// CountByParentIDToday returns the number of sub-users registered today under parentID
+func (r *userRepository) CountByParentIDToday(ctx context.Context, parentID int64) (int64, error) {
+	var count int64
+	err := scanSingleRow(ctx, r.sql,
+		"SELECT COUNT(*) FROM users WHERE parent_id = $1 AND deleted_at IS NULL AND created_at >= CURRENT_DATE",
+		[]any{parentID}, &count,
+	)
+	return count, err
+}
+
 // ListResellerUsers returns paginated reseller users with optional search
 func (r *userRepository) ListResellerUsers(ctx context.Context, page, pageSize int, search string) ([]*service.MerchantInfo, int, error) {
 	offset := (page - 1) * pageSize

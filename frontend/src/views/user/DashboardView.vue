@@ -5,8 +5,12 @@
       <template v-else-if="stats">
         <UserDashboardStats :stats="stats" :balance="user?.balance || 0" :is-simple="authStore.isSimpleMode" />
 
-        <!-- Reseller Commission Cards -->
-        <div v-if="authStore.isReseller && commissionSummary" class="grid grid-cols-2 gap-4 sm:grid-cols-3">
+        <!-- Reseller Agent Merchant Cards (only shown when merchant mode is enabled) -->
+        <div v-if="authStore.isReseller && appStore.resellerAgentEnabled && commissionSummary" class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+          <div class="card p-4">
+            <p class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('reseller.commissions.totalRecharge') }}</p>
+            <p class="mt-1 text-xl font-bold text-purple-600 dark:text-purple-400">${{ commissionSummary.total_recharge }}</p>
+          </div>
           <div class="card p-4">
             <p class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('reseller.commissions.totalCommission') }}</p>
             <p class="mt-1 text-xl font-bold text-emerald-600 dark:text-emerald-400">${{ commissionSummary.total_commission }}</p>
@@ -16,8 +20,16 @@
             <p class="mt-1 text-xl font-bold text-blue-600 dark:text-blue-400">${{ commissionSummary.available }}</p>
           </div>
           <div class="card p-4">
-            <p class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('reseller.commissions.priceMultiplier') }}</p>
-            <p class="mt-1 text-xl font-bold text-gray-900 dark:text-white">{{ commissionSummary.price_multiplier }}x</p>
+            <p class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('reseller.commissions.totalUsers') }}</p>
+            <p class="mt-1 text-xl font-bold text-gray-900 dark:text-white">{{ commissionSummary.total_users }}</p>
+          </div>
+          <div class="card p-4">
+            <p class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('reseller.commissions.todayNewUsers') }}</p>
+            <p class="mt-1 text-xl font-bold text-orange-600 dark:text-orange-400">{{ commissionSummary.today_new_users }}</p>
+          </div>
+          <div class="card p-4">
+            <p class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('reseller.commissions.todayCost') }}</p>
+            <p class="mt-1 text-xl font-bold text-rose-600 dark:text-rose-400">${{ commissionSummary.today_cost }}</p>
           </div>
         </div>
 
@@ -35,6 +47,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
+import { useAppStore } from '@/stores/app'
 import { usageAPI, type UserDashboardStats as UserStatsType } from '@/api/usage'
 import { resellerAPI } from '@/api'
 import type { CommissionSummary } from '@/api/reseller/commissions'
@@ -48,6 +61,7 @@ import type { UsageLog, TrendDataPoint, ModelStat } from '@/types'
 
 const { t } = useI18n()
 const authStore = useAuthStore()
+const appStore = useAppStore()
 const user = computed(() => authStore.user)
 const stats = ref<UserStatsType | null>(null)
 const loading = ref(false)
