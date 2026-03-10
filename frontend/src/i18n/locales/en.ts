@@ -150,8 +150,8 @@ export default {
     faq: {
       title: 'FAQ',
       subtitle: 'Common questions for first-time users.',
-      q0: 'Does this support OpenAI / ChatGPT API?',
-      a0: 'This service does not provide OpenAI / ChatGPT API compatibility. We are based on the official Anthropic protocol, primarily for Claude Code and related development scenarios.',
+      q0: 'Does this support Codex CLI / OpenAI-compatible interface?',
+      a0: 'Yes. We support both Anthropic protocol (Claude Code) and OpenAI-compatible interface (Codex CLI), so you can use multiple AI coding tools on one platform.',
       q1: 'Do I need to learn APIs first?',
       a1: 'No. Pick your tool and copy the config. Read the docs when you want more options.',
       q2: 'Where do I get an API key?',

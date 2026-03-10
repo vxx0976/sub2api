@@ -7,4 +7,6 @@ export interface Column {
   label: string
   sortable?: boolean
   formatter?: (value: any, row: any) => string
+  mobileHidden?: boolean
+  width?: string
 }

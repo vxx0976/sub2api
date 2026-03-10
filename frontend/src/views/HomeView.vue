@@ -47,7 +47,7 @@
       </div>
       <!-- Feature pills -->
       <div class="mt-16 flex flex-wrap justify-center gap-3">
-        <span v-for="feat in ['OpenAI Compatible', 'Claude / Gemini / GPT', '高并发', '低延迟', '按量计费']" :key="feat"
+        <span v-for="feat in ['OpenAI Compatible', 'Claude / Gemini / GPT / Codex', '高并发', '低延迟', '按量计费']" :key="feat"
           class="rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-medium text-slate-300 backdrop-blur">
           {{ feat }}
         </span>
@@ -242,8 +242,8 @@
                     <span class="font-semibold text-gray-700 dark:text-dark-200">{{ t('home.hero.supportedToolsLabel') }}</span>
                     <span class="rounded-full border border-gray-200/60 bg-white/70 px-2.5 py-1 text-gray-700 shadow-sm dark:border-dark-700/70 dark:bg-dark-900/40 dark:text-dark-200">Terminal</span>
                     <span class="rounded-full border border-gray-200/60 bg-white/70 px-2.5 py-1 text-gray-700 shadow-sm dark:border-dark-700/70 dark:bg-dark-900/40 dark:text-dark-200">VS Code</span>
+                    <span class="rounded-full border border-gray-200/60 bg-white/70 px-2.5 py-1 text-gray-700 shadow-sm dark:border-dark-700/70 dark:bg-dark-900/40 dark:text-dark-200">Codex CLI</span>
                   </div>
-                  <p class="text-center text-[10px] text-gray-400 dark:text-dark-500 lg:text-left">{{ t('home.hero.supportedToolsHint') }}</p>
                 </div>
 
                 <div class="flex flex-wrap items-center justify-center gap-2 text-xs lg:justify-start">

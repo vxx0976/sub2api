@@ -216,6 +216,8 @@ export default {
       viewGuide: '查看教程',
       vscodeDesc: '通过插件在 VSCode 中使用 Claude 进行编程',
       cliDesc: '在终端中使用 Claude Code 命令行工具',
+      claudeDesc: '使用 Claude Code CLI — 配置 ANTHROPIC_BASE_URL 和 ANTHROPIC_AUTH_TOKEN 即可启动',
+      codexDesc: '使用 Codex CLI — 通过 ~/.codex/config.toml 和 auth.json 文件进行配置',
       tipsTitle: '使用技巧',
       tipsDesc: '常用命令、快捷键和最佳实践',
       quickInfo: {
@@ -284,6 +286,49 @@ export default {
         a1: '请检查 Base URL 格式是否正确（不要有尾部斜杠），确认 API Key 有效。',
         q2: '如何使用不同的模型？',
         a2: '在插件配置中修改 model 字段，可选值有 claude-sonnet-4-20250514、claude-opus-4-20250514 等。'
+      }
+    },
+    // Codex CLI 配置教程
+    codex: {
+      title: 'Codex CLI 配置教程',
+      subtitle: '通过 OpenAI 兼容协议，使用 Codex CLI 连接本中转服务',
+      step1: {
+        title: '安装 Codex CLI',
+        description: '通过 npm 安装 Codex CLI：',
+        verify: '验证安装',
+        verifySuccess: '若显示版本号，说明安装成功'
+      },
+      step2: {
+        title: '创建 API 密钥',
+        description: '登录后在控制台创建你的 API 密钥：'
+      },
+      step3: {
+        title: '配置文件',
+        description: '选择连接模式和操作系统，然后将以下两个配置文件保存到 Codex 配置目录。',
+        modeStandard: 'Codex CLI',
+        modeWs: 'Codex CLI (WebSocket)',
+        osMacLinux: 'macOS / Linux',
+        osWindows: 'Windows',
+        configDirLabel: '配置文件目录',
+        configHint: '请确保以下内容位于 config.toml 文件的开头部分',
+        wsNote: 'WebSocket 模式可获得更低延迟的流式输出，需服务端支持 WebSocket v2。',
+        note: '请确保配置目录存在。macOS/Linux 用户可运行 mkdir -p ~/.codex 创建目录。',
+        noteWindows: '按 Win+R，输入 %userprofile%\\.codex 打开配置目录。如目录不存在，请先手动创建。'
+      },
+      step4: {
+        title: '启动 Codex',
+        description: '配置完成后，在终端中运行：',
+        tip: 'Codex CLI 启动时会自动加载 ~/.codex/config.toml 和 auth.json。',
+        debugTip: '若启动失败，请检查配置文件格式（TOML/JSON）是否正确，以及 API 密钥是否有效。'
+      },
+      faq: {
+        title: '常见问题',
+        q1: 'Q：提示认证失败？',
+        a1: '请检查 ~/.codex/auth.json 中的 OPENAI_API_KEY 是否正确（注意是 OPENAI_API_KEY 而非 token）。',
+        q2: 'Q：连接超时或模型报错？',
+        a2: '请确认 config.toml 中的 base_url 填写的是站点根地址（不需要 /v1 后缀），服务会自动处理路径。',
+        q3: 'Q：应该选择哪种连接模式？',
+        a3: '默认使用标准 Codex CLI 模式即可。仅在账号支持且需要更低延迟流式输出时，才切换到 WebSocket 模式。'
       }
     },
     // CLI 配置教程

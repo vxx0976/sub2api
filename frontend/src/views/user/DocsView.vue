@@ -38,6 +38,15 @@
 
       <!-- Main content -->
       <div class="min-w-0 flex-1 max-w-4xl">
+      <!-- Back link -->
+      <div class="mb-6">
+        <router-link to="/docs" class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+          </svg>
+          {{ t('docs.backToList') }}
+        </router-link>
+      </div>
       <!-- Header -->
       <div class="mb-8 text-center">
         <h1 class="text-3xl font-bold text-gray-900 dark:text-white">{{ t('docs.guide.title') }}</h1>

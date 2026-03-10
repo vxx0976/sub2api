@@ -216,6 +216,8 @@ export default {
       viewGuide: 'View Guide',
       vscodeDesc: 'Use Claude for coding in VSCode with plugins',
       cliDesc: 'Use Claude Code command-line tool in your terminal',
+      claudeDesc: 'Use Claude Code CLI — set ANTHROPIC_BASE_URL and ANTHROPIC_AUTH_TOKEN to get started',
+      codexDesc: 'Use Codex CLI — configure via ~/.codex/config.toml and auth.json',
       tipsTitle: 'Tips & Tricks',
       tipsDesc: 'Common commands, shortcuts, and best practices',
       quickInfo: {
@@ -284,6 +286,49 @@ export default {
         a1: 'Check if the Base URL format is correct (no trailing slashes), and verify the API Key is valid.',
         q2: 'How to use different models?',
         a2: 'Modify the model field in the plugin configuration. Options include claude-sonnet-4-20250514, claude-opus-4-20250514, etc.'
+      }
+    },
+    // Codex CLI setup guide
+    codex: {
+      title: 'Codex CLI Setup Guide',
+      subtitle: 'Use OpenAI Codex CLI with this relay service via OpenAI-compatible protocol',
+      step1: {
+        title: 'Install Codex CLI',
+        description: 'Install the Codex CLI via npm:',
+        verify: 'Verify Installation',
+        verifySuccess: 'If a version is shown, installation succeeded'
+      },
+      step2: {
+        title: 'Create API Key',
+        description: 'Log in and create your API key in the dashboard:'
+      },
+      step3: {
+        title: 'Configure Config Files',
+        description: 'Choose connection mode and OS, then save the two config files to the Codex config directory.',
+        modeStandard: 'Codex CLI',
+        modeWs: 'Codex CLI (WebSocket)',
+        osMacLinux: 'macOS / Linux',
+        osWindows: 'Windows',
+        configDirLabel: 'Config directory',
+        configHint: 'Place at the beginning of config.toml',
+        wsNote: 'WebSocket mode enables lower-latency streaming. Requires the server to support WebSocket v2.',
+        note: 'Make sure the ~/.codex directory exists. macOS/Linux: run mkdir -p ~/.codex to create it.',
+        noteWindows: 'Press Win+R, enter %userprofile%\\.codex to open the directory. Create it manually if it does not exist.'
+      },
+      step4: {
+        title: 'Start Codex',
+        description: 'After configuration, run codex in your terminal:',
+        tip: 'Codex CLI auto-loads ~/.codex/config.toml and auth.json on startup.',
+        debugTip: 'If startup fails, verify that both config files are valid TOML/JSON and the API key is correct.'
+      },
+      faq: {
+        title: 'FAQ',
+        q1: 'Q: Getting auth errors?',
+        a1: 'Check that ~/.codex/auth.json contains a valid OPENAI_API_KEY value. The key format is "OPENAI_API_KEY", not "token".',
+        q2: 'Q: Connection timeout or model errors?',
+        a2: 'Verify that base_url in config.toml is set to the site root (no /v1 suffix). The service adds the path automatically.',
+        q3: 'Q: Which connection mode should I use?',
+        a3: 'Start with standard Codex CLI mode. Switch to WebSocket mode only if your account supports it and you need lower-latency streaming.'
       }
     },
     // CLI setup guide

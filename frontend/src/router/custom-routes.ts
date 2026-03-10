@@ -20,13 +20,33 @@ export const customRoutes: RouteRecordRaw[] = [
   },
   {
     path: '/docs',
-    name: 'Docs',
-    component: () => import('@/views/user/DocsView.vue'),
+    name: 'DocsPortal',
+    component: () => import('@/views/user/DocsPortalView.vue'),
     meta: {
       requiresAuth: false,
       title: 'Documentation',
       titleKey: 'docs.title',
       descriptionKey: 'docs.subtitle'
+    }
+  },
+  {
+    path: '/docs/claude',
+    name: 'DocsClaude',
+    component: () => import('@/views/user/DocsView.vue'),
+    meta: {
+      requiresAuth: false,
+      title: 'Claude Code Guide',
+      titleKey: 'docs.guide.title'
+    }
+  },
+  {
+    path: '/docs/codex',
+    name: 'DocsCodex',
+    component: () => import('@/views/user/CodexDocsView.vue'),
+    meta: {
+      requiresAuth: false,
+      title: 'Codex CLI Guide',
+      titleKey: 'docs.codex.title'
     }
   },
   {

@@ -149,8 +149,8 @@ export default {
     faq: {
       title: '常见问题',
       subtitle: '第一次用？这里先帮你把坑填平。',
-      q0: '是否支持 OpenAI / ChatGPT API？',
-      a0: '本服务不提供 OpenAI / ChatGPT API 兼容接口。我们基于 Anthropic 官方协议，主要用于 Claude Code 及相关开发场景。',
+      q0: '是否支持 Codex CLI / OpenAI 兼容接口？',
+      a0: '支持。我们同时兼容 Anthropic 协议（Claude Code）和 OpenAI 兼容接口（Codex CLI），可在同一平台使用多种 AI 编程工具。',
       q1: '我需要先懂 API 吗？',
       a1: '不需要。选你正在用的工具，复制配置即可；想更深入再看文档。',
       q2: 'API Key 在哪里拿？',
