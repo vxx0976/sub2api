@@ -65,6 +65,7 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { Account } from '@/types'
+import QuotaBadge from './QuotaBadge.vue'
 
 const props = defineProps<{
   account: Account
@@ -192,6 +193,19 @@ const rpmClass = computed(() => {
   }
   return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
 })
+
+// API Key 配额显示
+const showDailyQuota = computed(() =>
+  props.account.type === 'apikey' && (props.account.quota_daily_limit ?? 0) > 0
+)
+
+const showWeeklyQuota = computed(() =>
+  props.account.type === 'apikey' && (props.account.quota_weekly_limit ?? 0) > 0
+)
+
+const showTotalQuota = computed(() =>
+  props.account.type === 'apikey' && (props.account.quota_limit ?? 0) > 0
+)
 
 // RPM 提示文字
 const rpmTooltip = computed(() => {
