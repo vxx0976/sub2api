@@ -55,12 +55,26 @@
                   <span class="text-sm text-gray-900 dark:text-white">${{ item.balance?.toFixed(2) }}</span>
                 </td>
                 <td class="px-4 py-3">
-                  <button
-                    @click="openSettingsDialog(item)"
-                    class="rounded px-3 py-1 text-sm font-medium text-primary-600 transition-colors hover:bg-primary-50 dark:text-primary-400 dark:hover:bg-primary-900/20"
-                  >
-                    {{ t('admin.merchants.settings') }}
-                  </button>
+                  <div class="flex items-center gap-2">
+                    <button
+                      @click="handleDeposit(item)"
+                      class="rounded px-3 py-1 text-sm font-medium text-emerald-600 transition-colors hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/20"
+                    >
+                      {{ t('admin.users.deposit') }}
+                    </button>
+                    <button
+                      @click="handleWithdraw(item)"
+                      class="rounded px-3 py-1 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
+                    >
+                      {{ t('admin.users.withdraw') }}
+                    </button>
+                    <button
+                      @click="openSettingsDialog(item)"
+                      class="rounded px-3 py-1 text-sm font-medium text-primary-600 transition-colors hover:bg-primary-50 dark:text-primary-400 dark:hover:bg-primary-900/20"
+                    >
+                      {{ t('admin.merchants.settings') }}
+                    </button>
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -83,6 +97,16 @@
         @update:pageSize="handlePageSizeChange"
       />
     </div>
+
+    <!-- Balance Modal -->
+    <UserBalanceModal
+      :show="showBalanceModal"
+      :user="balanceMerchant"
+      :operation="balanceOperation"
+      :update-fn="merchantUpdateBalance"
+      @close="closeBalanceModal"
+      @success="handleBalanceSuccess"
+    />
 
     <!-- Settings Dialog -->
     <BaseDialog
@@ -174,6 +198,7 @@ import AppLayout from '@/components/layout/AppLayout.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import Pagination from '@/components/common/Pagination.vue'
 import BaseDialog from '@/components/common/BaseDialog.vue'
+import UserBalanceModal from '@/components/admin/user/UserBalanceModal.vue'
 
 const { t } = useI18n()
 const appStore = useAppStore()
@@ -189,6 +214,36 @@ const pagination = reactive({
   total: 0,
   pages: 0
 })
+
+// Balance Modal
+const showBalanceModal = ref(false)
+const balanceMerchant = ref<MerchantUser | null>(null)
+const balanceOperation = ref<'add' | 'subtract'>('add')
+
+function handleDeposit(merchant: MerchantUser) {
+  balanceMerchant.value = merchant
+  balanceOperation.value = 'add'
+  showBalanceModal.value = true
+}
+
+function handleWithdraw(merchant: MerchantUser) {
+  balanceMerchant.value = merchant
+  balanceOperation.value = 'subtract'
+  showBalanceModal.value = true
+}
+
+function closeBalanceModal() {
+  showBalanceModal.value = false
+  balanceMerchant.value = null
+}
+
+function handleBalanceSuccess() {
+  loadMerchants()
+}
+
+function merchantUpdateBalance(id: number, amount: number, operation: 'add' | 'subtract', notes?: string) {
+  return adminAPI.merchants.updateMerchantBalance(id, amount, operation, notes)
+}
 
 // Settings Dialog
 const showSettingsDialog = ref(false)

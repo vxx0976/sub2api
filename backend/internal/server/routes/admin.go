@@ -569,6 +569,7 @@ func registerAdminMerchantRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 		merchants.GET("", h.Admin.Merchant.List)
 		merchants.GET("/:id/settings", h.Admin.Merchant.GetSettings)
 		merchants.PUT("/:id/settings", h.Admin.Merchant.UpdateSettings)
+		merchants.POST("/:id/balance", h.Admin.Merchant.UpdateBalance)
 	}
 }
 

@@ -29,10 +29,14 @@ import { reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
 import { adminAPI } from '@/api/admin'
-import type { User } from '@/types'
 import BaseDialog from '@/components/common/BaseDialog.vue'
 
-const props = defineProps<{ show: boolean, user: User | null, operation: 'add' | 'subtract' }>()
+const props = defineProps<{
+  show: boolean
+  user: { id: number; email: string; balance: number } | null
+  operation: 'add' | 'subtract'
+  updateFn?: (id: number, amount: number, operation: 'add' | 'subtract', notes?: string) => Promise<any>
+}>()
 const emit = defineEmits(['close', 'success']); const { t } = useI18n(); const appStore = useAppStore()
 
 const submitting = ref(false); const form = reactive({ amount: 0, notes: '' })
@@ -76,7 +80,8 @@ const handleBalanceSubmit = async () => {
   }
   submitting.value = true
   try {
-    await adminAPI.users.updateBalance(props.user.id, form.amount, props.operation, form.notes)
+    const fn = props.updateFn ?? adminAPI.users.updateBalance
+    await fn(props.user.id, form.amount, props.operation, form.notes)
     appStore.showSuccess(t('common.success')); emit('success'); emit('close')
   } catch (e: any) {
     console.error('Failed to update balance:', e)

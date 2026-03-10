@@ -41,5 +41,18 @@ export async function updateMerchantSettings(id: number, settings: MerchantSetti
   return data
 }
 
-export const merchantsAPI = { getMerchants, getMerchantSettings, updateMerchantSettings }
+export async function updateMerchantBalance(
+  id: number,
+  balance: number,
+  operation: 'set' | 'add' | 'subtract',
+  notes?: string
+): Promise<void> {
+  await apiClient.post(`/admin/merchants/${id}/balance`, {
+    balance,
+    operation,
+    notes
+  })
+}
+
+export const merchantsAPI = { getMerchants, getMerchantSettings, updateMerchantSettings, updateMerchantBalance }
 export default merchantsAPI
