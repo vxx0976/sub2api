@@ -10,6 +10,9 @@ export interface MerchantUser {
   username: string
   email: string
   balance: number
+  domain: string
+  user_count: number
+  key_count: number
   merchant_mode: string
   platform_cost: string
   price_multiplier: string

@@ -77,10 +77,13 @@ type CommissionDetailItem struct {
 
 // MerchantInfo is information about a reseller user
 type MerchantInfo struct {
-	ID       int64   `json:"id"`
-	Username string  `json:"username"`
-	Email    string  `json:"email"`
-	Balance  float64 `json:"balance"`
+	ID        int64   `json:"id"`
+	Username  string  `json:"username"`
+	Email     string  `json:"email"`
+	Balance   float64 `json:"balance"`
+	Domain    string  `json:"domain"`
+	UserCount int64   `json:"user_count"`
+	KeyCount  int64   `json:"key_count"`
 }
 
 // ResellerWithdrawalRepository interface

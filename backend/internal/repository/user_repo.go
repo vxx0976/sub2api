@@ -684,22 +684,30 @@ func (r *userRepository) CountByParentIDToday(ctx context.Context, parentID int6
 func (r *userRepository) ListResellerUsers(ctx context.Context, page, pageSize int, search string) ([]*service.MerchantInfo, int, error) {
 	offset := (page - 1) * pageSize
 
-	whereClause := "WHERE role = 'reseller' AND deleted_at IS NULL"
+	whereClause := "WHERE u.role = 'reseller' AND u.deleted_at IS NULL"
 	args := []any{}
 	if search != "" {
 		args = append(args, "%"+search+"%")
-		whereClause += fmt.Sprintf(" AND (username ILIKE $%d OR email ILIKE $%d)", len(args), len(args))
+		whereClause += fmt.Sprintf(" AND (u.username ILIKE $%d OR u.email ILIKE $%d)", len(args), len(args))
 	}
 
 	var total int
-	countQuery := "SELECT COUNT(*) FROM users " + whereClause
+	countQuery := "SELECT COUNT(*) FROM users u " + whereClause
 	if err := scanSingleRow(ctx, r.sql, countQuery, args, &total); err != nil {
 		return nil, 0, err
 	}
 
 	args = append(args, pageSize, offset)
-	selectQuery := fmt.Sprintf(
-		"SELECT id, username, email, balance FROM users %s ORDER BY id DESC LIMIT $%d OFFSET $%d",
+	selectQuery := fmt.Sprintf(`
+		SELECT u.id, u.username, u.email, u.balance,
+			COALESCE((SELECT domain FROM reseller_domains WHERE reseller_id = u.id AND deleted_at IS NULL ORDER BY verified DESC, id ASC LIMIT 1), '') AS domain,
+			COUNT(DISTINCT uc.id) AS user_count,
+			COUNT(DISTINCT ak.id) AS key_count
+		FROM users u
+		LEFT JOIN users uc ON uc.parent_id = u.id AND uc.deleted_at IS NULL
+		LEFT JOIN api_keys ak ON ak.user_id = uc.id AND ak.deleted_at IS NULL
+		%s GROUP BY u.id, u.username, u.email, u.balance
+		ORDER BY u.id DESC LIMIT $%d OFFSET $%d`,
 		whereClause, len(args)-1, len(args),
 	)
 
@@ -712,7 +720,7 @@ func (r *userRepository) ListResellerUsers(ctx context.Context, page, pageSize i
 	var result []*service.MerchantInfo
 	for rows.Next() {
 		m := &service.MerchantInfo{}
-		if err := rows.Scan(&m.ID, &m.Username, &m.Email, &m.Balance); err != nil {
+		if err := rows.Scan(&m.ID, &m.Username, &m.Email, &m.Balance, &m.Domain, &m.UserCount, &m.KeyCount); err != nil {
 			return nil, 0, err
 		}
 		result = append(result, m)
