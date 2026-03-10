@@ -373,10 +373,10 @@ func (h *AuthHandler) GetCurrentUser(c *gin.Context) {
 	type UserResponse struct {
 		*dto.User
 		RunMode                 string   `json:"run_mode"`
-		ResellerPriceMultiplier *float64 `json:"reseller_price_multiplier,omitempty"`
+		ResellerPriceMultiplier *float64 `json:"_x_pm,omitempty"`
 		ResellerAgentEnabled    bool     `json:"reseller_agent_enabled,omitempty"`
 		ResellerPayURL          string   `json:"reseller_pay_url,omitempty"`
-		ResellerSellingPrice    *float64 `json:"reseller_selling_price,omitempty"`
+		ResellerSellingPrice    *float64 `json:"_x_sp,omitempty"`
 	}
 
 	runMode := config.RunModeStandard

@@ -150,9 +150,9 @@ export interface AuthResponse {
 export interface CurrentUserResponse extends User {
   run_mode?: 'standard' | 'simple'
   reseller_agent_enabled?: boolean
-  reseller_price_multiplier?: number
+  _x_pm?: number
   reseller_pay_url?: string
-  reseller_selling_price?: number
+  _x_sp?: number
 }
 
 // ==================== Subscription Types ====================

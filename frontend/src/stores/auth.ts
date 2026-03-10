@@ -391,7 +391,7 @@ export const useAuthStore = defineStore('auth', () => {
           appStore.resellerAgentEnabled = false
         }
       }
-      const { run_mode: _run_mode, reseller_agent_enabled: _rae, reseller_price_multiplier: _rpm, reseller_pay_url: _rpu, ...userData } = response.data
+      const { run_mode: _run_mode, reseller_agent_enabled: _rae, _x_pm: _rpm, _x_sp: _xsp, reseller_pay_url: _rpu, ...userData } = response.data
       user.value = userData
 
       // Update localStorage
