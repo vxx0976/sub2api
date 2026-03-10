@@ -30,6 +30,7 @@
             <thead>
               <tr class="border-b border-gray-100 dark:border-dark-700">
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">ID</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('admin.merchants.username') }}</th>
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('admin.merchants.domain') }}</th>
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('admin.merchants.email') }}</th>
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('admin.merchants.balance') }}</th>
@@ -48,14 +49,14 @@
                   <span class="text-sm text-gray-900 dark:text-white">{{ item.id }}</span>
                 </td>
                 <td class="px-4 py-3">
-                  <div>
-                    <a v-if="item.domain" :href="'https://' + item.domain" target="_blank" rel="noopener noreferrer"
-                      class="text-sm font-medium text-primary-600 hover:underline dark:text-primary-400">
-                      {{ item.domain }}
-                    </a>
-                    <span v-else class="text-sm text-gray-400 dark:text-gray-500">-</span>
-                    <p v-if="item.username" class="text-xs text-gray-400 dark:text-gray-500">{{ item.username }}</p>
-                  </div>
+                  <span class="text-sm text-gray-900 dark:text-white">{{ item.username || '-' }}</span>
+                </td>
+                <td class="px-4 py-3">
+                  <a v-if="item.domain" :href="'https://' + item.domain" target="_blank" rel="noopener noreferrer"
+                    class="text-sm font-medium text-primary-600 hover:underline dark:text-primary-400">
+                    {{ item.domain }}
+                  </a>
+                  <span v-else class="text-sm text-gray-400 dark:text-gray-500">-</span>
                 </td>
                 <td class="px-4 py-3">
                   <span class="text-sm text-gray-600 dark:text-gray-300">{{ item.email }}</span>
