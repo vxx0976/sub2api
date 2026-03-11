@@ -581,26 +581,24 @@
       <!-- FAQ Section -->
       <section id="faq" class="scroll-mt-20 rounded-xl border border-gray-200 bg-white p-6 dark:border-dark-700 dark:bg-dark-800">
         <h3 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">{{ t('docs.guide.faq.title') }}</h3>
-        <div class="space-y-4">
-          <div>
-            <p class="font-medium text-gray-800 dark:text-gray-200">{{ t('docs.guide.faq.q1') }}</p>
-            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">{{ t('docs.guide.faq.a1') }}</p>
-          </div>
-          <div>
-            <p class="font-medium text-gray-800 dark:text-gray-200">{{ t('docs.guide.faq.q2') }}</p>
-            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">{{ t('docs.guide.faq.a2') }}</p>
-          </div>
-          <div>
-            <p class="font-medium text-gray-800 dark:text-gray-200">{{ t('docs.guide.faq.q3') }}</p>
-            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">{{ t('docs.guide.faq.a3') }}</p>
-          </div>
-          <div>
-            <p class="font-medium text-gray-800 dark:text-gray-200">{{ t('docs.vscode.faq.q1') }}</p>
-            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">{{ t('docs.vscode.faq.a1') }}</p>
-          </div>
-          <div>
-            <p class="font-medium text-gray-800 dark:text-gray-200">{{ t('docs.vscode.faq.q2') }}</p>
-            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">{{ t('docs.vscode.faq.a2') }}</p>
+        <div class="divide-y divide-gray-100 dark:divide-dark-700">
+          <div v-for="(faq, i) in faqItems" :key="i">
+            <button
+              class="flex w-full items-center justify-between gap-4 py-4 text-left"
+              @click="expandedFaq = expandedFaq === i ? null : i"
+            >
+              <span class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ t(faq.q) }}</span>
+              <svg
+                class="h-4 w-4 flex-shrink-0 text-gray-400 transition-transform duration-200"
+                :class="{ 'rotate-180': expandedFaq === i }"
+                fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            <div v-show="expandedFaq === i" class="pb-4 text-sm text-gray-600 dark:text-gray-400">
+              {{ t(faq.a) }}
+            </div>
           </div>
         </div>
       </section>
@@ -635,6 +633,7 @@ function detectOS(): 'mac' | 'powershell' {
 }
 
 const copied = ref<string | null>(null)
+const expandedFaq = ref<number | null>(null)
 const activeInstallTab = ref('mac')
 const activeConfigTab = ref('mac')
 const activePermanentTab = ref('macos')
@@ -777,6 +776,15 @@ const copyCode = (type: string) => {
     copied.value = null
   }, 2000)
 }
+
+// FAQ data
+const faqItems = [
+  { q: 'docs.guide.faq.q1', a: 'docs.guide.faq.a1' },
+  { q: 'docs.guide.faq.q2', a: 'docs.guide.faq.a2' },
+  { q: 'docs.guide.faq.q3', a: 'docs.guide.faq.a3' },
+  { q: 'docs.vscode.faq.q1', a: 'docs.vscode.faq.a1' },
+  { q: 'docs.vscode.faq.q2', a: 'docs.vscode.faq.a2' },
+]
 
 // Tips data
 const commands = [

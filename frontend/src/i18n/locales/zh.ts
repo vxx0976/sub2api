@@ -146,6 +146,10 @@ export default {
       antigravity: 'Antigravity',
       more: '更多'
     },
+    tools: {
+      title: '开始使用',
+      subtitle: '选择你喜欢的 AI 编程工具，按照教程快速完成配置',
+    },
     faq: {
       title: '常见问题',
       subtitle: '第一次用？这里先帮你把坑填平。',

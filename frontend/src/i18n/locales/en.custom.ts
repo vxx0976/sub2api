@@ -209,6 +209,7 @@ export default {
     backToList: 'Back to docs',
     // Entry page
     entry: {
+      badge: 'Quick Start Guide',
       title: 'Choose Your Setup Method',
       subtitle: 'Select the configuration guide for your preferred tool',
       recommended: 'Recommended',
@@ -216,8 +217,8 @@ export default {
       viewGuide: 'View Guide',
       vscodeDesc: 'Use Claude for coding in VSCode with plugins',
       cliDesc: 'Use Claude Code command-line tool in your terminal',
-      claudeDesc: 'Use Claude Code CLI — set ANTHROPIC_BASE_URL and ANTHROPIC_AUTH_TOKEN to get started',
-      codexDesc: 'Use Codex CLI — configure via ~/.codex/config.toml and auth.json',
+      claudeDesc: "Anthropic's official AI coding assistant with deep terminal and editor integration for multi-file understanding and code generation.",
+      codexDesc: "OpenAI's lightweight code assistant, fast and focused on everyday coding tasks directly in your terminal.",
       tipsTitle: 'Tips & Tricks',
       tipsDesc: 'Common commands, shortcuts, and best practices',
       quickInfo: {

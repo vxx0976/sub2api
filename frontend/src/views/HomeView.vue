@@ -475,6 +475,67 @@
         </div>
       </section>
 
+      <!-- Tool Cards -->
+      <section class="mx-auto max-w-7xl px-6 pb-14 pt-2">
+        <div class="mx-auto max-w-3xl text-center">
+          <h2 class="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white sm:text-3xl">
+            {{ t('home.tools.title') }}
+          </h2>
+          <p class="mt-2 text-sm leading-relaxed text-gray-600 dark:text-dark-400 sm:text-base">
+            {{ t('home.tools.subtitle') }}
+          </p>
+        </div>
+        <div class="mx-auto mt-8 grid max-w-3xl gap-5 sm:grid-cols-2">
+          <router-link
+            to="/docs/claude"
+            class="group flex flex-col rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary-300 hover:shadow-md dark:border-dark-700 dark:bg-dark-800 dark:hover:border-primary-700"
+          >
+            <div class="mb-4 flex items-center gap-3">
+              <div class="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 shadow-md shadow-primary-500/25">
+                <svg class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 7.5l3 2.25-3 2.25m4.5 0h3m-9 8.25h13.5A2.25 2.25 0 0021 18V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v12a2.25 2.25 0 002.25 2.25z" />
+                </svg>
+              </div>
+              <div>
+                <h3 class="text-base font-semibold text-gray-900 dark:text-white">Claude Code</h3>
+                <p class="text-xs text-gray-400 dark:text-gray-500">claude-code CLI</p>
+              </div>
+            </div>
+            <p class="flex-1 text-sm leading-relaxed text-gray-500 dark:text-gray-400">{{ t('docs.entry.claudeDesc') }}</p>
+            <div class="mt-4 flex items-center gap-1 text-sm font-medium text-primary-600 transition-colors group-hover:text-primary-700 dark:text-primary-400">
+              {{ t('docs.entry.viewGuide') }}
+              <svg class="h-4 w-4 transition-transform duration-150 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+              </svg>
+            </div>
+          </router-link>
+
+          <router-link
+            to="/docs/codex"
+            class="group flex flex-col rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-md dark:border-dark-700 dark:bg-dark-800 dark:hover:border-emerald-700"
+          >
+            <div class="mb-4 flex items-center gap-3">
+              <div class="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-md shadow-emerald-500/25">
+                <svg class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" />
+                </svg>
+              </div>
+              <div>
+                <h3 class="text-base font-semibold text-gray-900 dark:text-white">Codex CLI</h3>
+                <p class="text-xs text-gray-400 dark:text-gray-500">@openai/codex</p>
+              </div>
+            </div>
+            <p class="flex-1 text-sm leading-relaxed text-gray-500 dark:text-gray-400">{{ t('docs.entry.codexDesc') }}</p>
+            <div class="mt-4 flex items-center gap-1 text-sm font-medium text-emerald-600 transition-colors group-hover:text-emerald-700 dark:text-emerald-400">
+              {{ t('docs.entry.viewGuide') }}
+              <svg class="h-4 w-4 transition-transform duration-150 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+              </svg>
+            </div>
+          </router-link>
+        </div>
+      </section>
+
       <!-- FAQ -->
       <section id="faq" class="mx-auto max-w-7xl px-6 pb-14 pt-2 lg:pb-20">
         <div class="mx-auto max-w-3xl text-center">

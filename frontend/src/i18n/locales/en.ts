@@ -147,6 +147,10 @@ export default {
       antigravity: 'Antigravity',
       more: 'More'
     },
+    tools: {
+      title: 'Get Started',
+      subtitle: 'Choose your preferred AI coding tool and follow the guide to set it up quickly',
+    },
     faq: {
       title: 'FAQ',
       subtitle: 'Common questions for first-time users.',

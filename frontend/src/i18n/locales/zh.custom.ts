@@ -209,6 +209,7 @@ export default {
     backToList: '返回文档列表',
     // 入口页
     entry: {
+      badge: '快速开始指南',
       title: '选择你的使用方式',
       subtitle: '根据你使用的工具，选择对应的配置教程',
       recommended: '新手推荐',
@@ -216,8 +217,8 @@ export default {
       viewGuide: '查看教程',
       vscodeDesc: '通过插件在 VSCode 中使用 Claude 进行编程',
       cliDesc: '在终端中使用 Claude Code 命令行工具',
-      claudeDesc: '使用 Claude Code CLI — 配置 ANTHROPIC_BASE_URL 和 ANTHROPIC_AUTH_TOKEN 即可启动',
-      codexDesc: '使用 Codex CLI — 通过 ~/.codex/config.toml 和 auth.json 文件进行配置',
+      claudeDesc: 'Anthropic 官方 AI 编程助手，深度集成终端与编辑器，支持多文件理解与代码生成。',
+      codexDesc: 'OpenAI 出品的代码智能助手，轻量快速，适合在终端中完成日常编程任务。',
       tipsTitle: '使用技巧',
       tipsDesc: '常用命令、快捷键和最佳实践',
       quickInfo: {
