@@ -32,7 +32,7 @@ export const customRoutes: RouteRecordRaw[] = [
   {
     path: '/docs/claude',
     name: 'DocsClaude',
-    component: () => import('@/views/user/DocsView.vue'),
+    component: () => import('@/views/user/ClaudeDocsView.vue'),
     meta: {
       requiresAuth: false,
       title: 'Claude Code Guide',

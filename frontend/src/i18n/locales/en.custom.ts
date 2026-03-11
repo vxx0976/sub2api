@@ -203,8 +203,43 @@ export default {
       vscodeStep: {
         title: 'Configure VSCode Plugin (Optional)',
         description: 'If you use VSCode, install the official plugin for an integrated experience:'
-      }
+      },
+      ccShortcuts: {
+        title: 'Keyboard Shortcuts',
+        desc: 'Use these shortcuts in interactive sessions. macOS users must set Option as Meta in their terminal for Alt shortcuts.',
+        general: 'General Controls',
+        textEdit: 'Text Editing',
+        multiline: 'Multiline Input',
+      },
+      ccSlashCmds: {
+        title: 'Slash Commands',
+        desc: 'Type / to see all commands, or type letters to filter.',
+        session: 'Session',
+        workflow: 'Workflow',
+        config: 'Config & Display',
+        dev: 'Dev Tools',
+      },
+      ccCliFlags: {
+        title: 'Launch Flags',
+        desc: 'Control Claude Code behavior with CLI flags at startup.',
+        basic: 'Basic',
+        sessionMgmt: 'Session Management',
+        permission: 'Permissions & Modes',
+      },
+      ccClaudeMd: {
+        title: 'CLAUDE.md',
+        desc: 'Project instruction file, auto-loaded by Claude on startup. Use it to convey project conventions, architecture notes, and coding standards.',
+        init: "Run /init in a new project — Claude generates a CLAUDE.md scaffold for you to fill in.",
+        priorityTitle: 'Lookup Priority (lowest → highest)',
+        mergeRule: 'Merge rule: all found CLAUDE.md files are stacked by priority. Total size limit ~500 KiB.',
+      },
+      ccPermissions: {
+        title: 'Permission Modes',
+        desc: 'Three modes control whether Claude asks for confirmation. Press Shift+Tab to cycle during a session.',
+      },
     },
+    // Common
+    cheatSheetDivider: 'Quick Reference',
     // Back button
     backToList: 'Back to docs',
     // Entry page
@@ -330,7 +365,41 @@ export default {
         a2: 'Verify that base_url in config.toml is set to the site root (no /v1 suffix). The service adds the path automatically.',
         q3: 'Q: Which connection mode should I use?',
         a3: 'Start with standard Codex CLI mode. Switch to WebSocket mode only if your account supports it and you need lower-latency streaming.'
-      }
+      },
+      shortcuts: {
+        title: 'Keyboard Shortcuts',
+        desc: 'Built-in shortcuts — custom bindings are not yet supported.',
+        basic: 'Basic',
+        edit: 'Edit & Navigate',
+      },
+      slashCmds: {
+        title: 'Slash Commands',
+        desc: 'Type / in the input box to open the command palette.',
+        session: 'Session',
+        config: 'Config & Model',
+        dev: 'Dev Tools',
+        persist: 'Persistence',
+      },
+      launchParams: {
+        title: 'Launch Parameters',
+        desc: 'Control Codex behavior with CLI flags at startup.',
+        basic: 'Basic',
+        autoMode: 'Full-Auto Modes',
+        autoModeNote: 'Prefer --full-auto for daily use: automated execution with sandbox protection. Use --yolo only inside containers or VMs.',
+        sandbox: 'Sandbox Modes',
+        sandboxNote: 'Sandbox restrictions are enforced at OS level (macOS: Seatbelt / Linux: Landlock) and cannot be bypassed.',
+      },
+      agentsMd: {
+        title: 'AGENTS.md',
+        desc: "Codex CLI's equivalent of CLAUDE.md. Place it in your project root or ~/.codex/. Codex reads it on startup to load project conventions, architecture notes, and coding standards.",
+        init: 'For new projects, run /init first — Codex will generate an AGENTS.md scaffold automatically.',
+        priorityTitle: 'Lookup Priority (lowest → highest)',
+        mergeRule: 'Merge rule: at most one file per directory level, stacked from global to current dir. Total size limit: 32 KiB.',
+      },
+      compare: {
+        title: 'Codex vs Claude Comparison',
+        desc: 'Both tools work with this relay service — choose based on your preference.',
+      },
     },
     // CLI setup guide
     cli: {

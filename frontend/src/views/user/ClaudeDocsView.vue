@@ -579,7 +579,7 @@
       </section>
 
       <!-- FAQ Section -->
-      <section id="faq" class="scroll-mt-20 rounded-xl border border-gray-200 bg-white p-6 dark:border-dark-700 dark:bg-dark-800">
+      <section id="faq" class="scroll-mt-20 mb-6 rounded-xl border border-gray-200 bg-white p-6 dark:border-dark-700 dark:bg-dark-800">
         <h3 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">{{ t('docs.guide.faq.title') }}</h3>
         <div class="divide-y divide-gray-100 dark:divide-dark-700">
           <div v-for="(faq, i) in faqItems" :key="i">
@@ -600,6 +600,216 @@
               {{ t(faq.a) }}
             </div>
           </div>
+        </div>
+      </section>
+
+      <!-- Divider -->
+      <div class="mb-6 flex items-center gap-3">
+        <div class="h-px flex-1 bg-gray-200 dark:bg-dark-700"></div>
+        <span class="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">{{ t('docs.cheatSheetDivider') }}</span>
+        <div class="h-px flex-1 bg-gray-200 dark:bg-dark-700"></div>
+      </div>
+
+      <!-- §A 快捷键 -->
+      <section id="cc-shortcuts" class="scroll-mt-20 mb-6 rounded-xl border border-gray-200 bg-white p-6 dark:border-dark-700 dark:bg-dark-800">
+        <h2 class="mb-1 text-xl font-semibold text-gray-900 dark:text-white">{{ t('docs.guide.ccShortcuts.title') }}</h2>
+        <p class="mb-5 text-sm text-gray-500 dark:text-gray-400">{{ t('docs.guide.ccShortcuts.desc') }}</p>
+
+        <h3 class="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">{{ t('docs.guide.ccShortcuts.general') }}</h3>
+        <div class="mb-5 overflow-hidden rounded-lg border border-gray-200 dark:border-dark-700">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-50 dark:bg-dark-700">
+              <tr>
+                <th class="px-4 py-2.5 text-left font-medium text-gray-600 dark:text-gray-300">按键</th>
+                <th class="px-4 py-2.5 text-left font-medium text-gray-600 dark:text-gray-300">作用</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 dark:divide-dark-700">
+              <tr v-for="row in ccShortcutsGeneral" :key="row.key" class="hover:bg-gray-50 dark:hover:bg-dark-700/50">
+                <td class="px-4 py-2.5 align-top"><code class="rounded bg-gray-100 px-1.5 py-0.5 text-xs font-mono text-gray-700 dark:bg-dark-600 dark:text-gray-300 whitespace-nowrap">{{ row.key }}</code></td>
+                <td class="px-4 py-2.5 text-gray-600 dark:text-gray-400">{{ row.desc }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 class="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">{{ t('docs.guide.ccShortcuts.textEdit') }}</h3>
+        <div class="mb-5 overflow-hidden rounded-lg border border-gray-200 dark:border-dark-700">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-50 dark:bg-dark-700">
+              <tr>
+                <th class="px-4 py-2.5 text-left font-medium text-gray-600 dark:text-gray-300">按键</th>
+                <th class="px-4 py-2.5 text-left font-medium text-gray-600 dark:text-gray-300">作用</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 dark:divide-dark-700">
+              <tr v-for="row in ccShortcutsEdit" :key="row.key" class="hover:bg-gray-50 dark:hover:bg-dark-700/50">
+                <td class="px-4 py-2.5 align-top"><code class="rounded bg-gray-100 px-1.5 py-0.5 text-xs font-mono text-gray-700 dark:bg-dark-600 dark:text-gray-300 whitespace-nowrap">{{ row.key }}</code></td>
+                <td class="px-4 py-2.5 text-gray-600 dark:text-gray-400">{{ row.desc }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 class="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">{{ t('docs.guide.ccShortcuts.multiline') }}</h3>
+        <div class="overflow-hidden rounded-lg border border-gray-200 dark:border-dark-700">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-50 dark:bg-dark-700">
+              <tr>
+                <th class="px-4 py-2.5 text-left font-medium text-gray-600 dark:text-gray-300">方式</th>
+                <th class="px-4 py-2.5 text-left font-medium text-gray-600 dark:text-gray-300">说明</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 dark:divide-dark-700">
+              <tr v-for="row in ccMultiline" :key="row.key" class="hover:bg-gray-50 dark:hover:bg-dark-700/50">
+                <td class="px-4 py-2.5 align-top"><code class="rounded bg-gray-100 px-1.5 py-0.5 text-xs font-mono text-gray-700 dark:bg-dark-600 dark:text-gray-300 whitespace-nowrap">{{ row.key }}</code></td>
+                <td class="px-4 py-2.5 text-gray-600 dark:text-gray-400">{{ row.desc }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- §B 斜杠命令 -->
+      <section id="cc-slash" class="scroll-mt-20 mb-6 rounded-xl border border-gray-200 bg-white p-6 dark:border-dark-700 dark:bg-dark-800">
+        <h2 class="mb-1 text-xl font-semibold text-gray-900 dark:text-white">{{ t('docs.guide.ccSlashCmds.title') }}</h2>
+        <p class="mb-5 text-sm text-gray-500 dark:text-gray-400">{{ t('docs.guide.ccSlashCmds.desc') }}</p>
+        <div v-for="group in ccSlashGroups" :key="group.key" class="mb-5 last:mb-0">
+          <h3 class="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">{{ group.label }}</h3>
+          <div class="overflow-hidden rounded-lg border border-gray-200 dark:border-dark-700">
+            <table class="w-full text-sm">
+              <thead class="bg-gray-50 dark:bg-dark-700">
+                <tr>
+                  <th class="px-4 py-2.5 text-left font-medium text-gray-600 dark:text-gray-300">命令</th>
+                  <th class="px-4 py-2.5 text-left font-medium text-gray-600 dark:text-gray-300">说明</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100 dark:divide-dark-700">
+                <tr v-for="row in group.rows" :key="row.cmd" class="hover:bg-gray-50 dark:hover:bg-dark-700/50">
+                  <td class="px-4 py-2.5 align-top"><code class="rounded bg-gray-100 px-1.5 py-0.5 text-xs font-mono text-primary-600 dark:bg-dark-600 dark:text-primary-400 whitespace-nowrap">{{ row.cmd }}</code></td>
+                  <td class="px-4 py-2.5 text-gray-600 dark:text-gray-400">{{ row.desc }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- §C 启动参数 -->
+      <section id="cc-flags" class="scroll-mt-20 mb-6 rounded-xl border border-gray-200 bg-white p-6 dark:border-dark-700 dark:bg-dark-800">
+        <h2 class="mb-1 text-xl font-semibold text-gray-900 dark:text-white">{{ t('docs.guide.ccCliFlags.title') }}</h2>
+        <p class="mb-5 text-sm text-gray-500 dark:text-gray-400">{{ t('docs.guide.ccCliFlags.desc') }}</p>
+
+        <h3 class="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">{{ t('docs.guide.ccCliFlags.basic') }}</h3>
+        <div class="mb-5 overflow-hidden rounded-lg border border-gray-200 dark:border-dark-700">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-50 dark:bg-dark-700">
+              <tr>
+                <th class="px-4 py-2.5 text-left font-medium text-gray-600 dark:text-gray-300">命令</th>
+                <th class="px-4 py-2.5 text-left font-medium text-gray-600 dark:text-gray-300">说明</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 dark:divide-dark-700">
+              <tr v-for="row in ccFlagsBasic" :key="row.cmd" class="hover:bg-gray-50 dark:hover:bg-dark-700/50">
+                <td class="px-4 py-2.5 align-top"><code class="rounded bg-gray-100 px-1.5 py-0.5 text-xs font-mono text-gray-700 dark:bg-dark-600 dark:text-gray-300 whitespace-nowrap">{{ row.cmd }}</code></td>
+                <td class="px-4 py-2.5 text-gray-600 dark:text-gray-400">{{ row.desc }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 class="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">{{ t('docs.guide.ccCliFlags.sessionMgmt') }}</h3>
+        <div class="mb-5 overflow-hidden rounded-lg border border-gray-200 dark:border-dark-700">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-50 dark:bg-dark-700">
+              <tr>
+                <th class="px-4 py-2.5 text-left font-medium text-gray-600 dark:text-gray-300">参数</th>
+                <th class="px-4 py-2.5 text-left font-medium text-gray-600 dark:text-gray-300">说明</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 dark:divide-dark-700">
+              <tr v-for="row in ccFlagsSession" :key="row.cmd" class="hover:bg-gray-50 dark:hover:bg-dark-700/50">
+                <td class="px-4 py-2.5 align-top"><code class="rounded bg-gray-100 px-1.5 py-0.5 text-xs font-mono text-gray-700 dark:bg-dark-600 dark:text-gray-300 whitespace-nowrap">{{ row.cmd }}</code></td>
+                <td class="px-4 py-2.5 text-gray-600 dark:text-gray-400">{{ row.desc }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 class="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">{{ t('docs.guide.ccCliFlags.permission') }}</h3>
+        <div class="overflow-hidden rounded-lg border border-gray-200 dark:border-dark-700">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-50 dark:bg-dark-700">
+              <tr>
+                <th class="px-4 py-2.5 text-left font-medium text-gray-600 dark:text-gray-300">参数</th>
+                <th class="px-4 py-2.5 text-left font-medium text-gray-600 dark:text-gray-300">说明</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 dark:divide-dark-700">
+              <tr v-for="row in ccFlagsPermission" :key="row.cmd" class="hover:bg-gray-50 dark:hover:bg-dark-700/50">
+                <td class="px-4 py-2.5 align-top">
+                  <div class="flex items-center gap-2">
+                    <code class="rounded bg-gray-100 px-1.5 py-0.5 text-xs font-mono text-gray-700 dark:bg-dark-600 dark:text-gray-300 whitespace-nowrap">{{ row.cmd }}</code>
+                    <span v-if="row.badge" :class="row.badgeClass" class="rounded-full px-1.5 py-0.5 text-xs font-semibold whitespace-nowrap">{{ row.badge }}</span>
+                  </div>
+                </td>
+                <td class="px-4 py-2.5 text-gray-600 dark:text-gray-400">{{ row.desc }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- §D CLAUDE.md -->
+      <section id="cc-claude-md" class="scroll-mt-20 mb-6 rounded-xl border border-gray-200 bg-white p-6 dark:border-dark-700 dark:bg-dark-800">
+        <h2 class="mb-1 text-xl font-semibold text-gray-900 dark:text-white">{{ t('docs.guide.ccClaudeMd.title') }}</h2>
+        <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">{{ t('docs.guide.ccClaudeMd.desc') }}</p>
+        <div class="mb-5 rounded-lg border border-primary-200 bg-primary-50 p-3 dark:border-primary-800 dark:bg-primary-900/20">
+          <p class="text-sm text-primary-700 dark:text-primary-300">💡 {{ t('docs.guide.ccClaudeMd.init') }}</p>
+        </div>
+        <h3 class="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">{{ t('docs.guide.ccClaudeMd.priorityTitle') }}</h3>
+        <div class="mb-4 overflow-hidden rounded-lg border border-gray-200 dark:border-dark-700">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-50 dark:bg-dark-700">
+              <tr>
+                <th class="px-4 py-2.5 text-left font-medium text-gray-600 dark:text-gray-300">级别</th>
+                <th class="px-4 py-2.5 text-left font-medium text-gray-600 dark:text-gray-300">文件路径</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 dark:divide-dark-700">
+              <tr v-for="row in ccClaudeMdPriority" :key="row.level" class="hover:bg-gray-50 dark:hover:bg-dark-700/50">
+                <td class="px-4 py-2.5 text-gray-500 dark:text-gray-400 whitespace-nowrap">{{ row.level }}</td>
+                <td class="px-4 py-2.5 font-mono text-xs text-gray-700 dark:text-gray-300">{{ row.path }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="text-sm text-gray-500 dark:text-gray-400">{{ t('docs.guide.ccClaudeMd.mergeRule') }}</p>
+      </section>
+
+      <!-- §E 权限模式 -->
+      <section id="cc-permissions" class="scroll-mt-20 rounded-xl border border-gray-200 bg-white p-6 dark:border-dark-700 dark:bg-dark-800">
+        <h2 class="mb-1 text-xl font-semibold text-gray-900 dark:text-white">{{ t('docs.guide.ccPermissions.title') }}</h2>
+        <p class="mb-5 text-sm text-gray-500 dark:text-gray-400">{{ t('docs.guide.ccPermissions.desc') }}</p>
+        <div class="overflow-hidden rounded-lg border border-gray-200 dark:border-dark-700">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-50 dark:bg-dark-700">
+              <tr>
+                <th class="px-4 py-2.5 text-left font-medium text-gray-600 dark:text-gray-300">模式</th>
+                <th class="px-4 py-2.5 text-left font-medium text-gray-600 dark:text-gray-300">启动方式</th>
+                <th class="px-4 py-2.5 text-left font-medium text-gray-600 dark:text-gray-300">说明</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 dark:divide-dark-700">
+              <tr v-for="row in ccPermissionModes" :key="row.mode" class="hover:bg-gray-50 dark:hover:bg-dark-700/50">
+                <td class="px-4 py-2.5 align-top">
+                  <span :class="row.badgeClass" class="rounded-full px-2 py-0.5 text-xs font-semibold whitespace-nowrap">{{ row.mode }}</span>
+                </td>
+                <td class="px-4 py-2.5 align-top font-mono text-xs text-gray-600 dark:text-gray-400">{{ row.how }}</td>
+                <td class="px-4 py-2.5 text-gray-600 dark:text-gray-400">{{ row.desc }}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </section>
       </div>
@@ -648,6 +858,11 @@ const navItems = [
   { id: 'step-5', label: '5. ' + t('docs.guide.vscodeStep.title') },
   { id: 'tips', label: t('docs.tips.title') },
   { id: 'faq', label: t('docs.guide.faq.title') },
+  { id: 'cc-shortcuts', label: t('docs.guide.ccShortcuts.title') },
+  { id: 'cc-slash', label: t('docs.guide.ccSlashCmds.title') },
+  { id: 'cc-flags', label: t('docs.guide.ccCliFlags.title') },
+  { id: 'cc-claude-md', label: t('docs.guide.ccClaudeMd.title') },
+  { id: 'cc-permissions', label: t('docs.guide.ccPermissions.title') },
 ]
 
 const activeSection = ref('')
@@ -799,5 +1014,182 @@ const shortcuts = [
   { keys: 'Esc', functionKey: 'docs.tips.shortcuts.escFunc' },
   { keys: 'Shift+Tab', functionKey: 'docs.tips.shortcuts.shiftTabFunc' },
   { keys: 'Ctrl+C', functionKey: 'docs.tips.shortcuts.ctrlCFunc' }
+]
+
+// ── CC Shortcuts ───────────────────────────────────────────
+const ccShortcutsGeneral = [
+  { key: 'Ctrl+C', desc: '取消当前输入或生成' },
+  { key: 'Ctrl+D', desc: '退出 Claude Code 会话' },
+  { key: 'Ctrl+L', desc: '清屏（保留对话历史）' },
+  { key: 'Ctrl+G', desc: '在默认文本编辑器中打开当前输入' },
+  { key: 'Ctrl+O', desc: '切换详细输出（显示工具调用详情）' },
+  { key: 'Ctrl+R', desc: '反向搜索命令历史' },
+  { key: 'Ctrl+V / Cmd+V', desc: '从剪贴板粘贴图片' },
+  { key: 'Ctrl+B', desc: '将当前 Bash 命令移到后台运行' },
+  { key: 'Ctrl+T', desc: '切换任务列表显示' },
+  { key: 'Ctrl+F', desc: '终止所有后台 Agent（3 秒内按两次确认）' },
+  { key: 'Esc Esc', desc: '回退对话 / 恢复到之前某个节点' },
+  { key: 'Shift+Tab', desc: '循环切换权限模式（普通 → 自动接受 → 计划模式）' },
+  { key: 'Option+P / Alt+P', desc: '切换模型（不清空输入框）' },
+  { key: 'Option+T / Alt+T', desc: '切换扩展思考模式（需先运行 /terminal-setup）' },
+  { key: '↑ / ↓', desc: '浏览命令历史' },
+]
+
+const ccShortcutsEdit = [
+  { key: 'Ctrl+K', desc: '删除到行尾（保存至粘贴历史）' },
+  { key: 'Ctrl+U', desc: '删除整行（保存至粘贴历史）' },
+  { key: 'Ctrl+Y', desc: '粘贴已删除文本' },
+  { key: 'Alt+Y', desc: '循环粘贴历史（Ctrl+Y 后使用）' },
+  { key: 'Alt+B', desc: '向后移动一个单词' },
+  { key: 'Alt+F', desc: '向前移动一个单词' },
+]
+
+const ccMultiline = [
+  { key: '\\ + Enter', desc: '所有终端通用' },
+  { key: 'Option+Enter', desc: 'macOS 默认' },
+  { key: 'Shift+Enter', desc: 'iTerm2 / WezTerm / Ghostty / Kitty 开箱即用；其他终端运行 /terminal-setup' },
+  { key: 'Ctrl+J', desc: '换行符方式' },
+]
+
+// ── CC Slash Commands ──────────────────────────────────────
+const ccSlashGroups = computed(() => [
+  {
+    key: 'session',
+    label: t('docs.guide.ccSlashCmds.session'),
+    rows: [
+      { cmd: '/compact', desc: '压缩上下文，聊太久 token 爆了用这个续命' },
+      { cmd: '/clear', desc: '清空对话历史，重新开始（别名 /reset、/new）' },
+      { cmd: '/fork [name]', desc: '在当前节点分叉出新对话，用于尝试不同方案' },
+      { cmd: '/resume [session]', desc: '恢复指定会话或打开会话选择器（别名 /continue）' },
+      { cmd: '/export [filename]', desc: '导出当前对话为纯文本' },
+      { cmd: '/rewind', desc: '回退代码和对话到之前某个节点（别名 /checkpoint）' },
+      { cmd: '/rename [name]', desc: '重命名当前会话，不指定名称则自动生成' },
+    ],
+  },
+  {
+    key: 'workflow',
+    label: t('docs.guide.ccSlashCmds.workflow'),
+    rows: [
+      { cmd: '/plan', desc: '进入计划模式——只规划不执行，先看方案再动手' },
+      { cmd: '/diff', desc: '查看未提交变更及每轮操作的 diff' },
+      { cmd: '/cost', desc: '查看当前会话 token 用量和费用统计' },
+      { cmd: '/context', desc: '以可视化方式显示当前上下文用量' },
+      { cmd: '/btw <question>', desc: '快速提问，不加入对话历史（即问即答，不影响主对话）' },
+      { cmd: '/tasks', desc: '列出和管理后台任务' },
+    ],
+  },
+  {
+    key: 'config',
+    label: t('docs.guide.ccSlashCmds.config'),
+    rows: [
+      { cmd: '/model [model]', desc: '切换模型（sonnet / opus），立即生效' },
+      { cmd: '/permissions', desc: '查看或更新工具权限（别名 /allowed-tools）' },
+      { cmd: '/config', desc: '打开设置界面（别名 /settings）' },
+      { cmd: '/theme', desc: '更换配色主题（含深色、浅色、色盲友好模式）' },
+      { cmd: '/vim', desc: '切换 Vim / 普通编辑模式' },
+      { cmd: '/statusline', desc: '配置底部状态栏显示内容' },
+      { cmd: '/output-style', desc: '切换输出风格（默认 / 解释型 / 学习型）' },
+    ],
+  },
+  {
+    key: 'dev',
+    label: t('docs.guide.ccSlashCmds.dev'),
+    rows: [
+      { cmd: '/init', desc: '初始化项目，生成 CLAUDE.md 框架' },
+      { cmd: '/memory', desc: '编辑 CLAUDE.md 文件，管理跨会话记忆' },
+      { cmd: '/mcp', desc: '管理 MCP 服务器连接' },
+      { cmd: '/hooks', desc: '管理工具事件 Hook' },
+      { cmd: '/skills', desc: '查看可用的 Skill 列表' },
+      { cmd: '/doctor', desc: '诊断并验证 Claude Code 安装和配置' },
+      { cmd: '/security-review', desc: '分析当前分支未提交变更中的安全风险' },
+    ],
+  },
+])
+
+// ── CC CLI Flags ───────────────────────────────────────────
+const ccFlagsBasic = [
+  { cmd: 'claude', desc: '启动交互式会话' },
+  { cmd: 'claude "任务描述"', desc: '带初始提示启动' },
+  { cmd: 'claude -p "query"', desc: '非交互式执行后退出，适合脚本 / CI' },
+  { cmd: 'cat file | claude -p "query"', desc: '通过管道传入内容处理' },
+  { cmd: 'claude update', desc: '更新到最新版本' },
+  { cmd: 'claude --model sonnet', desc: '指定模型（sonnet / opus 或完整模型名）' },
+  { cmd: 'claude -w feature-auth', desc: '在隔离的 git worktree 中启动' },
+]
+
+const ccFlagsSession = [
+  { cmd: 'claude -c', desc: '恢复当前目录最近一次对话' },
+  { cmd: 'claude -r "session-name"', desc: '按 ID 或名称恢复指定会话' },
+  { cmd: 'claude --from-pr 123', desc: '恢复与指定 PR 关联的会话' },
+  { cmd: 'claude --resume --fork-session', desc: '恢复会话并生成新的会话 ID（分叉）' },
+]
+
+const ccFlagsPermission = [
+  {
+    cmd: '--permission-mode plan',
+    badge: '计划模式',
+    badgeClass: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+    desc: '只读分析，不执行任何文件操作，先看方案再动手',
+  },
+  {
+    cmd: '--permission-mode auto-accept',
+    badge: '自动接受',
+    badgeClass: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+    desc: '自动接受所有操作请求，无需手动确认',
+  },
+  {
+    cmd: '--dangerously-skip-permissions',
+    badge: '跳过全部',
+    badgeClass: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+    desc: '跳过所有权限提示，仅限容器 / CI 环境使用',
+  },
+  {
+    cmd: '--add-dir ../lib',
+    badge: null,
+    badgeClass: '',
+    desc: '为当前会话添加额外可访问目录（可重复使用）',
+  },
+  {
+    cmd: '--max-turns 5',
+    badge: null,
+    badgeClass: '',
+    desc: '限制 Agent 最大执行轮数（非交互模式）',
+  },
+  {
+    cmd: '--max-budget-usd 2.00',
+    badge: null,
+    badgeClass: '',
+    desc: '设置 API 调用花费上限，超出则停止（非交互模式）',
+  },
+]
+
+// ── CC CLAUDE.md ───────────────────────────────────────────
+const ccClaudeMdPriority = [
+  { level: '全局', path: '~/.claude/CLAUDE.md' },
+  { level: '父目录', path: '从根目录到项目路径各层 CLAUDE.md（逐层叠加）' },
+  { level: '项目根', path: '<project>/CLAUDE.md' },
+  { level: '项目子目录', path: '<project>/<subdir>/CLAUDE.md（当前工作目录中的）' },
+]
+
+// ── CC Permission Modes ────────────────────────────────────
+const ccPermissionModes = [
+  {
+    mode: '普通模式',
+    how: '默认启动',
+    badgeClass: 'bg-gray-100 text-gray-600 dark:bg-dark-600 dark:text-gray-300',
+    desc: '每次执行文件操作、运行命令前都会询问确认，最安全',
+  },
+  {
+    mode: '计划模式',
+    how: 'Shift+Tab 或 --permission-mode plan',
+    badgeClass: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+    desc: '只读分析，可查看和阅读文件，但不执行任何写操作，适合先评审方案',
+  },
+  {
+    mode: '自动接受模式',
+    how: 'Shift+Tab 或 --permission-mode auto-accept',
+    badgeClass: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+    desc: '自动批准所有操作，无需确认，适合信任场景下的高效执行',
+  },
 ]
 </script>

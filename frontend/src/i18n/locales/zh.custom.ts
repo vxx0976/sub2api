@@ -203,8 +203,43 @@ export default {
       vscodeStep: {
         title: '配置 VSCode 插件（可选）',
         description: '如果你使用 VSCode 开发，可以安装官方插件获得集成开发体验：'
-      }
+      },
+      ccShortcuts: {
+        title: '快捷键',
+        desc: '在交互式会话中使用以下快捷键。macOS 用户需将终端 Option 键设为 Meta 才能使用 Alt 系列快捷键。',
+        general: '通用控制',
+        textEdit: '文本编辑',
+        multiline: '多行输入',
+      },
+      ccSlashCmds: {
+        title: '斜杠命令',
+        desc: '在输入框中输入 / 查看全部命令，输入字母可过滤。',
+        session: '会话管理',
+        workflow: '工作流',
+        config: '配置与显示',
+        dev: '开发工具',
+      },
+      ccCliFlags: {
+        title: '启动参数',
+        desc: '通过命令行参数控制 Claude Code 的行为。',
+        basic: '基础启动',
+        sessionMgmt: '会话管理',
+        permission: '权限与模式',
+      },
+      ccClaudeMd: {
+        title: 'CLAUDE.md',
+        desc: '项目指令文件，Claude 启动时自动读取。用于传递项目约定、架构说明和编码规范。',
+        init: '新项目执行 /init，Claude 自动生成 CLAUDE.md 框架，然后手动补充项目信息。',
+        priorityTitle: '查找优先级（从低到高）',
+        mergeRule: '合并规则：所有找到的 CLAUDE.md 文件内容按优先级叠加，总大小上限约 500 KiB。',
+      },
+      ccPermissions: {
+        title: '权限模式',
+        desc: '三种权限模式控制 Claude 执行操作时是否需要确认。按 Shift+Tab 在会话中循环切换。',
+      },
     },
+    // 通用
+    cheatSheetDivider: '速查手册',
     // 返回按钮
     backToList: '返回文档列表',
     // 入口页
@@ -330,7 +365,41 @@ export default {
         a2: '请确认 config.toml 中的 base_url 填写的是站点根地址（不需要 /v1 后缀），服务会自动处理路径。',
         q3: 'Q：应该选择哪种连接模式？',
         a3: '默认使用标准 Codex CLI 模式即可。仅在账号支持且需要更低延迟流式输出时，才切换到 WebSocket 模式。'
-      }
+      },
+      shortcuts: {
+        title: '快捷键',
+        desc: 'Codex CLI 内置快捷键，目前不支持自定义。',
+        basic: '基础操作',
+        edit: '编辑与导航',
+      },
+      slashCmds: {
+        title: '斜杠命令',
+        desc: '在输入框输入 / 即可呼出命令面板。',
+        session: '会话控制',
+        config: '配置与模型',
+        dev: '开发工具',
+        persist: '会话持久化',
+      },
+      launchParams: {
+        title: '启动参数',
+        desc: '启动 Codex 时通过命令行参数控制行为。',
+        basic: '基础启动',
+        autoMode: '全自动模式',
+        autoModeNote: '日常推荐 --full-auto：自动执行且保留沙盒保护；--yolo 仅限容器 / VM 环境使用。',
+        sandbox: '沙盒模式',
+        sandboxNote: '沙盒限制由操作系统层面（macOS: Seatbelt / Linux: Landlock）实现，无法绕过。',
+      },
+      agentsMd: {
+        title: 'AGENTS.md',
+        desc: '相当于 Codex CLI 的 CLAUDE.md。在项目根目录或 ~/.codex/ 下创建，cx 启动时自动读取，用于传递项目约定、架构说明和编码规范。',
+        init: '新项目建议第一件事执行 /init，cx 会自动生成一个 AGENTS.md 框架。',
+        priorityTitle: '查找优先级（从低到高）',
+        mergeRule: '合并规则：每级目录最多取一个文件，从全局到当前目录逐层叠加，总大小上限 32 KiB。',
+      },
+      compare: {
+        title: 'Codex vs Claude 对比',
+        desc: '两款工具均可使用本中转服务，适合不同使用习惯。',
+      },
     },
     // CLI 配置教程
     cli: {

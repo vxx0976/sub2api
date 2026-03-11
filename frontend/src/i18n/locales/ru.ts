@@ -653,6 +653,8 @@ export default {
         a3: 'Убедитесь, что у вас последняя версия claude-code и вы не используете режим входа через Web.'
       }
     },
+    // Common
+    cheatSheetDivider: 'Справочник',
     // Back button
     backToList: 'Вернуться к документации',
     // Entry page
