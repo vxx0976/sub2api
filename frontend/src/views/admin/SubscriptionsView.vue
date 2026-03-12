@@ -205,13 +205,13 @@
               </span>
               <!-- Has source records (redeem or purchase) -->
               <div
-                v-else-if="parseSourceRecords(row.notes).length > 0"
+                v-else-if="sourceInfoMap.get(row.id)?.records.length"
                 class="relative"
                 @mouseenter="showSourcePopover(row.id, $event)"
                 @mouseleave="hideSourcePopover"
               >
-                <span :class="['badge cursor-default', getSourceBadgeClass(row.notes)]">
-                  {{ getSourceLabel(row.notes) }}
+                <span :class="['badge cursor-default', sourceInfoMap.get(row.id)!.badgeClass]">
+                  {{ sourceInfoMap.get(row.id)!.label }}
                 </span>
               </div>
               <!-- Unknown -->
@@ -396,6 +396,15 @@
               >
                 <Icon name="clock" size="sm" />
                 <span class="text-xs">{{ t('admin.subscriptions.extend') }}</span>
+              </button>
+              <button
+                v-if="row.status === 'active'"
+                @click="handleResetQuota(row)"
+                :disabled="resettingQuota && resettingSubscription?.id === row.id"
+                class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-orange-50 hover:text-orange-600 dark:hover:bg-orange-900/20 dark:hover:text-orange-400 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Icon name="refresh" size="sm" />
+                <span class="text-xs">{{ t('admin.subscriptions.resetQuota') }}</span>
               </button>
               <button
                 v-if="row.status === 'active'"
@@ -634,7 +643,7 @@
     <!-- Source Popover (Teleported to body) -->
     <Teleport to="body">
       <div
-        v-if="sourcePopover.visible && sourcePopover.subscriptionId"
+        v-if="sourcePopover.visible && sourcePopover.records.length > 0"
         class="fixed z-[9999] rounded-lg bg-white px-4 py-3 text-sm shadow-lg border border-gray-200 dark:bg-gray-800 dark:border-gray-700"
         :style="{ top: sourcePopover.top + 'px', left: sourcePopover.left + 'px' }"
         @mouseenter="cancelHideSourcePopover"
@@ -662,6 +671,17 @@
         </div>
       </div>
     </Teleport>
+
+    <!-- Reset Quota Confirmation Dialog -->
+    <ConfirmDialog
+      :show="showResetQuotaConfirm"
+      :title="t('admin.subscriptions.resetQuotaTitle')"
+      :message="t('admin.subscriptions.resetQuotaConfirm', { user: resettingSubscription?.user?.email })"
+      :confirm-text="t('admin.subscriptions.resetQuota')"
+      :cancel-text="t('common.cancel')"
+      @confirm="confirmResetQuota"
+      @cancel="showResetQuotaConfirm = false"
+    />
   </AppLayout>
 </template>
 
@@ -674,6 +694,8 @@ import type { UserSubscription, Group, GroupPlatform, SubscriptionType } from '@
 import type { SimpleUser } from '@/api/admin/usage'
 import type { Column } from '@/components/common/types'
 import { formatDateOnly } from '@/utils/format'
+import { getRemainingCycles, getEffectiveMonthlyLimit } from '@/utils/subscription'
+import { useClipboard } from '@/composables/useClipboard'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import TablePageLayout from '@/components/layout/TablePageLayout.vue'
 import DataTable from '@/components/common/DataTable.vue'
@@ -688,6 +710,7 @@ import Icon from '@/components/icons/Icon.vue'
 
 const { t } = useI18n()
 const appStore = useAppStore()
+const { copyToClipboard } = useClipboard()
 
 interface GroupOption {
   value: number
@@ -857,7 +880,10 @@ const pagination = reactive({
 const showAssignModal = ref(false)
 const showExtendModal = ref(false)
 const showRevokeDialog = ref(false)
+const showResetQuotaConfirm = ref(false)
 const submitting = ref(false)
+const resettingSubscription = ref<UserSubscription | null>(null)
+const resettingQuota = ref(false)
 const extendingSubscription = ref<UserSubscription | null>(null)
 const revokingSubscription = ref<UserSubscription | null>(null)
 
@@ -1177,7 +1203,6 @@ interface SourceRecord {
 // Source popover state
 const sourcePopover = reactive({
   visible: false,
-  subscriptionId: null as number | null,
   top: 0,
   left: 0,
   records: [] as SourceRecord[]
@@ -1209,21 +1234,20 @@ const parseSourceRecords = (notes?: string): SourceRecord[] => {
   return records
 }
 
-const getSourceBadgeClass = (notes?: string): string => {
-  const records = parseSourceRecords(notes)
-  if (records.length === 0) return 'badge-secondary'
-  // Use the first record's type for badge color
-  const firstType = records[0].type
-  return firstType === 'redeem' ? 'badge-warning' : 'badge-success'
-}
-
-const getSourceLabel = (notes?: string): string => {
-  const records = parseSourceRecords(notes)
-  if (records.length === 0) return t('admin.subscriptions.source.unknown')
-  // Use the first record's type for label
-  const firstType = records[0].type
-  return firstType === 'redeem' ? t('admin.subscriptions.source.redeem') : t('admin.subscriptions.source.purchase')
-}
+// Pre-parse source records for all loaded subscriptions to avoid repeated regex per row
+const sourceInfoMap = computed(() => {
+  const map = new Map<number, { records: SourceRecord[]; badgeClass: string; label: string }>()
+  for (const sub of subscriptions.value) {
+    const records = parseSourceRecords(sub.notes)
+    const firstType = records[0]?.type
+    map.set(sub.id, {
+      records,
+      badgeClass: firstType === 'redeem' ? 'badge-warning' : firstType === 'purchase' ? 'badge-success' : 'badge-secondary',
+      label: firstType === 'redeem' ? t('admin.subscriptions.source.redeem') : firstType === 'purchase' ? t('admin.subscriptions.source.purchase') : t('admin.subscriptions.source.unknown'),
+    })
+  }
+  return map
+})
 
 const showSourcePopover = (subscriptionId: number, event: MouseEvent) => {
   if (sourcePopoverHideTimeout) {
@@ -1231,11 +1255,9 @@ const showSourcePopover = (subscriptionId: number, event: MouseEvent) => {
     sourcePopoverHideTimeout = null
   }
 
-  const sub = subscriptions.value.find(s => s.id === subscriptionId)
-  if (!sub) return
-
-  const records = parseSourceRecords(sub.notes)
-  if (records.length === 0) return
+  const info = sourceInfoMap.value.get(subscriptionId)
+  if (!info || info.records.length === 0) return
+  const records = info.records
 
   const target = event.currentTarget as HTMLElement
   const rect = target.getBoundingClientRect()
@@ -1267,7 +1289,6 @@ const showSourcePopover = (subscriptionId: number, event: MouseEvent) => {
   let left = rect.left + rect.width / 2 - popoverWidth / 2
   left = Math.max(padding, Math.min(left, window.innerWidth - popoverWidth - padding))
 
-  sourcePopover.subscriptionId = subscriptionId
   sourcePopover.records = records
   sourcePopover.top = top
   sourcePopover.left = left
@@ -1277,7 +1298,7 @@ const showSourcePopover = (subscriptionId: number, event: MouseEvent) => {
 const hideSourcePopover = () => {
   sourcePopoverHideTimeout = setTimeout(() => {
     sourcePopover.visible = false
-    sourcePopover.subscriptionId = null
+    sourcePopover.records = []
   }, 100)
 }
 
@@ -1288,32 +1309,29 @@ const cancelHideSourcePopover = () => {
   }
 }
 
-const copyToClipboard = async (text: string) => {
+
+const handleResetQuota = (subscription: UserSubscription) => {
+  resettingSubscription.value = subscription
+  showResetQuotaConfirm.value = true
+}
+
+const confirmResetQuota = async () => {
+  if (!resettingSubscription.value || resettingQuota.value) return
+  resettingQuota.value = true
   try {
-    await navigator.clipboard.writeText(text)
-    appStore.showSuccess(t('common.copied'))
-  } catch {
-    appStore.showError(t('common.copyFailed'))
+    await adminAPI.subscriptions.resetQuota(resettingSubscription.value.id, { daily: true, weekly: true })
+    appStore.showSuccess(t('admin.subscriptions.quotaResetSuccess'))
+    showResetQuotaConfirm.value = false
+    resettingSubscription.value = null
+    await loadSubscriptions()
+  } catch (error: any) {
+    appStore.showError(error.response?.data?.detail || t('admin.subscriptions.failedToResetQuota'))
+    console.error('Error resetting quota:', error)
+  } finally {
+    resettingQuota.value = false
   }
 }
 
-// 计算剩余周期数（向上取整，每30天为一个周期）
-const getRemainingCycles = (sub: UserSubscription): number => {
-  if (!sub.expires_at) return 1
-  const now = new Date()
-  const expires = new Date(sub.expires_at)
-  const diff = expires.getTime() - now.getTime()
-  const daysRemaining = Math.ceil(diff / (1000 * 60 * 60 * 24))
-  if (daysRemaining <= 0) return 0
-  return Math.ceil(daysRemaining / 30)
-}
-
-// 计算有效月额度（单周期额度 × 剩余周期数）
-const getEffectiveMonthlyLimit = (sub: UserSubscription): number => {
-  const monthlyLimit = sub.group?.monthly_limit_usd || 0
-  const cycles = getRemainingCycles(sub)
-  return monthlyLimit * cycles
-}
 
 // Helper functions
 const getDaysRemaining = (expiresAt: string): number | null => {
@@ -1408,6 +1426,9 @@ onUnmounted(() => {
   }
   if (userSearchTimeout) {
     clearTimeout(userSearchTimeout)
+  }
+  if (sourcePopoverHideTimeout) {
+    clearTimeout(sourcePopoverHideTimeout)
   }
 })
 </script>
