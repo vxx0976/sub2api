@@ -183,7 +183,7 @@ import { useI18n } from 'vue-i18n'
 import Icon from '@/components/icons/Icon.vue'
 import { useSubscriptionStore } from '@/stores'
 import type { UserSubscription } from '@/types'
-import { getRemainingCycles, getEffectiveMonthlyLimit } from '@/utils/subscription'
+import { getEffectiveMonthlyLimit } from '@/utils/subscription'
 
 const { t } = useI18n()
 

@@ -694,7 +694,7 @@ import type { UserSubscription, Group, GroupPlatform, SubscriptionType } from '@
 import type { SimpleUser } from '@/api/admin/usage'
 import type { Column } from '@/components/common/types'
 import { formatDateOnly } from '@/utils/format'
-import { getRemainingCycles, getEffectiveMonthlyLimit } from '@/utils/subscription'
+import { getEffectiveMonthlyLimit } from '@/utils/subscription'
 import { useClipboard } from '@/composables/useClipboard'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import TablePageLayout from '@/components/layout/TablePageLayout.vue'
