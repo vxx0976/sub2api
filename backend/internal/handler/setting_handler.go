@@ -66,6 +66,7 @@ func (h *SettingHandler) GetPublicSettings(c *gin.Context) {
 		CustomMenuItems:                  dto.ParseUserVisibleMenuItems(settings.CustomMenuItems),
 		LinuxDoOAuthEnabled:              settings.LinuxDoOAuthEnabled,
 		SoraClientEnabled:                settings.SoraClientEnabled,
+		BackendModeEnabled:               settings.BackendModeEnabled,
 		Version:                          h.version,
 		Announcements:                    announcements,
 		ContactWechat:                    settings.ContactWechat,

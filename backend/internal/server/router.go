@@ -133,9 +133,9 @@ func registerRoutes(
 	}
 
 	// 注册各模块路由
-	routes.RegisterAuthRoutes(v1, h, jwtAuth, redisClient)
-	routes.RegisterUserRoutes(v1, h, jwtAuth)
-	routes.RegisterSoraClientRoutes(v1, h, jwtAuth)
+	routes.RegisterAuthRoutes(v1, h, jwtAuth, redisClient, settingService)
+	routes.RegisterUserRoutes(v1, h, jwtAuth, settingService)
+	routes.RegisterSoraClientRoutes(v1, h, jwtAuth, settingService)
 	routes.RegisterAdminRoutes(v1, h, adminAuth)
 	routes.RegisterResellerRoutes(v1, h, resellerAuth)
 	routes.RegisterPaymentRoutes(v1, h, jwtAuth)

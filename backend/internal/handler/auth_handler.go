@@ -281,6 +281,12 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
+	// Backend mode: only admin can login
+	if h.settingSvc.IsBackendModeEnabled(c.Request.Context()) && !user.IsAdmin() {
+		response.Forbidden(c, "Backend mode is active. Only admin login is allowed.")
+		return
+	}
+
 	h.respondWithTokenPair(c, user)
 }
 
@@ -337,10 +343,7 @@ func (h *AuthHandler) Login2FA(c *gin.Context) {
 		return
 	}
 
-	// Delete the login session
-	_ = h.totpService.DeleteLoginSession(c.Request.Context(), req.TempToken)
-
-	// Get the user
+	// Get the user (before session deletion so we can check backend mode)
 	user, err := h.userService.GetByID(c.Request.Context(), session.UserID)
 	if err != nil {
 		response.ErrorFrom(c, err)
@@ -351,6 +354,15 @@ func (h *AuthHandler) Login2FA(c *gin.Context) {
 	if !h.checkLoginDomain(c, user) {
 		return
 	}
+
+	// Backend mode: only admin can login (check BEFORE deleting session)
+	if h.settingSvc.IsBackendModeEnabled(c.Request.Context()) && !user.IsAdmin() {
+		response.Forbidden(c, "Backend mode is active. Only admin login is allowed.")
+		return
+	}
+
+	// Delete the login session (only after all checks pass)
+	_ = h.totpService.DeleteLoginSession(c.Request.Context(), req.TempToken)
 
 	h.respondWithTokenPair(c, user)
 }
@@ -682,16 +694,22 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 		return
 	}
 
-	tokenPair, err := h.authService.RefreshTokenPair(c.Request.Context(), req.RefreshToken)
+	result, err := h.authService.RefreshTokenPair(c.Request.Context(), req.RefreshToken)
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return
 	}
 
+	// Backend mode: block non-admin token refresh
+	if h.settingSvc.IsBackendModeEnabled(c.Request.Context()) && result.UserRole != "admin" {
+		response.Forbidden(c, "Backend mode is active. Only admin login is allowed.")
+		return
+	}
+
 	response.Success(c, RefreshTokenResponse{
-		AccessToken:  tokenPair.AccessToken,
-		RefreshToken: tokenPair.RefreshToken,
-		ExpiresIn:    tokenPair.ExpiresIn,
+		AccessToken:  result.AccessToken,
+		RefreshToken: result.RefreshToken,
+		ExpiresIn:    result.ExpiresIn,
 		TokenType:    "Bearer",
 	})
 }

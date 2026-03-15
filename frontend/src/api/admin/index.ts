@@ -26,6 +26,7 @@ import apiKeysAPI from './apiKeys'
 import scheduledTestsAPI from './scheduledTests'
 import merchantsAPI from './merchants'
 import merchantWithdrawalsAPI from './merchantWithdrawals'
+import backupAPI from './backup'
 
 /**
  * Unified admin API object for convenient access
@@ -53,7 +54,8 @@ export const adminAPI = {
   apiKeys: apiKeysAPI,
   scheduledTests: scheduledTestsAPI,
   merchants: merchantsAPI,
-  merchantWithdrawals: merchantWithdrawalsAPI
+  merchantWithdrawals: merchantWithdrawalsAPI,
+  backup: backupAPI
 }
 
 export {
@@ -79,7 +81,8 @@ export {
   apiKeysAPI,
   scheduledTestsAPI,
   merchantsAPI,
-  merchantWithdrawalsAPI
+  merchantWithdrawalsAPI,
+  backupAPI
 }
 
 export default adminAPI

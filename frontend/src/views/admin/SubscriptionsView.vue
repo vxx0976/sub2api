@@ -1319,7 +1319,7 @@ const confirmResetQuota = async () => {
   if (!resettingSubscription.value || resettingQuota.value) return
   resettingQuota.value = true
   try {
-    await adminAPI.subscriptions.resetQuota(resettingSubscription.value.id, { daily: true, weekly: true })
+    await adminAPI.subscriptions.resetQuota(resettingSubscription.value.id, { daily: true, weekly: true, monthly: true })
     appStore.showSuccess(t('admin.subscriptions.quotaResetSuccess'))
     showResetQuotaConfirm.value = false
     resettingSubscription.value = null

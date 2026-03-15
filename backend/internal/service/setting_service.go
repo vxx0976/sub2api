@@ -65,6 +65,19 @@ const minVersionErrorTTL = 5 * time.Second
 // minVersionDBTimeout singleflight 内 DB 查询超时，独立于请求 context
 const minVersionDBTimeout = 5 * time.Second
 
+// cachedBackendMode Backend Mode cache (in-process, 60s TTL)
+type cachedBackendMode struct {
+	value     bool
+	expiresAt int64 // unix nano
+}
+
+var backendModeCache atomic.Value // *cachedBackendMode
+var backendModeSF singleflight.Group
+
+const backendModeCacheTTL = 60 * time.Second
+const backendModeErrorTTL = 5 * time.Second
+const backendModeDBTimeout = 5 * time.Second
+
 // DefaultSubscriptionGroupReader validates group references used by default subscriptions.
 type DefaultSubscriptionGroupReader interface {
 	GetByID(ctx context.Context, id int64) (*Group, error)
@@ -133,6 +146,7 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		SettingKeyDefaultLocale,
 		SettingKeyContactWechat,
 		SettingKeyContactTelegram,
+		SettingKeyBackendModeEnabled,
 	}
 
 	settings, err := s.settingRepo.GetMultiple(ctx, keys)
@@ -188,6 +202,7 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		DefaultLocale:                    settings[SettingKeyDefaultLocale],
 		ContactWechat:                    settings[SettingKeyContactWechat],
 		ContactTelegram:                  settings[SettingKeyContactTelegram],
+		BackendModeEnabled:               settings[SettingKeyBackendModeEnabled] == "true",
 	}, nil
 }
 
@@ -240,6 +255,7 @@ func (s *SettingService) GetPublicSettingsForInjection(ctx context.Context) (any
 		SoraClientEnabled                bool                 `json:"sora_client_enabled"`
 		CustomMenuItems                  json.RawMessage      `json:"custom_menu_items"`
 		LinuxDoOAuthEnabled              bool                 `json:"linuxdo_oauth_enabled"`
+		BackendModeEnabled               bool                 `json:"backend_mode_enabled"`
 		Version                          string               `json:"version,omitempty"`
 		Announcements                    []SimpleAnnouncement `json:"announcements,omitempty"`
 		DefaultLocale                    string               `json:"default_locale,omitempty"`
@@ -269,6 +285,7 @@ func (s *SettingService) GetPublicSettingsForInjection(ctx context.Context) (any
 		SoraClientEnabled:                settings.SoraClientEnabled,
 		CustomMenuItems:                  filterUserVisibleMenuItems(settings.CustomMenuItems),
 		LinuxDoOAuthEnabled:              settings.LinuxDoOAuthEnabled,
+		BackendModeEnabled:               settings.BackendModeEnabled,
 		Version:                          s.version,
 		Announcements:                    settings.Announcements,
 		DefaultLocale:                    settings.DefaultLocale,
@@ -491,6 +508,9 @@ func (s *SettingService) UpdateSettings(ctx context.Context, settings *SystemSet
 	// 分组隔离
 	updates[SettingKeyAllowUngroupedKeyScheduling] = strconv.FormatBool(settings.AllowUngroupedKeyScheduling)
 
+	// Backend Mode
+	updates[SettingKeyBackendModeEnabled] = strconv.FormatBool(settings.BackendModeEnabled)
+
 	err = s.settingRepo.SetMultiple(ctx, updates)
 	if err == nil {
 		// 先使 inflight singleflight 失效，再刷新缓存，缩小旧值覆盖新值的竞态窗口
@@ -498,6 +518,11 @@ func (s *SettingService) UpdateSettings(ctx context.Context, settings *SystemSet
 		minVersionCache.Store(&cachedMinVersion{
 			value:     settings.MinClaudeCodeVersion,
 			expiresAt: time.Now().Add(minVersionCacheTTL).UnixNano(),
+		})
+		backendModeSF.Forget("backend_mode")
+		backendModeCache.Store(&cachedBackendMode{
+			value:     settings.BackendModeEnabled,
+			expiresAt: time.Now().Add(backendModeCacheTTL).UnixNano(),
 		})
 		if s.onUpdate != nil {
 			s.onUpdate() // Invalidate cache after settings update
@@ -553,6 +578,52 @@ func (s *SettingService) IsRegistrationEnabled(ctx context.Context) bool {
 		return false
 	}
 	return value == "true"
+}
+
+// IsBackendModeEnabled checks if backend mode is enabled
+// Uses in-process atomic.Value cache with 60s TTL, zero-lock hot path
+func (s *SettingService) IsBackendModeEnabled(ctx context.Context) bool {
+	if cached, ok := backendModeCache.Load().(*cachedBackendMode); ok && cached != nil {
+		if time.Now().UnixNano() < cached.expiresAt {
+			return cached.value
+		}
+	}
+	result, _, _ := backendModeSF.Do("backend_mode", func() (any, error) {
+		if cached, ok := backendModeCache.Load().(*cachedBackendMode); ok && cached != nil {
+			if time.Now().UnixNano() < cached.expiresAt {
+				return cached.value, nil
+			}
+		}
+		dbCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), backendModeDBTimeout)
+		defer cancel()
+		value, err := s.settingRepo.GetValue(dbCtx, SettingKeyBackendModeEnabled)
+		if err != nil {
+			if errors.Is(err, ErrSettingNotFound) {
+				// Setting not yet created (fresh install) - default to disabled with full TTL
+				backendModeCache.Store(&cachedBackendMode{
+					value:     false,
+					expiresAt: time.Now().Add(backendModeCacheTTL).UnixNano(),
+				})
+				return false, nil
+			}
+			slog.Warn("failed to get backend_mode_enabled setting", "error", err)
+			backendModeCache.Store(&cachedBackendMode{
+				value:     false,
+				expiresAt: time.Now().Add(backendModeErrorTTL).UnixNano(),
+			})
+			return false, nil
+		}
+		enabled := value == "true"
+		backendModeCache.Store(&cachedBackendMode{
+			value:     enabled,
+			expiresAt: time.Now().Add(backendModeCacheTTL).UnixNano(),
+		})
+		return enabled, nil
+	})
+	if val, ok := result.(bool); ok {
+		return val
+	}
+	return false
 }
 
 // IsEmailVerifyEnabled 检查是否开启邮件验证
@@ -753,6 +824,7 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 		ContactTelegram:                  settings[SettingKeyContactTelegram],
 		SoraClientEnabled:                settings[SettingKeySoraClientEnabled] == "true",
 		CustomMenuItems:                  settings[SettingKeyCustomMenuItems],
+		BackendModeEnabled:               settings[SettingKeyBackendModeEnabled] == "true",
 	}
 
 	// 解析整数类型
@@ -1312,7 +1384,7 @@ func (s *SettingService) SetBetaPolicySettings(ctx context.Context, settings *Be
 		BetaPolicyActionPass: true, BetaPolicyActionFilter: true, BetaPolicyActionBlock: true,
 	}
 	validScopes := map[string]bool{
-		BetaPolicyScopeAll: true, BetaPolicyScopeOAuth: true, BetaPolicyScopeAPIKey: true,
+		BetaPolicyScopeAll: true, BetaPolicyScopeOAuth: true, BetaPolicyScopeAPIKey: true, BetaPolicyScopeBedrock: true,
 	}
 
 	for i, rule := range settings.Rules {
