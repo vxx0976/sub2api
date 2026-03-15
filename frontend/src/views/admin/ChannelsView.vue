@@ -40,12 +40,12 @@
           <!-- Right: Actions -->
           <div class="ml-auto flex flex-wrap items-center justify-end gap-3">
             <button
-              @click="loadChannels"
-              :disabled="loading"
+              @click="handleRefreshAllBalances"
+              :disabled="loading || refreshingAll"
               class="btn btn-secondary"
-              :title="t('common.refresh')"
+              :title="t('admin.channels.refreshAllBalances')"
             >
-              <Icon name="refresh" size="md" :class="loading ? 'animate-spin' : ''" />
+              <Icon name="refresh" size="md" :class="(loading || refreshingAll) ? 'animate-spin' : ''" />
             </button>
             <button @click="openCurlModal" class="btn btn-secondary">
               <Icon name="code" size="md" class="mr-2" />
@@ -695,6 +695,59 @@ async function handleRefreshBalance(channel: Channel) {
     appStore.showError(t('admin.channels.balanceCheckError'))
   } finally {
     refreshingChannelIds.value.delete(channel.id)
+  }
+}
+
+// Refresh all channel balances with concurrency limit
+const refreshingAll = ref(false)
+async function handleRefreshAllBalances() {
+  await loadChannels()
+  const channelsWithBalance = channels.value.filter(c => c.balance_url)
+  if (channelsWithBalance.length === 0) return
+
+  refreshingAll.value = true
+  const concurrency = 5
+  let failed = 0
+  let withError = 0
+  let succeeded = 0
+
+  try {
+    // Process in batches of `concurrency`
+    for (let i = 0; i < channelsWithBalance.length; i += concurrency) {
+      const batch = channelsWithBalance.slice(i, i + concurrency)
+      const results = await Promise.allSettled(
+        batch.map(async (channel) => {
+          refreshingChannelIds.value.add(channel.id)
+          try {
+            const updated = await channelsAPI.checkBalance(channel.id)
+            const index = channels.value.findIndex(c => c.id === channel.id)
+            if (index !== -1) {
+              channels.value[index] = updated
+            }
+            return updated
+          } finally {
+            refreshingChannelIds.value.delete(channel.id)
+          }
+        })
+      )
+      for (const r of results) {
+        if (r.status === 'rejected') {
+          failed++
+        } else if (r.value.last_error) {
+          withError++
+        } else {
+          succeeded++
+        }
+      }
+    }
+
+    if (failed > 0 || withError > 0) {
+      appStore.showError(t('admin.channels.refreshAllPartial', { success: succeeded, fail: failed + withError }))
+    } else {
+      appStore.showSuccess(t('admin.channels.refreshAllSuccess', { count: succeeded }))
+    }
+  } finally {
+    refreshingAll.value = false
   }
 }
 
