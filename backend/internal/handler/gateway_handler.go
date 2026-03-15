@@ -47,6 +47,7 @@ type GatewayHandler struct {
 	errorPassthroughService   *service.ErrorPassthroughService
 	concurrencyHelper         *ConcurrencyHelper
 	userMsgQueueHelper        *UserMsgQueueHelper
+	groupStatusCache          service.GroupStatusCache
 	maxAccountSwitches        int
 	maxAccountSwitchesGemini  int
 	cfg                       *config.Config
@@ -68,6 +69,7 @@ func NewGatewayHandler(
 	userMsgQueueService *service.UserMessageQueueService,
 	cfg *config.Config,
 	settingService *service.SettingService,
+	groupStatusCache service.GroupStatusCache,
 ) *GatewayHandler {
 	pingInterval := time.Duration(0)
 	maxAccountSwitches := 10
@@ -100,6 +102,7 @@ func NewGatewayHandler(
 		errorPassthroughService:   errorPassthroughService,
 		concurrencyHelper:         NewConcurrencyHelper(concurrencyService, SSEPingFormatClaude, pingInterval),
 		userMsgQueueHelper:        umqHelper,
+		groupStatusCache:          groupStatusCache,
 		maxAccountSwitches:        maxAccountSwitches,
 		maxAccountSwitchesGemini:  maxAccountSwitchesGemini,
 		cfg:                       cfg,
@@ -405,14 +408,17 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 					action := fs.HandleFailoverError(c.Request.Context(), h.gatewayService, account.ID, account.Platform, failoverErr)
 					switch action {
 					case FailoverContinue:
+						// failover 继续尝试下一个账号，不计入分组状态
 						continue
 					case FailoverExhausted:
+						h.incrGroupStatus(c.Request.Context(), apiKey.GroupID, false, reqLog)
 						h.handleFailoverExhausted(c, fs.LastFailoverErr, service.PlatformGemini, streamStarted)
 						return
 					case FailoverCanceled:
 						return
 					}
 				}
+				h.incrGroupStatus(c.Request.Context(), apiKey.GroupID, false, reqLog)
 				wroteFallback := h.ensureForwardErrorResponse(c, streamStarted)
 				reqLog.Error("gateway.forward_failed",
 					zap.Int64("account_id", account.ID),
@@ -421,6 +427,9 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 				)
 				return
 			}
+
+			// 分组状态计数：成功
+			h.incrGroupStatus(c.Request.Context(), apiKey.GroupID, true, reqLog)
 
 			// RPM 计数递增（Forward 成功后）
 			// 注意：TOCTOU 竞态是已知且可接受的设计权衡，与 WindowCost 一致的 soft-limit 模式。
@@ -657,6 +666,7 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 				// Beta policy block: return 400 immediately, no failover
 				var betaBlockedErr *service.BetaBlockedError
 				if errors.As(err, &betaBlockedErr) {
+					h.incrGroupStatus(c.Request.Context(), currentAPIKey.GroupID, false, reqLog)
 					h.errorResponse(c, http.StatusBadRequest, "invalid_request_error", betaBlockedErr.Message)
 					return
 				}
@@ -672,6 +682,7 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 						fallbackGroup, err := h.gatewayService.ResolveGroupByID(c.Request.Context(), *fallbackGroupID)
 						if err != nil {
 							reqLog.Warn("gateway.resolve_fallback_group_failed", zap.Int64("fallback_group_id", *fallbackGroupID), zap.Error(err))
+							h.incrGroupStatus(c.Request.Context(), currentAPIKey.GroupID, false, reqLog)
 							_ = h.antigravityGatewayService.WriteMappedClaudeError(c, account, promptTooLongErr.StatusCode, promptTooLongErr.RequestID, promptTooLongErr.Body)
 							return
 						}
@@ -683,6 +694,7 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 								zap.String("fallback_platform", fallbackGroup.Platform),
 								zap.String("fallback_subscription_type", fallbackGroup.SubscriptionType),
 							)
+							h.incrGroupStatus(c.Request.Context(), currentAPIKey.GroupID, false, reqLog)
 							_ = h.antigravityGatewayService.WriteMappedClaudeError(c, account, promptTooLongErr.StatusCode, promptTooLongErr.RequestID, promptTooLongErr.Body)
 							return
 						}
@@ -701,6 +713,7 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 						retryWithFallback = true
 						break
 					}
+					h.incrGroupStatus(c.Request.Context(), currentAPIKey.GroupID, false, reqLog)
 					_ = h.antigravityGatewayService.WriteMappedClaudeError(c, account, promptTooLongErr.StatusCode, promptTooLongErr.RequestID, promptTooLongErr.Body)
 					return
 				}
@@ -709,14 +722,17 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 					action := fs.HandleFailoverError(c.Request.Context(), h.gatewayService, account.ID, account.Platform, failoverErr)
 					switch action {
 					case FailoverContinue:
+						// failover 继续尝试下一个账号，不计入分组状态
 						continue
 					case FailoverExhausted:
+						h.incrGroupStatus(c.Request.Context(), currentAPIKey.GroupID, false, reqLog)
 						h.handleFailoverExhausted(c, fs.LastFailoverErr, account.Platform, streamStarted)
 						return
 					case FailoverCanceled:
 						return
 					}
 				}
+				h.incrGroupStatus(c.Request.Context(), currentAPIKey.GroupID, false, reqLog)
 				wroteFallback := h.ensureForwardErrorResponse(c, streamStarted)
 				reqLog.Error("gateway.forward_failed",
 					zap.Int64("account_id", account.ID),
@@ -725,6 +741,9 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 				)
 				return
 			}
+
+			// 分组状态计数：成功
+			h.incrGroupStatus(c.Request.Context(), currentAPIKey.GroupID, true, reqLog)
 
 			// RPM 计数递增（Forward 成功后）
 			// 注意：TOCTOU 竞态是已知且可接受的设计权衡，与 WindowCost 一致的 soft-limit 模式。
@@ -1657,6 +1676,23 @@ func (h *GatewayHandler) maybeLogCompatibilityFallbackMetrics(reqLog *zap.Logger
 		zap.Float64("session_hash_legacy_read_hit_rate", metrics.SessionHashLegacyReadHitRate),
 		zap.Int64("metadata_legacy_fallback_total", metrics.MetadataLegacyFallbackTotal),
 	)
+}
+
+// incrGroupStatus 递增分组状态计数器（成功 + 总量，或仅总量）
+// 仅在 groupID 非 nil 且 groupStatusCache 已注入时执行，失败只记 warn 不阻塞请求。
+func (h *GatewayHandler) incrGroupStatus(ctx context.Context, groupID *int64, success bool, log *zap.Logger) {
+	if groupID == nil || h.groupStatusCache == nil {
+		return
+	}
+	gid := *groupID
+	if err := h.groupStatusCache.IncrTotal(ctx, gid); err != nil {
+		log.Warn("gateway.group_status_incr_total_failed", zap.Int64("group_id", gid), zap.Error(err))
+	}
+	if success {
+		if err := h.groupStatusCache.IncrSuccess(ctx, gid); err != nil {
+			log.Warn("gateway.group_status_incr_success_failed", zap.Int64("group_id", gid), zap.Error(err))
+		}
+	}
 }
 
 func (h *GatewayHandler) submitUsageRecordTask(task service.UsageRecordTask) {

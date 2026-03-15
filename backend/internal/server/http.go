@@ -41,6 +41,8 @@ func ProvideRouter(
 	settingRepo service.ResellerSettingRepository,
 	redisClient *redis.Client,
 	db *sql.DB,
+	groupService *service.GroupService,
+	groupStatusCache service.GroupStatusCache,
 ) *gin.Engine {
 	if cfg.Server.Mode == "release" {
 		gin.SetMode(gin.ReleaseMode)
@@ -61,7 +63,7 @@ func ProvideRouter(
 		}
 	}
 
-	return SetupRouter(r, handlers, jwtAuth, adminAuth, apiKeyAuth, resellerAuth, apiKeyService, subscriptionService, opsService, settingService, domainRepo, settingRepo, cfg, redisClient, db)
+	return SetupRouter(r, handlers, jwtAuth, adminAuth, apiKeyAuth, resellerAuth, apiKeyService, subscriptionService, opsService, settingService, domainRepo, settingRepo, cfg, redisClient, db, groupService, groupStatusCache)
 }
 
 // ProvideHTTPServer 提供 HTTP 服务器

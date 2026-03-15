@@ -49,13 +49,11 @@ export default {
     degraded: 'Degraded Performance',
     down: 'Service Disruption',
     unknown: 'Unknown',
-    uptime: 'uptime',
-    daysAgo: '{days} days ago',
-    today: 'Today',
     lastUpdated: 'Last updated',
-    dataFrom: 'status data from',
-    loadFailed: 'Failed to load status page',
-    goToStatusPage: 'Go to status.claude.com'
+    loadFailed: 'Failed to load status',
+    retry: 'Retry',
+    requests: 'requests',
+    noGroups: 'No active groups'
   },
 
   // Docs

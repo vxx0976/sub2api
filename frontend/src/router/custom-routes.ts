@@ -52,12 +52,13 @@ export const customRoutes: RouteRecordRaw[] = [
   {
     path: '/status',
     name: 'Status',
-    beforeEnter() {
-      window.location.href = 'https://status.claude.com'
-      return false
-    },
-    component: () => import('@/views/HomeView.vue'), // placeholder, never rendered
-    meta: { requiresAuth: false }
+    component: () => import('@/views/StatusView.vue'),
+    meta: {
+      requiresAuth: false,
+      title: 'System Status',
+      titleKey: 'status.title',
+      descriptionKey: 'status.description'
+    }
   },
 
   // ==================== Merchant Routes ====================

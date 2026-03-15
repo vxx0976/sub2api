@@ -49,13 +49,11 @@ export default {
     degraded: '性能下降',
     down: '服务中断',
     unknown: '未知',
-    uptime: '正常运行时间',
-    daysAgo: '{days} 天前',
-    today: '今天',
     lastUpdated: '最后更新',
-    dataFrom: '状态数据来自',
-    loadFailed: '状态页面加载失败',
-    goToStatusPage: '前往 status.claude.com 查看'
+    loadFailed: '加载状态失败',
+    retry: '重试',
+    requests: '次请求',
+    noGroups: '暂无活跃分组'
   },
 
   // Docs
