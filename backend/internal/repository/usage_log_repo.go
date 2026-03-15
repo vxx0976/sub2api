@@ -60,12 +60,14 @@ var usageLogInsertArgTypes = [...]string{
 	"integer",
 	"text",
 	"text",
+	"text",
 	"integer",
 	"text",
 	"text",
 	"text",
 	"text",
 	"boolean",
+	"numeric",
 	"timestamptz",
 }
 
@@ -729,16 +731,18 @@ func buildUsageLogBatchInsertQuery(keys []string, preparedByKey map[string]usage
 			first_token_ms,
 			user_agent,
 			ip_address,
+			country_code,
 			image_count,
 			image_size,
 			media_type,
 			service_tier,
 			reasoning_effort,
 			cache_ttl_overridden,
+			merchant_rate_snapshot,
 			created_at
 		) AS (VALUES `)
 
-	args := make([]any, 0, len(keys)*37)
+	args := make([]any, 0, len(keys)*39)
 	argPos := 1
 	for idx, key := range keys {
 		if idx > 0 {
@@ -796,12 +800,14 @@ func buildUsageLogBatchInsertQuery(keys []string, preparedByKey map[string]usage
 				first_token_ms,
 				user_agent,
 				ip_address,
+				country_code,
 				image_count,
 				image_size,
 				media_type,
 				service_tier,
 				reasoning_effort,
 				cache_ttl_overridden,
+				merchant_rate_snapshot,
 				created_at
 			)
 			SELECT
@@ -834,12 +840,14 @@ func buildUsageLogBatchInsertQuery(keys []string, preparedByKey map[string]usage
 				first_token_ms,
 				user_agent,
 				ip_address,
+				country_code,
 				image_count,
 				image_size,
 				media_type,
 				service_tier,
 				reasoning_effort,
 				cache_ttl_overridden,
+				merchant_rate_snapshot,
 				created_at
 			FROM input
 			ON CONFLICT (request_id, api_key_id) DO NOTHING
@@ -912,16 +920,18 @@ func buildUsageLogBestEffortInsertQuery(preparedList []usageLogInsertPrepared) (
 			first_token_ms,
 			user_agent,
 			ip_address,
+			country_code,
 			image_count,
 			image_size,
 			media_type,
 			service_tier,
 			reasoning_effort,
 			cache_ttl_overridden,
+			merchant_rate_snapshot,
 			created_at
 		) AS (VALUES `)
 
-	args := make([]any, 0, len(preparedList)*36)
+	args := make([]any, 0, len(preparedList)*38)
 	argPos := 1
 	for idx, prepared := range preparedList {
 		if idx > 0 {
@@ -976,12 +986,14 @@ func buildUsageLogBestEffortInsertQuery(preparedList []usageLogInsertPrepared) (
 			first_token_ms,
 			user_agent,
 			ip_address,
+			country_code,
 			image_count,
 			image_size,
 			media_type,
 			service_tier,
 			reasoning_effort,
 			cache_ttl_overridden,
+			merchant_rate_snapshot,
 			created_at
 		)
 		SELECT
@@ -1014,12 +1026,14 @@ func buildUsageLogBestEffortInsertQuery(preparedList []usageLogInsertPrepared) (
 			first_token_ms,
 			user_agent,
 			ip_address,
+			country_code,
 			image_count,
 			image_size,
 			media_type,
 			service_tier,
 			reasoning_effort,
 			cache_ttl_overridden,
+			merchant_rate_snapshot,
 			created_at
 		FROM input
 		ON CONFLICT (request_id, api_key_id) DO NOTHING
@@ -1060,12 +1074,14 @@ func execUsageLogInsertNoResult(ctx context.Context, sqlq sqlExecutor, prepared 
 			first_token_ms,
 			user_agent,
 			ip_address,
+			country_code,
 			image_count,
 			image_size,
 			media_type,
 			service_tier,
 			reasoning_effort,
 			cache_ttl_overridden,
+			merchant_rate_snapshot,
 			created_at
 		) VALUES (
 			$1, $2, $3, $4, $5,
@@ -1073,7 +1089,7 @@ func execUsageLogInsertNoResult(ctx context.Context, sqlq sqlExecutor, prepared 
 			$8, $9, $10, $11,
 			$12, $13,
 			$14, $15, $16, $17, $18, $19,
-			$20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36
+			$20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38
 		)
 		ON CONFLICT (request_id, api_key_id) DO NOTHING
 	`, prepared.args...)

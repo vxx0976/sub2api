@@ -194,18 +194,21 @@ const rpmClass = computed(() => {
   return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
 })
 
+// 是否显示各维度配额（apikey / bedrock 类型）
+const isQuotaEligible = computed(() => props.account.type === 'apikey' || props.account.type === 'bedrock')
+
 // API Key 配额显示
-const showDailyQuota = computed(() =>
-  props.account.type === 'apikey' && (props.account.quota_daily_limit ?? 0) > 0
-)
+const showDailyQuota = computed(() => {
+  return isQuotaEligible.value && (props.account.quota_daily_limit ?? 0) > 0
+})
 
-const showWeeklyQuota = computed(() =>
-  props.account.type === 'apikey' && (props.account.quota_weekly_limit ?? 0) > 0
-)
+const showWeeklyQuota = computed(() => {
+  return isQuotaEligible.value && (props.account.quota_weekly_limit ?? 0) > 0
+})
 
-const showTotalQuota = computed(() =>
-  props.account.type === 'apikey' && (props.account.quota_limit ?? 0) > 0
-)
+const showTotalQuota = computed(() => {
+  return isQuotaEligible.value && (props.account.quota_limit ?? 0) > 0
+})
 
 // RPM 提示文字
 const rpmTooltip = computed(() => {
@@ -237,25 +240,5 @@ const rpmTooltip = computed(() => {
   }
 })
 
-// 是否显示各维度配额（apikey / bedrock 类型）
-const isQuotaEligible = computed(() => props.account.type === 'apikey' || props.account.type === 'bedrock')
-
-const showDailyQuota = computed(() => {
-  return isQuotaEligible.value && (props.account.quota_daily_limit ?? 0) > 0
-})
-
-const showWeeklyQuota = computed(() => {
-  return isQuotaEligible.value && (props.account.quota_weekly_limit ?? 0) > 0
-})
-
-const showTotalQuota = computed(() => {
-  return isQuotaEligible.value && (props.account.quota_limit ?? 0) > 0
-})
-
-// 格式化费用显示
-const formatCost = (value: number | null | undefined) => {
-  if (value === null || value === undefined) return '0'
-  return value.toFixed(2)
-}
 
 </script>
