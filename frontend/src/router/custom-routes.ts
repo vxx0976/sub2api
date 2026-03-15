@@ -50,6 +50,16 @@ export const customRoutes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/docs/openclaw',
+    name: 'DocsOpenclaw',
+    component: () => import('@/views/user/OpenclawDocsView.vue'),
+    meta: {
+      requiresAuth: false,
+      title: 'Openclaw Guide',
+      titleKey: 'docs.openclaw.title'
+    }
+  },
+  {
     path: '/status',
     name: 'Status',
     component: () => import('@/views/StatusView.vue'),

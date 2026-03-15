@@ -257,6 +257,7 @@ export default {
       cliDesc: '在终端中使用 Claude Code 命令行工具',
       claudeDesc: 'Anthropic 官方 AI 编程助手，深度集成终端与编辑器，支持多文件理解与代码生成。',
       codexDesc: 'OpenAI 出品的代码智能助手，轻量快速，适合在终端中完成日常编程任务。',
+      openclawDesc: 'Clawdbot 团队协作 AI 编程平台，支持多模型切换、团队共享工作区和 TUI 交互界面。',
       tipsTitle: '使用技巧',
       tipsDesc: '常用命令、快捷键和最佳实践',
       quickInfo: {
@@ -402,6 +403,75 @@ export default {
       compare: {
         title: 'Codex vs Claude 对比',
         desc: '两款工具均可使用本中转服务，适合不同使用习惯。',
+      },
+    },
+    // Openclaw / Clawdbot 配置教程
+    openclaw: {
+      title: 'Openclaw 配置教程',
+      subtitle: '通过 Clawdbot / Openclaw 连接第三方 Claude API 服务',
+      yourKey: 'sk-xxx',
+      prereq: {
+        title: '前提条件',
+        item1: '已安装 Node.js 环境',
+        item2: '拥有本站的 API Key（在密钥管理页面创建）',
+        item3: '已安装 openclaw 或准备安装',
+      },
+      step1: {
+        title: '安装 Openclaw',
+        desc: '通过 npm 全局安装 openclaw：',
+      },
+      step2: {
+        title: '初始化',
+        desc: '运行 onboard 命令完成初始化并安装守护进程：',
+      },
+      step3: {
+        title: '修改配置文件',
+        desc: '配置文件位置：',
+        editDesc: '在配置文件中添加 models 部分，注意修改 apiKey：',
+        changeKey: '改成自己的 API Key',
+        changeWorkspace: '改成自己的路径',
+      },
+      step4: {
+        title: '配置参数说明',
+        param: '参数',
+        description: '说明',
+        baseUrl: '第三方 API 的地址，不需要加 /v1',
+        apiKey: '你的 API Key',
+        api: '固定为 anthropic-messages',
+        id: '模型 ID，需与 API 支持的模型名一致',
+        name: '自定义显示名称',
+        contextWindow: '上下文窗口大小，一般为 170000',
+        maxTokens: '最大输出 token 数，建议 64000',
+        headers: '请求头，建议添加 User-Agent 和 Content-Type',
+      },
+      step5: {
+        title: '切换模型',
+      },
+      step6: {
+        title: '重启 Gateway',
+        desc: '配置完成后，重启 gateway 使配置生效：',
+      },
+      step7: {
+        title: '验证配置',
+        desc1: '查看已配置的模型：',
+        desc2: '查看模型状态：',
+      },
+      step8: {
+        title: '开始使用',
+        tui: '启动 TUI 交互界面',
+        message: '或直接发送消息',
+        hello: '你好',
+      },
+      faq: {
+        title: '常见问题',
+        q1: 'Q：连接成功但没有输出？',
+        a1: '请检查以下配置：maxTokens 是否设置足够大（建议 64000），headers 是否添加了 User-Agent 和 Content-Type，baseUrl 不要加 /v1 后缀。',
+        q2: 'Q：如何查看日志排查问题？',
+        a2: '运行 openclaw logs --tail 命令查看实时日志输出。',
+        q3: 'Q：如何切换不同的模型？',
+        a3: '运行 openclaw models list 查看可用模型，然后运行 openclaw models set mayione/模型名 进行切换。',
+        q4: 'Q：API Key 可以使用环境变量吗？',
+        a4: '可以，在配置文件中使用 ${ENV_VAR_NAME} 格式，例如 "apiKey": "${ANTHROPIC_AUTH_TOKEN}"。',
       },
     },
     // CLI 配置教程

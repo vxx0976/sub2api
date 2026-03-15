@@ -257,6 +257,7 @@ export default {
       cliDesc: 'Use Claude Code command-line tool in your terminal',
       claudeDesc: "Anthropic's official AI coding assistant with deep terminal and editor integration for multi-file understanding and code generation.",
       codexDesc: "OpenAI's lightweight code assistant, fast and focused on everyday coding tasks directly in your terminal.",
+      openclawDesc: "Clawdbot team collaboration AI coding platform with multi-model switching, shared workspaces, and TUI interface.",
       tipsTitle: 'Tips & Tricks',
       tipsDesc: 'Common commands, shortcuts, and best practices',
       quickInfo: {
@@ -402,6 +403,75 @@ export default {
       compare: {
         title: 'Codex vs Claude Comparison',
         desc: 'Both tools work with this relay service — choose based on your preference.',
+      },
+    },
+    // Openclaw / Clawdbot setup guide
+    openclaw: {
+      title: 'Openclaw Setup Guide',
+      subtitle: 'Connect to third-party Claude API service via Clawdbot / Openclaw',
+      yourKey: 'sk-xxx',
+      prereq: {
+        title: 'Prerequisites',
+        item1: 'Node.js installed',
+        item2: 'Have an API Key from this site (create one in Key Management)',
+        item3: 'Openclaw installed or ready to install',
+      },
+      step1: {
+        title: 'Install Openclaw',
+        desc: 'Install openclaw globally via npm:',
+      },
+      step2: {
+        title: 'Initialize',
+        desc: 'Run the onboard command to initialize and install the daemon:',
+      },
+      step3: {
+        title: 'Edit Config File',
+        desc: 'Config file location:',
+        editDesc: 'Add the models section to the config file, remember to change apiKey:',
+        changeKey: 'Change to your API Key',
+        changeWorkspace: 'Change to your path',
+      },
+      step4: {
+        title: 'Parameter Reference',
+        param: 'Parameter',
+        description: 'Description',
+        baseUrl: 'Third-party API address, no /v1 suffix needed',
+        apiKey: 'Your API Key',
+        api: 'Fixed as anthropic-messages',
+        id: 'Model ID, must match API-supported model names',
+        name: 'Custom display name',
+        contextWindow: 'Context window size, typically 170000',
+        maxTokens: 'Max output tokens, recommended 64000',
+        headers: 'Request headers, recommended to add User-Agent and Content-Type',
+      },
+      step5: {
+        title: 'Switch Model',
+      },
+      step6: {
+        title: 'Restart Gateway',
+        desc: 'After configuration, restart the gateway to apply changes:',
+      },
+      step7: {
+        title: 'Verify Config',
+        desc1: 'List configured models:',
+        desc2: 'Check model status:',
+      },
+      step8: {
+        title: 'Start Using',
+        tui: 'Launch TUI interactive interface',
+        message: 'Or send a message directly',
+        hello: 'Hello',
+      },
+      faq: {
+        title: 'FAQ',
+        q1: 'Q: Connected but no output?',
+        a1: 'Check these settings: maxTokens should be large enough (recommended 64000), headers should include User-Agent and Content-Type, baseUrl should not have /v1 suffix.',
+        q2: 'Q: How to view logs for troubleshooting?',
+        a2: 'Run openclaw logs --tail to view real-time log output.',
+        q3: 'Q: How to switch between models?',
+        a3: 'Run openclaw models list to see available models, then run openclaw models set mayione/model-name to switch.',
+        q4: 'Q: Can API Key use environment variables?',
+        a4: 'Yes, use ${ENV_VAR_NAME} format in the config file, e.g. "apiKey": "${ANTHROPIC_AUTH_TOKEN}".',
       },
     },
     // CLI setup guide
