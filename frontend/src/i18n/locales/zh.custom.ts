@@ -53,7 +53,12 @@ export default {
     loadFailed: '加载状态失败',
     retry: '重试',
     requests: '次请求',
-    noGroups: '暂无活跃分组'
+    noGroups: '暂无活跃分组',
+    daysAgo: '{days} 天前',
+    uptime: '正常运行时间',
+    today: '今天',
+    noData: '无数据',
+    uptimeTitle: '30 天运行记录'
   },
 
   // Docs

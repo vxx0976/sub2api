@@ -1679,19 +1679,16 @@ func (h *GatewayHandler) maybeLogCompatibilityFallbackMetrics(reqLog *zap.Logger
 }
 
 // incrGroupStatus 递增分组状态计数器（成功 + 总量，或仅总量）
-// 仅在 groupID 非 nil 且 groupStatusCache 已注入时执行，失败只记 warn 不阻塞请求。
-func (h *GatewayHandler) incrGroupStatus(ctx context.Context, groupID *int64, success bool, log *zap.Logger) {
+// 使用 detached context 避免请求取消导致计数丢失，失败只记 warn 不阻塞请求。
+func (h *GatewayHandler) incrGroupStatus(_ context.Context, groupID *int64, success bool, log *zap.Logger) {
 	if groupID == nil || h.groupStatusCache == nil {
 		return
 	}
 	gid := *groupID
-	if err := h.groupStatusCache.IncrTotal(ctx, gid); err != nil {
-		log.Warn("gateway.group_status_incr_total_failed", zap.Int64("group_id", gid), zap.Error(err))
-	}
-	if success {
-		if err := h.groupStatusCache.IncrSuccess(ctx, gid); err != nil {
-			log.Warn("gateway.group_status_incr_success_failed", zap.Int64("group_id", gid), zap.Error(err))
-		}
+	detachedCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	if err := h.groupStatusCache.Incr(detachedCtx, gid, success); err != nil {
+		log.Warn("gateway.group_status_incr_failed", zap.Int64("group_id", gid), zap.Bool("success", success), zap.Error(err))
 	}
 }
 

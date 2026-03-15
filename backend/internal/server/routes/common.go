@@ -3,7 +3,9 @@ package routes
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/service"
@@ -17,6 +19,30 @@ type StatusDependencies struct {
 	RedisClient      *redis.Client
 	GroupService     *service.GroupService
 	GroupStatusCache service.GroupStatusCache
+}
+
+// groupStatusCache 内存缓存，避免公开端点频繁查询 Redis
+type groupStatusRespCache struct {
+	mu       sync.RWMutex
+	data     []byte
+	cachedAt time.Time
+	ttl      time.Duration
+}
+
+func (c *groupStatusRespCache) get() ([]byte, bool) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	if c.data == nil || time.Since(c.cachedAt) > c.ttl {
+		return nil, false
+	}
+	return c.data, true
+}
+
+func (c *groupStatusRespCache) set(data []byte) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.data = data
+	c.cachedAt = time.Now()
 }
 
 // RegisterCommonRoutes 注册通用路由（健康检查、状态等）
@@ -63,8 +89,15 @@ func RegisterCommonRoutes(r *gin.Engine, deps *StatusDependencies) {
 		})
 	})
 
-	// 分组实时状态接口（公开，无需认证）
+	// 分组实时状态接口（公开，无需认证，30 秒内存缓存）
+	respCache := &groupStatusRespCache{ttl: 30 * time.Second}
 	r.GET("/api/v1/group-status", func(c *gin.Context) {
+		// 命中缓存直接返回
+		if cached, ok := respCache.get(); ok {
+			c.Data(http.StatusOK, "application/json; charset=utf-8", cached)
+			return
+		}
+
 		if deps.GroupService == nil || deps.GroupStatusCache == nil {
 			c.JSON(http.StatusServiceUnavailable, gin.H{
 				"code":    1,
@@ -99,12 +132,28 @@ func RegisterCommonRoutes(r *gin.Engine, deps *StatusDependencies) {
 			return
 		}
 
+		const historyDays = 30
+		dailyHistory, err := deps.GroupStatusCache.GetDailyHistory(ctx, groupIDs, historyDays)
+		if err != nil {
+			// 日维度数据获取失败不影响实时状态
+			dailyHistory = nil
+		}
+
+		type dailyItem struct {
+			Date    string  `json:"date"`
+			Status  string  `json:"status"`
+			Rate    float64 `json:"rate"`
+			Total   int64   `json:"total"`
+		}
+
 		type groupStatusItem struct {
-			ID            int64   `json:"id"`
-			Name          string  `json:"name"`
-			Status        string  `json:"status"`
-			SuccessRate   float64 `json:"success_rate"`
-			TotalRequests int64   `json:"total_requests"`
+			ID            int64       `json:"id"`
+			Name          string      `json:"name"`
+			Status        string      `json:"status"`
+			SuccessRate   float64     `json:"success_rate"`
+			TotalRequests int64       `json:"total_requests"`
+			Uptime30d     float64     `json:"uptime_30d"`
+			DailyHistory  []dailyItem `json:"daily_history"`
 		}
 
 		items := make([]groupStatusItem, 0, len(groups))
@@ -115,9 +164,11 @@ func RegisterCommonRoutes(r *gin.Engine, deps *StatusDependencies) {
 				Name:          g.Name,
 				TotalRequests: data.Total,
 			}
+
+			// 实时状态
 			if data.Total == 0 {
-				item.Status = "unknown"
-				item.SuccessRate = 0
+				item.Status = "operational" // 无请求时默认正常
+				item.SuccessRate = 100
 			} else {
 				rate := float64(data.Success) / float64(data.Total) * 100
 				item.SuccessRate = rate
@@ -130,16 +181,58 @@ func RegisterCommonRoutes(r *gin.Engine, deps *StatusDependencies) {
 					item.Status = "down"
 				}
 			}
+
+			// 30 天日维度历史
+			if history, ok := dailyHistory[g.ID]; ok {
+				var totalOK, totalAll int64
+				item.DailyHistory = make([]dailyItem, len(history))
+				for i, d := range history {
+					di := dailyItem{Date: d.Date, Total: d.Total}
+					if d.Total == 0 {
+						di.Status = "operational" // 无数据的天默认正常
+						di.Rate = 100
+					} else {
+						di.Rate = float64(d.Success) / float64(d.Total) * 100
+						switch {
+						case di.Rate >= 99:
+							di.Status = "operational"
+						case di.Rate >= 95:
+							di.Status = "degraded"
+						default:
+							di.Status = "down"
+						}
+					}
+					totalOK += d.Success
+					totalAll += d.Total
+					item.DailyHistory[i] = di
+				}
+				if totalAll > 0 {
+					item.Uptime30d = float64(totalOK) / float64(totalAll) * 100
+				} else {
+					item.Uptime30d = 100
+				}
+			} else {
+				item.Uptime30d = 100
+				item.DailyHistory = []dailyItem{}
+			}
+
 			items = append(items, item)
 		}
 
-		c.JSON(http.StatusOK, gin.H{
+		resp := gin.H{
 			"code": 0,
 			"data": gin.H{
 				"groups":     items,
 				"updated_at": time.Now().UTC().Format(time.RFC3339),
 			},
-		})
+		}
+		// 序列化并缓存
+		if b, err := json.Marshal(resp); err == nil {
+			respCache.set(b)
+			c.Data(http.StatusOK, "application/json; charset=utf-8", b)
+		} else {
+			c.JSON(http.StatusOK, resp)
+		}
 	})
 }
 

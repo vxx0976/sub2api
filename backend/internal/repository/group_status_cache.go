@@ -4,28 +4,22 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/redis/go-redis/v9"
 )
 
-// 分组状态计数器缓存常量定义
+// 分组状态计数器缓存
 //
-// 设计说明：
-// 使用 Redis 简单计数器跟踪每个分组在 5 分钟窗口内的请求成功/总量：
-// - Key: gs:{groupID}:ok:{5minBucket} / gs:{groupID}:total:{5minBucket}
-// - Value: 计数
-// - TTL: 10 分钟（覆盖当前窗口 + 冗余）
-//
-// 使用 TxPipeline（MULTI/EXEC）执行 INCR + EXPIRE，保证原子性且兼容 Redis Cluster。
-// 通过 rdb.Time() 获取服务端时间，避免多实例时钟不同步。
+// 双维度计数：
+//   - 5 分钟窗口：用于实时状态判断（Key: gs:{gid}:ok:{bucket} / gs:{gid}:total:{bucket}，TTL 10min）
+//   - 日维度：用于 30 天 uptime 条形图（Key: gs:{gid}:ok:d:{YYYYMMDD} / gs:{gid}:total:d:{YYYYMMDD}，TTL 31d）
 const (
-	gsKeyPrefix = "gs:"
-	gsKeyTTL    = 10 * time.Minute
-	// 5 分钟窗口 = unix / 300
+	gsKeyPrefix     = "gs:"
+	gsKeyTTL        = 10 * time.Minute
 	gsBucketSeconds = 300
+	gsDailyTTL      = 31 * 24 * time.Hour
 )
 
 // GroupStatusCacheImpl 分组状态计数器 Redis 实现
@@ -38,72 +32,84 @@ func NewGroupStatusCache(rdb *redis.Client) service.GroupStatusCache {
 	return &GroupStatusCacheImpl{rdb: rdb}
 }
 
-// currentBucket 获取当前 5 分钟窗口的 bucket 值
-func (c *GroupStatusCacheImpl) currentBucket(ctx context.Context) (int64, error) {
-	serverTime, err := c.rdb.Time(ctx).Result()
+// getServerTime 获取 Redis 服务端时间
+func (c *GroupStatusCacheImpl) getServerTime(ctx context.Context) (time.Time, error) {
+	t, err := c.rdb.Time(ctx).Result()
 	if err != nil {
-		return 0, fmt.Errorf("redis TIME: %w", err)
+		return time.Time{}, fmt.Errorf("redis TIME: %w", err)
 	}
-	return serverTime.Unix() / gsBucketSeconds, nil
+	return t, nil
 }
 
-// IncrSuccess 递增分组成功计数
-func (c *GroupStatusCacheImpl) IncrSuccess(ctx context.Context, groupID int64) error {
-	bucket, err := c.currentBucket(ctx)
+// Incr 递增分组计数（总量 +1，success 为 true 时成功 +1）
+// 单次 TIME 调用 + 单个 TxPipeline，避免 bucket 边界分裂
+func (c *GroupStatusCacheImpl) Incr(ctx context.Context, groupID int64, success bool) error {
+	serverTime, err := c.getServerTime(ctx)
 	if err != nil {
-		return fmt.Errorf("group status incr success: %w", err)
+		return fmt.Errorf("group status incr: %w", err)
 	}
 
-	key := fmt.Sprintf("%s%d:ok:%d", gsKeyPrefix, groupID, bucket)
+	bucket := serverTime.Unix() / gsBucketSeconds
+	dateStr := serverTime.UTC().Format("20060102")
+
 	pipe := c.rdb.TxPipeline()
-	pipe.Incr(ctx, key)
-	pipe.Expire(ctx, key, gsKeyTTL)
+
+	// 5 分钟窗口 - total
+	totalBucketKey := fmt.Sprintf("%s%d:total:%d", gsKeyPrefix, groupID, bucket)
+	pipe.Incr(ctx, totalBucketKey)
+	pipe.Expire(ctx, totalBucketKey, gsKeyTTL)
+
+	// 日维度 - total
+	totalDailyKey := fmt.Sprintf("%s%d:total:d:%s", gsKeyPrefix, groupID, dateStr)
+	pipe.Incr(ctx, totalDailyKey)
+	pipe.Expire(ctx, totalDailyKey, gsDailyTTL)
+
+	if success {
+		// 5 分钟窗口 - ok
+		okBucketKey := fmt.Sprintf("%s%d:ok:%d", gsKeyPrefix, groupID, bucket)
+		pipe.Incr(ctx, okBucketKey)
+		pipe.Expire(ctx, okBucketKey, gsKeyTTL)
+
+		// 日维度 - ok
+		okDailyKey := fmt.Sprintf("%s%d:ok:d:%s", gsKeyPrefix, groupID, dateStr)
+		pipe.Incr(ctx, okDailyKey)
+		pipe.Expire(ctx, okDailyKey, gsDailyTTL)
+	}
 
 	if _, err := pipe.Exec(ctx); err != nil {
-		return fmt.Errorf("group status incr success: %w", err)
+		return fmt.Errorf("group status incr: %w", err)
 	}
 	return nil
 }
 
-// IncrTotal 递增分组总请求计数
-func (c *GroupStatusCacheImpl) IncrTotal(ctx context.Context, groupID int64) error {
-	bucket, err := c.currentBucket(ctx)
-	if err != nil {
-		return fmt.Errorf("group status incr total: %w", err)
-	}
-
-	key := fmt.Sprintf("%s%d:total:%d", gsKeyPrefix, groupID, bucket)
-	pipe := c.rdb.TxPipeline()
-	pipe.Incr(ctx, key)
-	pipe.Expire(ctx, key, gsKeyTTL)
-
-	if _, err := pipe.Exec(ctx); err != nil {
-		return fmt.Errorf("group status incr total: %w", err)
-	}
-	return nil
-}
-
-// GetGroupStatuses 批量获取多个分组的状态计数
+// GetGroupStatuses 批量获取多个分组的实时状态计数（当前 + 上一个 5 分钟窗口，消除桶边界冷启动）
 func (c *GroupStatusCacheImpl) GetGroupStatuses(ctx context.Context, groupIDs []int64) (map[int64]service.GroupStatusData, error) {
 	if len(groupIDs) == 0 {
 		return map[int64]service.GroupStatusData{}, nil
 	}
 
-	bucket, err := c.currentBucket(ctx)
+	serverTime, err := c.getServerTime(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("group status batch get: %w", err)
 	}
-	bucketStr := strconv.FormatInt(bucket, 10)
+	currentBucket := serverTime.Unix() / gsBucketSeconds
+	prevBucket := currentBucket - 1
 
-	// 使用 Pipeline 批量 GET
 	pipe := c.rdb.Pipeline()
-	okCmds := make(map[int64]*redis.StringCmd, len(groupIDs))
-	totalCmds := make(map[int64]*redis.StringCmd, len(groupIDs))
+	type bucketCmds struct {
+		okCur    *redis.StringCmd
+		totalCur *redis.StringCmd
+		okPrev   *redis.StringCmd
+		totalPrev *redis.StringCmd
+	}
+	cmds := make(map[int64]bucketCmds, len(groupIDs))
 	for _, id := range groupIDs {
-		okKey := fmt.Sprintf("%s%d:ok:%s", gsKeyPrefix, id, bucketStr)
-		totalKey := fmt.Sprintf("%s%d:total:%s", gsKeyPrefix, id, bucketStr)
-		okCmds[id] = pipe.Get(ctx, okKey)
-		totalCmds[id] = pipe.Get(ctx, totalKey)
+		cmds[id] = bucketCmds{
+			okCur:    pipe.Get(ctx, fmt.Sprintf("%s%d:ok:%d", gsKeyPrefix, id, currentBucket)),
+			totalCur: pipe.Get(ctx, fmt.Sprintf("%s%d:total:%d", gsKeyPrefix, id, currentBucket)),
+			okPrev:   pipe.Get(ctx, fmt.Sprintf("%s%d:ok:%d", gsKeyPrefix, id, prevBucket)),
+			totalPrev: pipe.Get(ctx, fmt.Sprintf("%s%d:total:%d", gsKeyPrefix, id, prevBucket)),
+		}
 	}
 
 	if _, err := pipe.Exec(ctx); err != nil && !errors.Is(err, redis.Nil) {
@@ -112,14 +118,79 @@ func (c *GroupStatusCacheImpl) GetGroupStatuses(ctx context.Context, groupIDs []
 
 	result := make(map[int64]service.GroupStatusData, len(groupIDs))
 	for _, id := range groupIDs {
+		bc := cmds[id]
 		var data service.GroupStatusData
-		if val, err := okCmds[id].Int64(); err == nil {
-			data.Success = val
+		if val, err := bc.okCur.Int64(); err == nil {
+			data.Success += val
 		}
-		if val, err := totalCmds[id].Int64(); err == nil {
-			data.Total = val
+		if val, err := bc.okPrev.Int64(); err == nil {
+			data.Success += val
+		}
+		if val, err := bc.totalCur.Int64(); err == nil {
+			data.Total += val
+		}
+		if val, err := bc.totalPrev.Int64(); err == nil {
+			data.Total += val
 		}
 		result[id] = data
+	}
+	return result, nil
+}
+
+// GetDailyHistory 获取多个分组最近 N 天的每日状态数据
+func (c *GroupStatusCacheImpl) GetDailyHistory(ctx context.Context, groupIDs []int64, days int) (map[int64][]service.DailyStatusData, error) {
+	if len(groupIDs) == 0 || days <= 0 {
+		return map[int64][]service.DailyStatusData{}, nil
+	}
+
+	serverTime, err := c.getServerTime(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("group status daily history: %w", err)
+	}
+	today := serverTime.UTC()
+
+	// 生成日期列表（从 days-1 天前到今天）
+	dates := make([]string, days)
+	for i := 0; i < days; i++ {
+		d := today.AddDate(0, 0, -(days - 1 - i))
+		dates[i] = d.Format("20060102")
+	}
+
+	// Pipeline 批量读取
+	pipe := c.rdb.Pipeline()
+	type cmdPair struct {
+		ok    *redis.StringCmd
+		total *redis.StringCmd
+	}
+	cmds := make(map[int64][]cmdPair, len(groupIDs))
+	for _, gid := range groupIDs {
+		pairs := make([]cmdPair, days)
+		for i, dateStr := range dates {
+			pairs[i] = cmdPair{
+				ok:    pipe.Get(ctx, fmt.Sprintf("%s%d:ok:d:%s", gsKeyPrefix, gid, dateStr)),
+				total: pipe.Get(ctx, fmt.Sprintf("%s%d:total:d:%s", gsKeyPrefix, gid, dateStr)),
+			}
+		}
+		cmds[gid] = pairs
+	}
+
+	if _, err := pipe.Exec(ctx); err != nil && !errors.Is(err, redis.Nil) {
+		return nil, fmt.Errorf("group status daily history: %w", err)
+	}
+
+	result := make(map[int64][]service.DailyStatusData, len(groupIDs))
+	for _, gid := range groupIDs {
+		history := make([]service.DailyStatusData, days)
+		for i, pair := range cmds[gid] {
+			history[i].Date = dates[i]
+			if val, err := pair.ok.Int64(); err == nil {
+				history[i].Success = val
+			}
+			if val, err := pair.total.Int64(); err == nil {
+				history[i].Total = val
+			}
+		}
+		result[gid] = history
 	}
 	return result, nil
 }

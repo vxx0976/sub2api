@@ -53,7 +53,12 @@ export default {
     loadFailed: 'Failed to load status',
     retry: 'Retry',
     requests: 'requests',
-    noGroups: 'No active groups'
+    noGroups: 'No active groups',
+    daysAgo: '{days} days ago',
+    uptime: 'uptime',
+    today: 'Today',
+    noData: 'No data',
+    uptimeTitle: '30-day uptime history'
   },
 
   // Docs
