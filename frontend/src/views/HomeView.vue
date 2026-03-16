@@ -485,7 +485,7 @@
             {{ t('home.tools.subtitle') }}
           </p>
         </div>
-        <div class="mx-auto mt-8 grid max-w-3xl gap-5 sm:grid-cols-2">
+        <div class="mx-auto mt-8 grid max-w-4xl gap-5 sm:grid-cols-2 lg:grid-cols-3">
           <router-link
             to="/docs/claude"
             class="group flex flex-col rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary-300 hover:shadow-md dark:border-dark-700 dark:bg-dark-800 dark:hover:border-primary-700"
@@ -527,6 +527,30 @@
             </div>
             <p class="flex-1 text-sm leading-relaxed text-gray-500 dark:text-gray-400">{{ t('docs.entry.codexDesc') }}</p>
             <div class="mt-4 flex items-center gap-1 text-sm font-medium text-emerald-600 transition-colors group-hover:text-emerald-700 dark:text-emerald-400">
+              {{ t('docs.entry.viewGuide') }}
+              <svg class="h-4 w-4 transition-transform duration-150 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+              </svg>
+            </div>
+          </router-link>
+
+          <router-link
+            to="/docs/openclaw"
+            class="group flex flex-col rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-300 hover:shadow-md dark:border-dark-700 dark:bg-dark-800 dark:hover:border-violet-700"
+          >
+            <div class="mb-4 flex items-center gap-3">
+              <div class="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 shadow-md shadow-violet-500/25">
+                <svg class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
+                </svg>
+              </div>
+              <div>
+                <h3 class="text-base font-semibold text-gray-900 dark:text-white">Openclaw</h3>
+                <p class="text-xs text-gray-400 dark:text-gray-500">Clawdbot / openclaw</p>
+              </div>
+            </div>
+            <p class="flex-1 text-sm leading-relaxed text-gray-500 dark:text-gray-400">{{ t('docs.entry.openclawDesc') }}</p>
+            <div class="mt-4 flex items-center gap-1 text-sm font-medium text-violet-600 transition-colors group-hover:text-violet-700 dark:text-violet-400">
               {{ t('docs.entry.viewGuide') }}
               <svg class="h-4 w-4 transition-transform duration-150 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
