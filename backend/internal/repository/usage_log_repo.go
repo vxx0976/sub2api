@@ -28,7 +28,7 @@ import (
 	gocache "github.com/patrickmn/go-cache"
 )
 
-const usageLogSelectColumns = "id, user_id, api_key_id, account_id, request_id, model, group_id, subscription_id, input_tokens, output_tokens, cache_creation_tokens, cache_read_tokens, cache_creation_5m_tokens, cache_creation_1h_tokens, input_cost, output_cost, cache_creation_cost, cache_read_cost, total_cost, actual_cost, rate_multiplier, account_rate_multiplier, billing_type, request_type, stream, openai_ws_mode, duration_ms, first_token_ms, user_agent, ip_address, country_code, image_count, image_size, media_type, service_tier, reasoning_effort, cache_ttl_overridden, merchant_rate_snapshot, created_at"
+const usageLogSelectColumns = "id, user_id, api_key_id, account_id, request_id, model, group_id, subscription_id, input_tokens, output_tokens, cache_creation_tokens, cache_read_tokens, cache_creation_5m_tokens, cache_creation_1h_tokens, input_cost, output_cost, cache_creation_cost, cache_read_cost, total_cost, actual_cost, rate_multiplier, account_rate_multiplier, billing_type, request_type, stream, openai_ws_mode, duration_ms, first_token_ms, user_agent, ip_address, country_code, image_count, image_size, media_type, service_tier, reasoning_effort, inbound_endpoint, upstream_endpoint, cache_ttl_overridden, merchant_rate_snapshot, created_at"
 
 var usageLogInsertArgTypes = [...]string{
 	"bigint",
@@ -62,6 +62,8 @@ var usageLogInsertArgTypes = [...]string{
 	"text",
 	"text",
 	"integer",
+	"text",
+	"text",
 	"text",
 	"text",
 	"text",
@@ -307,6 +309,8 @@ func (r *usageLogRepository) createSingle(ctx context.Context, sqlq sqlExecutor,
 			media_type,
 			service_tier,
 			reasoning_effort,
+			inbound_endpoint,
+			upstream_endpoint,
 			cache_ttl_overridden,
 			merchant_rate_snapshot,
 			created_at
@@ -737,12 +741,14 @@ func buildUsageLogBatchInsertQuery(keys []string, preparedByKey map[string]usage
 			media_type,
 			service_tier,
 			reasoning_effort,
+			inbound_endpoint,
+			upstream_endpoint,
 			cache_ttl_overridden,
 			merchant_rate_snapshot,
 			created_at
 		) AS (VALUES `)
 
-	args := make([]any, 0, len(keys)*39)
+	args := make([]any, 0, len(keys)*41)
 	argPos := 1
 	for idx, key := range keys {
 		if idx > 0 {
@@ -806,6 +812,8 @@ func buildUsageLogBatchInsertQuery(keys []string, preparedByKey map[string]usage
 				media_type,
 				service_tier,
 				reasoning_effort,
+				inbound_endpoint,
+				upstream_endpoint,
 				cache_ttl_overridden,
 				merchant_rate_snapshot,
 				created_at
@@ -846,6 +854,8 @@ func buildUsageLogBatchInsertQuery(keys []string, preparedByKey map[string]usage
 				media_type,
 				service_tier,
 				reasoning_effort,
+				inbound_endpoint,
+				upstream_endpoint,
 				cache_ttl_overridden,
 				merchant_rate_snapshot,
 				created_at
@@ -926,6 +936,8 @@ func buildUsageLogBestEffortInsertQuery(preparedList []usageLogInsertPrepared) (
 			media_type,
 			service_tier,
 			reasoning_effort,
+			inbound_endpoint,
+			upstream_endpoint,
 			cache_ttl_overridden,
 			merchant_rate_snapshot,
 			created_at
@@ -992,6 +1004,8 @@ func buildUsageLogBestEffortInsertQuery(preparedList []usageLogInsertPrepared) (
 			media_type,
 			service_tier,
 			reasoning_effort,
+			inbound_endpoint,
+			upstream_endpoint,
 			cache_ttl_overridden,
 			merchant_rate_snapshot,
 			created_at
@@ -1032,6 +1046,8 @@ func buildUsageLogBestEffortInsertQuery(preparedList []usageLogInsertPrepared) (
 			media_type,
 			service_tier,
 			reasoning_effort,
+			inbound_endpoint,
+			upstream_endpoint,
 			cache_ttl_overridden,
 			merchant_rate_snapshot,
 			created_at
@@ -1080,6 +1096,8 @@ func execUsageLogInsertNoResult(ctx context.Context, sqlq sqlExecutor, prepared 
 			media_type,
 			service_tier,
 			reasoning_effort,
+			inbound_endpoint,
+			upstream_endpoint,
 			cache_ttl_overridden,
 			merchant_rate_snapshot,
 			created_at
@@ -1120,6 +1138,8 @@ func prepareUsageLogInsert(log *service.UsageLog) usageLogInsertPrepared {
 	mediaType := nullString(log.MediaType)
 	serviceTier := nullString(log.ServiceTier)
 	reasoningEffort := nullString(log.ReasoningEffort)
+	inboundEndpoint := nullString(log.InboundEndpoint)
+	upstreamEndpoint := nullString(log.UpstreamEndpoint)
 
 	var requestIDArg any
 	if requestID != "" {
@@ -1167,6 +1187,8 @@ func prepareUsageLogInsert(log *service.UsageLog) usageLogInsertPrepared {
 			mediaType,
 			serviceTier,
 			reasoningEffort,
+			inboundEndpoint,
+			upstreamEndpoint,
 			log.CacheTTLOverridden,
 			log.MerchantRateSnapshot,
 			createdAt,
@@ -2223,7 +2245,9 @@ func (r *usageLogRepository) GetUserSpendingRanking(ctx context.Context, startTi
 				actual_cost,
 				requests,
 				tokens,
-				COALESCE(SUM(actual_cost) OVER (), 0) as total_actual_cost
+				COALESCE(SUM(actual_cost) OVER (), 0) as total_actual_cost,
+				COALESCE(SUM(requests) OVER (), 0) as total_requests,
+				COALESCE(SUM(tokens) OVER (), 0) as total_tokens
 			FROM user_spend
 			ORDER BY actual_cost DESC, tokens DESC, user_id ASC
 			LIMIT $3
@@ -2234,7 +2258,9 @@ func (r *usageLogRepository) GetUserSpendingRanking(ctx context.Context, startTi
 			actual_cost,
 			requests,
 			tokens,
-			total_actual_cost
+			total_actual_cost,
+			total_requests,
+			total_tokens
 		FROM ranked
 		ORDER BY actual_cost DESC, tokens DESC, user_id ASC
 	`
@@ -2252,9 +2278,11 @@ func (r *usageLogRepository) GetUserSpendingRanking(ctx context.Context, startTi
 
 	ranking := make([]UserSpendingRankingItem, 0)
 	totalActualCost := 0.0
+	totalRequests := int64(0)
+	totalTokens := int64(0)
 	for rows.Next() {
 		var row UserSpendingRankingItem
-		if err = rows.Scan(&row.UserID, &row.Email, &row.ActualCost, &row.Requests, &row.Tokens, &totalActualCost); err != nil {
+		if err = rows.Scan(&row.UserID, &row.Email, &row.ActualCost, &row.Requests, &row.Tokens, &totalActualCost, &totalRequests, &totalTokens); err != nil {
 			return nil, err
 		}
 		ranking = append(ranking, row)
@@ -2266,6 +2294,8 @@ func (r *usageLogRepository) GetUserSpendingRanking(ctx context.Context, startTi
 	return &UserSpendingRankingResponse{
 		Ranking:         ranking,
 		TotalActualCost: totalActualCost,
+		TotalRequests:   totalRequests,
+		TotalTokens:     totalTokens,
 	}, nil
 }
 
@@ -2589,7 +2619,7 @@ func (r *usageLogRepository) ListWithFilters(ctx context.Context, params paginat
 		args = append(args, *filters.StartTime)
 	}
 	if filters.EndTime != nil {
-		conditions = append(conditions, fmt.Sprintf("created_at <= $%d", len(args)+1))
+		conditions = append(conditions, fmt.Sprintf("created_at < $%d", len(args)+1))
 		args = append(args, *filters.EndTime)
 	}
 
@@ -3066,7 +3096,7 @@ func (r *usageLogRepository) GetGlobalStats(ctx context.Context, startTime, endT
 			COALESCE(SUM(actual_cost), 0) as total_actual_cost,
 			COALESCE(AVG(duration_ms), 0) as avg_duration_ms
 		FROM usage_logs
-		WHERE created_at >= $1 AND created_at <= $2
+		WHERE created_at >= $1 AND created_at < $2
 	`
 
 	stats := &UsageStats{}
@@ -3124,7 +3154,7 @@ func (r *usageLogRepository) GetStatsWithFilters(ctx context.Context, filters Us
 		args = append(args, *filters.StartTime)
 	}
 	if filters.EndTime != nil {
-		conditions = append(conditions, fmt.Sprintf("created_at <= $%d", len(args)+1))
+		conditions = append(conditions, fmt.Sprintf("created_at < $%d", len(args)+1))
 		args = append(args, *filters.EndTime)
 	}
 
@@ -3164,6 +3194,35 @@ func (r *usageLogRepository) GetStatsWithFilters(ctx context.Context, filters Us
 		stats.TotalAccountCost = &totalAccountCost
 	}
 	stats.TotalTokens = stats.TotalInputTokens + stats.TotalOutputTokens + stats.TotalCacheTokens
+
+	start := time.Unix(0, 0).UTC()
+	if filters.StartTime != nil {
+		start = *filters.StartTime
+	}
+	end := time.Now().UTC()
+	if filters.EndTime != nil {
+		end = *filters.EndTime
+	}
+
+	endpoints, endpointErr := r.GetEndpointStatsWithFilters(ctx, start, end, filters.UserID, filters.APIKeyID, filters.AccountID, filters.GroupID, filters.Model, filters.RequestType, filters.Stream, filters.BillingType)
+	if endpointErr != nil {
+		logger.LegacyPrintf("repository.usage_log", "GetEndpointStatsWithFilters failed in GetStatsWithFilters: %v", endpointErr)
+		endpoints = []EndpointStat{}
+	}
+	upstreamEndpoints, upstreamEndpointErr := r.GetUpstreamEndpointStatsWithFilters(ctx, start, end, filters.UserID, filters.APIKeyID, filters.AccountID, filters.GroupID, filters.Model, filters.RequestType, filters.Stream, filters.BillingType)
+	if upstreamEndpointErr != nil {
+		logger.LegacyPrintf("repository.usage_log", "GetUpstreamEndpointStatsWithFilters failed in GetStatsWithFilters: %v", upstreamEndpointErr)
+		upstreamEndpoints = []EndpointStat{}
+	}
+	endpointPaths, endpointPathErr := r.getEndpointPathStatsWithFilters(ctx, start, end, filters.UserID, filters.APIKeyID, filters.AccountID, filters.GroupID, filters.Model, filters.RequestType, filters.Stream, filters.BillingType)
+	if endpointPathErr != nil {
+		logger.LegacyPrintf("repository.usage_log", "getEndpointPathStatsWithFilters failed in GetStatsWithFilters: %v", endpointPathErr)
+		endpointPaths = []EndpointStat{}
+	}
+	stats.Endpoints = endpoints
+	stats.UpstreamEndpoints = upstreamEndpoints
+	stats.EndpointPaths = endpointPaths
+
 	return stats, nil
 }
 
@@ -3175,6 +3234,163 @@ type AccountUsageSummary = usagestats.AccountUsageSummary
 
 // AccountUsageStatsResponse represents the full usage statistics response for an account
 type AccountUsageStatsResponse = usagestats.AccountUsageStatsResponse
+
+// EndpointStat represents endpoint usage statistics row.
+type EndpointStat = usagestats.EndpointStat
+
+func (r *usageLogRepository) getEndpointStatsByColumnWithFilters(ctx context.Context, endpointColumn string, startTime, endTime time.Time, userID, apiKeyID, accountID, groupID int64, model string, requestType *int16, stream *bool, billingType *int8) (results []EndpointStat, err error) {
+	actualCostExpr := "COALESCE(SUM(actual_cost), 0) as actual_cost"
+	if accountID > 0 && userID == 0 && apiKeyID == 0 {
+		actualCostExpr = "COALESCE(SUM(total_cost * COALESCE(account_rate_multiplier, 1)), 0) as actual_cost"
+	}
+
+	query := fmt.Sprintf(`
+		SELECT
+			COALESCE(NULLIF(TRIM(%s), ''), 'unknown') AS endpoint,
+			COUNT(*) AS requests,
+			COALESCE(SUM(input_tokens + output_tokens + cache_creation_tokens + cache_read_tokens), 0) AS total_tokens,
+			COALESCE(SUM(total_cost), 0) as cost,
+			%s
+		FROM usage_logs
+		WHERE created_at >= $1 AND created_at < $2
+	`, endpointColumn, actualCostExpr)
+
+	args := []any{startTime, endTime}
+	if userID > 0 {
+		query += fmt.Sprintf(" AND user_id = $%d", len(args)+1)
+		args = append(args, userID)
+	}
+	if apiKeyID > 0 {
+		query += fmt.Sprintf(" AND api_key_id = $%d", len(args)+1)
+		args = append(args, apiKeyID)
+	}
+	if accountID > 0 {
+		query += fmt.Sprintf(" AND account_id = $%d", len(args)+1)
+		args = append(args, accountID)
+	}
+	if groupID > 0 {
+		query += fmt.Sprintf(" AND group_id = $%d", len(args)+1)
+		args = append(args, groupID)
+	}
+	if model != "" {
+		query += fmt.Sprintf(" AND model = $%d", len(args)+1)
+		args = append(args, model)
+	}
+	query, args = appendRequestTypeOrStreamQueryFilter(query, args, requestType, stream)
+	if billingType != nil {
+		query += fmt.Sprintf(" AND billing_type = $%d", len(args)+1)
+		args = append(args, int16(*billingType))
+	}
+	query += " GROUP BY endpoint ORDER BY requests DESC"
+
+	rows, err := r.sql.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if closeErr := rows.Close(); closeErr != nil && err == nil {
+			err = closeErr
+			results = nil
+		}
+	}()
+
+	results = make([]EndpointStat, 0)
+	for rows.Next() {
+		var row EndpointStat
+		if err := rows.Scan(&row.Endpoint, &row.Requests, &row.TotalTokens, &row.Cost, &row.ActualCost); err != nil {
+			return nil, err
+		}
+		results = append(results, row)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return results, nil
+}
+
+func (r *usageLogRepository) getEndpointPathStatsWithFilters(ctx context.Context, startTime, endTime time.Time, userID, apiKeyID, accountID, groupID int64, model string, requestType *int16, stream *bool, billingType *int8) (results []EndpointStat, err error) {
+	actualCostExpr := "COALESCE(SUM(actual_cost), 0) as actual_cost"
+	if accountID > 0 && userID == 0 && apiKeyID == 0 {
+		actualCostExpr = "COALESCE(SUM(total_cost * COALESCE(account_rate_multiplier, 1)), 0) as actual_cost"
+	}
+
+	query := fmt.Sprintf(`
+		SELECT
+			CONCAT(
+				COALESCE(NULLIF(TRIM(inbound_endpoint), ''), 'unknown'),
+				' -> ',
+				COALESCE(NULLIF(TRIM(upstream_endpoint), ''), 'unknown')
+			) AS endpoint,
+			COUNT(*) AS requests,
+			COALESCE(SUM(input_tokens + output_tokens + cache_creation_tokens + cache_read_tokens), 0) AS total_tokens,
+			COALESCE(SUM(total_cost), 0) as cost,
+			%s
+		FROM usage_logs
+		WHERE created_at >= $1 AND created_at < $2
+	`, actualCostExpr)
+
+	args := []any{startTime, endTime}
+	if userID > 0 {
+		query += fmt.Sprintf(" AND user_id = $%d", len(args)+1)
+		args = append(args, userID)
+	}
+	if apiKeyID > 0 {
+		query += fmt.Sprintf(" AND api_key_id = $%d", len(args)+1)
+		args = append(args, apiKeyID)
+	}
+	if accountID > 0 {
+		query += fmt.Sprintf(" AND account_id = $%d", len(args)+1)
+		args = append(args, accountID)
+	}
+	if groupID > 0 {
+		query += fmt.Sprintf(" AND group_id = $%d", len(args)+1)
+		args = append(args, groupID)
+	}
+	if model != "" {
+		query += fmt.Sprintf(" AND model = $%d", len(args)+1)
+		args = append(args, model)
+	}
+	query, args = appendRequestTypeOrStreamQueryFilter(query, args, requestType, stream)
+	if billingType != nil {
+		query += fmt.Sprintf(" AND billing_type = $%d", len(args)+1)
+		args = append(args, int16(*billingType))
+	}
+	query += " GROUP BY endpoint ORDER BY requests DESC"
+
+	rows, err := r.sql.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if closeErr := rows.Close(); closeErr != nil && err == nil {
+			err = closeErr
+			results = nil
+		}
+	}()
+
+	results = make([]EndpointStat, 0)
+	for rows.Next() {
+		var row EndpointStat
+		if err := rows.Scan(&row.Endpoint, &row.Requests, &row.TotalTokens, &row.Cost, &row.ActualCost); err != nil {
+			return nil, err
+		}
+		results = append(results, row)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return results, nil
+}
+
+// GetEndpointStatsWithFilters returns inbound endpoint statistics with optional filters.
+func (r *usageLogRepository) GetEndpointStatsWithFilters(ctx context.Context, startTime, endTime time.Time, userID, apiKeyID, accountID, groupID int64, model string, requestType *int16, stream *bool, billingType *int8) ([]EndpointStat, error) {
+	return r.getEndpointStatsByColumnWithFilters(ctx, "inbound_endpoint", startTime, endTime, userID, apiKeyID, accountID, groupID, model, requestType, stream, billingType)
+}
+
+// GetUpstreamEndpointStatsWithFilters returns upstream endpoint statistics with optional filters.
+func (r *usageLogRepository) GetUpstreamEndpointStatsWithFilters(ctx context.Context, startTime, endTime time.Time, userID, apiKeyID, accountID, groupID int64, model string, requestType *int16, stream *bool, billingType *int8) ([]EndpointStat, error) {
+	return r.getEndpointStatsByColumnWithFilters(ctx, "upstream_endpoint", startTime, endTime, userID, apiKeyID, accountID, groupID, model, requestType, stream, billingType)
+}
 
 // GetAccountUsageStats returns comprehensive usage statistics for an account over a time range
 func (r *usageLogRepository) GetAccountUsageStats(ctx context.Context, accountID int64, startTime, endTime time.Time) (resp *AccountUsageStatsResponse, err error) {
@@ -3338,11 +3554,23 @@ func (r *usageLogRepository) GetAccountUsageStats(ctx context.Context, accountID
 	if err != nil {
 		models = []ModelStat{}
 	}
+	endpoints, endpointErr := r.GetEndpointStatsWithFilters(ctx, startTime, endTime, 0, 0, accountID, 0, "", nil, nil, nil)
+	if endpointErr != nil {
+		logger.LegacyPrintf("repository.usage_log", "GetEndpointStatsWithFilters failed in GetAccountUsageStats: %v", endpointErr)
+		endpoints = []EndpointStat{}
+	}
+	upstreamEndpoints, upstreamEndpointErr := r.GetUpstreamEndpointStatsWithFilters(ctx, startTime, endTime, 0, 0, accountID, 0, "", nil, nil, nil)
+	if upstreamEndpointErr != nil {
+		logger.LegacyPrintf("repository.usage_log", "GetUpstreamEndpointStatsWithFilters failed in GetAccountUsageStats: %v", upstreamEndpointErr)
+		upstreamEndpoints = []EndpointStat{}
+	}
 
 	resp = &AccountUsageStatsResponse{
-		History: history,
-		Summary: summary,
-		Models:  models,
+		History:           history,
+		Summary:           summary,
+		Models:            models,
+		Endpoints:         endpoints,
+		UpstreamEndpoints: upstreamEndpoints,
 	}
 	return resp, nil
 }
@@ -3626,6 +3854,8 @@ func scanUsageLog(scanner interface{ Scan(...any) error }) (*service.UsageLog, e
 		mediaType             sql.NullString
 		serviceTier           sql.NullString
 		reasoningEffort       sql.NullString
+		inboundEndpoint       sql.NullString
+		upstreamEndpoint      sql.NullString
 		cacheTTLOverridden    bool
 		merchantRateSnapshot  sql.NullFloat64
 		createdAt             time.Time
@@ -3668,6 +3898,8 @@ func scanUsageLog(scanner interface{ Scan(...any) error }) (*service.UsageLog, e
 		&mediaType,
 		&serviceTier,
 		&reasoningEffort,
+		&inboundEndpoint,
+		&upstreamEndpoint,
 		&cacheTTLOverridden,
 		&merchantRateSnapshot,
 		&createdAt,
@@ -3747,6 +3979,12 @@ func scanUsageLog(scanner interface{ Scan(...any) error }) (*service.UsageLog, e
 	}
 	if reasoningEffort.Valid {
 		log.ReasoningEffort = &reasoningEffort.String
+	}
+	if inboundEndpoint.Valid {
+		log.InboundEndpoint = &inboundEndpoint.String
+	}
+	if upstreamEndpoint.Valid {
+		log.UpstreamEndpoint = &upstreamEndpoint.String
 	}
 
 	return log, nil
