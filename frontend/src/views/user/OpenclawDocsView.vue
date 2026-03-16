@@ -153,12 +153,21 @@
             <span class="flex h-7 w-7 items-center justify-center rounded-full bg-violet-100 text-sm font-bold text-violet-600 dark:bg-violet-900/30 dark:text-violet-400">5</span>
             {{ t('docs.openclaw.step5.title') }}
           </h2>
-          <div class="relative rounded-lg bg-gray-900 p-4">
-            <button @click="copyCode('switch')" class="absolute right-2 top-2 rounded-md p-1.5 text-gray-400 transition-colors hover:bg-gray-700 hover:text-white">
-              <svg v-if="copied !== 'switch'" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9.75a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" /></svg>
+          <p class="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Anthropic (Claude)</p>
+          <div class="relative mb-4 rounded-lg bg-gray-900 p-4">
+            <button @click="copyCode('switch-claude')" class="absolute right-2 top-2 rounded-md p-1.5 text-gray-400 transition-colors hover:bg-gray-700 hover:text-white">
+              <svg v-if="copied !== 'switch-claude'" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9.75a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" /></svg>
               <svg v-else class="h-4 w-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
             </button>
-            <code class="text-sm text-gray-100">openclaw models set mayione/claude-opus-4-6</code>
+            <code class="text-sm text-gray-100">openclaw models set {{ providerName }}/claude-opus-4-6</code>
+          </div>
+          <p class="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">OpenAI (GPT / Codex)</p>
+          <div class="relative rounded-lg bg-gray-900 p-4">
+            <button @click="copyCode('switch-openai')" class="absolute right-2 top-2 rounded-md p-1.5 text-gray-400 transition-colors hover:bg-gray-700 hover:text-white">
+              <svg v-if="copied !== 'switch-openai'" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9.75a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" /></svg>
+              <svg v-else class="h-4 w-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            </button>
+            <code class="text-sm text-gray-100">openclaw models set {{ providerName }}-openai/gpt-5.3-codex</code>
           </div>
         </section>
 
@@ -227,7 +236,7 @@ openclaw message "{{ t('docs.openclaw.step8.hello') }}"</pre>
           <div class="space-y-4">
             <div v-for="(item, i) in faqItems" :key="i" class="rounded-lg bg-gray-50 p-4 dark:bg-dark-700/50">
               <h3 class="mb-2 font-medium text-gray-900 dark:text-white">{{ t(item.q) }}</h3>
-              <p class="text-sm text-gray-600 dark:text-gray-400">{{ t(item.a) }}</p>
+              <p class="text-sm text-gray-600 dark:text-gray-400">{{ t(item.a, { provider: providerName }) }}</p>
             </div>
           </div>
         </section>
@@ -246,6 +255,11 @@ const copied = ref<string | null>(null)
 const activeSection = ref('prereq')
 
 const baseUrl = computed(() => window.location.origin)
+const providerName = computed(() => {
+  const parts = window.location.hostname.split('.')
+  if (parts.length >= 2) return parts[parts.length - 2]
+  return parts[0]
+})
 
 const navItems = computed(() => [
   { id: 'prereq', label: t('docs.openclaw.prereq.title') },
@@ -276,11 +290,13 @@ const yourKey = computed(() => t('docs.openclaw.yourKey'))
 const configJson = computed(() => {
   const url = baseUrl.value
   const key = yourKey.value
+  const pn = providerName.value
   return `{
   <span class="text-blue-300">"models"</span>: {
     <span class="text-blue-300">"mode"</span>: <span class="text-yellow-300">"merge"</span>,
     <span class="text-blue-300">"providers"</span>: {
-      <span class="text-blue-300">"mayione"</span>: {
+      <span class="text-gray-500">// ── Anthropic (Claude) ──</span>
+      <span class="text-blue-300">"${pn}"</span>: {
         <span class="text-blue-300">"baseUrl"</span>: <span class="text-yellow-300">"${url}"</span>,
         <span class="text-blue-300">"apiKey"</span>: <span class="text-yellow-300">"${key}"</span>,  <span class="text-gray-500">// &lt;--- ${t('docs.openclaw.step3.changeKey')}</span>
         <span class="text-blue-300">"api"</span>: <span class="text-yellow-300">"anthropic-messages"</span>,
@@ -326,6 +342,23 @@ const configJson = computed(() => {
             <span class="text-blue-300">"headers"</span>: { <span class="text-blue-300">"User-Agent"</span>: <span class="text-yellow-300">"Mozilla/5.0"</span>, <span class="text-blue-300">"Content-Type"</span>: <span class="text-yellow-300">"application/json"</span> }
           }
         ]
+      },
+      <span class="text-gray-500">// ── OpenAI (GPT / Codex) ──</span>
+      <span class="text-blue-300">"${pn}-openai"</span>: {
+        <span class="text-blue-300">"baseUrl"</span>: <span class="text-yellow-300">"${url}/v1"</span>,
+        <span class="text-blue-300">"apiKey"</span>: <span class="text-yellow-300">"${key}"</span>,  <span class="text-gray-500">// &lt;--- ${t('docs.openclaw.step3.changeKey')}</span>
+        <span class="text-blue-300">"api"</span>: <span class="text-yellow-300">"openai-responses"</span>,
+        <span class="text-blue-300">"models"</span>: [
+          {
+            <span class="text-blue-300">"id"</span>: <span class="text-yellow-300">"gpt-5.3-codex"</span>,
+            <span class="text-blue-300">"name"</span>: <span class="text-yellow-300">"GPT-5.3 Codex"</span>,
+            <span class="text-blue-300">"api"</span>: <span class="text-yellow-300">"openai-responses"</span>,
+            <span class="text-blue-300">"reasoning"</span>: <span class="text-orange-300">true</span>,
+            <span class="text-blue-300">"input"</span>: [<span class="text-yellow-300">"text"</span>],
+            <span class="text-blue-300">"contextWindow"</span>: <span class="text-orange-300">200000</span>,
+            <span class="text-blue-300">"maxTokens"</span>: <span class="text-orange-300">16384</span>
+          }
+        ]
       }
     }
   },
@@ -333,10 +366,11 @@ const configJson = computed(() => {
     <span class="text-blue-300">"defaults"</span>: {
       <span class="text-blue-300">"model"</span>: { <span class="text-blue-300">"primary"</span>: <span class="text-yellow-300">"claude-sonnet-4-5-20250929"</span> },
       <span class="text-blue-300">"models"</span>: {
-        <span class="text-blue-300">"mayione/claude-opus-4-6"</span>: {},
-        <span class="text-blue-300">"mayione/claude-opus-4-5-20251101"</span>: {},
-        <span class="text-blue-300">"mayione/claude-sonnet-4-5-20250929"</span>: {},
-        <span class="text-blue-300">"mayione/claude-haiku-4-5-20251001"</span>: {}
+        <span class="text-blue-300">"${pn}/claude-opus-4-6"</span>: {},
+        <span class="text-blue-300">"${pn}/claude-opus-4-5-20251101"</span>: {},
+        <span class="text-blue-300">"${pn}/claude-sonnet-4-5-20250929"</span>: {},
+        <span class="text-blue-300">"${pn}/claude-haiku-4-5-20251001"</span>: {},
+        <span class="text-blue-300">"${pn}-openai/gpt-5.3-codex"</span>: {}
       },
       <span class="text-blue-300">"workspace"</span>: <span class="text-yellow-300">"~/.openclaw/workspace"</span>,  <span class="text-gray-500">// &lt;--- ${t('docs.openclaw.step3.changeWorkspace')}</span>
       <span class="text-blue-300">"compaction"</span>: { <span class="text-blue-300">"mode"</span>: <span class="text-yellow-300">"safeguard"</span> },
@@ -356,11 +390,13 @@ const faqItems = [
 
 const getConfigJsonRaw = () => {
   const url = baseUrl.value
+  const pn = providerName.value
   return `{
   "models": {
     "mode": "merge",
     "providers": {
-      "mayione": {
+      // ── Anthropic (Claude) ──
+      "${pn}": {
         "baseUrl": "${url}",
         "apiKey": "sk-xxx",
         "api": "anthropic-messages",
@@ -406,6 +442,23 @@ const getConfigJsonRaw = () => {
             "headers": { "User-Agent": "Mozilla/5.0", "Content-Type": "application/json" }
           }
         ]
+      },
+      // ── OpenAI (GPT / Codex) ──
+      "${pn}-openai": {
+        "baseUrl": "${url}/v1",
+        "apiKey": "sk-xxx",
+        "api": "openai-responses",
+        "models": [
+          {
+            "id": "gpt-5.3-codex",
+            "name": "GPT-5.3 Codex",
+            "api": "openai-responses",
+            "reasoning": true,
+            "input": ["text"],
+            "contextWindow": 200000,
+            "maxTokens": 16384
+          }
+        ]
       }
     }
   },
@@ -413,10 +466,11 @@ const getConfigJsonRaw = () => {
     "defaults": {
       "model": { "primary": "claude-sonnet-4-5-20250929" },
       "models": {
-        "mayione/claude-opus-4-6": {},
-        "mayione/claude-opus-4-5-20251101": {},
-        "mayione/claude-sonnet-4-5-20250929": {},
-        "mayione/claude-haiku-4-5-20251001": {}
+        "${pn}/claude-opus-4-6": {},
+        "${pn}/claude-opus-4-5-20251101": {},
+        "${pn}/claude-sonnet-4-5-20250929": {},
+        "${pn}/claude-haiku-4-5-20251001": {},
+        "${pn}-openai/gpt-5.3-codex": {}
       },
       "workspace": "~/.openclaw/workspace",
       "compaction": { "mode": "safeguard" },
@@ -429,11 +483,13 @@ const getConfigJsonRaw = () => {
 
 const copyCode = (type: string) => {
   let code = ''
+  const pn = providerName.value
   switch (type) {
     case 'install': code = 'npm install -g openclaw@latest'; break
     case 'init': code = 'openclaw onboard --install-daemon'; break
     case 'config': code = getConfigJsonRaw(); break
-    case 'switch': code = 'openclaw models set mayione/claude-opus-4-6'; break
+    case 'switch-claude': code = `openclaw models set ${pn}/claude-opus-4-6`; break
+    case 'switch-openai': code = `openclaw models set ${pn}-openai/gpt-5.3-codex`; break
     case 'restart': code = 'openclaw gateway restart'; break
     case 'list': code = 'openclaw models list'; break
     case 'status': code = 'openclaw models status'; break
