@@ -1159,6 +1159,7 @@
         </div>
         <QuotaLimitCard
           :totalLimit="editQuotaLimit"
+          :fiveHourLimit="editQuota5hLimit"
           :dailyLimit="editQuotaDailyLimit"
           :weeklyLimit="editQuotaWeeklyLimit"
           :dailyResetMode="editDailyResetMode"
@@ -1167,7 +1168,13 @@
           :weeklyResetDay="editWeeklyResetDay"
           :weeklyResetHour="editWeeklyResetHour"
           :resetTimezone="editResetTimezone"
+          :showUsed="true"
+          :totalUsed="editQuotaUsed"
+          :fiveHourUsed="editQuota5hUsed"
+          :dailyUsed="editQuotaDailyUsed"
+          :weeklyUsed="editQuotaWeeklyUsed"
           @update:totalLimit="editQuotaLimit = $event"
+          @update:fiveHourLimit="editQuota5hLimit = $event"
           @update:dailyLimit="editQuotaDailyLimit = $event"
           @update:weeklyLimit="editQuotaWeeklyLimit = $event"
           @update:dailyResetMode="editDailyResetMode = $event"
@@ -1176,7 +1183,23 @@
           @update:weeklyResetDay="editWeeklyResetDay = $event"
           @update:weeklyResetHour="editWeeklyResetHour = $event"
           @update:resetTimezone="editResetTimezone = $event"
+          @update:totalUsed="editQuotaUsed = $event"
+          @update:fiveHourUsed="editQuota5hUsed = $event"
+          @update:dailyUsed="editQuotaDailyUsed = $event"
+          @update:weeklyUsed="editQuotaWeeklyUsed = $event"
         />
+      </div>
+
+      <!-- 客户端屏蔽列表 -->
+      <div class="border-t border-gray-200 pt-4 dark:border-dark-600">
+        <label class="input-label">{{ t('admin.accounts.blockedClients') }}</label>
+        <textarea
+          v-model="blockedClients"
+          rows="3"
+          class="input font-mono text-sm"
+          :placeholder="t('admin.accounts.blockedClientsPlaceholder')"
+        />
+        <p class="input-hint">{{ t('admin.accounts.blockedClientsHint') }}</p>
       </div>
 
       <!-- OpenAI OAuth Codex 官方客户端限制开关 -->
@@ -1824,9 +1847,15 @@ const openaiOAuthResponsesWebSocketV2Mode = ref<OpenAIWSMode>(OPENAI_WS_MODE_OFF
 const openaiAPIKeyResponsesWebSocketV2Mode = ref<OpenAIWSMode>(OPENAI_WS_MODE_OFF)
 const codexCLIOnlyEnabled = ref(false)
 const anthropicPassthroughEnabled = ref(false)
+const blockedClients = ref('')
 const editQuotaLimit = ref<number | null>(null)
+const editQuota5hLimit = ref<number | null>(null)
 const editQuotaDailyLimit = ref<number | null>(null)
 const editQuotaWeeklyLimit = ref<number | null>(null)
+const editQuotaUsed = ref<number | null>(null)
+const editQuota5hUsed = ref<number | null>(null)
+const editQuotaDailyUsed = ref<number | null>(null)
+const editQuotaWeeklyUsed = ref<number | null>(null)
 const editDailyResetMode = ref<'rolling' | 'fixed' | null>(null)
 const editDailyResetHour = ref<number | null>(null)
 const editWeeklyResetMode = ref<'rolling' | 'fixed' | null>(null)
@@ -2016,6 +2045,8 @@ watch(
       if (newAccount.type === 'apikey' || newAccount.type === 'bedrock') {
         const quotaVal = extra?.quota_limit as number | undefined
         editQuotaLimit.value = (quotaVal && quotaVal > 0) ? quotaVal : null
+        const fiveHourVal = extra?.quota_5h_limit as number | undefined
+        editQuota5hLimit.value = (fiveHourVal && fiveHourVal > 0) ? fiveHourVal : null
         const dailyVal = extra?.quota_daily_limit as number | undefined
         editQuotaDailyLimit.value = (dailyVal && dailyVal > 0) ? dailyVal : null
         const weeklyVal = extra?.quota_weekly_limit as number | undefined
@@ -2027,8 +2058,14 @@ watch(
         editWeeklyResetDay.value = (extra?.quota_weekly_reset_day as number) ?? null
         editWeeklyResetHour.value = (extra?.quota_weekly_reset_hour as number) ?? null
         editResetTimezone.value = (extra?.quota_reset_timezone as string) || null
+        // Load quota used values
+        editQuotaUsed.value = typeof extra?.quota_used === 'number' ? extra.quota_used : null
+        editQuota5hUsed.value = typeof extra?.quota_5h_used === 'number' ? extra.quota_5h_used : null
+        editQuotaDailyUsed.value = typeof extra?.quota_daily_used === 'number' ? extra.quota_daily_used : null
+        editQuotaWeeklyUsed.value = typeof extra?.quota_weekly_used === 'number' ? extra.quota_weekly_used : null
       } else {
         editQuotaLimit.value = null
+        editQuota5hLimit.value = null
         editQuotaDailyLimit.value = null
         editQuotaWeeklyLimit.value = null
         editDailyResetMode.value = null
@@ -2037,6 +2074,14 @@ watch(
         editWeeklyResetDay.value = null
         editWeeklyResetHour.value = null
         editResetTimezone.value = null
+      }
+
+      // Load blocked_clients from extra
+      const rawBlockedClients = extra?.blocked_clients
+      if (Array.isArray(rawBlockedClients) && rawBlockedClients.length > 0) {
+        blockedClients.value = rawBlockedClients.join('\n')
+      } else {
+        blockedClients.value = ''
       }
 
       // Load antigravity model mapping (Antigravity 只支持映射模式)
@@ -2149,8 +2194,14 @@ watch(
         // Load quota limits for bedrock
         const bedrockExtra = (newAccount.extra as Record<string, unknown>) || {}
         editQuotaLimit.value = typeof bedrockExtra.quota_limit === 'number' ? bedrockExtra.quota_limit : null
+        editQuota5hLimit.value = typeof bedrockExtra.quota_5h_limit === 'number' ? bedrockExtra.quota_5h_limit : null
         editQuotaDailyLimit.value = typeof bedrockExtra.quota_daily_limit === 'number' ? bedrockExtra.quota_daily_limit : null
         editQuotaWeeklyLimit.value = typeof bedrockExtra.quota_weekly_limit === 'number' ? bedrockExtra.quota_weekly_limit : null
+        // Load quota used values for bedrock
+        editQuotaUsed.value = typeof bedrockExtra.quota_used === 'number' ? bedrockExtra.quota_used : null
+        editQuota5hUsed.value = typeof bedrockExtra.quota_5h_used === 'number' ? bedrockExtra.quota_5h_used : null
+        editQuotaDailyUsed.value = typeof bedrockExtra.quota_daily_used === 'number' ? bedrockExtra.quota_daily_used : null
+        editQuotaWeeklyUsed.value = typeof bedrockExtra.quota_weekly_used === 'number' ? bedrockExtra.quota_weekly_used : null
 
         // Load model mappings for bedrock
         const existingMappings = bedrockCreds.model_mapping as Record<string, string> | undefined
@@ -2966,6 +3017,11 @@ const handleSubmit = async () => {
       } else {
         delete newExtra.quota_limit
       }
+      if (editQuota5hLimit.value != null && editQuota5hLimit.value > 0) {
+        newExtra.quota_5h_limit = editQuota5hLimit.value
+      } else {
+        delete newExtra.quota_5h_limit
+      }
       if (editQuotaDailyLimit.value != null && editQuotaDailyLimit.value > 0) {
         newExtra.quota_daily_limit = editQuotaDailyLimit.value
       } else {
@@ -2997,6 +3053,37 @@ const handleSubmit = async () => {
         newExtra.quota_reset_timezone = editResetTimezone.value || 'UTC'
       } else {
         delete newExtra.quota_reset_timezone
+      }
+      // Write quota used values if explicitly set
+      if (editQuotaUsed.value != null) {
+        newExtra.quota_used = editQuotaUsed.value
+      }
+      if (editQuota5hUsed.value != null) {
+        newExtra.quota_5h_used = editQuota5hUsed.value
+      }
+      if (editQuotaDailyUsed.value != null) {
+        newExtra.quota_daily_used = editQuotaDailyUsed.value
+      }
+      if (editQuotaWeeklyUsed.value != null) {
+        newExtra.quota_weekly_used = editQuotaWeeklyUsed.value
+      }
+      // Remove _start timestamp fields — managed by backend only
+      delete newExtra.quota_5h_start
+      delete newExtra.quota_daily_start
+      delete newExtra.quota_weekly_start
+      updatePayload.extra = newExtra
+    }
+
+    // Handle blocked_clients for all account types
+    {
+      const currentExtra = (updatePayload.extra as Record<string, unknown>) ||
+        (props.account.extra as Record<string, unknown>) || {}
+      const newExtra: Record<string, unknown> = { ...currentExtra }
+      if (blockedClients.value.trim()) {
+        const clients = blockedClients.value.split('\n').map(s => s.trim()).filter(Boolean)
+        newExtra.blocked_clients = clients
+      } else {
+        delete newExtra.blocked_clients
       }
       updatePayload.extra = newExtra
     }

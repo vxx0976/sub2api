@@ -790,6 +790,8 @@ export interface Account {
   // API Key 账号配额限制
   quota_limit?: number | null
   quota_used?: number | null
+  quota_5h_limit?: number | null
+  quota_5h_used?: number | null
   quota_daily_limit?: number | null
   quota_daily_used?: number | null
   quota_weekly_limit?: number | null
@@ -804,6 +806,9 @@ export interface Account {
   quota_reset_timezone?: string | null
   quota_daily_reset_at?: string | null
   quota_weekly_reset_at?: string | null
+
+  // 客户端屏蔽列表
+  blocked_clients?: string[] | null
 
   // 运行时状态（仅当启用对应限制时返回）
   current_daily_cost?: number | null // 当前每日费用

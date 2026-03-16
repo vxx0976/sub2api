@@ -281,6 +281,11 @@ func AccountFromServiceShallow(a *service.Account) *Account {
 			used := a.GetQuotaUsed()
 			out.QuotaUsed = &used
 		}
+		if limit := a.GetQuota5hLimit(); limit > 0 {
+			out.Quota5hLimit = &limit
+			used := a.GetQuota5hUsed()
+			out.Quota5hUsed = &used
+		}
 		if limit := a.GetQuotaDailyLimit(); limit > 0 {
 			out.QuotaDailyLimit = &limit
 			used := a.GetQuotaDailyUsed()
@@ -316,6 +321,11 @@ func AccountFromServiceShallow(a *service.Account) *Account {
 				out.QuotaWeeklyResetAt = &v
 			}
 		}
+	}
+
+	// 提取客户端屏蔽列表（所有账号类型均可配置）
+	if clients := a.GetBlockedClients(); len(clients) > 0 {
+		out.BlockedClients = clients
 	}
 
 	return out

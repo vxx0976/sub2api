@@ -1,6 +1,9 @@
 <template>
   <div v-if="hasAnyCostLimit" class="flex flex-col gap-1.5">
-    <!-- API Key 日/周/总配额（quota_daily_limit / quota_weekly_limit / quota_limit） -->
+    <!-- API Key 5h/日/周/总配额（quota_5h_limit / quota_daily_limit / quota_weekly_limit / quota_limit） -->
+    <div v-if="show5hQuota" class="flex items-center gap-1">
+      <QuotaBadge :used="account.quota_5h_used ?? 0" :limit="account.quota_5h_limit!" label="5h" />
+    </div>
     <div v-if="showDailyQuota" class="flex items-center gap-1">
       <QuotaBadge :used="account.quota_daily_used ?? 0" :limit="account.quota_daily_limit!" label="D" />
     </div>
@@ -50,18 +53,26 @@ const isAnthropicOAuthOrSetupToken = computed(() =>
   (props.account.type === 'oauth' || props.account.type === 'setup-token')
 )
 
-// ========== API Key 配额（日/周/总） ==========
+// ========== API Key 配额（5h/日/周/总） ==========
+
+const isApiKeyOrBedrock = computed(() =>
+  props.account.type === 'apikey' || props.account.type === 'bedrock'
+)
+
+const show5hQuota = computed(() =>
+  isApiKeyOrBedrock.value && (props.account.quota_5h_limit ?? 0) > 0
+)
 
 const showDailyQuota = computed(() =>
-  props.account.type === 'apikey' && (props.account.quota_daily_limit ?? 0) > 0
+  isApiKeyOrBedrock.value && (props.account.quota_daily_limit ?? 0) > 0
 )
 
 const showWeeklyQuota = computed(() =>
-  props.account.type === 'apikey' && (props.account.quota_weekly_limit ?? 0) > 0
+  isApiKeyOrBedrock.value && (props.account.quota_weekly_limit ?? 0) > 0
 )
 
 const showTotalQuota = computed(() =>
-  props.account.type === 'apikey' && (props.account.quota_limit ?? 0) > 0
+  isApiKeyOrBedrock.value && (props.account.quota_limit ?? 0) > 0
 )
 
 // ========== 5h窗口费用 ==========
@@ -97,7 +108,7 @@ const windowCostTooltip = computed(() => {
 // ========== 通用 ==========
 
 const hasAnyCostLimit = computed(() =>
-  showDailyQuota.value || showWeeklyQuota.value || showTotalQuota.value || showWindowCost.value
+  show5hQuota.value || showDailyQuota.value || showWeeklyQuota.value || showTotalQuota.value || showWindowCost.value
 )
 
 const formatCost = (value: number | null | undefined) => {

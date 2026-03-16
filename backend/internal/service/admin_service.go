@@ -1603,10 +1603,12 @@ func (s *adminServiceImpl) UpdateAccount(ctx context.Context, id int64, input *U
 		account.Credentials = input.Credentials
 	}
 	if len(input.Extra) > 0 {
-		// 保留配额用量字段，防止编辑账号时意外重置
-		for _, key := range []string{"quota_used", "quota_daily_used", "quota_daily_start", "quota_weekly_used", "quota_weekly_start"} {
-			if v, ok := account.Extra[key]; ok {
-				input.Extra[key] = v
+		// 保留配额用量字段，防止编辑账号时意外重置（但允许前端显式覆盖）
+		for _, key := range []string{"quota_used", "quota_5h_used", "quota_5h_start", "quota_daily_used", "quota_daily_start", "quota_weekly_used", "quota_weekly_start"} {
+			if _, inputHas := input.Extra[key]; !inputHas {
+				if v, ok := account.Extra[key]; ok {
+					input.Extra[key] = v
+				}
 			}
 		}
 		account.Extra = input.Extra

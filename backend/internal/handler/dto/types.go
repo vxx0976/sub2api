@@ -211,6 +211,8 @@ type Account struct {
 	// API Key 账号配额限制
 	QuotaLimit       *float64 `json:"quota_limit,omitempty"`
 	QuotaUsed        *float64 `json:"quota_used,omitempty"`
+	Quota5hLimit     *float64 `json:"quota_5h_limit,omitempty"`
+	Quota5hUsed      *float64 `json:"quota_5h_used,omitempty"`
 	QuotaDailyLimit  *float64 `json:"quota_daily_limit,omitempty"`
 	QuotaDailyUsed   *float64 `json:"quota_daily_used,omitempty"`
 	QuotaWeeklyLimit *float64 `json:"quota_weekly_limit,omitempty"`
@@ -225,6 +227,9 @@ type Account struct {
 	QuotaResetTimezone   *string `json:"quota_reset_timezone,omitempty"`
 	QuotaDailyResetAt    *string `json:"quota_daily_reset_at,omitempty"`
 	QuotaWeeklyResetAt   *string `json:"quota_weekly_reset_at,omitempty"`
+
+	// 客户端屏蔽列表（User-Agent 模糊匹配）
+	BlockedClients []string `json:"blocked_clients,omitempty"`
 
 	Proxy         *Proxy         `json:"proxy,omitempty"`
 	AccountGroups []AccountGroup `json:"account_groups,omitempty"`

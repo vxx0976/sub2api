@@ -1566,6 +1566,7 @@
         </div>
         <QuotaLimitCard
           :totalLimit="editQuotaLimit"
+          :fiveHourLimit="editQuota5hLimit"
           :dailyLimit="editQuotaDailyLimit"
           :weeklyLimit="editQuotaWeeklyLimit"
           :dailyResetMode="editDailyResetMode"
@@ -1575,6 +1576,7 @@
           :weeklyResetHour="editWeeklyResetHour"
           :resetTimezone="editResetTimezone"
           @update:totalLimit="editQuotaLimit = $event"
+          @update:fiveHourLimit="editQuota5hLimit = $event"
           @update:dailyLimit="editQuotaDailyLimit = $event"
           @update:weeklyLimit="editQuotaWeeklyLimit = $event"
           @update:dailyResetMode="editDailyResetMode = $event"
@@ -1584,6 +1586,18 @@
           @update:weeklyResetHour="editWeeklyResetHour = $event"
           @update:resetTimezone="editResetTimezone = $event"
         />
+      </div>
+
+      <!-- 客户端屏蔽列表 -->
+      <div class="border-t border-gray-200 pt-4 dark:border-dark-600">
+        <label class="input-label">{{ t('admin.accounts.blockedClients') }}</label>
+        <textarea
+          v-model="blockedClients"
+          rows="3"
+          class="input font-mono text-sm"
+          :placeholder="t('admin.accounts.blockedClientsPlaceholder')"
+        />
+        <p class="input-hint">{{ t('admin.accounts.blockedClientsHint') }}</p>
       </div>
 
       <!-- OpenAI OAuth Model Mapping (OAuth 类型没有 apikey 容器，需要独立的模型映射区域) -->
@@ -2965,6 +2979,7 @@ const addMethod = ref<AddMethod>('oauth') // For oauth-based: 'oauth' or 'setup-
 const apiKeyBaseUrl = ref('https://api.anthropic.com')
 const apiKeyValue = ref('')
 const editQuotaLimit = ref<number | null>(null)
+const editQuota5hLimit = ref<number | null>(null)
 const editQuotaDailyLimit = ref<number | null>(null)
 const editQuotaWeeklyLimit = ref<number | null>(null)
 const editDailyResetMode = ref<'rolling' | 'fixed' | null>(null)
@@ -2985,6 +3000,7 @@ const selectedErrorCodes = ref<number[]>([])
 const customErrorCodeInput = ref<number | null>(null)
 const interceptWarmupRequests = ref(false)
 const autoPauseOnExpired = ref(true)
+const blockedClients = ref('')
 const openaiPassthroughEnabled = ref(false)
 const openaiOAuthResponsesWebSocketV2Mode = ref<OpenAIWSMode>(OPENAI_WS_MODE_OFF)
 const openaiAPIKeyResponsesWebSocketV2Mode = ref<OpenAIWSMode>(OPENAI_WS_MODE_OFF)
@@ -3667,6 +3683,7 @@ const resetForm = () => {
   apiKeyBaseUrl.value = 'https://api.anthropic.com'
   apiKeyValue.value = ''
   editQuotaLimit.value = null
+  editQuota5hLimit.value = null
   editQuotaDailyLimit.value = null
   editQuotaWeeklyLimit.value = null
   editDailyResetMode.value = null
@@ -3691,6 +3708,7 @@ const resetForm = () => {
   customErrorCodeInput.value = null
   interceptWarmupRequests.value = false
   autoPauseOnExpired.value = true
+  blockedClients.value = ''
   openaiPassthroughEnabled.value = false
   openaiOAuthResponsesWebSocketV2Mode.value = OPENAI_WS_MODE_OFF
   openaiAPIKeyResponsesWebSocketV2Mode.value = OPENAI_WS_MODE_OFF
@@ -4176,6 +4194,9 @@ const createAccountAndFinish = async (
     if (editQuotaLimit.value != null && editQuotaLimit.value > 0) {
       quotaExtra.quota_limit = editQuotaLimit.value
     }
+    if (editQuota5hLimit.value != null && editQuota5hLimit.value > 0) {
+      quotaExtra.quota_5h_limit = editQuota5hLimit.value
+    }
     if (editQuotaDailyLimit.value != null && editQuotaDailyLimit.value > 0) {
       quotaExtra.quota_daily_limit = editQuotaDailyLimit.value
     }
@@ -4197,6 +4218,13 @@ const createAccountAndFinish = async (
     }
     if (Object.keys(quotaExtra).length > 0) {
       finalExtra = quotaExtra
+    }
+  }
+  // Inject blocked_clients for all account types
+  if (blockedClients.value.trim()) {
+    const clients = blockedClients.value.split('\n').map(s => s.trim()).filter(Boolean)
+    if (clients.length > 0) {
+      finalExtra = { ...(finalExtra || {}), blocked_clients: clients }
     }
   }
   await doCreateAccount({

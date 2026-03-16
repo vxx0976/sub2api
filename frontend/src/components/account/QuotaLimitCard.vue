@@ -6,6 +6,7 @@ const { t } = useI18n()
 
 const props = defineProps<{
   totalLimit: number | null
+  fiveHourLimit: number | null
   dailyLimit: number | null
   weeklyLimit: number | null
   dailyResetMode: 'rolling' | 'fixed' | null
@@ -14,10 +15,16 @@ const props = defineProps<{
   weeklyResetDay: number | null
   weeklyResetHour: number | null
   resetTimezone: string | null
+  showUsed?: boolean
+  totalUsed?: number | null
+  fiveHourUsed?: number | null
+  dailyUsed?: number | null
+  weeklyUsed?: number | null
 }>()
 
 const emit = defineEmits<{
   'update:totalLimit': [value: number | null]
+  'update:fiveHourLimit': [value: number | null]
   'update:dailyLimit': [value: number | null]
   'update:weeklyLimit': [value: number | null]
   'update:dailyResetMode': [value: 'rolling' | 'fixed' | null]
@@ -26,10 +33,15 @@ const emit = defineEmits<{
   'update:weeklyResetDay': [value: number | null]
   'update:weeklyResetHour': [value: number | null]
   'update:resetTimezone': [value: string | null]
+  'update:totalUsed': [value: number | null]
+  'update:fiveHourUsed': [value: number | null]
+  'update:dailyUsed': [value: number | null]
+  'update:weeklyUsed': [value: number | null]
 }>()
 
 const enabled = computed(() =>
   (props.totalLimit != null && props.totalLimit > 0) ||
+  (props.fiveHourLimit != null && props.fiveHourLimit > 0) ||
   (props.dailyLimit != null && props.dailyLimit > 0) ||
   (props.weeklyLimit != null && props.weeklyLimit > 0)
 )
@@ -45,6 +57,7 @@ watch(enabled, (val) => {
 watch(localEnabled, (val) => {
   if (!val) {
     emit('update:totalLimit', null)
+    emit('update:fiveHourLimit', null)
     emit('update:dailyLimit', null)
     emit('update:weeklyLimit', null)
     emit('update:dailyResetMode', null)
@@ -101,6 +114,10 @@ const onTotalInput = (e: Event) => {
   const raw = (e.target as HTMLInputElement).valueAsNumber
   emit('update:totalLimit', Number.isNaN(raw) ? null : raw)
 }
+const onFiveHourInput = (e: Event) => {
+  const raw = (e.target as HTMLInputElement).valueAsNumber
+  emit('update:fiveHourLimit', Number.isNaN(raw) ? null : raw)
+}
 const onDailyInput = (e: Event) => {
   const raw = (e.target as HTMLInputElement).valueAsNumber
   emit('update:dailyLimit', Number.isNaN(raw) ? null : raw)
@@ -108,6 +125,15 @@ const onDailyInput = (e: Event) => {
 const onWeeklyInput = (e: Event) => {
   const raw = (e.target as HTMLInputElement).valueAsNumber
   emit('update:weeklyLimit', Number.isNaN(raw) ? null : raw)
+}
+
+const onUsedInput = (field: 'totalUsed' | 'fiveHourUsed' | 'dailyUsed' | 'weeklyUsed', e: Event) => {
+  const raw = (e.target as HTMLInputElement).valueAsNumber
+  const val = Number.isNaN(raw) ? null : raw
+  if (field === 'totalUsed') emit('update:totalUsed', val)
+  else if (field === 'fiveHourUsed') emit('update:fiveHourUsed', val)
+  else if (field === 'dailyUsed') emit('update:dailyUsed', val)
+  else emit('update:weeklyUsed', val)
 }
 
 const onDailyModeChange = (e: Event) => {
@@ -157,6 +183,38 @@ const onWeeklyModeChange = (e: Event) => {
       </div>
 
       <div v-if="localEnabled" class="space-y-3">
+        <!-- 5h 滚动窗口配额 -->
+        <div>
+          <label class="input-label">{{ t('admin.accounts.quota5hLimit') }}</label>
+          <div class="relative">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">$</span>
+            <input
+              :value="fiveHourLimit"
+              @input="onFiveHourInput"
+              type="number"
+              min="0"
+              step="0.01"
+              class="input pl-7"
+              :placeholder="t('admin.accounts.quotaLimitPlaceholder')"
+            />
+          </div>
+          <p class="input-hint">{{ t('admin.accounts.quota5hLimitHint') }}</p>
+          <div v-if="showUsed && fiveHourLimit != null && fiveHourLimit > 0" class="mt-1 flex items-center gap-2">
+            <label class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{{ t('admin.accounts.quotaUsedLabel') }}</label>
+            <div class="relative w-32">
+              <span class="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-gray-400">$</span>
+              <input
+                :value="fiveHourUsed ?? 0"
+                @input="onUsedInput('fiveHourUsed', $event)"
+                type="number"
+                min="0"
+                step="0.01"
+                class="input py-1 pl-5 text-xs"
+              />
+            </div>
+          </div>
+        </div>
+
         <!-- 日配额 -->
         <div>
           <label class="input-label">{{ t('admin.accounts.quotaDailyLimit') }}</label>
@@ -203,6 +261,20 @@ const onWeeklyModeChange = (e: Event) => {
               {{ t('admin.accounts.quotaDailyLimitHint') }}
             </template>
           </p>
+          <div v-if="showUsed && dailyLimit != null && dailyLimit > 0" class="mt-1 flex items-center gap-2">
+            <label class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{{ t('admin.accounts.quotaUsedLabel') }}</label>
+            <div class="relative w-32">
+              <span class="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-gray-400">$</span>
+              <input
+                :value="dailyUsed ?? 0"
+                @input="onUsedInput('dailyUsed', $event)"
+                type="number"
+                min="0"
+                step="0.01"
+                class="input py-1 pl-5 text-xs"
+              />
+            </div>
+          </div>
         </div>
 
         <!-- 周配额 -->
@@ -259,6 +331,20 @@ const onWeeklyModeChange = (e: Event) => {
               {{ t('admin.accounts.quotaWeeklyLimitHint') }}
             </template>
           </p>
+          <div v-if="showUsed && weeklyLimit != null && weeklyLimit > 0" class="mt-1 flex items-center gap-2">
+            <label class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{{ t('admin.accounts.quotaUsedLabel') }}</label>
+            <div class="relative w-32">
+              <span class="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-gray-400">$</span>
+              <input
+                :value="weeklyUsed ?? 0"
+                @input="onUsedInput('weeklyUsed', $event)"
+                type="number"
+                min="0"
+                step="0.01"
+                class="input py-1 pl-5 text-xs"
+              />
+            </div>
+          </div>
         </div>
 
         <!-- 时区选择（当任一维度使用固定模式时显示） -->
@@ -289,6 +375,20 @@ const onWeeklyModeChange = (e: Event) => {
             />
           </div>
           <p class="input-hint">{{ t('admin.accounts.quotaTotalLimitHint') }}</p>
+          <div v-if="showUsed && totalLimit != null && totalLimit > 0" class="mt-1 flex items-center gap-2">
+            <label class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{{ t('admin.accounts.quotaUsedLabel') }}</label>
+            <div class="relative w-32">
+              <span class="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-gray-400">$</span>
+              <input
+                :value="totalUsed ?? 0"
+                @input="onUsedInput('totalUsed', $event)"
+                type="number"
+                min="0"
+                step="0.01"
+                class="input py-1 pl-5 text-xs"
+              />
+            </div>
+          </div>
         </div>
       </div>
   </div>

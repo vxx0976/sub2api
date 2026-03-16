@@ -53,11 +53,6 @@
         <span class="text-[9px] opacity-60">{{ rpmStrategyTag }}</span>
       </span>
     </div>
-
-    <!-- API Key 账号配额限制 -->
-    <QuotaBadge v-if="showDailyQuota" :used="account.quota_daily_used ?? 0" :limit="account.quota_daily_limit!" label="D" />
-    <QuotaBadge v-if="showWeeklyQuota" :used="account.quota_weekly_used ?? 0" :limit="account.quota_weekly_limit!" label="W" />
-    <QuotaBadge v-if="showTotalQuota" :used="account.quota_used ?? 0" :limit="account.quota_limit!" />
   </div>
 </template>
 
@@ -65,7 +60,6 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { Account } from '@/types'
-import QuotaBadge from './QuotaBadge.vue'
 
 const props = defineProps<{
   account: Account
@@ -194,21 +188,6 @@ const rpmClass = computed(() => {
   return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
 })
 
-// 是否显示各维度配额（apikey / bedrock 类型）
-const isQuotaEligible = computed(() => props.account.type === 'apikey' || props.account.type === 'bedrock')
-
-// API Key 配额显示
-const showDailyQuota = computed(() => {
-  return isQuotaEligible.value && (props.account.quota_daily_limit ?? 0) > 0
-})
-
-const showWeeklyQuota = computed(() => {
-  return isQuotaEligible.value && (props.account.quota_weekly_limit ?? 0) > 0
-})
-
-const showTotalQuota = computed(() => {
-  return isQuotaEligible.value && (props.account.quota_limit ?? 0) > 0
-})
 
 // RPM 提示文字
 const rpmTooltip = computed(() => {

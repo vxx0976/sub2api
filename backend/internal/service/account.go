@@ -1221,6 +1221,54 @@ func (a *Account) GetCacheTTLOverrideTarget() string {
 	return "5m"
 }
 
+// GetBlockedClients 获取账号禁止使用的客户端列表（User-Agent 模糊匹配模式）
+func (a *Account) GetBlockedClients() []string {
+	if a.Extra == nil {
+		return nil
+	}
+	raw, ok := a.Extra["blocked_clients"]
+	if !ok {
+		return nil
+	}
+	arr, ok := raw.([]interface{})
+	if !ok {
+		return nil
+	}
+	result := make([]string, 0, len(arr))
+	for _, v := range arr {
+		if s, ok := v.(string); ok && s != "" {
+			result = append(result, s)
+		}
+	}
+	return result
+}
+
+// IsClientBlocked 检查指定 User-Agent 是否被此账号屏蔽
+// 使用大小写不敏感的子串匹配
+func (a *Account) IsClientBlocked(userAgent string) bool {
+	clients := a.GetBlockedClients()
+	if len(clients) == 0 {
+		return false
+	}
+	uaLower := strings.ToLower(userAgent)
+	for _, pattern := range clients {
+		if strings.Contains(uaLower, strings.ToLower(pattern)) {
+			return true
+		}
+	}
+	return false
+}
+
+// GetQuota5hLimit 获取 5 小时滚动窗口配额限制（美元），0 表示未启用
+func (a *Account) GetQuota5hLimit() float64 {
+	return a.getExtraFloat64("quota_5h_limit")
+}
+
+// GetQuota5hUsed 获取 5 小时窗口内已用配额（美元）
+func (a *Account) GetQuota5hUsed() float64 {
+	return a.getExtraFloat64("quota_5h_used")
+}
+
 // GetQuotaLimit 获取 API Key 账号的配额限制（美元）
 // 返回 0 表示未启用
 func (a *Account) GetQuotaLimit() float64 {
@@ -1517,7 +1565,7 @@ func ValidateQuotaResetConfig(extra map[string]any) error {
 
 // HasAnyQuotaLimit 检查是否配置了任一维度的配额限制
 func (a *Account) HasAnyQuotaLimit() bool {
-	return a.GetQuotaLimit() > 0 || a.GetQuotaDailyLimit() > 0 || a.GetQuotaWeeklyLimit() > 0
+	return a.GetQuotaLimit() > 0 || a.GetQuotaDailyLimit() > 0 || a.GetQuotaWeeklyLimit() > 0 || a.GetQuota5hLimit() > 0
 }
 
 // isPeriodExpired 检查指定周期（自 periodStart 起经过 dur）是否已过期
@@ -1533,6 +1581,13 @@ func (a *Account) IsQuotaExceeded() bool {
 	// 总额度
 	if limit := a.GetQuotaLimit(); limit > 0 && a.GetQuotaUsed() >= limit {
 		return true
+	}
+	// 5h 滚动窗口额度
+	if limit := a.GetQuota5hLimit(); limit > 0 {
+		start := a.getExtraTime("quota_5h_start")
+		if !isPeriodExpired(start, 5*time.Hour) && a.GetQuota5hUsed() >= limit {
+			return true
+		}
 	}
 	// 日额度（周期过期视为未超限，下次 increment 会重置）
 	if limit := a.GetQuotaDailyLimit(); limit > 0 {

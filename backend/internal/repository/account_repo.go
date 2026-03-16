@@ -1746,6 +1746,13 @@ const weeklyExpiredExpr = `(
 	END
 )`
 
+// fiveHourExpiredExpr is a SQL expression that evaluates to TRUE when 5h quota period has expired.
+// 5h quota is always rolling (no fixed mode).
+const fiveHourExpiredExpr = `(
+	COALESCE((extra->>'quota_5h_start')::timestamptz, '1970-01-01'::timestamptz)
+		+ '5 hours'::interval <= NOW()
+)`
+
 // nextDailyResetAtExpr is a SQL expression to compute the next daily reset_at when a reset occurs.
 // For fixed mode: computes the next future reset time based on NOW(), timezone, and configured hour.
 // This correctly handles long-inactive accounts by jumping directly to the next valid reset point.
@@ -1823,6 +1830,19 @@ func (r *accountRepository) IncrementQuotaUsed(ctx context.Context, id int64, am
 			COALESCE(extra, '{}'::jsonb)
 			-- 总额度：始终递增
 			|| jsonb_build_object('quota_used', COALESCE((extra->>'quota_used')::numeric, 0) + $1)
+			-- 5h 滚动窗口：仅在 quota_5h_limit > 0 时处理
+			|| CASE WHEN COALESCE((extra->>'quota_5h_limit')::numeric, 0) > 0 THEN
+				jsonb_build_object(
+					'quota_5h_used',
+					CASE WHEN `+fiveHourExpiredExpr+`
+					THEN $1
+					ELSE COALESCE((extra->>'quota_5h_used')::numeric, 0) + $1 END,
+					'quota_5h_start',
+					CASE WHEN `+fiveHourExpiredExpr+`
+					THEN `+nowUTC+`
+					ELSE COALESCE(extra->>'quota_5h_start', `+nowUTC+`) END
+				)
+			ELSE '{}'::jsonb END
 			-- 日额度：仅在 quota_daily_limit > 0 时处理
 			|| CASE WHEN COALESCE((extra->>'quota_daily_limit')::numeric, 0) > 0 THEN
 				jsonb_build_object(
@@ -1893,8 +1913,8 @@ func (r *accountRepository) ResetQuotaUsed(ctx context.Context, id int64) error 
 	_, err := r.sql.ExecContext(ctx,
 		`UPDATE accounts SET extra = (
 			COALESCE(extra, '{}'::jsonb)
-			|| '{"quota_used": 0, "quota_daily_used": 0, "quota_weekly_used": 0}'::jsonb
-		) - 'quota_daily_start' - 'quota_weekly_start' - 'quota_daily_reset_at' - 'quota_weekly_reset_at', updated_at = NOW()
+			|| '{"quota_used": 0, "quota_5h_used": 0, "quota_daily_used": 0, "quota_weekly_used": 0}'::jsonb
+		) - 'quota_5h_start' - 'quota_daily_start' - 'quota_weekly_start' - 'quota_daily_reset_at' - 'quota_weekly_reset_at', updated_at = NOW()
 		WHERE id = $1 AND deleted_at IS NULL`,
 		id)
 	if err != nil {

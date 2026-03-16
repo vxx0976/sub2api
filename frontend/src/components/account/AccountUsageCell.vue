@@ -385,6 +385,13 @@
     <!-- API Key accounts with quota limits: show progress bars -->
     <div v-else-if="hasApiKeyQuota" class="space-y-1">
       <UsageProgressBar
+        v-if="quota5hBar"
+        label="5h"
+        :utilization="quota5hBar.utilization"
+        :resets-at="quota5hBar.resetsAt"
+        color="indigo"
+      />
+      <UsageProgressBar
         v-if="quotaDailyBar"
         label="1d"
         :utilization="quotaDailyBar.utilization"
@@ -942,22 +949,33 @@ const makeQuotaBar = (
   let resetsAt: string | null = null
   if (startKey) {
     const extra = props.account.extra as Record<string, unknown> | undefined
+    const is5h = startKey.includes('5h')
     const isDaily = startKey.includes('daily')
-    const mode = isDaily
-      ? (extra?.quota_daily_reset_mode as string) || 'rolling'
-      : (extra?.quota_weekly_reset_mode as string) || 'rolling'
 
-    if (mode === 'fixed') {
-      // Use pre-computed next reset time for fixed mode
-      const resetAtKey = isDaily ? 'quota_daily_reset_at' : 'quota_weekly_reset_at'
-      resetsAt = (extra?.[resetAtKey] as string) || null
-    } else {
-      // Rolling mode: compute from start + period
+    if (is5h) {
+      // 5h is always rolling
       const startStr = extra?.[startKey] as string | undefined
       if (startStr) {
         const startDate = new Date(startStr)
-        const periodMs = isDaily ? 24 * 60 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000
-        resetsAt = new Date(startDate.getTime() + periodMs).toISOString()
+        resetsAt = new Date(startDate.getTime() + 5 * 60 * 60 * 1000).toISOString()
+      }
+    } else {
+      const mode = isDaily
+        ? (extra?.quota_daily_reset_mode as string) || 'rolling'
+        : (extra?.quota_weekly_reset_mode as string) || 'rolling'
+
+      if (mode === 'fixed') {
+        // Use pre-computed next reset time for fixed mode
+        const resetAtKey = isDaily ? 'quota_daily_reset_at' : 'quota_weekly_reset_at'
+        resetsAt = (extra?.[resetAtKey] as string) || null
+      } else {
+        // Rolling mode: compute from start + period
+        const startStr = extra?.[startKey] as string | undefined
+        if (startStr) {
+          const startDate = new Date(startStr)
+          const periodMs = isDaily ? 24 * 60 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000
+          resetsAt = new Date(startDate.getTime() + periodMs).toISOString()
+        }
       }
     }
   }
@@ -967,10 +985,17 @@ const makeQuotaBar = (
 const hasApiKeyQuota = computed(() => {
   if (props.account.type !== 'apikey' && props.account.type !== 'bedrock') return false
   return (
+    (props.account.quota_5h_limit ?? 0) > 0 ||
     (props.account.quota_daily_limit ?? 0) > 0 ||
     (props.account.quota_weekly_limit ?? 0) > 0 ||
     (props.account.quota_limit ?? 0) > 0
   )
+})
+
+const quota5hBar = computed((): QuotaBarInfo | null => {
+  const limit = props.account.quota_5h_limit ?? 0
+  if (limit <= 0) return null
+  return makeQuotaBar(props.account.quota_5h_used ?? 0, limit, 'quota_5h_start')
 })
 
 const quotaDailyBar = computed((): QuotaBarInfo | null => {

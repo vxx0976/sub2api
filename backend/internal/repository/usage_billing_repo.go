@@ -245,6 +245,20 @@ func incrementUsageBillingAccountQuota(ctx context.Context, tx *sql.Tx, accountI
 		`UPDATE accounts SET extra = (
 			COALESCE(extra, '{}'::jsonb)
 			|| jsonb_build_object('quota_used', COALESCE((extra->>'quota_used')::numeric, 0) + $1)
+			|| CASE WHEN COALESCE((extra->>'quota_5h_limit')::numeric, 0) > 0 THEN
+				jsonb_build_object(
+					'quota_5h_used',
+					CASE WHEN COALESCE((extra->>'quota_5h_start')::timestamptz, '1970-01-01'::timestamptz)
+						+ '5 hours'::interval <= NOW()
+					THEN $1
+					ELSE COALESCE((extra->>'quota_5h_used')::numeric, 0) + $1 END,
+					'quota_5h_start',
+					CASE WHEN COALESCE((extra->>'quota_5h_start')::timestamptz, '1970-01-01'::timestamptz)
+						+ '5 hours'::interval <= NOW()
+					THEN `+nowUTC+`
+					ELSE COALESCE(extra->>'quota_5h_start', `+nowUTC+`) END
+				)
+			ELSE '{}'::jsonb END
 			|| CASE WHEN COALESCE((extra->>'quota_daily_limit')::numeric, 0) > 0 THEN
 				jsonb_build_object(
 					'quota_daily_used',
