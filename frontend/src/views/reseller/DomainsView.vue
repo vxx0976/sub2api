@@ -141,7 +141,7 @@
                       <tbody class="font-mono">
                         <tr>
                           <td class="px-3 py-2">TXT</td>
-                          <td class="px-3 py-2">_domain-verify</td>
+                          <td class="px-3 py-2">_domain-verify.{{ domain.domain }}</td>
                           <td class="px-3 py-2 break-all">domain-verify={{ domain.verify_token }}</td>
                           <td class="px-1 py-2">
                             <button @click="copyToClipboard('domain-verify=' + (domain.verify_token || ''))" class="rounded p-1 text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
@@ -346,7 +346,7 @@
                       <tbody class="font-mono">
                         <tr>
                           <td class="px-3 py-2">TXT</td>
-                          <td class="px-3 py-2">_domain-verify</td>
+                          <td class="px-3 py-2">_domain-verify.{{ editingSite.domain }}</td>
                           <td class="px-3 py-2 break-all">domain-verify={{ editingSite.verify_token }}</td>
                           <td class="px-1 py-2">
                             <button @click="copyToClipboard('domain-verify=' + (editingSite.verify_token || ''))" class="rounded p-1 text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
