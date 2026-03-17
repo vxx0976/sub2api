@@ -1173,7 +1173,9 @@ export default {
       payUrlHint: 'When agent mode is enabled, merchant users will recharge at this URL. Must start with https://',
       minWithdrawal: 'Min Withdrawal Amount',
       minWithdrawalPlaceholder: 'e.g. 10',
-      empty: 'No merchants found'
+      empty: 'No merchants found',
+      backfillSnapshots: 'Backfill Rate Snapshots',
+      backfillSuccess: 'Backfilled rate snapshots for {count} historical records'
     },
     merchantWithdrawals: {
       title: 'Withdrawal Review',

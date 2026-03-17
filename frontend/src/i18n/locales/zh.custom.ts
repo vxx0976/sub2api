@@ -1118,7 +1118,9 @@ export default {
       payUrlHint: '开启代理模式后，商户用户将在此地址完成充值，地址需带 https://',
       minWithdrawal: '最低提现金额',
       minWithdrawalPlaceholder: '例如：10',
-      empty: '暂无商户'
+      empty: '暂无商户',
+      backfillSnapshots: '回填历史倍率',
+      backfillSuccess: '已回填 {count} 条历史记录的倍率快照'
     },
 
     // Merchant Withdrawal Review

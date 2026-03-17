@@ -343,3 +343,9 @@ func (s *CommissionService) AdminGetMerchantSettings(ctx context.Context, mercha
 func (s *CommissionService) AdminUpdateMerchantSettings(ctx context.Context, merchantID int64, settings map[string]string) error {
 	return s.settingRepo.SetAll(ctx, merchantID, settings)
 }
+
+// BackfillMerchantRateSnapshot fills NULL merchant_rate_snapshot values in usage_logs
+// using the current price_multiplier from reseller_settings. Returns updated row count.
+func (s *CommissionService) BackfillMerchantRateSnapshot(ctx context.Context) (int64, error) {
+	return s.usageLogRepo.BackfillMerchantRateSnapshot(ctx)
+}

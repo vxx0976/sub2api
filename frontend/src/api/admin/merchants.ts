@@ -57,5 +57,10 @@ export async function updateMerchantBalance(
   })
 }
 
-export const merchantsAPI = { getMerchants, getMerchantSettings, updateMerchantSettings, updateMerchantBalance }
+export async function backfillSnapshots(): Promise<{ updated: number }> {
+  const { data } = await apiClient.post<{ updated: number }>('/admin/merchants/backfill-snapshots')
+  return data
+}
+
+export const merchantsAPI = { getMerchants, getMerchantSettings, updateMerchantSettings, updateMerchantBalance, backfillSnapshots }
 export default merchantsAPI

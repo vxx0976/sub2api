@@ -4246,3 +4246,28 @@ func (r *usageLogRepository) SumTodayCostByUserIDs(ctx context.Context, userIDs 
 	}
 	return total, nil
 }
+
+// BackfillMerchantRateSnapshot fills in NULL merchant_rate_snapshot values
+// for users with a parent reseller that has a valid price_multiplier setting.
+func (r *usageLogRepository) BackfillMerchantRateSnapshot(ctx context.Context) (int64, error) {
+	query := `
+		UPDATE usage_logs ul
+		SET merchant_rate_snapshot = rs.mult
+		FROM users u
+		JOIN (
+			SELECT reseller_id, value::double precision AS mult
+			FROM reseller_settings
+			WHERE key = 'price_multiplier'
+			  AND value ~ '^\d+\.?\d*$'
+			  AND value::double precision > 0
+		) rs ON rs.reseller_id = u.parent_id
+		WHERE ul.user_id = u.id
+		  AND u.parent_id IS NOT NULL
+		  AND ul.merchant_rate_snapshot IS NULL
+	`
+	result, err := r.sql.ExecContext(ctx, query)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}

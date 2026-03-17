@@ -85,6 +85,9 @@ type UsageLogRepository interface {
 	ListCommissionDetail(ctx context.Context, userIDs []int64, startDate, endDate *time.Time, userIDFilter *int64, limit, offset int) ([]*CommissionDetailItem, int, error)
 	// SumTodayCostByUserIDs returns today's total_cost for the given user IDs
 	SumTodayCostByUserIDs(ctx context.Context, userIDs []int64) (float64, error)
+	// BackfillMerchantRateSnapshot fills in NULL merchant_rate_snapshot values
+	// using the current price_multiplier from reseller_settings. Returns the number of rows updated.
+	BackfillMerchantRateSnapshot(ctx context.Context) (int64, error)
 }
 
 type accountWindowStatsBatchReader interface {

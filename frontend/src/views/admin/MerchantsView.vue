@@ -8,6 +8,13 @@
           <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ t('admin.merchants.description') }}</p>
         </div>
         <div class="flex items-center gap-3">
+          <button
+            @click="handleBackfillSnapshots"
+            :disabled="backfilling"
+            class="btn btn-secondary"
+          >
+            {{ backfilling ? t('common.loading') : t('admin.merchants.backfillSnapshots') }}
+          </button>
           <input
             v-model="searchQuery"
             type="text"
@@ -222,6 +229,7 @@ const appStore = useAppStore()
 const loading = ref(true)
 const items = ref<MerchantUser[]>([])
 const searchQuery = ref('')
+const backfilling = ref(false)
 let searchTimer: ReturnType<typeof setTimeout> | null = null
 
 const pagination = reactive({
@@ -312,6 +320,18 @@ async function handleSettingsSubmit() {
     appStore.showError(error.message || t('common.error'))
   } finally {
     settingsSubmitting.value = false
+  }
+}
+
+async function handleBackfillSnapshots() {
+  backfilling.value = true
+  try {
+    const result = await adminAPI.merchants.backfillSnapshots()
+    appStore.showSuccess(t('admin.merchants.backfillSuccess', { count: result.updated }))
+  } catch (error: any) {
+    appStore.showError(error.message || t('common.error'))
+  } finally {
+    backfilling.value = false
   }
 }
 

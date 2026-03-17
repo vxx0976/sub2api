@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/handler/dto"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
@@ -117,4 +118,17 @@ func (h *MerchantHandler) UpdateBalance(c *gin.Context) {
 		}
 		return dto.UserFromServiceAdmin(user), nil
 	})
+}
+
+// BackfillSnapshots POST /api/v1/admin/merchants/backfill-snapshots
+// Backfills NULL merchant_rate_snapshot values in usage_logs using current price_multiplier settings.
+func (h *MerchantHandler) BackfillSnapshots(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
+	updated, err := h.commissionService.BackfillMerchantRateSnapshot(ctx)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, gin.H{"updated": updated})
 }
