@@ -10,7 +10,7 @@
         <div class="flex items-center gap-3">
           <div v-if="summary" class="rounded-lg bg-blue-50 px-4 py-2 dark:bg-blue-900/20">
             <p class="text-xs text-blue-600 dark:text-blue-400">{{ t('reseller.withdrawals.available') }}</p>
-            <p class="text-lg font-bold text-blue-700 dark:text-blue-300">${{ summary.available }}</p>
+            <p class="text-lg font-bold text-blue-700 dark:text-blue-300">¥{{ Number(summary.available).toFixed(2) }}</p>
           </div>
           <button @click="openApplyDialog" class="btn">
             {{ t('reseller.withdrawals.apply') }}
@@ -138,7 +138,7 @@
             />
           </div>
           <p v-if="summary" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            {{ t('reseller.withdrawals.availableBalance') }}: ${{ summary.available }}
+            {{ t('reseller.withdrawals.availableBalance') }}: ¥{{ Number(summary.available).toFixed(2) }}
           </p>
         </div>
         <div>
