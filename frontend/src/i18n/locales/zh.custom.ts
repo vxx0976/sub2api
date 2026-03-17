@@ -1119,8 +1119,8 @@ export default {
       minWithdrawal: '最低提现金额',
       minWithdrawalPlaceholder: '例如：10',
       empty: '暂无商户',
-      backfillSnapshots: '回填历史倍率',
-      backfillSuccess: '已回填 {count} 条历史记录的倍率快照'
+      backfillSnapshots: '历史数据修复',
+      backfillSuccess: '已修复 {count} 条历史记录'
     },
 
     // Merchant Withdrawal Review

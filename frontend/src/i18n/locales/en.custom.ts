@@ -1174,8 +1174,8 @@ export default {
       minWithdrawal: 'Min Withdrawal Amount',
       minWithdrawalPlaceholder: 'e.g. 10',
       empty: 'No merchants found',
-      backfillSnapshots: 'Backfill Rate Snapshots',
-      backfillSuccess: 'Backfilled rate snapshots for {count} historical records'
+      backfillSnapshots: 'Fix Historical Data',
+      backfillSuccess: 'Fixed {count} historical records'
     },
     merchantWithdrawals: {
       title: 'Withdrawal Review',

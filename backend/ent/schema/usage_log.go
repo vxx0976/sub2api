@@ -97,6 +97,12 @@ func (UsageLog) Fields() []ent.Field {
 			Nillable().
 			SchemaType(map[string]string{dialect.Postgres: "decimal(10,4)"}),
 
+		// platform_cost_snapshot: 商户平台进价快照（NULL 表示非商户用户或未配置）
+		field.Float("platform_cost_snapshot").
+			Optional().
+			Nillable().
+			SchemaType(map[string]string{dialect.Postgres: "decimal(10,4)"}),
+
 		// 其他字段
 		field.Int8("billing_type").
 			Default(0),

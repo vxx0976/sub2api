@@ -295,6 +295,20 @@ func (_c *UsageLogCreate) SetNillableMerchantRateSnapshot(v *float64) *UsageLogC
 	return _c
 }
 
+// SetPlatformCostSnapshot sets the "platform_cost_snapshot" field.
+func (_c *UsageLogCreate) SetPlatformCostSnapshot(v float64) *UsageLogCreate {
+	_c.mutation.SetPlatformCostSnapshot(v)
+	return _c
+}
+
+// SetNillablePlatformCostSnapshot sets the "platform_cost_snapshot" field if the given value is not nil.
+func (_c *UsageLogCreate) SetNillablePlatformCostSnapshot(v *float64) *UsageLogCreate {
+	if v != nil {
+		_c.SetPlatformCostSnapshot(*v)
+	}
+	return _c
+}
+
 // SetBillingType sets the "billing_type" field.
 func (_c *UsageLogCreate) SetBillingType(v int8) *UsageLogCreate {
 	_c.mutation.SetBillingType(v)
@@ -787,6 +801,10 @@ func (_c *UsageLogCreate) createSpec() (*UsageLog, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.MerchantRateSnapshot(); ok {
 		_spec.SetField(usagelog.FieldMerchantRateSnapshot, field.TypeFloat64, value)
 		_node.MerchantRateSnapshot = &value
+	}
+	if value, ok := _c.mutation.PlatformCostSnapshot(); ok {
+		_spec.SetField(usagelog.FieldPlatformCostSnapshot, field.TypeFloat64, value)
+		_node.PlatformCostSnapshot = &value
 	}
 	if value, ok := _c.mutation.BillingType(); ok {
 		_spec.SetField(usagelog.FieldBillingType, field.TypeInt8, value)
@@ -1344,6 +1362,30 @@ func (u *UsageLogUpsert) AddMerchantRateSnapshot(v float64) *UsageLogUpsert {
 // ClearMerchantRateSnapshot clears the value of the "merchant_rate_snapshot" field.
 func (u *UsageLogUpsert) ClearMerchantRateSnapshot() *UsageLogUpsert {
 	u.SetNull(usagelog.FieldMerchantRateSnapshot)
+	return u
+}
+
+// SetPlatformCostSnapshot sets the "platform_cost_snapshot" field.
+func (u *UsageLogUpsert) SetPlatformCostSnapshot(v float64) *UsageLogUpsert {
+	u.Set(usagelog.FieldPlatformCostSnapshot, v)
+	return u
+}
+
+// UpdatePlatformCostSnapshot sets the "platform_cost_snapshot" field to the value that was provided on create.
+func (u *UsageLogUpsert) UpdatePlatformCostSnapshot() *UsageLogUpsert {
+	u.SetExcluded(usagelog.FieldPlatformCostSnapshot)
+	return u
+}
+
+// AddPlatformCostSnapshot adds v to the "platform_cost_snapshot" field.
+func (u *UsageLogUpsert) AddPlatformCostSnapshot(v float64) *UsageLogUpsert {
+	u.Add(usagelog.FieldPlatformCostSnapshot, v)
+	return u
+}
+
+// ClearPlatformCostSnapshot clears the value of the "platform_cost_snapshot" field.
+func (u *UsageLogUpsert) ClearPlatformCostSnapshot() *UsageLogUpsert {
+	u.SetNull(usagelog.FieldPlatformCostSnapshot)
 	return u
 }
 
@@ -2010,6 +2052,34 @@ func (u *UsageLogUpsertOne) UpdateMerchantRateSnapshot() *UsageLogUpsertOne {
 func (u *UsageLogUpsertOne) ClearMerchantRateSnapshot() *UsageLogUpsertOne {
 	return u.Update(func(s *UsageLogUpsert) {
 		s.ClearMerchantRateSnapshot()
+	})
+}
+
+// SetPlatformCostSnapshot sets the "platform_cost_snapshot" field.
+func (u *UsageLogUpsertOne) SetPlatformCostSnapshot(v float64) *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.SetPlatformCostSnapshot(v)
+	})
+}
+
+// AddPlatformCostSnapshot adds v to the "platform_cost_snapshot" field.
+func (u *UsageLogUpsertOne) AddPlatformCostSnapshot(v float64) *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.AddPlatformCostSnapshot(v)
+	})
+}
+
+// UpdatePlatformCostSnapshot sets the "platform_cost_snapshot" field to the value that was provided on create.
+func (u *UsageLogUpsertOne) UpdatePlatformCostSnapshot() *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.UpdatePlatformCostSnapshot()
+	})
+}
+
+// ClearPlatformCostSnapshot clears the value of the "platform_cost_snapshot" field.
+func (u *UsageLogUpsertOne) ClearPlatformCostSnapshot() *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.ClearPlatformCostSnapshot()
 	})
 }
 
@@ -2872,6 +2942,34 @@ func (u *UsageLogUpsertBulk) UpdateMerchantRateSnapshot() *UsageLogUpsertBulk {
 func (u *UsageLogUpsertBulk) ClearMerchantRateSnapshot() *UsageLogUpsertBulk {
 	return u.Update(func(s *UsageLogUpsert) {
 		s.ClearMerchantRateSnapshot()
+	})
+}
+
+// SetPlatformCostSnapshot sets the "platform_cost_snapshot" field.
+func (u *UsageLogUpsertBulk) SetPlatformCostSnapshot(v float64) *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.SetPlatformCostSnapshot(v)
+	})
+}
+
+// AddPlatformCostSnapshot adds v to the "platform_cost_snapshot" field.
+func (u *UsageLogUpsertBulk) AddPlatformCostSnapshot(v float64) *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.AddPlatformCostSnapshot(v)
+	})
+}
+
+// UpdatePlatformCostSnapshot sets the "platform_cost_snapshot" field to the value that was provided on create.
+func (u *UsageLogUpsertBulk) UpdatePlatformCostSnapshot() *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.UpdatePlatformCostSnapshot()
+	})
+}
+
+// ClearPlatformCostSnapshot clears the value of the "platform_cost_snapshot" field.
+func (u *UsageLogUpsertBulk) ClearPlatformCostSnapshot() *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.ClearPlatformCostSnapshot()
 	})
 }
 

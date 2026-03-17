@@ -131,6 +131,8 @@ type UsageLog struct {
 	AccountRateMultiplier *float64
 	// MerchantRateSnapshot 商户定价倍率快照（nil 表示非商户用户或商户未配置倍率）
 	MerchantRateSnapshot *float64
+	// PlatformCostSnapshot 商户平台进价快照（nil 表示非商户用户或未配置）
+	PlatformCostSnapshot *float64
 
 	BillingType  int8
 	RequestType  RequestType

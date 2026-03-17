@@ -654,21 +654,29 @@ func NewGatewayService(
 	return svc
 }
 
-// getMerchantRateSnapshot returns the price_multiplier for the reseller that owns this user,
-// or nil if the user has no parent or the setting is absent/invalid.
-func (s *GatewayService) getMerchantRateSnapshot(ctx context.Context, parentID *int64) *float64 {
+// getMerchantSnapshots returns the price_multiplier and platform_cost for the reseller
+// that owns this user, or nil if the user has no parent or the settings are absent/invalid.
+func (s *GatewayService) getMerchantSnapshots(ctx context.Context, parentID *int64) (multiplier *float64, platformCost *float64) {
 	if parentID == nil {
-		return nil
+		return nil, nil
 	}
 	val, err := s.resellerSettingRepo.Get(ctx, *parentID, "price_multiplier")
 	if err != nil || val == "" {
-		return nil
+		return nil, nil
 	}
 	mult, err := strconv.ParseFloat(val, 64)
 	if err != nil || mult <= 0 {
-		return nil
+		return nil, nil
 	}
-	return &mult
+	pcVal, err := s.resellerSettingRepo.Get(ctx, *parentID, "platform_cost")
+	if err != nil || pcVal == "" {
+		return &mult, nil
+	}
+	pc, err := strconv.ParseFloat(pcVal, 64)
+	if err != nil || pc <= 0 {
+		return &mult, nil
+	}
+	return &mult, &pc
 }
 
 // GenerateSessionHash 从预解析请求计算粘性会话 hash
@@ -7958,8 +7966,8 @@ func (s *GatewayService) RecordUsage(ctx context.Context, input *RecordUsageInpu
 	}
 	accountRateMultiplier := account.BillingRateMultiplier()
 
-	// Compute merchant_rate_snapshot if user belongs to a reseller
-	merchantRateSnapshot := s.getMerchantRateSnapshot(ctx, user.ParentID)
+	// Compute merchant snapshots if user belongs to a reseller
+	merchantRateSnapshot, platformCostSnapshot := s.getMerchantSnapshots(ctx, user.ParentID)
 
 	requestID := resolveUsageBillingRequestID(ctx, result.RequestID)
 	usageLog := &UsageLog{
@@ -7986,6 +7994,7 @@ func (s *GatewayService) RecordUsage(ctx context.Context, input *RecordUsageInpu
 		RateMultiplier:        multiplier,
 		AccountRateMultiplier: &accountRateMultiplier,
 		MerchantRateSnapshot:  merchantRateSnapshot,
+		PlatformCostSnapshot:  platformCostSnapshot,
 		BillingType:           billingType,
 		Stream:                result.Stream,
 		DurationMs:            &durationMs,
@@ -8147,8 +8156,8 @@ func (s *GatewayService) RecordUsageWithLongContext(ctx context.Context, input *
 	}
 	accountRateMultiplier := account.BillingRateMultiplier()
 
-	// Compute merchant_rate_snapshot if user belongs to a reseller
-	merchantRateSnapshotLong := s.getMerchantRateSnapshot(ctx, user.ParentID)
+	// Compute merchant snapshots if user belongs to a reseller
+	merchantRateSnapshotLong, platformCostSnapshotLong := s.getMerchantSnapshots(ctx, user.ParentID)
 
 	requestID := resolveUsageBillingRequestID(ctx, result.RequestID)
 	usageLog := &UsageLog{
@@ -8175,6 +8184,7 @@ func (s *GatewayService) RecordUsageWithLongContext(ctx context.Context, input *
 		RateMultiplier:        multiplier,
 		AccountRateMultiplier: &accountRateMultiplier,
 		MerchantRateSnapshot:  merchantRateSnapshotLong,
+		PlatformCostSnapshot:  platformCostSnapshotLong,
 		BillingType:           billingType,
 		Stream:                result.Stream,
 		DurationMs:            &durationMs,

@@ -10,30 +10,26 @@
       </div>
 
       <!-- Summary Cards -->
-      <div v-if="summary" class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-        <div class="card p-4">
-          <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('reseller.commissions.priceMultiplier') }}</p>
-          <p class="mt-1 text-xl font-bold text-gray-900 dark:text-white">{{ summary.price_multiplier }}x</p>
-        </div>
+      <div v-if="summary" class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
         <div class="card p-4">
           <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('reseller.commissions.totalCost') }}</p>
           <p class="mt-1 text-xl font-bold text-gray-900 dark:text-white">${{ summary.total_cost }}</p>
         </div>
         <div class="card p-4">
           <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('reseller.commissions.totalCommission') }}</p>
-          <p class="mt-1 text-xl font-bold text-emerald-600 dark:text-emerald-400">${{ summary.total_commission }}</p>
+          <p class="mt-1 text-xl font-bold text-emerald-600 dark:text-emerald-400">¥{{ summary.total_commission }}</p>
         </div>
         <div class="card p-4">
           <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('reseller.commissions.withdrawn') }}</p>
-          <p class="mt-1 text-xl font-bold text-gray-900 dark:text-white">${{ summary.withdrawn }}</p>
+          <p class="mt-1 text-xl font-bold text-gray-900 dark:text-white">¥{{ summary.withdrawn }}</p>
         </div>
         <div class="card p-4">
           <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('reseller.commissions.pending') }}</p>
-          <p class="mt-1 text-xl font-bold text-yellow-600 dark:text-yellow-400">${{ summary.pending }}</p>
+          <p class="mt-1 text-xl font-bold text-yellow-600 dark:text-yellow-400">¥{{ summary.pending }}</p>
         </div>
         <div class="card p-4">
           <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('reseller.commissions.available') }}</p>
-          <p class="mt-1 text-xl font-bold text-blue-600 dark:text-blue-400">${{ summary.available }}</p>
+          <p class="mt-1 text-xl font-bold text-blue-600 dark:text-blue-400">¥{{ summary.available }}</p>
         </div>
       </div>
 
@@ -88,7 +84,6 @@
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('reseller.commissions.userId') }}</th>
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('reseller.commissions.model') }}</th>
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('reseller.commissions.totalCost') }}</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('reseller.commissions.merchantRateSnapshot') }}</th>
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('reseller.commissions.commission') }}</th>
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('reseller.commissions.createdAt') }}</th>
               </tr>
@@ -109,10 +104,7 @@
                   <span class="text-sm text-gray-900 dark:text-white">${{ item.total_cost }}</span>
                 </td>
                 <td class="px-4 py-3">
-                  <span class="text-sm text-gray-600 dark:text-gray-300">{{ item.merchant_rate_snapshot }}x</span>
-                </td>
-                <td class="px-4 py-3">
-                  <span class="text-sm font-medium text-emerald-600 dark:text-emerald-400">${{ item.commission }}</span>
+                  <span class="text-sm font-medium text-emerald-600 dark:text-emerald-400">¥{{ item.commission }}</span>
                 </td>
                 <td class="px-4 py-3">
                   <span class="text-sm text-gray-500 dark:text-gray-400">{{ formatDateTime(item.created_at) }}</span>

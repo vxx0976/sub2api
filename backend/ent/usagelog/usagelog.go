@@ -58,6 +58,8 @@ const (
 	FieldAccountRateMultiplier = "account_rate_multiplier"
 	// FieldMerchantRateSnapshot holds the string denoting the merchant_rate_snapshot field in the database.
 	FieldMerchantRateSnapshot = "merchant_rate_snapshot"
+	// FieldPlatformCostSnapshot holds the string denoting the platform_cost_snapshot field in the database.
+	FieldPlatformCostSnapshot = "platform_cost_snapshot"
 	// FieldBillingType holds the string denoting the billing_type field in the database.
 	FieldBillingType = "billing_type"
 	// FieldStream holds the string denoting the stream field in the database.
@@ -154,6 +156,7 @@ var Columns = []string{
 	FieldRateMultiplier,
 	FieldAccountRateMultiplier,
 	FieldMerchantRateSnapshot,
+	FieldPlatformCostSnapshot,
 	FieldBillingType,
 	FieldStream,
 	FieldDurationMs,
@@ -344,6 +347,11 @@ func ByAccountRateMultiplier(opts ...sql.OrderTermOption) OrderOption {
 // ByMerchantRateSnapshot orders the results by the merchant_rate_snapshot field.
 func ByMerchantRateSnapshot(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldMerchantRateSnapshot, opts...).ToFunc()
+}
+
+// ByPlatformCostSnapshot orders the results by the platform_cost_snapshot field.
+func ByPlatformCostSnapshot(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPlatformCostSnapshot, opts...).ToFunc()
 }
 
 // ByBillingType orders the results by the billing_type field.

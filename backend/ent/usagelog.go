@@ -66,6 +66,8 @@ type UsageLog struct {
 	AccountRateMultiplier *float64 `json:"account_rate_multiplier,omitempty"`
 	// MerchantRateSnapshot holds the value of the "merchant_rate_snapshot" field.
 	MerchantRateSnapshot *float64 `json:"merchant_rate_snapshot,omitempty"`
+	// PlatformCostSnapshot holds the value of the "platform_cost_snapshot" field.
+	PlatformCostSnapshot *float64 `json:"platform_cost_snapshot,omitempty"`
 	// BillingType holds the value of the "billing_type" field.
 	BillingType int8 `json:"billing_type,omitempty"`
 	// Stream holds the value of the "stream" field.
@@ -173,7 +175,7 @@ func (*UsageLog) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case usagelog.FieldStream, usagelog.FieldCacheTTLOverridden:
 			values[i] = new(sql.NullBool)
-		case usagelog.FieldInputCost, usagelog.FieldOutputCost, usagelog.FieldCacheCreationCost, usagelog.FieldCacheReadCost, usagelog.FieldTotalCost, usagelog.FieldActualCost, usagelog.FieldRateMultiplier, usagelog.FieldAccountRateMultiplier, usagelog.FieldMerchantRateSnapshot:
+		case usagelog.FieldInputCost, usagelog.FieldOutputCost, usagelog.FieldCacheCreationCost, usagelog.FieldCacheReadCost, usagelog.FieldTotalCost, usagelog.FieldActualCost, usagelog.FieldRateMultiplier, usagelog.FieldAccountRateMultiplier, usagelog.FieldMerchantRateSnapshot, usagelog.FieldPlatformCostSnapshot:
 			values[i] = new(sql.NullFloat64)
 		case usagelog.FieldID, usagelog.FieldUserID, usagelog.FieldAPIKeyID, usagelog.FieldAccountID, usagelog.FieldGroupID, usagelog.FieldSubscriptionID, usagelog.FieldInputTokens, usagelog.FieldOutputTokens, usagelog.FieldCacheCreationTokens, usagelog.FieldCacheReadTokens, usagelog.FieldCacheCreation5mTokens, usagelog.FieldCacheCreation1hTokens, usagelog.FieldBillingType, usagelog.FieldDurationMs, usagelog.FieldFirstTokenMs, usagelog.FieldImageCount:
 			values[i] = new(sql.NullInt64)
@@ -337,6 +339,13 @@ func (_m *UsageLog) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.MerchantRateSnapshot = new(float64)
 				*_m.MerchantRateSnapshot = value.Float64
+			}
+		case usagelog.FieldPlatformCostSnapshot:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field platform_cost_snapshot", values[i])
+			} else if value.Valid {
+				_m.PlatformCostSnapshot = new(float64)
+				*_m.PlatformCostSnapshot = value.Float64
 			}
 		case usagelog.FieldBillingType:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -542,6 +551,11 @@ func (_m *UsageLog) String() string {
 	builder.WriteString(", ")
 	if v := _m.MerchantRateSnapshot; v != nil {
 		builder.WriteString("merchant_rate_snapshot=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.PlatformCostSnapshot; v != nil {
+		builder.WriteString("platform_cost_snapshot=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")

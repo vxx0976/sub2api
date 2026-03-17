@@ -23,6 +23,7 @@ export interface CommissionDetailItem {
   model: string
   total_cost: string
   merchant_rate_snapshot: string
+  platform_cost_snapshot?: string
   commission: string
   created_at: string
 }

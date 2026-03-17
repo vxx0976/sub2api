@@ -469,6 +469,33 @@ func (_u *UsageLogUpdate) ClearMerchantRateSnapshot() *UsageLogUpdate {
 	return _u
 }
 
+// SetPlatformCostSnapshot sets the "platform_cost_snapshot" field.
+func (_u *UsageLogUpdate) SetPlatformCostSnapshot(v float64) *UsageLogUpdate {
+	_u.mutation.ResetPlatformCostSnapshot()
+	_u.mutation.SetPlatformCostSnapshot(v)
+	return _u
+}
+
+// SetNillablePlatformCostSnapshot sets the "platform_cost_snapshot" field if the given value is not nil.
+func (_u *UsageLogUpdate) SetNillablePlatformCostSnapshot(v *float64) *UsageLogUpdate {
+	if v != nil {
+		_u.SetPlatformCostSnapshot(*v)
+	}
+	return _u
+}
+
+// AddPlatformCostSnapshot adds value to the "platform_cost_snapshot" field.
+func (_u *UsageLogUpdate) AddPlatformCostSnapshot(v float64) *UsageLogUpdate {
+	_u.mutation.AddPlatformCostSnapshot(v)
+	return _u
+}
+
+// ClearPlatformCostSnapshot clears the value of the "platform_cost_snapshot" field.
+func (_u *UsageLogUpdate) ClearPlatformCostSnapshot() *UsageLogUpdate {
+	_u.mutation.ClearPlatformCostSnapshot()
+	return _u
+}
+
 // SetBillingType sets the "billing_type" field.
 func (_u *UsageLogUpdate) SetBillingType(v int8) *UsageLogUpdate {
 	_u.mutation.ResetBillingType()
@@ -917,6 +944,15 @@ func (_u *UsageLogUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.MerchantRateSnapshotCleared() {
 		_spec.ClearField(usagelog.FieldMerchantRateSnapshot, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.PlatformCostSnapshot(); ok {
+		_spec.SetField(usagelog.FieldPlatformCostSnapshot, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedPlatformCostSnapshot(); ok {
+		_spec.AddField(usagelog.FieldPlatformCostSnapshot, field.TypeFloat64, value)
+	}
+	if _u.mutation.PlatformCostSnapshotCleared() {
+		_spec.ClearField(usagelog.FieldPlatformCostSnapshot, field.TypeFloat64)
 	}
 	if value, ok := _u.mutation.BillingType(); ok {
 		_spec.SetField(usagelog.FieldBillingType, field.TypeInt8, value)
@@ -1580,6 +1616,33 @@ func (_u *UsageLogUpdateOne) ClearMerchantRateSnapshot() *UsageLogUpdateOne {
 	return _u
 }
 
+// SetPlatformCostSnapshot sets the "platform_cost_snapshot" field.
+func (_u *UsageLogUpdateOne) SetPlatformCostSnapshot(v float64) *UsageLogUpdateOne {
+	_u.mutation.ResetPlatformCostSnapshot()
+	_u.mutation.SetPlatformCostSnapshot(v)
+	return _u
+}
+
+// SetNillablePlatformCostSnapshot sets the "platform_cost_snapshot" field if the given value is not nil.
+func (_u *UsageLogUpdateOne) SetNillablePlatformCostSnapshot(v *float64) *UsageLogUpdateOne {
+	if v != nil {
+		_u.SetPlatformCostSnapshot(*v)
+	}
+	return _u
+}
+
+// AddPlatformCostSnapshot adds value to the "platform_cost_snapshot" field.
+func (_u *UsageLogUpdateOne) AddPlatformCostSnapshot(v float64) *UsageLogUpdateOne {
+	_u.mutation.AddPlatformCostSnapshot(v)
+	return _u
+}
+
+// ClearPlatformCostSnapshot clears the value of the "platform_cost_snapshot" field.
+func (_u *UsageLogUpdateOne) ClearPlatformCostSnapshot() *UsageLogUpdateOne {
+	_u.mutation.ClearPlatformCostSnapshot()
+	return _u
+}
+
 // SetBillingType sets the "billing_type" field.
 func (_u *UsageLogUpdateOne) SetBillingType(v int8) *UsageLogUpdateOne {
 	_u.mutation.ResetBillingType()
@@ -2058,6 +2121,15 @@ func (_u *UsageLogUpdateOne) sqlSave(ctx context.Context) (_node *UsageLog, err 
 	}
 	if _u.mutation.MerchantRateSnapshotCleared() {
 		_spec.ClearField(usagelog.FieldMerchantRateSnapshot, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.PlatformCostSnapshot(); ok {
+		_spec.SetField(usagelog.FieldPlatformCostSnapshot, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedPlatformCostSnapshot(); ok {
+		_spec.AddField(usagelog.FieldPlatformCostSnapshot, field.TypeFloat64, value)
+	}
+	if _u.mutation.PlatformCostSnapshotCleared() {
+		_spec.ClearField(usagelog.FieldPlatformCostSnapshot, field.TypeFloat64)
 	}
 	if value, ok := _u.mutation.BillingType(); ok {
 		_spec.SetField(usagelog.FieldBillingType, field.TypeInt8, value)

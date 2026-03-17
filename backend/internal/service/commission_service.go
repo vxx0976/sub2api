@@ -71,6 +71,7 @@ type CommissionDetailItem struct {
 	Model                string    `json:"model"`
 	TotalCost            float64   `json:"total_cost"`
 	MerchantRateSnapshot *float64  `json:"merchant_rate_snapshot"`
+	PlatformCostSnapshot *float64  `json:"platform_cost_snapshot"`
 	Commission           float64   `json:"commission"`
 	CreatedAt            time.Time `json:"created_at"`
 }

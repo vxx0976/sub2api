@@ -27490,6 +27490,8 @@ type UsageLogMutation struct {
 	addaccount_rate_multiplier  *float64
 	merchant_rate_snapshot      *float64
 	addmerchant_rate_snapshot   *float64
+	platform_cost_snapshot      *float64
+	addplatform_cost_snapshot   *float64
 	billing_type                *int8
 	addbilling_type             *int8
 	stream                      *bool
@@ -28765,6 +28767,76 @@ func (m *UsageLogMutation) ResetMerchantRateSnapshot() {
 	delete(m.clearedFields, usagelog.FieldMerchantRateSnapshot)
 }
 
+// SetPlatformCostSnapshot sets the "platform_cost_snapshot" field.
+func (m *UsageLogMutation) SetPlatformCostSnapshot(f float64) {
+	m.platform_cost_snapshot = &f
+	m.addplatform_cost_snapshot = nil
+}
+
+// PlatformCostSnapshot returns the value of the "platform_cost_snapshot" field in the mutation.
+func (m *UsageLogMutation) PlatformCostSnapshot() (r float64, exists bool) {
+	v := m.platform_cost_snapshot
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPlatformCostSnapshot returns the old "platform_cost_snapshot" field's value of the UsageLog entity.
+// If the UsageLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageLogMutation) OldPlatformCostSnapshot(ctx context.Context) (v *float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPlatformCostSnapshot is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPlatformCostSnapshot requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPlatformCostSnapshot: %w", err)
+	}
+	return oldValue.PlatformCostSnapshot, nil
+}
+
+// AddPlatformCostSnapshot adds f to the "platform_cost_snapshot" field.
+func (m *UsageLogMutation) AddPlatformCostSnapshot(f float64) {
+	if m.addplatform_cost_snapshot != nil {
+		*m.addplatform_cost_snapshot += f
+	} else {
+		m.addplatform_cost_snapshot = &f
+	}
+}
+
+// AddedPlatformCostSnapshot returns the value that was added to the "platform_cost_snapshot" field in this mutation.
+func (m *UsageLogMutation) AddedPlatformCostSnapshot() (r float64, exists bool) {
+	v := m.addplatform_cost_snapshot
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearPlatformCostSnapshot clears the value of the "platform_cost_snapshot" field.
+func (m *UsageLogMutation) ClearPlatformCostSnapshot() {
+	m.platform_cost_snapshot = nil
+	m.addplatform_cost_snapshot = nil
+	m.clearedFields[usagelog.FieldPlatformCostSnapshot] = struct{}{}
+}
+
+// PlatformCostSnapshotCleared returns if the "platform_cost_snapshot" field was cleared in this mutation.
+func (m *UsageLogMutation) PlatformCostSnapshotCleared() bool {
+	_, ok := m.clearedFields[usagelog.FieldPlatformCostSnapshot]
+	return ok
+}
+
+// ResetPlatformCostSnapshot resets all changes to the "platform_cost_snapshot" field.
+func (m *UsageLogMutation) ResetPlatformCostSnapshot() {
+	m.platform_cost_snapshot = nil
+	m.addplatform_cost_snapshot = nil
+	delete(m.clearedFields, usagelog.FieldPlatformCostSnapshot)
+}
+
 // SetBillingType sets the "billing_type" field.
 func (m *UsageLogMutation) SetBillingType(i int8) {
 	m.billing_type = &i
@@ -29490,7 +29562,7 @@ func (m *UsageLogMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UsageLogMutation) Fields() []string {
-	fields := make([]string, 0, 33)
+	fields := make([]string, 0, 34)
 	if m.user != nil {
 		fields = append(fields, usagelog.FieldUserID)
 	}
@@ -29556,6 +29628,9 @@ func (m *UsageLogMutation) Fields() []string {
 	}
 	if m.merchant_rate_snapshot != nil {
 		fields = append(fields, usagelog.FieldMerchantRateSnapshot)
+	}
+	if m.platform_cost_snapshot != nil {
+		fields = append(fields, usagelog.FieldPlatformCostSnapshot)
 	}
 	if m.billing_type != nil {
 		fields = append(fields, usagelog.FieldBillingType)
@@ -29642,6 +29717,8 @@ func (m *UsageLogMutation) Field(name string) (ent.Value, bool) {
 		return m.AccountRateMultiplier()
 	case usagelog.FieldMerchantRateSnapshot:
 		return m.MerchantRateSnapshot()
+	case usagelog.FieldPlatformCostSnapshot:
+		return m.PlatformCostSnapshot()
 	case usagelog.FieldBillingType:
 		return m.BillingType()
 	case usagelog.FieldStream:
@@ -29717,6 +29794,8 @@ func (m *UsageLogMutation) OldField(ctx context.Context, name string) (ent.Value
 		return m.OldAccountRateMultiplier(ctx)
 	case usagelog.FieldMerchantRateSnapshot:
 		return m.OldMerchantRateSnapshot(ctx)
+	case usagelog.FieldPlatformCostSnapshot:
+		return m.OldPlatformCostSnapshot(ctx)
 	case usagelog.FieldBillingType:
 		return m.OldBillingType(ctx)
 	case usagelog.FieldStream:
@@ -29902,6 +29981,13 @@ func (m *UsageLogMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetMerchantRateSnapshot(v)
 		return nil
+	case usagelog.FieldPlatformCostSnapshot:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPlatformCostSnapshot(v)
+		return nil
 	case usagelog.FieldBillingType:
 		v, ok := value.(int8)
 		if !ok {
@@ -30032,6 +30118,9 @@ func (m *UsageLogMutation) AddedFields() []string {
 	if m.addmerchant_rate_snapshot != nil {
 		fields = append(fields, usagelog.FieldMerchantRateSnapshot)
 	}
+	if m.addplatform_cost_snapshot != nil {
+		fields = append(fields, usagelog.FieldPlatformCostSnapshot)
+	}
 	if m.addbilling_type != nil {
 		fields = append(fields, usagelog.FieldBillingType)
 	}
@@ -30082,6 +30171,8 @@ func (m *UsageLogMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedAccountRateMultiplier()
 	case usagelog.FieldMerchantRateSnapshot:
 		return m.AddedMerchantRateSnapshot()
+	case usagelog.FieldPlatformCostSnapshot:
+		return m.AddedPlatformCostSnapshot()
 	case usagelog.FieldBillingType:
 		return m.AddedBillingType()
 	case usagelog.FieldDurationMs:
@@ -30204,6 +30295,13 @@ func (m *UsageLogMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddMerchantRateSnapshot(v)
 		return nil
+	case usagelog.FieldPlatformCostSnapshot:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPlatformCostSnapshot(v)
+		return nil
 	case usagelog.FieldBillingType:
 		v, ok := value.(int8)
 		if !ok {
@@ -30252,6 +30350,9 @@ func (m *UsageLogMutation) ClearedFields() []string {
 	if m.FieldCleared(usagelog.FieldMerchantRateSnapshot) {
 		fields = append(fields, usagelog.FieldMerchantRateSnapshot)
 	}
+	if m.FieldCleared(usagelog.FieldPlatformCostSnapshot) {
+		fields = append(fields, usagelog.FieldPlatformCostSnapshot)
+	}
 	if m.FieldCleared(usagelog.FieldDurationMs) {
 		fields = append(fields, usagelog.FieldDurationMs)
 	}
@@ -30295,6 +30396,9 @@ func (m *UsageLogMutation) ClearField(name string) error {
 		return nil
 	case usagelog.FieldMerchantRateSnapshot:
 		m.ClearMerchantRateSnapshot()
+		return nil
+	case usagelog.FieldPlatformCostSnapshot:
+		m.ClearPlatformCostSnapshot()
 		return nil
 	case usagelog.FieldDurationMs:
 		m.ClearDurationMs()
@@ -30387,6 +30491,9 @@ func (m *UsageLogMutation) ResetField(name string) error {
 		return nil
 	case usagelog.FieldMerchantRateSnapshot:
 		m.ResetMerchantRateSnapshot()
+		return nil
+	case usagelog.FieldPlatformCostSnapshot:
+		m.ResetPlatformCostSnapshot()
 		return nil
 	case usagelog.FieldBillingType:
 		m.ResetBillingType()

@@ -165,6 +165,11 @@ func MerchantRateSnapshot(v float64) predicate.UsageLog {
 	return predicate.UsageLog(sql.FieldEQ(FieldMerchantRateSnapshot, v))
 }
 
+// PlatformCostSnapshot applies equality check predicate on the "platform_cost_snapshot" field. It's identical to PlatformCostSnapshotEQ.
+func PlatformCostSnapshot(v float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldEQ(FieldPlatformCostSnapshot, v))
+}
+
 // BillingType applies equality check predicate on the "billing_type" field. It's identical to BillingTypeEQ.
 func BillingType(v int8) predicate.UsageLog {
 	return predicate.UsageLog(sql.FieldEQ(FieldBillingType, v))
@@ -1088,6 +1093,56 @@ func MerchantRateSnapshotIsNil() predicate.UsageLog {
 // MerchantRateSnapshotNotNil applies the NotNil predicate on the "merchant_rate_snapshot" field.
 func MerchantRateSnapshotNotNil() predicate.UsageLog {
 	return predicate.UsageLog(sql.FieldNotNull(FieldMerchantRateSnapshot))
+}
+
+// PlatformCostSnapshotEQ applies the EQ predicate on the "platform_cost_snapshot" field.
+func PlatformCostSnapshotEQ(v float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldEQ(FieldPlatformCostSnapshot, v))
+}
+
+// PlatformCostSnapshotNEQ applies the NEQ predicate on the "platform_cost_snapshot" field.
+func PlatformCostSnapshotNEQ(v float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNEQ(FieldPlatformCostSnapshot, v))
+}
+
+// PlatformCostSnapshotIn applies the In predicate on the "platform_cost_snapshot" field.
+func PlatformCostSnapshotIn(vs ...float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldIn(FieldPlatformCostSnapshot, vs...))
+}
+
+// PlatformCostSnapshotNotIn applies the NotIn predicate on the "platform_cost_snapshot" field.
+func PlatformCostSnapshotNotIn(vs ...float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNotIn(FieldPlatformCostSnapshot, vs...))
+}
+
+// PlatformCostSnapshotGT applies the GT predicate on the "platform_cost_snapshot" field.
+func PlatformCostSnapshotGT(v float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldGT(FieldPlatformCostSnapshot, v))
+}
+
+// PlatformCostSnapshotGTE applies the GTE predicate on the "platform_cost_snapshot" field.
+func PlatformCostSnapshotGTE(v float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldGTE(FieldPlatformCostSnapshot, v))
+}
+
+// PlatformCostSnapshotLT applies the LT predicate on the "platform_cost_snapshot" field.
+func PlatformCostSnapshotLT(v float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldLT(FieldPlatformCostSnapshot, v))
+}
+
+// PlatformCostSnapshotLTE applies the LTE predicate on the "platform_cost_snapshot" field.
+func PlatformCostSnapshotLTE(v float64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldLTE(FieldPlatformCostSnapshot, v))
+}
+
+// PlatformCostSnapshotIsNil applies the IsNil predicate on the "platform_cost_snapshot" field.
+func PlatformCostSnapshotIsNil() predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldIsNull(FieldPlatformCostSnapshot))
+}
+
+// PlatformCostSnapshotNotNil applies the NotNil predicate on the "platform_cost_snapshot" field.
+func PlatformCostSnapshotNotNil() predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNotNull(FieldPlatformCostSnapshot))
 }
 
 // BillingTypeEQ applies the EQ predicate on the "billing_type" field.

@@ -28,7 +28,7 @@ import (
 	gocache "github.com/patrickmn/go-cache"
 )
 
-const usageLogSelectColumns = "id, user_id, api_key_id, account_id, request_id, model, group_id, subscription_id, input_tokens, output_tokens, cache_creation_tokens, cache_read_tokens, cache_creation_5m_tokens, cache_creation_1h_tokens, input_cost, output_cost, cache_creation_cost, cache_read_cost, total_cost, actual_cost, rate_multiplier, account_rate_multiplier, billing_type, request_type, stream, openai_ws_mode, duration_ms, first_token_ms, user_agent, ip_address, country_code, image_count, image_size, media_type, service_tier, reasoning_effort, inbound_endpoint, upstream_endpoint, cache_ttl_overridden, merchant_rate_snapshot, created_at"
+const usageLogSelectColumns = "id, user_id, api_key_id, account_id, request_id, model, group_id, subscription_id, input_tokens, output_tokens, cache_creation_tokens, cache_read_tokens, cache_creation_5m_tokens, cache_creation_1h_tokens, input_cost, output_cost, cache_creation_cost, cache_read_cost, total_cost, actual_cost, rate_multiplier, account_rate_multiplier, billing_type, request_type, stream, openai_ws_mode, duration_ms, first_token_ms, user_agent, ip_address, country_code, image_count, image_size, media_type, service_tier, reasoning_effort, inbound_endpoint, upstream_endpoint, cache_ttl_overridden, merchant_rate_snapshot, platform_cost_snapshot, created_at"
 
 var usageLogInsertArgTypes = [...]string{
 	"bigint",
@@ -69,6 +69,7 @@ var usageLogInsertArgTypes = [...]string{
 	"text",
 	"text",
 	"boolean",
+	"numeric",
 	"numeric",
 	"timestamptz",
 }
@@ -313,6 +314,7 @@ func (r *usageLogRepository) createSingle(ctx context.Context, sqlq sqlExecutor,
 			upstream_endpoint,
 			cache_ttl_overridden,
 			merchant_rate_snapshot,
+			platform_cost_snapshot,
 			created_at
 		) VALUES (
 			$1, $2, $3, $4, $5,
@@ -320,7 +322,7 @@ func (r *usageLogRepository) createSingle(ctx context.Context, sqlq sqlExecutor,
 			$8, $9, $10, $11,
 			$12, $13,
 			$14, $15, $16, $17, $18, $19,
-			$20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38
+			$20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39
 		)
 		ON CONFLICT (request_id, api_key_id) DO NOTHING
 		RETURNING id, created_at
@@ -745,10 +747,11 @@ func buildUsageLogBatchInsertQuery(keys []string, preparedByKey map[string]usage
 			upstream_endpoint,
 			cache_ttl_overridden,
 			merchant_rate_snapshot,
+			platform_cost_snapshot,
 			created_at
 		) AS (VALUES `)
 
-	args := make([]any, 0, len(keys)*41)
+	args := make([]any, 0, len(keys)*42)
 	argPos := 1
 	for idx, key := range keys {
 		if idx > 0 {
@@ -816,6 +819,7 @@ func buildUsageLogBatchInsertQuery(keys []string, preparedByKey map[string]usage
 				upstream_endpoint,
 				cache_ttl_overridden,
 				merchant_rate_snapshot,
+				platform_cost_snapshot,
 				created_at
 			)
 			SELECT
@@ -858,6 +862,7 @@ func buildUsageLogBatchInsertQuery(keys []string, preparedByKey map[string]usage
 				upstream_endpoint,
 				cache_ttl_overridden,
 				merchant_rate_snapshot,
+				platform_cost_snapshot,
 				created_at
 			FROM input
 			ON CONFLICT (request_id, api_key_id) DO NOTHING
@@ -940,10 +945,11 @@ func buildUsageLogBestEffortInsertQuery(preparedList []usageLogInsertPrepared) (
 			upstream_endpoint,
 			cache_ttl_overridden,
 			merchant_rate_snapshot,
+			platform_cost_snapshot,
 			created_at
 		) AS (VALUES `)
 
-	args := make([]any, 0, len(preparedList)*38)
+	args := make([]any, 0, len(preparedList)*39)
 	argPos := 1
 	for idx, prepared := range preparedList {
 		if idx > 0 {
@@ -1008,6 +1014,7 @@ func buildUsageLogBestEffortInsertQuery(preparedList []usageLogInsertPrepared) (
 			upstream_endpoint,
 			cache_ttl_overridden,
 			merchant_rate_snapshot,
+			platform_cost_snapshot,
 			created_at
 		)
 		SELECT
@@ -1050,6 +1057,7 @@ func buildUsageLogBestEffortInsertQuery(preparedList []usageLogInsertPrepared) (
 			upstream_endpoint,
 			cache_ttl_overridden,
 			merchant_rate_snapshot,
+			platform_cost_snapshot,
 			created_at
 		FROM input
 		ON CONFLICT (request_id, api_key_id) DO NOTHING
@@ -1100,6 +1108,7 @@ func execUsageLogInsertNoResult(ctx context.Context, sqlq sqlExecutor, prepared 
 			upstream_endpoint,
 			cache_ttl_overridden,
 			merchant_rate_snapshot,
+			platform_cost_snapshot,
 			created_at
 		) VALUES (
 			$1, $2, $3, $4, $5,
@@ -1107,7 +1116,7 @@ func execUsageLogInsertNoResult(ctx context.Context, sqlq sqlExecutor, prepared 
 			$8, $9, $10, $11,
 			$12, $13,
 			$14, $15, $16, $17, $18, $19,
-			$20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38
+			$20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39
 		)
 		ON CONFLICT (request_id, api_key_id) DO NOTHING
 	`, prepared.args...)
@@ -1191,6 +1200,7 @@ func prepareUsageLogInsert(log *service.UsageLog) usageLogInsertPrepared {
 			upstreamEndpoint,
 			log.CacheTTLOverridden,
 			log.MerchantRateSnapshot,
+			log.PlatformCostSnapshot,
 			createdAt,
 		},
 	}
@@ -3858,6 +3868,7 @@ func scanUsageLog(scanner interface{ Scan(...any) error }) (*service.UsageLog, e
 		upstreamEndpoint      sql.NullString
 		cacheTTLOverridden    bool
 		merchantRateSnapshot  sql.NullFloat64
+		platformCostSnapshot  sql.NullFloat64
 		createdAt             time.Time
 	)
 
@@ -3902,6 +3913,7 @@ func scanUsageLog(scanner interface{ Scan(...any) error }) (*service.UsageLog, e
 		&upstreamEndpoint,
 		&cacheTTLOverridden,
 		&merchantRateSnapshot,
+		&platformCostSnapshot,
 		&createdAt,
 	); err != nil {
 		return nil, err
@@ -3928,6 +3940,7 @@ func scanUsageLog(scanner interface{ Scan(...any) error }) (*service.UsageLog, e
 		RateMultiplier:        rateMultiplier,
 		AccountRateMultiplier: nullFloat64Ptr(accountRateMultiplier),
 		MerchantRateSnapshot:  nullFloat64Ptr(merchantRateSnapshot),
+		PlatformCostSnapshot:  nullFloat64Ptr(platformCostSnapshot),
 		BillingType:           int8(billingType),
 		RequestType:           service.RequestTypeFromInt16(requestTypeRaw),
 		ImageCount:            imageCount,
@@ -4129,7 +4142,7 @@ func setToSlice(set map[int64]struct{}) []int64 {
 }
 
 // SumCommissionByUserIDs aggregates total_cost and commission for given user IDs.
-// commission = SUM(total_cost * (merchant_rate_snapshot - 1)) WHERE merchant_rate_snapshot IS NOT NULL
+// commission = SUM(total_cost * platform_cost_snapshot * (merchant_rate_snapshot - 1))
 func (r *usageLogRepository) SumCommissionByUserIDs(ctx context.Context, userIDs []int64) (totalCost float64, totalCommission float64, err error) {
 	if len(userIDs) == 0 {
 		return 0, 0, nil
@@ -4137,7 +4150,7 @@ func (r *usageLogRepository) SumCommissionByUserIDs(ctx context.Context, userIDs
 	query := `
 		SELECT
 			COALESCE(SUM(total_cost), 0),
-			COALESCE(SUM(total_cost * (merchant_rate_snapshot - 1)), 0)
+			COALESCE(SUM(total_cost * COALESCE(platform_cost_snapshot, 0) * (merchant_rate_snapshot - 1)), 0)
 		FROM usage_logs
 		WHERE user_id = ANY($1)
 		  AND merchant_rate_snapshot IS NOT NULL
@@ -4182,8 +4195,9 @@ func (r *usageLogRepository) ListCommissionDetail(ctx context.Context, userIDs [
 			model,
 			total_cost,
 			merchant_rate_snapshot,
-			CASE WHEN merchant_rate_snapshot IS NOT NULL
-				THEN total_cost * (merchant_rate_snapshot - 1)
+			platform_cost_snapshot,
+			CASE WHEN merchant_rate_snapshot IS NOT NULL AND platform_cost_snapshot IS NOT NULL
+				THEN total_cost * platform_cost_snapshot * (merchant_rate_snapshot - 1)
 				ELSE 0
 			END as commission,
 			created_at
@@ -4207,11 +4221,13 @@ func (r *usageLogRepository) ListCommissionDetail(ctx context.Context, userIDs [
 	for rows.Next() {
 		var item service.CommissionDetailItem
 		var merchantRateSnapshot sql.NullFloat64
+		var platformCostSnapshot sql.NullFloat64
 		if err := rows.Scan(
 			&item.UserID,
 			&item.Model,
 			&item.TotalCost,
 			&merchantRateSnapshot,
+			&platformCostSnapshot,
 			&item.Commission,
 			&item.CreatedAt,
 		); err != nil {
@@ -4220,6 +4236,10 @@ func (r *usageLogRepository) ListCommissionDetail(ctx context.Context, userIDs [
 		if merchantRateSnapshot.Valid {
 			v := merchantRateSnapshot.Float64
 			item.MerchantRateSnapshot = &v
+		}
+		if platformCostSnapshot.Valid {
+			v := platformCostSnapshot.Float64
+			item.PlatformCostSnapshot = &v
 		}
 		results = append(results, &item)
 	}
@@ -4247,23 +4267,28 @@ func (r *usageLogRepository) SumTodayCostByUserIDs(ctx context.Context, userIDs 
 	return total, nil
 }
 
-// BackfillMerchantRateSnapshot fills in NULL merchant_rate_snapshot values
-// for users with a parent reseller that has a valid price_multiplier setting.
+// BackfillMerchantRateSnapshot fills in NULL merchant_rate_snapshot and platform_cost_snapshot values
+// for users with a parent reseller that has valid price_multiplier and platform_cost settings.
 func (r *usageLogRepository) BackfillMerchantRateSnapshot(ctx context.Context) (int64, error) {
 	query := `
 		UPDATE usage_logs ul
-		SET merchant_rate_snapshot = rs.mult
+		SET merchant_rate_snapshot = rs.mult,
+		    platform_cost_snapshot = rs.pcost
 		FROM users u
 		JOIN (
-			SELECT reseller_id, value::double precision AS mult
-			FROM reseller_settings
-			WHERE key = 'price_multiplier'
-			  AND value ~ '^\d+\.?\d*$'
-			  AND value::double precision > 0
+			SELECT r1.reseller_id,
+			       r1.value::double precision AS mult,
+			       r2.value::double precision AS pcost
+			FROM reseller_settings r1
+			JOIN reseller_settings r2
+			    ON r2.reseller_id = r1.reseller_id AND r2.key = 'platform_cost'
+			WHERE r1.key = 'price_multiplier'
+			  AND r1.value ~ '^\d+\.?\d*$' AND r1.value::double precision > 0
+			  AND r2.value ~ '^\d+\.?\d*$' AND r2.value::double precision > 0
 		) rs ON rs.reseller_id = u.parent_id
 		WHERE ul.user_id = u.id
 		  AND u.parent_id IS NOT NULL
-		  AND ul.merchant_rate_snapshot IS NULL
+		  AND (ul.merchant_rate_snapshot IS NULL OR ul.platform_cost_snapshot IS NULL)
 	`
 	result, err := r.sql.ExecContext(ctx, query)
 	if err != nil {
