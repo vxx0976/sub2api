@@ -9,15 +9,15 @@
         <div v-if="authStore.isReseller && appStore.resellerAgentEnabled && commissionSummary" class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
           <div class="card p-4">
             <p class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('reseller.commissions.totalRecharge') }}</p>
-            <p class="mt-1 text-xl font-bold text-purple-600 dark:text-purple-400">${{ commissionSummary.total_recharge }}</p>
+            <p class="mt-1 text-xl font-bold text-purple-600 dark:text-purple-400">¥{{ Number(commissionSummary.total_recharge).toFixed(2) }}</p>
           </div>
           <div class="card p-4">
             <p class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('reseller.commissions.totalCommission') }}</p>
-            <p class="mt-1 text-xl font-bold text-emerald-600 dark:text-emerald-400">${{ commissionSummary.total_commission }}</p>
+            <p class="mt-1 text-xl font-bold text-emerald-600 dark:text-emerald-400">¥{{ Number(commissionSummary.total_commission).toFixed(2) }}</p>
           </div>
           <div class="card p-4">
             <p class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('reseller.commissions.available') }}</p>
-            <p class="mt-1 text-xl font-bold text-blue-600 dark:text-blue-400">${{ commissionSummary.available }}</p>
+            <p class="mt-1 text-xl font-bold text-blue-600 dark:text-blue-400">¥{{ Number(commissionSummary.available).toFixed(2) }}</p>
           </div>
           <div class="card p-4">
             <p class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('reseller.commissions.totalUsers') }}</p>
@@ -29,7 +29,7 @@
           </div>
           <div class="card p-4">
             <p class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('reseller.commissions.todayCost') }}</p>
-            <p class="mt-1 text-xl font-bold text-rose-600 dark:text-rose-400">${{ commissionSummary.today_cost }}</p>
+            <p class="mt-1 text-xl font-bold text-rose-600 dark:text-rose-400">${{ Number(commissionSummary.today_cost).toFixed(2) }}</p>
           </div>
         </div>
 
