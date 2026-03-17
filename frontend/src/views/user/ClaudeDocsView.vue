@@ -88,6 +88,10 @@
             <ul class="mt-1 ml-4 list-disc space-y-1">
               <li>{{ t('docs.cli.prereq.windowsNode') }} <a href="https://nodejs.org/" target="_blank" rel="noopener noreferrer" class="underline">nodejs.org</a></li>
               <li>{{ t('docs.cli.prereq.windowsTerminal') }}</li>
+              <li>
+                {{ t('docs.cli.prereq.windowsPsPolicy') }}
+                <code class="ml-1 rounded bg-amber-100 px-1.5 py-0.5 font-mono text-xs text-amber-900 dark:bg-amber-800/40 dark:text-amber-200">{{ t('docs.cli.prereq.windowsPsPolicyCmd') }}</code>
+              </li>
             </ul>
           </div>
           <div>

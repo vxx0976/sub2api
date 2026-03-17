@@ -754,6 +754,8 @@ export default {
         windows: 'Пользователи Windows:',
         windowsNode: 'Необходимо сначала установить Node.js:',
         windowsTerminal: 'Рекомендуем использовать PowerShell или Windows Terminal',
+        windowsPsPolicy: 'Ошибка PowerShell «выполнение сценариев запрещено»? Выполните команду и повторите:',
+        windowsPsPolicyCmd: 'Set-ExecutionPolicy RemoteSigned -Scope CurrentUser',
         mac: 'Пользователи macOS / Linux:',
         macTerminal: 'Откройте Терминал (поиск Spotlight «Terminal»)'
       }

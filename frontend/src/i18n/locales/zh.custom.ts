@@ -484,6 +484,8 @@ export default {
         windows: 'Windows 用户：',
         windowsNode: '需要先安装 Node.js：',
         windowsTerminal: '推荐使用 PowerShell 或 Windows Terminal',
+        windowsPsPolicy: 'PowerShell 报错"禁止运行脚本"？执行以下命令后重试：',
+        windowsPsPolicyCmd: 'Set-ExecutionPolicy RemoteSigned -Scope CurrentUser',
         mac: 'macOS / Linux 用户：',
         macTerminal: '打开终端（Spotlight 搜索 "终端" 或 "Terminal"）'
       }

@@ -484,6 +484,8 @@ export default {
         windows: 'Windows Users:',
         windowsNode: 'Need to install Node.js first:',
         windowsTerminal: 'Recommend using PowerShell or Windows Terminal',
+        windowsPsPolicy: 'PowerShell error "running scripts is disabled"? Run this command then retry:',
+        windowsPsPolicyCmd: 'Set-ExecutionPolicy RemoteSigned -Scope CurrentUser',
         mac: 'macOS / Linux Users:',
         macTerminal: 'Open Terminal (Spotlight search "Terminal")'
       }
