@@ -81,6 +81,9 @@ type SystemSettings struct {
 
 	// Backend 模式：禁用用户注册和自助服务，仅管理员可登录
 	BackendModeEnabled bool
+
+	// 平台定价（¥/USD），0 表示不启用
+	PlatformSellingPrice float64
 }
 
 // SimpleAnnouncement represents a single announcement item for public display

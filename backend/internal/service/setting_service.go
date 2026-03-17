@@ -125,6 +125,19 @@ func (s *SettingService) GetFrontendURL(ctx context.Context) string {
 	return s.cfg.Server.FrontendURL
 }
 
+// GetPlatformSellingPrice 获取平台定价（¥/USD），0 表示未设置
+func (s *SettingService) GetPlatformSellingPrice(ctx context.Context) float64 {
+	val, err := s.settingRepo.GetValue(ctx, SettingKeyPlatformSellingPrice)
+	if err != nil {
+		return 0
+	}
+	sp, err := strconv.ParseFloat(strings.TrimSpace(val), 64)
+	if err != nil || sp <= 0 {
+		return 0
+	}
+	return sp
+}
+
 // GetPublicSettings 获取公开设置（无需登录）
 func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings, error) {
 	keys := []string{
@@ -520,6 +533,9 @@ func (s *SettingService) UpdateSettings(ctx context.Context, settings *SystemSet
 
 	// Backend Mode
 	updates[SettingKeyBackendModeEnabled] = strconv.FormatBool(settings.BackendModeEnabled)
+
+	// 平台定价
+	updates[SettingKeyPlatformSellingPrice] = strconv.FormatFloat(settings.PlatformSellingPrice, 'f', -1, 64)
 
 	err = s.settingRepo.SetMultiple(ctx, updates)
 	if err == nil {
@@ -930,8 +946,16 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 	// Claude Code version check
 	result.MinClaudeCodeVersion = settings[SettingKeyMinClaudeCodeVersion]
 
-	// 分组隔离
+	// 分组隔離
 	result.AllowUngroupedKeyScheduling = settings[SettingKeyAllowUngroupedKeyScheduling] == "true"
+
+	// Backend Mode
+	result.BackendModeEnabled = settings[SettingKeyBackendModeEnabled] == "true"
+
+	// 平台定价
+	if sp, err := strconv.ParseFloat(settings[SettingKeyPlatformSellingPrice], 64); err == nil && sp >= 0 {
+		result.PlatformSellingPrice = sp
+	}
 
 	return result
 }

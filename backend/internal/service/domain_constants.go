@@ -236,6 +236,10 @@ const (
 
 	// SettingKeyBackendModeEnabled Backend 模式：禁用用户注册和自助服务，仅管理员可登录
 	SettingKeyBackendModeEnabled = "backend_mode_enabled"
+
+	// SettingKeyPlatformSellingPrice 平台定价（¥/USD），用于非商户用户充值时的价格换算
+	// 设为 0 表示不启用，由支付系统使用默认比例
+	SettingKeyPlatformSellingPrice = "platform_selling_price"
 )
 
 // AdminAPIKeyPrefix is the prefix for admin API keys (distinct from user "sk-" keys).

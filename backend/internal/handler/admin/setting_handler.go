@@ -130,6 +130,7 @@ func (h *SettingHandler) GetSettings(c *gin.Context) {
 		MinClaudeCodeVersion:                 settings.MinClaudeCodeVersion,
 		AllowUngroupedKeyScheduling:          settings.AllowUngroupedKeyScheduling,
 		BackendModeEnabled:                   settings.BackendModeEnabled,
+		PlatformSellingPrice:                 settings.PlatformSellingPrice,
 	})
 }
 
@@ -211,6 +212,9 @@ type UpdateSettingsRequest struct {
 
 	// Backend Mode
 	BackendModeEnabled bool `json:"backend_mode_enabled"`
+
+	// 平台定价（¥/USD）
+	PlatformSellingPrice *float64 `json:"platform_selling_price"`
 }
 
 // UpdateSettings 更新系统设置
@@ -499,6 +503,16 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		MinClaudeCodeVersion:             req.MinClaudeCodeVersion,
 		AllowUngroupedKeyScheduling:      req.AllowUngroupedKeyScheduling,
 		BackendModeEnabled:               req.BackendModeEnabled,
+		PlatformSellingPrice: func() float64 {
+			if req.PlatformSellingPrice != nil {
+				v := *req.PlatformSellingPrice
+				if v < 0 {
+					v = 0
+				}
+				return v
+			}
+			return previousSettings.PlatformSellingPrice
+		}(),
 		OpsMonitoringEnabled: func() bool {
 			if req.OpsMonitoringEnabled != nil {
 				return *req.OpsMonitoringEnabled
@@ -600,6 +614,7 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		MinClaudeCodeVersion:                 updatedSettings.MinClaudeCodeVersion,
 		AllowUngroupedKeyScheduling:          updatedSettings.AllowUngroupedKeyScheduling,
 		BackendModeEnabled:                   updatedSettings.BackendModeEnabled,
+		PlatformSellingPrice:                 updatedSettings.PlatformSellingPrice,
 	})
 }
 

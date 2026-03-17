@@ -88,6 +88,9 @@ export interface SystemSettings {
 
   // 分组隔离
   allow_ungrouped_key_scheduling: boolean
+
+  // 平台定价（¥/USD）
+  platform_selling_price: number
 }
 
 export interface UpdateSettingsRequest {
@@ -146,6 +149,7 @@ export interface UpdateSettingsRequest {
   ops_metrics_interval_seconds?: number
   min_claude_code_version?: string
   allow_ungrouped_key_scheduling?: boolean
+  platform_selling_price?: number
 }
 
 /**

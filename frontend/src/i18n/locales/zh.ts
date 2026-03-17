@@ -4404,6 +4404,13 @@ export default {
         integrationDoc: '支付集成文档',
         integrationDocHint: '包含接口说明、幂等语义及示例代码'
       },
+      platformPricing: {
+        title: '定价设置',
+        description: '设置非商户用户充值时的价格换算比例',
+        label: '平台定价 (¥/USD)',
+        hint: '设为 0 表示使用支付系统默认比例；设置后所有非商户用户充值将按此价格换算',
+        preview: '¥{price} = $1'
+      },
       soraClient: {
         title: 'Sora 客户端',
         description: '控制是否在侧边栏展示 Sora 客户端入口',

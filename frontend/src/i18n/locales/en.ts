@@ -4429,6 +4429,13 @@ export default {
         integrationDoc: 'Payment Integration Docs',
         integrationDocHint: 'Covers endpoint specs, idempotency semantics, and code samples'
       },
+      platformPricing: {
+        title: 'Pricing Settings',
+        description: 'Set the price conversion ratio for non-merchant user top-ups',
+        label: 'Platform Pricing (¥/USD)',
+        hint: 'Set to 0 to use the payment system default ratio; once set, all non-merchant user top-ups will be converted at this price',
+        preview: '¥{price} = $1'
+      },
       soraClient: {
         title: 'Sora Client',
         description: 'Control whether to show the Sora client entry in the sidebar',

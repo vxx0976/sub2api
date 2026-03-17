@@ -1455,6 +1455,42 @@
           </div>
         </div>
 
+        <!-- Platform Pricing Card -->
+        <div class="card">
+          <div class="border-b border-gray-200 bg-gray-50 px-6 py-4 dark:border-gray-700 dark:bg-gray-800/50">
+            <h3 class="text-base font-semibold text-gray-900 dark:text-white">
+              {{ t('admin.settings.platformPricing.title') }}
+            </h3>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              {{ t('admin.settings.platformPricing.description') }}
+            </p>
+          </div>
+          <div class="space-y-6 p-6">
+            <div>
+              <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                {{ t('admin.settings.platformPricing.label') }}
+              </label>
+              <input
+                v-model.number="form.platform_selling_price"
+                type="number"
+                min="0"
+                step="0.01"
+                class="input font-mono text-sm"
+                placeholder="0"
+              />
+              <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                {{ t('admin.settings.platformPricing.hint') }}
+              </p>
+              <p
+                v-if="form.platform_selling_price > 0"
+                class="mt-2 text-sm font-medium text-blue-600 dark:text-blue-400"
+              >
+                {{ t('admin.settings.platformPricing.preview', { price: form.platform_selling_price }) }}
+              </p>
+            </div>
+          </div>
+        </div>
+
         <!-- Sora Client Toggle -->
         <div class="card">
           <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
@@ -2047,7 +2083,9 @@ const form = reactive<SettingsForm>({
   // Claude Code version check
   min_claude_code_version: '',
   // 分组隔离
-  allow_ungrouped_key_scheduling: false
+  allow_ungrouped_key_scheduling: false,
+  // 平台定价
+  platform_selling_price: 0
 })
 
 const defaultSubscriptionGroupOptions = computed<DefaultSubscriptionGroupOption[]>(() =>
@@ -2315,7 +2353,8 @@ async function saveSettings() {
       enable_identity_patch: form.enable_identity_patch,
       identity_patch_prompt: form.identity_patch_prompt,
       min_claude_code_version: form.min_claude_code_version,
-      allow_ungrouped_key_scheduling: form.allow_ungrouped_key_scheduling
+      allow_ungrouped_key_scheduling: form.allow_ungrouped_key_scheduling,
+      platform_selling_price: form.platform_selling_price
     }
     const updated = await adminAPI.settings.updateSettings(payload)
     Object.assign(form, updated)

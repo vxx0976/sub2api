@@ -90,6 +90,9 @@ type SystemSettings struct {
 
 	// Backend Mode
 	BackendModeEnabled bool `json:"backend_mode_enabled"`
+
+	// 平台定价（¥/USD）
+	PlatformSellingPrice float64 `json:"platform_selling_price"`
 }
 
 type DefaultSubscriptionSetting struct {
