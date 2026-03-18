@@ -2,22 +2,50 @@ package admin
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 )
+
+type noopResellerDomainRepo struct{}
+
+func (noopResellerDomainRepo) Create(ctx context.Context, domain *service.ResellerDomain) error { return nil }
+func (noopResellerDomainRepo) GetByID(ctx context.Context, id int64) (*service.ResellerDomain, error) {
+	return nil, nil
+}
+func (noopResellerDomainRepo) GetByDomain(ctx context.Context, domain string) (*service.ResellerDomain, error) {
+	return nil, nil
+}
+func (noopResellerDomainRepo) Update(ctx context.Context, domain *service.ResellerDomain) error { return nil }
+func (noopResellerDomainRepo) Delete(ctx context.Context, id int64) error { return nil }
+func (noopResellerDomainRepo) ListByResellerID(ctx context.Context, resellerID int64, params pagination.PaginationParams) ([]service.ResellerDomain, *pagination.PaginationResult, error) {
+	return nil, nil, nil
+}
+func (noopResellerDomainRepo) ListAllDomainNamesByResellerID(ctx context.Context, resellerID int64) ([]string, error) {
+	return nil, nil
+}
+func (noopResellerDomainRepo) CountByResellerID(ctx context.Context, resellerID int64) (int, int, error) {
+	return 0, 0, nil
+}
+func (noopResellerDomainRepo) GetDomainsByResellerIDs(ctx context.Context, resellerIDs []int64) (map[int64]string, error) {
+	return map[int64]string{}, nil
+}
+func (noopResellerDomainRepo) PurgeSoftDeletedByDomain(ctx context.Context, domain string) {}
 
 func setupAdminRouter() (*gin.Engine, *stubAdminService) {
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
 	adminSvc := newStubAdminService()
 
-	userHandler := NewUserHandler(adminSvc, nil)
-	groupHandler := NewGroupHandler(adminSvc)
+	userHandler := NewUserHandler(adminSvc, nil, noopResellerDomainRepo{})
+	groupHandler := NewGroupHandler(adminSvc, nil, nil)
 	proxyHandler := NewProxyHandler(adminSvc)
 	redeemHandler := NewRedeemHandler(adminSvc, nil)
 

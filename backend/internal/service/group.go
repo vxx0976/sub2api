@@ -72,8 +72,10 @@ type Group struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 
-	AccountGroups []AccountGroup `json:"account_groups,omitempty"`
-	AccountCount  int64          `json:"account_count,omitempty"`
+	AccountGroups           []AccountGroup `json:"account_groups,omitempty"`
+	AccountCount            int64          `json:"account_count,omitempty"`
+	ActiveAccountCount      int64          `json:"active_account_count,omitempty"`
+	RateLimitedAccountCount int64          `json:"rate_limited_account_count,omitempty"`
 }
 
 func (g *Group) IsActive() bool {

@@ -68,6 +68,7 @@ func TestUsageLogRepositoryCreateSyncRequestTypeAndLegacyFields(t *testing.T) {
 			sqlmock.AnyArg(), // first_token_ms
 			sqlmock.AnyArg(), // user_agent
 			sqlmock.AnyArg(), // ip_address
+			sqlmock.AnyArg(), // country_code
 			log.ImageCount,
 			sqlmock.AnyArg(), // image_size
 			sqlmock.AnyArg(), // media_type
@@ -76,6 +77,8 @@ func TestUsageLogRepositoryCreateSyncRequestTypeAndLegacyFields(t *testing.T) {
 			sqlmock.AnyArg(), // inbound_endpoint
 			sqlmock.AnyArg(), // upstream_endpoint
 			log.CacheTTLOverridden,
+			sqlmock.AnyArg(), // merchant_rate_snapshot
+			sqlmock.AnyArg(), // platform_cost_snapshot
 			createdAt,
 		).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at"}).AddRow(int64(99), createdAt))
@@ -138,6 +141,7 @@ func TestUsageLogRepositoryCreate_PersistsServiceTier(t *testing.T) {
 			sqlmock.AnyArg(),
 			sqlmock.AnyArg(),
 			sqlmock.AnyArg(),
+			sqlmock.AnyArg(),
 			log.ImageCount,
 			sqlmock.AnyArg(),
 			sqlmock.AnyArg(),
@@ -146,6 +150,8 @@ func TestUsageLogRepositoryCreate_PersistsServiceTier(t *testing.T) {
 			sqlmock.AnyArg(),
 			sqlmock.AnyArg(),
 			log.CacheTTLOverridden,
+			sqlmock.AnyArg(),
+			sqlmock.AnyArg(),
 			createdAt,
 		).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at"}).AddRow(int64(100), createdAt))
@@ -244,6 +250,16 @@ func TestUsageLogRepositoryGetStatsWithFiltersRequestTypePriority(t *testing.T) 
 			"total_account_cost",
 			"avg_duration_ms",
 		}).AddRow(int64(1), int64(2), int64(3), int64(4), 1.2, 1.0, 1.2, 20.0))
+
+	mock.ExpectQuery(`SELECT .* FROM usage_logs WHERE created_at >= \$1 AND created_at < \$2 AND \(request_type = \$3 OR \(request_type = 0 AND stream = FALSE AND openai_ws_mode = FALSE\)\) GROUP BY endpoint ORDER BY requests DESC`).
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), requestType).
+		WillReturnRows(sqlmock.NewRows([]string{"endpoint", "requests", "total_tokens", "cost", "actual_cost"}))
+	mock.ExpectQuery(`SELECT .* FROM usage_logs WHERE created_at >= \$1 AND created_at < \$2 AND \(request_type = \$3 OR \(request_type = 0 AND stream = FALSE AND openai_ws_mode = FALSE\)\) GROUP BY endpoint ORDER BY requests DESC`).
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), requestType).
+		WillReturnRows(sqlmock.NewRows([]string{"endpoint", "requests", "total_tokens", "cost", "actual_cost"}))
+	mock.ExpectQuery(`SELECT .* FROM usage_logs WHERE created_at >= \$1 AND created_at < \$2 AND \(request_type = \$3 OR \(request_type = 0 AND stream = FALSE AND openai_ws_mode = FALSE\)\) GROUP BY endpoint ORDER BY requests DESC`).
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), requestType).
+		WillReturnRows(sqlmock.NewRows([]string{"endpoint", "requests", "total_tokens", "cost", "actual_cost"}))
 
 	stats, err := repo.GetStatsWithFilters(context.Background(), filters)
 	require.NoError(t, err)
@@ -377,6 +393,7 @@ func TestScanUsageLogRequestTypeAndLegacyFallback(t *testing.T) {
 			sql.NullInt64{},
 			sql.NullString{},
 			sql.NullString{},
+			sql.NullString{},
 			0,
 			sql.NullString{},
 			sql.NullString{},
@@ -385,6 +402,8 @@ func TestScanUsageLogRequestTypeAndLegacyFallback(t *testing.T) {
 			sql.NullString{},
 			sql.NullString{},
 			false,
+			sql.NullFloat64{},
+			sql.NullFloat64{},
 			now,
 		}})
 		require.NoError(t, err)
@@ -418,6 +437,7 @@ func TestScanUsageLogRequestTypeAndLegacyFallback(t *testing.T) {
 			sql.NullInt64{},
 			sql.NullString{},
 			sql.NullString{},
+			sql.NullString{},
 			0,
 			sql.NullString{},
 			sql.NullString{},
@@ -426,6 +446,8 @@ func TestScanUsageLogRequestTypeAndLegacyFallback(t *testing.T) {
 			sql.NullString{},
 			sql.NullString{},
 			false,
+			sql.NullFloat64{},
+			sql.NullFloat64{},
 			now,
 		}})
 		require.NoError(t, err)
@@ -459,6 +481,7 @@ func TestScanUsageLogRequestTypeAndLegacyFallback(t *testing.T) {
 			sql.NullInt64{},
 			sql.NullString{},
 			sql.NullString{},
+			sql.NullString{},
 			0,
 			sql.NullString{},
 			sql.NullString{},
@@ -467,6 +490,8 @@ func TestScanUsageLogRequestTypeAndLegacyFallback(t *testing.T) {
 			sql.NullString{},
 			sql.NullString{},
 			false,
+			sql.NullFloat64{},
+			sql.NullFloat64{},
 			now,
 		}})
 		require.NoError(t, err)

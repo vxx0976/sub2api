@@ -500,4 +500,5 @@ var ProviderSet = wire.NewSet(
 	NewSoraQuotaService,
 	ProvideScheduledTestService,
 	ProvideScheduledTestRunnerService,
+	NewGroupCapacityService,
 )
