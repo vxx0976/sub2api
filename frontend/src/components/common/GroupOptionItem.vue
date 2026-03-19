@@ -1,6 +1,6 @@
 <template>
   <div class="flex min-w-0 flex-1 items-start justify-between gap-3">
-    <!-- Left: name + description -->
+    <!-- Left: name + description + status bar -->
     <div
       class="flex min-w-0 flex-1 flex-col items-start"
       :title="description || undefined"
@@ -20,6 +20,22 @@
       >
         {{ description }}
       </span>
+      <!-- Row 3: 30-day status bar -->
+      <div v-if="statusInfo && statusInfo.daily_history?.length > 0" class="mt-2 w-full">
+        <div class="flex gap-[1px]">
+          <div
+            v-for="(day, idx) in statusInfo.daily_history"
+            :key="idx"
+            class="h-1.5 flex-1 rounded-[1px]"
+            :class="barClass(day.status)"
+            :title="barTooltip(day)"
+          ></div>
+        </div>
+        <div class="mt-0.5 flex items-center justify-between text-[10px] text-gray-400 dark:text-dark-500">
+          <span :class="statusTextClass(statusInfo.status)">{{ statusLabel(statusInfo.status) }}</span>
+          <span>{{ (statusInfo.uptime_30d ?? 100).toFixed(1) }}% {{ t('status.uptime') }}</span>
+        </div>
+      </div>
     </div>
 
     <!-- Right: rate pill + checkmark (vertically centered to first row) -->
@@ -51,8 +67,10 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import GroupBadge from './GroupBadge.vue'
 import type { SubscriptionType, GroupPlatform } from '@/types'
+import type { GroupStatusItem, DailyStatus } from '@/api/status'
 
 interface Props {
   name: string
@@ -63,14 +81,50 @@ interface Props {
   description?: string | null
   selected?: boolean
   showCheckmark?: boolean
+  statusInfo?: GroupStatusItem | null
 }
 
 const props = withDefaults(defineProps<Props>(), {
   subscriptionType: 'standard',
   selected: false,
   showCheckmark: true,
-  userRateMultiplier: null
+  userRateMultiplier: null,
+  statusInfo: null
 })
+
+const { t } = useI18n()
+
+function barClass(status: string) {
+  switch (status) {
+    case 'operational': return 'bg-emerald-500'
+    case 'degraded': return 'bg-amber-400'
+    case 'down': return 'bg-red-500'
+    default: return 'bg-emerald-500'
+  }
+}
+
+function barTooltip(day: DailyStatus) {
+  if (day.total === 0) return `${day.date}: ${t('status.noData')}`
+  return `${day.date}: ${day.rate.toFixed(1)}% (${day.total} ${t('status.requests')})`
+}
+
+function statusTextClass(status: string) {
+  switch (status) {
+    case 'operational': return 'text-emerald-600 dark:text-emerald-400'
+    case 'degraded': return 'text-amber-600 dark:text-amber-400'
+    case 'down': return 'text-red-600 dark:text-red-400'
+    default: return 'text-emerald-600 dark:text-emerald-400'
+  }
+}
+
+function statusLabel(status: string) {
+  switch (status) {
+    case 'operational': return t('status.operational')
+    case 'degraded': return t('status.degraded')
+    case 'down': return t('status.down')
+    default: return t('status.operational')
+  }
+}
 
 // Whether user has a custom rate different from default
 const hasCustomRate = computed(() => {

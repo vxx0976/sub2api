@@ -428,6 +428,7 @@
                 :rate-multiplier="(option as unknown as GroupOption).rate"
                 :user-rate-multiplier="(option as unknown as GroupOption).userRate"
                 :description="(option as unknown as GroupOption).description"
+                :status-info="(option as unknown as GroupOption).statusInfo"
                 :selected="selected"
               />
             </template>
@@ -990,6 +991,7 @@
               :rate-multiplier="option.rate"
               :user-rate-multiplier="option.userRate"
               :description="option.description"
+              :status-info="option.statusInfo"
               :selected="
                 selectedKeyForGroup?.group_id === option.value ||
                 (!selectedKeyForGroup?.group_id && option.value === null)
@@ -1015,6 +1017,7 @@
 
 const { t } = useI18n()
 import { keysAPI, authAPI, usageAPI, userGroupsAPI } from '@/api'
+import { getGroupStatus, type GroupStatusItem } from '@/api/status'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import TablePageLayout from '@/components/layout/TablePageLayout.vue'
 	import DataTable from '@/components/common/DataTable.vue'
@@ -1052,6 +1055,7 @@ interface GroupOption {
   userRate: number | null
   subscriptionType: SubscriptionType
   platform: GroupPlatform
+  statusInfo: GroupStatusItem | null
 }
 
 const appStore = useAppStore()
@@ -1083,6 +1087,7 @@ const now = ref(new Date())
 let resetTimer: ReturnType<typeof setInterval> | null = null
 const usageStats = ref<Record<string, BatchApiKeyUsageStats>>({})
 const userGroupRates = ref<Record<number, number>>({})
+const groupStatusMap = ref<Record<number, GroupStatusItem>>({})
 
 const pagination = ref({
   page: 1,
@@ -1210,7 +1215,8 @@ const groupOptions = computed(() =>
     rate: group.rate_multiplier,
     userRate: userGroupRates.value[group.id] ?? null,
     subscriptionType: group.subscription_type,
-    platform: group.platform
+    platform: group.platform,
+    statusInfo: groupStatusMap.value[group.id] ?? null
   }))
 )
 
@@ -1306,6 +1312,19 @@ const loadUserGroupRates = async () => {
     userGroupRates.value = await userGroupsAPI.getUserGroupRates()
   } catch (error) {
     console.error('Failed to load user group rates:', error)
+  }
+}
+
+const loadGroupStatus = async () => {
+  try {
+    const data = await getGroupStatus()
+    const map: Record<number, GroupStatusItem> = {}
+    for (const item of data.groups) {
+      map[item.id] = item
+    }
+    groupStatusMap.value = map
+  } catch (error) {
+    console.error('Failed to load group status:', error)
   }
 }
 
@@ -1773,6 +1792,7 @@ onMounted(() => {
   loadGroups()
   loadUserGroupRates()
   loadPublicSettings()
+  loadGroupStatus()
   document.addEventListener('click', closeGroupSelector)
   resetTimer = setInterval(() => { now.value = new Date() }, 60000)
 })
