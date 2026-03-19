@@ -32,7 +32,7 @@
           ></div>
         </div>
         <div class="mt-0.5 flex items-center justify-between text-[10px] text-gray-400 dark:text-dark-500">
-          <span :class="statusTextClass(statusInfo.status)">{{ statusLabel(statusInfo.status) }}</span>
+          <span :class="statusTextClass(statusInfo.status)">{{ statusLabel(statusInfo.uptime_30d ?? 100) }}</span>
           <span>{{ (statusInfo.uptime_30d ?? 100).toFixed(1) }}% {{ t('status.uptime') }}</span>
         </div>
       </div>
@@ -112,18 +112,16 @@ function statusTextClass(status: string) {
   switch (status) {
     case 'operational': return 'text-emerald-600 dark:text-emerald-400'
     case 'degraded': return 'text-amber-600 dark:text-amber-400'
-    case 'down': return 'text-red-600 dark:text-red-400'
+    case 'down': return 'text-amber-600 dark:text-amber-400'
     default: return 'text-emerald-600 dark:text-emerald-400'
   }
 }
 
-function statusLabel(status: string) {
-  switch (status) {
-    case 'operational': return t('status.operational')
-    case 'degraded': return t('status.degraded')
-    case 'down': return t('status.down')
-    default: return t('status.operational')
-  }
+function statusLabel(uptime: number) {
+  if (uptime >= 99) return t('status.statusStable')
+  if (uptime >= 95) return t('status.statusMostlyStable')
+  if (uptime >= 90) return t('status.statusSlightFluctuation')
+  return t('status.statusUnstable')
 }
 
 // Whether user has a custom rate different from default

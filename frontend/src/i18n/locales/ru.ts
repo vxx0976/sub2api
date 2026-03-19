@@ -318,7 +318,11 @@ export default {
     daysAgo: '{days} дней назад',
     today: 'Сегодня',
     lastUpdated: 'Последнее обновление',
-    dataFrom: 'данные статуса от'
+    dataFrom: 'данные статуса от',
+    statusStable: 'Стабильно',
+    statusMostlyStable: 'В основном стабильно',
+    statusSlightFluctuation: 'Небольшие сбои',
+    statusUnstable: 'Нестабильно'
   },
 
   // Setup Wizard

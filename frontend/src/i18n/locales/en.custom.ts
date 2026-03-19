@@ -58,7 +58,11 @@ export default {
     uptime: 'uptime',
     today: 'Today',
     noData: 'No data',
-    uptimeTitle: '30-day uptime history'
+    uptimeTitle: '30-day uptime history',
+    statusStable: 'Stable',
+    statusMostlyStable: 'Mostly stable',
+    statusSlightFluctuation: 'Minor fluctuation',
+    statusUnstable: 'Unstable'
   },
 
   // Docs

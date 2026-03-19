@@ -58,7 +58,11 @@ export default {
     uptime: '正常运行时间',
     today: '今天',
     noData: '无数据',
-    uptimeTitle: '30 天运行记录'
+    uptimeTitle: '30 天运行记录',
+    statusStable: '稳定',
+    statusMostlyStable: '较稳定',
+    statusSlightFluctuation: '有小幅波动',
+    statusUnstable: '不稳定'
   },
 
   // Docs
