@@ -191,8 +191,8 @@ function f2p(v: number) {
 
 const activeTab = ref<'consumption' | 'recharge'>('consumption')
 const tabs = computed(() => [
-  { key: 'consumption', label: t('reseller.commissions.tabConsumption') },
-  { key: 'recharge', label: t('reseller.commissions.tabRecharge') },
+  { key: 'consumption' as const, label: t('reseller.commissions.tabConsumption') },
+  { key: 'recharge' as const, label: t('reseller.commissions.tabRecharge') },
 ])
 
 const summary = ref<CommissionSummary | null>(null)
