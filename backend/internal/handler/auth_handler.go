@@ -420,9 +420,8 @@ func (h *AuthHandler) GetCurrentUser(c *gin.Context) {
 		}
 	}
 
-	// For non-merchant users (no parent_id), expose platform_selling_price as _x_sp
-	// so sub2apipay can use it for balance calculation.
-	if user.ParentID == nil && resp.ResellerSellingPrice == nil && h.settingSvc != nil {
+	// Expose platform_selling_price as _x_sp for all users so sub2apipay can use it.
+	if resp.ResellerSellingPrice == nil && h.settingSvc != nil {
 		if sp := h.settingSvc.GetPlatformSellingPrice(c.Request.Context()); sp > 0 {
 			resp.ResellerSellingPrice = &sp
 		}
