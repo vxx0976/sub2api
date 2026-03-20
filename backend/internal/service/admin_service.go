@@ -210,6 +210,9 @@ type UpdateGroupInput struct {
 	SortOrder           *int
 	IsRecommended  *bool
 	ExternalBuyURL *string
+	// 定时上线时间窗口（格式 "HH:MM"，空字符串表示清除）
+	ActiveStartTime *string
+	ActiveEndTime   *string
 }
 
 type CreateAccountInput struct {
@@ -1210,6 +1213,22 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 	}
 	if input.DefaultMappedModel != nil {
 		group.DefaultMappedModel = *input.DefaultMappedModel
+	}
+
+	// 定时上线时间窗口（空字符串表示清除）
+	if input.ActiveStartTime != nil {
+		if *input.ActiveStartTime == "" {
+			group.ActiveStartTime = nil
+		} else {
+			group.ActiveStartTime = input.ActiveStartTime
+		}
+	}
+	if input.ActiveEndTime != nil {
+		if *input.ActiveEndTime == "" {
+			group.ActiveEndTime = nil
+		} else {
+			group.ActiveEndTime = input.ActiveEndTime
+		}
 	}
 
 	if err := s.groupRepo.Update(ctx, group); err != nil {

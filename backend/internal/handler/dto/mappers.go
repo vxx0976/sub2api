@@ -191,6 +191,8 @@ func groupFromServiceBase(g *service.Group) Group {
 		ExternalBuyURL:                  g.ExternalBuyURL,
 		SoraStorageQuotaBytes:           g.SoraStorageQuotaBytes,
 		AllowMessagesDispatch:           g.AllowMessagesDispatch,
+		ActiveStartTime:                 g.ActiveStartTime,
+		ActiveEndTime:                   g.ActiveEndTime,
 		CreatedAt:                       g.CreatedAt,
 		UpdatedAt:                       g.UpdatedAt,
 	}

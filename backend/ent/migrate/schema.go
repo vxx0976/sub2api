@@ -480,6 +480,8 @@ var (
 		{Name: "reseller_template", Type: field.TypeBool, Default: false},
 		{Name: "allow_messages_dispatch", Type: field.TypeBool, Default: false},
 		{Name: "default_mapped_model", Type: field.TypeString, Size: 100, Default: ""},
+		{Name: "active_start_time", Type: field.TypeString, Nullable: true, Size: 5},
+		{Name: "active_end_time", Type: field.TypeString, Nullable: true, Size: 5},
 	}
 	// GroupsTable holds the schema information for the "groups" table.
 	GroupsTable = &schema.Table{

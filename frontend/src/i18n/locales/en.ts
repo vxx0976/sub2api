@@ -1912,6 +1912,16 @@ export default {
         geminiText: 'Gemini Text',
         geminiImage: 'Gemini Image',
         hint: 'Select at least one model family'
+      },
+      schedule: {
+        title: 'Scheduled Availability',
+        hint: '(optional)',
+        startTime: 'Start Time',
+        endTime: 'End Time',
+        startTimePlaceholder: '08:00',
+        endTimePlaceholder: '20:00',
+        activeHint: 'Group is available daily from {start} to {end}',
+        noScheduleHint: 'No schedule set — available all day (both times required)'
       }
     },
 

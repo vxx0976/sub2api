@@ -10056,6 +10056,8 @@ type GroupMutation struct {
 	reseller_template                       *bool
 	allow_messages_dispatch                 *bool
 	default_mapped_model                    *string
+	active_start_time                       *string
+	active_end_time                         *string
 	clearedFields                           map[string]struct{}
 	api_keys                                map[int64]struct{}
 	removedapi_keys                         map[int64]struct{}
@@ -12242,6 +12244,104 @@ func (m *GroupMutation) ResetDefaultMappedModel() {
 	m.default_mapped_model = nil
 }
 
+// SetActiveStartTime sets the "active_start_time" field.
+func (m *GroupMutation) SetActiveStartTime(s string) {
+	m.active_start_time = &s
+}
+
+// ActiveStartTime returns the value of the "active_start_time" field in the mutation.
+func (m *GroupMutation) ActiveStartTime() (r string, exists bool) {
+	v := m.active_start_time
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldActiveStartTime returns the old "active_start_time" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldActiveStartTime(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldActiveStartTime is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldActiveStartTime requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldActiveStartTime: %w", err)
+	}
+	return oldValue.ActiveStartTime, nil
+}
+
+// ClearActiveStartTime clears the value of the "active_start_time" field.
+func (m *GroupMutation) ClearActiveStartTime() {
+	m.active_start_time = nil
+	m.clearedFields[group.FieldActiveStartTime] = struct{}{}
+}
+
+// ActiveStartTimeCleared returns if the "active_start_time" field was cleared in this mutation.
+func (m *GroupMutation) ActiveStartTimeCleared() bool {
+	_, ok := m.clearedFields[group.FieldActiveStartTime]
+	return ok
+}
+
+// ResetActiveStartTime resets all changes to the "active_start_time" field.
+func (m *GroupMutation) ResetActiveStartTime() {
+	m.active_start_time = nil
+	delete(m.clearedFields, group.FieldActiveStartTime)
+}
+
+// SetActiveEndTime sets the "active_end_time" field.
+func (m *GroupMutation) SetActiveEndTime(s string) {
+	m.active_end_time = &s
+}
+
+// ActiveEndTime returns the value of the "active_end_time" field in the mutation.
+func (m *GroupMutation) ActiveEndTime() (r string, exists bool) {
+	v := m.active_end_time
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldActiveEndTime returns the old "active_end_time" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldActiveEndTime(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldActiveEndTime is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldActiveEndTime requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldActiveEndTime: %w", err)
+	}
+	return oldValue.ActiveEndTime, nil
+}
+
+// ClearActiveEndTime clears the value of the "active_end_time" field.
+func (m *GroupMutation) ClearActiveEndTime() {
+	m.active_end_time = nil
+	m.clearedFields[group.FieldActiveEndTime] = struct{}{}
+}
+
+// ActiveEndTimeCleared returns if the "active_end_time" field was cleared in this mutation.
+func (m *GroupMutation) ActiveEndTimeCleared() bool {
+	_, ok := m.clearedFields[group.FieldActiveEndTime]
+	return ok
+}
+
+// ResetActiveEndTime resets all changes to the "active_end_time" field.
+func (m *GroupMutation) ResetActiveEndTime() {
+	m.active_end_time = nil
+	delete(m.clearedFields, group.FieldActiveEndTime)
+}
+
 // AddAPIKeyIDs adds the "api_keys" edge to the APIKey entity by ids.
 func (m *GroupMutation) AddAPIKeyIDs(ids ...int64) {
 	if m.api_keys == nil {
@@ -12654,7 +12754,7 @@ func (m *GroupMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *GroupMutation) Fields() []string {
-	fields := make([]string, 0, 39)
+	fields := make([]string, 0, 41)
 	if m.created_at != nil {
 		fields = append(fields, group.FieldCreatedAt)
 	}
@@ -12772,6 +12872,12 @@ func (m *GroupMutation) Fields() []string {
 	if m.default_mapped_model != nil {
 		fields = append(fields, group.FieldDefaultMappedModel)
 	}
+	if m.active_start_time != nil {
+		fields = append(fields, group.FieldActiveStartTime)
+	}
+	if m.active_end_time != nil {
+		fields = append(fields, group.FieldActiveEndTime)
+	}
 	return fields
 }
 
@@ -12858,6 +12964,10 @@ func (m *GroupMutation) Field(name string) (ent.Value, bool) {
 		return m.AllowMessagesDispatch()
 	case group.FieldDefaultMappedModel:
 		return m.DefaultMappedModel()
+	case group.FieldActiveStartTime:
+		return m.ActiveStartTime()
+	case group.FieldActiveEndTime:
+		return m.ActiveEndTime()
 	}
 	return nil, false
 }
@@ -12945,6 +13055,10 @@ func (m *GroupMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldAllowMessagesDispatch(ctx)
 	case group.FieldDefaultMappedModel:
 		return m.OldDefaultMappedModel(ctx)
+	case group.FieldActiveStartTime:
+		return m.OldActiveStartTime(ctx)
+	case group.FieldActiveEndTime:
+		return m.OldActiveEndTime(ctx)
 	}
 	return nil, fmt.Errorf("unknown Group field %s", name)
 }
@@ -13226,6 +13340,20 @@ func (m *GroupMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetDefaultMappedModel(v)
+		return nil
+	case group.FieldActiveStartTime:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetActiveStartTime(v)
+		return nil
+	case group.FieldActiveEndTime:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetActiveEndTime(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Group field %s", name)
@@ -13545,6 +13673,12 @@ func (m *GroupMutation) ClearedFields() []string {
 	if m.FieldCleared(group.FieldSourceGroupID) {
 		fields = append(fields, group.FieldSourceGroupID)
 	}
+	if m.FieldCleared(group.FieldActiveStartTime) {
+		fields = append(fields, group.FieldActiveStartTime)
+	}
+	if m.FieldCleared(group.FieldActiveEndTime) {
+		fields = append(fields, group.FieldActiveEndTime)
+	}
 	return fields
 }
 
@@ -13615,6 +13749,12 @@ func (m *GroupMutation) ClearField(name string) error {
 		return nil
 	case group.FieldSourceGroupID:
 		m.ClearSourceGroupID()
+		return nil
+	case group.FieldActiveStartTime:
+		m.ClearActiveStartTime()
+		return nil
+	case group.FieldActiveEndTime:
+		m.ClearActiveEndTime()
 		return nil
 	}
 	return fmt.Errorf("unknown Group nullable field %s", name)
@@ -13740,6 +13880,12 @@ func (m *GroupMutation) ResetField(name string) error {
 		return nil
 	case group.FieldDefaultMappedModel:
 		m.ResetDefaultMappedModel()
+		return nil
+	case group.FieldActiveStartTime:
+		m.ResetActiveStartTime()
+		return nil
+	case group.FieldActiveEndTime:
+		m.ResetActiveEndTime()
 		return nil
 	}
 	return fmt.Errorf("unknown Group field %s", name)

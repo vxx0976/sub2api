@@ -716,6 +716,8 @@ func groupEntityToService(g *dbent.Group) *service.Group {
 		SourceGroupID:                   g.SourceGroupID,
 		AllowMessagesDispatch:           g.AllowMessagesDispatch,
 		DefaultMappedModel:              g.DefaultMappedModel,
+		ActiveStartTime:                 g.ActiveStartTime,
+		ActiveEndTime:                   g.ActiveEndTime,
 		CreatedAt:                       g.CreatedAt,
 		UpdatedAt:                       g.UpdatedAt,
 	}

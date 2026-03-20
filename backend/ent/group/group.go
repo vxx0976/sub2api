@@ -93,6 +93,10 @@ const (
 	FieldAllowMessagesDispatch = "allow_messages_dispatch"
 	// FieldDefaultMappedModel holds the string denoting the default_mapped_model field in the database.
 	FieldDefaultMappedModel = "default_mapped_model"
+	// FieldActiveStartTime holds the string denoting the active_start_time field in the database.
+	FieldActiveStartTime = "active_start_time"
+	// FieldActiveEndTime holds the string denoting the active_end_time field in the database.
+	FieldActiveEndTime = "active_end_time"
 	// EdgeAPIKeys holds the string denoting the api_keys edge name in mutations.
 	EdgeAPIKeys = "api_keys"
 	// EdgeRedeemCodes holds the string denoting the redeem_codes edge name in mutations.
@@ -216,6 +220,8 @@ var Columns = []string{
 	FieldResellerTemplate,
 	FieldAllowMessagesDispatch,
 	FieldDefaultMappedModel,
+	FieldActiveStartTime,
+	FieldActiveEndTime,
 }
 
 var (
@@ -295,6 +301,10 @@ var (
 	DefaultDefaultMappedModel string
 	// DefaultMappedModelValidator is a validator for the "default_mapped_model" field. It is called by the builders before save.
 	DefaultMappedModelValidator func(string) error
+	// ActiveStartTimeValidator is a validator for the "active_start_time" field. It is called by the builders before save.
+	ActiveStartTimeValidator func(string) error
+	// ActiveEndTimeValidator is a validator for the "active_end_time" field. It is called by the builders before save.
+	ActiveEndTimeValidator func(string) error
 )
 
 // OrderOption defines the ordering options for the Group queries.
@@ -488,6 +498,16 @@ func ByAllowMessagesDispatch(opts ...sql.OrderTermOption) OrderOption {
 // ByDefaultMappedModel orders the results by the default_mapped_model field.
 func ByDefaultMappedModel(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDefaultMappedModel, opts...).ToFunc()
+}
+
+// ByActiveStartTime orders the results by the active_start_time field.
+func ByActiveStartTime(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldActiveStartTime, opts...).ToFunc()
+}
+
+// ByActiveEndTime orders the results by the active_end_time field.
+func ByActiveEndTime(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldActiveEndTime, opts...).ToFunc()
 }
 
 // ByAPIKeysCount orders the results by api_keys count.

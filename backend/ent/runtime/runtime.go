@@ -563,6 +563,14 @@ func init() {
 	group.DefaultDefaultMappedModel = groupDescDefaultMappedModel.Default.(string)
 	// group.DefaultMappedModelValidator is a validator for the "default_mapped_model" field. It is called by the builders before save.
 	group.DefaultMappedModelValidator = groupDescDefaultMappedModel.Validators[0].(func(string) error)
+	// groupDescActiveStartTime is the schema descriptor for active_start_time field.
+	groupDescActiveStartTime := groupFields[36].Descriptor()
+	// group.ActiveStartTimeValidator is a validator for the "active_start_time" field. It is called by the builders before save.
+	group.ActiveStartTimeValidator = groupDescActiveStartTime.Validators[0].(func(string) error)
+	// groupDescActiveEndTime is the schema descriptor for active_end_time field.
+	groupDescActiveEndTime := groupFields[37].Descriptor()
+	// group.ActiveEndTimeValidator is a validator for the "active_end_time" field. It is called by the builders before save.
+	group.ActiveEndTimeValidator = groupDescActiveEndTime.Validators[0].(func(string) error)
 	idempotencyrecordMixin := schema.IdempotencyRecord{}.Mixin()
 	idempotencyrecordMixinFields0 := idempotencyrecordMixin[0].Fields()
 	_ = idempotencyrecordMixinFields0

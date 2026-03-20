@@ -1,6 +1,7 @@
 package service
 
 import (
+	"strconv"
 	"strings"
 	"time"
 )
@@ -69,6 +70,10 @@ type Group struct {
 	AllowMessagesDispatch bool   `json:"allow_messages_dispatch"`
 	DefaultMappedModel    string `json:"default_mapped_model"`
 
+	// 定时上线时间窗口（格式 "HH:MM"，两者都设置时生效）
+	ActiveStartTime *string `json:"active_start_time"`
+	ActiveEndTime   *string `json:"active_end_time"`
+
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 
@@ -79,7 +84,48 @@ type Group struct {
 }
 
 func (g *Group) IsActive() bool {
-	return g.Status == StatusActive
+	if g.Status != StatusActive {
+		return false
+	}
+	// 未配置时间窗口则全天可用
+	if g.ActiveStartTime == nil || g.ActiveEndTime == nil {
+		return true
+	}
+	now := time.Now()
+	current := now.Hour()*60 + now.Minute()
+	start := parseHHMM(*g.ActiveStartTime)
+	end := parseHHMM(*g.ActiveEndTime)
+	if start < 0 || end < 0 {
+		return true // 格式异常视为全天可用
+	}
+	if start == end {
+		return true // 相同时间视为全天可用
+	}
+	if start < end {
+		return current >= start && current < end
+	}
+	// 跨午夜（如 22:00-06:00）
+	return current >= start || current < end
+}
+
+// parseHHMM 将 "HH:MM" 解析为分钟数，失败返回 -1
+func parseHHMM(s string) int {
+	hStr, mStr, ok := strings.Cut(s, ":")
+	if !ok {
+		return -1
+	}
+	h, err := strconv.Atoi(hStr)
+	if err != nil {
+		return -1
+	}
+	m, err := strconv.Atoi(mStr)
+	if err != nil {
+		return -1
+	}
+	if h < 0 || h > 23 || m < 0 || m > 59 {
+		return -1
+	}
+	return h*60 + m
 }
 
 func (g *Group) IsSubscriptionType() bool {

@@ -448,6 +448,9 @@ export interface Group {
   account_groups?: GroupAccountInfo[]
   // OpenAI Messages 调度开关（用户侧需要此字段判断是否展示 Claude Code 教程）
   allow_messages_dispatch?: boolean
+  // 定时上线时间窗口
+  active_start_time?: string | null
+  active_end_time?: string | null
   created_at: string
   updated_at: string
 }

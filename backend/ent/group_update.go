@@ -797,6 +797,46 @@ func (_u *GroupUpdate) SetNillableDefaultMappedModel(v *string) *GroupUpdate {
 	return _u
 }
 
+// SetActiveStartTime sets the "active_start_time" field.
+func (_u *GroupUpdate) SetActiveStartTime(v string) *GroupUpdate {
+	_u.mutation.SetActiveStartTime(v)
+	return _u
+}
+
+// SetNillableActiveStartTime sets the "active_start_time" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillableActiveStartTime(v *string) *GroupUpdate {
+	if v != nil {
+		_u.SetActiveStartTime(*v)
+	}
+	return _u
+}
+
+// ClearActiveStartTime clears the value of the "active_start_time" field.
+func (_u *GroupUpdate) ClearActiveStartTime() *GroupUpdate {
+	_u.mutation.ClearActiveStartTime()
+	return _u
+}
+
+// SetActiveEndTime sets the "active_end_time" field.
+func (_u *GroupUpdate) SetActiveEndTime(v string) *GroupUpdate {
+	_u.mutation.SetActiveEndTime(v)
+	return _u
+}
+
+// SetNillableActiveEndTime sets the "active_end_time" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillableActiveEndTime(v *string) *GroupUpdate {
+	if v != nil {
+		_u.SetActiveEndTime(*v)
+	}
+	return _u
+}
+
+// ClearActiveEndTime clears the value of the "active_end_time" field.
+func (_u *GroupUpdate) ClearActiveEndTime() *GroupUpdate {
+	_u.mutation.ClearActiveEndTime()
+	return _u
+}
+
 // AddAPIKeyIDs adds the "api_keys" edge to the APIKey entity by IDs.
 func (_u *GroupUpdate) AddAPIKeyIDs(ids ...int64) *GroupUpdate {
 	_u.mutation.AddAPIKeyIDs(ids...)
@@ -1123,6 +1163,16 @@ func (_u *GroupUpdate) check() error {
 			return &ValidationError{Name: "default_mapped_model", err: fmt.Errorf(`ent: validator failed for field "Group.default_mapped_model": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.ActiveStartTime(); ok {
+		if err := group.ActiveStartTimeValidator(v); err != nil {
+			return &ValidationError{Name: "active_start_time", err: fmt.Errorf(`ent: validator failed for field "Group.active_start_time": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.ActiveEndTime(); ok {
+		if err := group.ActiveEndTimeValidator(v); err != nil {
+			return &ValidationError{Name: "active_end_time", err: fmt.Errorf(`ent: validator failed for field "Group.active_end_time": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -1370,6 +1420,18 @@ func (_u *GroupUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.DefaultMappedModel(); ok {
 		_spec.SetField(group.FieldDefaultMappedModel, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.ActiveStartTime(); ok {
+		_spec.SetField(group.FieldActiveStartTime, field.TypeString, value)
+	}
+	if _u.mutation.ActiveStartTimeCleared() {
+		_spec.ClearField(group.FieldActiveStartTime, field.TypeString)
+	}
+	if value, ok := _u.mutation.ActiveEndTime(); ok {
+		_spec.SetField(group.FieldActiveEndTime, field.TypeString, value)
+	}
+	if _u.mutation.ActiveEndTimeCleared() {
+		_spec.ClearField(group.FieldActiveEndTime, field.TypeString)
 	}
 	if _u.mutation.APIKeysCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -2491,6 +2553,46 @@ func (_u *GroupUpdateOne) SetNillableDefaultMappedModel(v *string) *GroupUpdateO
 	return _u
 }
 
+// SetActiveStartTime sets the "active_start_time" field.
+func (_u *GroupUpdateOne) SetActiveStartTime(v string) *GroupUpdateOne {
+	_u.mutation.SetActiveStartTime(v)
+	return _u
+}
+
+// SetNillableActiveStartTime sets the "active_start_time" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillableActiveStartTime(v *string) *GroupUpdateOne {
+	if v != nil {
+		_u.SetActiveStartTime(*v)
+	}
+	return _u
+}
+
+// ClearActiveStartTime clears the value of the "active_start_time" field.
+func (_u *GroupUpdateOne) ClearActiveStartTime() *GroupUpdateOne {
+	_u.mutation.ClearActiveStartTime()
+	return _u
+}
+
+// SetActiveEndTime sets the "active_end_time" field.
+func (_u *GroupUpdateOne) SetActiveEndTime(v string) *GroupUpdateOne {
+	_u.mutation.SetActiveEndTime(v)
+	return _u
+}
+
+// SetNillableActiveEndTime sets the "active_end_time" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillableActiveEndTime(v *string) *GroupUpdateOne {
+	if v != nil {
+		_u.SetActiveEndTime(*v)
+	}
+	return _u
+}
+
+// ClearActiveEndTime clears the value of the "active_end_time" field.
+func (_u *GroupUpdateOne) ClearActiveEndTime() *GroupUpdateOne {
+	_u.mutation.ClearActiveEndTime()
+	return _u
+}
+
 // AddAPIKeyIDs adds the "api_keys" edge to the APIKey entity by IDs.
 func (_u *GroupUpdateOne) AddAPIKeyIDs(ids ...int64) *GroupUpdateOne {
 	_u.mutation.AddAPIKeyIDs(ids...)
@@ -2830,6 +2932,16 @@ func (_u *GroupUpdateOne) check() error {
 			return &ValidationError{Name: "default_mapped_model", err: fmt.Errorf(`ent: validator failed for field "Group.default_mapped_model": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.ActiveStartTime(); ok {
+		if err := group.ActiveStartTimeValidator(v); err != nil {
+			return &ValidationError{Name: "active_start_time", err: fmt.Errorf(`ent: validator failed for field "Group.active_start_time": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.ActiveEndTime(); ok {
+		if err := group.ActiveEndTimeValidator(v); err != nil {
+			return &ValidationError{Name: "active_end_time", err: fmt.Errorf(`ent: validator failed for field "Group.active_end_time": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -3094,6 +3206,18 @@ func (_u *GroupUpdateOne) sqlSave(ctx context.Context) (_node *Group, err error)
 	}
 	if value, ok := _u.mutation.DefaultMappedModel(); ok {
 		_spec.SetField(group.FieldDefaultMappedModel, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.ActiveStartTime(); ok {
+		_spec.SetField(group.FieldActiveStartTime, field.TypeString, value)
+	}
+	if _u.mutation.ActiveStartTimeCleared() {
+		_spec.ClearField(group.FieldActiveStartTime, field.TypeString)
+	}
+	if value, ok := _u.mutation.ActiveEndTime(); ok {
+		_spec.SetField(group.FieldActiveEndTime, field.TypeString, value)
+	}
+	if _u.mutation.ActiveEndTimeCleared() {
+		_spec.ClearField(group.FieldActiveEndTime, field.TypeString)
 	}
 	if _u.mutation.APIKeysCleared() {
 		edge := &sqlgraph.EdgeSpec{

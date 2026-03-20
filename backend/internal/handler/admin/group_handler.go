@@ -167,6 +167,9 @@ type UpdateGroupRequest struct {
 	SortOrder           *int     `json:"sort_order"`
 	IsRecommended       *bool    `json:"is_recommended"`
 	ExternalBuyURL      *string  `json:"external_buy_url"`
+	// 定时上线时间窗口（格式 "HH:MM"，传空字符串清除）
+	ActiveStartTime *string `json:"active_start_time"`
+	ActiveEndTime   *string `json:"active_end_time"`
 }
 
 // List handles listing all groups with pagination
@@ -355,6 +358,8 @@ func (h *GroupHandler) Update(c *gin.Context) {
 		SortOrder:                       req.SortOrder,
 		IsRecommended:                   req.IsRecommended,
 		ExternalBuyURL:                  req.ExternalBuyURL,
+		ActiveStartTime:                 req.ActiveStartTime,
+		ActiveEndTime:                   req.ActiveEndTime,
 	})
 	if err != nil {
 		response.ErrorFrom(c, err)

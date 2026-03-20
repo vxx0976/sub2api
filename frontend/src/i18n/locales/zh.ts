@@ -1907,6 +1907,16 @@ export default {
         geminiText: 'Gemini Text',
         geminiImage: 'Gemini Image',
         hint: '至少选择一个模型系列'
+      },
+      schedule: {
+        title: '定时上线',
+        hint: '（可选）',
+        startTime: '开始时间',
+        endTime: '结束时间',
+        startTimePlaceholder: '08:00',
+        endTimePlaceholder: '20:00',
+        activeHint: '每天 {start} ~ {end} 期间分组可用',
+        noScheduleHint: '未设置时间段，全天可用（两个时间均需填写才生效）'
       }
     },
 

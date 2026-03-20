@@ -213,6 +213,18 @@ func (r *groupRepository) Update(ctx context.Context, groupIn *service.Group) er
 	// 处理 SupportedModelScopes（始终设置，空数组表示不限制）
 	builder = builder.SetSupportedModelScopes(groupIn.SupportedModelScopes)
 
+	// 处理定时上线时间窗口
+	if groupIn.ActiveStartTime != nil {
+		builder = builder.SetActiveStartTime(*groupIn.ActiveStartTime)
+	} else {
+		builder = builder.ClearActiveStartTime()
+	}
+	if groupIn.ActiveEndTime != nil {
+		builder = builder.SetActiveEndTime(*groupIn.ActiveEndTime)
+	} else {
+		builder = builder.ClearActiveEndTime()
+	}
+
 	updated, err := builder.Save(ctx)
 	if err != nil {
 		return translatePersistenceError(err, service.ErrGroupNotFound, service.ErrGroupExists)

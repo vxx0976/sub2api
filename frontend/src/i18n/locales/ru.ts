@@ -1897,6 +1897,16 @@ export default {
         geminiText: 'Gemini Текст',
         geminiImage: 'Gemini Изображение',
         hint: 'Выберите хотя бы одно семейство моделей'
+      },
+      schedule: {
+        title: 'Расписание доступности',
+        hint: '(необязательно)',
+        startTime: 'Время начала',
+        endTime: 'Время окончания',
+        startTimePlaceholder: '08:00',
+        endTimePlaceholder: '20:00',
+        activeHint: 'Группа доступна ежедневно с {start} до {end}',
+        noScheduleHint: 'Расписание не задано — доступна весь день (нужно заполнить оба поля)'
       }
     },
 
