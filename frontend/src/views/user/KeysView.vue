@@ -1014,6 +1014,7 @@
 	import { useAppStore } from '@/stores/app'
 	import { useOnboardingStore } from '@/stores/onboarding'
 	import { useClipboard } from '@/composables/useClipboard'
+import { getPersistedPageSize } from '@/composables/usePersistedPageSize'
 
 const { t } = useI18n()
 import { keysAPI, authAPI, usageAPI, userGroupsAPI } from '@/api'
@@ -1091,7 +1092,7 @@ const groupStatusMap = ref<Record<number, GroupStatusItem>>({})
 
 const pagination = ref({
   page: 1,
-  page_size: 10,
+  page_size: getPersistedPageSize(),
   total: 0,
   pages: 0
 })

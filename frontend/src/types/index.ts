@@ -858,6 +858,7 @@ export interface AntigravityModelQuota {
 }
 
 export interface AccountUsageInfo {
+  source?: 'passive' | 'active'
   updated_at: string | null
   five_hour: UsageProgress | null
   seven_day: UsageProgress | null
@@ -1054,6 +1055,7 @@ export interface UsageLog {
   account_id: number | null
   request_id: string
   model: string
+  upstream_model?: string | null
   service_tier?: string | null
   reasoning_effort?: string | null
   inbound_endpoint?: string | null
@@ -1093,7 +1095,7 @@ export interface UsageLog {
   user_agent: string | null
 
   // IP 地址（仅管理员可见）
-  ip_address: string | null
+  ip_address?: string | null
 
   // Cache TTL Override
   cache_ttl_overridden: boolean
@@ -1105,6 +1107,16 @@ export interface UsageLog {
   account?: Account
   group?: Group
   subscription?: UserSubscription
+}
+
+export interface UsageLogAccountSummary {
+  id: number
+  name: string
+}
+
+export interface AdminUsageLog extends UsageLog {
+  // dev 的 UsageLog 已包含 account_rate_multiplier, ip_address, account
+  // 此接口保留用于类型语义区分（管理员专用用量日志）
 }
 
 export interface UsageCleanupFilters {

@@ -775,6 +775,7 @@ const refreshAccountsIncrementally = async () => {
         platform?: string
         type?: string
         status?: string
+        group?: string
         search?: string
 
       },

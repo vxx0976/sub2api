@@ -790,6 +790,7 @@ import type { Column } from '@/components/common/types'
 import { formatDateOnly } from '@/utils/format'
 import { getEffectiveMonthlyLimit } from '@/utils/subscription'
 import { useClipboard } from '@/composables/useClipboard'
+import { getPersistedPageSize } from '@/composables/usePersistedPageSize'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import TablePageLayout from '@/components/layout/TablePageLayout.vue'
 import DataTable from '@/components/common/DataTable.vue'
@@ -976,7 +977,7 @@ const sortState = reactive({
 
 const pagination = reactive({
   page: 1,
-  page_size: 20,
+  page_size: getPersistedPageSize(),
   total: 0,
   pages: 0
 })
