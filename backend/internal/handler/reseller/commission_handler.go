@@ -35,6 +35,19 @@ func (h *CommissionHandler) GetSummary(c *gin.Context) {
 	response.Success(c, summary)
 }
 
+func parsePage(c *gin.Context) (page, pageSize, offset int) {
+	page, _ = strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ = strconv.Atoi(c.DefaultQuery("page_size", "20"))
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 || pageSize > 100 {
+		pageSize = 20
+	}
+	offset = (page - 1) * pageSize
+	return
+}
+
 // GetDetail GET /api/v1/reseller/commissions/detail
 func (h *CommissionHandler) GetDetail(c *gin.Context) {
 	resellerID := getResellerIDFromContext(c)
@@ -42,14 +55,7 @@ func (h *CommissionHandler) GetDetail(c *gin.Context) {
 		response.Error(c, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
-	if page < 1 {
-		page = 1
-	}
-	if pageSize < 1 || pageSize > 100 {
-		pageSize = 20
-	}
+	page, pageSize, offset := parsePage(c)
 
 	var startDate, endDate *time.Time
 	if s := c.Query("start_date"); s != "" {
@@ -71,8 +77,23 @@ func (h *CommissionHandler) GetDetail(c *gin.Context) {
 		}
 	}
 
-	offset := (page - 1) * pageSize
 	items, total, err := h.commissionService.GetDetail(c.Request.Context(), resellerID, startDate, endDate, userIDFilter, pageSize, offset)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Paginated(c, items, int64(total), page, pageSize)
+}
+
+// GetRecharges GET /api/v1/reseller/commissions/recharges
+func (h *CommissionHandler) GetRecharges(c *gin.Context) {
+	resellerID := getResellerIDFromContext(c)
+	if resellerID == 0 {
+		response.Error(c, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+	page, pageSize, offset := parsePage(c)
+	items, total, err := h.commissionService.ListRechargeDetail(c.Request.Context(), resellerID, pageSize, offset)
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return

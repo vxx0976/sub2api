@@ -109,6 +109,7 @@ func registerResellerCommissionRoutes(reseller *gin.RouterGroup, h *handler.Hand
 	{
 		commissions.GET("/summary", h.Reseller.Commission.GetSummary)
 		commissions.GET("/detail", h.Reseller.Commission.GetDetail)
+		commissions.GET("/recharges", h.Reseller.Commission.GetRecharges)
 	}
 }
 

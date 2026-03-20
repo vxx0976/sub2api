@@ -52,3 +52,11 @@ type RechargeConfig struct {
 	MaxAmount  float64 `json:"max_amount"`
 	UsdCnyRate float64 `json:"usd_cny_rate"`
 }
+
+// RechargeDetailRecord is one row of sub-user recharge history for merchant commission
+type RechargeDetailRecord struct {
+	UserID       int64     `json:"user_id"`
+	OrderNo      string    `json:"order_no"`
+	CreditAmount float64   `json:"credit_amount"`
+	PaidAt       time.Time `json:"paid_at"`
+}

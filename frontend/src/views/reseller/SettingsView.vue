@@ -32,52 +32,7 @@
         </div>
 
         <!-- Pricing Config (only when agent mode enabled) -->
-        <div v-if="resellerSettingsStore.isAgentEnabled" class="card p-6">
-          <h2 class="mb-1 text-lg font-semibold text-gray-900 dark:text-white">
-            {{ t('reseller.settings.pricingSection') }}
-          </h2>
-          <p class="mb-4 text-xs text-gray-500 dark:text-gray-400">{{ t('reseller.settings.pricingHint') }}</p>
-          <div class="space-y-4">
-            <!-- 进价 + 卖价 → 自动计算倍率 -->
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <label class="label">{{ t('reseller.settings.platformCost') }}</label>
-                <input
-                  :value="platformCost || t('reseller.settings.platformCostNotSet')"
-                  type="text"
-                  class="input cursor-not-allowed bg-gray-50 dark:bg-gray-800"
-                  readonly
-                />
-                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('reseller.settings.platformCostHint') }}</p>
-              </div>
-              <div>
-                <label class="label">{{ t('reseller.settings.sellingPrice') }}</label>
-                <input
-                  v-model.number="sellingPrice"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  class="input"
-                  placeholder="1.00"
-                />
-                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('reseller.settings.sellingPriceHint') }}</p>
-              </div>
-            </div>
-            <!-- 计算结果展示 -->
-            <div v-if="computedMultiplier !== null" class="rounded-lg bg-blue-50 px-4 py-3 dark:bg-blue-900/20">
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-blue-700 dark:text-blue-300">{{ t('reseller.settings.computedMultiplier') }}</span>
-                <span class="text-lg font-bold text-blue-800 dark:text-blue-200">× {{ computedMultiplier }}</span>
-              </div>
-              <p class="mt-0.5 text-xs text-blue-600 dark:text-blue-400">
-                {{ t('reseller.settings.computedMultiplierHint', { cost: platformCost, price: sellingPrice, profit: computedProfit }) }}
-              </p>
-            </div>
-            <div v-else-if="platformCost > 0 && sellingPrice > 0 && sellingPrice < platformCost" class="rounded-lg bg-red-50 px-4 py-3 dark:bg-red-900/20">
-              <p class="text-sm text-red-600 dark:text-red-400">{{ t('reseller.settings.pricingError') }}</p>
-            </div>
-          </div>
-        </div>
+        <!-- 管理员统一定价，商户不再能自定义价格，此 section 已移除 -->
 
         <!-- Contact Info -->
         <div class="card p-6">
@@ -162,7 +117,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch, onMounted } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { resellerAPI } from '@/api'
 import { useAppStore, useResellerSettingsStore } from '@/stores'
@@ -186,33 +141,6 @@ const settings = ref<Record<string, string>>({
   contact_telegram: '',
 })
 
-// 平台进价（从全局设置读取，只读）
-const platformCost = ref<number>(0)
-const sellingPrice = ref<number>(0)
-
-// 自动计算倍率：卖价 / 进价，保留4位小数
-const computedMultiplier = computed<string | null>(() => {
-  if (platformCost.value > 0 && sellingPrice.value >= platformCost.value) {
-    return (sellingPrice.value / platformCost.value).toFixed(4)
-  }
-  return null
-})
-
-// 每刀利润
-const computedProfit = computed<string>(() => {
-  if (platformCost.value > 0 && sellingPrice.value >= platformCost.value) {
-    return (sellingPrice.value - platformCost.value).toFixed(4)
-  }
-  return '0'
-})
-
-// 倍率变化时同步写入 settings
-watch(computedMultiplier, (val) => {
-  if (val !== null) {
-    settings.value.price_multiplier = val
-  }
-})
-
 // SimpleAnnouncement list (stored as JSON in settings.announcements)
 const announcementList = reactive<{ title: string; date: string }[]>([])
 
@@ -223,16 +151,10 @@ async function loadSettings() {
     // 同步到 store（确保侧边栏 isAgentEnabled 也能实时更新）
     resellerSettingsStore.settings = data
     resellerSettingsStore.loaded = true
-    // 从商户自己的 KV 设置中读取管理员配置的进价（只读）
-    if (data.platform_cost) {
-      platformCost.value = parseFloat(data.platform_cost) || 0
-    }
     // Merge loaded settings with defaults
     for (const key of Object.keys(data)) {
       settings.value[key] = data[key]
     }
-    // 回显卖价
-    if (data.selling_price) sellingPrice.value = parseFloat(data.selling_price) || 0
     // Parse announcements JSON
     announcementList.length = 0
     if (data.announcements) {
@@ -257,8 +179,6 @@ async function saveSettings() {
     for (const [key, value] of Object.entries(settings.value)) {
       payload[key] = value
     }
-    // 保存卖价，供回显用（进价由管理员配置，不保存）
-    if (sellingPrice.value > 0) payload.selling_price = String(sellingPrice.value)
     // Serialize announcements (filter out empty titles)
     const validAnnouncements = announcementList.filter(a => a.title.trim())
     payload.announcements = validAnnouncements.length > 0 ? JSON.stringify(validAnnouncements) : ''

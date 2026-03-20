@@ -5,7 +5,7 @@
 import { apiClient } from '../client'
 
 export interface CommissionSummary {
-  price_multiplier: string
+  commission_rate: number
   total_cost: string
   total_commission: string
   total_recharge: string
@@ -28,8 +28,23 @@ export interface CommissionDetailItem {
   created_at: string
 }
 
+export interface RechargeDetailItem {
+  user_id: number
+  order_no: string
+  credit_amount: number
+  paid_at: string
+}
+
 export interface CommissionDetailResponse {
   items: CommissionDetailItem[]
+  total: number
+  page: number
+  page_size: number
+  pages: number
+}
+
+export interface RechargeDetailResponse {
+  items: RechargeDetailItem[]
   total: number
   page: number
   page_size: number
@@ -52,5 +67,13 @@ export async function getCommissionDetail(params: {
   return data
 }
 
-export const commissionsAPI = { getCommissionSummary, getCommissionDetail }
+export async function getRechargeDetail(params: {
+  page?: number
+  page_size?: number
+}): Promise<RechargeDetailResponse> {
+  const { data } = await apiClient.get<RechargeDetailResponse>('/reseller/commissions/recharges', { params })
+  return data
+}
+
+export const commissionsAPI = { getCommissionSummary, getCommissionDetail, getRechargeDetail }
 export default commissionsAPI

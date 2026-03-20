@@ -408,9 +408,7 @@ func (h *AuthHandler) GetCurrentUser(c *gin.Context) {
 			if mult, err := strconv.ParseFloat(rs["price_multiplier"], 64); err == nil && mult > 0 {
 				resp.ResellerPriceMultiplier = &mult
 			}
-			if sp, err := strconv.ParseFloat(rs["selling_price"], 64); err == nil && sp > 0 {
-				resp.ResellerSellingPrice = &sp
-			}
+			// selling_price 不再由商户自定义，统一使用平台定价，不传 _x_sp
 		}
 	}
 

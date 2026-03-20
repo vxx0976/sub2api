@@ -163,26 +163,17 @@
           </button>
         </div>
         <div>
-          <label class="input-label">{{ t('admin.merchants.platformCost') }}</label>
+          <label class="input-label">{{ t('admin.merchants.commissionRate') }}</label>
           <input
-            v-model="settingsForm.platform_cost"
+            v-model="settingsForm.commission_rate"
             type="number"
             min="0"
+            max="1"
             step="0.01"
             class="input"
-            placeholder="0.69"
+            placeholder="0.1"
           />
-          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('admin.merchants.platformCostHint') }}</p>
-        </div>
-        <div>
-          <label class="input-label">{{ t('admin.merchants.priceMultiplier') }}</label>
-          <input
-            :value="settingsForm.price_multiplier || t('admin.merchants.notSet')"
-            type="text"
-            class="input cursor-not-allowed bg-gray-50 dark:bg-gray-800"
-            readonly
-          />
-          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('admin.merchants.priceMultiplierReadonlyHint') }}</p>
+          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('admin.merchants.commissionRateHint') }}</p>
         </div>
         <div>
           <label class="input-label">{{ t('admin.merchants.minWithdrawal') }}</label>
@@ -275,23 +266,20 @@ const settingsSubmitting = ref(false)
 const editingMerchant = ref<MerchantUser | null>(null)
 const settingsForm = reactive({
   merchant_mode: '',
-  platform_cost: '',
-  price_multiplier: '',
+  commission_rate: '',
   min_withdrawal: ''
 })
 
 async function openSettingsDialog(merchant: MerchantUser) {
   editingMerchant.value = merchant
   settingsForm.merchant_mode = ''
-  settingsForm.platform_cost = ''
-  settingsForm.price_multiplier = ''
+  settingsForm.commission_rate = ''
   settingsForm.min_withdrawal = ''
   showSettingsDialog.value = true
   try {
     const kv = await adminAPI.merchants.getMerchantSettings(merchant.id)
     settingsForm.merchant_mode = kv.merchant_mode || ''
-    settingsForm.platform_cost = kv.platform_cost || ''
-    settingsForm.price_multiplier = kv.price_multiplier || ''
+    settingsForm.commission_rate = kv.commission_rate || ''
     settingsForm.min_withdrawal = kv.min_withdrawal || ''
   } catch {
     // ignore, form stays empty
@@ -309,7 +297,7 @@ async function handleSettingsSubmit() {
   try {
     const payload: Record<string, string> = {}
     if (settingsForm.merchant_mode) payload.merchant_mode = settingsForm.merchant_mode
-    if (settingsForm.platform_cost) payload.platform_cost = settingsForm.platform_cost
+    if (settingsForm.commission_rate) payload.commission_rate = settingsForm.commission_rate
     if (settingsForm.min_withdrawal) payload.min_withdrawal = settingsForm.min_withdrawal
 
     await adminAPI.merchants.updateMerchantSettings(editingMerchant.value.id, payload)

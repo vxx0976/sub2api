@@ -62,6 +62,12 @@ func (h *SettingHandler) Update(c *gin.Context) {
 		return
 	}
 
+	// 商户不允许自行修改定价相关字段，由管理员统一设置
+	protectedKeys := []string{"selling_price", "price_multiplier", "platform_cost", "commission_rate", "merchant_mode", "min_withdrawal", "max_withdrawal"}
+	for _, k := range protectedKeys {
+		delete(settings, k)
+	}
+
 	if err := h.resellerService.UpdateSettings(c.Request.Context(), resellerID, settings); err != nil {
 		response.ErrorFrom(c, err)
 		return

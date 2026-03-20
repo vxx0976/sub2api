@@ -53,7 +53,7 @@ type ResellerWithdrawal struct {
 
 // CommissionSummary is the response for /reseller/commissions/summary
 type CommissionSummary struct {
-	PriceMultiplier float64 `json:"price_multiplier"`
+	CommissionRate  float64 `json:"commission_rate"`
 	TotalCost       float64 `json:"total_cost"`
 	TotalCommission float64 `json:"total_commission"`
 	TotalRecharge   float64 `json:"total_recharge"`
@@ -130,17 +130,17 @@ func (s *CommissionService) getSubUserIDs(ctx context.Context, resellerID int64)
 	return s.userRepo.ListIDsByParentID(ctx, resellerID)
 }
 
-// getPriceMultiplier returns the current price_multiplier for the reseller (0 if not set)
-func (s *CommissionService) getPriceMultiplier(ctx context.Context, resellerID int64) (float64, error) {
-	val, err := s.settingRepo.Get(ctx, resellerID, "price_multiplier")
+// getCommissionRate returns the commission_rate for the reseller (default 0.1 = 10%)
+func (s *CommissionService) getCommissionRate(ctx context.Context, resellerID int64) (float64, error) {
+	val, err := s.settingRepo.Get(ctx, resellerID, "commission_rate")
 	if err != nil || val == "" {
-		return 0, nil
+		return 0.1, nil // 默认10%
 	}
-	mult, err := strconv.ParseFloat(val, 64)
-	if err != nil {
-		return 0, nil
+	rate, err := strconv.ParseFloat(val, 64)
+	if err != nil || rate < 0 {
+		return 0.1, nil
 	}
-	return mult, nil
+	return rate, nil
 }
 
 // GetSummary returns commission summary for a reseller
@@ -150,18 +150,22 @@ func (s *CommissionService) GetSummary(ctx context.Context, resellerID int64) (*
 		return nil, err
 	}
 
-	mult, err := s.getPriceMultiplier(ctx, resellerID)
+	rate, err := s.getCommissionRate(ctx, resellerID)
 	if err != nil {
 		return nil, err
 	}
 
-	var totalCost, totalCommission float64
+	var totalCost float64
 	if len(userIDs) > 0 {
-		totalCost, totalCommission, err = s.usageLogRepo.SumCommissionByUserIDs(ctx, userIDs)
+		// 只取 totalCost，分成按比例计算
+		totalCost, _, err = s.usageLogRepo.SumCommissionByUserIDs(ctx, userIDs)
 		if err != nil {
 			return nil, err
 		}
 	}
+
+	// 分成 = 用户总消费 × 分成比例
+	totalCommission := totalCost * rate
 
 	var totalRecharge float64
 	if len(userIDs) > 0 {
@@ -203,7 +207,7 @@ func (s *CommissionService) GetSummary(ctx context.Context, resellerID int64) (*
 	}
 
 	return &CommissionSummary{
-		PriceMultiplier: mult,
+		CommissionRate:  rate,
 		TotalCost:       totalCost,
 		TotalCommission: totalCommission,
 		TotalRecharge:   totalRecharge,
@@ -349,4 +353,16 @@ func (s *CommissionService) AdminUpdateMerchantSettings(ctx context.Context, mer
 // using the current price_multiplier from reseller_settings. Returns updated row count.
 func (s *CommissionService) BackfillMerchantRateSnapshot(ctx context.Context) (int64, error) {
 	return s.usageLogRepo.BackfillMerchantRateSnapshot(ctx)
+}
+
+// ListRechargeDetail returns paginated recharge history for a reseller's sub-users
+func (s *CommissionService) ListRechargeDetail(ctx context.Context, resellerID int64, limit, offset int) ([]*RechargeDetailRecord, int, error) {
+	userIDs, err := s.getSubUserIDs(ctx, resellerID)
+	if err != nil {
+		return nil, 0, err
+	}
+	if len(userIDs) == 0 {
+		return nil, 0, nil
+	}
+	return s.rechargeOrderRepo.ListPaidByUserIDs(ctx, userIDs, limit, offset)
 }

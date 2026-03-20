@@ -283,6 +283,43 @@ func (r *rechargeOrderRepository) SumCreditByUserIDs(ctx context.Context, userID
 	return result[0].Sum, nil
 }
 
+func (r *rechargeOrderRepository) ListPaidByUserIDs(ctx context.Context, userIDs []int64, limit, offset int) ([]*service.RechargeDetailRecord, int, error) {
+	if len(userIDs) == 0 {
+		return nil, 0, nil
+	}
+
+	q := clientFromContext(ctx, r.client).RechargeOrder.Query().
+		Where(rechargeorder.UserIDIn(userIDs...), rechargeorder.StatusEQ(service.RechargeOrderStatusPaid))
+
+	total, err := q.Clone().Count(ctx)
+	if err != nil {
+		return nil, 0, translatePersistenceError(err, nil, nil)
+	}
+
+	rows, err := q.Order(dbent.Desc(rechargeorder.FieldPaidAt)).
+		Offset(offset).
+		Limit(limit).
+		All(ctx)
+	if err != nil {
+		return nil, 0, translatePersistenceError(err, nil, nil)
+	}
+
+	out := make([]*service.RechargeDetailRecord, 0, len(rows))
+	for _, row := range rows {
+		paidAt := time.Time{}
+		if row.PaidAt != nil {
+			paidAt = *row.PaidAt
+		}
+		out = append(out, &service.RechargeDetailRecord{
+			UserID:       row.UserID,
+			OrderNo:      row.OrderNo,
+			CreditAmount: row.CreditAmount,
+			PaidAt:       paidAt,
+		})
+	}
+	return out, total, nil
+}
+
 func applyRechargeOrderEntityToService(dst *service.RechargeOrder, src *dbent.RechargeOrder) {
 	if dst == nil || src == nil {
 		return

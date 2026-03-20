@@ -26,4 +26,7 @@ type RechargeOrderRepository interface {
 
 	// SumCreditByUserIDs returns the total credit_amount for paid orders of given user IDs
 	SumCreditByUserIDs(ctx context.Context, userIDs []int64) (float64, error)
+
+	// ListPaidByUserIDs returns paginated paid recharge orders for given user IDs, newest first
+	ListPaidByUserIDs(ctx context.Context, userIDs []int64, limit, offset int) ([]*RechargeDetailRecord, int, error)
 }
