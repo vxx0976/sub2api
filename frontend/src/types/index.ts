@@ -858,6 +858,7 @@ export interface AntigravityModelQuota {
 }
 
 export interface AccountUsageInfo {
+  source?: 'passive' | 'active'
   updated_at: string | null
   five_hour: UsageProgress | null
   seven_day: UsageProgress | null
@@ -1054,6 +1055,7 @@ export interface UsageLog {
   account_id: number | null
   request_id: string
   model: string
+  upstream_model?: string | null
   service_tier?: string | null
   reasoning_effort?: string | null
   inbound_endpoint?: string | null
@@ -1105,6 +1107,19 @@ export interface UsageLog {
   account?: Account
   group?: Group
   subscription?: UserSubscription
+}
+
+export interface UsageLogAccountSummary {
+  id: number
+  name: string
+}
+
+export interface AdminUsageLog extends Omit<UsageLog, 'account'> {
+  // Account rate multiplier (admin only)
+  account_rate_multiplier?: number | null
+
+  // Minimal account info (admin API only)
+  account?: UsageLogAccountSummary
 }
 
 export interface UsageCleanupFilters {
