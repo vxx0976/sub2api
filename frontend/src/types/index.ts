@@ -1095,7 +1095,7 @@ export interface UsageLog {
   user_agent: string | null
 
   // IP 地址（仅管理员可见）
-  ip_address: string | null
+  ip_address?: string | null
 
   // Cache TTL Override
   cache_ttl_overridden: boolean
@@ -1114,12 +1114,9 @@ export interface UsageLogAccountSummary {
   name: string
 }
 
-export interface AdminUsageLog extends Omit<UsageLog, 'account'> {
-  // Account rate multiplier (admin only)
-  account_rate_multiplier?: number | null
-
-  // Minimal account info (admin API only)
-  account?: UsageLogAccountSummary
+export interface AdminUsageLog extends UsageLog {
+  // dev 的 UsageLog 已包含 account_rate_multiplier, ip_address, account
+  // 此接口保留用于类型语义区分（管理员专用用量日志）
 }
 
 export interface UsageCleanupFilters {
