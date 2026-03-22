@@ -263,7 +263,9 @@ func (s *ChannelService) CheckBalance(ctx context.Context, id int64) (*Channel, 
 	return channel, nil
 }
 
-// extractBalance extracts the balance value from JSON response using the given path
+// extractBalance extracts the balance value from JSON response using the given path.
+// Supports simple paths like "data.balance" and expressions like "data.limit - data.used".
+// Supported operators: +, -, *, /
 func (s *ChannelService) extractBalance(body []byte, path *string) (float64, error) {
 	var data interface{}
 	if err := json.Unmarshal(body, &data); err != nil {
@@ -275,8 +277,45 @@ func (s *ChannelService) extractBalance(body []byte, path *string) (float64, err
 		return parseFloat(data)
 	}
 
-	// Navigate the path
-	parts := strings.Split(*path, ".")
+	// Check if path is an expression (contains arithmetic operator surrounded by spaces)
+	for _, op := range []string{" - ", " + ", " * ", " / "} {
+		if idx := strings.Index(*path, op); idx > 0 {
+			left := strings.TrimSpace((*path)[:idx])
+			right := strings.TrimSpace((*path)[idx+len(op):])
+			operator := strings.TrimSpace(op)
+
+			leftVal, err := navigatePath(data, left)
+			if err != nil {
+				return 0, err
+			}
+			rightVal, err := navigatePath(data, right)
+			if err != nil {
+				return 0, err
+			}
+
+			switch operator {
+			case "+":
+				return leftVal + rightVal, nil
+			case "-":
+				return leftVal - rightVal, nil
+			case "*":
+				return leftVal * rightVal, nil
+			case "/":
+				if rightVal == 0 {
+					return 0, fmt.Errorf("division by zero")
+				}
+				return leftVal / rightVal, nil
+			}
+		}
+	}
+
+	// Simple path
+	return navigatePath(data, *path)
+}
+
+// navigatePath extracts a float64 value from parsed JSON data using a dot-separated path
+func navigatePath(data interface{}, path string) (float64, error) {
+	parts := strings.Split(path, ".")
 	current := data
 	for _, part := range parts {
 		switch v := current.(type) {
@@ -284,7 +323,7 @@ func (s *ChannelService) extractBalance(body []byte, path *string) (float64, err
 			var ok bool
 			current, ok = v[part]
 			if !ok {
-				return 0, fmt.Errorf("path '%s' not found in response", *path)
+				return 0, fmt.Errorf("path '%s' not found in response", path)
 			}
 		case []interface{}:
 			idx, err := strconv.Atoi(part)
@@ -293,7 +332,7 @@ func (s *ChannelService) extractBalance(body []byte, path *string) (float64, err
 			}
 			current = v[idx]
 		default:
-			return 0, fmt.Errorf("cannot navigate path '%s': unexpected type at '%s'", *path, part)
+			return 0, fmt.Errorf("cannot navigate path '%s': unexpected type at '%s'", path, part)
 		}
 	}
 

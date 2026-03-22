@@ -298,6 +298,7 @@
                 class="input"
                 :placeholder="t('admin.channels.balancePathPlaceholder')"
               />
+              <p class="mt-1 text-xs text-gray-500">{{ t('admin.channels.balancePathHint') }}</p>
             </div>
             <div class="sm:col-span-2">
               <label class="input-label">{{ t('admin.channels.balanceHeaders') }}</label>
