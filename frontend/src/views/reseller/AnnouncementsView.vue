@@ -159,7 +159,7 @@ import { useI18n } from 'vue-i18n'
 import { resellerAPI } from '@/api'
 import type { ResellerAnnouncement } from '@/api/reseller/announcements'
 import { useAppStore } from '@/stores'
-import { formatDateTime } from '@/utils/format'
+import { formatDateTime, formatDateTimeLocalInput, parseDateTimeLocalInput } from '@/utils/format'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import Pagination from '@/components/common/Pagination.vue'
@@ -211,25 +211,14 @@ function openEditModal(item: ResellerAnnouncement) {
   form.title = item.title
   form.content = item.content
   form.status = item.status
-  form.starts_at = item.starts_at ? toLocalDatetime(item.starts_at) : ''
-  form.ends_at = item.ends_at ? toLocalDatetime(item.ends_at) : ''
+  form.starts_at = item.starts_at ? formatDateTimeLocalInput(Math.floor(new Date(item.starts_at).getTime() / 1000)) : ''
+  form.ends_at = item.ends_at ? formatDateTimeLocalInput(Math.floor(new Date(item.ends_at).getTime() / 1000)) : ''
   showModal.value = true
 }
 
 function closeModal() {
   showModal.value = false
   editingItem.value = null
-}
-
-function toLocalDatetime(isoStr: string): string {
-  try {
-    const d = new Date(isoStr)
-    const offset = d.getTimezoneOffset()
-    const local = new Date(d.getTime() - offset * 60000)
-    return local.toISOString().slice(0, 16)
-  } catch {
-    return ''
-  }
 }
 
 async function loadAnnouncements() {
@@ -252,23 +241,37 @@ async function loadAnnouncements() {
 async function handleSubmit() {
   submitting.value = true
   try {
+    const startsAt = parseDateTimeLocalInput(form.starts_at)
+    const endsAt = parseDateTimeLocalInput(form.ends_at)
+
     if (editingItem.value) {
-      await resellerAPI.announcements.update(editingItem.value.id, {
+      const original = editingItem.value
+      const originalStarts = original.starts_at ? Math.floor(new Date(original.starts_at).getTime() / 1000) : null
+      const originalEnds = original.ends_at ? Math.floor(new Date(original.ends_at).getTime() / 1000) : null
+
+      const payload: Record<string, any> = {
         title: form.title,
         content: form.content,
-        status: form.status,
-        starts_at: form.starts_at || null,
-        ends_at: form.ends_at || null
-      })
+        status: form.status
+      }
+
+      if (startsAt !== originalStarts) {
+        payload.starts_at = startsAt === null ? 0 : startsAt
+      }
+      if (endsAt !== originalEnds) {
+        payload.ends_at = endsAt === null ? 0 : endsAt
+      }
+
+      await resellerAPI.announcements.update(editingItem.value.id, payload)
       appStore.showSuccess(t('reseller.announcements.updateSuccess'))
     } else {
       await resellerAPI.announcements.create({
         title: form.title,
         content: form.content,
         status: form.status,
-        starts_at: form.starts_at || undefined,
-        ends_at: form.ends_at || undefined
-      })
+        starts_at: startsAt ?? undefined,
+        ends_at: endsAt ?? undefined
+      } as any)
       appStore.showSuccess(t('reseller.announcements.createSuccess'))
     }
     closeModal()

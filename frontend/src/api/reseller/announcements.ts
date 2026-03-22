@@ -24,16 +24,16 @@ export interface CreateAnnouncementRequest {
   title: string
   content: string
   status: string
-  starts_at?: string
-  ends_at?: string
+  starts_at?: number
+  ends_at?: number
 }
 
 export interface UpdateAnnouncementRequest {
   title?: string
   content?: string
   status?: string
-  starts_at?: string | null
-  ends_at?: string | null
+  starts_at?: number | null
+  ends_at?: number | null
 }
 
 export const resellerAnnouncementAPI = {

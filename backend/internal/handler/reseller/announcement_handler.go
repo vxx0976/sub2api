@@ -23,20 +23,20 @@ func NewAnnouncementHandler(resellerService *service.ResellerService) *Announcem
 
 // CreateAnnouncementRequest represents the request to create an announcement
 type CreateAnnouncementRequest struct {
-	Title    string     `json:"title" binding:"required"`
-	Content  string     `json:"content" binding:"required"`
-	Status   string     `json:"status"`
-	StartsAt *time.Time `json:"starts_at"`
-	EndsAt   *time.Time `json:"ends_at"`
+	Title    string `json:"title" binding:"required"`
+	Content  string `json:"content" binding:"required"`
+	Status   string `json:"status"`
+	StartsAt *int64 `json:"starts_at"` // Unix seconds
+	EndsAt   *int64 `json:"ends_at"`   // Unix seconds
 }
 
 // UpdateAnnouncementRequest represents the request to update an announcement
 type UpdateAnnouncementRequest struct {
-	Title    *string     `json:"title"`
-	Content  *string     `json:"content"`
-	Status   *string     `json:"status"`
-	StartsAt **time.Time `json:"starts_at"`
-	EndsAt   **time.Time `json:"ends_at"`
+	Title    *string `json:"title"`
+	Content  *string `json:"content"`
+	Status   *string `json:"status"`
+	StartsAt *int64  `json:"starts_at"` // Unix seconds, 0 = clear
+	EndsAt   *int64  `json:"ends_at"`   // Unix seconds, 0 = clear
 }
 
 // List returns announcements owned by the reseller
@@ -85,11 +85,18 @@ func (h *AnnouncementHandler) Create(c *gin.Context) {
 	}
 
 	input := &service.CreateAnnouncementInput{
-		Title:    req.Title,
-		Content:  req.Content,
-		Status:   req.Status,
-		StartsAt: req.StartsAt,
-		EndsAt:   req.EndsAt,
+		Title:   req.Title,
+		Content: req.Content,
+		Status:  req.Status,
+	}
+
+	if req.StartsAt != nil && *req.StartsAt > 0 {
+		t := time.Unix(*req.StartsAt, 0)
+		input.StartsAt = &t
+	}
+	if req.EndsAt != nil && *req.EndsAt > 0 {
+		t := time.Unix(*req.EndsAt, 0)
+		input.EndsAt = &t
 	}
 
 	a, err := h.resellerService.CreateAnnouncement(c.Request.Context(), resellerID, input)
@@ -126,8 +133,28 @@ func (h *AnnouncementHandler) Update(c *gin.Context) {
 		Title:   req.Title,
 		Content: req.Content,
 		Status:  req.Status,
-		StartsAt: req.StartsAt,
-		EndsAt:   req.EndsAt,
+	}
+
+	if req.StartsAt != nil {
+		if *req.StartsAt == 0 {
+			var cleared *time.Time = nil
+			input.StartsAt = &cleared
+		} else {
+			t := time.Unix(*req.StartsAt, 0)
+			ptr := &t
+			input.StartsAt = &ptr
+		}
+	}
+
+	if req.EndsAt != nil {
+		if *req.EndsAt == 0 {
+			var cleared *time.Time = nil
+			input.EndsAt = &cleared
+		} else {
+			t := time.Unix(*req.EndsAt, 0)
+			ptr := &t
+			input.EndsAt = &ptr
+		}
 	}
 
 	a, err := h.resellerService.UpdateAnnouncement(c.Request.Context(), resellerID, announcementID, input)
