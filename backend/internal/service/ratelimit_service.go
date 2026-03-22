@@ -99,6 +99,10 @@ func (s *RateLimitService) CheckErrorPolicy(ctx context.Context, account *Accoun
 		return ErrorPolicySkipped
 	}
 	if account.IsPoolMode() {
+		// 池模式下仍尝试临时不可调度规则
+		if s.tryTempUnschedulable(ctx, account, statusCode, responseBody) {
+			return ErrorPolicyTempUnscheduled
+		}
 		return ErrorPolicySkipped
 	}
 	if s.tryTempUnschedulable(ctx, account, statusCode, responseBody) {
@@ -113,7 +117,13 @@ func (s *RateLimitService) HandleUpstreamError(ctx context.Context, account *Acc
 	customErrorCodesEnabled := account.IsCustomErrorCodesEnabled()
 
 	// 池模式默认不标记本地账号状态；仅当用户显式配置自定义错误码时按本地策略处理。
+	// 但仍尝试临时不可调度规则（用户显式配置的规则应始终生效）。
 	if account.IsPoolMode() && !customErrorCodesEnabled {
+		if statusCode != 401 {
+			if s.tryTempUnschedulable(ctx, account, statusCode, responseBody) {
+				return true
+			}
+		}
 		slog.Info("pool_mode_error_skipped", "account_id", account.ID, "status_code", statusCode)
 		return false
 	}
