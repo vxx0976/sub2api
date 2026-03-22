@@ -20,20 +20,20 @@
       >
         {{ description }}
       </span>
-      <!-- Row 3: 30-day status bar -->
-      <div v-if="statusInfo && statusInfo.daily_history?.length > 0" class="mt-2 w-full">
-        <div class="flex gap-[1px]">
+      <!-- Row 3: 30-day status bar (compact) -->
+      <div v-if="statusInfo && statusInfo.daily_history?.length > 0" class="mt-1.5 w-full">
+        <div class="flex gap-[0.5px]">
           <div
             v-for="(day, idx) in statusInfo.daily_history"
             :key="idx"
-            class="h-1.5 flex-1 rounded-[1px]"
+            class="h-1 flex-1 rounded-[1px]"
             :class="barClass(day.status)"
             :title="barTooltip(day)"
           ></div>
         </div>
-        <div class="mt-0.5 flex items-center justify-between text-[10px] text-gray-400 dark:text-dark-500">
-          <span :class="statusTextClass(statusInfo.status)">{{ statusLabel(statusInfo.uptime_30d ?? 100) }}</span>
-          <span>{{ (statusInfo.uptime_30d ?? 100).toFixed(1) }}% {{ t('status.uptime') }}</span>
+        <div class="mt-0.5 flex items-center justify-between text-[9px] leading-tight text-gray-400 dark:text-dark-500">
+          <span :class="statusTextClass(statusInfo.status)">{{ statusLabel(statusInfo.status) }}</span>
+          <span>{{ (statusInfo.uptime_30d ?? 100).toFixed(1) }}%</span>
         </div>
       </div>
     </div>
@@ -117,11 +117,13 @@ function statusTextClass(status: string) {
   }
 }
 
-function statusLabel(uptime: number) {
-  if (uptime >= 99) return t('status.statusStable')
-  if (uptime >= 95) return t('status.statusMostlyStable')
-  if (uptime >= 90) return t('status.statusSlightFluctuation')
-  return t('status.statusUnstable')
+function statusLabel(status: string) {
+  switch (status) {
+    case 'operational': return t('status.statusStable')
+    case 'degraded': return t('status.statusMostlyStable')
+    case 'down': return t('status.statusSlightFluctuation')
+    default: return t('status.statusStable')
+  }
 }
 
 // Whether user has a custom rate different from default
