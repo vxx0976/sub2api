@@ -21,7 +21,7 @@
         {{ description }}
       </span>
       <!-- Row 3: 30-day status bar (compact) -->
-      <div v-if="statusInfo && statusInfo.daily_history?.length > 0" class="mt-1.5 w-full">
+      <div v-if="statusInfo && statusInfo.daily_history?.length > 0" class="mt-1.5 w-4/5">
         <div class="flex gap-[0.5px]">
           <div
             v-for="(day, idx) in statusInfo.daily_history"
