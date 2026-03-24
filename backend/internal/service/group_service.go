@@ -19,7 +19,7 @@ type GroupRepository interface {
 	GetByIDLite(ctx context.Context, id int64) (*Group, error)
 	Update(ctx context.Context, group *Group) error
 	Delete(ctx context.Context, id int64) error
-	DeleteCascade(ctx context.Context, id int64) ([]int64, error)
+	DeleteCascade(ctx context.Context, id int64, migrateToGroupID *int64) ([]int64, error)
 
 	List(ctx context.Context, params pagination.PaginationParams) ([]Group, *pagination.PaginationResult, error)
 	ListWithFilters(ctx context.Context, params pagination.PaginationParams, platform, status, search string, isExclusive *bool, isPurchasable *bool) ([]Group, *pagination.PaginationResult, error)

@@ -64,7 +64,7 @@ func (f *fakeGroupRepo) GetByIDLite(context.Context, int64) (*service.Group, err
 }
 func (f *fakeGroupRepo) Update(context.Context, *service.Group) error          { return nil }
 func (f *fakeGroupRepo) Delete(context.Context, int64) error                   { return nil }
-func (f *fakeGroupRepo) DeleteCascade(context.Context, int64) ([]int64, error) { return nil, nil }
+func (f *fakeGroupRepo) DeleteCascade(context.Context, int64, *int64) ([]int64, error) { return nil, nil }
 func (f *fakeGroupRepo) List(context.Context, pagination.PaginationParams) ([]service.Group, *pagination.PaginationResult, error) {
 	return nil, nil, nil
 }

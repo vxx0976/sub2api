@@ -260,7 +260,7 @@ func (m *mockGroupRepoForGateway) GetByIDLite(ctx context.Context, id int64) (*G
 func (m *mockGroupRepoForGateway) Create(ctx context.Context, group *Group) error { return nil }
 func (m *mockGroupRepoForGateway) Update(ctx context.Context, group *Group) error { return nil }
 func (m *mockGroupRepoForGateway) Delete(ctx context.Context, id int64) error     { return nil }
-func (m *mockGroupRepoForGateway) DeleteCascade(ctx context.Context, id int64) ([]int64, error) {
+func (m *mockGroupRepoForGateway) DeleteCascade(ctx context.Context, id int64, migrateToGroupID *int64) ([]int64, error) {
 	return nil, nil
 }
 func (m *mockGroupRepoForGateway) List(ctx context.Context, params pagination.PaginationParams) ([]Group, *pagination.PaginationResult, error) {

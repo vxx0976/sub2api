@@ -1813,6 +1813,9 @@ export default {
         "Are you sure you want to delete '{name}'? All associated API keys will no longer belong to any group.",
       deleteConfirmSubscription:
         "Are you sure you want to delete subscription group '{name}'? This will invalidate all API keys bound to this subscription and delete all related subscription records. This action cannot be undone.",
+      migrateKeysTo: 'Migrate bound keys to',
+      noMigration: 'No migration (clear group binding)',
+      migrateKeysHint: 'If a target group is selected, all API keys in this group will be migrated to the target group instead of being unbound.',
       subscription: {
         title: 'Subscription Settings',
         type: 'Billing Type',

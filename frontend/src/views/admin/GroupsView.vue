@@ -1974,7 +1974,25 @@
       :danger="true"
       @confirm="confirmDelete"
       @cancel="showDeleteDialog = false"
-    />
+    >
+      <div v-if="migrateTargetGroups.length > 0" class="mt-3">
+        <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+          {{ t('admin.groups.migrateKeysTo') }}
+        </label>
+        <select
+          v-model="migrateToGroupId"
+          class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-dark-600 dark:bg-dark-700 dark:text-gray-100"
+        >
+          <option :value="null">{{ t('admin.groups.noMigration') }}</option>
+          <option v-for="g in migrateTargetGroups" :key="g.id" :value="g.id">
+            {{ g.name }} ({{ g.platform }})
+          </option>
+        </select>
+        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+          {{ t('admin.groups.migrateKeysHint') }}
+        </p>
+      </div>
+    </ConfirmDialog>
 
     <!-- Sort Order Modal -->
     <BaseDialog
@@ -2263,6 +2281,7 @@ const submitting = ref(false)
 const sortSubmitting = ref(false)
 const editingGroup = ref<AdminGroup | null>(null)
 const deletingGroup = ref<AdminGroup | null>(null)
+const migrateToGroupId = ref<number | null>(null)
 const showRateMultipliersModal = ref(false)
 const rateMultipliersGroup = ref<AdminGroup | null>(null)
 const sortableGroups = ref<AdminGroup[]>([])
@@ -2877,17 +2896,29 @@ const handleRateMultipliers = (group: AdminGroup) => {
 
 const handleDelete = (group: AdminGroup) => {
   deletingGroup.value = group
+  migrateToGroupId.value = null
   showDeleteDialog.value = true
 }
+
+const migrateTargetGroups = computed(() => {
+  if (!deletingGroup.value) return []
+  return groups.value.filter(
+    (g) => g.id !== deletingGroup.value!.id && g.status === 'active'
+  )
+})
 
 const confirmDelete = async () => {
   if (!deletingGroup.value) return
 
   try {
-    await adminAPI.groups.delete(deletingGroup.value.id)
+    await adminAPI.groups.delete(
+      deletingGroup.value.id,
+      migrateToGroupId.value ?? undefined
+    )
     appStore.showSuccess(t('admin.groups.groupDeleted'))
     showDeleteDialog.value = false
     deletingGroup.value = null
+    migrateToGroupId.value = null
     loadGroups()
   } catch (error: any) {
     appStore.showError(error.response?.data?.detail || t('admin.groups.failedToDelete'))

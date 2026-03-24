@@ -257,7 +257,7 @@ func (r *stubGroupRepo) GetByIDLite(ctx context.Context, id int64) (*service.Gro
 }
 func (r *stubGroupRepo) Update(ctx context.Context, group *service.Group) error { return nil }
 func (r *stubGroupRepo) Delete(ctx context.Context, id int64) error             { return nil }
-func (r *stubGroupRepo) DeleteCascade(ctx context.Context, id int64) ([]int64, error) {
+func (r *stubGroupRepo) DeleteCascade(ctx context.Context, id int64, migrateToGroupID *int64) ([]int64, error) {
 	return nil, nil
 }
 func (r *stubGroupRepo) List(ctx context.Context, params pagination.PaginationParams) ([]service.Group, *pagination.PaginationResult, error) {

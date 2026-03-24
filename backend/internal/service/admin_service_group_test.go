@@ -56,7 +56,7 @@ func (s *groupRepoStubForAdmin) Delete(_ context.Context, _ int64) error {
 	panic("unexpected Delete call")
 }
 
-func (s *groupRepoStubForAdmin) DeleteCascade(_ context.Context, _ int64) ([]int64, error) {
+func (s *groupRepoStubForAdmin) DeleteCascade(_ context.Context, _ int64, _ *int64) ([]int64, error) {
 	panic("unexpected DeleteCascade call")
 }
 
@@ -359,7 +359,7 @@ func (s *groupRepoStubForFallbackCycle) Delete(_ context.Context, _ int64) error
 	panic("unexpected Delete call")
 }
 
-func (s *groupRepoStubForFallbackCycle) DeleteCascade(_ context.Context, _ int64) ([]int64, error) {
+func (s *groupRepoStubForFallbackCycle) DeleteCascade(_ context.Context, _ int64, _ *int64) ([]int64, error) {
 	panic("unexpected DeleteCascade call")
 }
 
@@ -434,7 +434,7 @@ func (s *groupRepoStubForInvalidRequestFallback) Delete(_ context.Context, _ int
 	panic("unexpected Delete call")
 }
 
-func (s *groupRepoStubForInvalidRequestFallback) DeleteCascade(_ context.Context, _ int64) ([]int64, error) {
+func (s *groupRepoStubForInvalidRequestFallback) DeleteCascade(_ context.Context, _ int64, _ *int64) ([]int64, error) {
 	panic("unexpected DeleteCascade call")
 }
 

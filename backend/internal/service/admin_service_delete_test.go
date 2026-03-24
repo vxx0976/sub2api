@@ -139,7 +139,7 @@ func (s *groupRepoStub) Delete(ctx context.Context, id int64) error {
 	panic("unexpected Delete call")
 }
 
-func (s *groupRepoStub) DeleteCascade(ctx context.Context, id int64) ([]int64, error) {
+func (s *groupRepoStub) DeleteCascade(ctx context.Context, id int64, migrateToGroupID *int64) ([]int64, error) {
 	s.deleteCalls = append(s.deleteCalls, id)
 	return s.affectedUserIDs, s.deleteErr
 }
@@ -429,7 +429,7 @@ func TestAdminService_DeleteGroup_Success_WithCacheInvalidation(t *testing.T) {
 		billingCacheService: &BillingCacheService{cache: cache},
 	}
 
-	err := svc.DeleteGroup(context.Background(), 5)
+	err := svc.DeleteGroup(context.Background(), 5, nil)
 	require.NoError(t, err)
 	require.Equal(t, []int64{5}, repo.deleteCalls)
 
@@ -444,7 +444,7 @@ func TestAdminService_DeleteGroup_NotFound(t *testing.T) {
 	repo := &groupRepoStub{deleteErr: ErrGroupNotFound}
 	svc := &adminServiceImpl{groupRepo: repo}
 
-	err := svc.DeleteGroup(context.Background(), 99)
+	err := svc.DeleteGroup(context.Background(), 99, nil)
 	require.ErrorIs(t, err, ErrGroupNotFound)
 }
 
@@ -453,7 +453,7 @@ func TestAdminService_DeleteGroup_Error(t *testing.T) {
 	repo := &groupRepoStub{deleteErr: deleteErr}
 	svc := &adminServiceImpl{groupRepo: repo}
 
-	err := svc.DeleteGroup(context.Background(), 42)
+	err := svc.DeleteGroup(context.Background(), 42, nil)
 	require.ErrorIs(t, err, deleteErr)
 }
 

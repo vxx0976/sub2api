@@ -119,7 +119,7 @@ func TestGroupRepository_DeleteCascade_RemovesAllowedGroupsAndClearsApiKeys(t *t
 	}
 	require.NoError(t, apiKeyRepo.Create(ctx, key))
 
-	_, err = groupRepo.DeleteCascade(ctx, targetGroup.ID)
+	_, err = groupRepo.DeleteCascade(ctx, targetGroup.ID, nil)
 	require.NoError(t, err)
 
 	// Deleted group should be hidden by default queries (soft-delete semantics).

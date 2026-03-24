@@ -498,7 +498,7 @@ func (r *groupRepository) DeleteAccountGroupsByGroupID(ctx context.Context, grou
 	return affected, nil
 }
 
-func (r *groupRepository) DeleteCascade(ctx context.Context, id int64) ([]int64, error) {
+func (r *groupRepository) DeleteCascade(ctx context.Context, id int64, migrateToGroupID *int64) ([]int64, error) {
 	g, err := r.client.Group.Query().Where(group.IDEQ(id)).Only(ctx)
 	if err != nil {
 		return nil, translatePersistenceError(err, service.ErrGroupNotFound, nil)
@@ -571,14 +571,24 @@ func (r *groupRepository) DeleteCascade(ctx context.Context, id int64) ([]int64,
 		}
 	}
 
-	// 2. Clear group_id for api keys bound to this group.
+	// 2. Migrate or clear group_id for api keys bound to this group.
 	// 仅更新未软删除的记录，避免修改已删除数据，保证审计与历史回溯一致性。
-	// 与 APIKeyRepository 的软删除语义保持一致，减少跨模块行为差异。
-	if _, err := txClient.APIKey.Update().
-		Where(apikey.GroupIDEQ(id), apikey.DeletedAtIsNil()).
-		ClearGroupID().
-		Save(ctx); err != nil {
-		return nil, err
+	if migrateToGroupID != nil && *migrateToGroupID > 0 {
+		// 迁移 API 密钥到目标分组
+		if _, err := txClient.APIKey.Update().
+			Where(apikey.GroupIDEQ(id), apikey.DeletedAtIsNil()).
+			SetGroupID(*migrateToGroupID).
+			Save(ctx); err != nil {
+			return nil, err
+		}
+	} else {
+		// 清除 group_id
+		if _, err := txClient.APIKey.Update().
+			Where(apikey.GroupIDEQ(id), apikey.DeletedAtIsNil()).
+			ClearGroupID().
+			Save(ctx); err != nil {
+			return nil, err
+		}
 	}
 
 	// 3. Remove the group id from user_allowed_groups join table.

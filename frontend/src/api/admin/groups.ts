@@ -99,10 +99,12 @@ export async function update(id: number, updates: UpdateGroupRequest): Promise<G
 /**
  * Delete group
  * @param id - Group ID
+ * @param migrateToGroupId - Optional group ID to migrate bound keys to
  * @returns Success confirmation
  */
-export async function deleteGroup(id: number): Promise<{ message: string }> {
-  const { data } = await apiClient.delete<{ message: string }>(`/admin/groups/${id}`)
+export async function deleteGroup(id: number, migrateToGroupId?: number): Promise<{ message: string }> {
+  const params = migrateToGroupId ? { migrate_to_group_id: migrateToGroupId } : undefined
+  const { data } = await apiClient.delete<{ message: string }>(`/admin/groups/${id}`, { params })
   return data
 }
 

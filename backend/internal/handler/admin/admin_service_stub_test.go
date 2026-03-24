@@ -167,7 +167,7 @@ func (s *stubAdminService) UpdateGroup(ctx context.Context, id int64, input *ser
 	return &group, nil
 }
 
-func (s *stubAdminService) DeleteGroup(ctx context.Context, id int64) error {
+func (s *stubAdminService) DeleteGroup(ctx context.Context, id int64, migrateToGroupID *int64) error {
 	return nil
 }
 

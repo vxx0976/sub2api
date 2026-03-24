@@ -898,7 +898,7 @@ func (stubGroupRepo) Delete(ctx context.Context, id int64) error {
 	return errors.New("not implemented")
 }
 
-func (stubGroupRepo) DeleteCascade(ctx context.Context, id int64) ([]int64, error) {
+func (stubGroupRepo) DeleteCascade(ctx context.Context, id int64, migrateToGroupID *int64) ([]int64, error) {
 	return nil, errors.New("not implemented")
 }
 

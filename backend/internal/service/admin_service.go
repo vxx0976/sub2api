@@ -40,7 +40,7 @@ type AdminService interface {
 	GetGroup(ctx context.Context, id int64) (*Group, error)
 	CreateGroup(ctx context.Context, input *CreateGroupInput) (*Group, error)
 	UpdateGroup(ctx context.Context, id int64, input *UpdateGroupInput) (*Group, error)
-	DeleteGroup(ctx context.Context, id int64) error
+	DeleteGroup(ctx context.Context, id int64, migrateToGroupID *int64) error
 	GetGroupAPIKeys(ctx context.Context, groupID int64, page, pageSize int) ([]APIKey, int64, error)
 	GetGroupRateMultipliers(ctx context.Context, groupID int64) ([]UserGroupRateEntry, error)
 	ClearGroupRateMultipliers(ctx context.Context, groupID int64) error
@@ -1296,7 +1296,18 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 	return group, nil
 }
 
-func (s *adminServiceImpl) DeleteGroup(ctx context.Context, id int64) error {
+func (s *adminServiceImpl) DeleteGroup(ctx context.Context, id int64, migrateToGroupID *int64) error {
+	// 校验目标分组存在且不等于自身
+	if migrateToGroupID != nil && *migrateToGroupID > 0 {
+		if *migrateToGroupID == id {
+			return fmt.Errorf("cannot migrate to the same group being deleted")
+		}
+		_, err := s.groupRepo.GetByID(ctx, *migrateToGroupID)
+		if err != nil {
+			return fmt.Errorf("target migration group not found")
+		}
+	}
+
 	var groupKeys []string
 	if s.authCacheInvalidator != nil {
 		keys, err := s.apiKeyRepo.ListKeysByGroupID(ctx, id)
@@ -1305,7 +1316,7 @@ func (s *adminServiceImpl) DeleteGroup(ctx context.Context, id int64) error {
 		}
 	}
 
-	affectedUserIDs, err := s.groupRepo.DeleteCascade(ctx, id)
+	affectedUserIDs, err := s.groupRepo.DeleteCascade(ctx, id, migrateToGroupID)
 	if err != nil {
 		return err
 	}

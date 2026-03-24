@@ -36,7 +36,7 @@ func (r *stubGroupRepoForQuota) GetByIDLite(_ context.Context, id int64) (*Group
 }
 func (r *stubGroupRepoForQuota) Update(context.Context, *Group) error { return nil }
 func (r *stubGroupRepoForQuota) Delete(context.Context, int64) error  { return nil }
-func (r *stubGroupRepoForQuota) DeleteCascade(context.Context, int64) ([]int64, error) {
+func (r *stubGroupRepoForQuota) DeleteCascade(context.Context, int64, *int64) ([]int64, error) {
 	return nil, nil
 }
 func (r *stubGroupRepoForQuota) List(context.Context, pagination.PaginationParams) ([]Group, *pagination.PaginationResult, error) {

@@ -370,7 +370,7 @@ func (h *GroupHandler) Update(c *gin.Context) {
 }
 
 // Delete handles deleting a group
-// DELETE /api/v1/admin/groups/:id
+// DELETE /api/v1/admin/groups/:id?migrate_to_group_id=123
 func (h *GroupHandler) Delete(c *gin.Context) {
 	groupID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -378,7 +378,17 @@ func (h *GroupHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	err = h.adminService.DeleteGroup(c.Request.Context(), groupID)
+	var migrateToGroupID *int64
+	if migrateStr := c.Query("migrate_to_group_id"); migrateStr != "" {
+		v, err := strconv.ParseInt(migrateStr, 10, 64)
+		if err != nil {
+			response.BadRequest(c, "Invalid migrate_to_group_id")
+			return
+		}
+		migrateToGroupID = &v
+	}
+
+	err = h.adminService.DeleteGroup(c.Request.Context(), groupID, migrateToGroupID)
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return

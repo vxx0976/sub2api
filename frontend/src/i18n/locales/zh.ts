@@ -1680,6 +1680,9 @@ export default {
       deleteConfirm: "确定要删除分组 '{name}' 吗？所有关联的 API 密钥将不再属于任何分组。",
       deleteConfirmSubscription:
         "确定要删除订阅分组 '{name}' 吗？此操作会让所有绑定此订阅的用户的 API Key 失效，并删除所有相关的订阅记录。此操作无法撤销。",
+      migrateKeysTo: '将绑定的 Key 迁移到',
+      noMigration: '不迁移（清除分组绑定）',
+      migrateKeysHint: '选择一个分组后，该分组下的所有 API Key 将自动迁移到目标分组，而非解除绑定。',
       columns: {
         name: '名称',
         platform: '平台',

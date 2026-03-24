@@ -182,7 +182,7 @@ func (s *groupRepoStubForGroupUpdate) GetByIDLite(context.Context, int64) (*Grou
 }
 func (s *groupRepoStubForGroupUpdate) Update(context.Context, *Group) error { panic("unexpected") }
 func (s *groupRepoStubForGroupUpdate) Delete(context.Context, int64) error  { panic("unexpected") }
-func (s *groupRepoStubForGroupUpdate) DeleteCascade(context.Context, int64) ([]int64, error) {
+func (s *groupRepoStubForGroupUpdate) DeleteCascade(context.Context, int64, *int64) ([]int64, error) {
 	panic("unexpected")
 }
 func (s *groupRepoStubForGroupUpdate) List(context.Context, pagination.PaginationParams) ([]Group, *pagination.PaginationResult, error) {
