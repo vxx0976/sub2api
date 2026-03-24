@@ -62,7 +62,10 @@ export default {
     statusStable: 'Stable',
     statusMostlyStable: 'Mostly stable',
     statusSlightFluctuation: 'Minor fluctuation',
-    statusUnstable: 'Unstable'
+    statusUnstable: 'Unstable',
+    availability7d: 'Availability (7 days)',
+    successCount: 'succeeded',
+    nextUpdate: 'Next update in {seconds}s'
   },
 
   // Docs

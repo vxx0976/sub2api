@@ -40,42 +40,67 @@
         </div>
       </div>
 
-      <!-- Group Cards with Uptime Bars -->
-      <div v-else class="space-y-0 divide-y divide-gray-200/80 rounded-xl border border-gray-200/80 bg-white dark:divide-dark-700/60 dark:border-dark-700/60 dark:bg-dark-900">
+      <!-- Group Cards -->
+      <div v-else class="space-y-4">
         <div
           v-for="group in groups"
           :key="group.id"
-          class="px-5 py-5"
+          class="overflow-hidden rounded-xl border border-gray-200/80 bg-white shadow-sm dark:border-dark-700/60 dark:bg-dark-900"
         >
-          <!-- Name + Status -->
-          <div class="mb-3 flex items-center justify-between">
-            <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ group.name }}</span>
-            <span class="text-xs font-medium" :class="statusTextClass(group.status)">
+          <!-- Card Header: icon + name + status badge -->
+          <div class="flex items-center justify-between px-5 pt-5 pb-3">
+            <div class="flex items-center gap-3">
+              <PlatformIcon :platform="group.platform" size="lg" class="shrink-0 text-gray-600 dark:text-gray-300" />
+              <div class="min-w-0">
+                <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ group.name }}</div>
+                <div v-if="group.description" class="mt-0.5 text-xs text-gray-500 dark:text-dark-400 line-clamp-1">{{ group.description }}</div>
+              </div>
+            </div>
+            <span
+              class="shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold"
+              :class="statusBadgeClass(group.status)"
+            >
               {{ statusLabel(group.status) }}
             </span>
           </div>
 
-          <!-- 30-day Uptime Bar -->
-          <div class="mb-2 flex gap-[2px]" :title="t('status.uptimeTitle')">
-            <template v-if="group.daily_history && group.daily_history.length > 0">
-              <div
-                v-for="(day, idx) in group.daily_history"
-                :key="idx"
-                class="h-8 flex-1 rounded-[1px] transition-opacity hover:opacity-80 cursor-default"
-                :class="barClass(day.status)"
-                :title="barTooltip(day)"
-              ></div>
-            </template>
-            <template v-else>
-              <div v-for="i in 30" :key="'empty-'+i" class="h-8 flex-1 rounded-[1px] bg-emerald-500"></div>
-            </template>
+          <!-- Availability stats -->
+          <div class="flex items-center justify-between border-t border-gray-100 px-5 py-3 dark:border-dark-800">
+            <div class="text-xs text-gray-500 dark:text-dark-400">
+              {{ t('status.availability7d') }}
+              <span v-if="statsMap[group.id]?.total > 0" class="ml-1 text-gray-400 dark:text-dark-500">
+                {{ statsMap[group.id].success }}/{{ statsMap[group.id].total }} {{ t('status.successCount') }}
+              </span>
+            </div>
+            <span class="text-sm font-bold" :class="statusTextClass(group.status)">
+              {{ statsMap[group.id]?.rate ?? '100.00' }}%
+            </span>
           </div>
 
-          <!-- Labels: 30 days ago — uptime % — Today -->
-          <div class="flex items-center justify-between text-[11px] text-gray-400 dark:text-dark-500">
-            <span>{{ t('status.daysAgo', { days: 30 }) }}</span>
-            <span>{{ (group.uptime_30d ?? 100).toFixed(2) }} % {{ t('status.uptime') }}</span>
-            <span>{{ t('status.today') }}</span>
+          <!-- 30-day History Bar -->
+          <div class="border-t border-gray-100 px-5 py-3 dark:border-dark-800">
+            <div class="mb-1.5 flex items-center justify-between text-[10px] text-gray-400 dark:text-dark-500">
+              <span>{{ t('status.uptimeTitle') }}</span>
+              <span>{{ nextUpdateText }}</span>
+            </div>
+            <div class="flex gap-[2px]">
+              <template v-if="group.daily_history && group.daily_history.length > 0">
+                <div
+                  v-for="(day, idx) in group.daily_history"
+                  :key="idx"
+                  class="h-6 flex-1 rounded-[2px] transition-opacity hover:opacity-80 cursor-default"
+                  :class="barClass(day.status)"
+                  :title="barTooltip(day)"
+                ></div>
+              </template>
+              <template v-else>
+                <div v-for="i in 30" :key="'empty-'+i" class="h-6 flex-1 rounded-[2px] bg-emerald-500"></div>
+              </template>
+            </div>
+            <div class="mt-1 flex items-center justify-between text-[10px] text-gray-400 dark:text-dark-500">
+              <span>{{ t('status.daysAgo', { days: 30 }) }}</span>
+              <span>{{ t('status.today') }}</span>
+            </div>
           </div>
         </div>
 
@@ -97,6 +122,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import PublicHeader from '@/components/layout/PublicHeader.vue'
+import PlatformIcon from '@/components/common/PlatformIcon.vue'
 import { getGroupStatus, type GroupStatusItem, type DailyStatus } from '@/api/status'
 
 const { t, locale } = useI18n()
@@ -106,6 +132,8 @@ const error = ref(false)
 const groups = ref<GroupStatusItem[]>([])
 const updatedAt = ref('')
 let pollTimer: ReturnType<typeof setInterval> | null = null
+const countdown = ref(30)
+let countdownTimer: ReturnType<typeof setInterval> | null = null
 
 // === Overall status ===
 
@@ -165,6 +193,15 @@ function statusTextClass(status: string) {
   }
 }
 
+function statusBadgeClass(status: string) {
+  switch (status) {
+    case 'operational': return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+    case 'degraded': return 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+    case 'down': return 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+    default: return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+  }
+}
+
 function statusLabel(status: string) {
   switch (status) {
     case 'operational': return t('status.operational')
@@ -197,6 +234,33 @@ function formatDate(yyyymmdd: string) {
   return `${y}-${m}-${d}`
 }
 
+function calc7dStats(group: GroupStatusItem) {
+  if (!group.daily_history || group.daily_history.length === 0) {
+    return { success: 0, total: 0, rate: '100.00' }
+  }
+  const last7 = group.daily_history.slice(-7)
+  let success = 0
+  let total = 0
+  for (const day of last7) {
+    total += day.total
+    success += Math.round(day.total * day.rate / 100)
+  }
+  const rate = total > 0 ? (success / total * 100).toFixed(2) : '100.00'
+  return { success, total, rate }
+}
+
+const statsMap = computed(() => {
+  const map: Record<number, { success: number; total: number; rate: string }> = {}
+  for (const g of groups.value) {
+    map[g.id] = calc7dStats(g)
+  }
+  return map
+})
+
+const nextUpdateText = computed(() => {
+  return t('status.nextUpdate', { seconds: countdown.value })
+})
+
 const formattedTime = computed(() => {
   if (!updatedAt.value) return ''
   const d = new Date(updatedAt.value)
@@ -214,6 +278,7 @@ async function fetchStatus() {
     const data = await getGroupStatus()
     groups.value = data.groups || []
     updatedAt.value = data.updated_at
+    countdown.value = 30
   } catch {
     error.value = true
   } finally {
@@ -226,9 +291,13 @@ onMounted(() => {
   pollTimer = setInterval(() => {
     if (!error.value) fetchStatus()
   }, 30000)
+  countdownTimer = setInterval(() => {
+    if (countdown.value > 0) countdown.value--
+  }, 1000)
 })
 
 onUnmounted(() => {
   if (pollTimer) clearInterval(pollTimer)
+  if (countdownTimer) clearInterval(countdownTimer)
 })
 </script>

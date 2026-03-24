@@ -322,7 +322,10 @@ export default {
     statusStable: 'Стабильно',
     statusMostlyStable: 'В основном стабильно',
     statusSlightFluctuation: 'Небольшие сбои',
-    statusUnstable: 'Нестабильно'
+    statusUnstable: 'Нестабильно',
+    availability7d: 'Доступность (7 дней)',
+    successCount: 'успешно',
+    nextUpdate: 'Обновление через {seconds}с'
   },
 
   // Setup Wizard

@@ -62,7 +62,10 @@ export default {
     statusStable: '稳定',
     statusMostlyStable: '较稳定',
     statusSlightFluctuation: '有小幅波动',
-    statusUnstable: '不稳定'
+    statusUnstable: '不稳定',
+    availability7d: '可用性 (7 天)',
+    successCount: '成功',
+    nextUpdate: '下次更新 {seconds}s'
   },
 
   // Docs

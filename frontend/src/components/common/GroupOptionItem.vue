@@ -20,21 +20,10 @@
       >
         {{ description }}
       </span>
-      <!-- Row 3: 30-day status bar (compact) -->
-      <div v-if="statusInfo && statusInfo.daily_history?.length > 0" class="mt-1.5 w-4/5">
-        <div class="flex gap-[0.5px]">
-          <div
-            v-for="(day, idx) in statusInfo.daily_history"
-            :key="idx"
-            class="h-1 flex-1 rounded-[1px]"
-            :class="barClass(day.status)"
-            :title="barTooltip(day)"
-          ></div>
-        </div>
-        <div class="mt-0.5 flex items-center justify-between text-[9px] leading-tight text-gray-400 dark:text-dark-500">
-          <span :class="statusTextClass(statusInfo.status)">{{ statusLabel(statusInfo.status) }}</span>
-          <span>{{ (statusInfo.uptime_30d ?? 100).toFixed(1) }}%</span>
-        </div>
+      <!-- Row 3: status indicator dot -->
+      <div v-if="statusInfo" class="mt-1.5 flex items-center gap-1.5">
+        <span class="inline-block h-1.5 w-1.5 rounded-full" :class="statusDotClass(statusInfo.status)"></span>
+        <span class="text-[10px] leading-tight" :class="statusTextClass(statusInfo.status)">{{ statusLabel(statusInfo.status) }}</span>
       </div>
     </div>
 
@@ -70,7 +59,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import GroupBadge from './GroupBadge.vue'
 import type { SubscriptionType, GroupPlatform } from '@/types'
-import type { GroupStatusItem, DailyStatus } from '@/api/status'
+import type { GroupStatusItem } from '@/api/status'
 
 interface Props {
   name: string
@@ -94,7 +83,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const { t } = useI18n()
 
-function barClass(status: string) {
+function statusDotClass(status: string) {
   switch (status) {
     case 'operational': return 'bg-emerald-500'
     case 'degraded': return 'bg-amber-400'
@@ -103,16 +92,11 @@ function barClass(status: string) {
   }
 }
 
-function barTooltip(day: DailyStatus) {
-  if (day.total === 0) return `${day.date}: ${t('status.noData')}`
-  return `${day.date}: ${day.rate.toFixed(1)}% (${day.total} ${t('status.requests')})`
-}
-
 function statusTextClass(status: string) {
   switch (status) {
     case 'operational': return 'text-emerald-600 dark:text-emerald-400'
     case 'degraded': return 'text-amber-600 dark:text-amber-400'
-    case 'down': return 'text-amber-600 dark:text-amber-400'
+    case 'down': return 'text-red-600 dark:text-red-400'
     default: return 'text-emerald-600 dark:text-emerald-400'
   }
 }
@@ -120,8 +104,8 @@ function statusTextClass(status: string) {
 function statusLabel(status: string) {
   switch (status) {
     case 'operational': return t('status.statusStable')
-    case 'degraded': return t('status.statusMostlyStable')
-    case 'down': return t('status.statusSlightFluctuation')
+    case 'degraded': return t('status.statusSlightFluctuation')
+    case 'down': return t('status.statusUnstable')
     default: return t('status.statusStable')
   }
 }

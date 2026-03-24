@@ -149,6 +149,8 @@ func RegisterCommonRoutes(r *gin.Engine, deps *StatusDependencies) {
 		type groupStatusItem struct {
 			ID            int64       `json:"id"`
 			Name          string      `json:"name"`
+			Platform      string      `json:"platform"`
+			Description   string      `json:"description,omitempty"`
 			Status        string      `json:"status"`
 			SuccessRate   float64     `json:"success_rate"`
 			TotalRequests int64       `json:"total_requests"`
@@ -162,6 +164,8 @@ func RegisterCommonRoutes(r *gin.Engine, deps *StatusDependencies) {
 			item := groupStatusItem{
 				ID:            g.ID,
 				Name:          g.Name,
+				Platform:      g.Platform,
+				Description:   g.Description,
 				TotalRequests: data.Total,
 			}
 
