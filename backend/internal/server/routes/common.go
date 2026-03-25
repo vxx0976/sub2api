@@ -154,6 +154,7 @@ func RegisterCommonRoutes(r *gin.Engine, deps *StatusDependencies) {
 			Status        string      `json:"status"`
 			SuccessRate   float64     `json:"success_rate"`
 			TotalRequests int64       `json:"total_requests"`
+			AvgLatency    int64       `json:"avg_latency_ms"`
 			Uptime30d     float64     `json:"uptime_30d"`
 			DailyHistory  []dailyItem `json:"daily_history"`
 		}
@@ -167,6 +168,7 @@ func RegisterCommonRoutes(r *gin.Engine, deps *StatusDependencies) {
 				Platform:      g.Platform,
 				Description:   g.Description,
 				TotalRequests: data.Total,
+				AvgLatency:    data.AvgLatency,
 			}
 
 			// 实时状态

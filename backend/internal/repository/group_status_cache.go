@@ -41,9 +41,9 @@ func (c *GroupStatusCacheImpl) getServerTime(ctx context.Context) (time.Time, er
 	return t, nil
 }
 
-// Incr 递增分组计数（总量 +1，success 为 true 时成功 +1）
+// Incr 递增分组计数（总量 +1，success 为 true 时成功 +1，latency 累加用于计算平均）
 // 单次 TIME 调用 + 单个 TxPipeline，避免 bucket 边界分裂
-func (c *GroupStatusCacheImpl) Incr(ctx context.Context, groupID int64, success bool) error {
+func (c *GroupStatusCacheImpl) Incr(ctx context.Context, groupID int64, success bool, latencyMs int64) error {
 	serverTime, err := c.getServerTime(ctx)
 	if err != nil {
 		return fmt.Errorf("group status incr: %w", err)
@@ -64,6 +64,13 @@ func (c *GroupStatusCacheImpl) Incr(ctx context.Context, groupID int64, success 
 	pipe.Incr(ctx, totalDailyKey)
 	pipe.Expire(ctx, totalDailyKey, gsDailyTTL)
 
+	// 5 分钟窗口 - latency 累加
+	if latencyMs > 0 {
+		latencyBucketKey := fmt.Sprintf("%s%d:latency:%d", gsKeyPrefix, groupID, bucket)
+		pipe.IncrBy(ctx, latencyBucketKey, latencyMs)
+		pipe.Expire(ctx, latencyBucketKey, gsKeyTTL)
+	}
+
 	if success {
 		// 5 分钟窗口 - ok
 		okBucketKey := fmt.Sprintf("%s%d:ok:%d", gsKeyPrefix, groupID, bucket)
@@ -74,6 +81,13 @@ func (c *GroupStatusCacheImpl) Incr(ctx context.Context, groupID int64, success 
 		okDailyKey := fmt.Sprintf("%s%d:ok:d:%s", gsKeyPrefix, groupID, dateStr)
 		pipe.Incr(ctx, okDailyKey)
 		pipe.Expire(ctx, okDailyKey, gsDailyTTL)
+
+		// 日维度 - latency 累加
+		if latencyMs > 0 {
+			latencyDailyKey := fmt.Sprintf("%s%d:latency:d:%s", gsKeyPrefix, groupID, dateStr)
+			pipe.IncrBy(ctx, latencyDailyKey, latencyMs)
+			pipe.Expire(ctx, latencyDailyKey, gsDailyTTL)
+		}
 	}
 
 	if _, err := pipe.Exec(ctx); err != nil {
@@ -97,18 +111,22 @@ func (c *GroupStatusCacheImpl) GetGroupStatuses(ctx context.Context, groupIDs []
 
 	pipe := c.rdb.Pipeline()
 	type bucketCmds struct {
-		okCur    *redis.StringCmd
-		totalCur *redis.StringCmd
-		okPrev   *redis.StringCmd
+		okCur     *redis.StringCmd
+		totalCur  *redis.StringCmd
+		okPrev    *redis.StringCmd
 		totalPrev *redis.StringCmd
+		latencyCur  *redis.StringCmd
+		latencyPrev *redis.StringCmd
 	}
 	cmds := make(map[int64]bucketCmds, len(groupIDs))
 	for _, id := range groupIDs {
 		cmds[id] = bucketCmds{
-			okCur:    pipe.Get(ctx, fmt.Sprintf("%s%d:ok:%d", gsKeyPrefix, id, currentBucket)),
-			totalCur: pipe.Get(ctx, fmt.Sprintf("%s%d:total:%d", gsKeyPrefix, id, currentBucket)),
-			okPrev:   pipe.Get(ctx, fmt.Sprintf("%s%d:ok:%d", gsKeyPrefix, id, prevBucket)),
-			totalPrev: pipe.Get(ctx, fmt.Sprintf("%s%d:total:%d", gsKeyPrefix, id, prevBucket)),
+			okCur:       pipe.Get(ctx, fmt.Sprintf("%s%d:ok:%d", gsKeyPrefix, id, currentBucket)),
+			totalCur:    pipe.Get(ctx, fmt.Sprintf("%s%d:total:%d", gsKeyPrefix, id, currentBucket)),
+			okPrev:      pipe.Get(ctx, fmt.Sprintf("%s%d:ok:%d", gsKeyPrefix, id, prevBucket)),
+			totalPrev:   pipe.Get(ctx, fmt.Sprintf("%s%d:total:%d", gsKeyPrefix, id, prevBucket)),
+			latencyCur:  pipe.Get(ctx, fmt.Sprintf("%s%d:latency:%d", gsKeyPrefix, id, currentBucket)),
+			latencyPrev: pipe.Get(ctx, fmt.Sprintf("%s%d:latency:%d", gsKeyPrefix, id, prevBucket)),
 		}
 	}
 
@@ -131,6 +149,17 @@ func (c *GroupStatusCacheImpl) GetGroupStatuses(ctx context.Context, groupIDs []
 		}
 		if val, err := bc.totalPrev.Int64(); err == nil {
 			data.Total += val
+		}
+		// 计算平均延迟
+		var totalLatency int64
+		if val, err := bc.latencyCur.Int64(); err == nil {
+			totalLatency += val
+		}
+		if val, err := bc.latencyPrev.Int64(); err == nil {
+			totalLatency += val
+		}
+		if data.Total > 0 && totalLatency > 0 {
+			data.AvgLatency = totalLatency / data.Total
 		}
 		result[id] = data
 	}
@@ -158,20 +187,22 @@ func (c *GroupStatusCacheImpl) GetDailyHistory(ctx context.Context, groupIDs []i
 
 	// Pipeline 批量读取
 	pipe := c.rdb.Pipeline()
-	type cmdPair struct {
-		ok    *redis.StringCmd
-		total *redis.StringCmd
+	type cmdTriple struct {
+		ok      *redis.StringCmd
+		total   *redis.StringCmd
+		latency *redis.StringCmd
 	}
-	cmds := make(map[int64][]cmdPair, len(groupIDs))
+	cmds := make(map[int64][]cmdTriple, len(groupIDs))
 	for _, gid := range groupIDs {
-		pairs := make([]cmdPair, days)
+		triples := make([]cmdTriple, days)
 		for i, dateStr := range dates {
-			pairs[i] = cmdPair{
-				ok:    pipe.Get(ctx, fmt.Sprintf("%s%d:ok:d:%s", gsKeyPrefix, gid, dateStr)),
-				total: pipe.Get(ctx, fmt.Sprintf("%s%d:total:d:%s", gsKeyPrefix, gid, dateStr)),
+			triples[i] = cmdTriple{
+				ok:      pipe.Get(ctx, fmt.Sprintf("%s%d:ok:d:%s", gsKeyPrefix, gid, dateStr)),
+				total:   pipe.Get(ctx, fmt.Sprintf("%s%d:total:d:%s", gsKeyPrefix, gid, dateStr)),
+				latency: pipe.Get(ctx, fmt.Sprintf("%s%d:latency:d:%s", gsKeyPrefix, gid, dateStr)),
 			}
 		}
-		cmds[gid] = pairs
+		cmds[gid] = triples
 	}
 
 	if _, err := pipe.Exec(ctx); err != nil && !errors.Is(err, redis.Nil) {
@@ -181,13 +212,17 @@ func (c *GroupStatusCacheImpl) GetDailyHistory(ctx context.Context, groupIDs []i
 	result := make(map[int64][]service.DailyStatusData, len(groupIDs))
 	for _, gid := range groupIDs {
 		history := make([]service.DailyStatusData, days)
-		for i, pair := range cmds[gid] {
+		for i, triple := range cmds[gid] {
 			history[i].Date = dates[i]
-			if val, err := pair.ok.Int64(); err == nil {
+			if val, err := triple.ok.Int64(); err == nil {
 				history[i].Success = val
 			}
-			if val, err := pair.total.Int64(); err == nil {
+			if val, err := triple.total.Int64(); err == nil {
 				history[i].Total = val
+			}
+			// 计算平均延迟
+			if val, err := triple.latency.Int64(); err == nil && history[i].Total > 0 {
+				history[i].AvgLatency = val / history[i].Total
 			}
 		}
 		result[gid] = history

@@ -18,6 +18,7 @@ export interface GroupStatusItem {
   status: 'operational' | 'degraded' | 'down'
   success_rate: number
   total_requests: number
+  avg_latency_ms: number
   uptime_30d: number
   daily_history: DailyStatus[]
 }

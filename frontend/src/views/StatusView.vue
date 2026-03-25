@@ -2,24 +2,7 @@
   <div class="flex min-h-screen flex-col bg-[#FAF9F5] dark:bg-dark-950">
     <PublicHeader />
 
-    <main class="mx-auto w-full max-w-3xl flex-1 px-4 py-8 sm:px-6">
-      <!-- Overall Status Banner (only show after data loaded successfully) -->
-      <div
-        v-if="!loading && !error"
-        class="mb-8 rounded-xl border px-5 py-4"
-        :class="overallBannerClass"
-      >
-        <div class="flex items-center gap-3">
-          <span class="relative flex h-3 w-3">
-            <span
-              v-if="overallStatus === 'operational'"
-              class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"
-            ></span>
-            <span class="relative inline-flex h-3 w-3 rounded-full" :class="overallDotClass"></span>
-          </span>
-          <span class="text-sm font-semibold" :class="overallTextClass">{{ overallMessage }}</span>
-        </div>
-      </div>
+    <main class="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:px-6">
 
       <!-- Loading -->
       <div v-if="loading" class="flex items-center justify-center py-20">
@@ -41,7 +24,7 @@
       </div>
 
       <!-- Group Cards -->
-      <div v-else class="space-y-4">
+      <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div
           v-for="group in groups"
           :key="group.id"
@@ -64,7 +47,7 @@
             </span>
           </div>
 
-          <!-- Availability stats -->
+          <!-- Availability stats + Latency -->
           <div class="flex items-center justify-between border-t border-gray-100 px-5 py-3 dark:border-dark-800">
             <div class="text-xs text-gray-500 dark:text-dark-400">
               {{ t('status.availability7d') }}
@@ -75,6 +58,28 @@
             <span class="text-sm font-bold" :class="statusTextClass(group.status)">
               {{ statsMap[group.id]?.rate ?? '100.00' }}%
             </span>
+          </div>
+
+          <!-- Latency + Ping -->
+          <div class="flex items-center justify-between border-t border-gray-100 px-5 py-3 dark:border-dark-800">
+            <div class="flex items-center gap-4">
+              <!-- 延迟指标 -->
+              <div class="text-xs text-gray-500 dark:text-dark-400">
+                {{ t('status.latency') }}
+              </div>
+              <div class="text-sm font-medium" :class="latencyClass(group.avg_latency_ms)">
+                {{ formatLatency(group.avg_latency_ms) }}
+              </div>
+            </div>
+            <!-- 断点 Ping 指示器 -->
+            <div class="flex items-center gap-1.5">
+              <span class="text-xs text-gray-500 dark:text-dark-400">{{ t('status.ping') }}</span>
+              <span
+                class="inline-block h-2 w-2 rounded-full"
+                :class="pingIndicatorClass(group.status)"
+                :title="pingTooltip(group.status)"
+              ></span>
+            </div>
           </div>
 
           <!-- 30-day History Bar -->
@@ -135,53 +140,6 @@ let pollTimer: ReturnType<typeof setInterval> | null = null
 const countdown = ref(30)
 let countdownTimer: ReturnType<typeof setInterval> | null = null
 
-// === Overall status ===
-
-const overallStatus = computed(() => {
-  if (groups.value.length === 0) return 'operational'
-  const hasDown = groups.value.some(g => g.status === 'down')
-  if (hasDown) return 'down'
-  const hasDegraded = groups.value.some(g => g.status === 'degraded')
-  if (hasDegraded) return 'degraded'
-  return 'operational'
-})
-
-const overallMessage = computed(() => {
-  switch (overallStatus.value) {
-    case 'operational': return t('status.allOperational')
-    case 'degraded': return t('status.partialOutage')
-    case 'down': return t('status.majorOutage')
-    default: return t('status.allOperational')
-  }
-})
-
-const overallBannerClass = computed(() => {
-  switch (overallStatus.value) {
-    case 'operational': return 'border-emerald-200 bg-emerald-50 dark:border-emerald-900/40 dark:bg-emerald-950/30'
-    case 'degraded': return 'border-amber-200 bg-amber-50 dark:border-amber-900/40 dark:bg-amber-950/30'
-    case 'down': return 'border-red-200 bg-red-50 dark:border-red-900/40 dark:bg-red-950/30'
-    default: return 'border-emerald-200 bg-emerald-50 dark:border-emerald-900/40 dark:bg-emerald-950/30'
-  }
-})
-
-const overallDotClass = computed(() => {
-  switch (overallStatus.value) {
-    case 'operational': return 'bg-emerald-500'
-    case 'degraded': return 'bg-amber-500'
-    case 'down': return 'bg-red-500'
-    default: return 'bg-emerald-500'
-  }
-})
-
-const overallTextClass = computed(() => {
-  switch (overallStatus.value) {
-    case 'operational': return 'text-emerald-700 dark:text-emerald-400'
-    case 'degraded': return 'text-amber-700 dark:text-amber-400'
-    case 'down': return 'text-red-700 dark:text-red-400'
-    default: return 'text-emerald-700 dark:text-emerald-400'
-  }
-})
-
 // === Per-group helpers ===
 
 function statusTextClass(status: string) {
@@ -208,6 +166,37 @@ function statusLabel(status: string) {
     case 'degraded': return t('status.degraded')
     case 'down': return t('status.down')
     default: return t('status.operational')
+  }
+}
+
+function latencyClass(latencyMs: number) {
+  if (!latencyMs || latencyMs <= 0) return 'text-gray-400 dark:text-dark-500'
+  if (latencyMs < 200) return 'text-emerald-600 dark:text-emerald-400'
+  if (latencyMs < 500) return 'text-amber-600 dark:text-amber-400'
+  return 'text-red-600 dark:text-red-400'
+}
+
+function formatLatency(latencyMs: number) {
+  if (!latencyMs || latencyMs <= 0) return '-- ms'
+  if (latencyMs < 1000) return `${Math.round(latencyMs)} ms`
+  return `${(latencyMs / 1000).toFixed(1)} s`
+}
+
+function pingIndicatorClass(status: string) {
+  switch (status) {
+    case 'operational': return 'bg-emerald-500'
+    case 'degraded': return 'bg-amber-500 animate-pulse'
+    case 'down': return 'bg-red-500'
+    default: return 'bg-gray-400'
+  }
+}
+
+function pingTooltip(status: string) {
+  switch (status) {
+    case 'operational': return t('status.pingConnected')
+    case 'degraded': return t('status.ping') + ': ' + t('status.degraded')
+    case 'down': return t('status.pingDisconnected')
+    default: return t('status.ping')
   }
 }
 
