@@ -113,6 +113,7 @@ func NewGatewayHandler(
 // Messages handles Claude API compatible messages endpoint
 // POST /v1/messages
 func (h *GatewayHandler) Messages(c *gin.Context) {
+
 	// 从context获取apiKey和user（ApiKeyAuth中间件已设置）
 	apiKey, ok := middleware2.GetAPIKeyFromContext(c)
 	if !ok {
@@ -1758,11 +1759,18 @@ func (h *GatewayHandler) maybeLogCompatibilityFallbackMetrics(reqLog *zap.Logger
 
 // incrGroupStatus 递增分组状态计数器（成功 + 总量，或仅总量）
 // 使用 detached context 避免请求取消导致计数丢失，失败只记 warn 不阻塞请求。
-func (h *GatewayHandler) incrGroupStatus(_ context.Context, groupID *int64, success bool, log *zap.Logger, latencyMs int64) {
+// startTime 为可选参数，如果提供则计算从开始到现在的延迟
+func (h *GatewayHandler) incrGroupStatus(ctx context.Context, groupID *int64, success bool, log *zap.Logger, startTime *time.Time) {
 	if groupID == nil || h.groupStatusCache == nil {
 		return
 	}
 	gid := *groupID
+
+	var latencyMs int64 = 0
+	if startTime != nil {
+		latencyMs = time.Since(*startTime).Milliseconds()
+	}
+
 	detachedCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 	if err := h.groupStatusCache.Incr(detachedCtx, gid, success, latencyMs); err != nil {

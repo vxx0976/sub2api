@@ -60,20 +60,14 @@
             </span>
           </div>
 
-          <!-- Latency + Ping -->
+          <!-- Ping Indicator -->
           <div class="flex items-center justify-between border-t border-gray-100 px-5 py-3 dark:border-dark-800">
-            <div class="flex items-center gap-4">
-              <!-- 延迟指标 -->
-              <div class="text-xs text-gray-500 dark:text-dark-400">
-                {{ t('status.latency') }}
-              </div>
-              <div class="text-sm font-medium" :class="latencyClass(group.avg_latency_ms)">
-                {{ formatLatency(group.avg_latency_ms) }}
-              </div>
+            <div class="text-xs text-gray-500 dark:text-dark-400">
+              {{ t('status.totalRequests') }}: <span class="font-medium text-gray-700 dark:text-gray-300">{{ group.total_requests }}</span>
             </div>
-            <!-- 断点 Ping 指示器 -->
+            <!-- 连接状态指示器 -->
             <div class="flex items-center gap-1.5">
-              <span class="text-xs text-gray-500 dark:text-dark-400">{{ t('status.ping') }}</span>
+              <span class="text-xs text-gray-500 dark:text-dark-400">{{ t('status.connection') }}</span>
               <span
                 class="inline-block h-2 w-2 rounded-full"
                 :class="pingIndicatorClass(group.status)"
@@ -167,19 +161,6 @@ function statusLabel(status: string) {
     case 'down': return t('status.down')
     default: return t('status.operational')
   }
-}
-
-function latencyClass(latencyMs: number) {
-  if (!latencyMs || latencyMs <= 0) return 'text-gray-400 dark:text-dark-500'
-  if (latencyMs < 200) return 'text-emerald-600 dark:text-emerald-400'
-  if (latencyMs < 500) return 'text-amber-600 dark:text-amber-400'
-  return 'text-red-600 dark:text-red-400'
-}
-
-function formatLatency(latencyMs: number) {
-  if (!latencyMs || latencyMs <= 0) return '-- ms'
-  if (latencyMs < 1000) return `${Math.round(latencyMs)} ms`
-  return `${(latencyMs / 1000).toFixed(1)} s`
 }
 
 function pingIndicatorClass(status: string) {

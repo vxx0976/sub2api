@@ -66,14 +66,11 @@ export default {
     availability7d: '可用性 (7 天)',
     successCount: '成功',
     nextUpdate: '下次更新 {seconds}s',
-    latency: '延迟',
     ping: 'Ping',
     pingConnected: '已连接',
     pingDisconnected: '已断开',
-    latencyFast: '快',
-    latencyNormal: '正常',
-    latencySlow: '较慢',
-    latencyHigh: '高'
+    connection: '连接状态',
+    totalRequests: '总请求数'
   },
 
   // Docs
