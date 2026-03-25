@@ -431,14 +431,14 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 						// failover 继续尝试下一个账号，不计入分组状态
 						continue
 					case FailoverExhausted:
-						h.incrGroupStatus(c.Request.Context(), apiKey.GroupID, false, reqLog, 0)
+						h.incrGroupStatus(c.Request.Context(), apiKey.GroupID, false, reqLog, nil)
 						h.handleFailoverExhausted(c, fs.LastFailoverErr, service.PlatformGemini, streamStarted)
 						return
 					case FailoverCanceled:
 						return
 					}
 				}
-				h.incrGroupStatus(c.Request.Context(), apiKey.GroupID, false, reqLog, 0)
+				h.incrGroupStatus(c.Request.Context(), apiKey.GroupID, false, reqLog, nil)
 				wroteFallback := h.ensureForwardErrorResponse(c, streamStarted)
 				reqLog.Error("gateway.forward_failed",
 					zap.Int64("account_id", account.ID),
@@ -449,7 +449,7 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 			}
 
 			// 分组状态计数：成功
-			h.incrGroupStatus(c.Request.Context(), apiKey.GroupID, true, reqLog, 0)
+			h.incrGroupStatus(c.Request.Context(), apiKey.GroupID, true, reqLog, nil)
 
 			// RPM 计数递增（Forward 成功后）
 			// 注意：TOCTOU 竞态是已知且可接受的设计权衡，与 WindowCost 一致的 soft-limit 模式。
@@ -708,7 +708,7 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 				// Beta policy block: return 400 immediately, no failover
 				var betaBlockedErr *service.BetaBlockedError
 				if errors.As(err, &betaBlockedErr) {
-					h.incrGroupStatus(c.Request.Context(), currentAPIKey.GroupID, false, reqLog, 0)
+					h.incrGroupStatus(c.Request.Context(), currentAPIKey.GroupID, false, reqLog, nil)
 					h.errorResponse(c, http.StatusBadRequest, "invalid_request_error", betaBlockedErr.Message)
 					return
 				}
@@ -724,7 +724,7 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 						fallbackGroup, err := h.gatewayService.ResolveGroupByID(c.Request.Context(), *fallbackGroupID)
 						if err != nil {
 							reqLog.Warn("gateway.resolve_fallback_group_failed", zap.Int64("fallback_group_id", *fallbackGroupID), zap.Error(err))
-							h.incrGroupStatus(c.Request.Context(), currentAPIKey.GroupID, false, reqLog, 0)
+							h.incrGroupStatus(c.Request.Context(), currentAPIKey.GroupID, false, reqLog, nil)
 							_ = h.antigravityGatewayService.WriteMappedClaudeError(c, account, promptTooLongErr.StatusCode, promptTooLongErr.RequestID, promptTooLongErr.Body)
 							return
 						}
@@ -736,7 +736,7 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 								zap.String("fallback_platform", fallbackGroup.Platform),
 								zap.String("fallback_subscription_type", fallbackGroup.SubscriptionType),
 							)
-							h.incrGroupStatus(c.Request.Context(), currentAPIKey.GroupID, false, reqLog, 0)
+							h.incrGroupStatus(c.Request.Context(), currentAPIKey.GroupID, false, reqLog, nil)
 							_ = h.antigravityGatewayService.WriteMappedClaudeError(c, account, promptTooLongErr.StatusCode, promptTooLongErr.RequestID, promptTooLongErr.Body)
 							return
 						}
@@ -755,7 +755,7 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 						retryWithFallback = true
 						break
 					}
-					h.incrGroupStatus(c.Request.Context(), currentAPIKey.GroupID, false, reqLog, 0)
+					h.incrGroupStatus(c.Request.Context(), currentAPIKey.GroupID, false, reqLog, nil)
 					_ = h.antigravityGatewayService.WriteMappedClaudeError(c, account, promptTooLongErr.StatusCode, promptTooLongErr.RequestID, promptTooLongErr.Body)
 					return
 				}
@@ -772,14 +772,14 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 						// failover 继续尝试下一个账号，不计入分组状态
 						continue
 					case FailoverExhausted:
-						h.incrGroupStatus(c.Request.Context(), currentAPIKey.GroupID, false, reqLog, 0)
+						h.incrGroupStatus(c.Request.Context(), currentAPIKey.GroupID, false, reqLog, nil)
 						h.handleFailoverExhausted(c, fs.LastFailoverErr, account.Platform, streamStarted)
 						return
 					case FailoverCanceled:
 						return
 					}
 				}
-				h.incrGroupStatus(c.Request.Context(), currentAPIKey.GroupID, false, reqLog, 0)
+				h.incrGroupStatus(c.Request.Context(), currentAPIKey.GroupID, false, reqLog, nil)
 				wroteFallback := h.ensureForwardErrorResponse(c, streamStarted)
 				reqLog.Error("gateway.forward_failed",
 					zap.Int64("account_id", account.ID),
@@ -790,7 +790,7 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 			}
 
 			// 分组状态计数：成功
-			h.incrGroupStatus(c.Request.Context(), currentAPIKey.GroupID, true, reqLog, 0)
+			h.incrGroupStatus(c.Request.Context(), currentAPIKey.GroupID, true, reqLog, nil)
 
 			// RPM 计数递增（Forward 成功后）
 			// 注意：TOCTOU 竞态是已知且可接受的设计权衡，与 WindowCost 一致的 soft-limit 模式。
