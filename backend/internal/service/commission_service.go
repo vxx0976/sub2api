@@ -157,8 +157,7 @@ func (s *CommissionService) GetSummary(ctx context.Context, resellerID int64) (*
 
 	var totalCost float64
 	if len(userIDs) > 0 {
-		// 只取 totalCost，分成按比例计算
-		totalCost, _, err = s.usageLogRepo.SumCommissionByUserIDs(ctx, userIDs)
+		totalCost, err = s.usageLogRepo.SumCommissionByUserIDs(ctx, userIDs)
 		if err != nil {
 			return nil, err
 		}

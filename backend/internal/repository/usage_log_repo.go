@@ -4294,24 +4294,22 @@ func setToSlice(set map[int64]struct{}) []int64 {
 	return out
 }
 
-// SumCommissionByUserIDs aggregates total_cost and commission for given user IDs.
-// commission = SUM(total_cost * platform_cost_snapshot * (merchant_rate_snapshot - 1))
-func (r *usageLogRepository) SumCommissionByUserIDs(ctx context.Context, userIDs []int64) (totalCost float64, totalCommission float64, err error) {
+// SumCommissionByUserIDs returns total_cost for given user IDs.
+// Used by commission service to calculate reseller commission (totalCost * commission_rate).
+// Note: Returns all records regardless of merchant_rate_snapshot value.
+func (r *usageLogRepository) SumCommissionByUserIDs(ctx context.Context, userIDs []int64) (totalCost float64, err error) {
 	if len(userIDs) == 0 {
-		return 0, 0, nil
+		return 0, nil
 	}
 	query := `
-		SELECT
-			COALESCE(SUM(total_cost), 0),
-			COALESCE(SUM(total_cost * COALESCE(platform_cost_snapshot, 0) * (merchant_rate_snapshot - 1)), 0)
+		SELECT COALESCE(SUM(total_cost), 0)
 		FROM usage_logs
 		WHERE user_id = ANY($1)
-		  AND merchant_rate_snapshot IS NOT NULL
 	`
-	if err := scanSingleRow(ctx, r.sql, query, []any{pq.Array(userIDs)}, &totalCost, &totalCommission); err != nil {
-		return 0, 0, err
+	if err := scanSingleRow(ctx, r.sql, query, []any{pq.Array(userIDs)}, &totalCost); err != nil {
+		return 0, err
 	}
-	return totalCost, totalCommission, nil
+	return totalCost, nil
 }
 
 // ListCommissionDetail returns paginated usage log items for given user IDs with commission fields.
