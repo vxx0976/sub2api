@@ -20,11 +20,6 @@
       >
         {{ description }}
       </span>
-      <!-- Row 3: status indicator dot -->
-      <div v-if="statusInfo" class="mt-1.5 flex items-center gap-1.5">
-        <span class="inline-block h-1.5 w-1.5 rounded-full" :class="statusDotClass(statusInfo.status)"></span>
-        <span class="text-[10px] leading-tight" :class="statusTextClass(statusInfo.status)">{{ statusLabel(statusInfo.status) }}</span>
-      </div>
     </div>
 
     <!-- Right: rate pill + checkmark (vertically centered to first row) -->
@@ -56,10 +51,8 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useI18n } from 'vue-i18n'
 import GroupBadge from './GroupBadge.vue'
 import type { SubscriptionType, GroupPlatform } from '@/types'
-import type { GroupStatusItem } from '@/api/status'
 
 interface Props {
   name: string
@@ -70,45 +63,14 @@ interface Props {
   description?: string | null
   selected?: boolean
   showCheckmark?: boolean
-  statusInfo?: GroupStatusItem | null
 }
 
 const props = withDefaults(defineProps<Props>(), {
   subscriptionType: 'standard',
   selected: false,
   showCheckmark: true,
-  userRateMultiplier: null,
-  statusInfo: null
+  userRateMultiplier: null
 })
-
-const { t } = useI18n()
-
-function statusDotClass(status: string) {
-  switch (status) {
-    case 'operational': return 'bg-emerald-500'
-    case 'degraded': return 'bg-amber-400'
-    case 'down': return 'bg-red-500'
-    default: return 'bg-emerald-500'
-  }
-}
-
-function statusTextClass(status: string) {
-  switch (status) {
-    case 'operational': return 'text-emerald-600 dark:text-emerald-400'
-    case 'degraded': return 'text-amber-600 dark:text-amber-400'
-    case 'down': return 'text-red-600 dark:text-red-400'
-    default: return 'text-emerald-600 dark:text-emerald-400'
-  }
-}
-
-function statusLabel(status: string) {
-  switch (status) {
-    case 'operational': return t('status.statusStable')
-    case 'degraded': return t('status.statusSlightFluctuation')
-    case 'down': return t('status.statusUnstable')
-    default: return t('status.statusStable')
-  }
-}
 
 // Whether user has a custom rate different from default
 const hasCustomRate = computed(() => {
