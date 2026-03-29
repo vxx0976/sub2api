@@ -169,6 +169,7 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		SettingKeyDefaultLocale,
 		SettingKeyContactWechat,
 		SettingKeyContactTelegram,
+		SettingKeyContactQQ,
 		SettingKeyBackendModeEnabled,
 	}
 
@@ -225,6 +226,7 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		DefaultLocale:                    settings[SettingKeyDefaultLocale],
 		ContactWechat:                    settings[SettingKeyContactWechat],
 		ContactTelegram:                  settings[SettingKeyContactTelegram],
+		ContactQQ:                        settings[SettingKeyContactQQ],
 		BackendModeEnabled:               settings[SettingKeyBackendModeEnabled] == "true",
 	}, nil
 }
@@ -284,6 +286,7 @@ func (s *SettingService) GetPublicSettingsForInjection(ctx context.Context) (any
 		DefaultLocale                    string               `json:"default_locale,omitempty"`
 		ContactWechat                    string               `json:"contact_wechat,omitempty"`
 		ContactTelegram                  string               `json:"contact_telegram,omitempty"`
+		ContactQQ                        string               `json:"contact_qq,omitempty"`
 	}{
 		RegistrationEnabled:              settings.RegistrationEnabled,
 		EmailVerifyEnabled:               settings.EmailVerifyEnabled,
@@ -314,6 +317,7 @@ func (s *SettingService) GetPublicSettingsForInjection(ctx context.Context) (any
 		DefaultLocale:                    settings.DefaultLocale,
 		ContactWechat:                    settings.ContactWechat,
 		ContactTelegram:                  settings.ContactTelegram,
+		ContactQQ:                        settings.ContactQQ,
 	}, nil
 }
 
@@ -495,6 +499,7 @@ func (s *SettingService) UpdateSettings(ctx context.Context, settings *SystemSet
 	updates[SettingKeyDefaultLocale] = settings.DefaultLocale
 	updates[SettingKeyContactWechat] = settings.ContactWechat
 	updates[SettingKeyContactTelegram] = settings.ContactTelegram
+	updates[SettingKeyContactQQ] = settings.ContactQQ
 	updates[SettingKeySoraClientEnabled] = strconv.FormatBool(settings.SoraClientEnabled)
 	updates[SettingKeyCustomMenuItems] = settings.CustomMenuItems
 
@@ -853,6 +858,7 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 		DefaultLocale:                    settings[SettingKeyDefaultLocale],
 		ContactWechat:                    settings[SettingKeyContactWechat],
 		ContactTelegram:                  settings[SettingKeyContactTelegram],
+		ContactQQ:                        settings[SettingKeyContactQQ],
 		SoraClientEnabled:                settings[SettingKeySoraClientEnabled] == "true",
 		CustomMenuItems:                  settings[SettingKeyCustomMenuItems],
 		BackendModeEnabled:               settings[SettingKeyBackendModeEnabled] == "true",

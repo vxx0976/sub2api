@@ -82,14 +82,13 @@ type ResellerDomainRepository interface {
 
 // ResellerDashboardStats contains reseller dashboard statistics
 type ResellerDashboardStats struct {
-	MyBalance        float64 `json:"my_balance"`
-	DomainCount      int     `json:"domain_count"`
-	VerifiedDomains  int     `json:"verified_domains"`
-	GroupCount       int     `json:"group_count"`
-	KeyCount         int     `json:"key_count"`
-	ActiveKeyCount   int     `json:"active_key_count"`
-	TotalQuotaUsed   float64 `json:"total_quota_used"`
-	TotalRechargeAmt float64 `json:"total_recharge_amount"`
+	MyBalance       float64 `json:"my_balance"`
+	DomainCount     int     `json:"domain_count"`
+	VerifiedDomains int     `json:"verified_domains"`
+	GroupCount      int     `json:"group_count"`
+	KeyCount        int     `json:"key_count"`
+	ActiveKeyCount  int     `json:"active_key_count"`
+	TotalQuotaUsed  float64 `json:"total_quota_used"`
 }
 
 // CreateDomainInput represents the input for creating a domain
@@ -163,10 +162,9 @@ type ResellerService struct {
 	settingRepo       ResellerSettingRepository
 	apiKeyRepo        APIKeyRepository
 	apiKeyService     *APIKeyService
-	redeemRepo        RedeemCodeRepository
-	announcementRepo  AnnouncementRepository
-	sub2apipayService *Sub2apipayService
-	entClient         *dbent.Client
+	redeemRepo       RedeemCodeRepository
+	announcementRepo AnnouncementRepository
+	entClient        *dbent.Client
 }
 
 // NewResellerService creates a new ResellerService
@@ -179,20 +177,18 @@ func NewResellerService(
 	apiKeyService *APIKeyService,
 	redeemRepo RedeemCodeRepository,
 	announcementRepo AnnouncementRepository,
-	sub2apipayService *Sub2apipayService,
 	client *dbent.Client,
 ) *ResellerService {
 	return &ResellerService{
-		userRepo:          userRepo,
-		domainRepo:        domainRepo,
-		groupRepo:         groupRepo,
-		settingRepo:       settingRepo,
-		apiKeyRepo:        apiKeyRepo,
-		apiKeyService:     apiKeyService,
-		redeemRepo:        redeemRepo,
-		announcementRepo:  announcementRepo,
-		sub2apipayService: sub2apipayService,
-		entClient:         client,
+		userRepo:         userRepo,
+		domainRepo:       domainRepo,
+		groupRepo:        groupRepo,
+		settingRepo:      settingRepo,
+		apiKeyRepo:       apiKeyRepo,
+		apiKeyService:    apiKeyService,
+		redeemRepo:       redeemRepo,
+		announcementRepo: announcementRepo,
+		entClient:        client,
 	}
 }
 
@@ -231,28 +227,14 @@ func (s *ResellerService) GetDashboardStats(ctx context.Context, resellerID int6
 		totalQuotaUsed = 0
 	}
 
-	// Get total recharge amount for reseller's users from sub2apipay
-	userIDs, err := s.userRepo.ListIDsByParentID(ctx, resellerID)
-	if err != nil {
-		userIDs = []int64{}
-	}
-	totalRechargeAmt := 0.0
-	if len(userIDs) > 0 && s.sub2apipayService != nil {
-		totalRechargeAmt, err = s.sub2apipayService.SumRechargeByUserIDs(ctx, userIDs)
-		if err != nil {
-			totalRechargeAmt = 0
-		}
-	}
-
 	return &ResellerDashboardStats{
-		MyBalance:        reseller.Balance,
-		DomainCount:      domainTotal,
-		VerifiedDomains:  domainVerified,
-		GroupCount:       int(groupCount),
-		KeyCount:         int(keyCount),
-		ActiveKeyCount:   int(activeKeyCount),
-		TotalQuotaUsed:   totalQuotaUsed,
-		TotalRechargeAmt: totalRechargeAmt,
+		MyBalance:       reseller.Balance,
+		DomainCount:     domainTotal,
+		VerifiedDomains: domainVerified,
+		GroupCount:      int(groupCount),
+		KeyCount:        int(keyCount),
+		ActiveKeyCount:  int(activeKeyCount),
+		TotalQuotaUsed:  totalQuotaUsed,
 	}, nil
 }
 

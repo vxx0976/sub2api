@@ -4461,6 +4461,7 @@ export default {
         platformCostHint: '平台向商户收取的成本价，商户据此设定自己的卖价',
         contactWechat: '微信号',
         contactTelegram: 'Telegram',
+        contactQQ: 'QQ',
         docUrl: '文档链接',
         docUrlHint: '文档网站的链接。留空则隐藏文档链接。',
         tawkToHint: '从 Tawk.to 获取，格式: property_id/widget_id。填写后右下角显示在线客服按钮。',

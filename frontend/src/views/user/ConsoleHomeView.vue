@@ -82,6 +82,13 @@
                 </svg>
                 <span class="text-sm font-medium text-gray-700 dark:text-dark-300">{{ t('consoleHome.contact.telegram') }}: @{{ contactTelegram }}</span>
               </a>
+              <!-- QQ -->
+              <div v-if="contactQQ" class="flex items-center gap-2">
+                <svg class="h-4 w-4 flex-shrink-0 text-sky-500" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12.003 2C6.004 2 3 6.086 3 9.166c0 3.313 1.727 6.286 2.907 7.594-.09.86-.455 2.11-.809 3.063-.18.484.235.696.56.512 1.108-.628 2.613-1.62 3.31-2.12.98.254 1.965.384 3.035.384 6 0 9.003-4.086 9.003-7.166C21.006 6.086 18.003 2 12.003 2z"/>
+                </svg>
+                <span class="text-sm font-medium text-gray-700 dark:text-dark-300">{{ t('consoleHome.contact.qq') }}: {{ contactQQ }}</span>
+              </div>
               <!-- Email -->
               <a
                 v-if="contactEmail"
@@ -118,8 +125,9 @@ const docUrl = computed(() => appStore.cachedPublicSettings?.doc_url || '')
 // Dynamic contact info — from public settings (main site or reseller)
 const contactWechat = computed(() => appStore.cachedPublicSettings?.contact_wechat || '')
 const contactTelegram = computed(() => appStore.cachedPublicSettings?.contact_telegram || '')
+const contactQQ = computed(() => appStore.cachedPublicSettings?.contact_qq || '')
 const contactEmail = computed(() => (appStore.isResellerDomain || authStore.isResellerUser) ? '' : 'vanxuehan@gmail.com')
-const hasContactInfo = computed(() => !!contactWechat.value || !!contactTelegram.value || !!contactEmail.value)
+const hasContactInfo = computed(() => !!contactWechat.value || !!contactTelegram.value || !!contactQQ.value || !!contactEmail.value)
 
 // Announcements from cachedPublicSettings (injected via __APP_CONFIG__).
 // On reseller domains, embed_on.go replaces system announcements with the reseller's own.

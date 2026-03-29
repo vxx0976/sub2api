@@ -1409,8 +1409,8 @@
               </p>
             </div>
 
-            <!-- Contact WeChat & Telegram -->
-            <div class="grid grid-cols-2 gap-4">
+            <!-- Contact WeChat, Telegram & QQ -->
+            <div class="grid grid-cols-3 gap-4">
               <div>
                 <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                   {{ t('admin.settings.site.contactWechat') }}
@@ -1431,6 +1431,17 @@
                   type="text"
                   class="input"
                   placeholder="Telegram username"
+                />
+              </div>
+              <div>
+                <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {{ t('admin.settings.site.contactQQ') }}
+                </label>
+                <input
+                  v-model="form.contact_qq"
+                  type="text"
+                  class="input"
+                  placeholder="QQ"
                 />
               </div>
             </div>
@@ -2144,6 +2155,7 @@ const form = reactive<SettingsForm>({
   contact_info: '',
   contact_wechat: '',
   contact_telegram: '',
+  contact_qq: '',
   doc_url: '',
   home_content: '',
   backend_mode_enabled: false,
@@ -2428,6 +2440,7 @@ async function saveSettings() {
       contact_info: form.contact_info,
       contact_wechat: form.contact_wechat,
       contact_telegram: form.contact_telegram,
+      contact_qq: form.contact_qq,
       doc_url: form.doc_url,
       home_content: form.home_content,
       backend_mode_enabled: form.backend_mode_enabled,

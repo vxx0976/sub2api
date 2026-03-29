@@ -139,6 +139,7 @@ const (
 	// 联系方式
 	SettingKeyContactWechat   = "contact_wechat"   // 微信联系方式
 	SettingKeyContactTelegram = "contact_telegram"  // Telegram 联系方式
+	SettingKeyContactQQ       = "contact_qq"       // QQ 联系方式
 
 	// Gemini 配额策略（JSON）
 	SettingKeyGeminiQuotaPolicy = "gemini_quota_policy"

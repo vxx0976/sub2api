@@ -169,13 +169,19 @@ func (s *CommissionService) GetSummary(ctx context.Context, resellerID int64) (*
 	// 分成 = 用户总消费 × 分成比例
 	totalCommission := totalCost * rate
 
-	// 从 sub2apipay 查询充值总额
+	// 查询充值总额：优先从 sub2apipay，否则从本地 recharge_orders
 	var totalRecharge float64
-	if len(userIDs) > 0 && s.sub2apipayService != nil {
-		totalRecharge, err = s.sub2apipayService.SumRechargeByUserIDs(ctx, userIDs)
-		if err != nil {
-			// 查询失败时记录日志，但不影响主流程
-			totalRecharge = 0
+	if len(userIDs) > 0 {
+		if s.sub2apipayService != nil {
+			totalRecharge, err = s.sub2apipayService.SumRechargeByUserIDs(ctx, userIDs)
+			if err != nil {
+				totalRecharge = 0
+			}
+		} else {
+			totalRecharge, err = s.rechargeOrderRepo.SumCreditByUserIDs(ctx, userIDs)
+			if err != nil {
+				totalRecharge = 0
+			}
 		}
 	}
 

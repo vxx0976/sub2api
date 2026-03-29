@@ -276,6 +276,7 @@ func mergeResellerBranding(baseJSON []byte, info *middleware.ResellerDomainConte
 	delete(m, "contact_info")
 	delete(m, "contact_wechat")
 	delete(m, "contact_telegram")
+	delete(m, "contact_qq")
 
 	// Override from reseller-global settings (contact_info, default_locale, etc.)
 	if rs := info.ResellerSettings; rs != nil {
@@ -290,6 +291,9 @@ func mergeResellerBranding(baseJSON []byte, info *middleware.ResellerDomainConte
 		}
 		if v := rs["contact_telegram"]; v != "" {
 			m["contact_telegram"] = v
+		}
+		if v := rs["contact_qq"]; v != "" {
+			m["contact_qq"] = v
 		}
 		// When merchant_mode is enabled, expose the payment page.
 		// Use reseller's own pay_url if configured, otherwise fall back to main site URL.

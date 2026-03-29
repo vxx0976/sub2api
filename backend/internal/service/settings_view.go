@@ -48,6 +48,7 @@ type SystemSettings struct {
 	// 联系方式
 	ContactWechat   string
 	ContactTelegram string
+	ContactQQ       string
 
 	DefaultConcurrency   int
 	DefaultBalance       float64
@@ -129,6 +130,7 @@ type PublicSettings struct {
 	DefaultLocale               string
 	ContactWechat               string
 	ContactTelegram             string
+	ContactQQ                   string
 }
 
 // SoraS3Settings Sora S3 存储配置

@@ -4490,6 +4490,7 @@ export default {
         platformCostHint: 'The cost the platform charges merchants. Merchants use this as reference to set their selling price.',
         contactWechat: 'WeChat ID',
         contactTelegram: 'Telegram',
+        contactQQ: 'QQ',
         docUrl: 'Documentation URL',
         docUrlPlaceholder: 'https://docs.example.com',
         docUrlHint: 'Link to your documentation site. Leave empty to hide the documentation link.',

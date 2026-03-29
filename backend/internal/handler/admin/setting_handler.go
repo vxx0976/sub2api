@@ -111,6 +111,8 @@ func (h *SettingHandler) GetSettings(c *gin.Context) {
 		PurchaseSubscriptionURL:              settings.PurchaseSubscriptionURL,
 		ContactWechat:                        settings.ContactWechat,
 		ContactTelegram:                      settings.ContactTelegram,
+		ContactQQ:                            settings.ContactQQ,
+		DefaultLocale:                        settings.DefaultLocale,
 		SoraClientEnabled:                    settings.SoraClientEnabled,
 		CustomMenuItems:                      dto.ParseCustomMenuItems(settings.CustomMenuItems),
 		DefaultConcurrency:                   settings.DefaultConcurrency,
@@ -181,6 +183,8 @@ type UpdateSettingsRequest struct {
 	PurchaseSubscriptionURL     *string               `json:"purchase_subscription_url"`
 	ContactWechat               string                `json:"contact_wechat"`
 	ContactTelegram             string                `json:"contact_telegram"`
+	ContactQQ                   string                `json:"contact_qq"`
+	DefaultLocale               string                `json:"default_locale"`
 	SoraClientEnabled           bool                  `json:"sora_client_enabled"`
 	CustomMenuItems             *[]dto.CustomMenuItem `json:"custom_menu_items"`
 
@@ -506,6 +510,8 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		PurchaseSubscriptionURL:          purchaseURL,
 		ContactWechat:                    req.ContactWechat,
 		ContactTelegram:                  req.ContactTelegram,
+		ContactQQ:                        req.ContactQQ,
+		DefaultLocale:                    req.DefaultLocale,
 		SoraClientEnabled:                req.SoraClientEnabled,
 		CustomMenuItems:                  customMenuJSON,
 		DefaultConcurrency:               req.DefaultConcurrency,
@@ -614,6 +620,10 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		HideCcsImportButton:                  updatedSettings.HideCcsImportButton,
 		PurchaseSubscriptionEnabled:          updatedSettings.PurchaseSubscriptionEnabled,
 		PurchaseSubscriptionURL:              updatedSettings.PurchaseSubscriptionURL,
+		ContactWechat:                        updatedSettings.ContactWechat,
+		ContactTelegram:                      updatedSettings.ContactTelegram,
+		ContactQQ:                            updatedSettings.ContactQQ,
+		DefaultLocale:                        updatedSettings.DefaultLocale,
 		SoraClientEnabled:                    updatedSettings.SoraClientEnabled,
 		CustomMenuItems:                      dto.ParseCustomMenuItems(updatedSettings.CustomMenuItems),
 		DefaultConcurrency:                   updatedSettings.DefaultConcurrency,
@@ -734,6 +744,18 @@ func diffSettings(before *service.SystemSettings, after *service.SystemSettings,
 	}
 	if before.ContactInfo != after.ContactInfo {
 		changed = append(changed, "contact_info")
+	}
+	if before.ContactWechat != after.ContactWechat {
+		changed = append(changed, "contact_wechat")
+	}
+	if before.ContactTelegram != after.ContactTelegram {
+		changed = append(changed, "contact_telegram")
+	}
+	if before.ContactQQ != after.ContactQQ {
+		changed = append(changed, "contact_qq")
+	}
+	if before.DefaultLocale != after.DefaultLocale {
+		changed = append(changed, "default_locale")
 	}
 	if before.DocURL != after.DocURL {
 		changed = append(changed, "doc_url")

@@ -28,6 +28,7 @@ export default {
       title: 'Contact Us',
       wechat: 'WeChat',
       telegram: 'Telegram',
+      qq: 'QQ',
       email: 'Email',
       scanQr: 'WeChat: mayione1'
     },
@@ -914,6 +915,7 @@ export default {
       contactSection: 'Contact Info',
       contactWechat: 'WeChat ID',
       contactTelegram: 'Telegram',
+      contactQQ: 'QQ',
       announcementsSection: 'Homepage Announcements',
       announcementsHint: 'Short announcements shown at the top of the user console home page',
       announcementTitle: 'Title',

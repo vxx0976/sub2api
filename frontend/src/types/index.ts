@@ -126,6 +126,7 @@ export interface PublicSettings {
   default_locale?: string
   contact_wechat?: string
   contact_telegram?: string
+  contact_qq?: string
   // Reseller domain branding (injected when accessed via a reseller's custom domain)
   reseller_id?: number
   reseller_domain?: string

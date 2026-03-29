@@ -44,6 +44,7 @@ export interface SystemSettings {
   default_locale: string
   contact_wechat: string
   contact_telegram: string
+  contact_qq: string
   sora_client_enabled: boolean
   backend_mode_enabled: boolean
   custom_menu_items: CustomMenuItem[]
@@ -120,6 +121,7 @@ export interface UpdateSettingsRequest {
   default_locale?: string
   contact_wechat?: string
   contact_telegram?: string
+  contact_qq?: string
   sora_client_enabled?: boolean
   backend_mode_enabled?: boolean
   custom_menu_items?: CustomMenuItem[]

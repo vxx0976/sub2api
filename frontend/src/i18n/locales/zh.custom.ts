@@ -28,6 +28,7 @@ export default {
       title: '联系我们',
       wechat: '微信',
       telegram: 'Telegram',
+      qq: 'QQ',
       email: '邮箱',
       scanQr: '微信：mayione1'
     },
@@ -983,6 +984,7 @@ export default {
       contactSection: '联系方式',
       contactWechat: '微信号',
       contactTelegram: 'Telegram',
+      contactQQ: 'QQ',
       announcementsSection: '首页公告',
       announcementsHint: '展示在用户控制台首页顶部的简短公告',
       announcementTitle: '标题',

@@ -63,6 +63,16 @@
                   </svg>
                   <span class="text-sm font-medium text-green-700 dark:text-green-300">{{ contactWechat }}</span>
                 </div>
+                <!-- QQ -->
+                <div
+                  v-if="contactQQ"
+                  class="inline-flex items-center gap-2 rounded-full bg-sky-50 px-4 py-2 dark:bg-sky-900/20"
+                >
+                  <svg class="h-4 w-4 text-sky-600 dark:text-sky-400" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12.003 2C6.004 2 3 6.086 3 9.166c0 3.313 1.727 6.286 2.907 7.594-.09.86-.455 2.11-.809 3.063-.18.484.235.696.56.512 1.108-.628 2.613-1.62 3.31-2.12.98.254 1.965.384 3.035.384 6 0 9.003-4.086 9.003-7.166C21.006 6.086 18.003 2 12.003 2z"/>
+                  </svg>
+                  <span class="text-sm font-medium text-sky-700 dark:text-sky-300">{{ contactQQ }}</span>
+                </div>
               </div>
 
               <!-- Tip -->
@@ -95,6 +105,7 @@ const appStore = useAppStore()
 
 const contactTelegram = computed(() => appStore.cachedPublicSettings?.contact_telegram || '')
 const contactWechat = computed(() => appStore.cachedPublicSettings?.contact_wechat || '')
+const contactQQ = computed(() => appStore.cachedPublicSettings?.contact_qq || '')
 </script>
 
 <style scoped>

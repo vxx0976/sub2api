@@ -61,6 +61,10 @@ type SystemSettings struct {
 	// 联系方式
 	ContactWechat   string `json:"contact_wechat"`
 	ContactTelegram string `json:"contact_telegram"`
+	ContactQQ       string `json:"contact_qq"`
+
+	// 默认语言
+	DefaultLocale string `json:"default_locale"`
 
 	DefaultConcurrency   int                          `json:"default_concurrency"`
 	DefaultBalance       float64                      `json:"default_balance"`
@@ -139,6 +143,7 @@ type PublicSettings struct {
 	DefaultLocale                    string               `json:"default_locale,omitempty"`
 	ContactWechat                    string               `json:"contact_wechat,omitempty"`
 	ContactTelegram                  string               `json:"contact_telegram,omitempty"`
+	ContactQQ                        string               `json:"contact_qq,omitempty"`
 
 	// Reseller domain branding (populated when accessed via a reseller's custom domain)
 	ResellerID           int64  `json:"reseller_id,omitempty"`

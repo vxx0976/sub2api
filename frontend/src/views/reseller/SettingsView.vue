@@ -56,6 +56,14 @@
                 class="input"
               />
             </div>
+            <div>
+              <label class="label">{{ t('reseller.settings.contactQQ') }}</label>
+              <input
+                v-model="settings.contact_qq"
+                type="text"
+                class="input"
+              />
+            </div>
           </div>
         </div>
 
@@ -139,6 +147,7 @@ const settings = ref<Record<string, string>>({
   default_locale: '',
   contact_wechat: '',
   contact_telegram: '',
+  contact_qq: '',
 })
 
 // SimpleAnnouncement list (stored as JSON in settings.announcements)

@@ -71,6 +71,7 @@ func (h *SettingHandler) GetPublicSettings(c *gin.Context) {
 		Announcements:                    announcements,
 		ContactWechat:                    settings.ContactWechat,
 		ContactTelegram:                  settings.ContactTelegram,
+		ContactQQ:                        settings.ContactQQ,
 	}
 
 	// If accessed via a reseller's custom domain, overlay reseller branding
@@ -137,6 +138,7 @@ func (h *SettingHandler) GetPublicSettings(c *gin.Context) {
 		result.ContactInfo = ""
 		result.ContactWechat = ""
 		result.ContactTelegram = ""
+		result.ContactQQ = ""
 
 		// Override from reseller-global settings
 		if rs := info.ResellerSettings; rs != nil {
@@ -167,6 +169,9 @@ func (h *SettingHandler) GetPublicSettings(c *gin.Context) {
 			}
 			if v := rs["contact_telegram"]; v != "" {
 				result.ContactTelegram = v
+			}
+			if v := rs["contact_qq"]; v != "" {
+				result.ContactQQ = v
 			}
 			// Replace system announcements with reseller's own
 			if v := rs["announcements"]; v != "" {

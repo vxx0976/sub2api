@@ -12,7 +12,6 @@ export interface ResellerDashboardStats {
   key_count: number
   active_key_count: number
   total_quota_used: number
-  total_recharge_amount: number
 }
 
 /**
