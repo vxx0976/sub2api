@@ -53,6 +53,14 @@
             </div>
           </template>
 
+          <template #cell-owner="{ row }">
+            <span v-if="row.owner_id && row.owner_name" class="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 dark:bg-blue-900/20 dark:text-blue-400">
+              <Icon name="user" size="sm" />
+              {{ row.owner_name }}
+            </span>
+            <span v-else class="text-sm text-gray-400 dark:text-gray-500">{{ t('admin.announcements.systemAnnouncement') }}</span>
+          </template>
+
           <template #cell-status="{ value }">
             <span
               :class="[
@@ -296,6 +304,7 @@ const notifyModeOptions = computed(() => [
 
 const columns = computed<Column[]>(() => [
   { key: 'title', label: t('admin.announcements.columns.title') },
+  { key: 'owner', label: t('admin.announcements.columns.owner') },
   { key: 'status', label: t('admin.announcements.columns.status') },
   { key: 'notifyMode', label: t('admin.announcements.columns.notifyMode') },
   { key: 'targeting', label: t('admin.announcements.columns.targeting') },

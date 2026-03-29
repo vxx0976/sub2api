@@ -3425,6 +3425,7 @@ export default {
       allStatus: '全部状态',
       columns: {
         title: '标题',
+        owner: '发布商户',
         status: '状态',
         notifyMode: '通知方式',
         targeting: '展示条件',
@@ -3432,6 +3433,7 @@ export default {
         createdAt: '创建时间',
         actions: '操作'
       },
+      systemAnnouncement: '系统公告',
       statusLabels: {
         draft: '草稿',
         active: '展示中',

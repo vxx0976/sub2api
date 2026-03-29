@@ -3451,6 +3451,7 @@ export default {
       allStatus: 'All Status',
       columns: {
         title: 'Title',
+        owner: 'Merchant',
         status: 'Status',
         notifyMode: 'Notify Mode',
         targeting: 'Targeting',
@@ -3458,6 +3459,7 @@ export default {
         createdAt: 'Created At',
         actions: 'Actions'
       },
+      systemAnnouncement: 'System Announcement',
       statusLabels: {
         draft: 'Draft',
         active: 'Active',

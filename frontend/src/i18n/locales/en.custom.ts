@@ -661,7 +661,13 @@ export default {
       manageDomains: 'Manage Domains',
       manageDomainsDesc: 'Configure custom domains and branding',
       apiKeys: 'API Keys',
-      apiKeysDesc: 'Manage your API keys'
+      apiKeysDesc: 'Manage your API keys',
+      totalRechargeAmount: 'Total Recharge',
+      totalRechargeHint: 'Total recharge amount from all sub-users',
+      totalCommissionHint: 'Total commission earned',
+      availableHint: 'Available for withdrawal',
+      totalUsersHint: 'Total sub-users',
+      todayCommission: 'Today Commission'
     },
     keys: {
       title: 'API Key Management',

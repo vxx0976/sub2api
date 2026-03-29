@@ -82,13 +82,14 @@ type ResellerDomainRepository interface {
 
 // ResellerDashboardStats contains reseller dashboard statistics
 type ResellerDashboardStats struct {
-	MyBalance       float64 `json:"my_balance"`
-	DomainCount     int     `json:"domain_count"`
-	VerifiedDomains int     `json:"verified_domains"`
-	GroupCount      int     `json:"group_count"`
-	KeyCount        int     `json:"key_count"`
-	ActiveKeyCount  int     `json:"active_key_count"`
-	TotalQuotaUsed  float64 `json:"total_quota_used"`
+	MyBalance        float64 `json:"my_balance"`
+	DomainCount      int     `json:"domain_count"`
+	VerifiedDomains  int     `json:"verified_domains"`
+	GroupCount       int     `json:"group_count"`
+	KeyCount         int     `json:"key_count"`
+	ActiveKeyCount   int     `json:"active_key_count"`
+	TotalQuotaUsed   float64 `json:"total_quota_used"`
+	TotalRechargeAmt float64 `json:"total_recharge_amount"`
 }
 
 // CreateDomainInput represents the input for creating a domain
@@ -156,15 +157,16 @@ type UpdateResellerKeyInput struct {
 
 // ResellerService provides reseller-specific business logic
 type ResellerService struct {
-	userRepo         UserRepository
-	domainRepo       ResellerDomainRepository
-	groupRepo        GroupRepository
-	settingRepo      ResellerSettingRepository
-	apiKeyRepo       APIKeyRepository
-	apiKeyService    *APIKeyService
-	redeemRepo       RedeemCodeRepository
-	announcementRepo AnnouncementRepository
-	entClient        *dbent.Client
+	userRepo          UserRepository
+	domainRepo        ResellerDomainRepository
+	groupRepo         GroupRepository
+	settingRepo       ResellerSettingRepository
+	apiKeyRepo        APIKeyRepository
+	apiKeyService     *APIKeyService
+	redeemRepo        RedeemCodeRepository
+	announcementRepo  AnnouncementRepository
+	rechargeOrderRepo RechargeOrderRepository
+	entClient         *dbent.Client
 }
 
 // NewResellerService creates a new ResellerService
@@ -177,18 +179,20 @@ func NewResellerService(
 	apiKeyService *APIKeyService,
 	redeemRepo RedeemCodeRepository,
 	announcementRepo AnnouncementRepository,
+	rechargeOrderRepo RechargeOrderRepository,
 	client *dbent.Client,
 ) *ResellerService {
 	return &ResellerService{
-		userRepo:         userRepo,
-		domainRepo:       domainRepo,
-		groupRepo:        groupRepo,
-		settingRepo:      settingRepo,
-		apiKeyRepo:       apiKeyRepo,
-		apiKeyService:    apiKeyService,
-		redeemRepo:       redeemRepo,
-		announcementRepo: announcementRepo,
-		entClient:        client,
+		userRepo:          userRepo,
+		domainRepo:        domainRepo,
+		groupRepo:         groupRepo,
+		settingRepo:       settingRepo,
+		apiKeyRepo:        apiKeyRepo,
+		apiKeyService:     apiKeyService,
+		redeemRepo:        redeemRepo,
+		announcementRepo:  announcementRepo,
+		rechargeOrderRepo: rechargeOrderRepo,
+		entClient:         client,
 	}
 }
 
@@ -227,14 +231,28 @@ func (s *ResellerService) GetDashboardStats(ctx context.Context, resellerID int6
 		totalQuotaUsed = 0
 	}
 
+	// Get total recharge amount for reseller's users
+	userIDs, err := s.userRepo.ListIDsByParentID(ctx, resellerID)
+	if err != nil {
+		userIDs = []int64{}
+	}
+	totalRechargeAmt := 0.0
+	if len(userIDs) > 0 {
+		totalRechargeAmt, err = s.rechargeOrderRepo.SumCreditByUserIDs(ctx, userIDs)
+		if err != nil {
+			totalRechargeAmt = 0
+		}
+	}
+
 	return &ResellerDashboardStats{
-		MyBalance:       reseller.Balance,
-		DomainCount:     domainTotal,
-		VerifiedDomains: domainVerified,
-		GroupCount:      int(groupCount),
-		KeyCount:        int(keyCount),
-		ActiveKeyCount:  int(activeKeyCount),
-		TotalQuotaUsed:  totalQuotaUsed,
+		MyBalance:        reseller.Balance,
+		DomainCount:      domainTotal,
+		VerifiedDomains:  domainVerified,
+		GroupCount:       int(groupCount),
+		KeyCount:         int(keyCount),
+		ActiveKeyCount:   int(activeKeyCount),
+		TotalQuotaUsed:   totalQuotaUsed,
+		TotalRechargeAmt: totalRechargeAmt,
 	}, nil
 }
 

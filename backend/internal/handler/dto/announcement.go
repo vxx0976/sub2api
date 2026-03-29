@@ -20,6 +20,8 @@ type Announcement struct {
 
 	CreatedBy *int64 `json:"created_by,omitempty"`
 	UpdatedBy *int64 `json:"updated_by,omitempty"`
+	OwnerID   *int64 `json:"owner_id,omitempty"`
+	OwnerName string `json:"owner_name,omitempty"`
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
@@ -77,6 +79,7 @@ func AnnouncementFromService(a *service.Announcement) *Announcement {
 		EndsAt:     a.EndsAt,
 		CreatedBy:  a.CreatedBy,
 		UpdatedBy:  a.UpdatedBy,
+		OwnerID:    a.OwnerID,
 		CreatedAt:  a.CreatedAt,
 		UpdatedAt:  a.UpdatedAt,
 	}

@@ -17,12 +17,14 @@ import (
 // AnnouncementHandler handles admin announcement management
 type AnnouncementHandler struct {
 	announcementService *service.AnnouncementService
+	userService         *service.UserService
 }
 
 // NewAnnouncementHandler creates a new admin announcement handler
-func NewAnnouncementHandler(announcementService *service.AnnouncementService) *AnnouncementHandler {
+func NewAnnouncementHandler(announcementService *service.AnnouncementService, userService *service.UserService) *AnnouncementHandler {
 	return &AnnouncementHandler{
 		announcementService: announcementService,
+		userService:         userService,
 	}
 }
 
@@ -71,9 +73,32 @@ func (h *AnnouncementHandler) List(c *gin.Context) {
 		return
 	}
 
+	// Collect unique owner IDs to fetch merchant names
+	ownerIDMap := make(map[int64]struct{})
+	for _, item := range items {
+		if item.OwnerID != nil && *item.OwnerID > 0 {
+			ownerIDMap[*item.OwnerID] = struct{}{}
+		}
+	}
+
+	// Fetch merchant info map
+	merchantMap := make(map[int64]string)
+	for ownerID := range ownerIDMap {
+		user, err := h.userService.GetByID(c.Request.Context(), ownerID)
+		if err == nil {
+			merchantMap[ownerID] = user.Username
+		}
+	}
+
 	out := make([]dto.Announcement, 0, len(items))
 	for i := range items {
-		out = append(out, *dto.AnnouncementFromService(&items[i]))
+		a := dto.AnnouncementFromService(&items[i])
+		if a.OwnerID != nil && *a.OwnerID > 0 {
+			if name, ok := merchantMap[*a.OwnerID]; ok {
+				a.OwnerName = name
+			}
+		}
+		out = append(out, *a)
 	}
 	response.Paginated(c, out, paginationResult.Total, page, pageSize)
 }

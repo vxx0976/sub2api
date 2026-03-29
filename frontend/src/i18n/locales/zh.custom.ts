@@ -667,7 +667,13 @@ export default {
       manageDomains: '管理域名',
       manageDomainsDesc: '配置自定义域名和品牌',
       apiKeys: 'API 密钥',
-      apiKeysDesc: '管理您的 API 密钥'
+      apiKeysDesc: '管理您的 API 密钥',
+      totalRechargeAmount: '用户充值总额',
+      totalRechargeHint: '所有下属用户的充值总金额',
+      totalCommissionHint: '您获得的佣金总额',
+      availableHint: '可提现佣金',
+      totalUsersHint: '下属用户总数',
+      todayCommission: '今日分成'
     },
     keys: {
       title: 'API 密钥管理',
