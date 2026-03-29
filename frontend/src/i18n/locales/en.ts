@@ -844,6 +844,8 @@ export default {
     unknown: 'Unknown',
     in: 'In',
     out: 'Out',
+    read: 'Read',
+    write: 'Write',
     inputTokenPrice: 'Input price',
     outputTokenPrice: 'Output price',
     perMillionTokens: '/ 1M tokens',
