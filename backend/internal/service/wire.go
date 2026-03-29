@@ -407,12 +407,11 @@ func ProvideSettingService(settingRepo SettingRepository, groupRepo GroupReposit
 }
 
 // ProvideSub2apipayService creates Sub2apipayService if enabled
-// It reads the database URL from config or environment variable SUB2APIPAY_DATABASE_URL
-func ProvideSub2apipayService(cfg *config.Config) (*Sub2apipayService, error) {
-	if !cfg.Sub2apipay.Enabled {
-		return nil, nil
+func ProvideSub2apipayService(cfg *config.Config) *Sub2apipayService {
+	if !cfg.Sub2apipay.Enabled || cfg.Sub2apipay.APIURL == "" {
+		return nil
 	}
-	return NewSub2apipayService(cfg.Sub2apipay.DatabaseURL)
+	return NewSub2apipayService(cfg.Sub2apipay.APIURL, cfg.Sub2apipay.AdminToken)
 }
 
 // ProviderSet is the Wire provider set for all services

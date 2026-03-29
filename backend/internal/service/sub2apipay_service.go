@@ -1,87 +1,59 @@
 package service
 
 import (
+	"bytes"
 	"context"
-	"database/sql"
+	"encoding/json"
 	"fmt"
-	"os"
+	"net/http"
+	"time"
 )
 
-// Sub2apipayService provides integration with sub2apipay payment system
+// Sub2apipayService calls sub2apipay HTTP API for recharge data.
 type Sub2apipayService struct {
-	db *sql.DB
+	apiURL     string
+	adminToken string
+	httpClient *http.Client
 }
 
-// NewSub2apipayService creates a new Sub2apipayService
-// It reads the database URL from environment variable SUB2APIPAY_DATABASE_URL
-func NewSub2apipayService(databaseURL string) (*Sub2apipayService, error) {
-	if databaseURL == "" {
-		// Try environment variable
-		databaseURL = os.Getenv("SUB2APIPAY_DATABASE_URL")
+func NewSub2apipayService(apiURL, adminToken string) *Sub2apipayService {
+	return &Sub2apipayService{
+		apiURL:     apiURL,
+		adminToken: adminToken,
+		httpClient: &http.Client{Timeout: 15 * time.Second},
 	}
+}
 
-	if databaseURL == "" {
+// SumRechargeByHosts returns total recharge amount per srcHost from sub2apipay.
+func (s *Sub2apipayService) SumRechargeByHosts(ctx context.Context, hosts []string) (map[string]float64, error) {
+	if len(hosts) == 0 {
 		return nil, nil
 	}
 
-	db, err := sql.Open("postgres", databaseURL)
+	body, _ := json.Marshal(map[string]interface{}{"hosts": hosts})
+	req, err := http.NewRequestWithContext(ctx, "POST", s.apiURL+"/api/admin/orders/sum-by-host", bytes.NewReader(body))
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to sub2apipay database: %w", err)
+		return nil, fmt.Errorf("sub2apipay: build request: %w", err)
 	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+s.adminToken)
 
-	// Test connection
-	if err := db.Ping(); err != nil {
-		return nil, fmt.Errorf("failed to ping sub2apipay database: %w", err)
-	}
-
-	return &Sub2apipayService{db: db}, nil
-}
-
-// Close closes the database connection
-func (s *Sub2apipayService) Close() error {
-	if s.db != nil {
-		return s.db.Close()
-	}
-	return nil
-}
-
-// SumRechargeByUserIDs returns total recharge amount for given user IDs
-// This queries the sub2apipay orders table directly
-func (s *Sub2apipayService) SumRechargeByUserIDs(ctx context.Context, userIDs []int64) (float64, error) {
-	if len(userIDs) == 0 {
-		return 0, nil
-	}
-
-	// Build placeholders for IN clause
-	placeholders := make([]byte, 0, len(userIDs)*4)
-	args := make([]interface{}, 0, len(userIDs))
-	for i, id := range userIDs {
-		if i > 0 {
-			placeholders = append(placeholders, ',', ' ')
-		}
-		placeholders = append(placeholders, '$')
-		placeholders = append(placeholders, []byte(fmt.Sprintf("%d", i+1))...)
-		args = append(args, id)
-	}
-
-	// Query paid/completed orders only
-	// Status: PAID, RECHARGING, COMPLETED, REFUNDING, REFUNDED, REFUND_FAILED
-	query := fmt.Sprintf(`
-		SELECT COALESCE(SUM(amount), 0)
-		FROM orders
-		WHERE user_id IN (%s)
-		AND status IN ('PAID', 'RECHARGING', 'COMPLETED', 'REFUNDING', 'REFUNDED', 'REFUND_FAILED')
-	`, string(placeholders))
-
-	var total sql.NullFloat64
-	err := s.db.QueryRowContext(ctx, query, args...).Scan(&total)
+	resp, err := s.httpClient.Do(req)
 	if err != nil {
-		return 0, fmt.Errorf("failed to query recharge sum: %w", err)
+		return nil, fmt.Errorf("sub2apipay: request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("sub2apipay: unexpected status %d", resp.StatusCode)
 	}
 
-	if !total.Valid {
-		return 0, nil
+	var result struct {
+		Totals map[string]float64 `json:"totals"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("sub2apipay: decode response: %w", err)
 	}
 
-	return total.Float64, nil
+	return result.Totals, nil
 }

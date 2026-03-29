@@ -102,12 +102,13 @@ type ResellerWithdrawalRepository interface {
 
 // CommissionService handles commission calculation and withdrawal operations
 type CommissionService struct {
-	withdrawalRepo     ResellerWithdrawalRepository
-	usageLogRepo       UsageLogRepository
-	userRepo           UserRepository
-	settingRepo        ResellerSettingRepository
-	rechargeOrderRepo  RechargeOrderRepository
-	sub2apipayService  *Sub2apipayService
+	withdrawalRepo    ResellerWithdrawalRepository
+	usageLogRepo      UsageLogRepository
+	userRepo          UserRepository
+	settingRepo       ResellerSettingRepository
+	rechargeOrderRepo RechargeOrderRepository
+	domainRepo        ResellerDomainRepository
+	sub2apipayService *Sub2apipayService
 }
 
 func NewCommissionService(
@@ -116,6 +117,7 @@ func NewCommissionService(
 	userRepo UserRepository,
 	settingRepo ResellerSettingRepository,
 	rechargeOrderRepo RechargeOrderRepository,
+	domainRepo ResellerDomainRepository,
 	sub2apipayService *Sub2apipayService,
 ) *CommissionService {
 	return &CommissionService{
@@ -124,6 +126,7 @@ func NewCommissionService(
 		userRepo:          userRepo,
 		settingRepo:       settingRepo,
 		rechargeOrderRepo: rechargeOrderRepo,
+		domainRepo:        domainRepo,
 		sub2apipayService: sub2apipayService,
 	}
 }
@@ -169,18 +172,20 @@ func (s *CommissionService) GetSummary(ctx context.Context, resellerID int64) (*
 	// 分成 = 用户总消费 × 分成比例
 	totalCommission := totalCost * rate
 
-	// 查询充值总额：优先从 sub2apipay，否则从本地 recharge_orders
+	// 查询充值总额：通过 sub2apipay HTTP API 按商户域名汇总
 	var totalRecharge float64
-	if len(userIDs) > 0 {
-		if s.sub2apipayService != nil {
-			totalRecharge, err = s.sub2apipayService.SumRechargeByUserIDs(ctx, userIDs)
-			if err != nil {
-				totalRecharge = 0
+	if s.sub2apipayService != nil {
+		domains, _ := s.domainRepo.ListAllDomainNamesByResellerID(ctx, resellerID)
+		if len(domains) > 0 {
+			// sub2apipay srcHost 带 https:// 前缀
+			hosts := make([]string, len(domains))
+			for i, d := range domains {
+				hosts[i] = "https://" + d
 			}
-		} else {
-			totalRecharge, err = s.rechargeOrderRepo.SumCreditByUserIDs(ctx, userIDs)
-			if err != nil {
-				totalRecharge = 0
+			if totals, err := s.sub2apipayService.SumRechargeByHosts(ctx, hosts); err == nil {
+				for _, v := range totals {
+					totalRecharge += v
+				}
 			}
 		}
 	}

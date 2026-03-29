@@ -90,11 +90,9 @@ type Config struct {
 
 // Sub2apipayConfig sub2apipay 支付系统集成配置
 type Sub2apipayConfig struct {
-	// Enabled 是否启用 sub2apipay 集成
-	Enabled bool `mapstructure:"enabled"`
-	// DatabaseURL sub2apipay 数据库连接字符串
-	// 建议使用环境变量 SUB2APIPAY_DATABASE_URL 配置，避免明文密码
-	DatabaseURL string `mapstructure:"database_url"`
+	Enabled    bool   `mapstructure:"enabled"`
+	APIURL     string `mapstructure:"api_url"`
+	AdminToken string `mapstructure:"admin_token"`
 }
 
 type LogConfig struct {
