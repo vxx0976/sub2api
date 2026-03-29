@@ -92,9 +92,9 @@ type Config struct {
 type Sub2apipayConfig struct {
 	// Enabled 是否启用 sub2apipay 集成
 	Enabled bool `mapstructure:"enabled"`
-	// DatabaseName sub2apipay 数据库名称（默认：sub2apipay）
-	// 主机/端口/用户/密码复用主数据库配置
-	DatabaseName string `mapstructure:"database_name"`
+	// DatabaseURL sub2apipay 数据库连接字符串
+	// 建议使用环境变量 SUB2APIPAY_DATABASE_URL 配置，避免明文密码
+	DatabaseURL string `mapstructure:"database_url"`
 }
 
 type LogConfig struct {

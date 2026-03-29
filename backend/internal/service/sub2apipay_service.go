@@ -4,38 +4,27 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-
-	"github.com/Wei-Shaw/sub2api/internal/config"
+	"os"
 )
 
 // Sub2apipayService provides integration with sub2apipay payment system
-// It reuses the main database connection but switches to the sub2apipay database
 type Sub2apipayService struct {
 	db *sql.DB
 }
 
 // NewSub2apipayService creates a new Sub2apipayService
-// It derives the sub2apipay DSN from the main config
-func NewSub2apipayService(cfg *config.Config) (*Sub2apipayService, error) {
-	if !cfg.Sub2apipay.Enabled {
+// It reads the database URL from environment variable SUB2APIPAY_DATABASE_URL
+func NewSub2apipayService(databaseURL string) (*Sub2apipayService, error) {
+	if databaseURL == "" {
+		// Try environment variable
+		databaseURL = os.Getenv("SUB2APIPAY_DATABASE_URL")
+	}
+
+	if databaseURL == "" {
 		return nil, nil
 	}
 
-	dbName := cfg.Sub2apipay.DatabaseName
-	if dbName == "" {
-		dbName = "sub2apipay"
-	}
-
-	// Build DSN from main database config, but change the database name
-	dsn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		cfg.Database.Host,
-		cfg.Database.Port,
-		cfg.Database.User,
-		cfg.Database.Password,
-		dbName,
-	)
-
-	db, err := sql.Open("postgres", dsn)
+	db, err := sql.Open("postgres", databaseURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to sub2apipay database: %w", err)
 	}
