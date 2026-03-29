@@ -230,7 +230,7 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	merchantHandler := admin.NewMerchantHandler(commissionService, adminService)
 	adminWithdrawalHandler := admin.NewAdminWithdrawalHandler(commissionService)
 	adminHandlers := handler.ProvideAdminHandlers(dashboardHandler, adminUserHandler, groupHandler, accountHandler, adminAnnouncementHandler, dataManagementHandler, backupHandler, oAuthHandler, openAIOAuthHandler, geminiOAuthHandler, antigravityOAuthHandler, proxyHandler, adminRedeemHandler, promoHandler, settingHandler, opsHandler, systemHandler, adminSubscriptionHandler, orderHandler, adminUsageHandler, userAttributeHandler, referralHandler, channelHandler, errorPassthroughHandler, adminAPIKeyHandler, scheduledTestHandler, merchantHandler, adminWithdrawalHandler)
-	resellerService := service.NewResellerService(userRepository, resellerDomainRepository, groupRepository, resellerSettingRepository, apiKeyRepository, apiKeyService, redeemCodeRepository, announcementRepository, rechargeOrderRepository, client)
+	resellerService := service.NewResellerService(userRepository, resellerDomainRepository, groupRepository, resellerSettingRepository, apiKeyRepository, apiKeyService, redeemCodeRepository, announcementRepository, sub2apipayService, client)
 	resellerDashboardHandler := reseller.NewDashboardHandler(resellerService)
 	domainHandler := reseller.NewDomainHandler(resellerService, settingService)
 	resellerSettingHandler := reseller.NewSettingHandler(resellerService)

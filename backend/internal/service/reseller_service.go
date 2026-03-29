@@ -165,7 +165,7 @@ type ResellerService struct {
 	apiKeyService     *APIKeyService
 	redeemRepo        RedeemCodeRepository
 	announcementRepo  AnnouncementRepository
-	rechargeOrderRepo RechargeOrderRepository
+	sub2apipayService *Sub2apipayService
 	entClient         *dbent.Client
 }
 
@@ -179,7 +179,7 @@ func NewResellerService(
 	apiKeyService *APIKeyService,
 	redeemRepo RedeemCodeRepository,
 	announcementRepo AnnouncementRepository,
-	rechargeOrderRepo RechargeOrderRepository,
+	sub2apipayService *Sub2apipayService,
 	client *dbent.Client,
 ) *ResellerService {
 	return &ResellerService{
@@ -191,7 +191,7 @@ func NewResellerService(
 		apiKeyService:     apiKeyService,
 		redeemRepo:        redeemRepo,
 		announcementRepo:  announcementRepo,
-		rechargeOrderRepo: rechargeOrderRepo,
+		sub2apipayService: sub2apipayService,
 		entClient:         client,
 	}
 }
@@ -231,14 +231,14 @@ func (s *ResellerService) GetDashboardStats(ctx context.Context, resellerID int6
 		totalQuotaUsed = 0
 	}
 
-	// Get total recharge amount for reseller's users
+	// Get total recharge amount for reseller's users from sub2apipay
 	userIDs, err := s.userRepo.ListIDsByParentID(ctx, resellerID)
 	if err != nil {
 		userIDs = []int64{}
 	}
 	totalRechargeAmt := 0.0
-	if len(userIDs) > 0 {
-		totalRechargeAmt, err = s.rechargeOrderRepo.SumCreditByUserIDs(ctx, userIDs)
+	if len(userIDs) > 0 && s.sub2apipayService != nil {
+		totalRechargeAmt, err = s.sub2apipayService.SumRechargeByUserIDs(ctx, userIDs)
 		if err != nil {
 			totalRechargeAmt = 0
 		}
