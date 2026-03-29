@@ -406,6 +406,15 @@ func ProvideSettingService(settingRepo SettingRepository, groupRepo GroupReposit
 	return svc
 }
 
+// ProvideSub2apipayService creates Sub2apipayService if enabled
+// It reuses the main database connection but switches to the sub2apipay database
+func ProvideSub2apipayService(cfg *config.Config) (*Sub2apipayService, error) {
+	if !cfg.Sub2apipay.Enabled {
+		return nil, nil
+	}
+	return NewSub2apipayService(cfg)
+}
+
 // ProviderSet is the Wire provider set for all services
 var ProviderSet = wire.NewSet(
 	// Core services
@@ -426,6 +435,7 @@ var ProviderSet = wire.NewSet(
 	NewAnnouncementService,
 	NewAdminService,
 	NewGatewayService,
+	ProvideSub2apipayService,
 	ProvideSoraMediaStorage,
 	ProvideSoraMediaCleanupService,
 	ProvideSoraSDKClient,

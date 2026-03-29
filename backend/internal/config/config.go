@@ -85,6 +85,16 @@ type Config struct {
 	Update                  UpdateConfig                  `mapstructure:"update"`
 	Payment                 PaymentConfig                 `mapstructure:"payment"`
 	Idempotency             IdempotencyConfig             `mapstructure:"idempotency"`
+	Sub2apipay              Sub2apipayConfig              `mapstructure:"sub2apipay"`
+}
+
+// Sub2apipayConfig sub2apipay 支付系统集成配置
+type Sub2apipayConfig struct {
+	// Enabled 是否启用 sub2apipay 集成
+	Enabled bool `mapstructure:"enabled"`
+	// DatabaseName sub2apipay 数据库名称（默认：sub2apipay）
+	// 主机/端口/用户/密码复用主数据库配置
+	DatabaseName string `mapstructure:"database_name"`
 }
 
 type LogConfig struct {
