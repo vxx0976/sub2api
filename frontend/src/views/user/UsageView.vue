@@ -40,6 +40,10 @@
                 {{ t('usage.in') }}: {{ formatTokens(usageStats?.total_input_tokens || 0) }} /
                 {{ t('usage.out') }}: {{ formatTokens(usageStats?.total_output_tokens || 0) }}
               </p>
+              <p class="text-xs">
+                <span class="text-blue-600 dark:text-blue-400">{{ t('usage.read') }}: {{ formatTokens(usageStats?.total_cache_read_tokens || 0) }}</span> /
+                <span class="text-amber-600 dark:text-amber-400">{{ t('usage.write') }}: {{ formatTokens(usageStats?.total_cache_creation_tokens || 0) }}</span>
+              </p>
             </div>
           </div>
         </div>
