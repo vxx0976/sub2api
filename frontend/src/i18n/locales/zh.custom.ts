@@ -71,7 +71,8 @@ export default {
     pingConnected: '已连接',
     pingDisconnected: '已断开',
     connection: '连接状态',
-    totalRequests: '总请求数'
+    totalRequests: '总请求数',
+    uptime30d: '30天可用率'
   },
 
   // Docs

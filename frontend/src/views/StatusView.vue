@@ -60,12 +60,8 @@
             </span>
           </div>
 
-          <!-- Ping Indicator -->
-          <div class="flex items-center justify-between border-t border-gray-100 px-5 py-3 dark:border-dark-800">
-            <div class="text-xs text-gray-500 dark:text-dark-400">
-              {{ t('status.totalRequests') }}: <span class="font-medium text-gray-700 dark:text-gray-300">{{ group.total_requests }}</span>
-            </div>
-            <!-- 连接状态指示器 -->
+          <!-- Connection Indicator -->
+          <div class="flex items-center justify-end border-t border-gray-100 px-5 py-3 dark:border-dark-800">
             <div class="flex items-center gap-1.5">
               <span class="text-xs text-gray-500 dark:text-dark-400">{{ t('status.connection') }}</span>
               <span
