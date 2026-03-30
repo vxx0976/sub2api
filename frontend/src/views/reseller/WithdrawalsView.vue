@@ -62,7 +62,7 @@
                   <span class="text-sm text-gray-900 dark:text-white">{{ item.id }}</span>
                 </td>
                 <td class="px-4 py-3">
-                  <span class="text-sm font-medium text-gray-900 dark:text-white">${{ item.amount }}</span>
+                  <span class="text-sm font-medium text-gray-900 dark:text-white">¥{{ item.amount }}</span>
                 </td>
                 <td class="px-4 py-3">
                   <span
@@ -127,7 +127,7 @@
         <div>
           <label class="input-label">{{ t('reseller.withdrawals.amount') }}</label>
           <div class="relative">
-            <div class="absolute left-3 top-1/2 -translate-y-1/2 font-medium text-gray-500">$</div>
+            <div class="absolute left-3 top-1/2 -translate-y-1/2 font-medium text-gray-500">¥</div>
             <input
               v-model.number="applyForm.amount"
               type="number"

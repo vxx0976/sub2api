@@ -73,7 +73,7 @@
                   <span class="text-sm text-gray-900 dark:text-white">{{ item.reseller_id }}</span>
                 </td>
                 <td class="px-4 py-3">
-                  <span class="text-sm font-medium text-gray-900 dark:text-white">${{ item.amount }}</span>
+                  <span class="text-sm font-medium text-gray-900 dark:text-white">¥{{ item.amount }}</span>
                 </td>
                 <td class="px-4 py-3">
                   <span
@@ -150,7 +150,7 @@
         <div class="rounded-xl bg-gray-50 p-4 dark:bg-dark-700">
           <div class="flex justify-between text-sm">
             <span class="text-gray-600 dark:text-gray-400">{{ t('admin.merchantWithdrawals.amount') }}</span>
-            <span class="font-medium text-gray-900 dark:text-white">${{ actionItem.amount }}</span>
+            <span class="font-medium text-gray-900 dark:text-white">¥{{ actionItem.amount }}</span>
           </div>
           <div class="mt-1 flex justify-between text-sm">
             <span class="text-gray-600 dark:text-gray-400">{{ t('admin.merchantWithdrawals.paymentMethod') }}</span>
