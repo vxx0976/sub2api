@@ -63,12 +63,10 @@ type RechargeDetailRecord struct {
 // CommissionSummary is the response for /reseller/commissions/summary
 type CommissionSummary struct {
 	CommissionRate  float64 `json:"commission_rate"`
-	TotalCost       float64 `json:"total_cost"`
 	TotalCommission float64 `json:"total_commission"`
 	TotalRecharge   float64 `json:"total_recharge"`
 	TotalUsers      int64   `json:"total_users"`
 	TodayNewUsers   int64   `json:"today_new_users"`
-	TodayCost       float64 `json:"today_cost"`
 	Withdrawn       float64 `json:"withdrawn"`
 	Pending         float64 `json:"pending"`
 	Available       float64 `json:"available"`
@@ -167,17 +165,6 @@ func (s *CommissionService) GetSummary(ctx context.Context, resellerID int64) (*
 		return nil, err
 	}
 
-	var totalCost float64
-	if len(userIDs) > 0 {
-		totalCost, err = s.usageLogRepo.SumCommissionByUserIDs(ctx, userIDs)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	// 分成 = 用户总消费 × 分成比例
-	totalCommission := totalCost * rate
-
 	// 查询充值总额：通过 sub2apipay HTTP API 按商户域名汇总
 	var totalRecharge float64
 	if s.sub2apipayService != nil {
@@ -195,6 +182,9 @@ func (s *CommissionService) GetSummary(ctx context.Context, resellerID int64) (*
 		}
 	}
 
+	// 分成 = 充值总额 × 分成比例
+	totalCommission := totalRecharge * rate
+
 	totalUsers := int64(len(userIDs))
 
 	todayNewUsers, err := s.userRepo.CountByParentIDToday(ctx, resellerID)
@@ -202,20 +192,11 @@ func (s *CommissionService) GetSummary(ctx context.Context, resellerID int64) (*
 		return nil, err
 	}
 
-	var todayCost float64
-	if len(userIDs) > 0 {
-		todayCost, err = s.usageLogRepo.SumTodayCostByUserIDs(ctx, userIDs)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	withdrawn, err := s.withdrawalRepo.SumPaidByResellerID(ctx, resellerID)
 	if err != nil {
 		return nil, err
 	}
 
-	// 待审核提现也应从可用余额中扣除，避免重复申请
 	pending, err := s.withdrawalRepo.SumPendingByResellerID(ctx, resellerID)
 	if err != nil {
 		return nil, err
@@ -228,12 +209,10 @@ func (s *CommissionService) GetSummary(ctx context.Context, resellerID int64) (*
 
 	return &CommissionSummary{
 		CommissionRate:  rate,
-		TotalCost:       totalCost,
 		TotalCommission: totalCommission,
 		TotalRecharge:   totalRecharge,
 		TotalUsers:      totalUsers,
 		TodayNewUsers:   todayNewUsers,
-		TodayCost:       todayCost,
 		Withdrawn:       withdrawn,
 		Pending:         pending,
 		Available:       available,
