@@ -182,7 +182,6 @@ func (s *CommissionService) GetSummary(ctx context.Context, resellerID int64) (*
 	if s.sub2apipayService != nil {
 		domains, _ := s.domainRepo.ListAllDomainNamesByResellerID(ctx, resellerID)
 		if len(domains) > 0 {
-			// sub2apipay srcHost 带 https:// 前缀
 			hosts := make([]string, len(domains))
 			for i, d := range domains {
 				hosts[i] = "https://" + d

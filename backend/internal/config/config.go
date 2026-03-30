@@ -84,14 +84,6 @@ type Config struct {
 	Gemini                  GeminiConfig                  `mapstructure:"gemini"`
 	Update                  UpdateConfig                  `mapstructure:"update"`
 	Idempotency             IdempotencyConfig             `mapstructure:"idempotency"`
-	Sub2apipay              Sub2apipayConfig              `mapstructure:"sub2apipay"`
-}
-
-// Sub2apipayConfig sub2apipay 支付系统集成配置
-type Sub2apipayConfig struct {
-	Enabled    bool   `mapstructure:"enabled"`
-	APIURL     string `mapstructure:"api_url"`
-	AdminToken string `mapstructure:"admin_token"`
 }
 
 type LogConfig struct {

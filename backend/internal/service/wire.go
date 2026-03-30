@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"database/sql"
+	"strings"
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
@@ -405,12 +406,28 @@ func ProvideSettingService(settingRepo SettingRepository, groupRepo GroupReposit
 	return svc
 }
 
-// ProvideSub2apipayService creates Sub2apipayService if enabled
-func ProvideSub2apipayService(cfg *config.Config) *Sub2apipayService {
-	if !cfg.Sub2apipay.Enabled || cfg.Sub2apipay.APIURL == "" {
+// ProvideSub2apipayService creates Sub2apipayService by reading settings from DB.
+// It extracts the base URL from purchase_subscription_url and uses admin_api_key as the token.
+func ProvideSub2apipayService(settingRepo SettingRepository) *Sub2apipayService {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	payURL, _ := settingRepo.GetValue(ctx, SettingKeyPurchaseSubscriptionURL)
+	adminKey, _ := settingRepo.GetValue(ctx, SettingKeyAdminAPIKey)
+	if payURL == "" || adminKey == "" {
 		return nil
 	}
-	return NewSub2apipayService(cfg.Sub2apipay.APIURL, cfg.Sub2apipay.AdminToken)
+
+	// 从 purchase_subscription_url 截取基础 URL（去掉路径部分）
+	// 例: https://pay.clicodeplus.com/pay?src=xxx → https://pay.clicodeplus.com
+	apiURL := payURL
+	if idx := strings.Index(payURL, "://"); idx != -1 {
+		if pathIdx := strings.Index(payURL[idx+3:], "/"); pathIdx != -1 {
+			apiURL = payURL[:idx+3+pathIdx]
+		}
+	}
+
+	return NewSub2apipayService(apiURL, adminKey)
 }
 
 // ProviderSet is the Wire provider set for all services
