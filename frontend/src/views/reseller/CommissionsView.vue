@@ -131,6 +131,7 @@
               <thead>
                 <tr class="border-b border-gray-100 dark:border-dark-700">
                   <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('reseller.commissions.userId') }}</th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('reseller.commissions.userEmail') }}</th>
                   <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('reseller.commissions.orderNo') }}</th>
                   <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('reseller.commissions.creditAmount') }}</th>
                   <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('reseller.commissions.paidAt') }}</th>
@@ -139,6 +140,7 @@
               <tbody>
                 <tr v-for="(item, idx) in rechargeItems" :key="idx" class="border-b border-gray-50 dark:border-dark-800">
                   <td class="px-4 py-3"><span class="text-sm text-gray-900 dark:text-white">{{ item.user_id }}</span></td>
+                  <td class="px-4 py-3"><span class="text-sm text-gray-600 dark:text-gray-300">{{ item.user_email || '-' }}</span></td>
                   <td class="px-4 py-3"><span class="text-sm font-mono text-gray-600 dark:text-gray-300">{{ item.order_no }}</span></td>
                   <td class="px-4 py-3"><span class="text-sm font-medium text-blue-600 dark:text-blue-400">${{ f4(item.credit_amount) }}</span></td>
                   <td class="px-4 py-3"><span class="text-sm text-gray-500 dark:text-gray-400">{{ formatDateTime(item.paid_at) }}</span></td>

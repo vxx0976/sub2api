@@ -927,6 +927,7 @@ export default {
       merchantRateSnapshot: '分成倍率',
       commission: '分成金额',
       createdAt: '时间',
+      userEmail: '邮箱',
       orderNo: '订单号',
       creditAmount: '充值金额（USD）',
       paidAt: '充值时间',

@@ -30,6 +30,7 @@ export interface CommissionDetailItem {
 
 export interface RechargeDetailItem {
   user_id: number
+  user_email?: string
   order_no: string
   credit_amount: number
   paid_at: string

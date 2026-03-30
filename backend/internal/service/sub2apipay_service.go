@@ -105,10 +105,11 @@ func (s *Sub2apipayService) ListRechargesByHosts(ctx context.Context, hosts []st
 
 	var result struct {
 		Orders []struct {
-			ID     string  `json:"id"`
-			UserID int64   `json:"userId"`
-			Amount float64 `json:"amount"`
-			PaidAt *string `json:"paidAt"`
+			ID        string  `json:"id"`
+			UserID    int64   `json:"userId"`
+			UserEmail string  `json:"userEmail"`
+			Amount    float64 `json:"amount"`
+			PaidAt    *string `json:"paidAt"`
 		} `json:"orders"`
 		Total int `json:"total"`
 	}
@@ -120,6 +121,7 @@ func (s *Sub2apipayService) ListRechargesByHosts(ctx context.Context, hosts []st
 	for _, o := range result.Orders {
 		r := &RechargeDetailRecord{
 			UserID:       o.UserID,
+			UserEmail:    o.UserEmail,
 			OrderNo:      o.ID,
 			CreditAmount: o.Amount,
 		}

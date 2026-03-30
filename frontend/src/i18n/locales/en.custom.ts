@@ -967,6 +967,7 @@ export default {
       merchantRateSnapshot: 'Commission Rate',
       commission: 'Commission',
       createdAt: 'Time',
+      userEmail: 'Email',
       orderNo: 'Order No.',
       creditAmount: 'Credit (USD)',
       paidAt: 'Paid At',
