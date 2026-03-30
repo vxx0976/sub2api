@@ -7,7 +7,6 @@ import (
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
-	"github.com/Wei-Shaw/sub2api/internal/pkg/payment"
 	"github.com/google/wire"
 	"github.com/redis/go-redis/v9"
 )
@@ -490,8 +489,6 @@ var ProviderSet = wire.NewSet(
 	NewAntigravityQuotaFetcher,
 	NewUserAttributeService,
 	NewUsageCache,
-	NewOrderService,
-	NewRechargeOrderService,
 	NewReferralService,
 	NewTotpService,
 	NewChannelService,
@@ -503,9 +500,6 @@ var ProviderSet = wire.NewSet(
 	ProvideIdempotencyCoordinator,
 	ProvideSystemOperationLockService,
 	ProvideIdempotencyCleanupService,
-	NewPaymentMonitorService,
-	wire.Bind(new(payment.OrderMatcher), new(*PaymentMonitorService)),
-	NewExchangeRateService,
 	NewSoraS3Storage,
 	NewSoraGenerationService,
 	NewSoraQuotaService,

@@ -25,7 +25,6 @@ type AdminHandlers struct {
 	Ops              *admin.OpsHandler
 	System           *admin.SystemHandler
 	Subscription     *admin.SubscriptionHandler
-	Order            *admin.OrderHandler
 	Usage            *admin.UsageHandler
 	UserAttribute    *admin.UserAttributeHandler
 	Referral         *admin.ReferralHandler
@@ -58,8 +57,6 @@ type Handlers struct {
 	Usage         *UsageHandler
 	Redeem        *RedeemHandler
 	Subscription  *SubscriptionHandler
-	Payment       *PaymentHandler
-	Recharge      *RechargeHandler
 	Announcement  *AnnouncementHandler
 	Admin         *AdminHandlers
 	Reseller      *ResellerHandlers

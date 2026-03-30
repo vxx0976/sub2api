@@ -144,8 +144,6 @@ func registerRoutes(
 	routes.RegisterSoraClientRoutes(v1, h, jwtAuth, settingService)
 	routes.RegisterAdminRoutes(v1, h, adminAuth)
 	routes.RegisterResellerRoutes(v1, h, resellerAuth)
-	routes.RegisterPaymentRoutes(v1, h, jwtAuth)
-	routes.RegisterRechargeRoutes(v1, h, jwtAuth, adminAuth)
 	routes.RegisterGatewayRoutes(r, h, apiKeyAuth, apiKeyService, subscriptionService, opsService, settingService, cfg)
 }
 

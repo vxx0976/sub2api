@@ -19,6 +19,14 @@ import (
 	"golang.org/x/sync/singleflight"
 )
 
+// RechargeConfig 充值配置
+type RechargeConfig struct {
+	Enabled    bool    `json:"enabled"`
+	MinAmount  float64 `json:"min_amount"`
+	MaxAmount  float64 `json:"max_amount"`
+	UsdCnyRate float64 `json:"usd_cny_rate"`
+}
+
 var (
 	ErrRegistrationDisabled   = infraerrors.Forbidden("REGISTRATION_DISABLED", "registration is currently disabled")
 	ErrSettingNotFound        = infraerrors.NotFound("SETTING_NOT_FOUND", "setting not found")

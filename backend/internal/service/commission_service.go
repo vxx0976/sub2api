@@ -51,6 +51,14 @@ type ResellerWithdrawal struct {
 	RejectedAt     *time.Time `json:"rejected_at,omitempty"`
 }
 
+// RechargeDetailRecord is one row of sub-user recharge history for merchant commission
+type RechargeDetailRecord struct {
+	UserID       int64     `json:"user_id"`
+	OrderNo      string    `json:"order_no"`
+	CreditAmount float64   `json:"credit_amount"`
+	PaidAt       time.Time `json:"paid_at"`
+}
+
 // CommissionSummary is the response for /reseller/commissions/summary
 type CommissionSummary struct {
 	CommissionRate  float64 `json:"commission_rate"`
@@ -106,7 +114,6 @@ type CommissionService struct {
 	usageLogRepo      UsageLogRepository
 	userRepo          UserRepository
 	settingRepo       ResellerSettingRepository
-	rechargeOrderRepo RechargeOrderRepository
 	domainRepo        ResellerDomainRepository
 	sub2apipayService *Sub2apipayService
 }
@@ -116,7 +123,6 @@ func NewCommissionService(
 	usageLogRepo UsageLogRepository,
 	userRepo UserRepository,
 	settingRepo ResellerSettingRepository,
-	rechargeOrderRepo RechargeOrderRepository,
 	domainRepo ResellerDomainRepository,
 	sub2apipayService *Sub2apipayService,
 ) *CommissionService {
@@ -125,7 +131,6 @@ func NewCommissionService(
 		usageLogRepo:      usageLogRepo,
 		userRepo:          userRepo,
 		settingRepo:       settingRepo,
-		rechargeOrderRepo: rechargeOrderRepo,
 		domainRepo:        domainRepo,
 		sub2apipayService: sub2apipayService,
 	}
@@ -372,12 +377,20 @@ func (s *CommissionService) BackfillMerchantRateSnapshot(ctx context.Context) (i
 
 // ListRechargeDetail returns paginated recharge history for a reseller's sub-users
 func (s *CommissionService) ListRechargeDetail(ctx context.Context, resellerID int64, limit, offset int) ([]*RechargeDetailRecord, int, error) {
-	userIDs, err := s.getSubUserIDs(ctx, resellerID)
-	if err != nil {
-		return nil, 0, err
-	}
-	if len(userIDs) == 0 {
+	if s.sub2apipayService == nil {
 		return nil, 0, nil
 	}
-	return s.rechargeOrderRepo.ListPaidByUserIDs(ctx, userIDs, limit, offset)
+	domains, err := s.domainRepo.ListAllDomainNamesByResellerID(ctx, resellerID)
+	if err != nil || len(domains) == 0 {
+		return nil, 0, nil
+	}
+	hosts := make([]string, len(domains))
+	for i, d := range domains {
+		hosts[i] = "https://" + d
+	}
+	page := 1
+	if limit > 0 {
+		page = offset/limit + 1
+	}
+	return s.sub2apipayService.ListRechargesByHosts(ctx, hosts, page, limit)
 }

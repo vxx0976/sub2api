@@ -13,7 +13,6 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/handler"
 	"github.com/Wei-Shaw/sub2api/internal/handler/admin"
 	"github.com/Wei-Shaw/sub2api/internal/handler/reseller"
-	"github.com/Wei-Shaw/sub2api/internal/pkg/payment"
 	"github.com/Wei-Shaw/sub2api/internal/repository"
 	"github.com/Wei-Shaw/sub2api/internal/server"
 	"github.com/Wei-Shaw/sub2api/internal/server/middleware"
@@ -88,17 +87,6 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	usageHandler := handler.NewUsageHandler(usageService, apiKeyService)
 	redeemHandler := handler.NewRedeemHandler(redeemService)
 	subscriptionHandler := handler.NewSubscriptionHandler(subscriptionService)
-	orderRepository := repository.NewOrderRepository(client)
-	alipayPayment, err := payment.ProvideAlipayPayment(configConfig)
-	if err != nil {
-		return nil, err
-	}
-	orderService := service.NewOrderService(orderRepository, groupRepository, subscriptionService, alipayPayment, configConfig, referralService)
-	rechargeOrderRepository := repository.NewRechargeOrderRepository(client)
-	exchangeRateService := service.NewExchangeRateService()
-	rechargeOrderService := service.NewRechargeOrderService(rechargeOrderRepository, redeemCodeRepository, userRepository, settingService, exchangeRateService, alipayPayment, configConfig)
-	paymentHandler := handler.NewPaymentHandler(orderService, rechargeOrderService, alipayPayment, configConfig)
-	rechargeHandler := handler.NewRechargeHandler(rechargeOrderService, settingService, exchangeRateService)
 	announcementRepository := repository.NewAnnouncementRepository(client)
 	announcementReadRepository := repository.NewAnnouncementReadRepository(client)
 	announcementService := service.NewAnnouncementService(announcementRepository, announcementReadRepository, userRepository, userSubscriptionRepository)
@@ -203,7 +191,6 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	systemOperationLockService := service.ProvideSystemOperationLockService(idempotencyRepository, configConfig)
 	systemHandler := handler.ProvideSystemHandler(updateService, systemOperationLockService)
 	adminSubscriptionHandler := admin.NewSubscriptionHandler(subscriptionService)
-	orderHandler := admin.NewOrderHandler(orderService)
 	usageCleanupRepository := repository.NewUsageCleanupRepository(client, db)
 	usageCleanupService := service.ProvideUsageCleanupService(usageCleanupRepository, timingWheelService, dashboardAggregationService, configConfig)
 	adminUsageHandler := admin.NewUsageHandler(usageService, apiKeyService, adminService, usageCleanupService)
@@ -226,10 +213,10 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	scheduledTestHandler := admin.NewScheduledTestHandler(scheduledTestService)
 	resellerWithdrawalRepo := repository.NewResellerWithdrawalRepo(client)
 	sub2apipayService := service.ProvideSub2apipayService(configConfig)
-	commissionService := service.NewCommissionService(resellerWithdrawalRepo, usageLogRepository, userRepository, resellerSettingRepository, rechargeOrderRepository, resellerDomainRepository, sub2apipayService)
+	commissionService := service.NewCommissionService(resellerWithdrawalRepo, usageLogRepository, userRepository, resellerSettingRepository, resellerDomainRepository, sub2apipayService)
 	merchantHandler := admin.NewMerchantHandler(commissionService, adminService)
 	adminWithdrawalHandler := admin.NewAdminWithdrawalHandler(commissionService)
-	adminHandlers := handler.ProvideAdminHandlers(dashboardHandler, adminUserHandler, groupHandler, accountHandler, adminAnnouncementHandler, dataManagementHandler, backupHandler, oAuthHandler, openAIOAuthHandler, geminiOAuthHandler, antigravityOAuthHandler, proxyHandler, adminRedeemHandler, promoHandler, settingHandler, opsHandler, systemHandler, adminSubscriptionHandler, orderHandler, adminUsageHandler, userAttributeHandler, referralHandler, channelHandler, errorPassthroughHandler, adminAPIKeyHandler, scheduledTestHandler, merchantHandler, adminWithdrawalHandler)
+	adminHandlers := handler.ProvideAdminHandlers(dashboardHandler, adminUserHandler, groupHandler, accountHandler, adminAnnouncementHandler, dataManagementHandler, backupHandler, oAuthHandler, openAIOAuthHandler, geminiOAuthHandler, antigravityOAuthHandler, proxyHandler, adminRedeemHandler, promoHandler, settingHandler, opsHandler, systemHandler, adminSubscriptionHandler, adminUsageHandler, userAttributeHandler, referralHandler, channelHandler, errorPassthroughHandler, adminAPIKeyHandler, scheduledTestHandler, merchantHandler, adminWithdrawalHandler)
 	resellerService := service.NewResellerService(userRepository, resellerDomainRepository, groupRepository, resellerSettingRepository, apiKeyRepository, apiKeyService, redeemCodeRepository, announcementRepository, client)
 	resellerDashboardHandler := reseller.NewDashboardHandler(resellerService)
 	domainHandler := reseller.NewDomainHandler(resellerService, settingService)
@@ -261,7 +248,7 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	keyQueryHandler := handler.NewKeyQueryHandler(apiKeyService, subscriptionService, usageService)
 	idempotencyCoordinator := service.ProvideIdempotencyCoordinator(idempotencyRepository, configConfig)
 	idempotencyCleanupService := service.ProvideIdempotencyCleanupService(idempotencyRepository, configConfig)
-	handlers := handler.ProvideHandlers(authHandler, userHandler, apiKeyHandler, usageHandler, redeemHandler, subscriptionHandler, paymentHandler, rechargeHandler, announcementHandler, adminHandlers, resellerHandlers, gatewayHandler, openAIGatewayHandler, soraGatewayHandler, soraClientHandler, handlerSettingHandler, handlerReferralHandler, totpHandler, keyQueryHandler, idempotencyCoordinator, idempotencyCleanupService)
+	handlers := handler.ProvideHandlers(authHandler, userHandler, apiKeyHandler, usageHandler, redeemHandler, subscriptionHandler, announcementHandler, adminHandlers, resellerHandlers, gatewayHandler, openAIGatewayHandler, soraGatewayHandler, soraClientHandler, handlerSettingHandler, handlerReferralHandler, totpHandler, keyQueryHandler, idempotencyCoordinator, idempotencyCleanupService)
 	jwtAuthMiddleware := middleware.NewJWTAuthMiddleware(authService, userService)
 	adminAuthMiddleware := middleware.NewAdminAuthMiddleware(authService, userService, settingService)
 	apiKeyAuthMiddleware := middleware.NewAPIKeyAuthMiddleware(apiKeyService, subscriptionService, configConfig)
@@ -278,10 +265,8 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	tokenRefreshService := service.ProvideTokenRefreshService(accountRepository, soraAccountRepository, oAuthService, openAIOAuthService, geminiOAuthService, antigravityOAuthService, compositeTokenCacheInvalidator, schedulerCache, configConfig, tempUnschedCache, privacyClientFactory, proxyRepository, oAuthRefreshAPI)
 	accountExpiryService := service.ProvideAccountExpiryService(accountRepository)
 	subscriptionExpiryService := service.ProvideSubscriptionExpiryService(userSubscriptionRepository)
-	paymentMonitorService := service.NewPaymentMonitorService(orderService, rechargeOrderService)
-	alipayMonitor := payment.ProvideAlipayMonitor(alipayPayment, paymentMonitorService, configConfig)
 	scheduledTestRunnerService := service.ProvideScheduledTestRunnerService(scheduledTestPlanRepository, scheduledTestService, accountTestService, rateLimitService, configConfig)
-	v := provideCleanup(client, redisClient, opsMetricsCollector, opsAggregationService, opsAlertEvaluatorService, opsCleanupService, opsScheduledReportService, opsSystemLogSink, soraMediaCleanupService, schedulerSnapshotService, tokenRefreshService, accountExpiryService, subscriptionExpiryService, usageCleanupService, idempotencyCleanupService, pricingService, emailQueueService, billingCacheService, usageRecordWorkerPool, subscriptionService, oAuthService, openAIOAuthService, geminiOAuthService, antigravityOAuthService, alipayMonitor, openAIGatewayService, scheduledTestRunnerService, backupService)
+	v := provideCleanup(client, redisClient, opsMetricsCollector, opsAggregationService, opsAlertEvaluatorService, opsCleanupService, opsScheduledReportService, opsSystemLogSink, soraMediaCleanupService, schedulerSnapshotService, tokenRefreshService, accountExpiryService, subscriptionExpiryService, usageCleanupService, idempotencyCleanupService, pricingService, emailQueueService, billingCacheService, usageRecordWorkerPool, subscriptionService, oAuthService, openAIOAuthService, geminiOAuthService, antigravityOAuthService, openAIGatewayService, scheduledTestRunnerService, backupService)
 	application := &Application{
 		Server:  httpServer,
 		Cleanup: v,
@@ -332,7 +317,6 @@ func provideCleanup(
 	openaiOAuth *service.OpenAIOAuthService,
 	geminiOAuth *service.GeminiOAuthService,
 	antigravityOAuth *service.AntigravityOAuthService,
-	alipayMonitor *payment.AlipayMonitor,
 	openAIGateway *service.OpenAIGatewayService,
 	scheduledTestRunner *service.ScheduledTestRunnerService,
 	backupSvc *service.BackupService,
@@ -347,12 +331,6 @@ func provideCleanup(
 		}
 
 		parallelSteps := []cleanupStep{
-			{"AlipayMonitor", func() error {
-				if alipayMonitor != nil {
-					alipayMonitor.Stop()
-				}
-				return nil
-			}},
 			{"OpsScheduledReportService", func() error {
 				if opsScheduledReport != nil {
 					opsScheduledReport.Stop()
