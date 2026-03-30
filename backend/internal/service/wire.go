@@ -407,19 +407,17 @@ func ProvideSettingService(settingRepo SettingRepository, groupRepo GroupReposit
 }
 
 // ProvideSub2apipayService creates Sub2apipayService by reading settings from DB.
-// It extracts the base URL from purchase_subscription_url and uses admin_api_key as the token.
-func ProvideSub2apipayService(settingRepo SettingRepository) *Sub2apipayService {
+// It extracts the base URL from purchase_subscription_url and generates an admin JWT for auth.
+func ProvideSub2apipayService(settingRepo SettingRepository, cfg *config.Config) *Sub2apipayService {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	payURL, _ := settingRepo.GetValue(ctx, SettingKeyPurchaseSubscriptionURL)
-	adminKey, _ := settingRepo.GetValue(ctx, SettingKeyAdminAPIKey)
-	if payURL == "" || adminKey == "" {
+	if payURL == "" {
 		return nil
 	}
 
 	// 从 purchase_subscription_url 截取基础 URL（去掉路径部分）
-	// 例: https://pay.clicodeplus.com/pay?src=xxx → https://pay.clicodeplus.com
 	apiURL := payURL
 	if idx := strings.Index(payURL, "://"); idx != -1 {
 		if pathIdx := strings.Index(payURL[idx+3:], "/"); pathIdx != -1 {
@@ -427,7 +425,7 @@ func ProvideSub2apipayService(settingRepo SettingRepository) *Sub2apipayService 
 		}
 	}
 
-	return NewSub2apipayService(apiURL, adminKey)
+	return NewSub2apipayService(apiURL, cfg.JWT.Secret)
 }
 
 // ProviderSet is the Wire provider set for all services

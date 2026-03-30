@@ -7,21 +7,63 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
 // Sub2apipayService calls sub2apipay HTTP API for recharge data.
 type Sub2apipayService struct {
-	apiURL     string
-	adminToken string
+	apiURL    string
+	jwtSecret string
 	httpClient *http.Client
 }
 
-func NewSub2apipayService(apiURL, adminToken string) *Sub2apipayService {
+func NewSub2apipayService(apiURL, jwtSecret string) *Sub2apipayService {
 	return &Sub2apipayService{
 		apiURL:     apiURL,
-		adminToken: adminToken,
+		jwtSecret:  jwtSecret,
 		httpClient: &http.Client{Timeout: 15 * time.Second},
 	}
+}
+
+// generateAdminToken creates a short-lived admin JWT for sub2apipay auth.
+func (s *Sub2apipayService) generateAdminToken() (string, error) {
+	now := time.Now()
+	claims := jwt.MapClaims{
+		"user_id": 1,
+		"role":    "admin",
+		"exp":     now.Add(5 * time.Minute).Unix(),
+		"iat":     now.Unix(),
+		"nbf":     now.Unix(),
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(s.jwtSecret))
+}
+
+// doRequest creates and executes an authenticated request to sub2apipay.
+func (s *Sub2apipayService) doRequest(ctx context.Context, path string, payload interface{}) (*http.Response, error) {
+	body, _ := json.Marshal(payload)
+	req, err := http.NewRequestWithContext(ctx, "POST", s.apiURL+path, bytes.NewReader(body))
+	if err != nil {
+		return nil, fmt.Errorf("sub2apipay: build request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	token, err := s.generateAdminToken()
+	if err != nil {
+		return nil, fmt.Errorf("sub2apipay: generate token: %w", err)
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	resp, err := s.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("sub2apipay: request failed: %w", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		resp.Body.Close()
+		return nil, fmt.Errorf("sub2apipay: unexpected status %d", resp.StatusCode)
+	}
+	return resp, nil
 }
 
 // SumRechargeByHosts returns total recharge amount per srcHost from sub2apipay.
@@ -30,23 +72,11 @@ func (s *Sub2apipayService) SumRechargeByHosts(ctx context.Context, hosts []stri
 		return nil, nil
 	}
 
-	body, _ := json.Marshal(map[string]interface{}{"hosts": hosts})
-	req, err := http.NewRequestWithContext(ctx, "POST", s.apiURL+"/api/admin/orders/sum-by-host", bytes.NewReader(body))
+	resp, err := s.doRequest(ctx, "/api/admin/orders/sum-by-host", map[string]interface{}{"hosts": hosts})
 	if err != nil {
-		return nil, fmt.Errorf("sub2apipay: build request: %w", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+s.adminToken)
-
-	resp, err := s.httpClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("sub2apipay: request failed: %w", err)
+		return nil, err
 	}
 	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("sub2apipay: unexpected status %d", resp.StatusCode)
-	}
 
 	var result struct {
 		Totals map[string]float64 `json:"totals"`
@@ -54,7 +84,6 @@ func (s *Sub2apipayService) SumRechargeByHosts(ctx context.Context, hosts []stri
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, fmt.Errorf("sub2apipay: decode response: %w", err)
 	}
-
 	return result.Totals, nil
 }
 
@@ -64,35 +93,22 @@ func (s *Sub2apipayService) ListRechargesByHosts(ctx context.Context, hosts []st
 		return nil, 0, nil
 	}
 
-	body, _ := json.Marshal(map[string]interface{}{
+	resp, err := s.doRequest(ctx, "/api/admin/orders/list-by-host", map[string]interface{}{
 		"hosts":     hosts,
 		"page":      page,
 		"page_size": pageSize,
 	})
-	req, err := http.NewRequestWithContext(ctx, "POST", s.apiURL+"/api/admin/orders/list-by-host", bytes.NewReader(body))
 	if err != nil {
-		return nil, 0, fmt.Errorf("sub2apipay: build request: %w", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+s.adminToken)
-
-	resp, err := s.httpClient.Do(req)
-	if err != nil {
-		return nil, 0, fmt.Errorf("sub2apipay: request failed: %w", err)
+		return nil, 0, err
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return nil, 0, fmt.Errorf("sub2apipay: unexpected status %d", resp.StatusCode)
-	}
-
 	var result struct {
 		Orders []struct {
-			ID      string   `json:"id"`
-			UserID  int64    `json:"userId"`
-			Amount  float64  `json:"amount"`
-			PaidAt  *string  `json:"paidAt"`
-			SrcHost *string  `json:"srcHost"`
+			ID     string  `json:"id"`
+			UserID int64   `json:"userId"`
+			Amount float64 `json:"amount"`
+			PaidAt *string `json:"paidAt"`
 		} `json:"orders"`
 		Total int `json:"total"`
 	}
@@ -114,6 +130,5 @@ func (s *Sub2apipayService) ListRechargesByHosts(ctx context.Context, hosts []st
 		}
 		records = append(records, r)
 	}
-
 	return records, result.Total, nil
 }
