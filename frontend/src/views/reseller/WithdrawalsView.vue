@@ -12,7 +12,7 @@
             <p class="text-xs text-blue-600 dark:text-blue-400">{{ t('reseller.withdrawals.available') }}</p>
             <p class="text-lg font-bold text-blue-700 dark:text-blue-300">¥{{ Number(summary.available).toFixed(2) }}</p>
           </div>
-          <button @click="openApplyDialog" class="btn">
+          <button @click="openApplyDialog" class="btn btn-primary">
             {{ t('reseller.withdrawals.apply') }}
           </button>
         </div>
@@ -178,7 +178,7 @@
             type="submit"
             form="withdrawal-form"
             :disabled="applySubmitting"
-            class="btn"
+            class="btn btn-primary"
           >
             {{ applySubmitting ? t('common.saving') : t('reseller.withdrawals.submit') }}
           </button>
