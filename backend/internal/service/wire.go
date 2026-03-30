@@ -510,6 +510,7 @@ var ProviderSet = wire.NewSet(
 	NewErrorPassthroughService,
 	NewResellerService,
 	NewCommissionService,
+	NewTLSFingerprintProfileService,
 
 	NewDigestSessionStore,
 	ProvideIdempotencyCoordinator,

@@ -27,6 +27,7 @@ import scheduledTestsAPI from './scheduledTests'
 import merchantsAPI from './merchants'
 import merchantWithdrawalsAPI from './merchantWithdrawals'
 import backupAPI from './backup'
+import tlsFingerprintProfileAPI from './tlsFingerprintProfile'
 
 /**
  * Unified admin API object for convenient access
@@ -55,7 +56,8 @@ export const adminAPI = {
   scheduledTests: scheduledTestsAPI,
   merchants: merchantsAPI,
   merchantWithdrawals: merchantWithdrawalsAPI,
-  backup: backupAPI
+  backup: backupAPI,
+  tlsFingerprintProfiles: tlsFingerprintProfileAPI
 }
 
 export {
@@ -82,7 +84,8 @@ export {
   scheduledTestsAPI,
   merchantsAPI,
   merchantWithdrawalsAPI,
-  backupAPI
+  backupAPI,
+  tlsFingerprintProfileAPI
 }
 
 export default adminAPI
@@ -93,3 +96,4 @@ export type { ErrorPassthroughRule, CreateRuleRequest, UpdateRuleRequest } from 
 export type { BackupAgentHealth, DataManagementConfig } from './dataManagement'
 export type { MerchantUser, MerchantSettings } from './merchants'
 export type { AdminWithdrawalItem, AdminWithdrawalListResponse } from './merchantWithdrawals'
+export type { TLSFingerprintProfile, CreateProfileRequest, UpdateProfileRequest } from './tlsFingerprintProfile'
