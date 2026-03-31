@@ -332,7 +332,7 @@ export async function updateStreamTimeoutSettings(
  * Announcements response
  */
 export interface AnnouncementsResponse {
-  announcements: { title: string; date?: string }[]
+  announcements: { title: string; content?: string; date?: string }[]
 }
 
 /**

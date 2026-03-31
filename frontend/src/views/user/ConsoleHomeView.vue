@@ -13,13 +13,29 @@
           <div
             v-for="(announcement, index) in announcements"
             :key="index"
-            class="flex items-center gap-3 rounded-lg bg-gray-50 px-4 py-2.5 dark:bg-dark-800"
+            class="rounded-lg bg-gray-50 dark:bg-dark-800"
           >
-            <div class="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30">
-              <Icon name="infoCircle" size="sm" class="text-amber-600 dark:text-amber-400" />
+            <div
+              class="flex items-center gap-3 px-4 py-2.5"
+              :class="announcement.content ? 'cursor-pointer' : ''"
+              @click="announcement.content && toggleExpand(index)"
+            >
+              <div class="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30">
+                <Icon name="infoCircle" size="sm" class="text-amber-600 dark:text-amber-400" />
+              </div>
+              <p class="flex-1 text-sm font-medium text-gray-900 dark:text-white">{{ announcement.title }}</p>
+              <span v-if="announcement.date" class="flex-shrink-0 text-xs text-gray-400 dark:text-dark-500">{{ announcement.date }}</span>
+              <Icon
+                v-if="announcement.content"
+                name="chevronDown"
+                size="sm"
+                class="flex-shrink-0 text-gray-400 transition-transform duration-200"
+                :class="expandedSet.has(index) ? 'rotate-180' : ''"
+              />
             </div>
-            <p class="flex-1 text-sm font-medium text-gray-900 dark:text-white">{{ announcement.title }}</p>
-            <span v-if="announcement.date" class="flex-shrink-0 text-xs text-gray-400 dark:text-dark-500">{{ announcement.date }}</span>
+            <div v-if="announcement.content && expandedSet.has(index)" class="border-t border-gray-200 px-4 py-3 dark:border-dark-700">
+              <div class="markdown-body prose prose-sm max-w-none dark:prose-invert" v-html="renderMarkdown(announcement.content)"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -109,11 +125,30 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, reactive } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { Marked } from 'marked'
+import DOMPurify from 'dompurify'
 import { useAppStore, useAuthStore } from '@/stores'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import Icon from '@/components/icons/Icon.vue'
+
+const md = new Marked({ breaks: true, gfm: true })
+
+const expandedSet = reactive(new Set<number>())
+
+function toggleExpand(index: number) {
+  if (expandedSet.has(index)) {
+    expandedSet.delete(index)
+  } else {
+    expandedSet.add(index)
+  }
+}
+
+function renderMarkdown(content: string): string {
+  if (!content) return ''
+  return DOMPurify.sanitize(md.parse(content) as string)
+}
 
 const { t } = useI18n()
 const appStore = useAppStore()

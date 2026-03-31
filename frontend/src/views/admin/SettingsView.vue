@@ -1320,6 +1320,12 @@
                     </div>
                     <div>
                       <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
+                        {{ t('admin.settings.announcements.contentLabel') }}
+                      </label>
+                      <MarkdownEditor v-model="item.content" :rows="4" />
+                    </div>
+                    <div>
+                      <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
                         {{ t('admin.settings.announcements.dateLabel') }}
                       </label>
                       <input
@@ -1662,12 +1668,11 @@
               <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                 {{ t('admin.settings.site.homeContent') }}
               </label>
-              <textarea
+              <MarkdownEditor
                 v-model="form.home_content"
-                rows="6"
-                class="input font-mono text-sm"
+                :rows="6"
                 :placeholder="t('admin.settings.site.homeContentPlaceholder')"
-              ></textarea>
+              />
               <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
                 {{ t('admin.settings.site.homeContentHint') }}
               </p>
@@ -2208,6 +2213,7 @@ import GroupBadge from '@/components/common/GroupBadge.vue'
 import GroupOptionItem from '@/components/common/GroupOptionItem.vue'
 import Toggle from '@/components/common/Toggle.vue'
 import ImageUpload from '@/components/common/ImageUpload.vue'
+import MarkdownEditor from '@/components/common/MarkdownEditor.vue'
 import BackupSettings from '@/views/admin/BackupView.vue'
 import DataManagementSettings from '@/views/admin/DataManagementView.vue'
 import { useClipboard } from '@/composables/useClipboard'
@@ -2278,6 +2284,7 @@ const streamTimeoutForm = reactive({
 // Announcements 状态
 interface AnnouncementItem {
   title: string
+  content: string
   date?: string
 }
 const announcementsLoading = ref(true)
@@ -2920,7 +2927,7 @@ async function loadAnnouncements() {
   announcementsLoading.value = true
   try {
     const result = await adminAPI.settings.getAnnouncements()
-    announcementsList.value = result.announcements || []
+    announcementsList.value = (result.announcements || []).map(a => ({ ...a, content: a.content || '' }))
   } catch (error: any) {
     console.error('Failed to load announcements:', error)
   } finally {
@@ -2929,7 +2936,7 @@ async function loadAnnouncements() {
 }
 
 function addAnnouncement() {
-  announcementsList.value.push({ title: '', date: '' })
+  announcementsList.value.push({ title: '', content: '', date: '' })
 }
 
 function removeAnnouncement(index: number) {

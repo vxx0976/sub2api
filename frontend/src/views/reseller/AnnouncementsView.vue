@@ -104,7 +104,7 @@
             </div>
             <div>
               <label class="label">{{ t('reseller.announcements.content') }}</label>
-              <textarea v-model="form.content" class="input" rows="4" required />
+              <MarkdownEditor v-model="form.content" :rows="6" required />
             </div>
             <div>
               <label class="label">{{ t('reseller.announcements.status') }}</label>
@@ -164,6 +164,7 @@ import AppLayout from '@/components/layout/AppLayout.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import Pagination from '@/components/common/Pagination.vue'
 import Icon from '@/components/icons/Icon.vue'
+import MarkdownEditor from '@/components/common/MarkdownEditor.vue'
 
 const { t } = useI18n()
 const appStore = useAppStore()

@@ -4801,10 +4801,11 @@ export default {
         saveFailed: 'Failed to save stream timeout settings'
       },
       announcements: {
-        title: 'System Announcements',
-        description: 'Manage announcements displayed on the console home page',
+        title: 'Home Announcements',
+        description: 'Announcement entries shown on the user console home page',
         titleLabel: 'Announcement Title',
-        titlePlaceholder: 'Enter announcement content',
+        titlePlaceholder: 'Enter announcement title',
+        contentLabel: 'Content (Markdown)',
         dateLabel: 'Date (optional)',
         datePlaceholder: 'e.g., 2026-01-25',
         add: 'Add Announcement',
@@ -5360,5 +5361,27 @@ export default {
     examplePrompt2: 'Drone aerial view, green aurora reflecting on a glacial lake in Iceland, slow push-in',
     examplePrompt3: 'Cyberpunk futuristic city, neon lights reflected in rain puddles, nightscape, cinematic colors',
     examplePrompt4: 'Chinese ink painting style, a small boat drifting among misty mountains and rivers, classical atmosphere'
+  },
+  markdownEditor: {
+    edit: 'Edit',
+    preview: 'Preview',
+    bold: 'Bold',
+    italic: 'Italic',
+    strikethrough: 'Strikethrough',
+    heading: 'Heading',
+    quote: 'Quote',
+    code: 'Code',
+    unorderedList: 'Unordered List',
+    orderedList: 'Ordered List',
+    link: 'Link',
+    emptyPreview: 'Nothing to preview',
+    boldText: 'bold text',
+    italicText: 'italic text',
+    strikethroughText: 'strikethrough text',
+    headingText: 'Heading',
+    quoteText: 'quote text',
+    codeText: 'code',
+    listItem: 'list item',
+    linkText: 'link text'
   }
 }

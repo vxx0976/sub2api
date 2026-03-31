@@ -176,7 +176,7 @@
 
         <div>
           <label class="input-label">{{ t('admin.announcements.form.content') }}</label>
-          <textarea v-model="form.content" rows="6" class="input" required></textarea>
+          <MarkdownEditor v-model="form.content" :rows="8" required />
         </div>
 
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -263,6 +263,7 @@ import Select from '@/components/common/Select.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import Icon from '@/components/icons/Icon.vue'
 
+import MarkdownEditor from '@/components/common/MarkdownEditor.vue'
 import AnnouncementTargetingEditor from '@/components/admin/announcements/AnnouncementTargetingEditor.vue'
 import AnnouncementReadStatusDialog from '@/components/admin/announcements/AnnouncementReadStatusDialog.vue'
 

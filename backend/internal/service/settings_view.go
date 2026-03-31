@@ -95,8 +95,9 @@ type SystemSettings struct {
 
 // SimpleAnnouncement represents a single announcement item for public display
 type SimpleAnnouncement struct {
-	Title string `json:"title"`
-	Date  string `json:"date,omitempty"`
+	Title   string `json:"title"`
+	Content string `json:"content,omitempty"`
+	Date    string `json:"date,omitempty"`
 }
 
 type DefaultSubscriptionSetting struct {

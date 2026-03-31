@@ -4774,10 +4774,11 @@ export default {
         saveFailed: '保存流超时设置失败'
       },
       announcements: {
-        title: '系统公告',
-        description: '管理在控制台首页显示的系统公告',
+        title: '首页公告',
+        description: '在用户控制台首页显示的公告条目',
         titleLabel: '公告标题',
-        titlePlaceholder: '输入公告内容',
+        titlePlaceholder: '输入公告标题',
+        contentLabel: '公告内容（Markdown）',
         dateLabel: '日期（可选）',
         datePlaceholder: '如：2026-01-25',
         add: '添加公告',
@@ -5359,5 +5360,27 @@ export default {
     examplePrompt2: '无人机航拍视角，冰岛极光下的冰川湖面反射绿色光芒，慢速推进',
     examplePrompt3: '赛博朋克风格的未来城市，霓虹灯倒映在雨后积水中，夜景，电影级色彩',
     examplePrompt4: '水墨画风格，一叶扁舟在山水间漂泊，薄雾缭绕，中国古典意境'
+  },
+  markdownEditor: {
+    edit: '编辑',
+    preview: '预览',
+    bold: '粗体',
+    italic: '斜体',
+    strikethrough: '删除线',
+    heading: '标题',
+    quote: '引用',
+    code: '代码',
+    unorderedList: '无序列表',
+    orderedList: '有序列表',
+    link: '链接',
+    emptyPreview: '暂无内容可预览',
+    boldText: '粗体文本',
+    italicText: '斜体文本',
+    strikethroughText: '删除线文本',
+    headingText: '标题',
+    quoteText: '引用文本',
+    codeText: '代码',
+    listItem: '列表项',
+    linkText: '链接文本'
   }
 }

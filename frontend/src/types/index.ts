@@ -85,6 +85,7 @@ export interface SendVerifyCodeResponse {
 
 export interface SimpleAnnouncement {
   title: string
+  content?: string
   date?: string
 }
 

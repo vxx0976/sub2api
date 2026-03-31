@@ -4323,10 +4323,11 @@ export default {
         saveFailed: 'Не удалось сохранить настройки тайм-аута потока'
       },
       announcements: {
-        title: 'Системные объявления',
-        description: 'Управление объявлениями, отображаемыми на главной странице консоли',
+        title: 'Объявления на главной',
+        description: 'Объявления, отображаемые на главной странице консоли',
         titleLabel: 'Заголовок объявления',
-        titlePlaceholder: 'Введите содержание объявления',
+        titlePlaceholder: 'Введите заголовок объявления',
+        contentLabel: 'Содержание (Markdown)',
         dateLabel: 'Дата (опционально)',
         datePlaceholder: 'например, 2026-01-25',
         add: 'Добавить объявление',
@@ -5186,5 +5187,27 @@ export default {
       contactInfo: 'Контактная информация',
       cryptoPlaceholder: 'По одному на строку, формат: МОНЕТА:адрес'
     }
+  },
+  markdownEditor: {
+    edit: 'Редактировать',
+    preview: 'Предпросмотр',
+    bold: 'Жирный',
+    italic: 'Курсив',
+    strikethrough: 'Зачёркнутый',
+    heading: 'Заголовок',
+    quote: 'Цитата',
+    code: 'Код',
+    unorderedList: 'Маркированный список',
+    orderedList: 'Нумерованный список',
+    link: 'Ссылка',
+    emptyPreview: 'Нет содержимого для предпросмотра',
+    boldText: 'жирный текст',
+    italicText: 'курсивный текст',
+    strikethroughText: 'зачёркнутый текст',
+    headingText: 'Заголовок',
+    quoteText: 'текст цитаты',
+    codeText: 'код',
+    listItem: 'элемент списка',
+    linkText: 'текст ссылки'
   }
 }
