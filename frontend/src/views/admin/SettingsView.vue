@@ -1299,70 +1299,7 @@
             </div>
 
             <template v-else>
-              <!-- Announcements List -->
-              <div v-if="announcementsList.length > 0" class="space-y-3">
-                <div
-                  v-for="(item, index) in announcementsList"
-                  :key="index"
-                  class="flex items-start gap-3 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-dark-600 dark:bg-dark-800"
-                >
-                  <div class="flex-1 space-y-3">
-                    <div>
-                      <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
-                        {{ t('admin.settings.announcements.titleLabel') }}
-                      </label>
-                      <input
-                        v-model="item.title"
-                        type="text"
-                        class="input text-sm"
-                        :placeholder="t('admin.settings.announcements.titlePlaceholder')"
-                      />
-                    </div>
-                    <div>
-                      <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
-                        {{ t('admin.settings.announcements.contentLabel') }}
-                      </label>
-                      <MarkdownEditor v-model="item.content" :rows="4" />
-                    </div>
-                    <div>
-                      <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
-                        {{ t('admin.settings.announcements.dateLabel') }}
-                      </label>
-                      <input
-                        v-model="item.date"
-                        type="text"
-                        class="input text-sm"
-                        :placeholder="t('admin.settings.announcements.datePlaceholder')"
-                      />
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    @click="removeAnnouncement(index)"
-                    class="mt-6 flex-shrink-0 rounded-lg p-2 text-gray-400 hover:bg-gray-200 hover:text-red-500 dark:hover:bg-dark-700"
-                  >
-                    <Icon name="trash" size="sm" />
-                  </button>
-                </div>
-              </div>
-
-              <!-- Empty State -->
-              <div v-else class="rounded-lg border-2 border-dashed border-gray-200 p-6 text-center dark:border-dark-600">
-                <Icon name="chatBubble" size="lg" class="mx-auto text-gray-400" />
-                <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                  {{ t('admin.settings.announcements.empty') }}
-                </p>
-              </div>
-
-              <!-- Add Button -->
-              <button
-                type="button"
-                @click="addAnnouncement"
-                class="btn btn-secondary btn-sm w-full"
-              >
-                <Icon name="plus" size="sm" class="mr-1" />
-                {{ t('admin.settings.announcements.add') }}
-              </button>
+              <MarkdownEditor v-model="announcementContent" :rows="6" />
 
               <!-- Save Button -->
               <div class="flex justify-end border-t border-gray-100 pt-4 dark:border-dark-700">
@@ -2282,14 +2219,9 @@ const streamTimeoutForm = reactive({
 })
 
 // Announcements 状态
-interface AnnouncementItem {
-  title: string
-  content: string
-  date?: string
-}
 const announcementsLoading = ref(true)
 const announcementsSaving = ref(false)
-const announcementsList = ref<AnnouncementItem[]>([])
+const announcementContent = ref('')
 
 // Rectifier 状态
 const rectifierLoading = ref(true)
@@ -2927,7 +2859,17 @@ async function loadAnnouncements() {
   announcementsLoading.value = true
   try {
     const result = await adminAPI.settings.getAnnouncements()
-    announcementsList.value = (result.announcements || []).map(a => ({ ...a, content: a.content || '' }))
+    // 兼容旧数据：如果有多条，合并 title 和 content
+    const items = result.announcements || []
+    announcementContent.value = items
+      .map(a => {
+        const parts = []
+        if (a.title) parts.push(`## ${a.title}`)
+        if (a.content) parts.push(a.content)
+        return parts.join('\n\n')
+      })
+      .filter(Boolean)
+      .join('\n\n---\n\n')
   } catch (error: any) {
     console.error('Failed to load announcements:', error)
   } finally {
@@ -2935,23 +2877,12 @@ async function loadAnnouncements() {
   }
 }
 
-function addAnnouncement() {
-  announcementsList.value.push({ title: '', content: '', date: '' })
-}
-
-function removeAnnouncement(index: number) {
-  announcementsList.value.splice(index, 1)
-}
-
 async function saveAnnouncements() {
-  // Filter out empty announcements
-  const validAnnouncements = announcementsList.value.filter(a => a.title.trim())
-
   announcementsSaving.value = true
   try {
-    await adminAPI.settings.updateAnnouncements({ announcements: validAnnouncements })
-    announcementsList.value = validAnnouncements
-    // Refresh cached public settings
+    const content = announcementContent.value.trim()
+    const announcements = content ? [{ title: '', content }] : []
+    await adminAPI.settings.updateAnnouncements({ announcements })
     await appStore.fetchPublicSettings(true)
     appStore.showSuccess(t('admin.settings.announcements.saved'))
   } catch (error: any) {
