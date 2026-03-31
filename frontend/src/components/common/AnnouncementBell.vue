@@ -315,8 +315,7 @@
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
-import { marked } from 'marked'
-import DOMPurify from 'dompurify'
+import { renderMarkdown } from '@/utils/markdown'
 import { useAppStore } from '@/stores/app'
 import { useAnnouncementStore } from '@/stores/announcements'
 import { formatRelativeTime, formatRelativeWithDateTime } from '@/utils/format'
@@ -327,12 +326,6 @@ const { t } = useI18n()
 const appStore = useAppStore()
 const announcementStore = useAnnouncementStore()
 
-// Configure marked
-marked.setOptions({
-  breaks: true,
-  gfm: true,
-})
-
 // Use store state (storeToRefs for reactivity)
 const { announcements, loading } = storeToRefs(announcementStore)
 const unreadCount = computed(() => announcementStore.unreadCount)
@@ -341,13 +334,6 @@ const unreadCount = computed(() => announcementStore.unreadCount)
 const isModalOpen = ref(false)
 const detailModalOpen = ref(false)
 const selectedAnnouncement = ref<UserAnnouncement | null>(null)
-
-// Methods
-function renderMarkdown(content: string): string {
-  if (!content) return ''
-  const html = marked.parse(content) as string
-  return DOMPurify.sanitize(html)
-}
 
 function openModal() {
   isModalOpen.value = true

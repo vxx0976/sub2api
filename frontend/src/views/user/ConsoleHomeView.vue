@@ -99,13 +99,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Marked } from 'marked'
-import DOMPurify from 'dompurify'
+import { renderMarkdown } from '@/utils/markdown'
 import { useAppStore, useAuthStore } from '@/stores'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import Icon from '@/components/icons/Icon.vue'
-
-const md = new Marked({ breaks: true, gfm: true })
 
 const { t } = useI18n()
 const appStore = useAppStore()
@@ -136,6 +133,6 @@ const announcementHtml = computed(() => {
     .filter(Boolean)
     .join('\n\n---\n\n')
   if (!markdown) return ''
-  return DOMPurify.sanitize(md.parse(markdown) as string)
+  return renderMarkdown(markdown)
 })
 </script>

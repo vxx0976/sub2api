@@ -90,11 +90,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Marked } from 'marked'
-import DOMPurify from 'dompurify'
+import { renderMarkdown } from '@/utils/markdown'
 import Icon from '@/components/icons/Icon.vue'
-
-const md = new Marked({ breaks: true, gfm: true })
 
 const props = withDefaults(defineProps<{
   modelValue: string
@@ -116,11 +113,7 @@ const activeTab = ref<'edit' | 'preview'>('edit')
 const focused = ref(false)
 const textareaRef = ref<HTMLTextAreaElement | null>(null)
 
-const renderedHtml = computed(() => {
-  if (!props.modelValue) return ''
-  const html = md.parse(props.modelValue) as string
-  return DOMPurify.sanitize(html)
-})
+const renderedHtml = computed(() => renderMarkdown(props.modelValue))
 
 function insertFormat(type: string) {
   const textarea = textareaRef.value
