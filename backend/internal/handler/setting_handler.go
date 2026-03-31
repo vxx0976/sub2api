@@ -38,8 +38,9 @@ func (h *SettingHandler) GetPublicSettings(c *gin.Context) {
 	announcements := make([]dto.SimpleAnnouncement, 0, len(settings.Announcements))
 	for _, a := range settings.Announcements {
 		announcements = append(announcements, dto.SimpleAnnouncement{
-			Title: a.Title,
-			Date:  a.Date,
+			Title:   a.Title,
+			Content: a.Content,
+			Date:    a.Date,
 		})
 	}
 
