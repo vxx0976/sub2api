@@ -1600,24 +1600,6 @@
               />
             </div>
 
-            <!-- Home Content -->
-            <div>
-              <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                {{ t('admin.settings.site.homeContent') }}
-              </label>
-              <MarkdownEditor
-                v-model="form.home_content"
-                :rows="6"
-                :placeholder="t('admin.settings.site.homeContentPlaceholder')"
-              />
-              <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
-                {{ t('admin.settings.site.homeContentHint') }}
-              </p>
-              <!-- iframe CSP Warning -->
-              <p class="mt-2 text-xs text-amber-600 dark:text-amber-400">
-                {{ t('admin.settings.site.homeContentIframeWarning') }}
-              </p>
-            </div>
           </div>
         </div>
 
@@ -1806,22 +1788,6 @@
               />
               <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
                 {{ t('admin.settings.recharge.payTypesHint') }}
-              </p>
-            </div>
-
-            <!-- Tiers -->
-            <div>
-              <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                {{ t('admin.settings.recharge.tiers') }}
-              </label>
-              <textarea
-                v-model="form.recharge_tiers"
-                rows="3"
-                class="input font-mono text-sm"
-                placeholder='[{"min":100,"max":500,"multiplier":1.1},{"min":500,"max":null,"multiplier":1.2}]'
-              />
-              <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
-                {{ t('admin.settings.recharge.tiersHint') }}
               </p>
             </div>
 
@@ -2803,7 +2769,6 @@ async function saveSettings() {
       contact_telegram: form.contact_telegram,
       contact_qq: form.contact_qq,
       doc_url: form.doc_url,
-      home_content: form.home_content,
       backend_mode_enabled: form.backend_mode_enabled,
       hide_ccs_import_button: form.hide_ccs_import_button,
       purchase_subscription_enabled: form.purchase_subscription_enabled,
@@ -2842,7 +2807,6 @@ async function saveSettings() {
       recharge_enabled: form.recharge_enabled,
       recharge_min_amount: form.recharge_min_amount,
       recharge_max_amount: form.recharge_max_amount,
-      recharge_tiers: form.recharge_tiers || undefined,
       recharge_pay_types: form.recharge_pay_types || undefined,
       epay_api_url: form.epay_api_url || undefined,
       epay_pid: form.epay_pid || undefined,

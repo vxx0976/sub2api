@@ -12,6 +12,9 @@ type CreatePaymentRequest struct {
 }
 
 // CreatePaymentResponse API 创建支付响应
+// 兼容两种易支付响应格式:
+//   - 旧版: payurl, qrcode, urlscheme
+//   - 新版: pay_type + pay_info
 type CreatePaymentResponse struct {
 	Code      int    `json:"code"`
 	Msg       string `json:"msg"`
@@ -19,6 +22,8 @@ type CreatePaymentResponse struct {
 	PayURL    string `json:"payurl"`
 	QRCode    string `json:"qrcode"`
 	URLScheme string `json:"urlscheme"`
+	PayType   string `json:"pay_type"` // 新版: qrcode / url / ...
+	PayInfo   string `json:"pay_info"` // 新版: 支付链接
 }
 
 // QueryOrderResponse 订单查询响应

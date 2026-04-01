@@ -26,6 +26,9 @@ func (r *rechargeOrderRepo) Create(ctx context.Context, order *service.RechargeO
 		SetMultiplier(order.Multiplier).
 		SetStatus(order.Status)
 
+	if order.TradeNo != "" {
+		builder.SetTradeNo(order.TradeNo)
+	}
 	if order.PayType != "" {
 		builder.SetPayType(order.PayType)
 	}

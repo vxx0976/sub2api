@@ -164,6 +164,7 @@ func (s *RechargeService) CreateOrder(ctx context.Context, userID int64, amount 
 	expiredAt := time.Now().Add(5 * time.Minute)
 	order := &RechargeOrder{
 		OrderNo:      orderNo,
+		TradeNo:      payResp.TradeNo,
 		UserID:       userID,
 		Amount:       amount,
 		CreditAmount: creditAmount,
@@ -251,7 +252,7 @@ func (s *RechargeService) HandleNotify(ctx context.Context, params map[string]st
 	return nil
 }
 
-// GetOrderStatus 查询订单状态
+// GetOrderStatus 查询订单状态，对 pending 订单主动向易支付查询
 func (s *RechargeService) GetOrderStatus(ctx context.Context, orderNo string, userID int64) (*RechargeOrder, error) {
 	order, err := s.orderRepo.GetByOrderNo(ctx, orderNo)
 	if err != nil {
@@ -260,7 +261,51 @@ func (s *RechargeService) GetOrderStatus(ctx context.Context, orderNo string, us
 	if order == nil || order.UserID != userID {
 		return nil, fmt.Errorf("order not found")
 	}
+
+	// 对 pending 订单主动查询易支付状态
+	if order.Status == "pending" {
+		s.syncOrderFromEpay(ctx, order)
+		// 重新查询最新状态
+		order, _ = s.orderRepo.GetByOrderNo(ctx, orderNo)
+	}
+
 	return order, nil
+}
+
+// syncOrderFromEpay 主动查询易支付订单状态并同步
+func (s *RechargeService) syncOrderFromEpay(ctx context.Context, order *RechargeOrder) {
+	if order.TradeNo == "" {
+		return
+	}
+	epayClient, err := s.getEpayClient(ctx)
+	if err != nil {
+		return
+	}
+	resp, err := epayClient.QueryOrder(order.TradeNo)
+	if err != nil {
+		return
+	}
+	// status=1 表示已支付
+	if resp.Status != 1 {
+		return
+	}
+	// CAS 更新订单状态
+	now := time.Now()
+	tradeNo := resp.TradeNo
+	if err := s.orderRepo.UpdateStatus(ctx, order.OrderNo, "pending", "paid", &tradeNo, &now); err != nil {
+		return
+	}
+	// 充值到账
+	_, err = s.adminService.UpdateUserBalance(ctx, order.UserID, order.CreditAmount, "add",
+		fmt.Sprintf("Recharge order %s, paid ¥%.2f, credited $%.2f", order.OrderNo, order.Amount, order.CreditAmount))
+	if err != nil {
+		logger.LegacyPrintf("service.recharge", "credit balance failed (sync), rolling back: order=%s err=%v", order.OrderNo, err)
+		if rbErr := s.orderRepo.UpdateStatus(ctx, order.OrderNo, "paid", "pending", nil, nil); rbErr != nil {
+			logger.LegacyPrintf("service.recharge", "CRITICAL: rollback failed: order=%s err=%v", order.OrderNo, rbErr)
+		}
+		return
+	}
+	logger.LegacyPrintf("service.recharge", "recharge success (sync): order=%s user=%d amount=¥%.2f credit=$%.2f", order.OrderNo, order.UserID, order.Amount, order.CreditAmount)
 }
 
 // ListUserOrders 查询用户充值记录

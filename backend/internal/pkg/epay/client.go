@@ -81,13 +81,30 @@ func (c *Client) CreatePayment(req CreatePaymentRequest) (*CreatePaymentResponse
 		return nil, err
 	}
 
+	fmt.Printf("[epay] create payment response: %s\n", string(body))
+
 	var resp CreatePaymentResponse
 	if err := json.Unmarshal(body, &resp); err != nil {
 		return nil, fmt.Errorf("epay: decode response: %w", err)
 	}
-	if resp.Code != 1 {
+
+	// 判断是否成功：有 trade_no 即视为成功（兼容 code=0 和 code=1 的平台）
+	if resp.TradeNo == "" {
 		return nil, fmt.Errorf("epay: create payment failed: %s", resp.Msg)
 	}
+
+	// 兼容新版响应格式：pay_type + pay_info → 归一化到 PayURL/QRCode
+	if resp.PayInfo != "" {
+		if resp.PayType == "qrcode" {
+			if resp.QRCode == "" {
+				resp.QRCode = resp.PayInfo
+			}
+		}
+		if resp.PayURL == "" {
+			resp.PayURL = resp.PayInfo
+		}
+	}
+
 	return &resp, nil
 }
 
@@ -106,7 +123,8 @@ func (c *Client) QueryOrder(tradeNo string) (*QueryOrderResponse, error) {
 	if err := json.Unmarshal(body, &resp); err != nil {
 		return nil, fmt.Errorf("epay: decode query response: %w", err)
 	}
-	if resp.Code != 1 {
+	// 兼容 code=0 和 code=1 的平台，有 trade_no 即视为成功
+	if resp.TradeNo == "" {
 		return nil, fmt.Errorf("epay: query order failed: %s", resp.Msg)
 	}
 	return &resp, nil
