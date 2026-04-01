@@ -69,7 +69,10 @@
                   <span class="text-sm text-gray-900 dark:text-white">{{ item.order_no }}</span>
                 </td>
                 <td class="px-4 py-3">
-                  <span class="text-sm text-gray-900 dark:text-white">{{ item.user_id }}</span>
+                  <div>
+                    <span class="text-sm text-gray-900 dark:text-white">{{ item.user_email || '—' }}</span>
+                    <span class="ml-1 text-xs text-gray-400 dark:text-gray-500">#{{ item.user_id }}</span>
+                  </div>
                 </td>
                 <td class="px-4 py-3">
                   <span class="text-sm font-medium text-gray-900 dark:text-white">&yen;{{ item.amount }}</span>

@@ -253,7 +253,7 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	totpHandler := handler.NewTotpHandler(totpService)
 	keyQueryHandler := handler.NewKeyQueryHandler(apiKeyService, subscriptionService, usageService)
 	rechargeService := service.NewRechargeService(rechargeOrderRepository, settingRepository, adminService, settingService)
-	rechargeHandler := handler.NewRechargeHandler(rechargeService)
+	rechargeHandler := handler.NewRechargeHandler(rechargeService, adminService)
 	idempotencyCoordinator := service.ProvideIdempotencyCoordinator(idempotencyRepository, configConfig)
 	idempotencyCleanupService := service.ProvideIdempotencyCleanupService(idempotencyRepository, configConfig)
 	handlers := handler.ProvideHandlers(authHandler, userHandler, apiKeyHandler, usageHandler, redeemHandler, subscriptionHandler, announcementHandler, adminHandlers, resellerHandlers, gatewayHandler, openAIGatewayHandler, soraGatewayHandler, soraClientHandler, handlerSettingHandler, handlerReferralHandler, totpHandler, keyQueryHandler, rechargeHandler, idempotencyCoordinator, idempotencyCleanupService)

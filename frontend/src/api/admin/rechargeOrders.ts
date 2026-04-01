@@ -9,6 +9,7 @@ export interface AdminRechargeOrderItem {
   order_no: string
   trade_no: string
   user_id: number
+  user_email: string
   amount: string
   credit_amount: string
   multiplier: number

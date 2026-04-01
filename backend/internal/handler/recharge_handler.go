@@ -13,11 +13,12 @@ import (
 // RechargeHandler 充值相关接口
 type RechargeHandler struct {
 	rechargeService *service.RechargeService
+	adminService    service.AdminService
 }
 
 // NewRechargeHandler creates a new RechargeHandler
-func NewRechargeHandler(rechargeService *service.RechargeService) *RechargeHandler {
-	return &RechargeHandler{rechargeService: rechargeService}
+func NewRechargeHandler(rechargeService *service.RechargeService, adminService service.AdminService) *RechargeHandler {
+	return &RechargeHandler{rechargeService: rechargeService, adminService: adminService}
 }
 
 // GetConfig GET /api/v1/recharge/config
@@ -171,5 +172,31 @@ func (h *RechargeHandler) AdminListOrders(c *gin.Context) {
 		response.ErrorFrom(c, err)
 		return
 	}
-	response.Paginated(c, orders, int64(total), page, pageSize)
+
+	// 批量查用户邮箱
+	userIDs := make(map[int64]bool)
+	for _, o := range orders {
+		userIDs[o.UserID] = true
+	}
+	emailMap := make(map[int64]string)
+	for uid := range userIDs {
+		if u, err := h.adminService.GetUser(c.Request.Context(), uid); err == nil && u != nil {
+			emailMap[uid] = u.Email
+		}
+	}
+
+	// 构造带邮箱的响应
+	type orderWithEmail struct {
+		*service.RechargeOrder
+		UserEmail string `json:"user_email"`
+	}
+	items := make([]orderWithEmail, len(orders))
+	for i, o := range orders {
+		items[i] = orderWithEmail{
+			RechargeOrder: o,
+			UserEmail:     emailMap[o.UserID],
+		}
+	}
+
+	response.Paginated(c, items, int64(total), page, pageSize)
 }
