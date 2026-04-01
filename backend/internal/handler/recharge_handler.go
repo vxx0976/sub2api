@@ -123,7 +123,27 @@ func (h *RechargeHandler) ListOrders(c *gin.Context) {
 		response.ErrorFrom(c, err)
 		return
 	}
-	response.Paginated(c, orders, int64(total), page, pageSize)
+
+	// 显式构造响应，避免 sonic 省略零值字段
+	items := make([]gin.H, len(orders))
+	for i, o := range orders {
+		items[i] = gin.H{
+			"id":            o.ID,
+			"order_no":      o.OrderNo,
+			"trade_no":      o.TradeNo,
+			"user_id":       o.UserID,
+			"amount":        o.Amount,
+			"credit_amount": o.CreditAmount,
+			"multiplier":    o.Multiplier,
+			"status":        o.Status,
+			"pay_type":      o.PayType,
+			"paid_at":       o.PaidAt,
+			"created_at":    o.CreatedAt,
+			"updated_at":    o.UpdatedAt,
+			"expired_at":    o.ExpiredAt,
+		}
+	}
+	response.Paginated(c, items, int64(total), page, pageSize)
 }
 
 // HandleNotify GET /api/v1/recharge/notify — 异步回调（注意：彩虹易支付回调是 GET）
@@ -174,27 +194,35 @@ func (h *RechargeHandler) AdminListOrders(c *gin.Context) {
 	}
 
 	// 批量查用户邮箱
-	userIDs := make(map[int64]bool)
+	uidSet := make(map[int64]bool)
 	for _, o := range orders {
-		userIDs[o.UserID] = true
+		uidSet[o.UserID] = true
 	}
 	emailMap := make(map[int64]string)
-	for uid := range userIDs {
+	for uid := range uidSet {
 		if u, err := h.adminService.GetUser(c.Request.Context(), uid); err == nil && u != nil {
 			emailMap[uid] = u.Email
 		}
 	}
 
-	// 构造带邮箱的响应
-	type orderWithEmail struct {
-		*service.RechargeOrder
-		UserEmail string `json:"user_email"`
-	}
-	items := make([]orderWithEmail, len(orders))
+	// 显式构造响应，避免 sonic JSON 编码器省略零值字段
+	items := make([]gin.H, len(orders))
 	for i, o := range orders {
-		items[i] = orderWithEmail{
-			RechargeOrder: o,
-			UserEmail:     emailMap[o.UserID],
+		items[i] = gin.H{
+			"id":            o.ID,
+			"order_no":      o.OrderNo,
+			"trade_no":      o.TradeNo,
+			"user_id":       o.UserID,
+			"user_email":    emailMap[o.UserID],
+			"amount":        o.Amount,
+			"credit_amount": o.CreditAmount,
+			"multiplier":    o.Multiplier,
+			"status":        o.Status,
+			"pay_type":      o.PayType,
+			"paid_at":       o.PaidAt,
+			"created_at":    o.CreatedAt,
+			"updated_at":    o.UpdatedAt,
+			"expired_at":    o.ExpiredAt,
 		}
 	}
 
