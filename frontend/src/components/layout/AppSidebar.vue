@@ -571,6 +571,9 @@ const resellerNavItems = computed(() => {
     ...(appStore.cachedPublicSettings?.purchase_subscription_enabled || appStore.cachedPublicSettings?.purchase_enabled ? [
       { path: '/purchase', label: t('nav.buySubscription'), icon: RechargeSubscriptionIcon },
     ] : []),
+    ...(appStore.cachedPublicSettings?.recharge_enabled
+      ? [{ path: '/recharge', label: t('nav.recharge'), icon: CreditCardIcon }]
+      : []),
     { path: '/merchant/settings', label: t('nav.resellerSettings'), icon: CogIcon },
   ]
   return items

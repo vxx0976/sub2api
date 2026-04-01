@@ -392,10 +392,18 @@ func (s *CommissionService) ListRechargeDetail(ctx context.Context, resellerID i
 	if s.rechargeOrderRepo != nil {
 		userIDs, err := s.getSubUserIDs(ctx, resellerID)
 		if err == nil && len(userIDs) > 0 {
+			// 批量查用户邮箱
+			emailMap := make(map[int64]string)
+			for _, uid := range userIDs {
+				if u, err := s.userRepo.GetByID(ctx, uid); err == nil && u != nil {
+					emailMap[uid] = u.Email
+				}
+			}
 			if orders, nativeTotal, err := s.rechargeOrderRepo.ListPaidByUserIDs(ctx, userIDs, 10000, 0); err == nil {
 				for _, o := range orders {
 					rec := &RechargeDetailRecord{
 						UserID:       o.UserID,
+						UserEmail:    emailMap[o.UserID],
 						OrderNo:      o.OrderNo,
 						CreditAmount: o.CreditAmount,
 					}
