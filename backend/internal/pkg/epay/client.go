@@ -85,7 +85,7 @@ func (c *Client) CreatePayment(req CreatePaymentRequest) (*CreatePaymentResponse
 	if err := json.Unmarshal(body, &resp); err != nil {
 		return nil, fmt.Errorf("epay: decode response: %w", err)
 	}
-	if resp.Code != 0 {
+	if resp.Code != 1 {
 		return nil, fmt.Errorf("epay: create payment failed: %s", resp.Msg)
 	}
 	return &resp, nil
@@ -106,7 +106,7 @@ func (c *Client) QueryOrder(tradeNo string) (*QueryOrderResponse, error) {
 	if err := json.Unmarshal(body, &resp); err != nil {
 		return nil, fmt.Errorf("epay: decode query response: %w", err)
 	}
-	if resp.Code != 0 {
+	if resp.Code != 1 {
 		return nil, fmt.Errorf("epay: query order failed: %s", resp.Msg)
 	}
 	return &resp, nil
