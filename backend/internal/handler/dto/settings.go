@@ -108,6 +108,19 @@ type SystemSettings struct {
 	// 平台定价（¥/USD）
 	PlatformSellingPrice float64 `json:"platform_selling_price"`
 
+	// 充值配置
+	RechargeEnabled    bool    `json:"recharge_enabled"`
+	RechargeMinAmount  float64 `json:"recharge_min_amount"`
+	RechargeMaxAmount  float64 `json:"recharge_max_amount"`
+	RechargeTiers      string  `json:"recharge_tiers"`
+	RechargePayTypes   string  `json:"recharge_pay_types"`
+
+	// 易支付配置
+	EpayAPIURL               string `json:"epay_api_url"`
+	EpayPID                  string `json:"epay_pid"`
+	EpayPublicKeyConfigured  bool   `json:"epay_public_key_configured"`
+	EpayPrivateKeyConfigured bool   `json:"epay_private_key_configured"`
+
 	// Gateway forwarding behavior
 	EnableFingerprintUnification bool `json:"enable_fingerprint_unification"`
 	EnableMetadataPassthrough    bool `json:"enable_metadata_passthrough"`
@@ -150,6 +163,7 @@ type PublicSettings struct {
 	PurchaseURL                      string               `json:"purchase_url,omitempty"`
 	CustomMenuItems                  []CustomMenuItem     `json:"custom_menu_items"`
 	CustomEndpoints                  []CustomEndpoint     `json:"custom_endpoints"`
+	RechargeEnabled                  bool                 `json:"recharge_enabled"`
 	LinuxDoOAuthEnabled              bool                 `json:"linuxdo_oauth_enabled"`
 	SoraClientEnabled                bool                 `json:"sora_client_enabled"`
 	BackendModeEnabled               bool                 `json:"backend_mode_enabled"`

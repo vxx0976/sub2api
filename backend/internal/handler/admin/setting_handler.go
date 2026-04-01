@@ -136,6 +136,15 @@ func (h *SettingHandler) GetSettings(c *gin.Context) {
 		AllowUngroupedKeyScheduling:          settings.AllowUngroupedKeyScheduling,
 		BackendModeEnabled:                   settings.BackendModeEnabled,
 		PlatformSellingPrice:                 settings.PlatformSellingPrice,
+		RechargeEnabled:                      settings.RechargeEnabled,
+		RechargeMinAmount:                    settings.RechargeMinAmount,
+		RechargeMaxAmount:                    settings.RechargeMaxAmount,
+		RechargeTiers:                        settings.RechargeTiers,
+		RechargePayTypes:                     settings.RechargePayTypes,
+		EpayAPIURL:                           settings.EpayAPIURL,
+		EpayPID:                              settings.EpayPID,
+		EpayPublicKeyConfigured:              settings.EpayPublicKeyConfigured,
+		EpayPrivateKeyConfigured:             settings.EpayPrivateKeyConfigured,
 		EnableFingerprintUnification:         settings.EnableFingerprintUnification,
 		EnableMetadataPassthrough:            settings.EnableMetadataPassthrough,
 	})
@@ -227,6 +236,19 @@ type UpdateSettingsRequest struct {
 
 	// 平台定价（¥/USD）
 	PlatformSellingPrice *float64 `json:"platform_selling_price"`
+
+	// 充值配置
+	RechargeEnabled   *bool    `json:"recharge_enabled"`
+	RechargeMinAmount *float64 `json:"recharge_min_amount"`
+	RechargeMaxAmount *float64 `json:"recharge_max_amount"`
+	RechargeTiers     *string  `json:"recharge_tiers"`
+	RechargePayTypes  *string  `json:"recharge_pay_types"`
+
+	// 易支付配置
+	EpayAPIURL             *string `json:"epay_api_url"`
+	EpayPID                *string `json:"epay_pid"`
+	EpayPlatformPublicKey  *string `json:"epay_platform_public_key"`
+	EpayMerchantPrivateKey *string `json:"epay_merchant_private_key"`
 
 	// Gateway forwarding behavior
 	EnableFingerprintUnification *bool `json:"enable_fingerprint_unification"`
@@ -620,6 +642,60 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 			}
 			return previousSettings.PlatformSellingPrice
 		}(),
+		RechargeEnabled: func() bool {
+			if req.RechargeEnabled != nil {
+				return *req.RechargeEnabled
+			}
+			return previousSettings.RechargeEnabled
+		}(),
+		RechargeMinAmount: func() float64 {
+			if req.RechargeMinAmount != nil {
+				return *req.RechargeMinAmount
+			}
+			return previousSettings.RechargeMinAmount
+		}(),
+		RechargeMaxAmount: func() float64 {
+			if req.RechargeMaxAmount != nil {
+				return *req.RechargeMaxAmount
+			}
+			return previousSettings.RechargeMaxAmount
+		}(),
+		RechargeTiers: func() string {
+			if req.RechargeTiers != nil {
+				return *req.RechargeTiers
+			}
+			return previousSettings.RechargeTiers
+		}(),
+		RechargePayTypes: func() string {
+			if req.RechargePayTypes != nil {
+				return *req.RechargePayTypes
+			}
+			return previousSettings.RechargePayTypes
+		}(),
+		EpayAPIURL: func() string {
+			if req.EpayAPIURL != nil {
+				return *req.EpayAPIURL
+			}
+			return previousSettings.EpayAPIURL
+		}(),
+		EpayPID: func() string {
+			if req.EpayPID != nil {
+				return *req.EpayPID
+			}
+			return previousSettings.EpayPID
+		}(),
+		EpayPlatformPublicKey: func() string {
+			if req.EpayPlatformPublicKey != nil && *req.EpayPlatformPublicKey != "" {
+				return *req.EpayPlatformPublicKey
+			}
+			return previousSettings.EpayPlatformPublicKey
+		}(),
+		EpayMerchantPrivateKey: func() string {
+			if req.EpayMerchantPrivateKey != nil && *req.EpayMerchantPrivateKey != "" {
+				return *req.EpayMerchantPrivateKey
+			}
+			return previousSettings.EpayMerchantPrivateKey
+		}(),
 		OpsMonitoringEnabled: func() bool {
 			if req.OpsMonitoringEnabled != nil {
 				return *req.OpsMonitoringEnabled
@@ -741,6 +817,15 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		AllowUngroupedKeyScheduling:          updatedSettings.AllowUngroupedKeyScheduling,
 		BackendModeEnabled:                   updatedSettings.BackendModeEnabled,
 		PlatformSellingPrice:                 updatedSettings.PlatformSellingPrice,
+		RechargeEnabled:                      updatedSettings.RechargeEnabled,
+		RechargeMinAmount:                    updatedSettings.RechargeMinAmount,
+		RechargeMaxAmount:                    updatedSettings.RechargeMaxAmount,
+		RechargeTiers:                        updatedSettings.RechargeTiers,
+		RechargePayTypes:                     updatedSettings.RechargePayTypes,
+		EpayAPIURL:                           updatedSettings.EpayAPIURL,
+		EpayPID:                              updatedSettings.EpayPID,
+		EpayPublicKeyConfigured:              updatedSettings.EpayPublicKeyConfigured,
+		EpayPrivateKeyConfigured:             updatedSettings.EpayPrivateKeyConfigured,
 		EnableFingerprintUnification:         updatedSettings.EnableFingerprintUnification,
 		EnableMetadataPassthrough:            updatedSettings.EnableMetadataPassthrough,
 	})

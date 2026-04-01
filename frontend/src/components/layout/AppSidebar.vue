@@ -535,6 +535,9 @@ const userNavItems = computed((): NavItem[] => {
         ]
       : []),
     { path: '/redeem', label: t('nav.redeem'), icon: TicketIcon, hideInSimpleMode: true },
+    ...(appStore.cachedPublicSettings?.recharge_enabled
+      ? [{ path: '/recharge', label: t('nav.recharge'), icon: CreditCardIcon, hideInSimpleMode: true }]
+      : []),
     { path: '/profile', label: t('nav.profile'), icon: UserIcon },
     ...customMenuItemsForUser.value.map((item): NavItem => ({
       path: `/custom/${item.id}`,

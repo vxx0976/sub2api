@@ -96,6 +96,19 @@ export interface SystemSettings {
   // 平台定价（¥/USD）
   platform_selling_price: number
 
+  // 充值配置
+  recharge_enabled: boolean
+  recharge_min_amount: number
+  recharge_max_amount: number
+  recharge_tiers: string
+  recharge_pay_types: string
+
+  // 易支付配置
+  epay_api_url: string
+  epay_pid: string
+  epay_public_key_configured: boolean
+  epay_private_key_configured: boolean
+
   // Gateway forwarding behavior
   enable_fingerprint_unification: boolean
   enable_metadata_passthrough: boolean
@@ -162,6 +175,15 @@ export interface UpdateSettingsRequest {
   max_claude_code_version?: string
   allow_ungrouped_key_scheduling?: boolean
   platform_selling_price?: number
+  recharge_enabled?: boolean
+  recharge_min_amount?: number
+  recharge_max_amount?: number
+  recharge_tiers?: string
+  recharge_pay_types?: string
+  epay_api_url?: string
+  epay_pid?: string
+  epay_platform_public_key?: string
+  epay_merchant_private_key?: string
   enable_fingerprint_unification?: boolean
   enable_metadata_passthrough?: boolean
 }

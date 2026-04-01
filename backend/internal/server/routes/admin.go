@@ -99,6 +99,16 @@ func RegisterAdminRoutes(
 
 		// 提现管理
 		registerAdminWithdrawalRoutes(admin, h)
+
+		// 充值订单管理
+		registerAdminRechargeRoutes(admin, h)
+	}
+}
+
+func registerAdminRechargeRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
+	recharge := admin.Group("/recharge")
+	{
+		recharge.GET("/orders", h.Recharge.AdminListOrders)
 	}
 }
 

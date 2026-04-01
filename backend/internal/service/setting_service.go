@@ -194,6 +194,7 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		SettingKeyContactTelegram,
 		SettingKeyContactQQ,
 		SettingKeyBackendModeEnabled,
+		SettingKeyRechargeEnabled,
 	}
 
 	settings, err := s.settingRepo.GetMultiple(ctx, keys)
@@ -252,6 +253,7 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		ContactTelegram:                  settings[SettingKeyContactTelegram],
 		ContactQQ:                        settings[SettingKeyContactQQ],
 		BackendModeEnabled:               settings[SettingKeyBackendModeEnabled] == "true",
+		RechargeEnabled:                  settings[SettingKeyRechargeEnabled] == "true",
 	}, nil
 }
 
@@ -304,6 +306,7 @@ func (s *SettingService) GetPublicSettingsForInjection(ctx context.Context) (any
 		SoraClientEnabled                bool                 `json:"sora_client_enabled"`
 		CustomMenuItems                  json.RawMessage      `json:"custom_menu_items"`
 		CustomEndpoints                  json.RawMessage      `json:"custom_endpoints"`
+		RechargeEnabled                  bool                 `json:"recharge_enabled"`
 		LinuxDoOAuthEnabled              bool                 `json:"linuxdo_oauth_enabled"`
 		BackendModeEnabled               bool                 `json:"backend_mode_enabled"`
 		Version                          string               `json:"version,omitempty"`
@@ -336,6 +339,7 @@ func (s *SettingService) GetPublicSettingsForInjection(ctx context.Context) (any
 		SoraClientEnabled:                settings.SoraClientEnabled,
 		CustomMenuItems:                  filterUserVisibleMenuItems(settings.CustomMenuItems),
 		CustomEndpoints:                  safeRawJSONArray(settings.CustomEndpoints),
+		RechargeEnabled:                  settings.RechargeEnabled,
 		LinuxDoOAuthEnabled:              settings.LinuxDoOAuthEnabled,
 		BackendModeEnabled:               settings.BackendModeEnabled,
 		Version:                          s.version,
@@ -583,6 +587,32 @@ func (s *SettingService) UpdateSettings(ctx context.Context, settings *SystemSet
 
 	// 平台定价
 	updates[SettingKeyPlatformSellingPrice] = strconv.FormatFloat(settings.PlatformSellingPrice, 'f', -1, 64)
+
+	// 充值配置
+	updates[SettingKeyRechargeEnabled] = strconv.FormatBool(settings.RechargeEnabled)
+	updates[SettingKeyRechargeMinAmount] = fmt.Sprintf("%.2f", settings.RechargeMinAmount)
+	updates[SettingKeyRechargeMaxAmount] = fmt.Sprintf("%.2f", settings.RechargeMaxAmount)
+	if settings.RechargeTiers != "" {
+		updates[SettingKeyRechargeTiers] = settings.RechargeTiers
+	}
+	if settings.RechargePayTypes != "" {
+		updates[SettingKeyRechargePayTypes] = settings.RechargePayTypes
+	}
+
+	// 易支付配置
+	if settings.EpayAPIURL != "" {
+		updates[SettingKeyEpayAPIURL] = settings.EpayAPIURL
+	}
+	if settings.EpayPID != "" {
+		updates[SettingKeyEpayPID] = settings.EpayPID
+	}
+	// 密钥只在非空时更新（避免清空）
+	if settings.EpayPlatformPublicKey != "" {
+		updates[SettingKeyEpayPublicKey] = settings.EpayPlatformPublicKey
+	}
+	if settings.EpayMerchantPrivateKey != "" {
+		updates[SettingKeyEpayPrivateKey] = settings.EpayMerchantPrivateKey
+	}
 
 	// Gateway forwarding behavior
 	updates[SettingKeyEnableFingerprintUnification] = strconv.FormatBool(settings.EnableFingerprintUnification)
@@ -1072,6 +1102,29 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 	if sp, err := strconv.ParseFloat(settings[SettingKeyPlatformSellingPrice], 64); err == nil && sp >= 0 {
 		result.PlatformSellingPrice = sp
 	}
+
+	// 充值配置
+	result.RechargeEnabled = settings[SettingKeyRechargeEnabled] == "true"
+	if v, err := strconv.ParseFloat(settings[SettingKeyRechargeMinAmount], 64); err == nil {
+		result.RechargeMinAmount = v
+	} else {
+		result.RechargeMinAmount = 10
+	}
+	if v, err := strconv.ParseFloat(settings[SettingKeyRechargeMaxAmount], 64); err == nil {
+		result.RechargeMaxAmount = v
+	} else {
+		result.RechargeMaxAmount = 10000
+	}
+	result.RechargeTiers = settings[SettingKeyRechargeTiers]
+	result.RechargePayTypes = settings[SettingKeyRechargePayTypes]
+
+	// 易支付配置
+	result.EpayAPIURL = settings[SettingKeyEpayAPIURL]
+	result.EpayPID = settings[SettingKeyEpayPID]
+	result.EpayPlatformPublicKey = settings[SettingKeyEpayPublicKey]
+	result.EpayMerchantPrivateKey = settings[SettingKeyEpayPrivateKey]
+	result.EpayPublicKeyConfigured = settings[SettingKeyEpayPublicKey] != ""
+	result.EpayPrivateKeyConfigured = settings[SettingKeyEpayPrivateKey] != ""
 
 	// Gateway forwarding behavior (defaults: fingerprint=true, metadata_passthrough=false)
 	if v, ok := settings[SettingKeyEnableFingerprintUnification]; ok && v != "" {

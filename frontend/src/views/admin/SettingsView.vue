@@ -1739,6 +1739,158 @@
           </div>
         </div>
 
+        <!-- Recharge Settings -->
+        <div class="card">
+          <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+              {{ t('admin.settings.recharge.title') }}
+            </h2>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              {{ t('admin.settings.recharge.description') }}
+            </p>
+          </div>
+          <div class="space-y-6 p-6">
+            <!-- Enable Toggle -->
+            <div class="flex items-center justify-between">
+              <div>
+                <label class="font-medium text-gray-900 dark:text-white">{{
+                  t('admin.settings.recharge.enabled')
+                }}</label>
+                <p class="text-sm text-gray-500 dark:text-gray-400">
+                  {{ t('admin.settings.recharge.enabledHint') }}
+                </p>
+              </div>
+              <Toggle v-model="form.recharge_enabled" />
+            </div>
+
+            <!-- Amount Range -->
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {{ t('admin.settings.recharge.minAmount') }}
+                </label>
+                <input
+                  v-model.number="form.recharge_min_amount"
+                  type="number"
+                  min="0"
+                  step="1"
+                  class="input font-mono text-sm"
+                  placeholder="10"
+                />
+              </div>
+              <div>
+                <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {{ t('admin.settings.recharge.maxAmount') }}
+                </label>
+                <input
+                  v-model.number="form.recharge_max_amount"
+                  type="number"
+                  min="0"
+                  step="1"
+                  class="input font-mono text-sm"
+                  placeholder="10000"
+                />
+              </div>
+            </div>
+
+            <!-- Pay Types -->
+            <div>
+              <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                {{ t('admin.settings.recharge.payTypes') }}
+              </label>
+              <input
+                v-model="form.recharge_pay_types"
+                type="text"
+                class="input font-mono text-sm"
+                :placeholder="t('admin.settings.recharge.payTypesPlaceholder')"
+              />
+              <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                {{ t('admin.settings.recharge.payTypesHint') }}
+              </p>
+            </div>
+
+            <!-- Tiers -->
+            <div>
+              <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                {{ t('admin.settings.recharge.tiers') }}
+              </label>
+              <textarea
+                v-model="form.recharge_tiers"
+                rows="3"
+                class="input font-mono text-sm"
+                :placeholder="t('admin.settings.recharge.tiersPlaceholder')"
+              />
+              <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                {{ t('admin.settings.recharge.tiersHint') }}
+              </p>
+            </div>
+
+            <!-- Epay Configuration -->
+            <div class="border-t border-gray-200 pt-6 dark:border-gray-700">
+              <h3 class="mb-4 text-sm font-semibold text-gray-900 dark:text-white">
+                {{ t('admin.settings.recharge.epayTitle') }}
+              </h3>
+
+              <!-- API URL -->
+              <div class="mb-4">
+                <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {{ t('admin.settings.recharge.epayApiUrl') }}
+                </label>
+                <input
+                  v-model="form.epay_api_url"
+                  type="url"
+                  class="input font-mono text-sm"
+                  placeholder="https://pay.example.com/"
+                />
+              </div>
+
+              <!-- PID -->
+              <div class="mb-4">
+                <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {{ t('admin.settings.recharge.epayPid') }}
+                </label>
+                <input
+                  v-model="form.epay_pid"
+                  type="text"
+                  class="input font-mono text-sm"
+                  placeholder="1000"
+                />
+              </div>
+
+              <!-- Platform Public Key -->
+              <div class="mb-4">
+                <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {{ t('admin.settings.recharge.epayPublicKey') }}
+                  <span v-if="initialSettings?.epay_public_key_configured" class="ml-2 text-xs text-emerald-600 dark:text-emerald-400">{{ t('admin.settings.recharge.keyConfigured') }}</span>
+                </label>
+                <textarea
+                  v-model="form.epay_platform_public_key"
+                  rows="3"
+                  class="input font-mono text-sm"
+                  :placeholder="t('admin.settings.recharge.epayPublicKeyPlaceholder')"
+                />
+              </div>
+
+              <!-- Merchant Private Key -->
+              <div>
+                <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {{ t('admin.settings.recharge.epayPrivateKey') }}
+                  <span v-if="initialSettings?.epay_private_key_configured" class="ml-2 text-xs text-emerald-600 dark:text-emerald-400">{{ t('admin.settings.recharge.keyConfigured') }}</span>
+                </label>
+                <textarea
+                  v-model="form.epay_merchant_private_key"
+                  rows="3"
+                  class="input font-mono text-sm"
+                  :placeholder="t('admin.settings.recharge.epayPrivateKeyPlaceholder')"
+                />
+                <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                  {{ t('admin.settings.recharge.epayKeyHint') }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Sora Client Toggle -->
         <div class="card">
           <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
@@ -2200,6 +2352,7 @@ const availableLocaleOptions = availableLocales
 
 const loading = ref(true)
 const loadFailed = ref(false)
+const initialSettings = ref<Record<string, any> | null>(null)
 const saving = ref(false)
 const testingSmtp = ref(false)
 const sendingTestEmail = ref(false)
@@ -2277,6 +2430,8 @@ type SettingsForm = SystemSettings & {
   smtp_password: string
   turnstile_secret_key: string
   linuxdo_connect_client_secret: string
+  epay_platform_public_key: string
+  epay_merchant_private_key: string
 }
 
 const form = reactive<SettingsForm>({
@@ -2308,6 +2463,15 @@ const form = reactive<SettingsForm>({
   purchase_subscription_enabled: false,
   purchase_subscription_url: '',
   sub2apipay_admin_token: '',
+  recharge_enabled: false,
+  recharge_min_amount: 10,
+  recharge_max_amount: 10000,
+  recharge_tiers: '',
+  recharge_pay_types: '',
+  epay_api_url: '',
+  epay_pid: '',
+  epay_platform_public_key: '',
+  epay_merchant_private_key: '',
   sora_client_enabled: false,
   custom_menu_items: [] as Array<{id: string; label: string; icon_svg: string; url: string; visibility: 'user' | 'admin'; sort_order: number}>,
   custom_endpoints: [] as Array<{name: string; endpoint: string; description: string}>,
@@ -2354,7 +2518,10 @@ const form = reactive<SettingsForm>({
   platform_selling_price: 0,
   // Gateway forwarding behavior
   enable_fingerprint_unification: true,
-  enable_metadata_passthrough: false
+  enable_metadata_passthrough: false,
+  // Epay key configured flags (read-only, from server)
+  epay_public_key_configured: false,
+  epay_private_key_configured: false,
 })
 
 const defaultSubscriptionGroupOptions = computed<DefaultSubscriptionGroupOption[]>(() =>
@@ -2499,7 +2666,10 @@ async function loadSettings() {
   loadFailed.value = false
   try {
     const settings = await adminAPI.settings.getSettings()
+    initialSettings.value = settings
     Object.assign(form, settings)
+    form.epay_platform_public_key = ''
+    form.epay_merchant_private_key = ''
     form.backend_mode_enabled = settings.backend_mode_enabled
     form.default_subscriptions = Array.isArray(settings.default_subscriptions)
       ? settings.default_subscriptions
@@ -2669,6 +2839,15 @@ async function saveSettings() {
       max_claude_code_version: form.max_claude_code_version,
       allow_ungrouped_key_scheduling: form.allow_ungrouped_key_scheduling,
       platform_selling_price: form.platform_selling_price,
+      recharge_enabled: form.recharge_enabled,
+      recharge_min_amount: form.recharge_min_amount,
+      recharge_max_amount: form.recharge_max_amount,
+      recharge_tiers: form.recharge_tiers || undefined,
+      recharge_pay_types: form.recharge_pay_types || undefined,
+      epay_api_url: form.epay_api_url || undefined,
+      epay_pid: form.epay_pid || undefined,
+      epay_platform_public_key: form.epay_platform_public_key || undefined,
+      epay_merchant_private_key: form.epay_merchant_private_key || undefined,
       enable_fingerprint_unification: form.enable_fingerprint_unification,
       enable_metadata_passthrough: form.enable_metadata_passthrough
     }

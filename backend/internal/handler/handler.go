@@ -69,6 +69,7 @@ type Handlers struct {
 	Referral      *ReferralHandler
 	Totp          *TotpHandler
 	KeyQuery      *KeyQueryHandler
+	Recharge      *RechargeHandler
 }
 
 // BuildInfo contains build-time information

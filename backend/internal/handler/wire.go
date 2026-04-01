@@ -125,6 +125,7 @@ func ProvideHandlers(
 	referralHandler *ReferralHandler,
 	totpHandler *TotpHandler,
 	keyQueryHandler *KeyQueryHandler,
+	rechargeHandler *RechargeHandler,
 	_ *service.IdempotencyCoordinator,
 	_ *service.IdempotencyCleanupService,
 ) *Handlers {
@@ -146,6 +147,7 @@ func ProvideHandlers(
 		Referral:      referralHandler,
 		Totp:          totpHandler,
 		KeyQuery:      keyQueryHandler,
+		Recharge:      rechargeHandler,
 	}
 }
 
@@ -167,6 +169,7 @@ var ProviderSet = wire.NewSet(
 	ProvideSettingHandler,
 	NewReferralHandler,
 	NewKeyQueryHandler,
+	NewRechargeHandler,
 
 	// Admin handlers
 	admin.NewDashboardHandler,
