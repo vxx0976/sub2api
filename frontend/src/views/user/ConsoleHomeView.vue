@@ -1,17 +1,6 @@
 <template>
   <AppLayout>
     <div class="space-y-6">
-      <!-- Announcements -->
-      <div v-if="announcementHtml" class="card p-5">
-        <div class="mb-3 flex items-center gap-2">
-          <Icon name="chatBubble" size="md" class="text-amber-500" />
-          <h2 class="text-base font-semibold text-gray-900 dark:text-white">
-            {{ t('consoleHome.announcements') }}
-          </h2>
-        </div>
-        <div class="markdown-body prose prose-sm max-w-none dark:prose-invert" v-html="announcementHtml"></div>
-      </div>
-
       <!-- Getting Started + Contact Us (side by side) -->
       <div class="grid gap-4 sm:grid-cols-2">
         <!-- Getting Started Guide -->
@@ -49,7 +38,7 @@
               {{ t('consoleHome.contact.title') }}
             </h3>
           </div>
-          <div class="flex-1 space-y-2">
+          <div class="grid grid-cols-2 gap-2">
               <!-- WeChat -->
               <div v-if="contactWechat" class="flex items-center gap-2">
                 <svg class="h-4 w-4 flex-shrink-0 text-green-500" viewBox="0 0 24 24" fill="currentColor">
@@ -91,6 +80,17 @@
               </a>
             </div>
         </div>
+      </div>
+
+      <!-- Announcements -->
+      <div v-if="announcementHtml" class="card p-5">
+        <div class="mb-3 flex items-center gap-2">
+          <Icon name="chatBubble" size="md" class="text-amber-500" />
+          <h2 class="text-base font-semibold text-gray-900 dark:text-white">
+            {{ t('consoleHome.announcements') }}
+          </h2>
+        </div>
+        <div class="markdown-body prose prose-sm max-w-none dark:prose-invert" v-html="announcementHtml"></div>
       </div>
     </div>
   </AppLayout>
