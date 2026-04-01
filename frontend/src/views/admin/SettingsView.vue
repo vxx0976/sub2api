@@ -1802,7 +1802,7 @@
                 v-model="form.recharge_pay_types"
                 type="text"
                 class="input font-mono text-sm"
-                :placeholder="t('admin.settings.recharge.payTypesPlaceholder')"
+                placeholder='["alipay","wxpay"]'
               />
               <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
                 {{ t('admin.settings.recharge.payTypesHint') }}
@@ -1818,7 +1818,7 @@
                 v-model="form.recharge_tiers"
                 rows="3"
                 class="input font-mono text-sm"
-                :placeholder="t('admin.settings.recharge.tiersPlaceholder')"
+                placeholder='[{"min":100,"max":500,"multiplier":1.1},{"min":500,"max":null,"multiplier":1.2}]'
               />
               <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
                 {{ t('admin.settings.recharge.tiersHint') }}

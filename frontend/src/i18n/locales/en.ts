@@ -4629,7 +4629,7 @@ export default {
         payTypesPlaceholder: '["alipay","wxpay"]',
         payTypesHint: 'JSON array. Available values: alipay, wxpay. Leave empty to enable both by default.',
         tiers: 'Recharge Tiers',
-        tiersPlaceholder: '[{"min":100,"max":500,"multiplier":1.1},{"min":500,"max":null,"multiplier":1.2}]',
+        tiersPlaceholder: 'See format description below',
         tiersHint: 'JSON array with min, max (null = unlimited), multiplier per tier. Leave empty for no tiers.',
         epayTitle: 'EasyPay (Rainbow Pay) Configuration',
         epayApiUrl: 'API URL',
