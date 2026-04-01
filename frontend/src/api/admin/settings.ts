@@ -41,6 +41,7 @@ export interface SystemSettings {
   hide_ccs_import_button: boolean
   purchase_subscription_enabled: boolean
   purchase_subscription_url: string
+  sub2apipay_admin_token: string
   default_locale: string
   contact_wechat: string
   contact_telegram: string
@@ -123,6 +124,7 @@ export interface UpdateSettingsRequest {
   hide_ccs_import_button?: boolean
   purchase_subscription_enabled?: boolean
   purchase_subscription_url?: string
+  sub2apipay_admin_token?: string
   default_locale?: string
   contact_wechat?: string
   contact_telegram?: string

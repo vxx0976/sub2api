@@ -4544,6 +4544,9 @@ export default {
         urlHint: '必须是完整的 http(s) 链接',
         iframeWarning:
           '⚠️ iframe 提示：部分网站会通过 X-Frame-Options 或 CSP（frame-ancestors）禁止被 iframe 嵌入，出现空白时可引导用户使用”新窗口打开”。',
+        adminToken: 'Sub2apipay Admin Token',
+        adminTokenPlaceholder: '填入 sub2apipay 的 ADMIN_TOKEN',
+        adminTokenHint: '对应 sub2apipay 环境变量 ADMIN_TOKEN，用于服务间鉴权',
         integrationDoc: '支付集成文档',
         integrationDocHint: '包含接口说明、幂等语义及示例代码'
       },

@@ -407,8 +407,8 @@ func ProvideSettingService(settingRepo SettingRepository, groupRepo GroupReposit
 }
 
 // ProvideSub2apipayService creates Sub2apipayService by reading settings from DB.
-// It extracts the base URL from purchase_subscription_url and generates an admin JWT for auth.
-func ProvideSub2apipayService(settingRepo SettingRepository, cfg *config.Config) *Sub2apipayService {
+// It extracts the base URL from purchase_subscription_url and uses the configured admin token for auth.
+func ProvideSub2apipayService(settingRepo SettingRepository) *Sub2apipayService {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -425,7 +425,8 @@ func ProvideSub2apipayService(settingRepo SettingRepository, cfg *config.Config)
 		}
 	}
 
-	return NewSub2apipayService(apiURL, cfg.JWT.Secret)
+	adminToken, _ := settingRepo.GetValue(ctx, SettingKeySub2apipayAdminToken)
+	return NewSub2apipayService(apiURL, adminToken)
 }
 
 // ProviderSet is the Wire provider set for all services

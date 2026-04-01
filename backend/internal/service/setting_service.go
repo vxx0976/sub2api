@@ -534,6 +534,7 @@ func (s *SettingService) UpdateSettings(ctx context.Context, settings *SystemSet
 	updates[SettingKeyHideCcsImportButton] = strconv.FormatBool(settings.HideCcsImportButton)
 	updates[SettingKeyPurchaseSubscriptionEnabled] = strconv.FormatBool(settings.PurchaseSubscriptionEnabled)
 	updates[SettingKeyPurchaseSubscriptionURL] = strings.TrimSpace(settings.PurchaseSubscriptionURL)
+	updates[SettingKeySub2apipayAdminToken] = settings.Sub2apipayAdminToken
 	updates[SettingKeyDefaultLocale] = settings.DefaultLocale
 	updates[SettingKeyContactWechat] = settings.ContactWechat
 	updates[SettingKeyContactTelegram] = settings.ContactTelegram
@@ -889,6 +890,7 @@ func (s *SettingService) InitializeDefaultSettings(ctx context.Context) error {
 		SettingKeySiteLogo:                         "",
 		SettingKeyPurchaseSubscriptionEnabled:      "false",
 		SettingKeyPurchaseSubscriptionURL:          "",
+		SettingKeySub2apipayAdminToken:             "",
 		SettingKeySoraClientEnabled:                "false",
 		SettingKeyCustomMenuItems:                  "[]",
 		SettingKeyCustomEndpoints:                  "[]",
@@ -956,6 +958,7 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 		HideCcsImportButton:              settings[SettingKeyHideCcsImportButton] == "true",
 		PurchaseSubscriptionEnabled:      settings[SettingKeyPurchaseSubscriptionEnabled] == "true",
 		PurchaseSubscriptionURL:          strings.TrimSpace(settings[SettingKeyPurchaseSubscriptionURL]),
+		Sub2apipayAdminToken:             settings[SettingKeySub2apipayAdminToken],
 		DefaultLocale:                    settings[SettingKeyDefaultLocale],
 		ContactWechat:                    settings[SettingKeyContactWechat],
 		ContactTelegram:                  settings[SettingKeyContactTelegram],

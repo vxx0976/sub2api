@@ -4570,6 +4570,9 @@ export default {
         urlHint: 'Must be an absolute http(s) URL',
         iframeWarning:
           '⚠️ iframe note: Some websites block embedding via X-Frame-Options or CSP (frame-ancestors). If the page is blank, provide an "Open in new tab" alternative.',
+        adminToken: 'Sub2apipay Admin Token',
+        adminTokenPlaceholder: 'Enter the ADMIN_TOKEN from sub2apipay',
+        adminTokenHint: 'Matches the ADMIN_TOKEN env var in sub2apipay, used for service-to-service auth',
         integrationDoc: 'Payment Integration Docs',
         integrationDocHint: 'Covers endpoint specs, idempotency semantics, and code samples'
       },

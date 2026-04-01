@@ -109,6 +109,7 @@ func (h *SettingHandler) GetSettings(c *gin.Context) {
 		HideCcsImportButton:                  settings.HideCcsImportButton,
 		PurchaseSubscriptionEnabled:          settings.PurchaseSubscriptionEnabled,
 		PurchaseSubscriptionURL:              settings.PurchaseSubscriptionURL,
+		Sub2apipayAdminToken:                 settings.Sub2apipayAdminToken,
 		ContactWechat:                        settings.ContactWechat,
 		ContactTelegram:                      settings.ContactTelegram,
 		ContactQQ:                            settings.ContactQQ,
@@ -184,6 +185,7 @@ type UpdateSettingsRequest struct {
 	HideCcsImportButton         bool                  `json:"hide_ccs_import_button"`
 	PurchaseSubscriptionEnabled *bool                 `json:"purchase_subscription_enabled"`
 	PurchaseSubscriptionURL     *string               `json:"purchase_subscription_url"`
+	Sub2apipayAdminToken        *string               `json:"sub2apipay_admin_token"`
 	ContactWechat               string                `json:"contact_wechat"`
 	ContactTelegram             string                `json:"contact_telegram"`
 	ContactQQ                   string                `json:"contact_qq"`
@@ -366,6 +368,11 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 			response.BadRequest(c, "Purchase Subscription URL must be an absolute http(s) URL")
 			return
 		}
+	}
+
+	sub2apipayAdminToken := previousSettings.Sub2apipayAdminToken
+	if req.Sub2apipayAdminToken != nil {
+		sub2apipayAdminToken = strings.TrimSpace(*req.Sub2apipayAdminToken)
 	}
 
 	// Frontend URL 验证
@@ -581,6 +588,7 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		HideCcsImportButton:              req.HideCcsImportButton,
 		PurchaseSubscriptionEnabled:      purchaseEnabled,
 		PurchaseSubscriptionURL:          purchaseURL,
+		Sub2apipayAdminToken:             sub2apipayAdminToken,
 		ContactWechat:                    req.ContactWechat,
 		ContactTelegram:                  req.ContactTelegram,
 		ContactQQ:                        req.ContactQQ,
@@ -706,6 +714,7 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		HideCcsImportButton:                  updatedSettings.HideCcsImportButton,
 		PurchaseSubscriptionEnabled:          updatedSettings.PurchaseSubscriptionEnabled,
 		PurchaseSubscriptionURL:              updatedSettings.PurchaseSubscriptionURL,
+		Sub2apipayAdminToken:                 updatedSettings.Sub2apipayAdminToken,
 		ContactWechat:                        updatedSettings.ContactWechat,
 		ContactTelegram:                      updatedSettings.ContactTelegram,
 		ContactQQ:                            updatedSettings.ContactQQ,
@@ -914,6 +923,9 @@ func diffSettings(before *service.SystemSettings, after *service.SystemSettings,
 	}
 	if before.PurchaseSubscriptionURL != after.PurchaseSubscriptionURL {
 		changed = append(changed, "purchase_subscription_url")
+	}
+	if before.Sub2apipayAdminToken != after.Sub2apipayAdminToken {
+		changed = append(changed, "sub2apipay_admin_token")
 	}
 	if before.CustomMenuItems != after.CustomMenuItems {
 		changed = append(changed, "custom_menu_items")

@@ -217,7 +217,7 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	scheduledTestService := service.ProvideScheduledTestService(scheduledTestPlanRepository, scheduledTestResultRepository)
 	scheduledTestHandler := admin.NewScheduledTestHandler(scheduledTestService)
 	resellerWithdrawalRepo := repository.NewResellerWithdrawalRepo(client)
-	sub2apipayService := service.ProvideSub2apipayService(settingRepository, configConfig)
+	sub2apipayService := service.ProvideSub2apipayService(settingRepository)
 	commissionService := service.NewCommissionService(resellerWithdrawalRepo, usageLogRepository, userRepository, resellerSettingRepository, resellerDomainRepository, sub2apipayService)
 	merchantHandler := admin.NewMerchantHandler(commissionService, adminService)
 	adminWithdrawalHandler := admin.NewAdminWithdrawalHandler(commissionService)

@@ -1664,6 +1664,23 @@
               </p>
             </div>
 
+            <!-- Sub2apipay Admin Token -->
+            <div>
+              <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                {{ t('admin.settings.purchase.adminToken') }}
+              </label>
+              <input
+                v-model="form.sub2apipay_admin_token"
+                type="password"
+                autocomplete="off"
+                class="input font-mono text-sm"
+                :placeholder="t('admin.settings.purchase.adminTokenPlaceholder')"
+              />
+              <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                {{ t('admin.settings.purchase.adminTokenHint') }}
+              </p>
+            </div>
+
             <!-- Integration Docs -->
             <div class="flex items-center gap-2 text-sm">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -2290,6 +2307,7 @@ const form = reactive<SettingsForm>({
   hide_ccs_import_button: false,
   purchase_subscription_enabled: false,
   purchase_subscription_url: '',
+  sub2apipay_admin_token: '',
   sora_client_enabled: false,
   custom_menu_items: [] as Array<{id: string; label: string; icon_svg: string; url: string; visibility: 'user' | 'admin'; sort_order: number}>,
   custom_endpoints: [] as Array<{name: string; endpoint: string; description: string}>,
@@ -2620,6 +2638,7 @@ async function saveSettings() {
       hide_ccs_import_button: form.hide_ccs_import_button,
       purchase_subscription_enabled: form.purchase_subscription_enabled,
       purchase_subscription_url: form.purchase_subscription_url,
+      sub2apipay_admin_token: form.sub2apipay_admin_token,
       default_locale: form.default_locale,
       sora_client_enabled: form.sora_client_enabled,
       custom_menu_items: form.custom_menu_items,

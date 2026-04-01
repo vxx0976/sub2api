@@ -7,37 +7,21 @@ import (
 	"fmt"
 	"net/http"
 	"time"
-
-	"github.com/golang-jwt/jwt/v5"
 )
 
 // Sub2apipayService calls sub2apipay HTTP API for recharge data.
 type Sub2apipayService struct {
-	apiURL    string
-	jwtSecret string
+	apiURL     string
+	adminToken string
 	httpClient *http.Client
 }
 
-func NewSub2apipayService(apiURL, jwtSecret string) *Sub2apipayService {
+func NewSub2apipayService(apiURL, adminToken string) *Sub2apipayService {
 	return &Sub2apipayService{
 		apiURL:     apiURL,
-		jwtSecret:  jwtSecret,
+		adminToken: adminToken,
 		httpClient: &http.Client{Timeout: 15 * time.Second},
 	}
-}
-
-// generateAdminToken creates a short-lived admin JWT for sub2apipay auth.
-func (s *Sub2apipayService) generateAdminToken() (string, error) {
-	now := time.Now()
-	claims := jwt.MapClaims{
-		"user_id": 1,
-		"role":    "admin",
-		"exp":     now.Add(5 * time.Minute).Unix(),
-		"iat":     now.Unix(),
-		"nbf":     now.Unix(),
-	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(s.jwtSecret))
 }
 
 // doRequest creates and executes an authenticated request to sub2apipay.
@@ -48,12 +32,7 @@ func (s *Sub2apipayService) doRequest(ctx context.Context, path string, payload 
 		return nil, fmt.Errorf("sub2apipay: build request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
-
-	token, err := s.generateAdminToken()
-	if err != nil {
-		return nil, fmt.Errorf("sub2apipay: generate token: %w", err)
-	}
-	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Authorization", "Bearer "+s.adminToken)
 
 	resp, err := s.httpClient.Do(req)
 	if err != nil {
