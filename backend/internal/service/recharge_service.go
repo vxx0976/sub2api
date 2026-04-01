@@ -89,7 +89,7 @@ type CreateOrderResult struct {
 }
 
 // CreateOrder 创建充值订单
-func (s *RechargeService) CreateOrder(ctx context.Context, userID int64, amount float64, payType string, baseURL string) (*CreateOrderResult, error) {
+func (s *RechargeService) CreateOrder(ctx context.Context, userID int64, amount float64, payType string, baseURL string, clientIP string) (*CreateOrderResult, error) {
 	// 1. 检查充值是否启用
 	enabled, _ := s.settingRepo.GetValue(ctx, SettingKeyRechargeEnabled)
 	if enabled != "true" {
@@ -154,6 +154,7 @@ func (s *RechargeService) CreateOrder(ctx context.Context, userID int64, amount 
 		Money:      fmt.Sprintf("%.2f", amount),
 		NotifyURL:  notifyURL,
 		ReturnURL:  returnURL,
+		ClientIP:   clientIP,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("create payment failed: %w", err)

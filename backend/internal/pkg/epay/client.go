@@ -73,6 +73,7 @@ func (c *Client) CreatePayment(req CreatePaymentRequest) (*CreatePaymentResponse
 		"return_url":   req.ReturnURL,
 		"name":         req.Name,
 		"money":        req.Money,
+		"clientip":     req.ClientIP,
 	}
 
 	body, err := c.doPost("api/pay/create", params)

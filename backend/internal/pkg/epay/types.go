@@ -8,6 +8,7 @@ type CreatePaymentRequest struct {
 	Money      string  `json:"money"`        // 支付金额
 	NotifyURL  string  `json:"notify_url"`   // 异步通知地址
 	ReturnURL  string  `json:"return_url"`   // 同步跳转地址
+	ClientIP   string  `json:"clientip"`     // 用户IP地址（API模式必填）
 }
 
 // CreatePaymentResponse API 创建支付响应

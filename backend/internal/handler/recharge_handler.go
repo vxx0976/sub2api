@@ -58,7 +58,8 @@ func (h *RechargeHandler) CreateOrder(c *gin.Context) {
 	}
 	baseURL := scheme + "://" + c.Request.Host
 
-	result, err := h.rechargeService.CreateOrder(c.Request.Context(), subject.UserID, req.Amount, req.PayType, baseURL)
+	clientIP := c.ClientIP()
+	result, err := h.rechargeService.CreateOrder(c.Request.Context(), subject.UserID, req.Amount, req.PayType, baseURL, clientIP)
 	if err != nil {
 		response.BadRequest(c, err.Error())
 		return
