@@ -43,13 +43,8 @@
               {{ t('recharge.formTitle') }}
             </h2>
 
-            <!-- Price Info -->
-            <div v-if="config.selling_price > 0" class="mb-4 rounded-lg bg-blue-50 p-3 text-sm text-blue-700 dark:bg-blue-900/20 dark:text-blue-300">
-              {{ t('recharge.priceInfo', { price: config.selling_price }) }}
-            </div>
-
-            <!-- Tier Info -->
-            <div v-if="config.tiers && config.tiers.length > 0" class="mb-4 rounded-lg bg-amber-50 p-3 dark:bg-amber-900/20">
+            <!-- Tier Info (only show when there are tiers with multiplier > 1) -->
+            <div v-if="hasEffectiveTiers" class="mb-4 rounded-lg bg-amber-50 p-3 dark:bg-amber-900/20">
               <p class="mb-2 text-sm font-medium text-amber-800 dark:text-amber-300">{{ t('recharge.tierTitle') }}</p>
               <div class="space-y-1">
                 <div v-for="(tier, idx) in config.tiers" :key="idx" class="flex items-center justify-between text-xs text-amber-700 dark:text-amber-400">
@@ -231,6 +226,67 @@
         </div>
       </template>
     </div>
+
+    <!-- QR Code Payment Modal -->
+    <Teleport to="body">
+      <div
+        v-if="showQRModal"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+        @click.self="closeQRModal"
+      >
+        <div class="mx-4 w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl dark:bg-dark-800">
+          <div class="mb-4 flex items-center justify-between">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+              {{ t('recharge.scanToPay') }}
+            </h3>
+            <button
+              class="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-dark-700 dark:hover:text-dark-300"
+              @click="closeQRModal"
+            >
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          <!-- Amount Info -->
+          <div class="mb-4 rounded-lg bg-gray-50 p-3 text-center dark:bg-dark-700">
+            <p class="text-sm text-gray-500 dark:text-dark-400">{{ t('recharge.payAmount') }}</p>
+            <p class="text-2xl font-bold text-gray-900 dark:text-white">¥{{ qrOrderAmount?.toFixed(2) }}</p>
+          </div>
+
+          <!-- QR Code -->
+          <div class="mb-4 flex justify-center">
+            <div class="rounded-xl border-2 border-gray-100 bg-white p-3 dark:border-dark-600">
+              <img :src="qrCodeURL" alt="Payment QR Code" class="h-52 w-52" />
+            </div>
+          </div>
+
+          <p class="mb-3 text-center text-sm text-gray-500 dark:text-dark-400">
+            {{ t('recharge.scanQRHint') }}
+          </p>
+
+          <!-- Fallback link -->
+          <a
+            v-if="qrPayURL"
+            :href="qrPayURL"
+            target="_blank"
+            class="block text-center text-xs text-primary-500 hover:text-primary-600 dark:text-primary-400"
+          >
+            {{ t('recharge.openPayPage') }}
+          </a>
+
+          <!-- Waiting indicator -->
+          <div class="mt-4 flex items-center justify-center gap-2 text-sm text-gray-400 dark:text-dark-500">
+            <svg class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+            </svg>
+            {{ t('recharge.waitingPayment') }}
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </AppLayout>
 </template>
 
@@ -238,6 +294,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
+import QRCode from 'qrcode'
 import { useAuthStore } from '@/stores/auth'
 import { useAppStore } from '@/stores/app'
 import { rechargeAPI, type RechargeConfig, type RechargeOrderItem } from '@/api'
@@ -264,6 +321,17 @@ const loadingOrders = ref(false)
 // Polling for pending order
 let pollTimer: ReturnType<typeof setInterval> | null = null
 const pendingOrderNo = ref<string | null>(null)
+
+// QR Code modal
+const showQRModal = ref(false)
+const qrCodeURL = ref('')
+const qrPayURL = ref('')
+const qrOrderAmount = ref<number | null>(null)
+
+const hasEffectiveTiers = computed(() => {
+  if (!config.value?.tiers || config.value.tiers.length === 0) return false
+  return config.value.tiers.some(t => t.multiplier !== 1)
+})
 
 const currentMultiplier = computed(() => {
   if (!config.value?.tiers || !amount.value) return 1
@@ -317,8 +385,21 @@ const handleCreateOrder = async () => {
   try {
     const result = await rechargeAPI.createOrder(amount.value, payType.value)
     pendingOrderNo.value = result.order_no
-    // Open payment page in new window
-    window.open(result.pay_url, '_blank')
+    qrPayURL.value = result.pay_url || ''
+    qrOrderAmount.value = result.amount
+    // Generate QR code from qrcode link or pay_url
+    const qrContent = result.qrcode || result.pay_url || ''
+    if (qrContent) {
+      try {
+        qrCodeURL.value = await QRCode.toDataURL(qrContent, { width: 280, margin: 2 })
+        showQRModal.value = true
+      } catch {
+        // QR generation failed, fallback to opening pay URL
+        if (qrPayURL.value) window.open(qrPayURL.value, '_blank')
+      }
+    } else if (qrPayURL.value) {
+      window.open(qrPayURL.value, '_blank')
+    }
     appStore.showSuccess(t('recharge.orderCreated'))
     // Start polling for payment result
     startPolling(result.order_no)
@@ -329,6 +410,10 @@ const handleCreateOrder = async () => {
   } finally {
     submitting.value = false
   }
+}
+
+const closeQRModal = () => {
+  showQRModal.value = false
 }
 
 const startPolling = (orderNo: string) => {
@@ -344,12 +429,14 @@ const startPolling = (orderNo: string) => {
       const status = await rechargeAPI.getOrderStatus(orderNo)
       if (status.status === 'paid') {
         stopPolling()
+        showQRModal.value = false
         appStore.showSuccess(t('recharge.paymentSuccess'))
         await authStore.refreshUser()
         await fetchOrders()
         pendingOrderNo.value = null
       } else if (status.status === 'expired') {
         stopPolling()
+        showQRModal.value = false
         pendingOrderNo.value = null
         await fetchOrders()
       }

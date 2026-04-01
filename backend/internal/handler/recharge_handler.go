@@ -58,19 +58,20 @@ func (h *RechargeHandler) CreateOrder(c *gin.Context) {
 	}
 	baseURL := scheme + "://" + c.Request.Host
 
-	order, payURL, err := h.rechargeService.CreateOrder(c.Request.Context(), subject.UserID, req.Amount, req.PayType, baseURL)
+	result, err := h.rechargeService.CreateOrder(c.Request.Context(), subject.UserID, req.Amount, req.PayType, baseURL)
 	if err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
 
 	response.Success(c, gin.H{
-		"order_no":      order.OrderNo,
-		"amount":        order.Amount,
-		"credit_amount": order.CreditAmount,
-		"multiplier":    order.Multiplier,
-		"pay_url":       payURL,
-		"expired_at":    order.ExpiredAt,
+		"order_no":      result.Order.OrderNo,
+		"amount":        result.Order.Amount,
+		"credit_amount": result.Order.CreditAmount,
+		"multiplier":    result.Order.Multiplier,
+		"pay_url":       result.PayURL,
+		"qrcode":        result.QRCode,
+		"expired_at":    result.Order.ExpiredAt,
 	})
 }
 

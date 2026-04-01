@@ -26,6 +26,7 @@ export interface RechargeOrderResult {
   credit_amount: number
   multiplier: number
   pay_url: string
+  qrcode: string
   expired_at: string
 }
 

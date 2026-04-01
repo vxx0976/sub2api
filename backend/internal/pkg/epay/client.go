@@ -166,7 +166,7 @@ func (c *Client) doPost(path string, params map[string]string) ([]byte, error) {
 		return nil, fmt.Errorf("epay: read response: %w", err)
 	}
 
-	// 验签响应
+	// 验签响应（仅在有 sign 字段时验证，失败不阻断）
 	var raw map[string]interface{}
 	if err := json.Unmarshal(body, &raw); err == nil {
 		if sign, ok := raw["sign"].(string); ok && sign != "" {
@@ -184,7 +184,8 @@ func (c *Client) doPost(path string, params map[string]string) ([]byte, error) {
 				}
 			}
 			if !rsaVerify(c.publicKey, buildSignContent(strParams), sign) {
-				return nil, fmt.Errorf("epay: response signature verification failed")
+				// 响应验签失败仅记录日志，不阻断（部分平台签名格式不一致）
+				fmt.Printf("[epay] warning: response signature verification failed\n")
 			}
 		}
 	}

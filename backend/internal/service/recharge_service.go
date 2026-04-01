@@ -81,12 +81,19 @@ func (s *RechargeService) GetConfig(ctx context.Context) (*RechargePublicConfig,
 	return cfg, nil
 }
 
+// CreateOrderResult 创建充值订单结果
+type CreateOrderResult struct {
+	Order  *RechargeOrder
+	PayURL string // 支付页面链接
+	QRCode string // 二维码链接
+}
+
 // CreateOrder 创建充值订单
-func (s *RechargeService) CreateOrder(ctx context.Context, userID int64, amount float64, payType string, baseURL string) (*RechargeOrder, string, error) {
+func (s *RechargeService) CreateOrder(ctx context.Context, userID int64, amount float64, payType string, baseURL string) (*CreateOrderResult, error) {
 	// 1. 检查充值是否启用
 	enabled, _ := s.settingRepo.GetValue(ctx, SettingKeyRechargeEnabled)
 	if enabled != "true" {
-		return nil, "", fmt.Errorf("recharge is not enabled")
+		return nil, fmt.Errorf("recharge is not enabled")
 	}
 
 	// 2. 校验金额范围
@@ -99,13 +106,13 @@ func (s *RechargeService) CreateOrder(ctx context.Context, userID int64, amount 
 		maxAmount, _ = strconv.ParseFloat(v, 64)
 	}
 	if amount < minAmount || amount > maxAmount {
-		return nil, "", fmt.Errorf("amount must be between %.2f and %.2f", minAmount, maxAmount)
+		return nil, fmt.Errorf("amount must be between %.2f and %.2f", minAmount, maxAmount)
 	}
 
 	// 3. 计算到账金额
 	sellingPrice := s.settingService.GetPlatformSellingPrice(ctx)
 	if sellingPrice <= 0 {
-		return nil, "", fmt.Errorf("platform selling price not configured")
+		return nil, fmt.Errorf("platform selling price not configured")
 	}
 
 	// 查找倍率档位
@@ -131,7 +138,7 @@ func (s *RechargeService) CreateOrder(ctx context.Context, userID int64, amount 
 	// 5. 创建易支付客户端
 	epayClient, err := s.getEpayClient(ctx)
 	if err != nil {
-		return nil, "", fmt.Errorf("payment gateway not configured: %w", err)
+		return nil, fmt.Errorf("payment gateway not configured: %w", err)
 	}
 
 	// 6. 构造通知和跳转 URL
@@ -139,8 +146,8 @@ func (s *RechargeService) CreateOrder(ctx context.Context, userID int64, amount 
 	notifyURL := baseURL + "/api/v1/recharge/notify"
 	returnURL := baseURL + "/api/v1/recharge/return"
 
-	// 7. 调用易支付创建支付
-	payLink, err := epayClient.GetPayLink(epay.CreatePaymentRequest{
+	// 7. 调用易支付 API 创建支付（API 模式，返回二维码）
+	payResp, err := epayClient.CreatePayment(epay.CreatePaymentRequest{
 		OutTradeNo: orderNo,
 		Type:       payType,
 		Name:       "Balance Recharge",
@@ -149,7 +156,7 @@ func (s *RechargeService) CreateOrder(ctx context.Context, userID int64, amount 
 		ReturnURL:  returnURL,
 	})
 	if err != nil {
-		return nil, "", fmt.Errorf("create payment failed: %w", err)
+		return nil, fmt.Errorf("create payment failed: %w", err)
 	}
 
 	// 8. 写入数据库
@@ -166,10 +173,14 @@ func (s *RechargeService) CreateOrder(ctx context.Context, userID int64, amount 
 	}
 
 	if err := s.orderRepo.Create(ctx, order); err != nil {
-		return nil, "", fmt.Errorf("create order: %w", err)
+		return nil, fmt.Errorf("create order: %w", err)
 	}
 
-	return order, payLink, nil
+	return &CreateOrderResult{
+		Order:  order,
+		PayURL: payResp.PayURL,
+		QRCode: payResp.QRCode,
+	}, nil
 }
 
 // HandleNotify 处理异步回调
