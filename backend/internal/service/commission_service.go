@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"sort"
 	"strconv"
 	"time"
 
@@ -115,6 +116,7 @@ type CommissionService struct {
 	settingRepo       ResellerSettingRepository
 	domainRepo        ResellerDomainRepository
 	sub2apipayService *Sub2apipayService
+	rechargeOrderRepo RechargeOrderRepository
 }
 
 func NewCommissionService(
@@ -124,6 +126,7 @@ func NewCommissionService(
 	settingRepo ResellerSettingRepository,
 	domainRepo ResellerDomainRepository,
 	sub2apipayService *Sub2apipayService,
+	rechargeOrderRepo RechargeOrderRepository,
 ) *CommissionService {
 	return &CommissionService{
 		withdrawalRepo:    withdrawalRepo,
@@ -132,6 +135,7 @@ func NewCommissionService(
 		settingRepo:       settingRepo,
 		domainRepo:        domainRepo,
 		sub2apipayService: sub2apipayService,
+		rechargeOrderRepo: rechargeOrderRepo,
 	}
 }
 
@@ -179,6 +183,14 @@ func (s *CommissionService) GetSummary(ctx context.Context, resellerID int64) (*
 					totalRecharge += v
 				}
 			}
+		}
+	}
+
+	// 加上原生充值订单的到账金额
+	if s.rechargeOrderRepo != nil && len(userIDs) > 0 {
+		nativeTotal, err := s.rechargeOrderRepo.SumPaidCreditByUserIDs(ctx, userIDs)
+		if err == nil {
+			totalRecharge += nativeTotal
 		}
 	}
 
@@ -356,20 +368,62 @@ func (s *CommissionService) BackfillMerchantRateSnapshot(ctx context.Context) (i
 
 // ListRechargeDetail returns paginated recharge history for a reseller's sub-users
 func (s *CommissionService) ListRechargeDetail(ctx context.Context, resellerID int64, limit, offset int) ([]*RechargeDetailRecord, int, error) {
-	if s.sub2apipayService == nil {
-		return nil, 0, nil
+	// Collect all records from both sources, then sort and paginate
+	var allRecords []*RechargeDetailRecord
+	totalCount := 0
+
+	// 1. External recharges from Sub2apipay
+	if s.sub2apipayService != nil {
+		domains, err := s.domainRepo.ListAllDomainNamesByResellerID(ctx, resellerID)
+		if err == nil && len(domains) > 0 {
+			hosts := make([]string, len(domains))
+			for i, d := range domains {
+				hosts[i] = "https://" + d
+			}
+			// Fetch all external records (use large page size to get all for merging)
+			if records, total, err := s.sub2apipayService.ListRechargesByHosts(ctx, hosts, 1, 10000); err == nil {
+				allRecords = append(allRecords, records...)
+				totalCount += total
+			}
+		}
 	}
-	domains, err := s.domainRepo.ListAllDomainNamesByResellerID(ctx, resellerID)
-	if err != nil || len(domains) == 0 {
-		return nil, 0, nil
+
+	// 2. Native recharges from recharge_orders table
+	if s.rechargeOrderRepo != nil {
+		userIDs, err := s.getSubUserIDs(ctx, resellerID)
+		if err == nil && len(userIDs) > 0 {
+			if orders, nativeTotal, err := s.rechargeOrderRepo.ListPaidByUserIDs(ctx, userIDs, 10000, 0); err == nil {
+				for _, o := range orders {
+					rec := &RechargeDetailRecord{
+						UserID:       o.UserID,
+						OrderNo:      o.OrderNo,
+						CreditAmount: o.CreditAmount,
+					}
+					if o.PaidAt != nil {
+						rec.PaidAt = *o.PaidAt
+					} else {
+						rec.PaidAt = o.CreatedAt
+					}
+					allRecords = append(allRecords, rec)
+				}
+				totalCount += nativeTotal
+			}
+		}
 	}
-	hosts := make([]string, len(domains))
-	for i, d := range domains {
-		hosts[i] = "https://" + d
+
+	// Sort merged results by PaidAt desc
+	sort.Slice(allRecords, func(i, j int) bool {
+		return allRecords[i].PaidAt.After(allRecords[j].PaidAt)
+	})
+
+	// Apply pagination
+	total := len(allRecords)
+	if offset >= total {
+		return nil, total, nil
 	}
-	page := 1
-	if limit > 0 {
-		page = offset/limit + 1
+	end := offset + limit
+	if end > total {
+		end = total
 	}
-	return s.sub2apipayService.ListRechargesByHosts(ctx, hosts, page, limit)
+	return allRecords[offset:end], total, nil
 }

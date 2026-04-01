@@ -610,6 +610,7 @@ const adminNavItems = computed((): NavItem[] => {
     { path: '/admin/usage', label: t('nav.usage'), icon: ChartIcon },
     { path: '/admin/merchants', label: t('nav.adminMerchants'), icon: UsersIcon },
     { path: '/admin/merchant-withdrawals', label: t('nav.adminMerchantWithdrawals'), icon: CreditCardIcon },
+    { path: '/admin/recharge-orders', label: t('nav.adminRechargeOrders'), icon: WalletIcon },
   ]
 
   // 简单模式下，在系统设置前插入 API密钥

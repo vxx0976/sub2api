@@ -196,6 +196,18 @@ export const customRoutes: RouteRecordRaw[] = [
     }
   },
 
+  {
+    path: '/admin/recharge-orders',
+    name: 'AdminRechargeOrders',
+    component: () => import('@/views/admin/RechargeOrdersView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: 'Recharge Orders',
+      titleKey: 'admin.rechargeOrders.title'
+    }
+  },
+
   // ==================== Public Key Query ====================
   {
     path: '/key-query',

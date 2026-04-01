@@ -147,6 +147,51 @@ func (r *rechargeOrderRepo) ListAll(ctx context.Context, status string, userID *
 	return orders, total, nil
 }
 
+func (r *rechargeOrderRepo) SumPaidCreditByUserIDs(ctx context.Context, userIDs []int64) (float64, error) {
+	if len(userIDs) == 0 {
+		return 0, nil
+	}
+	var result []struct {
+		Sum float64 `json:"sum"`
+	}
+	err := r.client.RechargeOrder.Query().
+		Where(rechargeorder.StatusEQ("paid"), rechargeorder.UserIDIn(userIDs...)).
+		Aggregate(ent.As(ent.Sum(rechargeorder.FieldCreditAmount), "sum")).
+		Scan(ctx, &result)
+	if err != nil {
+		return 0, err
+	}
+	if len(result) == 0 {
+		return 0, nil
+	}
+	return result[0].Sum, nil
+}
+
+func (r *rechargeOrderRepo) ListPaidByUserIDs(ctx context.Context, userIDs []int64, limit, offset int) ([]*service.RechargeOrder, int, error) {
+	if len(userIDs) == 0 {
+		return nil, 0, nil
+	}
+	query := r.client.RechargeOrder.Query().
+		Where(rechargeorder.StatusEQ("paid"), rechargeorder.UserIDIn(userIDs...)).
+		Order(ent.Desc(rechargeorder.FieldCreatedAt))
+
+	total, err := query.Clone().Count(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	rows, err := query.Limit(limit).Offset(offset).All(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	orders := make([]*service.RechargeOrder, len(rows))
+	for i, row := range rows {
+		orders[i] = toServiceRechargeOrder(row)
+	}
+	return orders, total, nil
+}
+
 func toServiceRechargeOrder(row *ent.RechargeOrder) *service.RechargeOrder {
 	o := &service.RechargeOrder{
 		ID:           row.ID,

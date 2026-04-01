@@ -1227,6 +1227,28 @@ export default {
       bank: 'Bank Transfer',
       empty: 'No withdrawal requests'
     },
+    // Recharge Orders
+    rechargeOrders: {
+      title: 'Recharge Orders',
+      description: 'View all user recharge order records',
+      filterStatus: 'Status',
+      allStatus: 'All Status',
+      statusPending: 'Pending',
+      statusPaid: 'Paid',
+      statusExpired: 'Expired',
+      statusRefunded: 'Refunded',
+      userId: 'User ID',
+      userIdPlaceholder: 'Filter user',
+      orderNo: 'Order No.',
+      amount: 'Amount',
+      creditAmount: 'Credit',
+      status: 'Status',
+      payType: 'Pay Type',
+      createdAt: 'Created',
+      paidAt: 'Paid At',
+      empty: 'No recharge orders',
+    },
+
     settings: {
       site: {
         resellerServerIp: 'Reseller Server IP',
@@ -1242,5 +1264,6 @@ export default {
     resellerWithdrawals: 'Withdrawals',
     adminMerchants: 'Merchants',
     adminMerchantWithdrawals: 'Withdrawal Review',
+    adminRechargeOrders: 'Recharge Orders',
   },
 } as const

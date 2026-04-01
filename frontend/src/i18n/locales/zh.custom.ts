@@ -1239,6 +1239,28 @@ export default {
       failedToDelete: '删除优惠码失败',
       failedToLoadUsages: '加载使用记录失败'
     },
+    // Recharge Orders
+    rechargeOrders: {
+      title: '充值订单',
+      description: '查看所有用户的充值订单记录',
+      filterStatus: '状态筛选',
+      allStatus: '全部状态',
+      statusPending: '待支付',
+      statusPaid: '已支付',
+      statusExpired: '已过期',
+      statusRefunded: '已退款',
+      userId: '用户 ID',
+      userIdPlaceholder: '筛选用户',
+      orderNo: '订单号',
+      amount: '支付金额',
+      creditAmount: '到账额度',
+      status: '状态',
+      payType: '支付方式',
+      createdAt: '创建时间',
+      paidAt: '支付时间',
+      empty: '暂无充值订单',
+    },
+
     settings: {
       site: {
         resellerServerIp: '商户服务器 IP',
@@ -1254,5 +1276,6 @@ export default {
     resellerWithdrawals: '提现申请',
     adminMerchants: '商户管理',
     adminMerchantWithdrawals: '提现审核',
+    adminRechargeOrders: '充值订单',
   },
 } as const

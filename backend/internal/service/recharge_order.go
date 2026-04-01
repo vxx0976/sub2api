@@ -48,6 +48,8 @@ type RechargeOrderRepository interface {
 	ListByUserID(ctx context.Context, userID int64, limit, offset int) ([]*RechargeOrder, int, error)
 	ExpirePendingOrders(ctx context.Context) (int, error)
 	ListAll(ctx context.Context, status string, userID *int64, limit, offset int) ([]*RechargeOrder, int, error)
+	SumPaidCreditByUserIDs(ctx context.Context, userIDs []int64) (float64, error)
+	ListPaidByUserIDs(ctx context.Context, userIDs []int64, limit, offset int) ([]*RechargeOrder, int, error)
 }
 
 var ErrRechargeOrderStatusConflict = errors.New("recharge order status conflict")

@@ -26,6 +26,7 @@ import apiKeysAPI from './apiKeys'
 import scheduledTestsAPI from './scheduledTests'
 import merchantsAPI from './merchants'
 import merchantWithdrawalsAPI from './merchantWithdrawals'
+import rechargeOrdersAPI from './rechargeOrders'
 import backupAPI from './backup'
 import tlsFingerprintProfileAPI from './tlsFingerprintProfile'
 
@@ -56,6 +57,7 @@ export const adminAPI = {
   scheduledTests: scheduledTestsAPI,
   merchants: merchantsAPI,
   merchantWithdrawals: merchantWithdrawalsAPI,
+  rechargeOrders: rechargeOrdersAPI,
   backup: backupAPI,
   tlsFingerprintProfiles: tlsFingerprintProfileAPI
 }
@@ -84,6 +86,7 @@ export {
   scheduledTestsAPI,
   merchantsAPI,
   merchantWithdrawalsAPI,
+  rechargeOrdersAPI,
   backupAPI,
   tlsFingerprintProfileAPI
 }
@@ -96,4 +99,5 @@ export type { ErrorPassthroughRule, CreateRuleRequest, UpdateRuleRequest } from 
 export type { BackupAgentHealth, DataManagementConfig } from './dataManagement'
 export type { MerchantUser, MerchantSettings } from './merchants'
 export type { AdminWithdrawalItem, AdminWithdrawalListResponse } from './merchantWithdrawals'
+export type { AdminRechargeOrderItem, AdminRechargeOrderListResponse } from './rechargeOrders'
 export type { TLSFingerprintProfile, CreateProfileRequest, UpdateProfileRequest } from './tlsFingerprintProfile'
