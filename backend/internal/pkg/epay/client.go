@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
 )
 
 // Client 彩虹易支付 SDK 客户端
@@ -134,19 +136,28 @@ func (c *Client) QueryOrder(tradeNo string) (*QueryOrderResponse, error) {
 func (c *Client) VerifyNotify(params map[string]string) bool {
 	sign := params["sign"]
 	if sign == "" {
+		logger.LegacyPrintf("epay", "verify notify failed: sign is empty, params=%v", params)
 		return false
 	}
+
+	// GET 回调中 base64 的 + 会被 URL 解码为空格，需要还原
+	sign = strings.ReplaceAll(sign, " ", "+")
 
 	// 时间戳校验（5 分钟窗口）
 	if ts := params["timestamp"]; ts != "" {
 		t, err := strconv.ParseInt(ts, 10, 64)
 		if err != nil || math.Abs(float64(time.Now().Unix()-t)) > 300 {
+			logger.LegacyPrintf("epay", "verify notify failed: timestamp out of range, ts=%s, now=%d", ts, time.Now().Unix())
 			return false
 		}
 	}
 
 	content := buildSignContent(params)
-	return rsaVerify(c.publicKey, content, sign)
+	ok := rsaVerify(c.publicKey, content, sign)
+	if !ok {
+		logger.LegacyPrintf("epay", "verify notify failed: RSA signature mismatch, content=%s, sign=%s", content, sign)
+	}
+	return ok
 }
 
 func (c *Client) buildRequestParams(params map[string]string) (map[string]string, error) {
