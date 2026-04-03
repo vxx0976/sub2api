@@ -152,12 +152,30 @@ func (c *Client) VerifyNotify(params map[string]string) bool {
 		}
 	}
 
+	// 先用全量参数验签
 	content := buildSignContent(params)
-	ok := rsaVerify(c.publicKey, content, sign)
-	if !ok {
-		logger.LegacyPrintf("epay", "verify notify failed: RSA signature mismatch, content=%s, sign=%s", content, sign)
+	if rsaVerify(c.publicKey, content, sign) {
+		return true
 	}
-	return ok
+
+	// 部分易支付平台回调会附带 api_trade_no、buyer 等扩展字段，
+	// 但签名只覆盖核心字段，需要剔除扩展字段后重试验签
+	coreParams := make(map[string]string, len(params))
+	for k, v := range params {
+		coreParams[k] = v
+	}
+	delete(coreParams, "api_trade_no")
+	delete(coreParams, "buyer")
+
+	coreContent := buildSignContent(coreParams)
+	if coreContent != content {
+		if rsaVerify(c.publicKey, coreContent, sign) {
+			return true
+		}
+	}
+
+	logger.LegacyPrintf("epay", "verify notify failed: RSA signature mismatch, full_content=%s, core_content=%s, sign=%s", content, coreContent, sign)
+	return false
 }
 
 func (c *Client) buildRequestParams(params map[string]string) (map[string]string, error) {

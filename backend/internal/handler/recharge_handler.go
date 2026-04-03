@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
 	"github.com/Wei-Shaw/sub2api/internal/server/middleware"
 	"github.com/Wei-Shaw/sub2api/internal/service"
@@ -146,7 +147,7 @@ func (h *RechargeHandler) ListOrders(c *gin.Context) {
 	response.Paginated(c, items, int64(total), page, pageSize)
 }
 
-// HandleNotify GET /api/v1/recharge/notify — 异步回调（注意：彩虹易支付回调是 GET）
+// HandleNotify GET /api/v1/recharge/notify — 异步回调
 func (h *RechargeHandler) HandleNotify(c *gin.Context) {
 	params := make(map[string]string)
 	for k, v := range c.Request.URL.Query() {
@@ -155,10 +156,21 @@ func (h *RechargeHandler) HandleNotify(c *gin.Context) {
 		}
 	}
 
+	orderNo := params["out_trade_no"]
+	tradeNo := params["trade_no"]
+	tradeStatus := params["trade_status"]
+	logger.LegacyPrintf("handler.recharge", "notify received: order=%s trade=%s status=%s money=%s pid=%s params=%d ip=%s",
+		orderNo, tradeNo, tradeStatus, params["money"], params["pid"], len(params), c.ClientIP())
+
 	if err := h.rechargeService.HandleNotify(c.Request.Context(), params); err != nil {
+		logger.LegacyPrintf("handler.recharge", "notify failed: order=%s trade=%s status=%s ip=%s err=%v",
+			orderNo, tradeNo, tradeStatus, c.ClientIP(), err)
 		c.String(http.StatusOK, "fail")
 		return
 	}
+
+	logger.LegacyPrintf("handler.recharge", "notify processed: order=%s trade=%s status=%s ip=%s",
+		orderNo, tradeNo, tradeStatus, c.ClientIP())
 	c.String(http.StatusOK, "success")
 }
 

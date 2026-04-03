@@ -9,6 +9,7 @@ import (
 	"math/big"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/pkg/epay"
@@ -17,15 +18,15 @@ import (
 
 // Setting keys for recharge
 const (
-	SettingKeyRechargeEnabled    = "recharge_enabled"
-	SettingKeyRechargeMinAmount  = "recharge_min_amount"
-	SettingKeyRechargeMaxAmount  = "recharge_max_amount"
-	SettingKeyRechargeTiers      = "recharge_tiers"
-	SettingKeyRechargePayTypes   = "recharge_pay_types" // JSON array: ["alipay","wxpay"]
-	SettingKeyEpayAPIURL         = "epay_api_url"
-	SettingKeyEpayPID            = "epay_pid"
-	SettingKeyEpayPublicKey      = "epay_platform_public_key"
-	SettingKeyEpayPrivateKey     = "epay_merchant_private_key"
+	SettingKeyRechargeEnabled   = "recharge_enabled"
+	SettingKeyRechargeMinAmount = "recharge_min_amount"
+	SettingKeyRechargeMaxAmount = "recharge_max_amount"
+	SettingKeyRechargeTiers     = "recharge_tiers"
+	SettingKeyRechargePayTypes  = "recharge_pay_types" // JSON array: ["alipay","wxpay"]
+	SettingKeyEpayAPIURL        = "epay_api_url"
+	SettingKeyEpayPID           = "epay_pid"
+	SettingKeyEpayPublicKey     = "epay_platform_public_key"
+	SettingKeyEpayPrivateKey    = "epay_merchant_private_key"
 )
 
 // RechargeService 充值业务服务
@@ -34,6 +35,11 @@ type RechargeService struct {
 	settingRepo    SettingRepository
 	adminService   AdminService
 	settingService *SettingService
+	syncInterval   time.Duration
+	stopCh         chan struct{}
+	stopOnce       sync.Once
+	startOnce      sync.Once
+	wg             sync.WaitGroup
 }
 
 // NewRechargeService creates a new RechargeService
@@ -43,12 +49,57 @@ func NewRechargeService(
 	adminService AdminService,
 	settingService *SettingService,
 ) *RechargeService {
-	return &RechargeService{
+	svc := &RechargeService{
 		orderRepo:      orderRepo,
 		settingRepo:    settingRepo,
 		adminService:   adminService,
 		settingService: settingService,
+		syncInterval:   time.Minute,
+		stopCh:         make(chan struct{}),
 	}
+	svc.Start()
+	return svc
+}
+
+// Start 启动待支付订单后台补偿同步。
+func (s *RechargeService) Start() {
+	if s == nil || s.orderRepo == nil || s.syncInterval <= 0 {
+		return
+	}
+
+	s.startOnce.Do(func() {
+		s.wg.Add(1)
+		go func() {
+			defer s.wg.Done()
+
+			ticker := time.NewTicker(s.syncInterval)
+			defer ticker.Stop()
+
+			s.runPendingOrderSync()
+			for {
+				select {
+				case <-ticker.C:
+					s.runPendingOrderSync()
+				case <-s.stopCh:
+					return
+				}
+			}
+		}()
+	})
+}
+
+// Stop 停止后台补偿同步。
+func (s *RechargeService) Stop() {
+	if s == nil {
+		return
+	}
+
+	s.stopOnce.Do(func() {
+		if s.stopCh != nil {
+			close(s.stopCh)
+		}
+	})
+	s.wg.Wait()
 }
 
 // GetConfig 获取充值配置
@@ -252,6 +303,56 @@ func (s *RechargeService) HandleNotify(ctx context.Context, params map[string]st
 	return nil
 }
 
+func (s *RechargeService) runPendingOrderSync() {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	synced, err := s.syncPendingOrders(ctx)
+	if err != nil {
+		logger.LegacyPrintf("service.recharge", "pending order sync failed: err=%v", err)
+		return
+	}
+
+	expired, err := s.ExpirePendingOrders(ctx)
+	if err != nil {
+		logger.LegacyPrintf("service.recharge", "expire pending orders failed: err=%v", err)
+		return
+	}
+
+	if synced > 0 || expired > 0 {
+		logger.LegacyPrintf("service.recharge", "pending order sync completed: synced=%d expired=%d", synced, expired)
+	}
+}
+
+func (s *RechargeService) syncPendingOrders(ctx context.Context) (int, error) {
+	const pageSize = 100
+
+	synced := 0
+	for offset := 0; ; offset += pageSize {
+		orders, _, err := s.orderRepo.ListAll(ctx, "pending", nil, pageSize, offset)
+		if err != nil {
+			return synced, err
+		}
+		if len(orders) == 0 {
+			return synced, nil
+		}
+
+		for _, order := range orders {
+			if order == nil || order.TradeNo == "" {
+				continue
+			}
+
+			if s.syncOrderFromEpay(ctx, order) {
+				synced++
+			}
+		}
+
+		if len(orders) < pageSize {
+			return synced, nil
+		}
+	}
+}
+
 // GetOrderStatus 查询订单状态，对 pending 订单主动向易支付查询
 func (s *RechargeService) GetOrderStatus(ctx context.Context, orderNo string, userID int64) (*RechargeOrder, error) {
 	order, err := s.orderRepo.GetByOrderNo(ctx, orderNo)
@@ -273,27 +374,27 @@ func (s *RechargeService) GetOrderStatus(ctx context.Context, orderNo string, us
 }
 
 // syncOrderFromEpay 主动查询易支付订单状态并同步
-func (s *RechargeService) syncOrderFromEpay(ctx context.Context, order *RechargeOrder) {
+func (s *RechargeService) syncOrderFromEpay(ctx context.Context, order *RechargeOrder) bool {
 	if order.TradeNo == "" {
-		return
+		return false
 	}
 	epayClient, err := s.getEpayClient(ctx)
 	if err != nil {
-		return
+		return false
 	}
 	resp, err := epayClient.QueryOrder(order.TradeNo)
 	if err != nil {
-		return
+		return false
 	}
 	// status=1 表示已支付
 	if resp.Status != 1 {
-		return
+		return false
 	}
 	// CAS 更新订单状态
 	now := time.Now()
 	tradeNo := resp.TradeNo
 	if err := s.orderRepo.UpdateStatus(ctx, order.OrderNo, "pending", "paid", &tradeNo, &now); err != nil {
-		return
+		return false
 	}
 	// 充值到账
 	_, err = s.adminService.UpdateUserBalance(ctx, order.UserID, order.CreditAmount, "add",
@@ -303,9 +404,10 @@ func (s *RechargeService) syncOrderFromEpay(ctx context.Context, order *Recharge
 		if rbErr := s.orderRepo.UpdateStatus(ctx, order.OrderNo, "paid", "pending", nil, nil); rbErr != nil {
 			logger.LegacyPrintf("service.recharge", "CRITICAL: rollback failed: order=%s err=%v", order.OrderNo, rbErr)
 		}
-		return
+		return false
 	}
 	logger.LegacyPrintf("service.recharge", "recharge success (sync): order=%s user=%d amount=¥%.2f credit=$%.2f", order.OrderNo, order.UserID, order.Amount, order.CreditAmount)
+	return true
 }
 
 // ListUserOrders 查询用户充值记录

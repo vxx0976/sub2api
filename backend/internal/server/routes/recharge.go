@@ -19,6 +19,7 @@ func RegisterRechargeRoutes(
 	rechargePublic := v1.Group("/recharge")
 	{
 		rechargePublic.GET("/notify", h.Recharge.HandleNotify)
+		rechargePublic.POST("/notify", h.Recharge.HandleNotify)
 		rechargePublic.GET("/return", h.Recharge.HandleReturn)
 		rechargePublic.GET("/config", h.Recharge.GetConfig)
 	}
