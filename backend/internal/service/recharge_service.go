@@ -269,7 +269,8 @@ func (s *RechargeService) HandleNotify(ctx context.Context, params map[string]st
 	if order.Status == "paid" {
 		return nil
 	}
-	if order.Status != "pending" {
+	// 允许 pending 和 expired 订单通过回调完成支付（回调可能在订单过期后才到达）
+	if order.Status != "pending" && order.Status != "expired" {
 		return fmt.Errorf("order status is %s, cannot pay", order.Status)
 	}
 
@@ -283,7 +284,7 @@ func (s *RechargeService) HandleNotify(ctx context.Context, params map[string]st
 
 	// 5. CAS 更新订单状态
 	now := time.Now()
-	if err := s.orderRepo.UpdateStatus(ctx, orderNo, "pending", "paid", &tradeNo, &now); err != nil {
+	if err := s.orderRepo.UpdateStatus(ctx, orderNo, order.Status, "paid", &tradeNo, &now); err != nil {
 		return fmt.Errorf("update order status: %w", err)
 	}
 
@@ -353,7 +354,7 @@ func (s *RechargeService) syncPendingOrders(ctx context.Context) (int, error) {
 	}
 }
 
-// GetOrderStatus 查询订单状态，对 pending 订单主动向易支付查询
+// GetOrderStatus 查询订单状态，对 pending/expired 订单主动向易支付查询
 func (s *RechargeService) GetOrderStatus(ctx context.Context, orderNo string, userID int64) (*RechargeOrder, error) {
 	order, err := s.orderRepo.GetByOrderNo(ctx, orderNo)
 	if err != nil {
@@ -363,8 +364,8 @@ func (s *RechargeService) GetOrderStatus(ctx context.Context, orderNo string, us
 		return nil, fmt.Errorf("order not found")
 	}
 
-	// 对 pending 订单主动查询易支付状态
-	if order.Status == "pending" {
+	// 对 pending/expired 订单主动查询易支付状态（回调可能丢失或延迟）
+	if order.Status == "pending" || order.Status == "expired" {
 		s.syncOrderFromEpay(ctx, order)
 		// 重新查询最新状态
 		order, _ = s.orderRepo.GetByOrderNo(ctx, orderNo)
@@ -380,20 +381,27 @@ func (s *RechargeService) syncOrderFromEpay(ctx context.Context, order *Recharge
 	}
 	epayClient, err := s.getEpayClient(ctx)
 	if err != nil {
+		logger.LegacyPrintf("service.recharge", "sync: epay client error: order=%s err=%v", order.OrderNo, err)
 		return false
 	}
 	resp, err := epayClient.QueryOrder(order.TradeNo)
 	if err != nil {
+		logger.LegacyPrintf("service.recharge", "sync: query order failed: order=%s trade=%s err=%v", order.OrderNo, order.TradeNo, err)
 		return false
 	}
 	// status=1 表示已支付
 	if resp.Status != 1 {
 		return false
 	}
-	// CAS 更新订单状态
+
+	logger.LegacyPrintf("service.recharge", "sync: epay confirmed paid: order=%s trade=%s", order.OrderNo, order.TradeNo)
+
+	// CAS 更新订单状态：支持从 pending 或 expired 更新为 paid
 	now := time.Now()
 	tradeNo := resp.TradeNo
-	if err := s.orderRepo.UpdateStatus(ctx, order.OrderNo, "pending", "paid", &tradeNo, &now); err != nil {
+	fromStatus := order.Status
+	if err := s.orderRepo.UpdateStatus(ctx, order.OrderNo, fromStatus, "paid", &tradeNo, &now); err != nil {
+		logger.LegacyPrintf("service.recharge", "sync: update status failed: order=%s from=%s err=%v", order.OrderNo, fromStatus, err)
 		return false
 	}
 	// 充值到账
@@ -401,7 +409,7 @@ func (s *RechargeService) syncOrderFromEpay(ctx context.Context, order *Recharge
 		fmt.Sprintf("Recharge order %s, paid ¥%.2f, credited $%.2f", order.OrderNo, order.Amount, order.CreditAmount))
 	if err != nil {
 		logger.LegacyPrintf("service.recharge", "credit balance failed (sync), rolling back: order=%s err=%v", order.OrderNo, err)
-		if rbErr := s.orderRepo.UpdateStatus(ctx, order.OrderNo, "paid", "pending", nil, nil); rbErr != nil {
+		if rbErr := s.orderRepo.UpdateStatus(ctx, order.OrderNo, "paid", fromStatus, nil, nil); rbErr != nil {
 			logger.LegacyPrintf("service.recharge", "CRITICAL: rollback failed: order=%s err=%v", order.OrderNo, rbErr)
 		}
 		return false

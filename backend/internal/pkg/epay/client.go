@@ -121,6 +121,8 @@ func (c *Client) QueryOrder(tradeNo string) (*QueryOrderResponse, error) {
 		return nil, err
 	}
 
+	logger.LegacyPrintf("epay", "query order response: trade_no=%s body=%s", tradeNo, string(body))
+
 	var resp QueryOrderResponse
 	if err := json.Unmarshal(body, &resp); err != nil {
 		return nil, fmt.Errorf("epay: decode query response: %w", err)
