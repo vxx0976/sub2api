@@ -1,5 +1,33 @@
 package epay
 
+import (
+	"encoding/json"
+	"strconv"
+)
+
+// FlexInt 兼容 JSON 中数字和字符串两种格式的整数，如 1 和 "1"
+type FlexInt int
+
+func (fi *FlexInt) UnmarshalJSON(data []byte) error {
+	// 先尝试数字
+	var n int
+	if err := json.Unmarshal(data, &n); err == nil {
+		*fi = FlexInt(n)
+		return nil
+	}
+	// 再尝试字符串
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return err
+	}
+	n, err := strconv.Atoi(s)
+	if err != nil {
+		return err
+	}
+	*fi = FlexInt(n)
+	return nil
+}
+
 // CreatePaymentRequest 创建支付请求参数
 type CreatePaymentRequest struct {
 	OutTradeNo string  `json:"out_trade_no"` // 商户订单号
@@ -28,12 +56,12 @@ type CreatePaymentResponse struct {
 
 // QueryOrderResponse 订单查询响应
 type QueryOrderResponse struct {
-	Code    int    `json:"code"`
-	Msg     string `json:"msg"`
-	TradeNo string `json:"trade_no"`
-	Money   string `json:"money"`
-	Status  int    `json:"status"` // 1=已支付
-	Type    string `json:"type"`
+	Code    FlexInt `json:"code"`
+	Msg     string  `json:"msg"`
+	TradeNo string  `json:"trade_no"`
+	Money   string  `json:"money"`
+	Status  FlexInt `json:"status"` // 1=已支付
+	Type    string  `json:"type"`
 }
 
 // NotifyParams 异步回调参数
