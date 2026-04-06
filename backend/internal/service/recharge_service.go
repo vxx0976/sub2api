@@ -23,10 +23,9 @@ const (
 	SettingKeyRechargeMaxAmount = "recharge_max_amount"
 	SettingKeyRechargeTiers     = "recharge_tiers"
 	SettingKeyRechargePayTypes  = "recharge_pay_types" // JSON array: ["alipay","wxpay"]
-	SettingKeyEpayAPIURL        = "epay_api_url"
-	SettingKeyEpayPID           = "epay_pid"
-	SettingKeyEpayPublicKey     = "epay_platform_public_key"
-	SettingKeyEpayPrivateKey    = "epay_merchant_private_key"
+	SettingKeyEpayAPIURL = "epay_api_url"
+	SettingKeyEpayPID    = "epay_pid"
+	SettingKeyEpayKey    = "epay_key"
 )
 
 // RechargeService 充值业务服务
@@ -438,12 +437,11 @@ func (s *RechargeService) ExpirePendingOrders(ctx context.Context) (int, error) 
 func (s *RechargeService) getEpayClient(ctx context.Context) (*epay.Client, error) {
 	apiURL, _ := s.settingRepo.GetValue(ctx, SettingKeyEpayAPIURL)
 	pid, _ := s.settingRepo.GetValue(ctx, SettingKeyEpayPID)
-	pubKey, _ := s.settingRepo.GetValue(ctx, SettingKeyEpayPublicKey)
-	privKey, _ := s.settingRepo.GetValue(ctx, SettingKeyEpayPrivateKey)
+	key, _ := s.settingRepo.GetValue(ctx, SettingKeyEpayKey)
 
-	if apiURL == "" || pid == "" || pubKey == "" || privKey == "" {
+	if apiURL == "" || pid == "" || key == "" {
 		return nil, fmt.Errorf("epay configuration incomplete")
 	}
 
-	return epay.NewClient(apiURL, pid, pubKey, privKey)
+	return epay.NewClient(apiURL, pid, key)
 }

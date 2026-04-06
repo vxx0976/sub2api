@@ -97,12 +97,10 @@ type SystemSettings struct {
 	RechargePayTypes   string // JSON array: ["alipay","wxpay"]
 
 	// 易支付配置
-	EpayAPIURL               string
-	EpayPID                  string
-	EpayPlatformPublicKey    string
-	EpayMerchantPrivateKey   string
-	EpayPublicKeyConfigured  bool // 前端展示用，不存储
-	EpayPrivateKeyConfigured bool // 前端展示用，不存储
+	EpayAPIURL         string
+	EpayPID            string
+	EpayKey            string
+	EpayKeyConfigured  bool // 前端展示用，不存储
 
 	// Gateway forwarding behavior
 	EnableFingerprintUnification bool // 是否统一 OAuth 账号的指纹头（默认 true）

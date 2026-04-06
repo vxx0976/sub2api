@@ -106,8 +106,7 @@ export interface SystemSettings {
   // 易支付配置
   epay_api_url: string
   epay_pid: string
-  epay_public_key_configured: boolean
-  epay_private_key_configured: boolean
+  epay_key_configured: boolean
 
   // Gateway forwarding behavior
   enable_fingerprint_unification: boolean
@@ -182,8 +181,7 @@ export interface UpdateSettingsRequest {
   recharge_pay_types?: string
   epay_api_url?: string
   epay_pid?: string
-  epay_platform_public_key?: string
-  epay_merchant_private_key?: string
+  epay_key?: string
   enable_fingerprint_unification?: boolean
   enable_metadata_passthrough?: boolean
 }

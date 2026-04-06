@@ -141,10 +141,9 @@ func (h *SettingHandler) GetSettings(c *gin.Context) {
 		RechargeMaxAmount:                    settings.RechargeMaxAmount,
 		RechargeTiers:                        settings.RechargeTiers,
 		RechargePayTypes:                     settings.RechargePayTypes,
-		EpayAPIURL:                           settings.EpayAPIURL,
-		EpayPID:                              settings.EpayPID,
-		EpayPublicKeyConfigured:              settings.EpayPublicKeyConfigured,
-		EpayPrivateKeyConfigured:             settings.EpayPrivateKeyConfigured,
+		EpayAPIURL:        settings.EpayAPIURL,
+		EpayPID:           settings.EpayPID,
+		EpayKeyConfigured: settings.EpayKeyConfigured,
 		EnableFingerprintUnification:         settings.EnableFingerprintUnification,
 		EnableMetadataPassthrough:            settings.EnableMetadataPassthrough,
 	})
@@ -245,10 +244,9 @@ type UpdateSettingsRequest struct {
 	RechargePayTypes  *string  `json:"recharge_pay_types"`
 
 	// 易支付配置
-	EpayAPIURL             *string `json:"epay_api_url"`
-	EpayPID                *string `json:"epay_pid"`
-	EpayPlatformPublicKey  *string `json:"epay_platform_public_key"`
-	EpayMerchantPrivateKey *string `json:"epay_merchant_private_key"`
+	EpayAPIURL *string `json:"epay_api_url"`
+	EpayPID    *string `json:"epay_pid"`
+	EpayKey    *string `json:"epay_key"`
 
 	// Gateway forwarding behavior
 	EnableFingerprintUnification *bool `json:"enable_fingerprint_unification"`
@@ -684,17 +682,11 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 			}
 			return previousSettings.EpayPID
 		}(),
-		EpayPlatformPublicKey: func() string {
-			if req.EpayPlatformPublicKey != nil && *req.EpayPlatformPublicKey != "" {
-				return *req.EpayPlatformPublicKey
+		EpayKey: func() string {
+			if req.EpayKey != nil && *req.EpayKey != "" {
+				return *req.EpayKey
 			}
-			return previousSettings.EpayPlatformPublicKey
-		}(),
-		EpayMerchantPrivateKey: func() string {
-			if req.EpayMerchantPrivateKey != nil && *req.EpayMerchantPrivateKey != "" {
-				return *req.EpayMerchantPrivateKey
-			}
-			return previousSettings.EpayMerchantPrivateKey
+			return previousSettings.EpayKey
 		}(),
 		OpsMonitoringEnabled: func() bool {
 			if req.OpsMonitoringEnabled != nil {
@@ -822,10 +814,9 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		RechargeMaxAmount:                    updatedSettings.RechargeMaxAmount,
 		RechargeTiers:                        updatedSettings.RechargeTiers,
 		RechargePayTypes:                     updatedSettings.RechargePayTypes,
-		EpayAPIURL:                           updatedSettings.EpayAPIURL,
-		EpayPID:                              updatedSettings.EpayPID,
-		EpayPublicKeyConfigured:              updatedSettings.EpayPublicKeyConfigured,
-		EpayPrivateKeyConfigured:             updatedSettings.EpayPrivateKeyConfigured,
+		EpayAPIURL:        updatedSettings.EpayAPIURL,
+		EpayPID:           updatedSettings.EpayPID,
+		EpayKeyConfigured: updatedSettings.EpayKeyConfigured,
 		EnableFingerprintUnification:         updatedSettings.EnableFingerprintUnification,
 		EnableMetadataPassthrough:            updatedSettings.EnableMetadataPassthrough,
 	})

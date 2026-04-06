@@ -607,11 +607,8 @@ func (s *SettingService) UpdateSettings(ctx context.Context, settings *SystemSet
 		updates[SettingKeyEpayPID] = settings.EpayPID
 	}
 	// 密钥只在非空时更新（避免清空）
-	if settings.EpayPlatformPublicKey != "" {
-		updates[SettingKeyEpayPublicKey] = settings.EpayPlatformPublicKey
-	}
-	if settings.EpayMerchantPrivateKey != "" {
-		updates[SettingKeyEpayPrivateKey] = settings.EpayMerchantPrivateKey
+	if settings.EpayKey != "" {
+		updates[SettingKeyEpayKey] = settings.EpayKey
 	}
 
 	// Gateway forwarding behavior
@@ -1121,10 +1118,8 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 	// 易支付配置
 	result.EpayAPIURL = settings[SettingKeyEpayAPIURL]
 	result.EpayPID = settings[SettingKeyEpayPID]
-	result.EpayPlatformPublicKey = settings[SettingKeyEpayPublicKey]
-	result.EpayMerchantPrivateKey = settings[SettingKeyEpayPrivateKey]
-	result.EpayPublicKeyConfigured = settings[SettingKeyEpayPublicKey] != ""
-	result.EpayPrivateKeyConfigured = settings[SettingKeyEpayPrivateKey] != ""
+	result.EpayKey = settings[SettingKeyEpayKey]
+	result.EpayKeyConfigured = settings[SettingKeyEpayKey] != ""
 
 	// Gateway forwarding behavior (defaults: fingerprint=true, metadata_passthrough=false)
 	if v, ok := settings[SettingKeyEnableFingerprintUnification]; ok && v != "" {

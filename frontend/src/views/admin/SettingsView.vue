@@ -1823,31 +1823,17 @@
                 />
               </div>
 
-              <!-- Platform Public Key -->
-              <div class="mb-4">
-                <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {{ t('admin.settings.recharge.epayPublicKey') }}
-                  <span v-if="initialSettings?.epay_public_key_configured" class="ml-2 text-xs text-emerald-600 dark:text-emerald-400">{{ t('admin.settings.recharge.keyConfigured') }}</span>
-                </label>
-                <textarea
-                  v-model="form.epay_platform_public_key"
-                  rows="3"
-                  class="input font-mono text-sm"
-                  :placeholder="t('admin.settings.recharge.epayPublicKeyPlaceholder')"
-                />
-              </div>
-
-              <!-- Merchant Private Key -->
+              <!-- Merchant Key -->
               <div>
                 <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {{ t('admin.settings.recharge.epayPrivateKey') }}
-                  <span v-if="initialSettings?.epay_private_key_configured" class="ml-2 text-xs text-emerald-600 dark:text-emerald-400">{{ t('admin.settings.recharge.keyConfigured') }}</span>
+                  {{ t('admin.settings.recharge.epayKey') }}
+                  <span v-if="initialSettings?.epay_key_configured" class="ml-2 text-xs text-emerald-600 dark:text-emerald-400">{{ t('admin.settings.recharge.keyConfigured') }}</span>
                 </label>
-                <textarea
-                  v-model="form.epay_merchant_private_key"
-                  rows="3"
+                <input
+                  v-model="form.epay_key"
+                  type="text"
                   class="input font-mono text-sm"
-                  :placeholder="t('admin.settings.recharge.epayPrivateKeyPlaceholder')"
+                  :placeholder="t('admin.settings.recharge.epayKeyPlaceholder')"
                 />
                 <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
                   {{ t('admin.settings.recharge.epayKeyHint') }}
@@ -2396,8 +2382,7 @@ type SettingsForm = SystemSettings & {
   smtp_password: string
   turnstile_secret_key: string
   linuxdo_connect_client_secret: string
-  epay_platform_public_key: string
-  epay_merchant_private_key: string
+  epay_key: string
 }
 
 const form = reactive<SettingsForm>({
@@ -2436,8 +2421,7 @@ const form = reactive<SettingsForm>({
   recharge_pay_types: '',
   epay_api_url: '',
   epay_pid: '',
-  epay_platform_public_key: '',
-  epay_merchant_private_key: '',
+  epay_key: '',
   sora_client_enabled: false,
   custom_menu_items: [] as Array<{id: string; label: string; icon_svg: string; url: string; visibility: 'user' | 'admin'; sort_order: number}>,
   custom_endpoints: [] as Array<{name: string; endpoint: string; description: string}>,
@@ -2485,9 +2469,8 @@ const form = reactive<SettingsForm>({
   // Gateway forwarding behavior
   enable_fingerprint_unification: true,
   enable_metadata_passthrough: false,
-  // Epay key configured flags (read-only, from server)
-  epay_public_key_configured: false,
-  epay_private_key_configured: false,
+  // Epay key configured flag (read-only, from server)
+  epay_key_configured: false,
 })
 
 const defaultSubscriptionGroupOptions = computed<DefaultSubscriptionGroupOption[]>(() =>
@@ -2634,8 +2617,7 @@ async function loadSettings() {
     const settings = await adminAPI.settings.getSettings()
     initialSettings.value = settings
     Object.assign(form, settings)
-    form.epay_platform_public_key = ''
-    form.epay_merchant_private_key = ''
+    form.epay_key = ''
     form.backend_mode_enabled = settings.backend_mode_enabled
     form.default_subscriptions = Array.isArray(settings.default_subscriptions)
       ? settings.default_subscriptions
@@ -2810,8 +2792,7 @@ async function saveSettings() {
       recharge_pay_types: form.recharge_pay_types || undefined,
       epay_api_url: form.epay_api_url || undefined,
       epay_pid: form.epay_pid || undefined,
-      epay_platform_public_key: form.epay_platform_public_key || undefined,
-      epay_merchant_private_key: form.epay_merchant_private_key || undefined,
+      epay_key: form.epay_key || undefined,
       enable_fingerprint_unification: form.enable_fingerprint_unification,
       enable_metadata_passthrough: form.enable_metadata_passthrough
     }
@@ -2825,6 +2806,7 @@ async function saveSettings() {
     smtpPasswordManuallyEdited.value = false
     form.turnstile_secret_key = ''
     form.linuxdo_connect_client_secret = ''
+    form.epay_key = ''
     // Refresh cached settings so sidebar/header update immediately
     await appStore.fetchPublicSettings(true)
     await adminSettingsStore.fetch(true)

@@ -30,38 +30,34 @@ func (fi *FlexInt) UnmarshalJSON(data []byte) error {
 
 // CreatePaymentRequest 创建支付请求参数
 type CreatePaymentRequest struct {
-	OutTradeNo string  `json:"out_trade_no"` // 商户订单号
-	Type       string  `json:"type"`         // 支付方式: alipay/wxpay
-	Name       string  `json:"name"`         // 商品名称
-	Money      string  `json:"money"`        // 支付金额
-	NotifyURL  string  `json:"notify_url"`   // 异步通知地址
-	ReturnURL  string  `json:"return_url"`   // 同步跳转地址
-	ClientIP   string  `json:"clientip"`     // 用户IP地址（API模式必填）
+	OutTradeNo string `json:"out_trade_no"` // 商户订单号
+	Type       string `json:"type"`         // 支付方式: alipay/wxpay/qqpay
+	Name       string `json:"name"`         // 商品名称（最多127字节）
+	Money      string `json:"money"`        // 支付金额（元，2位小数）
+	NotifyURL  string `json:"notify_url"`   // 异步通知地址
+	ReturnURL  string `json:"return_url"`   // 同步跳转地址
+	ClientIP   string `json:"clientip"`     // 用户IP地址
+	Device     string `json:"device"`       // 设备类型: pc/mobile/qq/wechat/alipay
 }
 
-// CreatePaymentResponse API 创建支付响应
-// 兼容两种易支付响应格式:
-//   - 旧版: payurl, qrcode, urlscheme
-//   - 新版: pay_type + pay_info
+// CreatePaymentResponse API 创建支付响应（mapi.php）
 type CreatePaymentResponse struct {
-	Code      int    `json:"code"`
-	Msg       string `json:"msg"`
-	TradeNo   string `json:"trade_no"`
-	PayURL    string `json:"payurl"`
-	QRCode    string `json:"qrcode"`
-	URLScheme string `json:"urlscheme"`
-	PayType   string `json:"pay_type"` // 新版: qrcode / url / ...
-	PayInfo   string `json:"pay_info"` // 新版: 支付链接
+	Code      int    `json:"code"`      // 1=成功
+	Msg       string `json:"msg"`       // 失败原因
+	TradeNo   string `json:"trade_no"`  // 平台订单号
+	PayURL    string `json:"payurl"`    // 支付跳转URL
+	QRCode    string `json:"qrcode"`    // 二维码链接
+	URLScheme string `json:"urlscheme"` // 微信小程序跳转
 }
 
 // QueryOrderResponse 订单查询响应
 type QueryOrderResponse struct {
-	Code    FlexInt `json:"code"`
-	Msg     string  `json:"msg"`
-	TradeNo string  `json:"trade_no"`
-	Money   string  `json:"money"`
-	Status  FlexInt `json:"status"` // 1=已支付
-	Type    string  `json:"type"`
+	Code    int    `json:"code"`     // 1=成功
+	Msg     string `json:"msg"`      // 失败原因
+	TradeNo string `json:"trade_no"` // 平台订单号
+	Money   string `json:"money"`    // 金额
+	Status  FlexInt `json:"status"`  // 1=已支付
+	Type    string `json:"type"`     // 支付方式
 }
 
 // NotifyParams 异步回调参数
@@ -73,5 +69,4 @@ type NotifyParams struct {
 	Money       string `json:"money"`
 	Sign        string `json:"sign"`
 	SignType    string `json:"sign_type"`
-	Timestamp   string `json:"timestamp"`
 }

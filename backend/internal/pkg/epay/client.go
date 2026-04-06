@@ -1,74 +1,43 @@
 package epay
 
 import (
-	"crypto/rsa"
 	"encoding/json"
 	"fmt"
 	"io"
-	"math"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
 )
 
-// Client 彩虹易支付 SDK 客户端
+// Client 蓝荔支付 SDK 客户端（MD5 签名）
 type Client struct {
 	apiURL     string
 	pid        string
-	publicKey  *rsa.PublicKey
-	privateKey *rsa.PrivateKey
+	key        string
 	httpClient *http.Client
 }
 
-// NewClient 创建易支付客户端
-func NewClient(apiURL, pid, platformPublicKey, merchantPrivateKey string) (*Client, error) {
-	pubKey, err := parsePublicKey(platformPublicKey)
-	if err != nil {
-		return nil, fmt.Errorf("epay: parse platform public key: %w", err)
-	}
-	privKey, err := parsePrivateKey(merchantPrivateKey)
-	if err != nil {
-		return nil, fmt.Errorf("epay: parse merchant private key: %w", err)
+// NewClient 创建支付客户端
+func NewClient(apiURL, pid, key string) (*Client, error) {
+	if apiURL == "" || pid == "" || key == "" {
+		return nil, fmt.Errorf("epay: apiURL, pid, key are required")
 	}
 	apiURL = strings.TrimRight(apiURL, "/") + "/"
 	return &Client{
 		apiURL:     apiURL,
 		pid:        pid,
-		publicKey:  pubKey,
-		privateKey: privKey,
+		key:        key,
 		httpClient: &http.Client{Timeout: 15 * time.Second},
 	}, nil
 }
 
-// GetPayLink 生成支付跳转链接（页面跳转模式）
+// GetPayLink 生成支付跳转链接（页面跳转模式，submit.php）
 func (c *Client) GetPayLink(req CreatePaymentRequest) (string, error) {
 	params := map[string]string{
-		"type":         req.Type,
-		"out_trade_no": req.OutTradeNo,
-		"notify_url":   req.NotifyURL,
-		"return_url":   req.ReturnURL,
-		"name":         req.Name,
-		"money":        req.Money,
-	}
-	signed, err := c.buildRequestParams(params)
-	if err != nil {
-		return "", err
-	}
-
-	vals := url.Values{}
-	for k, v := range signed {
-		vals.Set(k, v)
-	}
-	return c.apiURL + "api/pay/submit?" + vals.Encode(), nil
-}
-
-// CreatePayment 通过 API 创建支付订单
-func (c *Client) CreatePayment(req CreatePaymentRequest) (*CreatePaymentResponse, error) {
-	params := map[string]string{
+		"pid":          c.pid,
 		"type":         req.Type,
 		"out_trade_no": req.OutTradeNo,
 		"notify_url":   req.NotifyURL,
@@ -77,135 +46,49 @@ func (c *Client) CreatePayment(req CreatePaymentRequest) (*CreatePaymentResponse
 		"money":        req.Money,
 		"clientip":     req.ClientIP,
 	}
-
-	body, err := c.doPost("api/pay/create", params)
-	if err != nil {
-		return nil, err
+	if req.Device != "" {
+		params["device"] = req.Device
 	}
 
-	fmt.Printf("[epay] create payment response: %s\n", string(body))
-
-	var resp CreatePaymentResponse
-	if err := json.Unmarshal(body, &resp); err != nil {
-		return nil, fmt.Errorf("epay: decode response: %w", err)
-	}
-
-	// 判断是否成功：有 trade_no 即视为成功（兼容 code=0 和 code=1 的平台）
-	if resp.TradeNo == "" {
-		return nil, fmt.Errorf("epay: create payment failed: %s", resp.Msg)
-	}
-
-	// 兼容新版响应格式：pay_type + pay_info → 归一化到 PayURL/QRCode
-	if resp.PayInfo != "" {
-		if resp.PayType == "qrcode" {
-			if resp.QRCode == "" {
-				resp.QRCode = resp.PayInfo
-			}
-		}
-		if resp.PayURL == "" {
-			resp.PayURL = resp.PayInfo
-		}
-	}
-
-	return &resp, nil
-}
-
-// QueryOrder 查询订单状态
-func (c *Client) QueryOrder(tradeNo string) (*QueryOrderResponse, error) {
-	params := map[string]string{
-		"trade_no": tradeNo,
-	}
-
-	body, err := c.doPost("api/pay/query", params)
-	if err != nil {
-		return nil, err
-	}
-
-	logger.LegacyPrintf("epay", "query order response: trade_no=%s body=%s", tradeNo, string(body))
-
-	var resp QueryOrderResponse
-	if err := json.Unmarshal(body, &resp); err != nil {
-		return nil, fmt.Errorf("epay: decode query response: %w", err)
-	}
-	// 兼容 code=0 和 code=1 的平台，有 trade_no 即视为成功
-	if resp.TradeNo == "" {
-		return nil, fmt.Errorf("epay: query order failed: %s", resp.Msg)
-	}
-	return &resp, nil
-}
-
-// VerifyNotify 验证异步回调签名
-func (c *Client) VerifyNotify(params map[string]string) bool {
-	sign := params["sign"]
-	if sign == "" {
-		logger.LegacyPrintf("epay", "verify notify failed: sign is empty, params=%v", params)
-		return false
-	}
-
-	// GET 回调中 base64 的 + 会被 URL 解码为空格，需要还原
-	sign = strings.ReplaceAll(sign, " ", "+")
-
-	// 时间戳校验（5 分钟窗口）
-	if ts := params["timestamp"]; ts != "" {
-		t, err := strconv.ParseInt(ts, 10, 64)
-		if err != nil || math.Abs(float64(time.Now().Unix()-t)) > 300 {
-			logger.LegacyPrintf("epay", "verify notify failed: timestamp out of range, ts=%s, now=%d", ts, time.Now().Unix())
-			return false
-		}
-	}
-
-	// 先用全量参数验签
-	content := buildSignContent(params)
-	if rsaVerify(c.publicKey, content, sign) {
-		return true
-	}
-
-	// 部分易支付平台回调会附带 api_trade_no、buyer 等扩展字段，
-	// 但签名只覆盖核心字段，需要剔除扩展字段后重试验签
-	coreParams := make(map[string]string, len(params))
-	for k, v := range params {
-		coreParams[k] = v
-	}
-	delete(coreParams, "api_trade_no")
-	delete(coreParams, "buyer")
-
-	coreContent := buildSignContent(coreParams)
-	if coreContent != content {
-		if rsaVerify(c.publicKey, coreContent, sign) {
-			return true
-		}
-	}
-
-	logger.LegacyPrintf("epay", "verify notify failed: RSA signature mismatch, full_content=%s, core_content=%s, sign=%s", content, coreContent, sign)
-	return false
-}
-
-func (c *Client) buildRequestParams(params map[string]string) (map[string]string, error) {
-	params["pid"] = c.pid
-	params["timestamp"] = strconv.FormatInt(time.Now().Unix(), 10)
-
-	content := buildSignContent(params)
-	sign, err := rsaSign(c.privateKey, content)
-	if err != nil {
-		return nil, fmt.Errorf("epay: sign request: %w", err)
-	}
-	params["sign"] = sign
-	params["sign_type"] = "RSA"
-	return params, nil
-}
-
-func (c *Client) doPost(path string, params map[string]string) ([]byte, error) {
-	signed, err := c.buildRequestParams(params)
-	if err != nil {
-		return nil, err
-	}
+	params["sign"] = md5Sign(params, c.key)
+	params["sign_type"] = "MD5"
 
 	vals := url.Values{}
-	for k, v := range signed {
+	for k, v := range params {
+		vals.Set(k, v)
+	}
+	return c.apiURL + "submit.php?" + vals.Encode(), nil
+}
+
+// CreatePayment 通过 API 创建支付订单（mapi.php）
+func (c *Client) CreatePayment(req CreatePaymentRequest) (*CreatePaymentResponse, error) {
+	params := map[string]string{
+		"pid":          c.pid,
+		"type":         req.Type,
+		"out_trade_no": req.OutTradeNo,
+		"notify_url":   req.NotifyURL,
+		"return_url":   req.ReturnURL,
+		"name":         req.Name,
+		"money":        req.Money,
+		"clientip":     req.ClientIP,
+	}
+	if req.Device != "" {
+		params["device"] = req.Device
+	}
+
+	params["sign"] = md5Sign(params, c.key)
+	params["sign_type"] = "MD5"
+
+	vals := url.Values{}
+	for k, v := range params {
 		vals.Set(k, v)
 	}
 
-	resp, err := c.httpClient.Post(c.apiURL+path, "application/x-www-form-urlencoded", strings.NewReader(vals.Encode()))
+	resp, err := c.httpClient.Post(
+		c.apiURL+"mapi.php",
+		"application/x-www-form-urlencoded",
+		strings.NewReader(vals.Encode()),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("epay: request failed: %w", err)
 	}
@@ -216,29 +99,60 @@ func (c *Client) doPost(path string, params map[string]string) ([]byte, error) {
 		return nil, fmt.Errorf("epay: read response: %w", err)
 	}
 
-	// 验签响应（仅在有 sign 字段时验证，失败不阻断）
-	var raw map[string]interface{}
-	if err := json.Unmarshal(body, &raw); err == nil {
-		if sign, ok := raw["sign"].(string); ok && sign != "" {
-			strParams := make(map[string]string)
-			for k, v := range raw {
-				switch val := v.(type) {
-				case string:
-					strParams[k] = val
-				case float64:
-					if val == float64(int64(val)) {
-						strParams[k] = strconv.FormatInt(int64(val), 10)
-					} else {
-						strParams[k] = strconv.FormatFloat(val, 'f', -1, 64)
-					}
-				}
-			}
-			if !rsaVerify(c.publicKey, buildSignContent(strParams), sign) {
-				// 响应验签失败仅记录日志，不阻断（部分平台签名格式不一致）
-				fmt.Printf("[epay] warning: response signature verification failed\n")
-			}
-		}
+	logger.LegacyPrintf("epay", "create payment response: %s", string(body))
+
+	var result CreatePaymentResponse
+	if err := json.Unmarshal(body, &result); err != nil {
+		return nil, fmt.Errorf("epay: decode response: %w", err)
 	}
 
-	return body, nil
+	if result.Code != 1 {
+		return nil, fmt.Errorf("epay: create payment failed: %s", result.Msg)
+	}
+
+	return &result, nil
+}
+
+// QueryOrder 查询订单状态
+func (c *Client) QueryOrder(tradeNo string) (*QueryOrderResponse, error) {
+	u := fmt.Sprintf("%sapi.php?act=order&pid=%s&key=%s&trade_no=%s",
+		c.apiURL, c.pid, c.key, url.QueryEscape(tradeNo))
+
+	resp, err := c.httpClient.Get(u)
+	if err != nil {
+		return nil, fmt.Errorf("epay: query request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("epay: read response: %w", err)
+	}
+
+	logger.LegacyPrintf("epay", "query order response: trade_no=%s body=%s", tradeNo, string(body))
+
+	var result QueryOrderResponse
+	if err := json.Unmarshal(body, &result); err != nil {
+		return nil, fmt.Errorf("epay: decode query response: %w", err)
+	}
+	if result.Code != 1 {
+		return nil, fmt.Errorf("epay: query order failed: %s", result.Msg)
+	}
+	return &result, nil
+}
+
+// VerifyNotify 验证异步回调签名（MD5）
+func (c *Client) VerifyNotify(params map[string]string) bool {
+	sign := params["sign"]
+	if sign == "" {
+		logger.LegacyPrintf("epay", "verify notify failed: sign is empty, params=%v", params)
+		return false
+	}
+
+	if !md5Verify(params, c.key, sign) {
+		logger.LegacyPrintf("epay", "verify notify failed: MD5 signature mismatch, params=%v", params)
+		return false
+	}
+
+	return true
 }

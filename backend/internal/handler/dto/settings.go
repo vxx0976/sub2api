@@ -116,10 +116,9 @@ type SystemSettings struct {
 	RechargePayTypes   string  `json:"recharge_pay_types"`
 
 	// 易支付配置
-	EpayAPIURL               string `json:"epay_api_url"`
-	EpayPID                  string `json:"epay_pid"`
-	EpayPublicKeyConfigured  bool   `json:"epay_public_key_configured"`
-	EpayPrivateKeyConfigured bool   `json:"epay_private_key_configured"`
+	EpayAPIURL        string `json:"epay_api_url"`
+	EpayPID           string `json:"epay_pid"`
+	EpayKeyConfigured bool   `json:"epay_key_configured"`
 
 	// Gateway forwarding behavior
 	EnableFingerprintUnification bool `json:"enable_fingerprint_unification"`
