@@ -27,15 +27,6 @@ type Group struct {
 	ImagePrice2K *float64 `json:"image_price_2k"`
 	ImagePrice4K *float64 `json:"image_price_4k"`
 
-	// Sora 按次计费配置（阶段 1）
-	SoraImagePrice360          *float64
-	SoraImagePrice540          *float64
-	SoraVideoPricePerRequest   *float64
-	SoraVideoPricePerRequestHD *float64
-
-	// Sora 存储配额
-	SoraStorageQuotaBytes int64
-
 	// Claude Code 客户端限制
 	ClaudeCodeOnly  bool   `json:"claude_code_only"`
 	FallbackGroupID *int64 `json:"fallback_group_id"`
@@ -68,6 +59,8 @@ type Group struct {
 
 	// OpenAI Messages 调度配置（仅 openai 平台使用）
 	AllowMessagesDispatch bool   `json:"allow_messages_dispatch"`
+	RequireOAuthOnly      bool   `json:"require_oauth_only"`  // 仅允许非 apikey 类型账号关联（OpenAI/Antigravity/Anthropic/Gemini）
+	RequirePrivacySet     bool   `json:"require_privacy_set"` // 调度时仅允许 privacy 已成功设置的账号（OpenAI/Antigravity/Anthropic/Gemini）
 	DefaultMappedModel    string `json:"default_mapped_model"`
 
 	// 定时上线时间窗口（格式 "HH:MM"，两者都设置时生效）
@@ -161,18 +154,6 @@ func (g *Group) GetImagePrice(imageSize string) *float64 {
 	default:
 		// 未知尺寸默认按 2K 计费
 		return g.ImagePrice2K
-	}
-}
-
-// GetSoraImagePrice 根据 Sora 图片尺寸返回价格（360/540）
-func (g *Group) GetSoraImagePrice(imageSize string) *float64 {
-	switch imageSize {
-	case "360":
-		return g.SoraImagePrice360
-	case "540":
-		return g.SoraImagePrice540
-	default:
-		return g.SoraImagePrice360
 	}
 }
 

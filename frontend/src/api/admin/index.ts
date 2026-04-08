@@ -19,7 +19,6 @@ import geminiAPI from './gemini'
 import antigravityAPI from './antigravity'
 import userAttributesAPI from './userAttributes'
 import opsAPI from './ops'
-import channelsAPI from './channels'
 import errorPassthroughAPI from './errorPassthrough'
 import dataManagementAPI from './dataManagement'
 import apiKeysAPI from './apiKeys'
@@ -29,6 +28,7 @@ import merchantWithdrawalsAPI from './merchantWithdrawals'
 import rechargeOrdersAPI from './rechargeOrders'
 import backupAPI from './backup'
 import tlsFingerprintProfileAPI from './tlsFingerprintProfile'
+import channelsAPI from './channels'
 
 /**
  * Unified admin API object for convenient access

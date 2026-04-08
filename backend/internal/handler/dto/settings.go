@@ -63,7 +63,6 @@ type SystemSettings struct {
 	PurchaseSubscriptionEnabled bool             `json:"purchase_subscription_enabled"`
 	PurchaseSubscriptionURL     string           `json:"purchase_subscription_url"`
 	Sub2apipayAdminToken        string           `json:"sub2apipay_admin_token,omitempty"`
-	SoraClientEnabled           bool             `json:"sora_client_enabled"`
 	CustomMenuItems             []CustomMenuItem `json:"custom_menu_items"`
 	CustomEndpoints             []CustomEndpoint `json:"custom_endpoints"`
 
@@ -164,7 +163,6 @@ type PublicSettings struct {
 	CustomEndpoints                  []CustomEndpoint     `json:"custom_endpoints"`
 	RechargeEnabled                  bool                 `json:"recharge_enabled"`
 	LinuxDoOAuthEnabled              bool                 `json:"linuxdo_oauth_enabled"`
-	SoraClientEnabled                bool                 `json:"sora_client_enabled"`
 	BackendModeEnabled               bool                 `json:"backend_mode_enabled"`
 	Version                          string               `json:"version"`
 	Announcements                    []SimpleAnnouncement `json:"announcements,omitempty"`
@@ -183,44 +181,6 @@ type PublicSettings struct {
 	SEOTitle       string `json:"seo_title,omitempty"`
 	SEODescription string `json:"seo_description,omitempty"`
 	SEOKeywords    string `json:"seo_keywords,omitempty"`
-}
-
-// SoraS3Settings Sora S3 存储配置 DTO（响应用，不含敏感字段）
-type SoraS3Settings struct {
-	Enabled                   bool   `json:"enabled"`
-	Endpoint                  string `json:"endpoint"`
-	Region                    string `json:"region"`
-	Bucket                    string `json:"bucket"`
-	AccessKeyID               string `json:"access_key_id"`
-	SecretAccessKeyConfigured bool   `json:"secret_access_key_configured"`
-	Prefix                    string `json:"prefix"`
-	ForcePathStyle            bool   `json:"force_path_style"`
-	CDNURL                    string `json:"cdn_url"`
-	DefaultStorageQuotaBytes  int64  `json:"default_storage_quota_bytes"`
-}
-
-// SoraS3Profile Sora S3 存储配置项 DTO（响应用，不含敏感字段）
-type SoraS3Profile struct {
-	ProfileID                 string `json:"profile_id"`
-	Name                      string `json:"name"`
-	IsActive                  bool   `json:"is_active"`
-	Enabled                   bool   `json:"enabled"`
-	Endpoint                  string `json:"endpoint"`
-	Region                    string `json:"region"`
-	Bucket                    string `json:"bucket"`
-	AccessKeyID               string `json:"access_key_id"`
-	SecretAccessKeyConfigured bool   `json:"secret_access_key_configured"`
-	Prefix                    string `json:"prefix"`
-	ForcePathStyle            bool   `json:"force_path_style"`
-	CDNURL                    string `json:"cdn_url"`
-	DefaultStorageQuotaBytes  int64  `json:"default_storage_quota_bytes"`
-	UpdatedAt                 string `json:"updated_at"`
-}
-
-// ListSoraS3ProfilesResponse Sora S3 配置列表响应
-type ListSoraS3ProfilesResponse struct {
-	ActiveProfileID string          `json:"active_profile_id"`
-	Items           []SoraS3Profile `json:"items"`
 }
 
 // OverloadCooldownSettings 529过载冷却配置 DTO
@@ -249,10 +209,13 @@ type RectifierSettings struct {
 
 // BetaPolicyRule Beta 策略规则 DTO
 type BetaPolicyRule struct {
-	BetaToken    string `json:"beta_token"`
-	Action       string `json:"action"`
-	Scope        string `json:"scope"`
-	ErrorMessage string `json:"error_message,omitempty"`
+	BetaToken            string   `json:"beta_token"`
+	Action               string   `json:"action"`
+	Scope                string   `json:"scope"`
+	ErrorMessage         string   `json:"error_message,omitempty"`
+	ModelWhitelist       []string `json:"model_whitelist,omitempty"`
+	FallbackAction       string   `json:"fallback_action,omitempty"`
+	FallbackErrorMessage string   `json:"fallback_error_message,omitempty"`
 }
 
 // BetaPolicySettings Beta 策略配置 DTO

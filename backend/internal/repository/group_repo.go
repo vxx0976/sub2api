@@ -50,10 +50,6 @@ func (r *groupRepository) Create(ctx context.Context, groupIn *service.Group) er
 		SetNillableImagePrice1k(groupIn.ImagePrice1K).
 		SetNillableImagePrice2k(groupIn.ImagePrice2K).
 		SetNillableImagePrice4k(groupIn.ImagePrice4K).
-		SetNillableSoraImagePrice360(groupIn.SoraImagePrice360).
-		SetNillableSoraImagePrice540(groupIn.SoraImagePrice540).
-		SetNillableSoraVideoPricePerRequest(groupIn.SoraVideoPricePerRequest).
-		SetNillableSoraVideoPricePerRequestHd(groupIn.SoraVideoPricePerRequestHD).
 		SetDefaultValidityDays(groupIn.DefaultValidityDays).
 		SetClaudeCodeOnly(groupIn.ClaudeCodeOnly).
 		SetNillableFallbackGroupID(groupIn.FallbackGroupID).
@@ -67,8 +63,9 @@ func (r *groupRepository) Create(ctx context.Context, groupIn *service.Group) er
 		SetNillableExternalBuyURL(groupIn.ExternalBuyURL).
 		SetNillableOwnerID(groupIn.OwnerID).
 		SetNillableSourceGroupID(groupIn.SourceGroupID).
-		SetSoraStorageQuotaBytes(groupIn.SoraStorageQuotaBytes).
 		SetAllowMessagesDispatch(groupIn.AllowMessagesDispatch).
+		SetRequireOauthOnly(groupIn.RequireOAuthOnly).
+		SetRequirePrivacySet(groupIn.RequirePrivacySet).
 		SetDefaultMappedModel(groupIn.DefaultMappedModel)
 
 	// 设置模型路由配置
@@ -128,10 +125,6 @@ func (r *groupRepository) Update(ctx context.Context, groupIn *service.Group) er
 		SetNillableImagePrice1k(groupIn.ImagePrice1K).
 		SetNillableImagePrice2k(groupIn.ImagePrice2K).
 		SetNillableImagePrice4k(groupIn.ImagePrice4K).
-		SetNillableSoraImagePrice360(groupIn.SoraImagePrice360).
-		SetNillableSoraImagePrice540(groupIn.SoraImagePrice540).
-		SetNillableSoraVideoPricePerRequest(groupIn.SoraVideoPricePerRequest).
-		SetNillableSoraVideoPricePerRequestHd(groupIn.SoraVideoPricePerRequestHD).
 		SetDefaultValidityDays(groupIn.DefaultValidityDays).
 		SetClaudeCodeOnly(groupIn.ClaudeCodeOnly).
 		SetModelRoutingEnabled(groupIn.ModelRoutingEnabled).
@@ -141,8 +134,9 @@ func (r *groupRepository) Update(ctx context.Context, groupIn *service.Group) er
 		SetSortOrder(groupIn.SortOrder).
 		SetIsRecommended(groupIn.IsRecommended).
 		SetNillableExternalBuyURL(groupIn.ExternalBuyURL).
-		SetSoraStorageQuotaBytes(groupIn.SoraStorageQuotaBytes).
 		SetAllowMessagesDispatch(groupIn.AllowMessagesDispatch).
+		SetRequireOauthOnly(groupIn.RequireOAuthOnly).
+		SetRequirePrivacySet(groupIn.RequirePrivacySet).
 		SetDefaultMappedModel(groupIn.DefaultMappedModel)
 
 	// 处理 OwnerID

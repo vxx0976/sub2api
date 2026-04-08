@@ -68,7 +68,6 @@ func (h *SettingHandler) GetPublicSettings(c *gin.Context) {
 		CustomEndpoints:                  dto.ParseCustomEndpoints(settings.CustomEndpoints),
 		RechargeEnabled:                  settings.RechargeEnabled,
 		LinuxDoOAuthEnabled:              settings.LinuxDoOAuthEnabled,
-		SoraClientEnabled:                settings.SoraClientEnabled,
 		BackendModeEnabled:               settings.BackendModeEnabled,
 		Version:                          h.version,
 		Announcements:                    announcements,

@@ -65,8 +65,6 @@ func UserFromServiceAdmin(u *service.User) *AdminUser {
 		RegisterDomain:        u.RegisterDomain,
 		ParentID:              u.ParentID,
 		GroupRates:            u.GroupRates,
-		SoraStorageQuotaBytes: u.SoraStorageQuotaBytes,
-		SoraStorageUsedBytes:  u.SoraStorageUsedBytes,
 	}
 }
 
@@ -176,10 +174,6 @@ func groupFromServiceBase(g *service.Group) Group {
 		ImagePrice1K:                    g.ImagePrice1K,
 		ImagePrice2K:                    g.ImagePrice2K,
 		ImagePrice4K:                    g.ImagePrice4K,
-		SoraImagePrice360:               g.SoraImagePrice360,
-		SoraImagePrice540:               g.SoraImagePrice540,
-		SoraVideoPricePerRequest:        g.SoraVideoPricePerRequest,
-		SoraVideoPricePerRequestHD:      g.SoraVideoPricePerRequestHD,
 		ClaudeCodeOnly:                  g.ClaudeCodeOnly,
 		FallbackGroupID:                 g.FallbackGroupID,
 		FallbackGroupIDOnInvalidRequest: g.FallbackGroupIDOnInvalidRequest,
@@ -189,8 +183,9 @@ func groupFromServiceBase(g *service.Group) Group {
 		SortOrder:                       g.SortOrder,
 		IsRecommended:                   g.IsRecommended,
 		ExternalBuyURL:                  g.ExternalBuyURL,
-		SoraStorageQuotaBytes:           g.SoraStorageQuotaBytes,
 		AllowMessagesDispatch:           g.AllowMessagesDispatch,
+		RequireOAuthOnly:                g.RequireOAuthOnly,
+		RequirePrivacySet:               g.RequirePrivacySet,
 		ActiveStartTime:                 g.ActiveStartTime,
 		ActiveEndTime:                   g.ActiveEndTime,
 		CreatedAt:                       g.CreatedAt,
@@ -279,6 +274,14 @@ func AccountFromServiceShallow(a *service.Account) *Account {
 			out.CacheTTLOverrideEnabled = &enabled
 			target := a.GetCacheTTLOverrideTarget()
 			out.CacheTTLOverrideTarget = &target
+		}
+		// 自定义 Base URL 中继转发
+		if a.IsCustomBaseURLEnabled() {
+			enabled := true
+			out.CustomBaseURLEnabled = &enabled
+			if customURL := a.GetCustomBaseURL(); customURL != "" {
+				out.CustomBaseURL = &customURL
+			}
 		}
 	}
 
@@ -589,6 +592,7 @@ func usageLogFromServiceUser(l *service.UsageLog) UsageLog {
 		MediaType:             l.MediaType,
 		UserAgent:             l.UserAgent,
 		CacheTTLOverridden:    l.CacheTTLOverridden,
+		BillingMode:           l.BillingMode,
 		CreatedAt:             l.CreatedAt,
 		User:                  UserFromServiceShallow(l.User),
 		APIKey:                APIKeyFromService(l.APIKey),
@@ -616,6 +620,9 @@ func UsageLogFromServiceAdmin(l *service.UsageLog) *AdminUsageLog {
 	return &AdminUsageLog{
 		UsageLog:              usageLogFromServiceUser(l),
 		UpstreamModel:         l.UpstreamModel,
+		ChannelID:             l.ChannelID,
+		ModelMappingChain:     l.ModelMappingChain,
+		BillingTier:           l.BillingTier,
 		AccountRateMultiplier: l.AccountRateMultiplier,
 		IPAddress:             l.IPAddress,
 		Account:               AccountSummaryFromService(l.Account),
@@ -777,23 +784,13 @@ func ChannelFromService(c *service.Channel) *Channel {
 		return nil
 	}
 	return &Channel{
-		ID:             c.ID,
-		Name:           c.Name,
-		Description:    c.Description,
-		Platform:       c.Platform,
-		Status:         c.Status,
-		IconURL:        c.IconURL,
-		WebsiteURL:     c.WebsiteURL,
-		BalanceURL:     c.BalanceURL,
-		BalanceMethod:  c.BalanceMethod,
-		BalanceHeaders: c.BalanceHeaders,
-		BalanceBody:    c.BalanceBody,
-		BalancePath:    c.BalancePath,
-		BalanceUnit:    c.BalanceUnit,
-		CachedBalance:  c.CachedBalance,
-		LastCheckAt:    c.LastCheckAt,
-		LastError:      c.LastError,
-		CreatedAt:      c.CreatedAt,
-		UpdatedAt:      c.UpdatedAt,
+		ID:                 c.ID,
+		Name:               c.Name,
+		Description:        c.Description,
+		Status:             c.Status,
+		BillingModelSource: c.BillingModelSource,
+		RestrictModels:     c.RestrictModels,
+		CreatedAt:          c.CreatedAt,
+		UpdatedAt:          c.UpdatedAt,
 	}
 }

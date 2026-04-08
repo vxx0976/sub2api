@@ -13,7 +13,7 @@ export interface DailyStatus {
 export interface GroupStatusItem {
   id: number
   name: string
-  platform: 'anthropic' | 'openai' | 'gemini' | 'antigravity' | 'sora'
+  platform: 'anthropic' | 'openai' | 'gemini' | 'antigravity'
   description?: string
   status: 'operational' | 'degraded' | 'down'
   success_rate: number

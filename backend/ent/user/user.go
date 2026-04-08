@@ -57,10 +57,6 @@ const (
 	FieldTokenVersion = "token_version"
 	// FieldRoleVersion holds the string denoting the role_version field in the database.
 	FieldRoleVersion = "role_version"
-	// FieldSoraStorageQuotaBytes holds the string denoting the sora_storage_quota_bytes field in the database.
-	FieldSoraStorageQuotaBytes = "sora_storage_quota_bytes"
-	// FieldSoraStorageUsedBytes holds the string denoting the sora_storage_used_bytes field in the database.
-	FieldSoraStorageUsedBytes = "sora_storage_used_bytes"
 	// EdgeAPIKeys holds the string denoting the api_keys edge name in mutations.
 	EdgeAPIKeys = "api_keys"
 	// EdgeRedeemCodes holds the string denoting the redeem_codes edge name in mutations.
@@ -234,8 +230,6 @@ var Columns = []string{
 	FieldParentID,
 	FieldTokenVersion,
 	FieldRoleVersion,
-	FieldSoraStorageQuotaBytes,
-	FieldSoraStorageUsedBytes,
 }
 
 var (
@@ -304,10 +298,6 @@ var (
 	DefaultTokenVersion int64
 	// DefaultRoleVersion holds the default value on creation for the "role_version" field.
 	DefaultRoleVersion int64
-	// DefaultSoraStorageQuotaBytes holds the default value on creation for the "sora_storage_quota_bytes" field.
-	DefaultSoraStorageQuotaBytes int64
-	// DefaultSoraStorageUsedBytes holds the default value on creation for the "sora_storage_used_bytes" field.
-	DefaultSoraStorageUsedBytes int64
 )
 
 // OrderOption defines the ordering options for the User queries.
@@ -421,16 +411,6 @@ func ByTokenVersion(opts ...sql.OrderTermOption) OrderOption {
 // ByRoleVersion orders the results by the role_version field.
 func ByRoleVersion(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldRoleVersion, opts...).ToFunc()
-}
-
-// BySoraStorageQuotaBytes orders the results by the sora_storage_quota_bytes field.
-func BySoraStorageQuotaBytes(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldSoraStorageQuotaBytes, opts...).ToFunc()
-}
-
-// BySoraStorageUsedBytes orders the results by the sora_storage_used_bytes field.
-func BySoraStorageUsedBytes(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldSoraStorageUsedBytes, opts...).ToFunc()
 }
 
 // ByAPIKeysCount orders the results by api_keys count.

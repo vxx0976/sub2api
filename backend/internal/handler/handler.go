@@ -63,8 +63,6 @@ type Handlers struct {
 	Reseller      *ResellerHandlers
 	Gateway       *GatewayHandler
 	OpenAIGateway *OpenAIGatewayHandler
-	SoraGateway   *SoraGatewayHandler
-	SoraClient    *SoraClientHandler
 	Setting       *SettingHandler
 	Referral      *ReferralHandler
 	Totp          *TotpHandler

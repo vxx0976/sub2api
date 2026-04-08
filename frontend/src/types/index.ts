@@ -51,9 +51,6 @@ export interface AdminUser extends User {
   group_rates?: Record<number, number>
   // 当前并发数（仅管理员列表接口返回）
   current_concurrency?: number
-  // Sora 存储配额（字节）
-  sora_storage_quota_bytes?: number
-  sora_storage_used_bytes?: number
 }
 
 
@@ -128,7 +125,6 @@ export interface PublicSettings {
   custom_endpoints: CustomEndpoint[]
   recharge_enabled: boolean
   linuxdo_oauth_enabled: boolean
-  sora_client_enabled: boolean
   backend_mode_enabled: boolean
   version: string
   announcements?: SimpleAnnouncement[]
@@ -403,7 +399,7 @@ export interface PaginationConfig {
 
 // ==================== API Key & Group Types ====================
 
-export type GroupPlatform = 'anthropic' | 'openai' | 'gemini' | 'antigravity' | 'sora'
+export type GroupPlatform = 'anthropic' | 'openai' | 'gemini' | 'antigravity'
 
 export type SubscriptionType = 'standard' | 'subscription'
 
@@ -435,13 +431,6 @@ export interface Group {
   image_price_1k: number | null
   image_price_2k: number | null
   image_price_4k: number | null
-  // Sora 按次计费配置
-  sora_image_price_360: number | null
-  sora_image_price_540: number | null
-  sora_video_price_per_request: number | null
-  sora_video_price_per_request_hd: number | null
-  // Sora 存储配额（字节）
-  sora_storage_quota_bytes: number
   // Claude Code 客户端限制
   claude_code_only: boolean
   fallback_group_id: number | null
@@ -461,6 +450,8 @@ export interface Group {
   // 定时上线时间窗口
   active_start_time?: string | null
   active_end_time?: string | null
+  require_oauth_only: boolean
+  require_privacy_set: boolean
   created_at: string
   updated_at: string
 }
@@ -566,17 +557,14 @@ export interface CreateGroupRequest {
   image_price_1k?: number | null
   image_price_2k?: number | null
   image_price_4k?: number | null
-  sora_image_price_360?: number | null
-  sora_image_price_540?: number | null
-  sora_video_price_per_request?: number | null
-  sora_video_price_per_request_hd?: number | null
-  sora_storage_quota_bytes?: number
   claude_code_only?: boolean
   fallback_group_id?: number | null
   fallback_group_id_on_invalid_request?: number | null
   mcp_xml_inject?: boolean
   simulate_claude_max_enabled?: boolean
   supported_model_scopes?: string[]
+  require_oauth_only?: boolean
+  require_privacy_set?: boolean
   // 从指定分组复制账号
   copy_accounts_from_group_ids?: number[]
 }
@@ -595,23 +583,20 @@ export interface UpdateGroupRequest {
   image_price_1k?: number | null
   image_price_2k?: number | null
   image_price_4k?: number | null
-  sora_image_price_360?: number | null
-  sora_image_price_540?: number | null
-  sora_video_price_per_request?: number | null
-  sora_video_price_per_request_hd?: number | null
-  sora_storage_quota_bytes?: number
   claude_code_only?: boolean
   fallback_group_id?: number | null
   fallback_group_id_on_invalid_request?: number | null
   mcp_xml_inject?: boolean
   simulate_claude_max_enabled?: boolean
   supported_model_scopes?: string[]
+  require_oauth_only?: boolean
+  require_privacy_set?: boolean
   copy_accounts_from_group_ids?: number[]
 }
 
 // ==================== Account & Proxy Types ====================
 
-export type AccountPlatform = 'anthropic' | 'openai' | 'gemini' | 'antigravity' | 'sora'
+export type AccountPlatform = 'anthropic' | 'openai' | 'gemini' | 'antigravity'
 export type AccountType = 'oauth' | 'setup-token' | 'apikey' | 'upstream' | 'bedrock'
 export type OAuthAddMethod = 'oauth' | 'setup-token'
 export type ProxyProtocol = 'http' | 'https' | 'socks5' | 'socks5h'
@@ -806,6 +791,10 @@ export interface Account {
   // 缓存 TTL 强制替换（仅 Anthropic OAuth/SetupToken 账号有效）
   cache_ttl_override_enabled?: boolean | null
   cache_ttl_override_target?: string | null
+
+  // 自定义 Base URL 中继转发（仅 Anthropic OAuth/SetupToken 账号有效）
+  custom_base_url_enabled?: boolean | null
+  custom_base_url?: string | null
 
   // 客户端亲和调度（仅 Anthropic/Antigravity 平台有效）
   // 启用后新会话会优先调度到客户端之前使用过的账号
@@ -1110,6 +1099,9 @@ export interface UsageLog {
   // Cache TTL Override
   cache_ttl_overridden: boolean
 
+  // 计费模式
+  billing_mode?: string | null
+
   created_at: string
 
   user?: User
@@ -1126,6 +1118,7 @@ export interface UsageLogAccountSummary {
 
 export interface AdminUsageLog extends Omit<UsageLog, 'account'> {
   upstream_model?: string | null
+  model_mapping_chain?: string | null
 
   // 账号计费倍率（仅管理员可见）
   account_rate_multiplier?: number | null

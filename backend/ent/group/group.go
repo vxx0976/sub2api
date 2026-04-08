@@ -49,16 +49,6 @@ const (
 	FieldImagePrice2k = "image_price_2k"
 	// FieldImagePrice4k holds the string denoting the image_price_4k field in the database.
 	FieldImagePrice4k = "image_price_4k"
-	// FieldSoraImagePrice360 holds the string denoting the sora_image_price_360 field in the database.
-	FieldSoraImagePrice360 = "sora_image_price_360"
-	// FieldSoraImagePrice540 holds the string denoting the sora_image_price_540 field in the database.
-	FieldSoraImagePrice540 = "sora_image_price_540"
-	// FieldSoraVideoPricePerRequest holds the string denoting the sora_video_price_per_request field in the database.
-	FieldSoraVideoPricePerRequest = "sora_video_price_per_request"
-	// FieldSoraVideoPricePerRequestHd holds the string denoting the sora_video_price_per_request_hd field in the database.
-	FieldSoraVideoPricePerRequestHd = "sora_video_price_per_request_hd"
-	// FieldSoraStorageQuotaBytes holds the string denoting the sora_storage_quota_bytes field in the database.
-	FieldSoraStorageQuotaBytes = "sora_storage_quota_bytes"
 	// FieldClaudeCodeOnly holds the string denoting the claude_code_only field in the database.
 	FieldClaudeCodeOnly = "claude_code_only"
 	// FieldFallbackGroupID holds the string denoting the fallback_group_id field in the database.
@@ -89,6 +79,10 @@ const (
 	FieldSourceGroupID = "source_group_id"
 	// FieldResellerTemplate holds the string denoting the reseller_template field in the database.
 	FieldResellerTemplate = "reseller_template"
+	// FieldRequireOauthOnly holds the string denoting the require_oauth_only field in the database.
+	FieldRequireOauthOnly = "require_oauth_only"
+	// FieldRequirePrivacySet holds the string denoting the require_privacy_set field in the database.
+	FieldRequirePrivacySet = "require_privacy_set"
 	// FieldAllowMessagesDispatch holds the string denoting the allow_messages_dispatch field in the database.
 	FieldAllowMessagesDispatch = "allow_messages_dispatch"
 	// FieldDefaultMappedModel holds the string denoting the default_mapped_model field in the database.
@@ -198,11 +192,6 @@ var Columns = []string{
 	FieldImagePrice1k,
 	FieldImagePrice2k,
 	FieldImagePrice4k,
-	FieldSoraImagePrice360,
-	FieldSoraImagePrice540,
-	FieldSoraVideoPricePerRequest,
-	FieldSoraVideoPricePerRequestHd,
-	FieldSoraStorageQuotaBytes,
 	FieldClaudeCodeOnly,
 	FieldFallbackGroupID,
 	FieldFallbackGroupIDOnInvalidRequest,
@@ -218,6 +207,8 @@ var Columns = []string{
 	FieldOwnerID,
 	FieldSourceGroupID,
 	FieldResellerTemplate,
+	FieldRequireOauthOnly,
+	FieldRequirePrivacySet,
 	FieldAllowMessagesDispatch,
 	FieldDefaultMappedModel,
 	FieldActiveStartTime,
@@ -277,8 +268,6 @@ var (
 	SubscriptionTypeValidator func(string) error
 	// DefaultDefaultValidityDays holds the default value on creation for the "default_validity_days" field.
 	DefaultDefaultValidityDays int
-	// DefaultSoraStorageQuotaBytes holds the default value on creation for the "sora_storage_quota_bytes" field.
-	DefaultSoraStorageQuotaBytes int64
 	// DefaultClaudeCodeOnly holds the default value on creation for the "claude_code_only" field.
 	DefaultClaudeCodeOnly bool
 	// DefaultModelRoutingEnabled holds the default value on creation for the "model_routing_enabled" field.
@@ -295,6 +284,10 @@ var (
 	DefaultIsRecommended bool
 	// DefaultResellerTemplate holds the default value on creation for the "reseller_template" field.
 	DefaultResellerTemplate bool
+	// DefaultRequireOauthOnly holds the default value on creation for the "require_oauth_only" field.
+	DefaultRequireOauthOnly bool
+	// DefaultRequirePrivacySet holds the default value on creation for the "require_privacy_set" field.
+	DefaultRequirePrivacySet bool
 	// DefaultAllowMessagesDispatch holds the default value on creation for the "allow_messages_dispatch" field.
 	DefaultAllowMessagesDispatch bool
 	// DefaultDefaultMappedModel holds the default value on creation for the "default_mapped_model" field.
@@ -400,31 +393,6 @@ func ByImagePrice4k(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldImagePrice4k, opts...).ToFunc()
 }
 
-// BySoraImagePrice360 orders the results by the sora_image_price_360 field.
-func BySoraImagePrice360(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldSoraImagePrice360, opts...).ToFunc()
-}
-
-// BySoraImagePrice540 orders the results by the sora_image_price_540 field.
-func BySoraImagePrice540(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldSoraImagePrice540, opts...).ToFunc()
-}
-
-// BySoraVideoPricePerRequest orders the results by the sora_video_price_per_request field.
-func BySoraVideoPricePerRequest(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldSoraVideoPricePerRequest, opts...).ToFunc()
-}
-
-// BySoraVideoPricePerRequestHd orders the results by the sora_video_price_per_request_hd field.
-func BySoraVideoPricePerRequestHd(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldSoraVideoPricePerRequestHd, opts...).ToFunc()
-}
-
-// BySoraStorageQuotaBytes orders the results by the sora_storage_quota_bytes field.
-func BySoraStorageQuotaBytes(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldSoraStorageQuotaBytes, opts...).ToFunc()
-}
-
 // ByClaudeCodeOnly orders the results by the claude_code_only field.
 func ByClaudeCodeOnly(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldClaudeCodeOnly, opts...).ToFunc()
@@ -488,6 +456,16 @@ func BySourceGroupID(opts ...sql.OrderTermOption) OrderOption {
 // ByResellerTemplate orders the results by the reseller_template field.
 func ByResellerTemplate(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldResellerTemplate, opts...).ToFunc()
+}
+
+// ByRequireOauthOnly orders the results by the require_oauth_only field.
+func ByRequireOauthOnly(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRequireOauthOnly, opts...).ToFunc()
+}
+
+// ByRequirePrivacySet orders the results by the require_privacy_set field.
+func ByRequirePrivacySet(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRequirePrivacySet, opts...).ToFunc()
 }
 
 // ByAllowMessagesDispatch orders the results by the allow_messages_dispatch field.
