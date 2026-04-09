@@ -52,6 +52,7 @@ func ProvideTokenRefreshService(
 	privacyClientFactory PrivacyClientFactory,
 	proxyRepo ProxyRepository,
 	refreshAPI *OAuthRefreshAPI,
+	locker *LeaderLocker,
 ) *TokenRefreshService {
 	svc := NewTokenRefreshService(accountRepo, oauthService, openaiOAuthService, geminiOAuthService, antigravityOAuthService, cacheInvalidator, schedulerCache, cfg, tempUnschedCache)
 	// 注入 OpenAI privacy opt-out 依赖
@@ -60,6 +61,7 @@ func ProvideTokenRefreshService(
 	svc.SetRefreshAPI(refreshAPI)
 	// 调用侧显式注入后台刷新策略，避免策略漂移
 	svc.SetRefreshPolicy(DefaultBackgroundRefreshPolicy())
+	svc.SetLocker(locker)
 	svc.Start()
 	return svc
 }
@@ -137,15 +139,15 @@ func ProvideUsageCleanupService(repo UsageCleanupRepository, timingWheel *Timing
 }
 
 // ProvideAccountExpiryService creates and starts AccountExpiryService.
-func ProvideAccountExpiryService(accountRepo AccountRepository) *AccountExpiryService {
-	svc := NewAccountExpiryService(accountRepo, time.Minute)
+func ProvideAccountExpiryService(accountRepo AccountRepository, locker *LeaderLocker) *AccountExpiryService {
+	svc := NewAccountExpiryService(accountRepo, time.Minute, locker)
 	svc.Start()
 	return svc
 }
 
 // ProvideSubscriptionExpiryService creates and starts SubscriptionExpiryService.
-func ProvideSubscriptionExpiryService(userSubRepo UserSubscriptionRepository) *SubscriptionExpiryService {
-	svc := NewSubscriptionExpiryService(userSubRepo, time.Minute)
+func ProvideSubscriptionExpiryService(userSubRepo UserSubscriptionRepository, locker *LeaderLocker) *SubscriptionExpiryService {
+	svc := NewSubscriptionExpiryService(userSubRepo, time.Minute, locker)
 	svc.Start()
 	return svc
 }
@@ -312,8 +314,8 @@ func ProvideSystemOperationLockService(repo IdempotencyRepository, cfg *config.C
 	return NewSystemOperationLockService(repo, buildIdempotencyConfig(cfg))
 }
 
-func ProvideIdempotencyCleanupService(repo IdempotencyRepository, cfg *config.Config) *IdempotencyCleanupService {
-	svc := NewIdempotencyCleanupService(repo, cfg)
+func ProvideIdempotencyCleanupService(repo IdempotencyRepository, cfg *config.Config, locker *LeaderLocker) *IdempotencyCleanupService {
+	svc := NewIdempotencyCleanupService(repo, cfg, locker)
 	svc.Start()
 	return svc
 }
@@ -333,8 +335,9 @@ func ProvideGroupHealthCheckService(
 	accountTestSvc *AccountTestService,
 	rateLimitSvc *RateLimitService,
 	cfg *config.Config,
+	locker *LeaderLocker,
 ) *GroupHealthCheckService {
-	svc := NewGroupHealthCheckService(groupRepo, accountRepo, accountTestSvc, rateLimitSvc, cfg)
+	svc := NewGroupHealthCheckService(groupRepo, accountRepo, accountTestSvc, rateLimitSvc, cfg, locker)
 	svc.Start()
 	return svc
 }
@@ -346,8 +349,9 @@ func ProvideScheduledTestRunnerService(
 	accountTestSvc *AccountTestService,
 	rateLimitSvc *RateLimitService,
 	cfg *config.Config,
+	locker *LeaderLocker,
 ) *ScheduledTestRunnerService {
-	svc := NewScheduledTestRunnerService(planRepo, scheduledSvc, accountTestSvc, rateLimitSvc, cfg)
+	svc := NewScheduledTestRunnerService(planRepo, scheduledSvc, accountTestSvc, rateLimitSvc, cfg, locker)
 	svc.Start()
 	return svc
 }
@@ -379,8 +383,9 @@ func ProvideBackupService(
 	encryptor SecretEncryptor,
 	storeFactory BackupObjectStoreFactory,
 	dumper DBDumper,
+	locker *LeaderLocker,
 ) *BackupService {
-	svc := NewBackupService(settingRepo, cfg, encryptor, storeFactory, dumper)
+	svc := NewBackupService(settingRepo, cfg, encryptor, storeFactory, dumper, locker)
 	svc.Start()
 	return svc
 }

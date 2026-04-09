@@ -50,7 +50,7 @@ func TestNewIdempotencyCleanupService_UsesConfig(t *testing.T) {
 			CleanupBatchSize:       321,
 		},
 	}
-	svc := NewIdempotencyCleanupService(repo, cfg)
+	svc := NewIdempotencyCleanupService(repo, cfg, nil)
 	require.Equal(t, 7*time.Second, svc.interval)
 	require.Equal(t, 321, svc.batch)
 }
@@ -61,7 +61,7 @@ func TestIdempotencyCleanupService_CleanupOnce(t *testing.T) {
 		Idempotency: config.IdempotencyConfig{
 			CleanupBatchSize: 99,
 		},
-	})
+	}, nil)
 
 	svc.cleanupOnce()
 	require.Equal(t, 1, repo.deleteCalls)

@@ -34,6 +34,7 @@ type RechargeService struct {
 	settingRepo    SettingRepository
 	adminService   AdminService
 	settingService *SettingService
+	locker         *LeaderLocker
 	syncInterval   time.Duration
 	stopCh         chan struct{}
 	stopOnce       sync.Once
@@ -47,12 +48,14 @@ func NewRechargeService(
 	settingRepo SettingRepository,
 	adminService AdminService,
 	settingService *SettingService,
+	locker *LeaderLocker,
 ) *RechargeService {
 	svc := &RechargeService{
 		orderRepo:      orderRepo,
 		settingRepo:    settingRepo,
 		adminService:   adminService,
 		settingService: settingService,
+		locker:         locker,
 		syncInterval:   time.Minute,
 		stopCh:         make(chan struct{}),
 	}
@@ -306,6 +309,14 @@ func (s *RechargeService) HandleNotify(ctx context.Context, params map[string]st
 func (s *RechargeService) runPendingOrderSync() {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
+
+	release, ok := s.locker.TryAcquire(ctx, "leader:recharge_sync", 2*time.Minute)
+	if !ok {
+		return
+	}
+	if release != nil {
+		defer release()
+	}
 
 	synced, err := s.syncPendingOrders(ctx)
 	if err != nil {

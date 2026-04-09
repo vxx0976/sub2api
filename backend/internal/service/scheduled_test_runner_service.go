@@ -19,6 +19,7 @@ type ScheduledTestRunnerService struct {
 	accountTestSvc *AccountTestService
 	rateLimitSvc   *RateLimitService
 	cfg            *config.Config
+	locker         *LeaderLocker
 
 	cron      *cron.Cron
 	startOnce sync.Once
@@ -32,6 +33,7 @@ func NewScheduledTestRunnerService(
 	accountTestSvc *AccountTestService,
 	rateLimitSvc *RateLimitService,
 	cfg *config.Config,
+	locker *LeaderLocker,
 ) *ScheduledTestRunnerService {
 	return &ScheduledTestRunnerService{
 		planRepo:       planRepo,
@@ -39,6 +41,7 @@ func NewScheduledTestRunnerService(
 		accountTestSvc: accountTestSvc,
 		rateLimitSvc:   rateLimitSvc,
 		cfg:            cfg,
+		locker:         locker,
 	}
 }
 
@@ -90,6 +93,14 @@ func (s *ScheduledTestRunnerService) runScheduled() {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
+
+	release, ok := s.locker.TryAcquire(ctx, "leader:scheduled_test_runner", 2*time.Minute)
+	if !ok {
+		return
+	}
+	if release != nil {
+		defer release()
+	}
 
 	now := time.Now()
 	plans, err := s.planRepo.ListDue(ctx, now)

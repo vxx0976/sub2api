@@ -129,6 +129,7 @@ type BackupService struct {
 	shuttingDown atomic.Bool        // 阻止新备份启动
 	bgCtx        context.Context    // 所有后台操作的 parent context
 	bgCancel     context.CancelFunc // 取消所有活跃后台操作
+	locker       *LeaderLocker
 }
 
 func NewBackupService(
@@ -137,6 +138,7 @@ func NewBackupService(
 	encryptor SecretEncryptor,
 	storeFactory BackupObjectStoreFactory,
 	dumper DBDumper,
+	locker *LeaderLocker,
 ) *BackupService {
 	bgCtx, bgCancel := context.WithCancel(context.Background())
 	return &BackupService{
@@ -147,6 +149,7 @@ func NewBackupService(
 		dumper:       dumper,
 		bgCtx:        bgCtx,
 		bgCancel:     bgCancel,
+		locker:       locker,
 	}
 }
 
@@ -390,6 +393,14 @@ func (s *BackupService) runScheduledBackup() {
 
 	ctx, cancel := context.WithTimeout(s.bgCtx, 30*time.Minute)
 	defer cancel()
+
+	release, ok := s.locker.TryAcquire(ctx, "leader:backup", 35*time.Minute)
+	if !ok {
+		return
+	}
+	if release != nil {
+		defer release()
+	}
 
 	// 读取定时备份配置中的过期天数
 	schedule, _ := s.GetSchedule(ctx)

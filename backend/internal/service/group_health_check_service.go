@@ -23,6 +23,7 @@ type GroupHealthCheckService struct {
 	accountTestSvc *AccountTestService
 	rateLimitSvc   *RateLimitService
 	cfg            *config.Config
+	locker         *LeaderLocker
 
 	cron      *cron.Cron
 	startOnce sync.Once
@@ -35,6 +36,7 @@ func NewGroupHealthCheckService(
 	accountTestSvc *AccountTestService,
 	rateLimitSvc *RateLimitService,
 	cfg *config.Config,
+	locker *LeaderLocker,
 ) *GroupHealthCheckService {
 	return &GroupHealthCheckService{
 		groupRepo:      groupRepo,
@@ -42,6 +44,7 @@ func NewGroupHealthCheckService(
 		accountTestSvc: accountTestSvc,
 		rateLimitSvc:   rateLimitSvc,
 		cfg:            cfg,
+		locker:         locker,
 	}
 }
 
@@ -90,6 +93,14 @@ func (s *GroupHealthCheckService) Stop() {
 func (s *GroupHealthCheckService) runHealthCheck() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
+
+	release, ok := s.locker.TryAcquire(ctx, "leader:group_health_check", 15*time.Minute)
+	if !ok {
+		return
+	}
+	if release != nil {
+		defer release()
+	}
 
 	groups, err := s.groupRepo.ListActive(ctx)
 	if err != nil {

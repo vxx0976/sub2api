@@ -10,15 +10,17 @@ import (
 // AccountExpiryService periodically pauses expired accounts when auto-pause is enabled.
 type AccountExpiryService struct {
 	accountRepo AccountRepository
+	locker      *LeaderLocker
 	interval    time.Duration
 	stopCh      chan struct{}
 	stopOnce    sync.Once
 	wg          sync.WaitGroup
 }
 
-func NewAccountExpiryService(accountRepo AccountRepository, interval time.Duration) *AccountExpiryService {
+func NewAccountExpiryService(accountRepo AccountRepository, interval time.Duration, locker *LeaderLocker) *AccountExpiryService {
 	return &AccountExpiryService{
 		accountRepo: accountRepo,
+		locker:      locker,
 		interval:    interval,
 		stopCh:      make(chan struct{}),
 	}
@@ -59,6 +61,14 @@ func (s *AccountExpiryService) Stop() {
 func (s *AccountExpiryService) runOnce() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
+
+	release, ok := s.locker.TryAcquire(ctx, "leader:account_expiry", 2*time.Minute)
+	if !ok {
+		return
+	}
+	if release != nil {
+		defer release()
+	}
 
 	updated, err := s.accountRepo.AutoPauseExpiredAccounts(ctx, time.Now())
 	if err != nil {

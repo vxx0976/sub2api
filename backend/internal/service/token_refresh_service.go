@@ -27,6 +27,7 @@ type TokenRefreshService struct {
 	schedulerCache   SchedulerCache   // 用于同步更新调度器缓存，解决 token 刷新后缓存不一致问题
 	tempUnschedCache TempUnschedCache // 用于清除 Redis 中的临时不可调度缓存
 	refreshAPI       *OAuthRefreshAPI // 统一刷新 API
+	locker           *LeaderLocker
 
 	// OpenAI privacy: 刷新成功后检查并设置 training opt-out
 	privacyClientFactory PrivacyClientFactory
@@ -82,6 +83,11 @@ func NewTokenRefreshService(
 	}
 
 	return s
+}
+
+// SetLocker 注入分布式锁
+func (s *TokenRefreshService) SetLocker(locker *LeaderLocker) {
+	s.locker = locker
 }
 
 // SetPrivacyDeps 注入 OpenAI privacy opt-out 所需依赖
@@ -154,6 +160,14 @@ func (s *TokenRefreshService) refreshLoop() {
 // processRefresh 执行一次刷新检查
 func (s *TokenRefreshService) processRefresh() {
 	ctx := context.Background()
+
+	release, ok := s.locker.TryAcquire(ctx, "leader:token_refresh", 10*time.Minute)
+	if !ok {
+		return
+	}
+	if release != nil {
+		defer release()
+	}
 
 	// 计算刷新窗口
 	refreshWindow := time.Duration(s.cfg.RefreshBeforeExpiryHours * float64(time.Hour))

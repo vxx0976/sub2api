@@ -12,6 +12,7 @@ import (
 // IdempotencyCleanupService 定期清理已过期的幂等记录，避免表无限增长。
 type IdempotencyCleanupService struct {
 	repo     IdempotencyRepository
+	locker   *LeaderLocker
 	interval time.Duration
 	batch    int
 
@@ -20,7 +21,7 @@ type IdempotencyCleanupService struct {
 	stopCh    chan struct{}
 }
 
-func NewIdempotencyCleanupService(repo IdempotencyRepository, cfg *config.Config) *IdempotencyCleanupService {
+func NewIdempotencyCleanupService(repo IdempotencyRepository, cfg *config.Config, locker *LeaderLocker) *IdempotencyCleanupService {
 	interval := 60 * time.Second
 	batch := 500
 	if cfg != nil {
@@ -33,6 +34,7 @@ func NewIdempotencyCleanupService(repo IdempotencyRepository, cfg *config.Config
 	}
 	return &IdempotencyCleanupService{
 		repo:     repo,
+		locker:   locker,
 		interval: interval,
 		batch:    batch,
 		stopCh:   make(chan struct{}),
@@ -79,6 +81,14 @@ func (s *IdempotencyCleanupService) runLoop() {
 func (s *IdempotencyCleanupService) cleanupOnce() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
+
+	release, ok := s.locker.TryAcquire(ctx, "leader:idempotency_cleanup", 2*time.Minute)
+	if !ok {
+		return
+	}
+	if release != nil {
+		defer release()
+	}
 
 	deleted, err := s.repo.DeleteExpired(ctx, time.Now(), s.batch)
 	if err != nil {
