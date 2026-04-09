@@ -89,6 +89,7 @@ export interface GroupInfo {
   platform: GroupPlatform
   subscription_type: SubscriptionType
   rate_multiplier: number
+  health_status: string
   has_subscription: boolean
   status: string
   expires_at: string | null

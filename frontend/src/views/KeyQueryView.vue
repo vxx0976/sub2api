@@ -171,6 +171,7 @@
                 :subscription-type="selectedGroup.subscription_type"
                 :rate-multiplier="selectedGroup.rate_multiplier"
                 :description="selectedGroup.description"
+                :health-status="selectedGroup.health_status"
                 :selected="false"
                 :show-checkmark="false"
               />
@@ -202,6 +203,7 @@
                   :subscription-type="g.subscription_type"
                   :rate-multiplier="g.rate_multiplier"
                   :description="g.description"
+                  :health-status="g.health_status"
                   :selected="selectedGroupId === g.group_id"
                 />
               </button>

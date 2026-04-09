@@ -433,6 +433,7 @@ type keyQueryGroupInfo struct {
 	Platform         string     `json:"platform"`
 	SubscriptionType string     `json:"subscription_type"`
 	RateMultiplier   float64    `json:"rate_multiplier"`
+	HealthStatus     string     `json:"health_status,omitempty"`
 	HasSub           bool       `json:"has_subscription"`
 	// Subscription fields (populated when has_subscription is true)
 	SubStatus       string     `json:"status,omitempty"`
@@ -491,6 +492,7 @@ func (h *KeyQueryHandler) ListGroups(c *gin.Context) {
 			Platform:         g.Platform,
 			SubscriptionType: g.SubscriptionType,
 			RateMultiplier:   g.RateMultiplier,
+			HealthStatus:     g.HealthStatus,
 		}
 
 		if sub, ok := subMap[g.ID]; ok {
