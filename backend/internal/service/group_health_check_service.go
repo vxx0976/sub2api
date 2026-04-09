@@ -146,7 +146,9 @@ func (s *GroupHealthCheckService) checkOneGroup(ctx context.Context, group *Grou
 	modelID := getDefaultTestModel(group.Platform)
 
 	healthy := 0
+	tested := 0
 	for _, acc := range sample {
+		tested++
 		result, err := s.accountTestSvc.RunTestBackground(ctx, acc.ID, modelID)
 		if err != nil {
 			continue
@@ -157,6 +159,7 @@ func (s *GroupHealthCheckService) checkOneGroup(ctx context.Context, group *Grou
 			if s.rateLimitSvc != nil {
 				_, _ = s.rateLimitSvc.RecoverAccountAfterSuccessfulTest(ctx, acc.ID)
 			}
+			break // 有一个可用即达标，跳过剩余账号
 		}
 	}
 
@@ -166,7 +169,7 @@ func (s *GroupHealthCheckService) checkOneGroup(ctx context.Context, group *Grou
 	}
 
 	now := time.Now()
-	if err := s.groupRepo.UpdateHealthStatus(ctx, group.ID, status, healthy, len(sample), now); err != nil {
+	if err := s.groupRepo.UpdateHealthStatus(ctx, group.ID, status, healthy, tested, now); err != nil {
 		slog.Error("GroupHealthCheck: update status", "group_id", group.ID, "error", err)
 	}
 }
