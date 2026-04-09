@@ -4902,6 +4902,8 @@ export default {
     daysRemaining: 'Истекает через {days} дней',
     subscription: 'Подписка',
     noSubscription: 'Нет активной подписки',
+    currentGroup: 'текущая',
+    selectGroup: 'Выбрать группу',
     dailyUsage: 'Дневное использование',
     weeklyUsage: 'Недельное использование',
     monthlyUsage: 'Месячное использование',

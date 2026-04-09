@@ -1,4 +1,5 @@
 import { apiClient } from './client'
+import type { GroupPlatform, SubscriptionType } from '@/types'
 
 export interface KeyQueryResponse {
   key: {
@@ -81,8 +82,37 @@ export interface TrendPoint {
   actual_cost: number
 }
 
+export interface GroupInfo {
+  group_id: number
+  group_name: string
+  description: string
+  platform: GroupPlatform
+  subscription_type: SubscriptionType
+  rate_multiplier: number
+  has_subscription: boolean
+  status: string
+  expires_at: string | null
+  days_remaining: number | null
+  daily_limit_usd: number | null
+  daily_usage_usd: number | null
+  weekly_limit_usd: number | null
+  weekly_usage_usd: number | null
+  monthly_limit_usd: number | null
+  monthly_usage_usd: number | null
+}
+
+export interface KeyGroupsResponse {
+  groups: GroupInfo[]
+  current_group_id: number | null
+}
+
 export async function queryApiKey(apiKey: string): Promise<KeyQueryResponse> {
   const { data } = await apiClient.post<KeyQueryResponse>('/public/key-query', { api_key: apiKey })
+  return data
+}
+
+export async function queryKeyGroups(apiKey: string): Promise<KeyGroupsResponse> {
+  const { data } = await apiClient.post<KeyGroupsResponse>('/public/key-query/groups', { api_key: apiKey })
   return data
 }
 

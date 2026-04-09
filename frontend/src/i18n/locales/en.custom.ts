@@ -593,6 +593,8 @@ export default {
     daysRemaining: 'Expires in {days} days',
     subscription: 'Subscription',
     noSubscription: 'No Active Subscription',
+    currentGroup: 'current',
+    selectGroup: 'Select Group',
     dailyUsage: 'Daily Usage',
     weeklyUsage: 'Weekly Usage',
     monthlyUsage: 'Monthly Usage',

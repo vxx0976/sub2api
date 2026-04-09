@@ -19,6 +19,8 @@ type KeyQueryHandler struct {
 	apiKeyService       *service.APIKeyService
 	subscriptionService *service.SubscriptionService
 	usageService        *service.UsageService
+	groupService        *service.GroupService
+	userService         *service.UserService
 }
 
 // NewKeyQueryHandler creates a new KeyQueryHandler
@@ -26,11 +28,15 @@ func NewKeyQueryHandler(
 	apiKeyService *service.APIKeyService,
 	subscriptionService *service.SubscriptionService,
 	usageService *service.UsageService,
+	groupService *service.GroupService,
+	userService *service.UserService,
 ) *KeyQueryHandler {
 	return &KeyQueryHandler{
 		apiKeyService:       apiKeyService,
 		subscriptionService: subscriptionService,
 		usageService:        usageService,
+		groupService:        groupService,
+		userService:         userService,
 	}
 }
 
@@ -52,6 +58,7 @@ type keyQueryKeyInfo struct {
 
 // keyQuerySubscriptionInfo represents subscription information in the response
 type keyQuerySubscriptionInfo struct {
+	GroupID         int64      `json:"group_id"`
 	GroupName       string     `json:"group_name"`
 	Status          string     `json:"status"`
 	ExpiresAt       *time.Time `json:"expires_at"`
@@ -148,7 +155,8 @@ func (h *KeyQueryHandler) QueryKey(c *gin.Context) {
 		sub, err := h.subscriptionService.GetActiveSubscription(ctx, apiKey.UserID, *apiKey.GroupID)
 		if err == nil && sub != nil {
 			subInfo = &keyQuerySubscriptionInfo{
-				Status: sub.Status,
+				GroupID: sub.GroupID,
+				Status:  sub.Status,
 			}
 
 			expiresAt := sub.ExpiresAt
@@ -414,6 +422,117 @@ func (h *KeyQueryHandler) UsageModels(c *gin.Context) {
 		"models":     models,
 		"start_date": startTime.Format("2006-01-02"),
 		"end_date":   endTime.Format("2006-01-02"),
+	})
+}
+
+// keyQueryGroupInfo represents a group with optional subscription info for the public API
+type keyQueryGroupInfo struct {
+	GroupID          int64      `json:"group_id"`
+	GroupName        string     `json:"group_name"`
+	Description      string     `json:"description,omitempty"`
+	Platform         string     `json:"platform"`
+	SubscriptionType string     `json:"subscription_type"`
+	RateMultiplier   float64    `json:"rate_multiplier"`
+	HasSub           bool       `json:"has_subscription"`
+	// Subscription fields (populated when has_subscription is true)
+	SubStatus       string     `json:"status,omitempty"`
+	ExpiresAt       *time.Time `json:"expires_at,omitempty"`
+	DaysRemaining   *int       `json:"days_remaining,omitempty"`
+	DailyLimitUSD   *float64   `json:"daily_limit_usd,omitempty"`
+	DailyUsageUSD   *float64   `json:"daily_usage_usd,omitempty"`
+	WeeklyLimitUSD  *float64   `json:"weekly_limit_usd,omitempty"`
+	WeeklyUsageUSD  *float64   `json:"weekly_usage_usd,omitempty"`
+	MonthlyLimitUSD *float64   `json:"monthly_limit_usd,omitempty"`
+	MonthlyUsageUSD *float64   `json:"monthly_usage_usd,omitempty"`
+}
+
+// ListGroups handles POST /api/v1/public/key-query/groups
+// Returns active groups the user has permission to access, with subscription info
+func (h *KeyQueryHandler) ListGroups(c *gin.Context) {
+	apiKey, ok := h.validateAPIKey(c)
+	if !ok {
+		return
+	}
+
+	ctx := c.Request.Context()
+
+	// Fetch user to get AllowedGroups for permission check
+	user, err := h.userService.GetByID(ctx, apiKey.UserID)
+	if err != nil {
+		response.BadRequest(c, "Failed to fetch user")
+		return
+	}
+
+	// Fetch all active groups
+	groups, err := h.groupService.ListActive(ctx)
+	if err != nil {
+		response.BadRequest(c, "Failed to fetch groups")
+		return
+	}
+
+	// Fetch user's active subscriptions and index by group_id
+	subs, _ := h.subscriptionService.ListActiveUserSubscriptions(ctx, apiKey.UserID)
+	subMap := make(map[int64]*service.UserSubscription, len(subs))
+	for i := range subs {
+		subMap[subs[i].GroupID] = &subs[i]
+	}
+
+	var items []keyQueryGroupInfo
+	for _, g := range groups {
+		// Filter: only groups the user has permission to access
+		if !user.CanBindGroup(g.ID, g.IsExclusive) {
+			continue
+		}
+
+		info := keyQueryGroupInfo{
+			GroupID:          g.ID,
+			GroupName:        g.Name,
+			Description:      g.Description,
+			Platform:         g.Platform,
+			SubscriptionType: g.SubscriptionType,
+			RateMultiplier:   g.RateMultiplier,
+		}
+
+		if sub, ok := subMap[g.ID]; ok {
+			info.HasSub = true
+			info.SubStatus = sub.Status
+			expiresAt := sub.ExpiresAt
+			info.ExpiresAt = &expiresAt
+			daysRemaining := sub.DaysRemaining()
+			info.DaysRemaining = &daysRemaining
+
+			if g.HasDailyLimit() {
+				info.DailyLimitUSD = g.DailyLimitUSD
+				usage := sub.DailyUsageUSD
+				info.DailyUsageUSD = &usage
+			}
+			if g.HasWeeklyLimit() {
+				info.WeeklyLimitUSD = g.WeeklyLimitUSD
+				usage := sub.WeeklyUsageUSD
+				info.WeeklyUsageUSD = &usage
+			}
+			if g.HasMonthlyLimit() {
+				effectiveLimit := sub.GetEffectiveMonthlyLimit(&g)
+				if effectiveLimit <= 0 {
+					effectiveLimit = *g.MonthlyLimitUSD
+				}
+				info.MonthlyLimitUSD = &effectiveLimit
+				usage := sub.MonthlyUsageUSD
+				info.MonthlyUsageUSD = &usage
+			}
+		}
+
+		items = append(items, info)
+	}
+
+	var currentGroupID *int64
+	if apiKey.GroupID != nil {
+		currentGroupID = apiKey.GroupID
+	}
+
+	response.Success(c, gin.H{
+		"groups":           items,
+		"current_group_id": currentGroupID,
 	})
 }
 

@@ -600,6 +600,8 @@ export default {
     daysRemaining: '{days} 天后过期',
     subscription: '订阅信息',
     noSubscription: '无有效订阅',
+    currentGroup: '当前',
+    selectGroup: '选择分组',
     dailyUsage: '今日用量',
     weeklyUsage: '本周用量',
     monthlyUsage: '本月用量',

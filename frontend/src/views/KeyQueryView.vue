@@ -110,10 +110,6 @@
           </h3>
           <div class="space-y-3">
             <div class="flex items-center justify-between">
-              <span class="text-sm text-gray-500 dark:text-gray-400">{{ t('keyQuery.keyName') }}</span>
-              <span class="font-medium text-gray-900 dark:text-white">{{ result.key.name }}</span>
-            </div>
-            <div class="flex items-center justify-between">
               <span class="text-sm text-gray-500 dark:text-gray-400">{{ t('keyQuery.status') }}</span>
               <span
                 class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium"
@@ -161,29 +157,77 @@
           <h3 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
             {{ t('keyQuery.subscription') }}
           </h3>
-          <div v-if="!result.subscription" class="py-4 text-center">
-            <p class="text-sm text-gray-500 dark:text-gray-400">{{ t('keyQuery.noSubscription') }}</p>
+
+          <!-- Group Switcher Dropdown -->
+          <div v-if="allGroups.length > 1" class="relative mb-4" ref="groupDropdownRef">
+            <button
+              @click="showGroupDropdown = !showGroupDropdown"
+              class="flex w-full items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition hover:bg-gray-100 dark:border-dark-600 dark:bg-dark-700 dark:hover:bg-dark-600"
+            >
+              <GroupOptionItem
+                v-if="selectedGroup"
+                :name="selectedGroup.group_name"
+                :platform="selectedGroup.platform"
+                :subscription-type="selectedGroup.subscription_type"
+                :rate-multiplier="selectedGroup.rate_multiplier"
+                :description="selectedGroup.description"
+                :selected="false"
+                :show-checkmark="false"
+              />
+              <span v-else class="text-gray-500 dark:text-gray-400">{{ t('keyQuery.selectGroup') }}</span>
+              <svg
+                class="ml-2 h-4 w-4 shrink-0 text-gray-400 transition-transform"
+                :class="showGroupDropdown ? 'rotate-180' : ''"
+                fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+              </svg>
+            </button>
+            <div
+              v-if="showGroupDropdown"
+              class="absolute left-0 right-0 top-full z-50 mt-1 max-h-80 overflow-y-auto rounded-xl border border-gray-200 bg-white p-1.5 shadow-lg dark:border-dark-600 dark:bg-dark-800"
+            >
+              <button
+                v-for="g in allGroups"
+                :key="g.group_id"
+                @click="selectedGroupId = g.group_id; showGroupDropdown = false"
+                class="flex w-full items-center rounded-lg px-3 py-2.5 text-left text-sm transition-colors border-b border-gray-100 last:border-0 dark:border-dark-700"
+                :class="selectedGroupId === g.group_id
+                  ? 'bg-primary-50 dark:bg-primary-900/20'
+                  : 'hover:bg-gray-100 dark:hover:bg-dark-700'"
+              >
+                <GroupOptionItem
+                  :name="g.group_name"
+                  :platform="g.platform"
+                  :subscription-type="g.subscription_type"
+                  :rate-multiplier="g.rate_multiplier"
+                  :description="g.description"
+                  :selected="selectedGroupId === g.group_id"
+                />
+              </button>
+            </div>
           </div>
-          <div v-else class="space-y-4">
+
+          <div v-if="displaySubscription" class="space-y-4">
             <div class="flex items-center justify-between">
-              <span class="font-medium text-gray-900 dark:text-white">{{ result.subscription.group_name }}</span>
+              <span class="font-medium text-gray-900 dark:text-white">{{ displaySubscription.group_name }}</span>
               <span class="text-sm text-gray-500 dark:text-gray-400">
-                {{ t('keyQuery.daysRemaining', { days: result.subscription.days_remaining }) }}
+                {{ t('keyQuery.daysRemaining', { days: displaySubscription.days_remaining }) }}
               </span>
             </div>
             <!-- Daily Usage -->
-            <div v-if="result.subscription.daily_limit_usd !== null">
+            <div v-if="displaySubscription.daily_limit_usd !== null">
               <div class="mb-1 flex items-center justify-between">
                 <span class="text-sm text-gray-500 dark:text-gray-400">{{ t('keyQuery.dailyUsage') }}</span>
                 <span class="text-sm text-gray-700 dark:text-gray-300">
-                  ${{ (result.subscription.daily_usage_usd ?? 0).toFixed(2) }} / ${{ result.subscription.daily_limit_usd.toFixed(2) }}
+                  ${{ (displaySubscription.daily_usage_usd ?? 0).toFixed(2) }} / ${{ displaySubscription.daily_limit_usd.toFixed(2) }}
                 </span>
               </div>
               <div class="h-2 overflow-hidden rounded-full bg-gray-200 dark:bg-dark-600">
                 <div
                   class="h-full rounded-full transition-all"
-                  :class="quotaBarClass(result.subscription.daily_usage_usd ?? 0, result.subscription.daily_limit_usd)"
-                  :style="{ width: usagePercent(result.subscription.daily_usage_usd ?? 0, result.subscription.daily_limit_usd) + '%' }"
+                  :class="quotaBarClass(displaySubscription.daily_usage_usd ?? 0, displaySubscription.daily_limit_usd)"
+                  :style="{ width: usagePercent(displaySubscription.daily_usage_usd ?? 0, displaySubscription.daily_limit_usd) + '%' }"
                 ></div>
               </div>
             </div>
@@ -192,18 +236,18 @@
               <span class="text-sm text-gray-700 dark:text-gray-300">{{ t('keyQuery.noLimit') }}</span>
             </div>
             <!-- Weekly Usage -->
-            <div v-if="result.subscription.weekly_limit_usd !== null">
+            <div v-if="displaySubscription.weekly_limit_usd !== null">
               <div class="mb-1 flex items-center justify-between">
                 <span class="text-sm text-gray-500 dark:text-gray-400">{{ t('keyQuery.weeklyUsage') }}</span>
                 <span class="text-sm text-gray-700 dark:text-gray-300">
-                  ${{ (result.subscription.weekly_usage_usd ?? 0).toFixed(2) }} / ${{ result.subscription.weekly_limit_usd.toFixed(2) }}
+                  ${{ (displaySubscription.weekly_usage_usd ?? 0).toFixed(2) }} / ${{ displaySubscription.weekly_limit_usd.toFixed(2) }}
                 </span>
               </div>
               <div class="h-2 overflow-hidden rounded-full bg-gray-200 dark:bg-dark-600">
                 <div
                   class="h-full rounded-full transition-all"
-                  :class="quotaBarClass(result.subscription.weekly_usage_usd ?? 0, result.subscription.weekly_limit_usd)"
-                  :style="{ width: usagePercent(result.subscription.weekly_usage_usd ?? 0, result.subscription.weekly_limit_usd) + '%' }"
+                  :class="quotaBarClass(displaySubscription.weekly_usage_usd ?? 0, displaySubscription.weekly_limit_usd)"
+                  :style="{ width: usagePercent(displaySubscription.weekly_usage_usd ?? 0, displaySubscription.weekly_limit_usd) + '%' }"
                 ></div>
               </div>
             </div>
@@ -212,18 +256,18 @@
               <span class="text-sm text-gray-700 dark:text-gray-300">{{ t('keyQuery.noLimit') }}</span>
             </div>
             <!-- Monthly Usage -->
-            <div v-if="result.subscription.monthly_limit_usd !== null">
+            <div v-if="displaySubscription.monthly_limit_usd !== null">
               <div class="mb-1 flex items-center justify-between">
                 <span class="text-sm text-gray-500 dark:text-gray-400">{{ t('keyQuery.monthlyUsage') }}</span>
                 <span class="text-sm text-gray-700 dark:text-gray-300">
-                  ${{ (result.subscription.monthly_usage_usd ?? 0).toFixed(2) }} / ${{ result.subscription.monthly_limit_usd.toFixed(2) }}
+                  ${{ (displaySubscription.monthly_usage_usd ?? 0).toFixed(2) }} / ${{ displaySubscription.monthly_limit_usd.toFixed(2) }}
                 </span>
               </div>
               <div class="h-2 overflow-hidden rounded-full bg-gray-200 dark:bg-dark-600">
                 <div
                   class="h-full rounded-full transition-all"
-                  :class="quotaBarClass(result.subscription.monthly_usage_usd ?? 0, result.subscription.monthly_limit_usd)"
-                  :style="{ width: usagePercent(result.subscription.monthly_usage_usd ?? 0, result.subscription.monthly_limit_usd) + '%' }"
+                  :class="quotaBarClass(displaySubscription.monthly_usage_usd ?? 0, displaySubscription.monthly_limit_usd)"
+                  :style="{ width: usagePercent(displaySubscription.monthly_usage_usd ?? 0, displaySubscription.monthly_limit_usd) + '%' }"
                 ></div>
               </div>
             </div>
@@ -487,18 +531,21 @@ import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores'
 import { availableLocales, setLocale } from '@/i18n'
 import PublicHeader from '@/components/layout/PublicHeader.vue'
+import GroupOptionItem from '@/components/common/GroupOptionItem.vue'
 import {
   queryApiKey,
   queryKeyUsage,
   queryKeyStats,
   queryKeyModels,
   queryKeyTrend,
+  queryKeyGroups,
   type KeyQueryResponse,
   type UsageStatsResponse,
   type ModelStat,
   type TrendPoint,
   type UsageLog,
-  type Pagination
+  type Pagination,
+  type GroupInfo
 } from '@/api/key-query'
 
 const { t, locale } = useI18n()
@@ -531,6 +578,9 @@ function handleClickOutside(e: MouseEvent) {
   if (langDropdownRef.value && !langDropdownRef.value.contains(e.target as Node)) {
     showLangDropdown.value = false
   }
+  if (groupDropdownRef.value && !groupDropdownRef.value.contains(e.target as Node)) {
+    showGroupDropdown.value = false
+  }
 }
 
 // Time range
@@ -554,6 +604,25 @@ const usageLogs = ref<UsageLog[]>([])
 const pagination = ref<Pagination | null>(null)
 const usageLoading = ref(false)
 const currentPage = ref(1)
+
+// Groups (group switching)
+const allGroups = ref<GroupInfo[]>([])
+const currentGroupId = ref<number | null>(null)
+const selectedGroupId = ref<number | null>(null)
+const showGroupDropdown = ref(false)
+const groupDropdownRef = ref<HTMLElement | null>(null)
+
+const selectedGroup = computed(() => {
+  if (!selectedGroupId.value || allGroups.value.length === 0) return null
+  return allGroups.value.find(g => g.group_id === selectedGroupId.value) ?? null
+})
+
+// Use selected group's subscription info, or fall back to result.subscription
+const displaySubscription = computed(() => {
+  if (selectedGroup.value?.has_subscription) return selectedGroup.value
+  if (selectedGroup.value && !selectedGroup.value.has_subscription) return null
+  return result.value?.subscription ?? null
+})
 
 onMounted(() => {
   appStore.fetchPublicSettings()
@@ -601,9 +670,27 @@ async function handleQuery() {
   trend.value = []
   usageLogs.value = []
   pagination.value = null
+  allGroups.value = []
+  currentGroupId.value = null
+  selectedGroupId.value = null
 
   try {
-    result.value = await queryApiKey(key)
+    const [keyResult, groupsResult] = await Promise.allSettled([
+      queryApiKey(key),
+      queryKeyGroups(key)
+    ])
+
+    if (keyResult.status === 'rejected') {
+      throw keyResult.reason
+    }
+    result.value = keyResult.value
+
+    if (groupsResult.status === 'fulfilled') {
+      allGroups.value = groupsResult.value.groups ?? []
+      currentGroupId.value = groupsResult.value.current_group_id
+      selectedGroupId.value = groupsResult.value.current_group_id
+    }
+
     localStorage.setItem(STORAGE_KEY, key)
     await fetchTimeRangeData()
   } catch (err: any) {
