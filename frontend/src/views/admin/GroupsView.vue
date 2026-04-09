@@ -151,15 +151,6 @@
             </span>
           </template>
 
-          <template #cell-is_purchasable="{ row }">
-            <span
-              v-if="row.subscription_type === 'subscription'"
-              :class="['badge', row.is_purchasable ? 'badge-success' : 'badge-gray']"
-            >
-              {{ row.is_purchasable ? t('common.yes') : t('common.no') }}
-            </span>
-            <span v-else class="text-gray-400 dark:text-gray-500">-</span>
-          </template>
 
           <template #cell-account_count="{ row }">
             <div class="space-y-0.5 text-xs">
@@ -541,33 +532,6 @@
                 placeholder="0.00"
               />
               <p class="input-hint">{{ t('admin.groups.payment.priceHint') }}</p>
-            </div>
-            <div>
-              <div class="mb-1.5 flex items-center gap-1">
-                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {{ t('admin.groups.payment.isPurchasable') }}
-                </label>
-              </div>
-              <div class="flex items-center gap-3">
-                <button
-                  type="button"
-                  @click="createForm.is_purchasable = !createForm.is_purchasable"
-                  :class="[
-                    'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
-                    createForm.is_purchasable ? 'bg-primary-500' : 'bg-gray-300 dark:bg-dark-600'
-                  ]"
-                >
-                  <span
-                    :class="[
-                      'inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform',
-                      createForm.is_purchasable ? 'translate-x-6' : 'translate-x-1'
-                    ]"
-                  />
-                </button>
-                <span class="text-sm text-gray-500 dark:text-gray-400">
-                  {{ t('admin.groups.payment.isPurchasableHint') }}
-                </span>
-              </div>
             </div>
             <div>
               <div class="mb-1.5 flex items-center gap-1">
@@ -1399,33 +1363,6 @@
             <div>
               <div class="mb-1.5 flex items-center gap-1">
                 <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {{ t('admin.groups.payment.isPurchasable') }}
-                </label>
-              </div>
-              <div class="flex items-center gap-3">
-                <button
-                  type="button"
-                  @click="editForm.is_purchasable = !editForm.is_purchasable"
-                  :class="[
-                    'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
-                    editForm.is_purchasable ? 'bg-primary-500' : 'bg-gray-300 dark:bg-dark-600'
-                  ]"
-                >
-                  <span
-                    :class="[
-                      'inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform',
-                      editForm.is_purchasable ? 'translate-x-6' : 'translate-x-1'
-                    ]"
-                  />
-                </button>
-                <span class="text-sm text-gray-500 dark:text-gray-400">
-                  {{ t('admin.groups.payment.isPurchasableHint') }}
-                </span>
-              </div>
-            </div>
-            <div>
-              <div class="mb-1.5 flex items-center gap-1">
-                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
                   {{ t('admin.groups.payment.isRecommended') }}
                 </label>
               </div>
@@ -2118,8 +2055,7 @@ const columns = computed<Column[]>(() => [
   { key: 'billing_type', label: t('admin.groups.columns.billingType'), sortable: true },
   { key: 'rate_multiplier', label: t('admin.groups.columns.rateMultiplier'), sortable: true },
   { key: 'is_exclusive', label: t('admin.groups.columns.type'), sortable: true },
-  { key: 'is_purchasable', label: t('admin.groups.columns.purchasable'), sortable: true },
-  { key: 'account_count', label: t('admin.groups.columns.accounts'), sortable: true },
+{ key: 'account_count', label: t('admin.groups.columns.accounts'), sortable: true },
   { key: 'capacity', label: t('admin.groups.columns.capacity'), sortable: false },
   { key: 'health', label: t('admin.groups.columns.health', 'Health'), sortable: false },
   { key: 'usage', label: t('admin.groups.columns.usage'), sortable: false },
