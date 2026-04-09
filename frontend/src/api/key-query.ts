@@ -117,6 +117,10 @@ export async function queryKeyGroups(apiKey: string): Promise<KeyGroupsResponse>
   return data
 }
 
+export async function switchKeyGroup(apiKey: string, groupId: number): Promise<void> {
+  await apiClient.post('/public/key-query/switch-group', { api_key: apiKey, group_id: groupId })
+}
+
 export async function queryKeyUsage(params: {
   api_key: string
   page?: number

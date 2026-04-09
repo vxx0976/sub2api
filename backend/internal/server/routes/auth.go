@@ -86,6 +86,7 @@ func RegisterAuthRoutes(
 	{
 		publicGroup.POST("/key-query", rateLimit, h.KeyQuery.QueryKey)
 		publicGroup.POST("/key-query/groups", rateLimit, h.KeyQuery.ListGroups)
+		publicGroup.POST("/key-query/switch-group", rateLimit, h.KeyQuery.SwitchGroup)
 		publicGroup.POST("/key-usage", rateLimit, h.KeyQuery.ListUsage)
 		publicGroup.POST("/key-usage/stats", rateLimit, h.KeyQuery.UsageStats)
 		publicGroup.POST("/key-usage/models", rateLimit, h.KeyQuery.UsageModels)

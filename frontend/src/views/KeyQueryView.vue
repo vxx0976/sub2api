@@ -162,7 +162,8 @@
           <div v-if="allGroups.length > 1" class="relative mb-4" ref="groupDropdownRef">
             <button
               @click="showGroupDropdown = !showGroupDropdown"
-              class="flex w-full items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition hover:bg-gray-100 dark:border-dark-600 dark:bg-dark-700 dark:hover:bg-dark-600"
+              :disabled="switchingGroup"
+              class="flex w-full items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition hover:bg-gray-100 dark:border-dark-600 dark:bg-dark-700 dark:hover:bg-dark-600 disabled:opacity-60"
             >
               <GroupOptionItem
                 v-if="selectedGroup"
@@ -191,7 +192,7 @@
               <button
                 v-for="g in allGroups"
                 :key="g.group_id"
-                @click="selectedGroupId = g.group_id; showGroupDropdown = false"
+                @click="handleSwitchGroup(g.group_id)"
                 class="flex w-full items-center rounded-lg px-3 py-2.5 text-left text-sm transition-colors border-b border-gray-100 last:border-0 dark:border-dark-700"
                 :class="selectedGroupId === g.group_id
                   ? 'bg-primary-50 dark:bg-primary-900/20'
@@ -541,6 +542,7 @@ import {
   queryKeyModels,
   queryKeyTrend,
   queryKeyGroups,
+  switchKeyGroup,
   type KeyQueryResponse,
   type UsageStatsResponse,
   type ModelStat,
@@ -761,6 +763,27 @@ async function goToPage(page: number) {
     // keep current data on error
   } finally {
     usageLoading.value = false
+  }
+}
+
+// Switch group: call backend to change key's group binding, then refresh
+const switchingGroup = ref(false)
+async function handleSwitchGroup(groupId: number) {
+  if (groupId === selectedGroupId.value || switchingGroup.value) return
+  showGroupDropdown.value = false
+  switchingGroup.value = true
+
+  try {
+    await switchKeyGroup(apiKey.value.trim(), groupId)
+    selectedGroupId.value = groupId
+    currentGroupId.value = groupId
+    // Re-fetch key query to reflect the new group's subscription
+    const keyResult = await queryApiKey(apiKey.value.trim())
+    result.value = keyResult
+  } catch (err: any) {
+    error.value = err.message || 'Failed to switch group'
+  } finally {
+    switchingGroup.value = false
   }
 }
 

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"math"
 	"sort"
 	"time"
@@ -536,6 +537,46 @@ func (h *KeyQueryHandler) ListGroups(c *gin.Context) {
 		"groups":           items,
 		"current_group_id": currentGroupID,
 	})
+}
+
+// switchGroupRequest is the request body for switching a key's group
+type switchGroupRequest struct {
+	APIKey  string `json:"api_key" binding:"required"`
+	GroupID int64  `json:"group_id" binding:"required"`
+}
+
+// SwitchGroup handles POST /api/v1/public/key-query/switch-group
+// Switches the API key's group binding. Authenticates via the API key itself.
+func (h *KeyQueryHandler) SwitchGroup(c *gin.Context) {
+	var req switchGroupRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: api_key and group_id are required")
+		return
+	}
+
+	ctx := c.Request.Context()
+
+	apiKey, err := h.apiKeyService.GetByKey(ctx, req.APIKey)
+	if err != nil {
+		response.BadRequest(c, "Invalid API key")
+		return
+	}
+
+	// Use the existing Update method which handles group permission validation
+	groupID := req.GroupID
+	_, err = h.apiKeyService.Update(ctx, apiKey.ID, apiKey.UserID, service.UpdateAPIKeyRequest{
+		GroupID: &groupID,
+	})
+	if err != nil {
+		if errors.Is(err, service.ErrGroupNotAllowed) {
+			response.BadRequest(c, "You do not have permission to use this group")
+		} else {
+			response.BadRequest(c, "Failed to switch group")
+		}
+		return
+	}
+
+	response.Success(c, gin.H{"message": "ok"})
 }
 
 // UsageTrend handles POST /api/v1/public/key-usage/trend
