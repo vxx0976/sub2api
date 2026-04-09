@@ -28,9 +28,11 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Get short commit SHA
+      - name: Get build metadata
         id: meta
-        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+        run: |
+          echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "version=$(cat backend/cmd/server/VERSION)" >> $GITHUB_OUTPUT
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
@@ -42,7 +44,7 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/sub2api:dev
             ${{ secrets.DOCKERHUB_USERNAME }}/sub2api:dev-${{ steps.meta.outputs.sha_short }}
           build-args: |
-            VERSION=dev-${{ steps.meta.outputs.sha_short }}
+            VERSION=${{ steps.meta.outputs.version }}
             COMMIT=${{ github.sha }}
             DATE=${{ github.event.head_commit.timestamp }}
           cache-from: type=gha
