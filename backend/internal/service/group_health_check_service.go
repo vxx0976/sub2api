@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"log/slog"
-	"math/rand"
 	"sync"
 	"time"
 
@@ -15,7 +14,6 @@ import (
 const (
 	HealthStatusAvailable   = "available"
 	HealthStatusUnavailable = "unavailable"
-	groupHealthMaxSample    = 3 // max accounts to test per group
 	groupHealthMaxWorkers   = 5 // max concurrent group checks
 )
 
@@ -135,19 +133,13 @@ func (s *GroupHealthCheckService) checkOneGroup(ctx context.Context, group *Grou
 		return
 	}
 
-	// Randomly sample up to groupHealthMaxSample accounts
-	sample := accounts
-	if len(sample) > groupHealthMaxSample {
-		rand.Shuffle(len(sample), func(i, j int) { sample[i], sample[j] = sample[j], sample[i] })
-		sample = sample[:groupHealthMaxSample]
-	}
-
 	// Determine test model based on platform
 	modelID := getDefaultTestModel(group.Platform)
 
+	// 逐个测试所有账号，第一个成功即绿灯并停止
 	healthy := 0
 	tested := 0
-	for _, acc := range sample {
+	for _, acc := range accounts {
 		tested++
 		result, err := s.accountTestSvc.RunTestBackground(ctx, acc.ID, modelID)
 		if err != nil {
