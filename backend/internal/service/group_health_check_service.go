@@ -118,6 +118,16 @@ func (s *GroupHealthCheckService) runHealthCheck() {
 	wg.Wait()
 }
 
+// CheckGroupByID 手动触发单个分组的健康检查
+func (s *GroupHealthCheckService) CheckGroupByID(ctx context.Context, groupID int64) error {
+	group, err := s.groupRepo.GetByID(ctx, groupID)
+	if err != nil {
+		return err
+	}
+	s.checkOneGroup(ctx, group)
+	return nil
+}
+
 func (s *GroupHealthCheckService) checkOneGroup(ctx context.Context, group *Group) {
 	// Get schedulable accounts for this group
 	accounts, err := s.accountRepo.ListSchedulableByGroupID(ctx, group.ID)

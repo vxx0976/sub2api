@@ -209,6 +209,14 @@
                 0/{{ row.total_checked_accounts }}
               </span>
               <span v-else class="text-xs text-gray-400">—</span>
+              <button
+                @click="handleCheckHealth(row)"
+                :disabled="checkingHealthId === row.id"
+                class="p-1 text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                :title="t('admin.groups.checkHealth', 'Check Health')"
+              >
+                <Icon name="refresh" size="xs" :class="{ 'animate-spin': checkingHealthId === row.id }" />
+              </button>
             </div>
             <div v-if="row.last_health_check_at" class="mt-0.5 text-[10px] text-gray-400">
               {{ formatHealthCheckTime(row.last_health_check_at) }}
@@ -2632,6 +2640,23 @@ function formatHealthCheckTime(dateStr: string): string {
   if (diffHours < 24) return `${diffHours}h ago`
   const diffDays = Math.floor(diffHours / 24)
   return `${diffDays}d ago`
+}
+
+const checkingHealthId = ref<number | null>(null)
+
+async function handleCheckHealth(row: any) {
+  checkingHealthId.value = row.id
+  try {
+    const updated = await adminAPI.groups.checkHealth(row.id)
+    const idx = groups.value.findIndex((g: any) => g.id === row.id)
+    if (idx !== -1) {
+      groups.value[idx] = { ...groups.value[idx], ...updated }
+    }
+  } catch (error: any) {
+    appStore.showError(error?.message || t('admin.groups.checkHealthFailed', 'Health check failed'))
+  } finally {
+    checkingHealthId.value = null
+  }
 }
 
 const loadUsageSummary = async () => {

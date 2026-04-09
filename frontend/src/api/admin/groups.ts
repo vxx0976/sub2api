@@ -249,6 +249,14 @@ export async function getCapacitySummary(): Promise<
   return data
 }
 
+/**
+ * Trigger health check for a specific group
+ */
+export async function checkHealth(id: number): Promise<any> {
+  const { data } = await apiClient.post(`/admin/groups/${id}/check-health`)
+  return data
+}
+
 export const groupsAPI = {
   list,
   getAll,
@@ -265,7 +273,8 @@ export const groupsAPI = {
   batchSetGroupRateMultipliers,
   updateSortOrder,
   getUsageSummary,
-  getCapacitySummary
+  getCapacitySummary,
+  checkHealth
 }
 
 export default groupsAPI

@@ -17,9 +17,10 @@ import (
 
 // GroupHandler handles admin group management
 type GroupHandler struct {
-	adminService         service.AdminService
-	dashboardService     *service.DashboardService
-	groupCapacityService *service.GroupCapacityService
+	adminService            service.AdminService
+	dashboardService        *service.DashboardService
+	groupCapacityService    *service.GroupCapacityService
+	groupHealthCheckService *service.GroupHealthCheckService
 }
 
 type optionalLimitField struct {
@@ -72,12 +73,18 @@ func (f optionalLimitField) ToServiceInput() *float64 {
 }
 
 // NewGroupHandler creates a new admin group handler
-func NewGroupHandler(adminService service.AdminService, dashboardService *service.DashboardService, groupCapacityService *service.GroupCapacityService) *GroupHandler {
+func NewGroupHandler(adminService service.AdminService, dashboardService *service.DashboardService, groupCapacityService *service.GroupCapacityService, groupHealthCheckService *service.GroupHealthCheckService) *GroupHandler {
 	return &GroupHandler{
-		adminService:         adminService,
-		dashboardService:     dashboardService,
-		groupCapacityService: groupCapacityService,
+		adminService:            adminService,
+		dashboardService:        dashboardService,
+		groupCapacityService:    groupCapacityService,
+		groupHealthCheckService: groupHealthCheckService,
 	}
+}
+
+// SetHealthCheckService 延迟注入健康检查服务（解决循环依赖）
+func (h *GroupHandler) SetHealthCheckService(svc *service.GroupHealthCheckService) {
+	h.groupHealthCheckService = svc
 }
 
 // CreateGroupRequest represents create group request
@@ -550,4 +557,28 @@ func (h *GroupHandler) UpdateSortOrder(c *gin.Context) {
 	}
 
 	response.Success(c, gin.H{"message": "Sort order updated successfully"})
+}
+
+// CheckHealth triggers a manual health check for a group
+// POST /api/v1/admin/groups/:id/check-health
+func (h *GroupHandler) CheckHealth(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.ErrorFrom(c, fmt.Errorf("invalid group ID"))
+		return
+	}
+
+	if err := h.groupHealthCheckService.CheckGroupByID(c.Request.Context(), id); err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+
+	// Return updated group
+	group, err := h.adminService.GetGroup(c.Request.Context(), id)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+
+	response.Success(c, dto.GroupFromServiceAdmin(group))
 }
