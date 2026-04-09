@@ -392,6 +392,7 @@ export default {
     used: '已使用',
     expired: '已过期',
     createdAt: '创建时间',
+    rateMultiplier: '倍率',
     time: {
       never: '从未',
       justNow: '刚刚',

@@ -472,6 +472,7 @@ export default {
     used: 'Использован',
     expired: 'Истёк',
     createdAt: 'Дата создания',
+    rateMultiplier: 'множитель',
     time: {
       never: 'Никогда',
       justNow: 'Только что',

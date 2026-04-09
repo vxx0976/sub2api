@@ -393,6 +393,7 @@ export default {
     used: 'Used',
     expired: 'Expired',
     createdAt: 'Created At',
+    rateMultiplier: 'rate',
     time: {
       never: 'Never',
       justNow: 'Just now',
