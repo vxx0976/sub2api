@@ -168,7 +168,7 @@
               <GroupOptionItem
                 v-if="selectedGroup"
                 :name="resolveI18n(selectedGroup.name_i18n, selectedGroup.group_name)"
-                :platform="selectedGroup.platform"
+                :platform="getDisplayPlatform(selectedGroup)"
                 :subscription-type="selectedGroup.subscription_type"
                 :rate-multiplier="selectedGroup.rate_multiplier"
                 :description="resolveI18n(selectedGroup.description_i18n, selectedGroup.description)"
@@ -200,7 +200,7 @@
               >
                 <GroupOptionItem
                   :name="resolveI18n(g.name_i18n, g.group_name)"
-                  :platform="g.platform"
+                  :platform="getDisplayPlatform(g)"
                   :subscription-type="g.subscription_type"
                   :rate-multiplier="g.rate_multiplier"
                   :description="resolveI18n(g.description_i18n, g.description)"
@@ -552,6 +552,7 @@ import {
   type Pagination,
   type GroupInfo
 } from '@/api/key-query'
+import { getDisplayPlatform } from '@/types'
 
 const { t, locale } = useI18n()
 const appStore = useAppStore()

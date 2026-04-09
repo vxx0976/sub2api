@@ -2348,6 +2348,7 @@ import type {
   UpdateSettingsRequest,
   DefaultSubscriptionSetting
 } from '@/api/admin/settings'
+import { getDisplayPlatform } from '@/types'
 import type { AdminGroup } from '@/types'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import Icon from '@/components/icons/Icon.vue'
@@ -2564,7 +2565,7 @@ const defaultSubscriptionGroupOptions = computed<DefaultSubscriptionGroupOption[
     value: group.id,
     label: group.name,
     description: group.description,
-    platform: group.platform,
+    platform: getDisplayPlatform(group),
     subscriptionType: group.subscription_type,
     rate: group.rate_multiplier
   }))

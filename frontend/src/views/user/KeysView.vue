@@ -100,7 +100,7 @@
                 <template v-if="row.group">
                   <GroupBadge
                     :name="row.group.name"
-                    :platform="row.group.platform"
+                    :platform="getDisplayPlatform(row.group)"
                     :subscription-type="row.group.subscription_type"
                     :rate-multiplier="row.group.rate_multiplier"
                     :user-rate-multiplier="userGroupRates[row.group.id]"
@@ -1052,7 +1052,8 @@ import TablePageLayout from '@/components/layout/TablePageLayout.vue'
 	import EndpointPopover from '@/components/keys/EndpointPopover.vue'
 	import GroupBadge from '@/components/common/GroupBadge.vue'
 	import GroupOptionItem from '@/components/common/GroupOptionItem.vue'
-	import type { ApiKey, Group, PublicSettings, SubscriptionType, GroupPlatform } from '@/types'
+	import { getDisplayPlatform } from '@/types'
+import type { ApiKey, Group, PublicSettings, SubscriptionType, GroupPlatform } from '@/types'
 import type { Column } from '@/components/common/types'
 import type { BatchApiKeyUsageStats } from '@/api/usage'
 import { formatDateTime } from '@/utils/format'
@@ -1235,7 +1236,7 @@ const groupOptions = computed(() =>
     rate: group.rate_multiplier,
     userRate: userGroupRates.value[group.id] ?? null,
     subscriptionType: group.subscription_type,
-    platform: group.platform,
+    platform: getDisplayPlatform(group),
     healthStatus: group.health_status
   }))
 )

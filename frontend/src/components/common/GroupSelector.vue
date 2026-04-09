@@ -22,7 +22,7 @@
         />
         <GroupBadge
           :name="group.name"
-          :platform="group.platform"
+          :platform="getDisplayPlatform(group)"
           :subscription-type="group.subscription_type"
           :rate-multiplier="group.rate_multiplier"
           class="min-w-0 flex-1"
@@ -43,6 +43,7 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import GroupBadge from './GroupBadge.vue'
+import { getDisplayPlatform } from '@/types'
 import type { Group, GroupPlatform } from '@/types'
 
 const { t } = useI18n()

@@ -29,7 +29,7 @@
                 <GroupBadge
                   v-if="key.group_id && key.group"
                   :name="key.group.name"
-                  :platform="key.group.platform"
+                  :platform="getDisplayPlatform(key.group)"
                   :subscription-type="key.group.subscription_type"
                   :rate-multiplier="key.group.rate_multiplier"
                 />
@@ -85,7 +85,7 @@
         >
           <GroupOptionItem
             :name="group.name"
-            :platform="group.platform"
+            :platform="getDisplayPlatform(group)"
             :subscription-type="group.subscription_type"
             :rate-multiplier="group.rate_multiplier"
             :description="group.description"
@@ -103,6 +103,7 @@ import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
 import { adminAPI } from '@/api/admin'
 import { formatDateTime } from '@/utils/format'
+import { getDisplayPlatform } from '@/types'
 import type { AdminUser, AdminGroup, ApiKey } from '@/types'
 import BaseDialog from '@/components/common/BaseDialog.vue'
 import GroupBadge from '@/components/common/GroupBadge.vue'

@@ -401,6 +401,14 @@ export interface PaginationConfig {
 
 export type GroupPlatform = 'anthropic' | 'openai' | 'gemini' | 'antigravity'
 
+/**
+ * 获取分组的展示平台：当 allow_messages_dispatch 开启时视为 anthropic 平台
+ */
+export function getDisplayPlatform(group: { platform: GroupPlatform; allow_messages_dispatch?: boolean }): GroupPlatform {
+  if (group.allow_messages_dispatch) return 'anthropic'
+  return group.platform
+}
+
 export type SubscriptionType = 'standard' | 'subscription'
 
 // Simple account info for group display
