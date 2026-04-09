@@ -70,6 +70,12 @@ type Group struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 
+	// 健康检查状态
+	HealthStatus         string     `json:"health_status"`           // available/unavailable/""
+	HealthyAccounts      int        `json:"healthy_accounts"`
+	TotalCheckedAccounts int        `json:"total_checked_accounts"`
+	LastHealthCheckAt    *time.Time `json:"last_health_check_at"`
+
 	AccountGroups           []AccountGroup `json:"account_groups,omitempty"`
 	AccountCount            int64          `json:"account_count,omitempty"`
 	ActiveAccountCount      int64          `json:"active_account_count,omitempty"`

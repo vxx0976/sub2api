@@ -184,6 +184,22 @@ func (Group) Fields() []ent.Field {
 			Nillable().
 			MaxLen(5).
 			Comment("每日可用结束时间（HH:MM），与 active_start_time 配合使用"),
+
+		// 分组健康检查状态
+		field.String("health_status").
+			MaxLen(20).
+			Default("").
+			Comment("分组可用性状态：available/unavailable/空=未检查"),
+		field.Int("healthy_accounts").
+			Default(0).
+			Comment("最近一次健康检查中可用的账号数"),
+		field.Int("total_checked_accounts").
+			Default(0).
+			Comment("最近一次健康检查中检查的账号总数"),
+		field.Time("last_health_check_at").
+			Optional().
+			Nillable().
+			Comment("最近一次健康检查时间"),
 	}
 }
 

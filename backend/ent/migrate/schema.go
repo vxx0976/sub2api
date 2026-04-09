@@ -479,6 +479,10 @@ var (
 		{Name: "default_mapped_model", Type: field.TypeString, Size: 100, Default: ""},
 		{Name: "active_start_time", Type: field.TypeString, Nullable: true, Size: 5},
 		{Name: "active_end_time", Type: field.TypeString, Nullable: true, Size: 5},
+		{Name: "health_status", Type: field.TypeString, Size: 20, Default: ""},
+		{Name: "healthy_accounts", Type: field.TypeInt, Default: 0},
+		{Name: "total_checked_accounts", Type: field.TypeInt, Default: 0},
+		{Name: "last_health_check_at", Type: field.TypeTime, Nullable: true},
 	}
 	// GroupsTable holds the schema information for the "groups" table.
 	GroupsTable = &schema.Table{

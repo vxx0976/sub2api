@@ -99,6 +99,7 @@ func provideCleanup(
 	alipayMonitor *payment.AlipayMonitor,
 	openAIGateway *service.OpenAIGatewayService,
 	scheduledTestRunner *service.ScheduledTestRunnerService,
+	groupHealthCheck *service.GroupHealthCheckService,
 	backupSvc *service.BackupService,
 ) func() {
 	return func() {
@@ -239,6 +240,12 @@ func provideCleanup(
 			{"ScheduledTestRunnerService", func() error {
 				if scheduledTestRunner != nil {
 					scheduledTestRunner.Stop()
+				}
+				return nil
+			}},
+			{"GroupHealthCheckService", func() error {
+				if groupHealthCheck != nil {
+					groupHealthCheck.Stop()
 				}
 				return nil
 			}},

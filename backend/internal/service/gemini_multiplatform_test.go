@@ -248,6 +248,18 @@ func (m *mockGroupRepoForGemini) GetAccountIDsByGroupIDs(ctx context.Context, gr
 func (m *mockGroupRepoForGemini) UpdateSortOrders(ctx context.Context, updates []GroupSortOrderUpdate) error {
 	return nil
 }
+func (m *mockGroupRepoForGemini) UpdateHealthStatus(ctx context.Context, groupID int64, status string, healthy int, total int, checkedAt time.Time) error {
+	return nil
+}
+func (m *mockGroupRepoForGemini) CountByOwnerID(ctx context.Context, ownerID int64) (int64, error) {
+	return 0, nil
+}
+func (m *mockGroupRepoForGemini) ListPurchasable(ctx context.Context) ([]Group, error) {
+	return nil, nil
+}
+func (m *mockGroupRepoForGemini) ListPurchasableByOwnerID(ctx context.Context, ownerID int64) ([]Group, error) {
+	return nil, nil
+}
 
 var _ GroupRepository = (*mockGroupRepoForGemini)(nil)
 

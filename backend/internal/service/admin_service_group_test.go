@@ -5,6 +5,7 @@ package service
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
 	"github.com/stretchr/testify/require"
@@ -118,6 +119,18 @@ func (s *groupRepoStubForAdmin) GetAccountIDsByGroupIDs(_ context.Context, _ []i
 
 func (s *groupRepoStubForAdmin) UpdateSortOrders(_ context.Context, _ []GroupSortOrderUpdate) error {
 	return nil
+}
+func (s *groupRepoStubForAdmin) UpdateHealthStatus(_ context.Context, _ int64, _ string, _ int, _ int, _ time.Time) error {
+	return nil
+}
+func (s *groupRepoStubForAdmin) CountByOwnerID(_ context.Context, _ int64) (int64, error) {
+	return 0, nil
+}
+func (s *groupRepoStubForAdmin) ListPurchasable(_ context.Context) ([]Group, error) {
+	return nil, nil
+}
+func (s *groupRepoStubForAdmin) ListPurchasableByOwnerID(_ context.Context, _ int64) ([]Group, error) {
+	return nil, nil
 }
 
 // TestAdminService_CreateGroup_WithImagePricing 测试创建分组时 ImagePrice 字段正确传递

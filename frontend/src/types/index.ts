@@ -478,6 +478,12 @@ export interface AdminGroup extends Group {
   // OpenAI Messages 调度配置（仅 openai 平台使用）
   default_mapped_model?: string
 
+  // 健康检查状态
+  health_status: string // 'available' | 'unavailable' | ''
+  healthy_accounts: number
+  total_checked_accounts: number
+  last_health_check_at: string | null
+
   // 分组排序
   sort_order: number
   created_at: string

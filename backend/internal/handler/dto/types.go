@@ -140,6 +140,12 @@ type AdminGroup struct {
 
 	// 分组排序
 	SortOrder int `json:"sort_order"`
+
+	// 健康检查状态
+	HealthStatus         string     `json:"health_status"`
+	HealthyAccounts      int        `json:"healthy_accounts"`
+	TotalCheckedAccounts int        `json:"total_checked_accounts"`
+	LastHealthCheckAt    *time.Time `json:"last_health_check_at"`
 }
 
 type Account struct {

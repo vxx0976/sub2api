@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"time"
 
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
@@ -38,6 +39,8 @@ type GroupRepository interface {
 	BindAccountsToGroup(ctx context.Context, groupID int64, accountIDs []int64) error
 	// UpdateSortOrders 批量更新分组排序
 	UpdateSortOrders(ctx context.Context, updates []GroupSortOrderUpdate) error
+	// UpdateHealthStatus 更新分组健康检查状态
+	UpdateHealthStatus(ctx context.Context, groupID int64, status string, healthy int, total int, checkedAt time.Time) error
 	// CountByOwnerID returns the number of groups owned by the given user.
 	CountByOwnerID(ctx context.Context, ownerID int64) (int64, error)
 }

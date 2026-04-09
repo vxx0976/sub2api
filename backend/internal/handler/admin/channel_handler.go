@@ -33,6 +33,14 @@ type createChannelRequest struct {
 	ModelMapping       map[string]map[string]string `json:"model_mapping"`
 	BillingModelSource string                       `json:"billing_model_source" binding:"omitempty,oneof=requested upstream channel_mapped"`
 	RestrictModels     bool                         `json:"restrict_models"`
+
+	// 余额查询配置
+	BalanceURL     string            `json:"balance_url"`
+	BalanceMethod  string            `json:"balance_method"`
+	BalanceHeaders map[string]string `json:"balance_headers"`
+	BalanceBody    string            `json:"balance_body"`
+	BalancePath    string            `json:"balance_path"`
+	BalanceUnit    string            `json:"balance_unit"`
 }
 
 type updateChannelRequest struct {
@@ -44,6 +52,14 @@ type updateChannelRequest struct {
 	ModelMapping       map[string]map[string]string  `json:"model_mapping"`
 	BillingModelSource string                        `json:"billing_model_source" binding:"omitempty,oneof=requested upstream channel_mapped"`
 	RestrictModels     *bool                         `json:"restrict_models"`
+
+	// 余额查询配置
+	BalanceURL     *string           `json:"balance_url"`
+	BalanceMethod  *string           `json:"balance_method"`
+	BalanceHeaders map[string]string `json:"balance_headers"`
+	BalanceBody    *string           `json:"balance_body"`
+	BalancePath    *string           `json:"balance_path"`
+	BalanceUnit    *string           `json:"balance_unit"`
 }
 
 type channelModelPricingRequest struct {
@@ -83,6 +99,19 @@ type channelResponse struct {
 	ModelMapping       map[string]map[string]string  `json:"model_mapping"`
 	CreatedAt          string                        `json:"created_at"`
 	UpdatedAt          string                        `json:"updated_at"`
+
+	// 余额查询配置
+	BalanceURL     string            `json:"balance_url"`
+	BalanceMethod  string            `json:"balance_method"`
+	BalanceHeaders map[string]string `json:"balance_headers"`
+	BalanceBody    string            `json:"balance_body"`
+	BalancePath    string            `json:"balance_path"`
+	BalanceUnit    string            `json:"balance_unit"`
+
+	// 缓存的余额信息
+	CachedBalance *float64 `json:"cached_balance"`
+	LastCheckAt   *string  `json:"last_check_at"`
+	LastError     string   `json:"last_error"`
 }
 
 type channelModelPricingResponse struct {
@@ -126,6 +155,22 @@ func channelToResponse(ch *service.Channel) *channelResponse {
 		ModelMapping:   ch.ModelMapping,
 		CreatedAt:      ch.CreatedAt.Format("2006-01-02T15:04:05Z"),
 		UpdatedAt:      ch.UpdatedAt.Format("2006-01-02T15:04:05Z"),
+
+		BalanceURL:     ch.BalanceURL,
+		BalanceMethod:  ch.BalanceMethod,
+		BalanceHeaders: ch.BalanceHeaders,
+		BalanceBody:    ch.BalanceBody,
+		BalancePath:    ch.BalancePath,
+		BalanceUnit:    ch.BalanceUnit,
+		CachedBalance:  ch.CachedBalance,
+		LastError:      ch.LastError,
+	}
+	if ch.LastCheckAt != nil {
+		t := ch.LastCheckAt.Format("2006-01-02T15:04:05Z")
+		resp.LastCheckAt = &t
+	}
+	if resp.BalanceHeaders == nil {
+		resp.BalanceHeaders = map[string]string{}
 	}
 	resp.BillingModelSource = ch.BillingModelSource
 	if resp.BillingModelSource == "" {
@@ -295,6 +340,12 @@ func (h *ChannelHandler) Create(c *gin.Context) {
 		ModelMapping:       req.ModelMapping,
 		BillingModelSource: req.BillingModelSource,
 		RestrictModels:     req.RestrictModels,
+		BalanceURL:         req.BalanceURL,
+		BalanceMethod:      req.BalanceMethod,
+		BalanceHeaders:     req.BalanceHeaders,
+		BalanceBody:        req.BalanceBody,
+		BalancePath:        req.BalancePath,
+		BalanceUnit:        req.BalanceUnit,
 	})
 	if err != nil {
 		response.ErrorFrom(c, err)
@@ -327,6 +378,12 @@ func (h *ChannelHandler) Update(c *gin.Context) {
 		ModelMapping:       req.ModelMapping,
 		BillingModelSource: req.BillingModelSource,
 		RestrictModels:     req.RestrictModels,
+		BalanceURL:         req.BalanceURL,
+		BalanceMethod:      req.BalanceMethod,
+		BalanceHeaders:     req.BalanceHeaders,
+		BalanceBody:        req.BalanceBody,
+		BalancePath:        req.BalancePath,
+		BalanceUnit:        req.BalanceUnit,
 	}
 	if req.ModelPricing != nil {
 		pricing := pricingRequestToService(*req.ModelPricing)
@@ -357,6 +414,24 @@ func (h *ChannelHandler) Delete(c *gin.Context) {
 	}
 
 	response.Success(c, gin.H{"message": "Channel deleted successfully"})
+}
+
+// RefreshBalance 刷新渠道余额
+// POST /api/v1/admin/channels/:id/refresh-balance
+func (h *ChannelHandler) RefreshBalance(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.ErrorFrom(c, infraerrors.BadRequest("INVALID_CHANNEL_ID", "Invalid channel ID"))
+		return
+	}
+
+	channel, err := h.channelService.RefreshBalance(c.Request.Context(), id)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+
+	response.Success(c, channelToResponse(channel))
 }
 
 // GetModelDefaultPricing 获取模型的默认定价（用于前端自动填充）

@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
 	"github.com/stretchr/testify/require"
@@ -159,6 +160,10 @@ func (m *mockChannelRepository) ReplaceModelPricing(ctx context.Context, channel
 	if m.replaceModelPricingFn != nil {
 		return m.replaceModelPricingFn(ctx, channelID, pricingList)
 	}
+	return nil
+}
+
+func (m *mockChannelRepository) UpdateBalance(ctx context.Context, channelID int64, balance *float64, lastCheckAt *time.Time, lastError string) error {
 	return nil
 }
 

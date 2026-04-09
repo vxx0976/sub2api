@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
 	"github.com/Wei-Shaw/sub2api/internal/service"
@@ -41,10 +42,17 @@ func (r *channelRepository) Create(ctx context.Context, channel *service.Channel
 		if err != nil {
 			return err
 		}
+		balanceHeadersJSON, err := marshalBalanceHeaders(channel.BalanceHeaders)
+		if err != nil {
+			return err
+		}
 		err = tx.QueryRowContext(ctx,
-			`INSERT INTO channels (name, description, status, model_mapping, billing_model_source, restrict_models) VALUES ($1, $2, $3, $4, $5, $6)
+			`INSERT INTO channels (name, description, status, model_mapping, billing_model_source, restrict_models,
+			 balance_url, balance_method, balance_headers, balance_body, balance_path, balance_unit)
+			 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 			 RETURNING id, created_at, updated_at`,
 			channel.Name, channel.Description, channel.Status, modelMappingJSON, channel.BillingModelSource, channel.RestrictModels,
+			channel.BalanceURL, channel.BalanceMethod, balanceHeadersJSON, channel.BalanceBody, channel.BalancePath, channel.BalanceUnit,
 		).Scan(&channel.ID, &channel.CreatedAt, &channel.UpdatedAt)
 		if err != nil {
 			if isUniqueViolation(err) {
@@ -74,12 +82,33 @@ func (r *channelRepository) Create(ctx context.Context, channel *service.Channel
 func (r *channelRepository) GetByID(ctx context.Context, id int64) (*service.Channel, error) {
 	ch := &service.Channel{}
 	var modelMappingJSON []byte
+	var balanceHeadersJSON []byte
 	var desc sql.NullString
+	var balanceURL, balanceMethod, balanceBody, balancePath, balanceUnit, lastError sql.NullString
+	var cachedBalance sql.NullFloat64
+	var lastCheckAt sql.NullTime
 	err := r.db.QueryRowContext(ctx,
-		`SELECT id, name, description, status, model_mapping, billing_model_source, restrict_models, created_at, updated_at
+		`SELECT id, name, description, status, model_mapping, billing_model_source, restrict_models, created_at, updated_at,
+		 balance_url, balance_method, balance_headers, balance_body, balance_path, balance_unit,
+		 cached_balance, last_check_at, last_error
 		 FROM channels WHERE id = $1`, id,
-	).Scan(&ch.ID, &ch.Name, &desc, &ch.Status, &modelMappingJSON, &ch.BillingModelSource, &ch.RestrictModels, &ch.CreatedAt, &ch.UpdatedAt)
+	).Scan(&ch.ID, &ch.Name, &desc, &ch.Status, &modelMappingJSON, &ch.BillingModelSource, &ch.RestrictModels, &ch.CreatedAt, &ch.UpdatedAt,
+		&balanceURL, &balanceMethod, &balanceHeadersJSON, &balanceBody, &balancePath, &balanceUnit,
+		&cachedBalance, &lastCheckAt, &lastError)
 	ch.Description = desc.String
+	ch.BalanceURL = balanceURL.String
+	ch.BalanceMethod = balanceMethod.String
+	ch.BalanceHeaders = unmarshalBalanceHeaders(balanceHeadersJSON)
+	ch.BalanceBody = balanceBody.String
+	ch.BalancePath = balancePath.String
+	ch.BalanceUnit = balanceUnit.String
+	ch.LastError = lastError.String
+	if cachedBalance.Valid {
+		ch.CachedBalance = &cachedBalance.Float64
+	}
+	if lastCheckAt.Valid {
+		ch.LastCheckAt = &lastCheckAt.Time
+	}
 	if err == sql.ErrNoRows {
 		return nil, service.ErrChannelNotFound
 	}
@@ -109,10 +138,18 @@ func (r *channelRepository) Update(ctx context.Context, channel *service.Channel
 		if err != nil {
 			return err
 		}
+		balanceHeadersJSON, err := marshalBalanceHeaders(channel.BalanceHeaders)
+		if err != nil {
+			return err
+		}
 		result, err := tx.ExecContext(ctx,
-			`UPDATE channels SET name = $1, description = $2, status = $3, model_mapping = $4, billing_model_source = $5, restrict_models = $6, updated_at = NOW()
-			 WHERE id = $7`,
-			channel.Name, channel.Description, channel.Status, modelMappingJSON, channel.BillingModelSource, channel.RestrictModels, channel.ID,
+			`UPDATE channels SET name = $1, description = $2, status = $3, model_mapping = $4, billing_model_source = $5, restrict_models = $6,
+			 balance_url = $7, balance_method = $8, balance_headers = $9, balance_body = $10, balance_path = $11, balance_unit = $12,
+			 updated_at = NOW()
+			 WHERE id = $13`,
+			channel.Name, channel.Description, channel.Status, modelMappingJSON, channel.BillingModelSource, channel.RestrictModels,
+			channel.BalanceURL, channel.BalanceMethod, balanceHeadersJSON, channel.BalanceBody, channel.BalancePath, channel.BalanceUnit,
+			channel.ID,
 		)
 		if err != nil {
 			if isUniqueViolation(err) {
@@ -189,7 +226,9 @@ func (r *channelRepository) List(ctx context.Context, params pagination.Paginati
 
 	// 查询 channel 列表
 	dataQuery := fmt.Sprintf(
-		`SELECT c.id, c.name, c.description, c.status, c.model_mapping, c.billing_model_source, c.restrict_models, c.created_at, c.updated_at
+		`SELECT c.id, c.name, c.description, c.status, c.model_mapping, c.billing_model_source, c.restrict_models, c.created_at, c.updated_at,
+		 c.balance_url, c.balance_method, c.balance_headers, c.balance_body, c.balance_path, c.balance_unit,
+		 c.cached_balance, c.last_check_at, c.last_error
 		 FROM channels c WHERE %s ORDER BY c.id ASC LIMIT $%d OFFSET $%d`,
 		whereClause, argIdx, argIdx+1,
 	)
@@ -206,12 +245,31 @@ func (r *channelRepository) List(ctx context.Context, params pagination.Paginati
 	for rows.Next() {
 		var ch service.Channel
 		var modelMappingJSON []byte
+		var balanceHeadersJSON []byte
 		var desc sql.NullString
-		if err := rows.Scan(&ch.ID, &ch.Name, &desc, &ch.Status, &modelMappingJSON, &ch.BillingModelSource, &ch.RestrictModels, &ch.CreatedAt, &ch.UpdatedAt); err != nil {
+		var balanceURL, balanceMethod, balanceBody, balancePath, balanceUnit, lastError sql.NullString
+		var cachedBalance sql.NullFloat64
+		var lastCheckAt sql.NullTime
+		if err := rows.Scan(&ch.ID, &ch.Name, &desc, &ch.Status, &modelMappingJSON, &ch.BillingModelSource, &ch.RestrictModels, &ch.CreatedAt, &ch.UpdatedAt,
+			&balanceURL, &balanceMethod, &balanceHeadersJSON, &balanceBody, &balancePath, &balanceUnit,
+			&cachedBalance, &lastCheckAt, &lastError); err != nil {
 			return nil, nil, fmt.Errorf("scan channel: %w", err)
 		}
 		ch.Description = desc.String
 		ch.ModelMapping = unmarshalModelMapping(modelMappingJSON)
+		ch.BalanceURL = balanceURL.String
+		ch.BalanceMethod = balanceMethod.String
+		ch.BalanceHeaders = unmarshalBalanceHeaders(balanceHeadersJSON)
+		ch.BalanceBody = balanceBody.String
+		ch.BalancePath = balancePath.String
+		ch.BalanceUnit = balanceUnit.String
+		ch.LastError = lastError.String
+		if cachedBalance.Valid {
+			ch.CachedBalance = &cachedBalance.Float64
+		}
+		if lastCheckAt.Valid {
+			ch.LastCheckAt = &lastCheckAt.Time
+		}
 		channels = append(channels, ch)
 		channelIDs = append(channelIDs, ch.ID)
 	}
@@ -252,7 +310,10 @@ func (r *channelRepository) List(ctx context.Context, params pagination.Paginati
 
 func (r *channelRepository) ListAll(ctx context.Context) ([]service.Channel, error) {
 	rows, err := r.db.QueryContext(ctx,
-		`SELECT id, name, description, status, model_mapping, billing_model_source, restrict_models, created_at, updated_at FROM channels ORDER BY id`,
+		`SELECT id, name, description, status, model_mapping, billing_model_source, restrict_models, created_at, updated_at,
+		 balance_url, balance_method, balance_headers, balance_body, balance_path, balance_unit,
+		 cached_balance, last_check_at, last_error
+		 FROM channels ORDER BY id`,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("query all channels: %w", err)
@@ -264,12 +325,31 @@ func (r *channelRepository) ListAll(ctx context.Context) ([]service.Channel, err
 	for rows.Next() {
 		var ch service.Channel
 		var modelMappingJSON []byte
+		var balanceHeadersJSON []byte
 		var desc sql.NullString
-		if err := rows.Scan(&ch.ID, &ch.Name, &desc, &ch.Status, &modelMappingJSON, &ch.BillingModelSource, &ch.RestrictModels, &ch.CreatedAt, &ch.UpdatedAt); err != nil {
+		var balanceURL, balanceMethod, balanceBody, balancePath, balanceUnit, lastError sql.NullString
+		var cachedBalance sql.NullFloat64
+		var lastCheckAt sql.NullTime
+		if err := rows.Scan(&ch.ID, &ch.Name, &desc, &ch.Status, &modelMappingJSON, &ch.BillingModelSource, &ch.RestrictModels, &ch.CreatedAt, &ch.UpdatedAt,
+			&balanceURL, &balanceMethod, &balanceHeadersJSON, &balanceBody, &balancePath, &balanceUnit,
+			&cachedBalance, &lastCheckAt, &lastError); err != nil {
 			return nil, fmt.Errorf("scan channel: %w", err)
 		}
 		ch.Description = desc.String
 		ch.ModelMapping = unmarshalModelMapping(modelMappingJSON)
+		ch.BalanceURL = balanceURL.String
+		ch.BalanceMethod = balanceMethod.String
+		ch.BalanceHeaders = unmarshalBalanceHeaders(balanceHeadersJSON)
+		ch.BalanceBody = balanceBody.String
+		ch.BalancePath = balancePath.String
+		ch.BalanceUnit = balanceUnit.String
+		ch.LastError = lastError.String
+		if cachedBalance.Valid {
+			ch.CachedBalance = &cachedBalance.Float64
+		}
+		if lastCheckAt.Valid {
+			ch.LastCheckAt = &lastCheckAt.Time
+		}
 		channels = append(channels, ch)
 		channelIDs = append(channelIDs, ch.ID)
 	}
@@ -410,6 +490,54 @@ func (r *channelRepository) GetGroupsInOtherChannels(ctx context.Context, channe
 		return nil, fmt.Errorf("iterate conflicting group ids: %w", err)
 	}
 	return conflicting, nil
+}
+
+// UpdateBalance 更新渠道余额缓存字段
+func (r *channelRepository) UpdateBalance(ctx context.Context, channelID int64, balance *float64, lastCheckAt *time.Time, lastError string) error {
+	var balanceArg interface{}
+	if balance != nil {
+		balanceArg = *balance
+	}
+	var lastCheckAtArg interface{}
+	if lastCheckAt != nil {
+		lastCheckAtArg = *lastCheckAt
+	}
+	result, err := r.db.ExecContext(ctx,
+		`UPDATE channels SET cached_balance = $1, last_check_at = $2, last_error = $3 WHERE id = $4`,
+		balanceArg, lastCheckAtArg, lastError, channelID,
+	)
+	if err != nil {
+		return fmt.Errorf("update balance: %w", err)
+	}
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		return service.ErrChannelNotFound
+	}
+	return nil
+}
+
+// marshalBalanceHeaders 将 balance headers 序列化为 JSON 字节
+func marshalBalanceHeaders(m map[string]string) ([]byte, error) {
+	if len(m) == 0 {
+		return []byte("{}"), nil
+	}
+	data, err := json.Marshal(m)
+	if err != nil {
+		return nil, fmt.Errorf("marshal balance_headers: %w", err)
+	}
+	return data, nil
+}
+
+// unmarshalBalanceHeaders 将 JSON 字节反序列化为 balance headers
+func unmarshalBalanceHeaders(data []byte) map[string]string {
+	if len(data) == 0 {
+		return nil
+	}
+	var m map[string]string
+	if err := json.Unmarshal(data, &m); err != nil {
+		return nil
+	}
+	return m
 }
 
 // marshalModelMapping 将 model mapping 序列化为嵌套 JSON 字节

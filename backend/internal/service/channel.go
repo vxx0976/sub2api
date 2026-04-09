@@ -42,6 +42,19 @@ type Channel struct {
 	CreatedAt          time.Time
 	UpdatedAt          time.Time
 
+	// 余额查询配置
+	BalanceURL     string            // 余额查询 API URL
+	BalanceMethod  string            // GET 或 POST
+	BalanceHeaders map[string]string // 认证请求头
+	BalanceBody    string            // POST 请求体
+	BalancePath    string            // JSON 路径提取余额 (如 data.balance)
+	BalanceUnit    string            // 货币单位 (默认 "$")
+
+	// 缓存的余额信息
+	CachedBalance *float64   // 缓存的余额值
+	LastCheckAt   *time.Time // 最后查询时间
+	LastError     string     // 最后错误信息
+
 	// 关联的分组 ID 列表
 	GroupIDs []int64
 	// 模型定价列表（每条含 Platform 字段）

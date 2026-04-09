@@ -235,6 +235,26 @@ func ActiveEndTime(v string) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldActiveEndTime, v))
 }
 
+// HealthStatus applies equality check predicate on the "health_status" field. It's identical to HealthStatusEQ.
+func HealthStatus(v string) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldHealthStatus, v))
+}
+
+// HealthyAccounts applies equality check predicate on the "healthy_accounts" field. It's identical to HealthyAccountsEQ.
+func HealthyAccounts(v int) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldHealthyAccounts, v))
+}
+
+// TotalCheckedAccounts applies equality check predicate on the "total_checked_accounts" field. It's identical to TotalCheckedAccountsEQ.
+func TotalCheckedAccounts(v int) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldTotalCheckedAccounts, v))
+}
+
+// LastHealthCheckAt applies equality check predicate on the "last_health_check_at" field. It's identical to LastHealthCheckAtEQ.
+func LastHealthCheckAt(v time.Time) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldLastHealthCheckAt, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldCreatedAt, v))
@@ -1768,6 +1788,201 @@ func ActiveEndTimeEqualFold(v string) predicate.Group {
 // ActiveEndTimeContainsFold applies the ContainsFold predicate on the "active_end_time" field.
 func ActiveEndTimeContainsFold(v string) predicate.Group {
 	return predicate.Group(sql.FieldContainsFold(FieldActiveEndTime, v))
+}
+
+// HealthStatusEQ applies the EQ predicate on the "health_status" field.
+func HealthStatusEQ(v string) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldHealthStatus, v))
+}
+
+// HealthStatusNEQ applies the NEQ predicate on the "health_status" field.
+func HealthStatusNEQ(v string) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldHealthStatus, v))
+}
+
+// HealthStatusIn applies the In predicate on the "health_status" field.
+func HealthStatusIn(vs ...string) predicate.Group {
+	return predicate.Group(sql.FieldIn(FieldHealthStatus, vs...))
+}
+
+// HealthStatusNotIn applies the NotIn predicate on the "health_status" field.
+func HealthStatusNotIn(vs ...string) predicate.Group {
+	return predicate.Group(sql.FieldNotIn(FieldHealthStatus, vs...))
+}
+
+// HealthStatusGT applies the GT predicate on the "health_status" field.
+func HealthStatusGT(v string) predicate.Group {
+	return predicate.Group(sql.FieldGT(FieldHealthStatus, v))
+}
+
+// HealthStatusGTE applies the GTE predicate on the "health_status" field.
+func HealthStatusGTE(v string) predicate.Group {
+	return predicate.Group(sql.FieldGTE(FieldHealthStatus, v))
+}
+
+// HealthStatusLT applies the LT predicate on the "health_status" field.
+func HealthStatusLT(v string) predicate.Group {
+	return predicate.Group(sql.FieldLT(FieldHealthStatus, v))
+}
+
+// HealthStatusLTE applies the LTE predicate on the "health_status" field.
+func HealthStatusLTE(v string) predicate.Group {
+	return predicate.Group(sql.FieldLTE(FieldHealthStatus, v))
+}
+
+// HealthStatusContains applies the Contains predicate on the "health_status" field.
+func HealthStatusContains(v string) predicate.Group {
+	return predicate.Group(sql.FieldContains(FieldHealthStatus, v))
+}
+
+// HealthStatusHasPrefix applies the HasPrefix predicate on the "health_status" field.
+func HealthStatusHasPrefix(v string) predicate.Group {
+	return predicate.Group(sql.FieldHasPrefix(FieldHealthStatus, v))
+}
+
+// HealthStatusHasSuffix applies the HasSuffix predicate on the "health_status" field.
+func HealthStatusHasSuffix(v string) predicate.Group {
+	return predicate.Group(sql.FieldHasSuffix(FieldHealthStatus, v))
+}
+
+// HealthStatusEqualFold applies the EqualFold predicate on the "health_status" field.
+func HealthStatusEqualFold(v string) predicate.Group {
+	return predicate.Group(sql.FieldEqualFold(FieldHealthStatus, v))
+}
+
+// HealthStatusContainsFold applies the ContainsFold predicate on the "health_status" field.
+func HealthStatusContainsFold(v string) predicate.Group {
+	return predicate.Group(sql.FieldContainsFold(FieldHealthStatus, v))
+}
+
+// HealthyAccountsEQ applies the EQ predicate on the "healthy_accounts" field.
+func HealthyAccountsEQ(v int) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldHealthyAccounts, v))
+}
+
+// HealthyAccountsNEQ applies the NEQ predicate on the "healthy_accounts" field.
+func HealthyAccountsNEQ(v int) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldHealthyAccounts, v))
+}
+
+// HealthyAccountsIn applies the In predicate on the "healthy_accounts" field.
+func HealthyAccountsIn(vs ...int) predicate.Group {
+	return predicate.Group(sql.FieldIn(FieldHealthyAccounts, vs...))
+}
+
+// HealthyAccountsNotIn applies the NotIn predicate on the "healthy_accounts" field.
+func HealthyAccountsNotIn(vs ...int) predicate.Group {
+	return predicate.Group(sql.FieldNotIn(FieldHealthyAccounts, vs...))
+}
+
+// HealthyAccountsGT applies the GT predicate on the "healthy_accounts" field.
+func HealthyAccountsGT(v int) predicate.Group {
+	return predicate.Group(sql.FieldGT(FieldHealthyAccounts, v))
+}
+
+// HealthyAccountsGTE applies the GTE predicate on the "healthy_accounts" field.
+func HealthyAccountsGTE(v int) predicate.Group {
+	return predicate.Group(sql.FieldGTE(FieldHealthyAccounts, v))
+}
+
+// HealthyAccountsLT applies the LT predicate on the "healthy_accounts" field.
+func HealthyAccountsLT(v int) predicate.Group {
+	return predicate.Group(sql.FieldLT(FieldHealthyAccounts, v))
+}
+
+// HealthyAccountsLTE applies the LTE predicate on the "healthy_accounts" field.
+func HealthyAccountsLTE(v int) predicate.Group {
+	return predicate.Group(sql.FieldLTE(FieldHealthyAccounts, v))
+}
+
+// TotalCheckedAccountsEQ applies the EQ predicate on the "total_checked_accounts" field.
+func TotalCheckedAccountsEQ(v int) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldTotalCheckedAccounts, v))
+}
+
+// TotalCheckedAccountsNEQ applies the NEQ predicate on the "total_checked_accounts" field.
+func TotalCheckedAccountsNEQ(v int) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldTotalCheckedAccounts, v))
+}
+
+// TotalCheckedAccountsIn applies the In predicate on the "total_checked_accounts" field.
+func TotalCheckedAccountsIn(vs ...int) predicate.Group {
+	return predicate.Group(sql.FieldIn(FieldTotalCheckedAccounts, vs...))
+}
+
+// TotalCheckedAccountsNotIn applies the NotIn predicate on the "total_checked_accounts" field.
+func TotalCheckedAccountsNotIn(vs ...int) predicate.Group {
+	return predicate.Group(sql.FieldNotIn(FieldTotalCheckedAccounts, vs...))
+}
+
+// TotalCheckedAccountsGT applies the GT predicate on the "total_checked_accounts" field.
+func TotalCheckedAccountsGT(v int) predicate.Group {
+	return predicate.Group(sql.FieldGT(FieldTotalCheckedAccounts, v))
+}
+
+// TotalCheckedAccountsGTE applies the GTE predicate on the "total_checked_accounts" field.
+func TotalCheckedAccountsGTE(v int) predicate.Group {
+	return predicate.Group(sql.FieldGTE(FieldTotalCheckedAccounts, v))
+}
+
+// TotalCheckedAccountsLT applies the LT predicate on the "total_checked_accounts" field.
+func TotalCheckedAccountsLT(v int) predicate.Group {
+	return predicate.Group(sql.FieldLT(FieldTotalCheckedAccounts, v))
+}
+
+// TotalCheckedAccountsLTE applies the LTE predicate on the "total_checked_accounts" field.
+func TotalCheckedAccountsLTE(v int) predicate.Group {
+	return predicate.Group(sql.FieldLTE(FieldTotalCheckedAccounts, v))
+}
+
+// LastHealthCheckAtEQ applies the EQ predicate on the "last_health_check_at" field.
+func LastHealthCheckAtEQ(v time.Time) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldLastHealthCheckAt, v))
+}
+
+// LastHealthCheckAtNEQ applies the NEQ predicate on the "last_health_check_at" field.
+func LastHealthCheckAtNEQ(v time.Time) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldLastHealthCheckAt, v))
+}
+
+// LastHealthCheckAtIn applies the In predicate on the "last_health_check_at" field.
+func LastHealthCheckAtIn(vs ...time.Time) predicate.Group {
+	return predicate.Group(sql.FieldIn(FieldLastHealthCheckAt, vs...))
+}
+
+// LastHealthCheckAtNotIn applies the NotIn predicate on the "last_health_check_at" field.
+func LastHealthCheckAtNotIn(vs ...time.Time) predicate.Group {
+	return predicate.Group(sql.FieldNotIn(FieldLastHealthCheckAt, vs...))
+}
+
+// LastHealthCheckAtGT applies the GT predicate on the "last_health_check_at" field.
+func LastHealthCheckAtGT(v time.Time) predicate.Group {
+	return predicate.Group(sql.FieldGT(FieldLastHealthCheckAt, v))
+}
+
+// LastHealthCheckAtGTE applies the GTE predicate on the "last_health_check_at" field.
+func LastHealthCheckAtGTE(v time.Time) predicate.Group {
+	return predicate.Group(sql.FieldGTE(FieldLastHealthCheckAt, v))
+}
+
+// LastHealthCheckAtLT applies the LT predicate on the "last_health_check_at" field.
+func LastHealthCheckAtLT(v time.Time) predicate.Group {
+	return predicate.Group(sql.FieldLT(FieldLastHealthCheckAt, v))
+}
+
+// LastHealthCheckAtLTE applies the LTE predicate on the "last_health_check_at" field.
+func LastHealthCheckAtLTE(v time.Time) predicate.Group {
+	return predicate.Group(sql.FieldLTE(FieldLastHealthCheckAt, v))
+}
+
+// LastHealthCheckAtIsNil applies the IsNil predicate on the "last_health_check_at" field.
+func LastHealthCheckAtIsNil() predicate.Group {
+	return predicate.Group(sql.FieldIsNull(FieldLastHealthCheckAt))
+}
+
+// LastHealthCheckAtNotNil applies the NotNil predicate on the "last_health_check_at" field.
+func LastHealthCheckAtNotNil() predicate.Group {
+	return predicate.Group(sql.FieldNotNull(FieldLastHealthCheckAt))
 }
 
 // HasAPIKeys applies the HasEdge predicate on the "api_keys" edge.

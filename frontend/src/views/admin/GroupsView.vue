@@ -194,6 +194,27 @@
             <span v-else class="text-xs text-gray-400">—</span>
           </template>
 
+          <template #cell-health="{ row }">
+            <div class="flex items-center gap-1.5">
+              <span v-if="row.health_status === 'available'"
+                class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+              >
+                <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                {{ row.healthy_accounts }}/{{ row.total_checked_accounts }}
+              </span>
+              <span v-else-if="row.health_status === 'unavailable'"
+                class="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-medium text-red-700 dark:bg-red-900/30 dark:text-red-400"
+              >
+                <span class="h-1.5 w-1.5 rounded-full bg-red-500" />
+                0/{{ row.total_checked_accounts }}
+              </span>
+              <span v-else class="text-xs text-gray-400">—</span>
+            </div>
+            <div v-if="row.last_health_check_at" class="mt-0.5 text-[10px] text-gray-400">
+              {{ formatHealthCheckTime(row.last_health_check_at) }}
+            </div>
+          </template>
+
           <template #cell-usage="{ row }">
             <div v-if="usageLoading" class="text-xs text-gray-400">—</div>
             <div v-else class="space-y-0.5 text-xs">
@@ -2092,6 +2113,7 @@ const columns = computed<Column[]>(() => [
   { key: 'is_purchasable', label: t('admin.groups.columns.purchasable'), sortable: true },
   { key: 'account_count', label: t('admin.groups.columns.accounts'), sortable: true },
   { key: 'capacity', label: t('admin.groups.columns.capacity'), sortable: false },
+  { key: 'health', label: t('admin.groups.columns.health', 'Health'), sortable: false },
   { key: 'usage', label: t('admin.groups.columns.usage'), sortable: false },
   { key: 'status', label: t('admin.groups.columns.status'), sortable: true },
   { key: 'actions', label: t('admin.groups.columns.actions'), sortable: false }
@@ -2597,6 +2619,19 @@ const formatCost = (cost: number): string => {
   if (cost >= 1000) return cost.toFixed(0)
   if (cost >= 100) return cost.toFixed(1)
   return cost.toFixed(2)
+}
+
+function formatHealthCheckTime(dateStr: string): string {
+  const date = new Date(dateStr)
+  const now = new Date()
+  const diffMs = now.getTime() - date.getTime()
+  const diffMins = Math.floor(diffMs / 60000)
+  if (diffMins < 1) return t('common.time.justNow', 'Just now')
+  if (diffMins < 60) return `${diffMins}m ago`
+  const diffHours = Math.floor(diffMins / 60)
+  if (diffHours < 24) return `${diffHours}h ago`
+  const diffDays = Math.floor(diffHours / 24)
+  return `${diffDays}d ago`
 }
 
 const loadUsageSummary = async () => {

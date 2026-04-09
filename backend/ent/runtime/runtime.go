@@ -576,6 +576,20 @@ func init() {
 	groupDescActiveEndTime := groupFields[34].Descriptor()
 	// group.ActiveEndTimeValidator is a validator for the "active_end_time" field. It is called by the builders before save.
 	group.ActiveEndTimeValidator = groupDescActiveEndTime.Validators[0].(func(string) error)
+	// groupDescHealthStatus is the schema descriptor for health_status field.
+	groupDescHealthStatus := groupFields[35].Descriptor()
+	// group.DefaultHealthStatus holds the default value on creation for the health_status field.
+	group.DefaultHealthStatus = groupDescHealthStatus.Default.(string)
+	// group.HealthStatusValidator is a validator for the "health_status" field. It is called by the builders before save.
+	group.HealthStatusValidator = groupDescHealthStatus.Validators[0].(func(string) error)
+	// groupDescHealthyAccounts is the schema descriptor for healthy_accounts field.
+	groupDescHealthyAccounts := groupFields[36].Descriptor()
+	// group.DefaultHealthyAccounts holds the default value on creation for the healthy_accounts field.
+	group.DefaultHealthyAccounts = groupDescHealthyAccounts.Default.(int)
+	// groupDescTotalCheckedAccounts is the schema descriptor for total_checked_accounts field.
+	groupDescTotalCheckedAccounts := groupFields[37].Descriptor()
+	// group.DefaultTotalCheckedAccounts holds the default value on creation for the total_checked_accounts field.
+	group.DefaultTotalCheckedAccounts = groupDescTotalCheckedAccounts.Default.(int)
 	idempotencyrecordMixin := schema.IdempotencyRecord{}.Mixin()
 	idempotencyrecordMixinFields0 := idempotencyrecordMixin[0].Fields()
 	_ = idempotencyrecordMixinFields0

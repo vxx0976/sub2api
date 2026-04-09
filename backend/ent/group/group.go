@@ -91,6 +91,14 @@ const (
 	FieldActiveStartTime = "active_start_time"
 	// FieldActiveEndTime holds the string denoting the active_end_time field in the database.
 	FieldActiveEndTime = "active_end_time"
+	// FieldHealthStatus holds the string denoting the health_status field in the database.
+	FieldHealthStatus = "health_status"
+	// FieldHealthyAccounts holds the string denoting the healthy_accounts field in the database.
+	FieldHealthyAccounts = "healthy_accounts"
+	// FieldTotalCheckedAccounts holds the string denoting the total_checked_accounts field in the database.
+	FieldTotalCheckedAccounts = "total_checked_accounts"
+	// FieldLastHealthCheckAt holds the string denoting the last_health_check_at field in the database.
+	FieldLastHealthCheckAt = "last_health_check_at"
 	// EdgeAPIKeys holds the string denoting the api_keys edge name in mutations.
 	EdgeAPIKeys = "api_keys"
 	// EdgeRedeemCodes holds the string denoting the redeem_codes edge name in mutations.
@@ -213,6 +221,10 @@ var Columns = []string{
 	FieldDefaultMappedModel,
 	FieldActiveStartTime,
 	FieldActiveEndTime,
+	FieldHealthStatus,
+	FieldHealthyAccounts,
+	FieldTotalCheckedAccounts,
+	FieldLastHealthCheckAt,
 }
 
 var (
@@ -298,6 +310,14 @@ var (
 	ActiveStartTimeValidator func(string) error
 	// ActiveEndTimeValidator is a validator for the "active_end_time" field. It is called by the builders before save.
 	ActiveEndTimeValidator func(string) error
+	// DefaultHealthStatus holds the default value on creation for the "health_status" field.
+	DefaultHealthStatus string
+	// HealthStatusValidator is a validator for the "health_status" field. It is called by the builders before save.
+	HealthStatusValidator func(string) error
+	// DefaultHealthyAccounts holds the default value on creation for the "healthy_accounts" field.
+	DefaultHealthyAccounts int
+	// DefaultTotalCheckedAccounts holds the default value on creation for the "total_checked_accounts" field.
+	DefaultTotalCheckedAccounts int
 )
 
 // OrderOption defines the ordering options for the Group queries.
@@ -486,6 +506,26 @@ func ByActiveStartTime(opts ...sql.OrderTermOption) OrderOption {
 // ByActiveEndTime orders the results by the active_end_time field.
 func ByActiveEndTime(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldActiveEndTime, opts...).ToFunc()
+}
+
+// ByHealthStatus orders the results by the health_status field.
+func ByHealthStatus(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldHealthStatus, opts...).ToFunc()
+}
+
+// ByHealthyAccounts orders the results by the healthy_accounts field.
+func ByHealthyAccounts(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldHealthyAccounts, opts...).ToFunc()
+}
+
+// ByTotalCheckedAccounts orders the results by the total_checked_accounts field.
+func ByTotalCheckedAccounts(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTotalCheckedAccounts, opts...).ToFunc()
+}
+
+// ByLastHealthCheckAt orders the results by the last_health_check_at field.
+func ByLastHealthCheckAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLastHealthCheckAt, opts...).ToFunc()
 }
 
 // ByAPIKeysCount orders the results by api_keys count.

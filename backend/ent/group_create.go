@@ -537,6 +537,62 @@ func (_c *GroupCreate) SetNillableActiveEndTime(v *string) *GroupCreate {
 	return _c
 }
 
+// SetHealthStatus sets the "health_status" field.
+func (_c *GroupCreate) SetHealthStatus(v string) *GroupCreate {
+	_c.mutation.SetHealthStatus(v)
+	return _c
+}
+
+// SetNillableHealthStatus sets the "health_status" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableHealthStatus(v *string) *GroupCreate {
+	if v != nil {
+		_c.SetHealthStatus(*v)
+	}
+	return _c
+}
+
+// SetHealthyAccounts sets the "healthy_accounts" field.
+func (_c *GroupCreate) SetHealthyAccounts(v int) *GroupCreate {
+	_c.mutation.SetHealthyAccounts(v)
+	return _c
+}
+
+// SetNillableHealthyAccounts sets the "healthy_accounts" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableHealthyAccounts(v *int) *GroupCreate {
+	if v != nil {
+		_c.SetHealthyAccounts(*v)
+	}
+	return _c
+}
+
+// SetTotalCheckedAccounts sets the "total_checked_accounts" field.
+func (_c *GroupCreate) SetTotalCheckedAccounts(v int) *GroupCreate {
+	_c.mutation.SetTotalCheckedAccounts(v)
+	return _c
+}
+
+// SetNillableTotalCheckedAccounts sets the "total_checked_accounts" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableTotalCheckedAccounts(v *int) *GroupCreate {
+	if v != nil {
+		_c.SetTotalCheckedAccounts(*v)
+	}
+	return _c
+}
+
+// SetLastHealthCheckAt sets the "last_health_check_at" field.
+func (_c *GroupCreate) SetLastHealthCheckAt(v time.Time) *GroupCreate {
+	_c.mutation.SetLastHealthCheckAt(v)
+	return _c
+}
+
+// SetNillableLastHealthCheckAt sets the "last_health_check_at" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableLastHealthCheckAt(v *time.Time) *GroupCreate {
+	if v != nil {
+		_c.SetLastHealthCheckAt(*v)
+	}
+	return _c
+}
+
 // AddAPIKeyIDs adds the "api_keys" edge to the APIKey entity by IDs.
 func (_c *GroupCreate) AddAPIKeyIDs(ids ...int64) *GroupCreate {
 	_c.mutation.AddAPIKeyIDs(ids...)
@@ -765,6 +821,18 @@ func (_c *GroupCreate) defaults() error {
 		v := group.DefaultDefaultMappedModel
 		_c.mutation.SetDefaultMappedModel(v)
 	}
+	if _, ok := _c.mutation.HealthStatus(); !ok {
+		v := group.DefaultHealthStatus
+		_c.mutation.SetHealthStatus(v)
+	}
+	if _, ok := _c.mutation.HealthyAccounts(); !ok {
+		v := group.DefaultHealthyAccounts
+		_c.mutation.SetHealthyAccounts(v)
+	}
+	if _, ok := _c.mutation.TotalCheckedAccounts(); !ok {
+		v := group.DefaultTotalCheckedAccounts
+		_c.mutation.SetTotalCheckedAccounts(v)
+	}
 	return nil
 }
 
@@ -867,6 +935,20 @@ func (_c *GroupCreate) check() error {
 		if err := group.ActiveEndTimeValidator(v); err != nil {
 			return &ValidationError{Name: "active_end_time", err: fmt.Errorf(`ent: validator failed for field "Group.active_end_time": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.HealthStatus(); !ok {
+		return &ValidationError{Name: "health_status", err: errors.New(`ent: missing required field "Group.health_status"`)}
+	}
+	if v, ok := _c.mutation.HealthStatus(); ok {
+		if err := group.HealthStatusValidator(v); err != nil {
+			return &ValidationError{Name: "health_status", err: fmt.Errorf(`ent: validator failed for field "Group.health_status": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.HealthyAccounts(); !ok {
+		return &ValidationError{Name: "healthy_accounts", err: errors.New(`ent: missing required field "Group.healthy_accounts"`)}
+	}
+	if _, ok := _c.mutation.TotalCheckedAccounts(); !ok {
+		return &ValidationError{Name: "total_checked_accounts", err: errors.New(`ent: missing required field "Group.total_checked_accounts"`)}
 	}
 	return nil
 }
@@ -1046,6 +1128,22 @@ func (_c *GroupCreate) createSpec() (*Group, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.ActiveEndTime(); ok {
 		_spec.SetField(group.FieldActiveEndTime, field.TypeString, value)
 		_node.ActiveEndTime = &value
+	}
+	if value, ok := _c.mutation.HealthStatus(); ok {
+		_spec.SetField(group.FieldHealthStatus, field.TypeString, value)
+		_node.HealthStatus = value
+	}
+	if value, ok := _c.mutation.HealthyAccounts(); ok {
+		_spec.SetField(group.FieldHealthyAccounts, field.TypeInt, value)
+		_node.HealthyAccounts = value
+	}
+	if value, ok := _c.mutation.TotalCheckedAccounts(); ok {
+		_spec.SetField(group.FieldTotalCheckedAccounts, field.TypeInt, value)
+		_node.TotalCheckedAccounts = value
+	}
+	if value, ok := _c.mutation.LastHealthCheckAt(); ok {
+		_spec.SetField(group.FieldLastHealthCheckAt, field.TypeTime, value)
+		_node.LastHealthCheckAt = &value
 	}
 	if nodes := _c.mutation.APIKeysIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -1849,6 +1947,72 @@ func (u *GroupUpsert) ClearActiveEndTime() *GroupUpsert {
 	return u
 }
 
+// SetHealthStatus sets the "health_status" field.
+func (u *GroupUpsert) SetHealthStatus(v string) *GroupUpsert {
+	u.Set(group.FieldHealthStatus, v)
+	return u
+}
+
+// UpdateHealthStatus sets the "health_status" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateHealthStatus() *GroupUpsert {
+	u.SetExcluded(group.FieldHealthStatus)
+	return u
+}
+
+// SetHealthyAccounts sets the "healthy_accounts" field.
+func (u *GroupUpsert) SetHealthyAccounts(v int) *GroupUpsert {
+	u.Set(group.FieldHealthyAccounts, v)
+	return u
+}
+
+// UpdateHealthyAccounts sets the "healthy_accounts" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateHealthyAccounts() *GroupUpsert {
+	u.SetExcluded(group.FieldHealthyAccounts)
+	return u
+}
+
+// AddHealthyAccounts adds v to the "healthy_accounts" field.
+func (u *GroupUpsert) AddHealthyAccounts(v int) *GroupUpsert {
+	u.Add(group.FieldHealthyAccounts, v)
+	return u
+}
+
+// SetTotalCheckedAccounts sets the "total_checked_accounts" field.
+func (u *GroupUpsert) SetTotalCheckedAccounts(v int) *GroupUpsert {
+	u.Set(group.FieldTotalCheckedAccounts, v)
+	return u
+}
+
+// UpdateTotalCheckedAccounts sets the "total_checked_accounts" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateTotalCheckedAccounts() *GroupUpsert {
+	u.SetExcluded(group.FieldTotalCheckedAccounts)
+	return u
+}
+
+// AddTotalCheckedAccounts adds v to the "total_checked_accounts" field.
+func (u *GroupUpsert) AddTotalCheckedAccounts(v int) *GroupUpsert {
+	u.Add(group.FieldTotalCheckedAccounts, v)
+	return u
+}
+
+// SetLastHealthCheckAt sets the "last_health_check_at" field.
+func (u *GroupUpsert) SetLastHealthCheckAt(v time.Time) *GroupUpsert {
+	u.Set(group.FieldLastHealthCheckAt, v)
+	return u
+}
+
+// UpdateLastHealthCheckAt sets the "last_health_check_at" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateLastHealthCheckAt() *GroupUpsert {
+	u.SetExcluded(group.FieldLastHealthCheckAt)
+	return u
+}
+
+// ClearLastHealthCheckAt clears the value of the "last_health_check_at" field.
+func (u *GroupUpsert) ClearLastHealthCheckAt() *GroupUpsert {
+	u.SetNull(group.FieldLastHealthCheckAt)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create.
 // Using this option is equivalent to using:
 //
@@ -2626,6 +2790,83 @@ func (u *GroupUpsertOne) UpdateActiveEndTime() *GroupUpsertOne {
 func (u *GroupUpsertOne) ClearActiveEndTime() *GroupUpsertOne {
 	return u.Update(func(s *GroupUpsert) {
 		s.ClearActiveEndTime()
+	})
+}
+
+// SetHealthStatus sets the "health_status" field.
+func (u *GroupUpsertOne) SetHealthStatus(v string) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetHealthStatus(v)
+	})
+}
+
+// UpdateHealthStatus sets the "health_status" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateHealthStatus() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateHealthStatus()
+	})
+}
+
+// SetHealthyAccounts sets the "healthy_accounts" field.
+func (u *GroupUpsertOne) SetHealthyAccounts(v int) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetHealthyAccounts(v)
+	})
+}
+
+// AddHealthyAccounts adds v to the "healthy_accounts" field.
+func (u *GroupUpsertOne) AddHealthyAccounts(v int) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.AddHealthyAccounts(v)
+	})
+}
+
+// UpdateHealthyAccounts sets the "healthy_accounts" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateHealthyAccounts() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateHealthyAccounts()
+	})
+}
+
+// SetTotalCheckedAccounts sets the "total_checked_accounts" field.
+func (u *GroupUpsertOne) SetTotalCheckedAccounts(v int) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetTotalCheckedAccounts(v)
+	})
+}
+
+// AddTotalCheckedAccounts adds v to the "total_checked_accounts" field.
+func (u *GroupUpsertOne) AddTotalCheckedAccounts(v int) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.AddTotalCheckedAccounts(v)
+	})
+}
+
+// UpdateTotalCheckedAccounts sets the "total_checked_accounts" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateTotalCheckedAccounts() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateTotalCheckedAccounts()
+	})
+}
+
+// SetLastHealthCheckAt sets the "last_health_check_at" field.
+func (u *GroupUpsertOne) SetLastHealthCheckAt(v time.Time) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetLastHealthCheckAt(v)
+	})
+}
+
+// UpdateLastHealthCheckAt sets the "last_health_check_at" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateLastHealthCheckAt() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateLastHealthCheckAt()
+	})
+}
+
+// ClearLastHealthCheckAt clears the value of the "last_health_check_at" field.
+func (u *GroupUpsertOne) ClearLastHealthCheckAt() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.ClearLastHealthCheckAt()
 	})
 }
 
@@ -3572,6 +3813,83 @@ func (u *GroupUpsertBulk) UpdateActiveEndTime() *GroupUpsertBulk {
 func (u *GroupUpsertBulk) ClearActiveEndTime() *GroupUpsertBulk {
 	return u.Update(func(s *GroupUpsert) {
 		s.ClearActiveEndTime()
+	})
+}
+
+// SetHealthStatus sets the "health_status" field.
+func (u *GroupUpsertBulk) SetHealthStatus(v string) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetHealthStatus(v)
+	})
+}
+
+// UpdateHealthStatus sets the "health_status" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateHealthStatus() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateHealthStatus()
+	})
+}
+
+// SetHealthyAccounts sets the "healthy_accounts" field.
+func (u *GroupUpsertBulk) SetHealthyAccounts(v int) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetHealthyAccounts(v)
+	})
+}
+
+// AddHealthyAccounts adds v to the "healthy_accounts" field.
+func (u *GroupUpsertBulk) AddHealthyAccounts(v int) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.AddHealthyAccounts(v)
+	})
+}
+
+// UpdateHealthyAccounts sets the "healthy_accounts" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateHealthyAccounts() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateHealthyAccounts()
+	})
+}
+
+// SetTotalCheckedAccounts sets the "total_checked_accounts" field.
+func (u *GroupUpsertBulk) SetTotalCheckedAccounts(v int) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetTotalCheckedAccounts(v)
+	})
+}
+
+// AddTotalCheckedAccounts adds v to the "total_checked_accounts" field.
+func (u *GroupUpsertBulk) AddTotalCheckedAccounts(v int) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.AddTotalCheckedAccounts(v)
+	})
+}
+
+// UpdateTotalCheckedAccounts sets the "total_checked_accounts" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateTotalCheckedAccounts() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateTotalCheckedAccounts()
+	})
+}
+
+// SetLastHealthCheckAt sets the "last_health_check_at" field.
+func (u *GroupUpsertBulk) SetLastHealthCheckAt(v time.Time) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetLastHealthCheckAt(v)
+	})
+}
+
+// UpdateLastHealthCheckAt sets the "last_health_check_at" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateLastHealthCheckAt() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateLastHealthCheckAt()
+	})
+}
+
+// ClearLastHealthCheckAt clears the value of the "last_health_check_at" field.
+func (u *GroupUpsertBulk) ClearLastHealthCheckAt() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.ClearLastHealthCheckAt()
 	})
 }
 

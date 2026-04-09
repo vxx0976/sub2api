@@ -1,9 +1,12 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"log/slog"
+	"net/http"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -43,6 +46,9 @@ type ChannelRepository interface {
 
 	// 分组平台查询
 	GetGroupPlatforms(ctx context.Context, groupIDs []int64) (map[int64]string, error)
+
+	// 余额缓存
+	UpdateBalance(ctx context.Context, channelID int64, balance *float64, lastCheckAt *time.Time, lastError string) error
 
 	// 模型定价
 	ListModelPricing(ctx context.Context, channelID int64) ([]ChannelModelPricing, error)
@@ -663,6 +669,12 @@ func (s *ChannelService) Create(ctx context.Context, input *CreateChannelInput) 
 		GroupIDs:           input.GroupIDs,
 		ModelPricing:       input.ModelPricing,
 		ModelMapping:       input.ModelMapping,
+		BalanceURL:         input.BalanceURL,
+		BalanceMethod:      input.BalanceMethod,
+		BalanceHeaders:     input.BalanceHeaders,
+		BalanceBody:        input.BalanceBody,
+		BalancePath:        input.BalancePath,
+		BalanceUnit:        input.BalanceUnit,
 	}
 	if channel.BillingModelSource == "" {
 		channel.BillingModelSource = BillingModelSourceChannelMapped
@@ -748,6 +760,26 @@ func (s *ChannelService) applyUpdateInput(ctx context.Context, channel *Channel,
 	if input.BillingModelSource != "" {
 		channel.BillingModelSource = input.BillingModelSource
 	}
+
+	// 余额查询配置
+	if input.BalanceURL != nil {
+		channel.BalanceURL = *input.BalanceURL
+	}
+	if input.BalanceMethod != nil {
+		channel.BalanceMethod = *input.BalanceMethod
+	}
+	if input.BalanceHeaders != nil {
+		channel.BalanceHeaders = input.BalanceHeaders
+	}
+	if input.BalanceBody != nil {
+		channel.BalanceBody = *input.BalanceBody
+	}
+	if input.BalancePath != nil {
+		channel.BalancePath = *input.BalancePath
+	}
+	if input.BalanceUnit != nil {
+		channel.BalanceUnit = *input.BalanceUnit
+	}
 	return nil
 }
 
@@ -811,6 +843,97 @@ func (s *ChannelService) Delete(ctx context.Context, id int64) error {
 	s.invalidateAuthCacheForGroups(ctx, groupIDs)
 
 	return nil
+}
+
+// RefreshBalance 查询渠道余额并更新缓存
+func (s *ChannelService) RefreshBalance(ctx context.Context, id int64) (*Channel, error) {
+	channel, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("get channel: %w", err)
+	}
+
+	if channel.BalanceURL == "" {
+		return nil, infraerrors.BadRequest("BALANCE_URL_EMPTY", "channel has no balance query URL configured")
+	}
+
+	now := time.Now()
+	balance, queryErr := s.fetchBalance(ctx, channel)
+
+	var balancePtr *float64
+	var lastError string
+	if queryErr != nil {
+		lastError = queryErr.Error()
+		slog.Warn("failed to fetch channel balance", "channel_id", id, "error", queryErr)
+	} else {
+		balancePtr = &balance
+	}
+
+	if err := s.repo.UpdateBalance(ctx, id, balancePtr, &now, lastError); err != nil {
+		return nil, fmt.Errorf("update balance cache: %w", err)
+	}
+
+	return s.repo.GetByID(ctx, id)
+}
+
+// fetchBalance 执行 HTTP 请求获取余额
+func (s *ChannelService) fetchBalance(ctx context.Context, channel *Channel) (float64, error) {
+	method := strings.ToUpper(channel.BalanceMethod)
+	if method == "" {
+		method = "GET"
+	}
+
+	var bodyReader io.Reader
+	if method == "POST" && channel.BalanceBody != "" {
+		bodyReader = bytes.NewBufferString(channel.BalanceBody)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, method, channel.BalanceURL, bodyReader)
+	if err != nil {
+		return 0, fmt.Errorf("create request: %w", err)
+	}
+
+	for k, v := range channel.BalanceHeaders {
+		req.Header.Set(k, v)
+	}
+	if method == "POST" && req.Header.Get("Content-Type") == "" {
+		req.Header.Set("Content-Type", "application/json")
+	}
+
+	client := &http.Client{Timeout: 30 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return 0, fmt.Errorf("http request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20)) // 1MB limit
+	if err != nil {
+		return 0, fmt.Errorf("read response: %w", err)
+	}
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		errBody := string(body)
+		if len(errBody) > 200 {
+			errBody = errBody[:200] + "..."
+		}
+		return 0, fmt.Errorf("unexpected status %d: %s", resp.StatusCode, errBody)
+	}
+
+	if channel.BalancePath == "" {
+		// 尝试将整个响应体解析为数字
+		result := gjson.ParseBytes(body)
+		if result.Type == gjson.Number {
+			return result.Float(), nil
+		}
+		return 0, fmt.Errorf("balance_path is empty and response is not a number")
+	}
+
+	result := gjson.GetBytes(body, channel.BalancePath)
+	if !result.Exists() {
+		return 0, fmt.Errorf("path %q not found in response", channel.BalancePath)
+	}
+
+	return result.Float(), nil
 }
 
 // List 获取渠道列表
@@ -920,6 +1043,14 @@ type CreateChannelInput struct {
 	ModelMapping       map[string]map[string]string // platform → {src→dst}
 	BillingModelSource string
 	RestrictModels     bool
+
+	// 余额查询配置
+	BalanceURL     string
+	BalanceMethod  string
+	BalanceHeaders map[string]string
+	BalanceBody    string
+	BalancePath    string
+	BalanceUnit    string
 }
 
 // UpdateChannelInput 更新渠道输入
@@ -932,4 +1063,12 @@ type UpdateChannelInput struct {
 	ModelMapping       map[string]map[string]string // platform → {src→dst}
 	BillingModelSource string
 	RestrictModels     *bool
+
+	// 余额查询配置
+	BalanceURL     *string
+	BalanceMethod  *string
+	BalanceHeaders map[string]string
+	BalanceBody    *string
+	BalancePath    *string
+	BalanceUnit    *string
 }

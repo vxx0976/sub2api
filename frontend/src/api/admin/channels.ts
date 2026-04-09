@@ -46,6 +46,19 @@ export interface Channel {
   model_mapping: Record<string, Record<string, string>> // platform → {src→dst}
   created_at: string
   updated_at: string
+
+  // 余额查询配置
+  balance_url?: string | null
+  balance_method: string  // 'GET' | 'POST'
+  balance_headers?: Record<string, string> | null
+  balance_body?: string | null
+  balance_path?: string | null
+  balance_unit: string    // default '$'
+
+  // 缓存的余额信息
+  cached_balance?: number | null
+  last_check_at?: string | null
+  last_error?: string | null
 }
 
 export interface CreateChannelRequest {
@@ -56,6 +69,12 @@ export interface CreateChannelRequest {
   model_mapping?: Record<string, Record<string, string>>
   billing_model_source?: string
   restrict_models?: boolean
+  balance_url?: string | null
+  balance_method?: string
+  balance_headers?: Record<string, string> | null
+  balance_body?: string | null
+  balance_path?: string | null
+  balance_unit?: string
 }
 
 export interface UpdateChannelRequest {
@@ -67,6 +86,12 @@ export interface UpdateChannelRequest {
   model_mapping?: Record<string, Record<string, string>>
   billing_model_source?: string
   restrict_models?: boolean
+  balance_url?: string | null
+  balance_method?: string
+  balance_headers?: Record<string, string> | null
+  balance_body?: string | null
+  balance_path?: string | null
+  balance_unit?: string
 }
 
 interface PaginatedResponse<T> {
@@ -144,5 +169,10 @@ export async function getModelDefaultPricing(model: string): Promise<ModelDefaul
   return data
 }
 
-const channelsAPI = { list, getById, create, update, remove, getModelDefaultPricing }
+export async function refreshBalance(id: number): Promise<Channel> {
+  const { data } = await apiClient.post<Channel>(`/admin/channels/${id}/refresh-balance`)
+  return data
+}
+
+const channelsAPI = { list, getById, create, update, remove, getModelDefaultPricing, refreshBalance }
 export default channelsAPI

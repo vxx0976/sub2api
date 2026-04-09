@@ -28,7 +28,7 @@ func (groupRepoNoop) DeleteCascade(context.Context, int64, *int64) ([]int64, err
 func (groupRepoNoop) List(context.Context, pagination.PaginationParams) ([]Group, *pagination.PaginationResult, error) {
 	panic("unexpected List call")
 }
-func (groupRepoNoop) ListWithFilters(context.Context, pagination.PaginationParams, string, string, string, *bool) ([]Group, *pagination.PaginationResult, error) {
+func (groupRepoNoop) ListWithFilters(context.Context, pagination.PaginationParams, string, string, string, *bool, *bool) ([]Group, *pagination.PaginationResult, error) {
 	panic("unexpected ListWithFilters call")
 }
 func (groupRepoNoop) ListActive(context.Context) ([]Group, error) {
@@ -54,6 +54,18 @@ func (groupRepoNoop) BindAccountsToGroup(context.Context, int64, []int64) error 
 }
 func (groupRepoNoop) UpdateSortOrders(context.Context, []GroupSortOrderUpdate) error {
 	panic("unexpected UpdateSortOrders call")
+}
+func (groupRepoNoop) UpdateHealthStatus(context.Context, int64, string, int, int, time.Time) error {
+	panic("unexpected UpdateHealthStatus call")
+}
+func (groupRepoNoop) CountByOwnerID(context.Context, int64) (int64, error) {
+	panic("unexpected CountByOwnerID call")
+}
+func (groupRepoNoop) ListPurchasable(context.Context) ([]Group, error) {
+	panic("unexpected ListPurchasable call")
+}
+func (groupRepoNoop) ListPurchasableByOwnerID(context.Context, int64) ([]Group, error) {
+	panic("unexpected ListPurchasableByOwnerID call")
 }
 
 type subscriptionGroupRepoStub struct {

@@ -57,6 +57,35 @@
             <span class="text-sm text-gray-600 dark:text-gray-400">{{ value || '-' }}</span>
           </template>
 
+          <template #cell-balance="{ row }">
+            <div class="flex items-center gap-2">
+              <div v-if="row.balance_url" class="text-right">
+                <div class="font-medium text-gray-900 dark:text-white">
+                  <span v-if="row.cached_balance !== null && row.cached_balance !== undefined">
+                    {{ row.balance_unit || '$' }}{{ formatBalance(row.cached_balance) }}
+                  </span>
+                  <span v-else class="text-gray-400">--</span>
+                </div>
+                <div v-if="row.last_check_at" class="text-xs text-gray-400">
+                  {{ formatRelativeTime(row.last_check_at) }}
+                </div>
+                <div v-if="row.last_error" class="text-xs text-red-500 truncate max-w-[120px]" :title="row.last_error">
+                  {{ row.last_error }}
+                </div>
+              </div>
+              <span v-else class="text-xs text-gray-400">&mdash;</span>
+              <button
+                v-if="row.balance_url"
+                @click="handleRefreshBalance(row)"
+                :disabled="refreshingBalanceId === row.id"
+                class="p-1 text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                :title="t('admin.channels.refreshBalance', 'Refresh Balance')"
+              >
+                <Icon name="refresh" size="xs" :class="{ 'animate-spin': refreshingBalanceId === row.id }" />
+              </button>
+            </div>
+          </template>
+
           <template #cell-status="{ row }">
             <Toggle
               :modelValue="row.status === 'active'"
@@ -218,6 +247,43 @@
               <p class="mt-1 text-xs text-gray-400">
                 {{ t('admin.channels.form.billingModelSourceHint', 'Controls which model name is used for pricing lookup') }}
               </p>
+            </div>
+
+            <!-- Balance Query Configuration -->
+            <div class="space-y-3">
+              <label class="input-label mb-0">{{ t('admin.channels.form.balanceConfig', '余额查询配置') }}</label>
+
+              <div>
+                <label class="input-label text-xs">{{ t('admin.channels.form.balanceUrl', 'Balance API URL') }}</label>
+                <input v-model="form.balance_url" type="text" class="input" placeholder="https://api.example.com/balance" />
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="input-label text-xs">{{ t('admin.channels.form.balanceMethod', 'Method') }}</label>
+                  <Select v-model="form.balance_method" :options="balanceMethodOptions" />
+                </div>
+                <div>
+                  <label class="input-label text-xs">{{ t('admin.channels.form.balanceUnit', 'Unit') }}</label>
+                  <input v-model="form.balance_unit" type="text" class="input" placeholder="$" />
+                </div>
+              </div>
+
+              <div>
+                <label class="input-label text-xs">{{ t('admin.channels.form.balancePath', 'JSON Path') }}</label>
+                <input v-model="form.balance_path" type="text" class="input" placeholder="data.balance" />
+                <p class="mt-1 text-xs text-gray-400">{{ t('admin.channels.form.balancePathHint', 'JSON path to extract balance value, e.g. data.balance') }}</p>
+              </div>
+
+              <div>
+                <label class="input-label text-xs">{{ t('admin.channels.form.balanceHeaders', 'Headers (JSON)') }}</label>
+                <textarea v-model="form.balance_headers_text" rows="2" class="input font-mono text-xs" placeholder='{"Authorization": "Bearer xxx"}' />
+              </div>
+
+              <div v-if="form.balance_method === 'POST'">
+                <label class="input-label text-xs">{{ t('admin.channels.form.balanceBody', 'Request Body') }}</label>
+                <textarea v-model="form.balance_body" rows="2" class="input font-mono text-xs" placeholder='{"action": "getBalance"}' />
+              </div>
             </div>
 
             <!-- Platform Management -->
@@ -452,6 +518,7 @@ interface PlatformSection {
 const columns = computed<Column[]>(() => [
   { key: 'name', label: t('admin.channels.columns.name', 'Name'), sortable: true },
   { key: 'description', label: t('admin.channels.columns.description', 'Description'), sortable: false },
+  { key: 'balance', label: t('admin.channels.columns.balance', 'Balance'), sortable: false },
   { key: 'status', label: t('admin.channels.columns.status', 'Status'), sortable: true },
   { key: 'group_count', label: t('admin.channels.columns.groups', 'Groups'), sortable: false },
   { key: 'pricing_count', label: t('admin.channels.columns.pricing', 'Pricing'), sortable: false },
@@ -475,6 +542,41 @@ const billingModelSourceOptions = computed(() => [
   { value: 'requested', label: t('admin.channels.form.billingModelSourceRequested', 'Bill by requested model') },
   { value: 'upstream', label: t('admin.channels.form.billingModelSourceUpstream', 'Bill by final upstream model') }
 ])
+
+// ── Balance refresh ──
+const refreshingBalanceId = ref<number | null>(null)
+
+function formatBalance(value: number): string {
+  return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
+function formatRelativeTime(dateStr: string): string {
+  const date = new Date(dateStr)
+  const now = new Date()
+  const diffMs = now.getTime() - date.getTime()
+  const diffMins = Math.floor(diffMs / 60000)
+  if (diffMins < 1) return t('common.time.justNow', 'Just now')
+  if (diffMins < 60) return t('common.time.minutesAgo', { n: diffMins }, `${diffMins}m ago`)
+  const diffHours = Math.floor(diffMins / 60)
+  if (diffHours < 24) return t('common.time.hoursAgo', { n: diffHours }, `${diffHours}h ago`)
+  const diffDays = Math.floor(diffHours / 24)
+  return t('common.time.daysAgo', { n: diffDays }, `${diffDays}d ago`)
+}
+
+async function handleRefreshBalance(channel: Channel) {
+  refreshingBalanceId.value = channel.id
+  try {
+    const updated = await adminAPI.channels.refreshBalance(channel.id)
+    const idx = channels.value.findIndex(c => c.id === channel.id)
+    if (idx !== -1) {
+      channels.value[idx] = updated
+    }
+  } catch (error: any) {
+    appStore.showError(error?.message || t('admin.channels.refreshBalanceFailed', 'Failed to refresh balance'))
+  } finally {
+    refreshingBalanceId.value = null
+  }
+}
 
 // ── State ──
 const channels = ref<Channel[]>([])
@@ -509,8 +611,19 @@ const form = reactive({
   status: 'active',
   restrict_models: false,
   billing_model_source: 'channel_mapped' as string,
-  platforms: [] as PlatformSection[]
+  platforms: [] as PlatformSection[],
+  balance_url: '',
+  balance_method: 'GET',
+  balance_headers_text: '',
+  balance_body: '',
+  balance_path: '',
+  balance_unit: '$'
 })
+
+const balanceMethodOptions = [
+  { value: 'GET', label: 'GET' },
+  { value: 'POST', label: 'POST' }
+]
 
 let abortController: AbortController | null = null
 
@@ -833,6 +946,12 @@ function resetForm() {
   form.restrict_models = false
   form.billing_model_source = 'channel_mapped'
   form.platforms = []
+  form.balance_url = ''
+  form.balance_method = 'GET'
+  form.balance_headers_text = ''
+  form.balance_body = ''
+  form.balance_path = ''
+  form.balance_unit = '$'
   activeTab.value = 'basic'
 }
 
@@ -850,6 +969,12 @@ async function openEditDialog(channel: Channel) {
   form.status = channel.status
   form.restrict_models = channel.restrict_models || false
   form.billing_model_source = channel.billing_model_source || 'channel_mapped'
+  form.balance_url = channel.balance_url || ''
+  form.balance_method = channel.balance_method || 'GET'
+  form.balance_headers_text = channel.balance_headers ? JSON.stringify(channel.balance_headers, null, 2) : ''
+  form.balance_body = channel.balance_body || ''
+  form.balance_path = channel.balance_path || ''
+  form.balance_unit = channel.balance_unit || '$'
   // Must load groups first so apiToForm can map groupID → platform
   await Promise.all([loadGroups(), loadAllChannelsForConflict()])
   form.platforms = apiToForm(channel)
@@ -950,6 +1075,26 @@ async function handleSubmit() {
 
   const { group_ids, model_pricing, model_mapping } = formToAPI()
 
+  // Parse balance headers JSON
+  let balanceHeaders: Record<string, string> | null = null
+  if (form.balance_headers_text.trim()) {
+    try {
+      balanceHeaders = JSON.parse(form.balance_headers_text)
+    } catch {
+      appStore.showError(t('admin.channels.form.invalidBalanceHeaders', 'Balance headers must be valid JSON'))
+      return
+    }
+  }
+
+  const balanceFields = {
+    balance_url: form.balance_url.trim() || null,
+    balance_method: form.balance_method,
+    balance_headers: balanceHeaders,
+    balance_body: form.balance_body.trim() || null,
+    balance_path: form.balance_path.trim() || null,
+    balance_unit: form.balance_unit || '$'
+  }
+
   submitting.value = true
   try {
     if (editingChannel.value) {
@@ -961,7 +1106,8 @@ async function handleSubmit() {
         model_pricing,
         model_mapping: Object.keys(model_mapping).length > 0 ? model_mapping : {},
         billing_model_source: form.billing_model_source,
-        restrict_models: form.restrict_models
+        restrict_models: form.restrict_models,
+        ...balanceFields
       }
       await adminAPI.channels.update(editingChannel.value.id, req)
       appStore.showSuccess(t('admin.channels.updateSuccess', 'Channel updated'))
@@ -973,7 +1119,8 @@ async function handleSubmit() {
         model_pricing,
         model_mapping: Object.keys(model_mapping).length > 0 ? model_mapping : {},
         billing_model_source: form.billing_model_source,
-        restrict_models: form.restrict_models
+        restrict_models: form.restrict_models,
+        ...balanceFields
       }
       await adminAPI.channels.create(req)
       appStore.showSuccess(t('admin.channels.createSuccess', 'Channel created'))

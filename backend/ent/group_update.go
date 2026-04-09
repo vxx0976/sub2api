@@ -736,6 +736,82 @@ func (_u *GroupUpdate) ClearActiveEndTime() *GroupUpdate {
 	return _u
 }
 
+// SetHealthStatus sets the "health_status" field.
+func (_u *GroupUpdate) SetHealthStatus(v string) *GroupUpdate {
+	_u.mutation.SetHealthStatus(v)
+	return _u
+}
+
+// SetNillableHealthStatus sets the "health_status" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillableHealthStatus(v *string) *GroupUpdate {
+	if v != nil {
+		_u.SetHealthStatus(*v)
+	}
+	return _u
+}
+
+// SetHealthyAccounts sets the "healthy_accounts" field.
+func (_u *GroupUpdate) SetHealthyAccounts(v int) *GroupUpdate {
+	_u.mutation.ResetHealthyAccounts()
+	_u.mutation.SetHealthyAccounts(v)
+	return _u
+}
+
+// SetNillableHealthyAccounts sets the "healthy_accounts" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillableHealthyAccounts(v *int) *GroupUpdate {
+	if v != nil {
+		_u.SetHealthyAccounts(*v)
+	}
+	return _u
+}
+
+// AddHealthyAccounts adds value to the "healthy_accounts" field.
+func (_u *GroupUpdate) AddHealthyAccounts(v int) *GroupUpdate {
+	_u.mutation.AddHealthyAccounts(v)
+	return _u
+}
+
+// SetTotalCheckedAccounts sets the "total_checked_accounts" field.
+func (_u *GroupUpdate) SetTotalCheckedAccounts(v int) *GroupUpdate {
+	_u.mutation.ResetTotalCheckedAccounts()
+	_u.mutation.SetTotalCheckedAccounts(v)
+	return _u
+}
+
+// SetNillableTotalCheckedAccounts sets the "total_checked_accounts" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillableTotalCheckedAccounts(v *int) *GroupUpdate {
+	if v != nil {
+		_u.SetTotalCheckedAccounts(*v)
+	}
+	return _u
+}
+
+// AddTotalCheckedAccounts adds value to the "total_checked_accounts" field.
+func (_u *GroupUpdate) AddTotalCheckedAccounts(v int) *GroupUpdate {
+	_u.mutation.AddTotalCheckedAccounts(v)
+	return _u
+}
+
+// SetLastHealthCheckAt sets the "last_health_check_at" field.
+func (_u *GroupUpdate) SetLastHealthCheckAt(v time.Time) *GroupUpdate {
+	_u.mutation.SetLastHealthCheckAt(v)
+	return _u
+}
+
+// SetNillableLastHealthCheckAt sets the "last_health_check_at" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillableLastHealthCheckAt(v *time.Time) *GroupUpdate {
+	if v != nil {
+		_u.SetLastHealthCheckAt(*v)
+	}
+	return _u
+}
+
+// ClearLastHealthCheckAt clears the value of the "last_health_check_at" field.
+func (_u *GroupUpdate) ClearLastHealthCheckAt() *GroupUpdate {
+	_u.mutation.ClearLastHealthCheckAt()
+	return _u
+}
+
 // AddAPIKeyIDs adds the "api_keys" edge to the APIKey entity by IDs.
 func (_u *GroupUpdate) AddAPIKeyIDs(ids ...int64) *GroupUpdate {
 	_u.mutation.AddAPIKeyIDs(ids...)
@@ -1072,6 +1148,11 @@ func (_u *GroupUpdate) check() error {
 			return &ValidationError{Name: "active_end_time", err: fmt.Errorf(`ent: validator failed for field "Group.active_end_time": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.HealthStatus(); ok {
+		if err := group.HealthStatusValidator(v); err != nil {
+			return &ValidationError{Name: "health_status", err: fmt.Errorf(`ent: validator failed for field "Group.health_status": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -1295,6 +1376,27 @@ func (_u *GroupUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.ActiveEndTimeCleared() {
 		_spec.ClearField(group.FieldActiveEndTime, field.TypeString)
+	}
+	if value, ok := _u.mutation.HealthStatus(); ok {
+		_spec.SetField(group.FieldHealthStatus, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.HealthyAccounts(); ok {
+		_spec.SetField(group.FieldHealthyAccounts, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedHealthyAccounts(); ok {
+		_spec.AddField(group.FieldHealthyAccounts, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.TotalCheckedAccounts(); ok {
+		_spec.SetField(group.FieldTotalCheckedAccounts, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedTotalCheckedAccounts(); ok {
+		_spec.AddField(group.FieldTotalCheckedAccounts, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.LastHealthCheckAt(); ok {
+		_spec.SetField(group.FieldLastHealthCheckAt, field.TypeTime, value)
+	}
+	if _u.mutation.LastHealthCheckAtCleared() {
+		_spec.ClearField(group.FieldLastHealthCheckAt, field.TypeTime)
 	}
 	if _u.mutation.APIKeysCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -2355,6 +2457,82 @@ func (_u *GroupUpdateOne) ClearActiveEndTime() *GroupUpdateOne {
 	return _u
 }
 
+// SetHealthStatus sets the "health_status" field.
+func (_u *GroupUpdateOne) SetHealthStatus(v string) *GroupUpdateOne {
+	_u.mutation.SetHealthStatus(v)
+	return _u
+}
+
+// SetNillableHealthStatus sets the "health_status" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillableHealthStatus(v *string) *GroupUpdateOne {
+	if v != nil {
+		_u.SetHealthStatus(*v)
+	}
+	return _u
+}
+
+// SetHealthyAccounts sets the "healthy_accounts" field.
+func (_u *GroupUpdateOne) SetHealthyAccounts(v int) *GroupUpdateOne {
+	_u.mutation.ResetHealthyAccounts()
+	_u.mutation.SetHealthyAccounts(v)
+	return _u
+}
+
+// SetNillableHealthyAccounts sets the "healthy_accounts" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillableHealthyAccounts(v *int) *GroupUpdateOne {
+	if v != nil {
+		_u.SetHealthyAccounts(*v)
+	}
+	return _u
+}
+
+// AddHealthyAccounts adds value to the "healthy_accounts" field.
+func (_u *GroupUpdateOne) AddHealthyAccounts(v int) *GroupUpdateOne {
+	_u.mutation.AddHealthyAccounts(v)
+	return _u
+}
+
+// SetTotalCheckedAccounts sets the "total_checked_accounts" field.
+func (_u *GroupUpdateOne) SetTotalCheckedAccounts(v int) *GroupUpdateOne {
+	_u.mutation.ResetTotalCheckedAccounts()
+	_u.mutation.SetTotalCheckedAccounts(v)
+	return _u
+}
+
+// SetNillableTotalCheckedAccounts sets the "total_checked_accounts" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillableTotalCheckedAccounts(v *int) *GroupUpdateOne {
+	if v != nil {
+		_u.SetTotalCheckedAccounts(*v)
+	}
+	return _u
+}
+
+// AddTotalCheckedAccounts adds value to the "total_checked_accounts" field.
+func (_u *GroupUpdateOne) AddTotalCheckedAccounts(v int) *GroupUpdateOne {
+	_u.mutation.AddTotalCheckedAccounts(v)
+	return _u
+}
+
+// SetLastHealthCheckAt sets the "last_health_check_at" field.
+func (_u *GroupUpdateOne) SetLastHealthCheckAt(v time.Time) *GroupUpdateOne {
+	_u.mutation.SetLastHealthCheckAt(v)
+	return _u
+}
+
+// SetNillableLastHealthCheckAt sets the "last_health_check_at" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillableLastHealthCheckAt(v *time.Time) *GroupUpdateOne {
+	if v != nil {
+		_u.SetLastHealthCheckAt(*v)
+	}
+	return _u
+}
+
+// ClearLastHealthCheckAt clears the value of the "last_health_check_at" field.
+func (_u *GroupUpdateOne) ClearLastHealthCheckAt() *GroupUpdateOne {
+	_u.mutation.ClearLastHealthCheckAt()
+	return _u
+}
+
 // AddAPIKeyIDs adds the "api_keys" edge to the APIKey entity by IDs.
 func (_u *GroupUpdateOne) AddAPIKeyIDs(ids ...int64) *GroupUpdateOne {
 	_u.mutation.AddAPIKeyIDs(ids...)
@@ -2704,6 +2882,11 @@ func (_u *GroupUpdateOne) check() error {
 			return &ValidationError{Name: "active_end_time", err: fmt.Errorf(`ent: validator failed for field "Group.active_end_time": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.HealthStatus(); ok {
+		if err := group.HealthStatusValidator(v); err != nil {
+			return &ValidationError{Name: "health_status", err: fmt.Errorf(`ent: validator failed for field "Group.health_status": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -2944,6 +3127,27 @@ func (_u *GroupUpdateOne) sqlSave(ctx context.Context) (_node *Group, err error)
 	}
 	if _u.mutation.ActiveEndTimeCleared() {
 		_spec.ClearField(group.FieldActiveEndTime, field.TypeString)
+	}
+	if value, ok := _u.mutation.HealthStatus(); ok {
+		_spec.SetField(group.FieldHealthStatus, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.HealthyAccounts(); ok {
+		_spec.SetField(group.FieldHealthyAccounts, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedHealthyAccounts(); ok {
+		_spec.AddField(group.FieldHealthyAccounts, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.TotalCheckedAccounts(); ok {
+		_spec.SetField(group.FieldTotalCheckedAccounts, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedTotalCheckedAccounts(); ok {
+		_spec.AddField(group.FieldTotalCheckedAccounts, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.LastHealthCheckAt(); ok {
+		_spec.SetField(group.FieldLastHealthCheckAt, field.TypeTime, value)
+	}
+	if _u.mutation.LastHealthCheckAtCleared() {
+		_spec.ClearField(group.FieldLastHealthCheckAt, field.TypeTime)
 	}
 	if _u.mutation.APIKeysCleared() {
 		edge := &sqlgraph.EdgeSpec{

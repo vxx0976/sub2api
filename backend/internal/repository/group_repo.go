@@ -848,6 +848,14 @@ func (r *groupRepository) UpdateSortOrders(ctx context.Context, updates []servic
 	return nil
 }
 
+func (r *groupRepository) UpdateHealthStatus(ctx context.Context, groupID int64, status string, healthy int, total int, checkedAt time.Time) error {
+	_, err := r.sql.ExecContext(ctx,
+		`UPDATE groups SET health_status = $1, healthy_accounts = $2, total_checked_accounts = $3, last_health_check_at = $4 WHERE id = $5`,
+		status, healthy, total, checkedAt, groupID,
+	)
+	return err
+}
+
 func (r *groupRepository) CountByOwnerID(ctx context.Context, ownerID int64) (int64, error) {
 	count, err := r.client.Group.Query().
 		Where(

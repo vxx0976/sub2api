@@ -94,6 +94,14 @@ type Group struct {
 	ActiveStartTime *string `json:"active_start_time,omitempty"`
 	// 每日可用结束时间（HH:MM），与 active_start_time 配合使用
 	ActiveEndTime *string `json:"active_end_time,omitempty"`
+	// 分组可用性状态：available/unavailable/空=未检查
+	HealthStatus string `json:"health_status,omitempty"`
+	// 最近一次健康检查中可用的账号数
+	HealthyAccounts int `json:"healthy_accounts,omitempty"`
+	// 最近一次健康检查中检查的账号总数
+	TotalCheckedAccounts int `json:"total_checked_accounts,omitempty"`
+	// 最近一次健康检查时间
+	LastHealthCheckAt *time.Time `json:"last_health_check_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the GroupQuery when eager-loading is set.
 	Edges        GroupEdges `json:"edges"`
@@ -217,11 +225,11 @@ func (*Group) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case group.FieldRateMultiplier, group.FieldDailyLimitUsd, group.FieldWeeklyLimitUsd, group.FieldMonthlyLimitUsd, group.FieldImagePrice1k, group.FieldImagePrice2k, group.FieldImagePrice4k, group.FieldPrice:
 			values[i] = new(sql.NullFloat64)
-		case group.FieldID, group.FieldDefaultValidityDays, group.FieldFallbackGroupID, group.FieldFallbackGroupIDOnInvalidRequest, group.FieldSortOrder, group.FieldOwnerID, group.FieldSourceGroupID:
+		case group.FieldID, group.FieldDefaultValidityDays, group.FieldFallbackGroupID, group.FieldFallbackGroupIDOnInvalidRequest, group.FieldSortOrder, group.FieldOwnerID, group.FieldSourceGroupID, group.FieldHealthyAccounts, group.FieldTotalCheckedAccounts:
 			values[i] = new(sql.NullInt64)
-		case group.FieldName, group.FieldDescription, group.FieldStatus, group.FieldPlatform, group.FieldSubscriptionType, group.FieldExternalBuyURL, group.FieldDefaultMappedModel, group.FieldActiveStartTime, group.FieldActiveEndTime:
+		case group.FieldName, group.FieldDescription, group.FieldStatus, group.FieldPlatform, group.FieldSubscriptionType, group.FieldExternalBuyURL, group.FieldDefaultMappedModel, group.FieldActiveStartTime, group.FieldActiveEndTime, group.FieldHealthStatus:
 			values[i] = new(sql.NullString)
-		case group.FieldCreatedAt, group.FieldUpdatedAt, group.FieldDeletedAt:
+		case group.FieldCreatedAt, group.FieldUpdatedAt, group.FieldDeletedAt, group.FieldLastHealthCheckAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -492,6 +500,31 @@ func (_m *Group) assignValues(columns []string, values []any) error {
 				_m.ActiveEndTime = new(string)
 				*_m.ActiveEndTime = value.String
 			}
+		case group.FieldHealthStatus:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field health_status", values[i])
+			} else if value.Valid {
+				_m.HealthStatus = value.String
+			}
+		case group.FieldHealthyAccounts:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field healthy_accounts", values[i])
+			} else if value.Valid {
+				_m.HealthyAccounts = int(value.Int64)
+			}
+		case group.FieldTotalCheckedAccounts:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field total_checked_accounts", values[i])
+			} else if value.Valid {
+				_m.TotalCheckedAccounts = int(value.Int64)
+			}
+		case group.FieldLastHealthCheckAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field last_health_check_at", values[i])
+			} else if value.Valid {
+				_m.LastHealthCheckAt = new(time.Time)
+				*_m.LastHealthCheckAt = value.Time
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -717,6 +750,20 @@ func (_m *Group) String() string {
 	if v := _m.ActiveEndTime; v != nil {
 		builder.WriteString("active_end_time=")
 		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	builder.WriteString("health_status=")
+	builder.WriteString(_m.HealthStatus)
+	builder.WriteString(", ")
+	builder.WriteString("healthy_accounts=")
+	builder.WriteString(fmt.Sprintf("%v", _m.HealthyAccounts))
+	builder.WriteString(", ")
+	builder.WriteString("total_checked_accounts=")
+	builder.WriteString(fmt.Sprintf("%v", _m.TotalCheckedAccounts))
+	builder.WriteString(", ")
+	if v := _m.LastHealthCheckAt; v != nil {
+		builder.WriteString("last_health_check_at=")
+		builder.WriteString(v.Format(time.ANSIC))
 	}
 	builder.WriteByte(')')
 	return builder.String()

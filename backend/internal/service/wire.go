@@ -326,6 +326,19 @@ func ProvideScheduledTestService(
 	return NewScheduledTestService(planRepo, resultRepo)
 }
 
+// ProvideGroupHealthCheckService creates and starts GroupHealthCheckService.
+func ProvideGroupHealthCheckService(
+	groupRepo GroupRepository,
+	accountRepo AccountRepository,
+	accountTestSvc *AccountTestService,
+	rateLimitSvc *RateLimitService,
+	cfg *config.Config,
+) *GroupHealthCheckService {
+	svc := NewGroupHealthCheckService(groupRepo, accountRepo, accountTestSvc, rateLimitSvc, cfg)
+	svc.Start()
+	return svc
+}
+
 // ProvideScheduledTestRunnerService creates and starts ScheduledTestRunnerService.
 func ProvideScheduledTestRunnerService(
 	planRepo ScheduledTestPlanRepository,
@@ -487,6 +500,7 @@ var ProviderSet = wire.NewSet(
 	ProvideIdempotencyCleanupService,
 	ProvideScheduledTestService,
 	ProvideScheduledTestRunnerService,
+	ProvideGroupHealthCheckService,
 	NewGroupCapacityService,
 	NewRechargeService,
 	NewModelPricingResolver,

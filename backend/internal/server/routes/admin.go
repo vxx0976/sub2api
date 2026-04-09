@@ -551,6 +551,7 @@ func registerChannelRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 		channels.GET("/:id", h.Admin.Channel.GetByID)
 		channels.POST("", h.Admin.Channel.Create)
 		channels.PUT("/:id", h.Admin.Channel.Update)
+		channels.POST("/:id/refresh-balance", h.Admin.Channel.RefreshBalance)
 		channels.DELETE("/:id", h.Admin.Channel.Delete)
 	}
 }

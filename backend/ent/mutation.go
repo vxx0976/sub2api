@@ -10052,6 +10052,12 @@ type GroupMutation struct {
 	default_mapped_model                    *string
 	active_start_time                       *string
 	active_end_time                         *string
+	health_status                           *string
+	healthy_accounts                        *int
+	addhealthy_accounts                     *int
+	total_checked_accounts                  *int
+	addtotal_checked_accounts               *int
+	last_health_check_at                    *time.Time
 	clearedFields                           map[string]struct{}
 	api_keys                                map[int64]struct{}
 	removedapi_keys                         map[int64]struct{}
@@ -12072,6 +12078,203 @@ func (m *GroupMutation) ResetActiveEndTime() {
 	delete(m.clearedFields, group.FieldActiveEndTime)
 }
 
+// SetHealthStatus sets the "health_status" field.
+func (m *GroupMutation) SetHealthStatus(s string) {
+	m.health_status = &s
+}
+
+// HealthStatus returns the value of the "health_status" field in the mutation.
+func (m *GroupMutation) HealthStatus() (r string, exists bool) {
+	v := m.health_status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldHealthStatus returns the old "health_status" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldHealthStatus(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldHealthStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldHealthStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldHealthStatus: %w", err)
+	}
+	return oldValue.HealthStatus, nil
+}
+
+// ResetHealthStatus resets all changes to the "health_status" field.
+func (m *GroupMutation) ResetHealthStatus() {
+	m.health_status = nil
+}
+
+// SetHealthyAccounts sets the "healthy_accounts" field.
+func (m *GroupMutation) SetHealthyAccounts(i int) {
+	m.healthy_accounts = &i
+	m.addhealthy_accounts = nil
+}
+
+// HealthyAccounts returns the value of the "healthy_accounts" field in the mutation.
+func (m *GroupMutation) HealthyAccounts() (r int, exists bool) {
+	v := m.healthy_accounts
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldHealthyAccounts returns the old "healthy_accounts" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldHealthyAccounts(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldHealthyAccounts is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldHealthyAccounts requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldHealthyAccounts: %w", err)
+	}
+	return oldValue.HealthyAccounts, nil
+}
+
+// AddHealthyAccounts adds i to the "healthy_accounts" field.
+func (m *GroupMutation) AddHealthyAccounts(i int) {
+	if m.addhealthy_accounts != nil {
+		*m.addhealthy_accounts += i
+	} else {
+		m.addhealthy_accounts = &i
+	}
+}
+
+// AddedHealthyAccounts returns the value that was added to the "healthy_accounts" field in this mutation.
+func (m *GroupMutation) AddedHealthyAccounts() (r int, exists bool) {
+	v := m.addhealthy_accounts
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetHealthyAccounts resets all changes to the "healthy_accounts" field.
+func (m *GroupMutation) ResetHealthyAccounts() {
+	m.healthy_accounts = nil
+	m.addhealthy_accounts = nil
+}
+
+// SetTotalCheckedAccounts sets the "total_checked_accounts" field.
+func (m *GroupMutation) SetTotalCheckedAccounts(i int) {
+	m.total_checked_accounts = &i
+	m.addtotal_checked_accounts = nil
+}
+
+// TotalCheckedAccounts returns the value of the "total_checked_accounts" field in the mutation.
+func (m *GroupMutation) TotalCheckedAccounts() (r int, exists bool) {
+	v := m.total_checked_accounts
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTotalCheckedAccounts returns the old "total_checked_accounts" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldTotalCheckedAccounts(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTotalCheckedAccounts is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTotalCheckedAccounts requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTotalCheckedAccounts: %w", err)
+	}
+	return oldValue.TotalCheckedAccounts, nil
+}
+
+// AddTotalCheckedAccounts adds i to the "total_checked_accounts" field.
+func (m *GroupMutation) AddTotalCheckedAccounts(i int) {
+	if m.addtotal_checked_accounts != nil {
+		*m.addtotal_checked_accounts += i
+	} else {
+		m.addtotal_checked_accounts = &i
+	}
+}
+
+// AddedTotalCheckedAccounts returns the value that was added to the "total_checked_accounts" field in this mutation.
+func (m *GroupMutation) AddedTotalCheckedAccounts() (r int, exists bool) {
+	v := m.addtotal_checked_accounts
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetTotalCheckedAccounts resets all changes to the "total_checked_accounts" field.
+func (m *GroupMutation) ResetTotalCheckedAccounts() {
+	m.total_checked_accounts = nil
+	m.addtotal_checked_accounts = nil
+}
+
+// SetLastHealthCheckAt sets the "last_health_check_at" field.
+func (m *GroupMutation) SetLastHealthCheckAt(t time.Time) {
+	m.last_health_check_at = &t
+}
+
+// LastHealthCheckAt returns the value of the "last_health_check_at" field in the mutation.
+func (m *GroupMutation) LastHealthCheckAt() (r time.Time, exists bool) {
+	v := m.last_health_check_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastHealthCheckAt returns the old "last_health_check_at" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldLastHealthCheckAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastHealthCheckAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastHealthCheckAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastHealthCheckAt: %w", err)
+	}
+	return oldValue.LastHealthCheckAt, nil
+}
+
+// ClearLastHealthCheckAt clears the value of the "last_health_check_at" field.
+func (m *GroupMutation) ClearLastHealthCheckAt() {
+	m.last_health_check_at = nil
+	m.clearedFields[group.FieldLastHealthCheckAt] = struct{}{}
+}
+
+// LastHealthCheckAtCleared returns if the "last_health_check_at" field was cleared in this mutation.
+func (m *GroupMutation) LastHealthCheckAtCleared() bool {
+	_, ok := m.clearedFields[group.FieldLastHealthCheckAt]
+	return ok
+}
+
+// ResetLastHealthCheckAt resets all changes to the "last_health_check_at" field.
+func (m *GroupMutation) ResetLastHealthCheckAt() {
+	m.last_health_check_at = nil
+	delete(m.clearedFields, group.FieldLastHealthCheckAt)
+}
+
 // AddAPIKeyIDs adds the "api_keys" edge to the APIKey entity by ids.
 func (m *GroupMutation) AddAPIKeyIDs(ids ...int64) {
 	if m.api_keys == nil {
@@ -12484,7 +12687,7 @@ func (m *GroupMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *GroupMutation) Fields() []string {
-	fields := make([]string, 0, 38)
+	fields := make([]string, 0, 42)
 	if m.created_at != nil {
 		fields = append(fields, group.FieldCreatedAt)
 	}
@@ -12599,6 +12802,18 @@ func (m *GroupMutation) Fields() []string {
 	if m.active_end_time != nil {
 		fields = append(fields, group.FieldActiveEndTime)
 	}
+	if m.health_status != nil {
+		fields = append(fields, group.FieldHealthStatus)
+	}
+	if m.healthy_accounts != nil {
+		fields = append(fields, group.FieldHealthyAccounts)
+	}
+	if m.total_checked_accounts != nil {
+		fields = append(fields, group.FieldTotalCheckedAccounts)
+	}
+	if m.last_health_check_at != nil {
+		fields = append(fields, group.FieldLastHealthCheckAt)
+	}
 	return fields
 }
 
@@ -12683,6 +12898,14 @@ func (m *GroupMutation) Field(name string) (ent.Value, bool) {
 		return m.ActiveStartTime()
 	case group.FieldActiveEndTime:
 		return m.ActiveEndTime()
+	case group.FieldHealthStatus:
+		return m.HealthStatus()
+	case group.FieldHealthyAccounts:
+		return m.HealthyAccounts()
+	case group.FieldTotalCheckedAccounts:
+		return m.TotalCheckedAccounts()
+	case group.FieldLastHealthCheckAt:
+		return m.LastHealthCheckAt()
 	}
 	return nil, false
 }
@@ -12768,6 +12991,14 @@ func (m *GroupMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldActiveStartTime(ctx)
 	case group.FieldActiveEndTime:
 		return m.OldActiveEndTime(ctx)
+	case group.FieldHealthStatus:
+		return m.OldHealthStatus(ctx)
+	case group.FieldHealthyAccounts:
+		return m.OldHealthyAccounts(ctx)
+	case group.FieldTotalCheckedAccounts:
+		return m.OldTotalCheckedAccounts(ctx)
+	case group.FieldLastHealthCheckAt:
+		return m.OldLastHealthCheckAt(ctx)
 	}
 	return nil, fmt.Errorf("unknown Group field %s", name)
 }
@@ -13043,6 +13274,34 @@ func (m *GroupMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetActiveEndTime(v)
 		return nil
+	case group.FieldHealthStatus:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetHealthStatus(v)
+		return nil
+	case group.FieldHealthyAccounts:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetHealthyAccounts(v)
+		return nil
+	case group.FieldTotalCheckedAccounts:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTotalCheckedAccounts(v)
+		return nil
+	case group.FieldLastHealthCheckAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastHealthCheckAt(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Group field %s", name)
 }
@@ -13093,6 +13352,12 @@ func (m *GroupMutation) AddedFields() []string {
 	if m.addsource_group_id != nil {
 		fields = append(fields, group.FieldSourceGroupID)
 	}
+	if m.addhealthy_accounts != nil {
+		fields = append(fields, group.FieldHealthyAccounts)
+	}
+	if m.addtotal_checked_accounts != nil {
+		fields = append(fields, group.FieldTotalCheckedAccounts)
+	}
 	return fields
 }
 
@@ -13129,6 +13394,10 @@ func (m *GroupMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedOwnerID()
 	case group.FieldSourceGroupID:
 		return m.AddedSourceGroupID()
+	case group.FieldHealthyAccounts:
+		return m.AddedHealthyAccounts()
+	case group.FieldTotalCheckedAccounts:
+		return m.AddedTotalCheckedAccounts()
 	}
 	return nil, false
 }
@@ -13236,6 +13505,20 @@ func (m *GroupMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddSourceGroupID(v)
 		return nil
+	case group.FieldHealthyAccounts:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddHealthyAccounts(v)
+		return nil
+	case group.FieldTotalCheckedAccounts:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTotalCheckedAccounts(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Group numeric field %s", name)
 }
@@ -13294,6 +13577,9 @@ func (m *GroupMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(group.FieldActiveEndTime) {
 		fields = append(fields, group.FieldActiveEndTime)
+	}
+	if m.FieldCleared(group.FieldLastHealthCheckAt) {
+		fields = append(fields, group.FieldLastHealthCheckAt)
 	}
 	return fields
 }
@@ -13359,6 +13645,9 @@ func (m *GroupMutation) ClearField(name string) error {
 		return nil
 	case group.FieldActiveEndTime:
 		m.ClearActiveEndTime()
+		return nil
+	case group.FieldLastHealthCheckAt:
+		m.ClearLastHealthCheckAt()
 		return nil
 	}
 	return fmt.Errorf("unknown Group nullable field %s", name)
@@ -13481,6 +13770,18 @@ func (m *GroupMutation) ResetField(name string) error {
 		return nil
 	case group.FieldActiveEndTime:
 		m.ResetActiveEndTime()
+		return nil
+	case group.FieldHealthStatus:
+		m.ResetHealthStatus()
+		return nil
+	case group.FieldHealthyAccounts:
+		m.ResetHealthyAccounts()
+		return nil
+	case group.FieldTotalCheckedAccounts:
+		m.ResetTotalCheckedAccounts()
+		return nil
+	case group.FieldLastHealthCheckAt:
+		m.ResetLastHealthCheckAt()
 		return nil
 	}
 	return fmt.Errorf("unknown Group field %s", name)
