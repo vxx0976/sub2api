@@ -162,7 +162,10 @@ func (s *GroupHealthCheckService) checkOneGroup(ctx context.Context, group *Grou
 	tested := 0
 	for _, acc := range accounts {
 		tested++
-		result, err := s.accountTestSvc.RunTestBackground(ctx, acc.ID, modelID)
+		// 单个账号测试超时 60 秒，避免长时间挂起
+		testCtx, testCancel := context.WithTimeout(ctx, 60*time.Second)
+		result, err := s.accountTestSvc.RunTestBackground(testCtx, acc.ID, modelID)
+		testCancel()
 		if err != nil {
 			continue
 		}
