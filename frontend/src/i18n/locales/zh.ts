@@ -1766,6 +1766,7 @@ export default {
       form: {
         name: '名称',
         description: '描述',
+        i18n: '多语言翻译（可选）',
         platform: '平台',
         rateMultiplier: '费率倍数',
         status: '状态',

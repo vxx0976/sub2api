@@ -14,6 +14,10 @@ type Group struct {
 	RateMultiplier float64 `json:"rate_multiplier"`
 	IsExclusive    bool    `json:"is_exclusive"`
 	Status         string  `json:"status"`
+
+	// 多语言名称/描述（可选，前端根据当前语言自动选择）
+	NameI18n        map[string]string `json:"name_i18n,omitempty"`
+	DescriptionI18n map[string]string `json:"description_i18n,omitempty"`
 	Hydrated       bool    `json:"-"` // indicates the group was loaded from a trusted repository source
 
 	SubscriptionType    string   `json:"subscription_type"`

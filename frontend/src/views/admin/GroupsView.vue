@@ -311,6 +311,20 @@
             :placeholder="t('admin.groups.optionalDescription')"
           ></textarea>
         </div>
+        <!-- i18n translations -->
+        <details class="rounded-lg border border-gray-200 dark:border-dark-600">
+          <summary class="cursor-pointer px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-400">
+            {{ t('admin.groups.form.i18n') }}
+          </summary>
+          <div class="space-y-3 px-3 pb-3 pt-1">
+            <div v-for="lang in i18nLangs" :key="lang.code">
+              <label class="input-label">{{ lang.label }} - {{ t('admin.groups.form.name') }}</label>
+              <input v-model="createForm.name_i18n[lang.code]" type="text" class="input" />
+              <label class="input-label mt-1">{{ lang.label }} - {{ t('admin.groups.form.description') }}</label>
+              <input v-model="createForm.description_i18n[lang.code]" type="text" class="input" />
+            </div>
+          </div>
+        </details>
         <div>
           <label class="input-label">{{ t('admin.groups.form.platform') }}</label>
           <Select
@@ -1094,6 +1108,20 @@
           <label class="input-label">{{ t('admin.groups.form.description') }}</label>
           <textarea v-model="editForm.description" rows="3" class="input"></textarea>
         </div>
+        <!-- i18n translations -->
+        <details class="rounded-lg border border-gray-200 dark:border-dark-600">
+          <summary class="cursor-pointer px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-400">
+            {{ t('admin.groups.form.i18n') }}
+          </summary>
+          <div class="space-y-3 px-3 pb-3 pt-1">
+            <div v-for="lang in i18nLangs" :key="lang.code">
+              <label class="input-label">{{ lang.label }} - {{ t('admin.groups.form.name') }}</label>
+              <input v-model="editForm.name_i18n[lang.code]" type="text" class="input" />
+              <label class="input-label mt-1">{{ lang.label }} - {{ t('admin.groups.form.description') }}</label>
+              <input v-model="editForm.description_i18n[lang.code]" type="text" class="input" />
+            </div>
+          </div>
+        </details>
         <div>
           <label class="input-label">{{ t('admin.groups.form.platform') }}</label>
           <Select
@@ -2076,6 +2104,21 @@ const exclusiveOptions = computed(() => [
   { value: 'false', label: t('admin.groups.nonExclusive') }
 ])
 
+// Strip empty values from i18n map, return null if all empty
+function cleanI18nMap(map: Record<string, string>): Record<string, string> | null {
+  const cleaned: Record<string, string> = {}
+  for (const [k, v] of Object.entries(map)) {
+    if (v && v.trim()) cleaned[k] = v.trim()
+  }
+  return Object.keys(cleaned).length > 0 ? cleaned : null
+}
+
+// Supported i18n languages (excluding zh which is the default stored in name/description)
+const i18nLangs = [
+  { code: 'en', label: 'English' },
+  { code: 'ru', label: 'Русский' }
+]
+
 const platformOptions = computed(() => [
   { value: 'anthropic', label: 'Anthropic' },
   { value: 'openai', label: 'OpenAI' },
@@ -2218,6 +2261,8 @@ const sortableGroups = ref<AdminGroup[]>([])
 const createForm = reactive({
   name: '',
   description: '',
+  name_i18n: {} as Record<string, string>,
+  description_i18n: {} as Record<string, string>,
   platform: 'anthropic' as GroupPlatform,
   rate_multiplier: 1.0,
   is_exclusive: false,
@@ -2465,6 +2510,8 @@ const convertApiFormatToRoutingRules = async (apiFormat: Record<string, number[]
 const editForm = reactive({
   name: '',
   description: '',
+  name_i18n: {} as Record<string, string>,
+  description_i18n: {} as Record<string, string>,
   platform: 'anthropic' as GroupPlatform,
   rate_multiplier: 1.0,
   is_exclusive: false,
@@ -2660,6 +2707,8 @@ const closeCreateModal = () => {
   clearAllAccountSearchState()
   createForm.name = ''
   createForm.description = ''
+  createForm.name_i18n = {}
+  createForm.description_i18n = {}
   createForm.platform = 'anthropic'
   createForm.rate_multiplier = 1.0
   createForm.is_exclusive = false
@@ -2716,6 +2765,8 @@ const handleCreateGroup = async () => {
     // 构建请求数据，包含模型路由配置
     const requestData = {
       ...createForm,
+      name_i18n: cleanI18nMap(createForm.name_i18n),
+      description_i18n: cleanI18nMap(createForm.description_i18n),
       daily_limit_usd: normalizeOptionalLimit(createForm.daily_limit_usd as number | string | null),
       weekly_limit_usd: normalizeOptionalLimit(createForm.weekly_limit_usd as number | string | null),
       monthly_limit_usd: normalizeOptionalLimit(createForm.monthly_limit_usd as number | string | null),
@@ -2747,6 +2798,8 @@ const handleEdit = async (group: AdminGroup) => {
   editingGroup.value = group
   editForm.name = group.name
   editForm.description = group.description || ''
+  editForm.name_i18n = { ...(group.name_i18n || {}) }
+  editForm.description_i18n = { ...(group.description_i18n || {}) }
   editForm.platform = group.platform
   editForm.rate_multiplier = group.rate_multiplier
   editForm.is_exclusive = group.is_exclusive
@@ -2805,6 +2858,8 @@ const handleUpdateGroup = async () => {
     // 转换 fallback_group_id: null -> 0 (后端使用 0 表示清除)
     const payload = {
       ...editForm,
+      name_i18n: cleanI18nMap(editForm.name_i18n),
+      description_i18n: cleanI18nMap(editForm.description_i18n),
       daily_limit_usd: normalizeOptionalLimit(editForm.daily_limit_usd as number | string | null),
       weekly_limit_usd: normalizeOptionalLimit(editForm.weekly_limit_usd as number | string | null),
       monthly_limit_usd: normalizeOptionalLimit(editForm.monthly_limit_usd as number | string | null),

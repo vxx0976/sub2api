@@ -1735,6 +1735,7 @@ export default {
       form: {
         name: 'Имя',
         description: 'Описание',
+        i18n: 'Переводы (необязательно)',
         platform: 'Платформа',
         rateMultiplier: 'Множитель ставки',
         status: 'Статус',

@@ -1,5 +1,5 @@
 import { apiClient } from './client'
-import type { GroupPlatform, SubscriptionType } from '@/types'
+import type { GroupPlatform, SubscriptionType, I18nMap } from '@/types'
 
 export interface KeyQueryResponse {
   key: {
@@ -86,6 +86,8 @@ export interface GroupInfo {
   group_id: number
   group_name: string
   description: string
+  name_i18n?: I18nMap | null
+  description_i18n?: I18nMap | null
   platform: GroupPlatform
   subscription_type: SubscriptionType
   rate_multiplier: number

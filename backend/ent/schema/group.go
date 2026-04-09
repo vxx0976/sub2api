@@ -42,6 +42,14 @@ func (Group) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			SchemaType(map[string]string{dialect.Postgres: "text"}),
+		field.JSON("name_i18n", map[string]string{}).
+			Optional().
+			SchemaType(map[string]string{dialect.Postgres: "jsonb"}).
+			Comment("多语言名称，如 {\"en\": \"English Name\", \"ru\": \"Русское имя\"}"),
+		field.JSON("description_i18n", map[string]string{}).
+			Optional().
+			SchemaType(map[string]string{dialect.Postgres: "jsonb"}).
+			Comment("多语言描述，如 {\"en\": \"English desc\", \"ru\": \"Русское описание\"}"),
 		field.Float("rate_multiplier").
 			SchemaType(map[string]string{dialect.Postgres: "decimal(10,4)"}).
 			Default(1.0),

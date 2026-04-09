@@ -415,10 +415,14 @@ export interface GroupAccountInfo {
   }
 }
 
+export type I18nMap = Record<string, string>
+
 export interface Group {
   id: number
   name: string
   description: string | null
+  name_i18n?: I18nMap | null
+  description_i18n?: I18nMap | null
   platform: GroupPlatform
   rate_multiplier: number
   is_exclusive: boolean
@@ -555,6 +559,8 @@ export interface UpdateApiKeyRequest {
 export interface CreateGroupRequest {
   name: string
   description?: string | null
+  name_i18n?: I18nMap | null
+  description_i18n?: I18nMap | null
   platform?: GroupPlatform
   rate_multiplier?: number
   is_exclusive?: boolean
@@ -580,6 +586,8 @@ export interface CreateGroupRequest {
 export interface UpdateGroupRequest {
   name?: string
   description?: string | null
+  name_i18n?: I18nMap | null
+  description_i18n?: I18nMap | null
   platform?: GroupPlatform
   rate_multiplier?: number
   is_exclusive?: boolean

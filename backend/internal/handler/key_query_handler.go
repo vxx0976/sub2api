@@ -428,10 +428,12 @@ func (h *KeyQueryHandler) UsageModels(c *gin.Context) {
 
 // keyQueryGroupInfo represents a group with optional subscription info for the public API
 type keyQueryGroupInfo struct {
-	GroupID          int64      `json:"group_id"`
-	GroupName        string     `json:"group_name"`
-	Description      string     `json:"description,omitempty"`
-	Platform         string     `json:"platform"`
+	GroupID          int64             `json:"group_id"`
+	GroupName        string            `json:"group_name"`
+	Description      string            `json:"description,omitempty"`
+	NameI18n         map[string]string `json:"name_i18n,omitempty"`
+	DescriptionI18n  map[string]string `json:"description_i18n,omitempty"`
+	Platform         string            `json:"platform"`
 	SubscriptionType string     `json:"subscription_type"`
 	RateMultiplier   float64    `json:"rate_multiplier"`
 	HealthStatus     string     `json:"health_status,omitempty"`
@@ -490,6 +492,8 @@ func (h *KeyQueryHandler) ListGroups(c *gin.Context) {
 			GroupID:          g.ID,
 			GroupName:        g.Name,
 			Description:      g.Description,
+			NameI18n:         g.NameI18n,
+			DescriptionI18n:  g.DescriptionI18n,
 			Platform:         g.Platform,
 			SubscriptionType: g.SubscriptionType,
 			RateMultiplier:   g.RateMultiplier,

@@ -132,6 +132,8 @@ type UpdateUserInput struct {
 type CreateGroupInput struct {
 	Name             string
 	Description      string
+	NameI18n         map[string]string
+	DescriptionI18n  map[string]string
 	Platform         string
 	RateMultiplier   float64
 	IsExclusive      bool
@@ -172,6 +174,8 @@ type CreateGroupInput struct {
 type UpdateGroupInput struct {
 	Name             string
 	Description      string
+	NameI18n         map[string]string
+	DescriptionI18n  map[string]string
 	Platform         string
 	RateMultiplier   *float64 // 使用指针以支持设置为0
 	IsExclusive      *bool
@@ -927,6 +931,8 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 	group := &Group{
 		Name:                            input.Name,
 		Description:                     input.Description,
+		NameI18n:                        input.NameI18n,
+		DescriptionI18n:                 input.DescriptionI18n,
 		Platform:                        platform,
 		RateMultiplier:                  input.RateMultiplier,
 		IsExclusive:                     input.IsExclusive,
@@ -1089,6 +1095,9 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 	if input.Description != "" {
 		group.Description = input.Description
 	}
+	// 多语言字段：始终更新（空 map 表示清除翻译）
+	group.NameI18n = input.NameI18n
+	group.DescriptionI18n = input.DescriptionI18n
 	if input.Platform != "" {
 		group.Platform = input.Platform
 	}

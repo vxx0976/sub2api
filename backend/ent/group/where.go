@@ -525,6 +525,26 @@ func DescriptionContainsFold(v string) predicate.Group {
 	return predicate.Group(sql.FieldContainsFold(FieldDescription, v))
 }
 
+// NameI18nIsNil applies the IsNil predicate on the "name_i18n" field.
+func NameI18nIsNil() predicate.Group {
+	return predicate.Group(sql.FieldIsNull(FieldNameI18n))
+}
+
+// NameI18nNotNil applies the NotNil predicate on the "name_i18n" field.
+func NameI18nNotNil() predicate.Group {
+	return predicate.Group(sql.FieldNotNull(FieldNameI18n))
+}
+
+// DescriptionI18nIsNil applies the IsNil predicate on the "description_i18n" field.
+func DescriptionI18nIsNil() predicate.Group {
+	return predicate.Group(sql.FieldIsNull(FieldDescriptionI18n))
+}
+
+// DescriptionI18nNotNil applies the NotNil predicate on the "description_i18n" field.
+func DescriptionI18nNotNil() predicate.Group {
+	return predicate.Group(sql.FieldNotNull(FieldDescriptionI18n))
+}
+
 // RateMultiplierEQ applies the EQ predicate on the "rate_multiplier" field.
 func RateMultiplierEQ(v float64) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldRateMultiplier, v))

@@ -167,11 +167,11 @@
             >
               <GroupOptionItem
                 v-if="selectedGroup"
-                :name="selectedGroup.group_name"
+                :name="resolveI18n(selectedGroup.name_i18n, selectedGroup.group_name)"
                 :platform="selectedGroup.platform"
                 :subscription-type="selectedGroup.subscription_type"
                 :rate-multiplier="selectedGroup.rate_multiplier"
-                :description="selectedGroup.description"
+                :description="resolveI18n(selectedGroup.description_i18n, selectedGroup.description)"
                 :health-status="selectedGroup.health_status"
                 :selected="false"
                 :show-checkmark="false"
@@ -199,11 +199,11 @@
                   : 'hover:bg-gray-100 dark:hover:bg-dark-700'"
               >
                 <GroupOptionItem
-                  :name="g.group_name"
+                  :name="resolveI18n(g.name_i18n, g.group_name)"
                   :platform="g.platform"
                   :subscription-type="g.subscription_type"
                   :rate-multiplier="g.rate_multiplier"
-                  :description="g.description"
+                  :description="resolveI18n(g.description_i18n, g.description)"
                   :health-status="g.health_status"
                   :selected="selectedGroupId === g.group_id"
                 />
@@ -213,7 +213,7 @@
 
           <div v-if="displaySubscription" class="space-y-4">
             <div class="flex items-center justify-between">
-              <span class="font-medium text-gray-900 dark:text-white">{{ displaySubscription.group_name }}</span>
+              <span class="font-medium text-gray-900 dark:text-white">{{ resolveI18n((displaySubscription as any).name_i18n, displaySubscription.group_name) }}</span>
               <span class="text-sm text-gray-500 dark:text-gray-400">
                 {{ t('keyQuery.daysRemaining', { days: displaySubscription.days_remaining }) }}
               </span>
@@ -533,6 +533,7 @@ import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores'
 import { availableLocales, setLocale } from '@/i18n'
+import { useI18nField } from '@/composables/useI18nField'
 import PublicHeader from '@/components/layout/PublicHeader.vue'
 import GroupOptionItem from '@/components/common/GroupOptionItem.vue'
 import {
@@ -554,6 +555,7 @@ import {
 
 const { t, locale } = useI18n()
 const appStore = useAppStore()
+const { resolveI18n } = useI18nField()
 
 // Reseller domain detection
 const isResellerDomain = computed(() => !!appStore.cachedPublicSettings?.reseller_id)

@@ -77,6 +77,10 @@ type Group struct {
 	IsExclusive    bool    `json:"is_exclusive"`
 	Status         string  `json:"status"`
 
+	// 多语言名称/描述
+	NameI18n        map[string]string `json:"name_i18n,omitempty"`
+	DescriptionI18n map[string]string `json:"description_i18n,omitempty"`
+
 	SubscriptionType string   `json:"subscription_type"`
 	DailyLimitUSD    *float64 `json:"daily_limit_usd"`
 	WeeklyLimitUSD   *float64 `json:"weekly_limit_usd"`

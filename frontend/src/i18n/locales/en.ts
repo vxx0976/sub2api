@@ -1772,6 +1772,7 @@ export default {
       form: {
         name: 'Name',
         description: 'Description',
+        i18n: 'Translations (optional)',
         platform: 'Platform',
         rateMultiplier: 'Rate Multiplier',
         status: 'Status',

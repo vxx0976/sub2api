@@ -68,6 +68,14 @@ func (r *groupRepository) Create(ctx context.Context, groupIn *service.Group) er
 		SetRequirePrivacySet(groupIn.RequirePrivacySet).
 		SetDefaultMappedModel(groupIn.DefaultMappedModel)
 
+	// 多语言字段
+	if len(groupIn.NameI18n) > 0 {
+		builder = builder.SetNameI18n(groupIn.NameI18n)
+	}
+	if len(groupIn.DescriptionI18n) > 0 {
+		builder = builder.SetDescriptionI18n(groupIn.DescriptionI18n)
+	}
+
 	// 设置模型路由配置
 	if groupIn.ModelRouting != nil {
 		builder = builder.SetModelRouting(groupIn.ModelRouting)
@@ -138,6 +146,18 @@ func (r *groupRepository) Update(ctx context.Context, groupIn *service.Group) er
 		SetRequireOauthOnly(groupIn.RequireOAuthOnly).
 		SetRequirePrivacySet(groupIn.RequirePrivacySet).
 		SetDefaultMappedModel(groupIn.DefaultMappedModel)
+
+	// 多语言字段
+	if len(groupIn.NameI18n) > 0 {
+		builder = builder.SetNameI18n(groupIn.NameI18n)
+	} else {
+		builder = builder.ClearNameI18n()
+	}
+	if len(groupIn.DescriptionI18n) > 0 {
+		builder = builder.SetDescriptionI18n(groupIn.DescriptionI18n)
+	} else {
+		builder = builder.ClearDescriptionI18n()
+	}
 
 	// 处理 OwnerID
 	if groupIn.OwnerID != nil {

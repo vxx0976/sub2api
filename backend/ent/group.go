@@ -28,6 +28,10 @@ type Group struct {
 	Name string `json:"name,omitempty"`
 	// Description holds the value of the "description" field.
 	Description *string `json:"description,omitempty"`
+	// 多语言名称，如 {"en": "English Name", "ru": "Русское имя"}
+	NameI18n map[string]string `json:"name_i18n,omitempty"`
+	// 多语言描述，如 {"en": "English desc", "ru": "Русское описание"}
+	DescriptionI18n map[string]string `json:"description_i18n,omitempty"`
 	// RateMultiplier holds the value of the "rate_multiplier" field.
 	RateMultiplier float64 `json:"rate_multiplier,omitempty"`
 	// IsExclusive holds the value of the "is_exclusive" field.
@@ -219,7 +223,7 @@ func (*Group) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case group.FieldModelRouting, group.FieldSupportedModelScopes:
+		case group.FieldNameI18n, group.FieldDescriptionI18n, group.FieldModelRouting, group.FieldSupportedModelScopes:
 			values[i] = new([]byte)
 		case group.FieldIsExclusive, group.FieldClaudeCodeOnly, group.FieldModelRoutingEnabled, group.FieldMcpXMLInject, group.FieldIsPurchasable, group.FieldIsRecommended, group.FieldResellerTemplate, group.FieldRequireOauthOnly, group.FieldRequirePrivacySet, group.FieldAllowMessagesDispatch:
 			values[i] = new(sql.NullBool)
@@ -283,6 +287,22 @@ func (_m *Group) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Description = new(string)
 				*_m.Description = value.String
+			}
+		case group.FieldNameI18n:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field name_i18n", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.NameI18n); err != nil {
+					return fmt.Errorf("unmarshal field name_i18n: %w", err)
+				}
+			}
+		case group.FieldDescriptionI18n:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field description_i18n", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.DescriptionI18n); err != nil {
+					return fmt.Errorf("unmarshal field description_i18n: %w", err)
+				}
 			}
 		case group.FieldRateMultiplier:
 			if value, ok := values[i].(*sql.NullFloat64); !ok {
@@ -624,6 +644,12 @@ func (_m *Group) String() string {
 		builder.WriteString("description=")
 		builder.WriteString(*v)
 	}
+	builder.WriteString(", ")
+	builder.WriteString("name_i18n=")
+	builder.WriteString(fmt.Sprintf("%v", _m.NameI18n))
+	builder.WriteString(", ")
+	builder.WriteString("description_i18n=")
+	builder.WriteString(fmt.Sprintf("%v", _m.DescriptionI18n))
 	builder.WriteString(", ")
 	builder.WriteString("rate_multiplier=")
 	builder.WriteString(fmt.Sprintf("%v", _m.RateMultiplier))
