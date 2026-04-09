@@ -675,6 +675,8 @@ export default {
     failedToDelete: 'Failed to delete API key',
     failedToUpdateStatus: 'Failed to update API key status',
     clickToChangeGroup: 'Click to change group',
+    groupHealthAvailable: 'Available',
+    groupHealthUnavailable: 'Unavailable',
     groupChangedSuccess: 'Group changed successfully',
     failedToChangeGroup: 'Failed to change group',
     groupRequired: 'Please select a group',
@@ -1751,8 +1753,13 @@ export default {
         userName: 'Username',
         userEmail: 'Email',
         userNotes: 'Notes',
-        userStatus: 'Status'
+        userStatus: 'Status',
+        health: 'Health'
       },
+      healthAvailable: 'Available',
+      healthUnavailable: 'Unavailable',
+      checkHealth: 'Check',
+      checkHealthFailed: 'Health check failed',
       usageToday: 'Today',
       usageTotal: 'Total',
       accountsAvailable: 'Avail:',

@@ -674,6 +674,8 @@ export default {
     failedToDelete: '删除 API 密钥失败',
     failedToUpdateStatus: '更新 API 密钥状态失败',
     clickToChangeGroup: '点击更换分组',
+    groupHealthAvailable: '正常',
+    groupHealthUnavailable: '异常',
     groupChangedSuccess: '分组更换成功',
     failedToChangeGroup: '更换分组失败',
     groupRequired: '请选择分组',
@@ -1748,8 +1750,13 @@ export default {
         userName: '用户名',
         userEmail: '邮箱',
         userNotes: '备注',
-        userStatus: '状态'
+        userStatus: '状态',
+        health: '可用性'
       },
+      healthAvailable: '正常',
+      healthUnavailable: '异常',
+      checkHealth: '检测',
+      checkHealthFailed: '检测失败',
       usageToday: '今日',
       usageTotal: '累计',
       accountsAvailable: '可用:',

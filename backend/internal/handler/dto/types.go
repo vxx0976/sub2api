@@ -112,6 +112,9 @@ type Group struct {
 	ActiveStartTime *string `json:"active_start_time"`
 	ActiveEndTime   *string `json:"active_end_time"`
 
+	// 健康检查状态（用户侧用于展示分组可用性指示）
+	HealthStatus string `json:"health_status"`
+
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }

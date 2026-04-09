@@ -452,6 +452,8 @@ export interface Group {
   active_end_time?: string | null
   require_oauth_only: boolean
   require_privacy_set: boolean
+  // 健康检查状态（用于展示分组可用性指示）
+  health_status?: string // 'available' | 'unavailable' | ''
   created_at: string
   updated_at: string
 }

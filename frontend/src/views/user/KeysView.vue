@@ -97,14 +97,25 @@
                 class="-mx-2 -my-1 flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 transition-all duration-200 hover:bg-gray-100 dark:hover:bg-dark-700"
                 :title="t('keys.clickToChangeGroup')"
               >
-                <GroupBadge
-                  v-if="row.group"
-                  :name="row.group.name"
-                  :platform="row.group.platform"
-                  :subscription-type="row.group.subscription_type"
-                  :rate-multiplier="row.group.rate_multiplier"
-                  :user-rate-multiplier="userGroupRates[row.group.id]"
-                />
+                <template v-if="row.group">
+                  <GroupBadge
+                    :name="row.group.name"
+                    :platform="row.group.platform"
+                    :subscription-type="row.group.subscription_type"
+                    :rate-multiplier="row.group.rate_multiplier"
+                    :user-rate-multiplier="userGroupRates[row.group.id]"
+                  />
+                  <span
+                    v-if="row.group.health_status === 'available'"
+                    class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"
+                    :title="t('keys.groupHealthAvailable')"
+                  />
+                  <span
+                    v-else-if="row.group.health_status === 'unavailable'"
+                    class="h-2 w-2 rounded-full bg-red-500"
+                    :title="t('keys.groupHealthUnavailable')"
+                  />
+                </template>
                 <span v-else class="text-sm text-gray-400 dark:text-dark-500">{{
                   t('keys.noGroup')
                 }}</span>

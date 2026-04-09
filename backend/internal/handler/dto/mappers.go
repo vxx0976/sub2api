@@ -192,6 +192,7 @@ func groupFromServiceBase(g *service.Group) Group {
 		RequirePrivacySet:               g.RequirePrivacySet,
 		ActiveStartTime:                 g.ActiveStartTime,
 		ActiveEndTime:                   g.ActiveEndTime,
+		HealthStatus:                    g.HealthStatus,
 		CreatedAt:                       g.CreatedAt,
 		UpdatedAt:                       g.UpdatedAt,
 	}

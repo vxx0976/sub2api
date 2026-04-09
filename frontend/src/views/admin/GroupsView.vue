@@ -191,20 +191,20 @@
                 class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
               >
                 <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                {{ row.healthy_accounts }}/{{ row.total_checked_accounts }}
+                {{ t('admin.groups.healthAvailable', '正常') }}
               </span>
               <span v-else-if="row.health_status === 'unavailable'"
                 class="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-medium text-red-700 dark:bg-red-900/30 dark:text-red-400"
               >
                 <span class="h-1.5 w-1.5 rounded-full bg-red-500" />
-                0/{{ row.total_checked_accounts }}
+                {{ t('admin.groups.healthUnavailable', '异常') }}
               </span>
               <span v-else class="text-xs text-gray-400">—</span>
               <button
                 @click="handleCheckHealth(row)"
                 :disabled="checkingHealthId === row.id"
                 class="p-1 text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
-                :title="t('admin.groups.checkHealth', 'Check Health')"
+                :title="t('admin.groups.checkHealth', '检测')"
               >
                 <Icon name="refresh" size="xs" :class="{ 'animate-spin': checkingHealthId === row.id }" />
               </button>
@@ -2057,7 +2057,7 @@ const columns = computed<Column[]>(() => [
   { key: 'is_exclusive', label: t('admin.groups.columns.type'), sortable: true },
 { key: 'account_count', label: t('admin.groups.columns.accounts'), sortable: true },
   { key: 'capacity', label: t('admin.groups.columns.capacity'), sortable: false },
-  { key: 'health', label: t('admin.groups.columns.health', 'Health'), sortable: false },
+  { key: 'health', label: t('admin.groups.columns.health'), sortable: false },
   { key: 'usage', label: t('admin.groups.columns.usage'), sortable: false },
   { key: 'status', label: t('admin.groups.columns.status'), sortable: true },
   { key: 'actions', label: t('admin.groups.columns.actions'), sortable: false }
@@ -2589,7 +2589,7 @@ async function handleCheckHealth(row: any) {
       groups.value[idx] = { ...groups.value[idx], ...updated }
     }
   } catch (error: any) {
-    appStore.showError(error?.message || t('admin.groups.checkHealthFailed', 'Health check failed'))
+    appStore.showError(error?.message || t('admin.groups.checkHealthFailed'))
   } finally {
     checkingHealthId.value = null
   }
