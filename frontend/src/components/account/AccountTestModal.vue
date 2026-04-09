@@ -304,9 +304,12 @@ const loadAvailableModels = async () => {
     if (availableModels.value.length > 0) {
       if (props.account.platform === 'gemini') {
         selectedModelId.value = availableModels.value[0].id
+      } else if (props.account.platform === 'openai') {
+        const gptModel = availableModels.value.find((m) => m.id.includes('gpt-5.4'))
+        selectedModelId.value = gptModel?.id || availableModels.value[0].id
       } else {
-        // Try to select Sonnet as default, otherwise use first model
-        const sonnetModel = availableModels.value.find((m) => m.id.includes('sonnet'))
+        // Anthropic / antigravity: default to Claude Sonnet 4.6
+        const sonnetModel = availableModels.value.find((m) => m.id.includes('claude-sonnet-4-6'))
         selectedModelId.value = sonnetModel?.id || availableModels.value[0].id
       }
     }
