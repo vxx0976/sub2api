@@ -180,14 +180,14 @@ func (s *GroupHealthCheckService) checkOneGroup(ctx context.Context, group *Grou
 func getDefaultTestModel(platform string) string {
 	switch platform {
 	case "anthropic":
-		return "claude-haiku-4-5-20251001"
+		return "claude-sonnet-4-6"
 	case "openai":
-		return "gpt-4o-mini"
+		return "gpt-5.4"
 	case "gemini":
 		return "gemini-2.0-flash"
 	case "antigravity":
-		return "claude-haiku-4-5-20251001"
+		return "claude-sonnet-4-6"
 	default:
-		return "claude-haiku-4-5-20251001"
+		return "claude-sonnet-4-6"
 	}
 }
