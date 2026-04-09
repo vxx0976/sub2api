@@ -446,6 +446,7 @@
                 :rate-multiplier="(option as unknown as GroupOption).rate"
                 :user-rate-multiplier="(option as unknown as GroupOption).userRate"
                 :description="(option as unknown as GroupOption).description"
+                :health-status="(option as unknown as GroupOption).healthStatus"
                 :selected="selected"
               />
             </template>
@@ -1008,6 +1009,7 @@
               :rate-multiplier="option.rate"
               :user-rate-multiplier="option.userRate"
               :description="option.description"
+              :health-status="option.healthStatus"
               :selected="
                 selectedKeyForGroup?.group_id === option.value ||
                 (!selectedKeyForGroup?.group_id && option.value === null)
@@ -1072,6 +1074,7 @@ interface GroupOption {
   userRate: number | null
   subscriptionType: SubscriptionType
   platform: GroupPlatform
+  healthStatus?: string
 }
 
 const appStore = useAppStore()
@@ -1230,7 +1233,8 @@ const groupOptions = computed(() =>
     rate: group.rate_multiplier,
     userRate: userGroupRates.value[group.id] ?? null,
     subscriptionType: group.subscription_type,
-    platform: group.platform
+    platform: group.platform,
+    healthStatus: group.health_status
   }))
 )
 

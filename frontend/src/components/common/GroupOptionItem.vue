@@ -5,14 +5,24 @@
       class="flex min-w-0 flex-1 flex-col items-start"
       :title="description || undefined"
     >
-      <!-- Row 1: platform badge (name bold) -->
-      <GroupBadge
-        :name="name"
-        :platform="platform"
-        :subscription-type="subscriptionType"
-        :show-rate="false"
-        class="groupOptionItemBadge"
-      />
+      <!-- Row 1: platform badge (name bold) + health dot -->
+      <div class="flex items-center gap-1.5">
+        <GroupBadge
+          :name="name"
+          :platform="platform"
+          :subscription-type="subscriptionType"
+          :show-rate="false"
+          class="groupOptionItemBadge"
+        />
+        <span
+          v-if="healthStatus === 'available'"
+          class="h-2 w-2 shrink-0 rounded-full bg-emerald-500 animate-pulse"
+        />
+        <span
+          v-else-if="healthStatus === 'unavailable'"
+          class="h-2 w-2 shrink-0 rounded-full bg-red-500"
+        />
+      </div>
       <!-- Row 2: description with top spacing -->
       <span
         v-if="description"
@@ -63,6 +73,7 @@ interface Props {
   description?: string | null
   selected?: boolean
   showCheckmark?: boolean
+  healthStatus?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
