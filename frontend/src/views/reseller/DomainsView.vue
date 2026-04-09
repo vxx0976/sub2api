@@ -598,7 +598,7 @@
             <!-- Conditional content input -->
             <div v-if="editForm.home_template === 'custom_html'">
               <label class="label">{{ t('reseller.sites.homeContent') }}</label>
-              <textarea v-model="editForm.home_content" class="input font-mono text-sm" rows="10" :placeholder="t('reseller.sites.homeContentHtmlPlaceholder')" />
+              <MarkdownEditor v-model="editForm.home_content" :rows="10" :placeholder="t('reseller.sites.homeContentHtmlPlaceholder')" />
             </div>
             <div v-else-if="editForm.home_template === 'external_url'">
               <label class="label">{{ t('reseller.sites.homeContent') }}</label>
@@ -762,6 +762,7 @@ import AppLayout from '@/components/layout/AppLayout.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import Icon from '@/components/icons/Icon.vue'
 import ImageUpload from '@/components/common/ImageUpload.vue'
+import MarkdownEditor from '@/components/common/MarkdownEditor.vue'
 
 const { t } = useI18n()
 const appStore = useAppStore()
