@@ -10054,6 +10054,8 @@ type GroupMutation struct {
 	default_mapped_model                    *string
 	active_start_time                       *string
 	active_end_time                         *string
+	health_check_interval_min               *int
+	addhealth_check_interval_min            *int
 	health_status                           *string
 	healthy_accounts                        *int
 	addhealthy_accounts                     *int
@@ -12178,6 +12180,62 @@ func (m *GroupMutation) ResetActiveEndTime() {
 	delete(m.clearedFields, group.FieldActiveEndTime)
 }
 
+// SetHealthCheckIntervalMin sets the "health_check_interval_min" field.
+func (m *GroupMutation) SetHealthCheckIntervalMin(i int) {
+	m.health_check_interval_min = &i
+	m.addhealth_check_interval_min = nil
+}
+
+// HealthCheckIntervalMin returns the value of the "health_check_interval_min" field in the mutation.
+func (m *GroupMutation) HealthCheckIntervalMin() (r int, exists bool) {
+	v := m.health_check_interval_min
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldHealthCheckIntervalMin returns the old "health_check_interval_min" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldHealthCheckIntervalMin(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldHealthCheckIntervalMin is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldHealthCheckIntervalMin requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldHealthCheckIntervalMin: %w", err)
+	}
+	return oldValue.HealthCheckIntervalMin, nil
+}
+
+// AddHealthCheckIntervalMin adds i to the "health_check_interval_min" field.
+func (m *GroupMutation) AddHealthCheckIntervalMin(i int) {
+	if m.addhealth_check_interval_min != nil {
+		*m.addhealth_check_interval_min += i
+	} else {
+		m.addhealth_check_interval_min = &i
+	}
+}
+
+// AddedHealthCheckIntervalMin returns the value that was added to the "health_check_interval_min" field in this mutation.
+func (m *GroupMutation) AddedHealthCheckIntervalMin() (r int, exists bool) {
+	v := m.addhealth_check_interval_min
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetHealthCheckIntervalMin resets all changes to the "health_check_interval_min" field.
+func (m *GroupMutation) ResetHealthCheckIntervalMin() {
+	m.health_check_interval_min = nil
+	m.addhealth_check_interval_min = nil
+}
+
 // SetHealthStatus sets the "health_status" field.
 func (m *GroupMutation) SetHealthStatus(s string) {
 	m.health_status = &s
@@ -12787,7 +12845,7 @@ func (m *GroupMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *GroupMutation) Fields() []string {
-	fields := make([]string, 0, 44)
+	fields := make([]string, 0, 45)
 	if m.created_at != nil {
 		fields = append(fields, group.FieldCreatedAt)
 	}
@@ -12908,6 +12966,9 @@ func (m *GroupMutation) Fields() []string {
 	if m.active_end_time != nil {
 		fields = append(fields, group.FieldActiveEndTime)
 	}
+	if m.health_check_interval_min != nil {
+		fields = append(fields, group.FieldHealthCheckIntervalMin)
+	}
 	if m.health_status != nil {
 		fields = append(fields, group.FieldHealthStatus)
 	}
@@ -13008,6 +13069,8 @@ func (m *GroupMutation) Field(name string) (ent.Value, bool) {
 		return m.ActiveStartTime()
 	case group.FieldActiveEndTime:
 		return m.ActiveEndTime()
+	case group.FieldHealthCheckIntervalMin:
+		return m.HealthCheckIntervalMin()
 	case group.FieldHealthStatus:
 		return m.HealthStatus()
 	case group.FieldHealthyAccounts:
@@ -13105,6 +13168,8 @@ func (m *GroupMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldActiveStartTime(ctx)
 	case group.FieldActiveEndTime:
 		return m.OldActiveEndTime(ctx)
+	case group.FieldHealthCheckIntervalMin:
+		return m.OldHealthCheckIntervalMin(ctx)
 	case group.FieldHealthStatus:
 		return m.OldHealthStatus(ctx)
 	case group.FieldHealthyAccounts:
@@ -13402,6 +13467,13 @@ func (m *GroupMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetActiveEndTime(v)
 		return nil
+	case group.FieldHealthCheckIntervalMin:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetHealthCheckIntervalMin(v)
+		return nil
 	case group.FieldHealthStatus:
 		v, ok := value.(string)
 		if !ok {
@@ -13480,6 +13552,9 @@ func (m *GroupMutation) AddedFields() []string {
 	if m.addsource_group_id != nil {
 		fields = append(fields, group.FieldSourceGroupID)
 	}
+	if m.addhealth_check_interval_min != nil {
+		fields = append(fields, group.FieldHealthCheckIntervalMin)
+	}
 	if m.addhealthy_accounts != nil {
 		fields = append(fields, group.FieldHealthyAccounts)
 	}
@@ -13522,6 +13597,8 @@ func (m *GroupMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedOwnerID()
 	case group.FieldSourceGroupID:
 		return m.AddedSourceGroupID()
+	case group.FieldHealthCheckIntervalMin:
+		return m.AddedHealthCheckIntervalMin()
 	case group.FieldHealthyAccounts:
 		return m.AddedHealthyAccounts()
 	case group.FieldTotalCheckedAccounts:
@@ -13632,6 +13709,13 @@ func (m *GroupMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddSourceGroupID(v)
+		return nil
+	case group.FieldHealthCheckIntervalMin:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddHealthCheckIntervalMin(v)
 		return nil
 	case group.FieldHealthyAccounts:
 		v, ok := value.(int)
@@ -13916,6 +14000,9 @@ func (m *GroupMutation) ResetField(name string) error {
 		return nil
 	case group.FieldActiveEndTime:
 		m.ResetActiveEndTime()
+		return nil
+	case group.FieldHealthCheckIntervalMin:
+		m.ResetHealthCheckIntervalMin()
 		return nil
 	case group.FieldHealthStatus:
 		m.ResetHealthStatus()

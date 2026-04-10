@@ -74,6 +74,8 @@ type Group struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 
+	// 健康检查配置
+	HealthCheckIntervalMin int       `json:"health_check_interval_min"` // 健康检查间隔（分钟），0 表示使用默认值 30
 	// 健康检查状态
 	HealthStatus         string     `json:"health_status"`           // available/unavailable/""
 	HealthyAccounts      int        `json:"healthy_accounts"`

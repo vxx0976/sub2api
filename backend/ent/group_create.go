@@ -549,6 +549,20 @@ func (_c *GroupCreate) SetNillableActiveEndTime(v *string) *GroupCreate {
 	return _c
 }
 
+// SetHealthCheckIntervalMin sets the "health_check_interval_min" field.
+func (_c *GroupCreate) SetHealthCheckIntervalMin(v int) *GroupCreate {
+	_c.mutation.SetHealthCheckIntervalMin(v)
+	return _c
+}
+
+// SetNillableHealthCheckIntervalMin sets the "health_check_interval_min" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableHealthCheckIntervalMin(v *int) *GroupCreate {
+	if v != nil {
+		_c.SetHealthCheckIntervalMin(*v)
+	}
+	return _c
+}
+
 // SetHealthStatus sets the "health_status" field.
 func (_c *GroupCreate) SetHealthStatus(v string) *GroupCreate {
 	_c.mutation.SetHealthStatus(v)
@@ -833,6 +847,10 @@ func (_c *GroupCreate) defaults() error {
 		v := group.DefaultDefaultMappedModel
 		_c.mutation.SetDefaultMappedModel(v)
 	}
+	if _, ok := _c.mutation.HealthCheckIntervalMin(); !ok {
+		v := group.DefaultHealthCheckIntervalMin
+		_c.mutation.SetHealthCheckIntervalMin(v)
+	}
 	if _, ok := _c.mutation.HealthStatus(); !ok {
 		v := group.DefaultHealthStatus
 		_c.mutation.SetHealthStatus(v)
@@ -947,6 +965,9 @@ func (_c *GroupCreate) check() error {
 		if err := group.ActiveEndTimeValidator(v); err != nil {
 			return &ValidationError{Name: "active_end_time", err: fmt.Errorf(`ent: validator failed for field "Group.active_end_time": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.HealthCheckIntervalMin(); !ok {
+		return &ValidationError{Name: "health_check_interval_min", err: errors.New(`ent: missing required field "Group.health_check_interval_min"`)}
 	}
 	if _, ok := _c.mutation.HealthStatus(); !ok {
 		return &ValidationError{Name: "health_status", err: errors.New(`ent: missing required field "Group.health_status"`)}
@@ -1148,6 +1169,10 @@ func (_c *GroupCreate) createSpec() (*Group, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.ActiveEndTime(); ok {
 		_spec.SetField(group.FieldActiveEndTime, field.TypeString, value)
 		_node.ActiveEndTime = &value
+	}
+	if value, ok := _c.mutation.HealthCheckIntervalMin(); ok {
+		_spec.SetField(group.FieldHealthCheckIntervalMin, field.TypeInt, value)
+		_node.HealthCheckIntervalMin = value
 	}
 	if value, ok := _c.mutation.HealthStatus(); ok {
 		_spec.SetField(group.FieldHealthStatus, field.TypeString, value)
@@ -2000,6 +2025,24 @@ func (u *GroupUpsert) UpdateActiveEndTime() *GroupUpsert {
 // ClearActiveEndTime clears the value of the "active_end_time" field.
 func (u *GroupUpsert) ClearActiveEndTime() *GroupUpsert {
 	u.SetNull(group.FieldActiveEndTime)
+	return u
+}
+
+// SetHealthCheckIntervalMin sets the "health_check_interval_min" field.
+func (u *GroupUpsert) SetHealthCheckIntervalMin(v int) *GroupUpsert {
+	u.Set(group.FieldHealthCheckIntervalMin, v)
+	return u
+}
+
+// UpdateHealthCheckIntervalMin sets the "health_check_interval_min" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateHealthCheckIntervalMin() *GroupUpsert {
+	u.SetExcluded(group.FieldHealthCheckIntervalMin)
+	return u
+}
+
+// AddHealthCheckIntervalMin adds v to the "health_check_interval_min" field.
+func (u *GroupUpsert) AddHealthCheckIntervalMin(v int) *GroupUpsert {
+	u.Add(group.FieldHealthCheckIntervalMin, v)
 	return u
 }
 
@@ -2888,6 +2931,27 @@ func (u *GroupUpsertOne) UpdateActiveEndTime() *GroupUpsertOne {
 func (u *GroupUpsertOne) ClearActiveEndTime() *GroupUpsertOne {
 	return u.Update(func(s *GroupUpsert) {
 		s.ClearActiveEndTime()
+	})
+}
+
+// SetHealthCheckIntervalMin sets the "health_check_interval_min" field.
+func (u *GroupUpsertOne) SetHealthCheckIntervalMin(v int) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetHealthCheckIntervalMin(v)
+	})
+}
+
+// AddHealthCheckIntervalMin adds v to the "health_check_interval_min" field.
+func (u *GroupUpsertOne) AddHealthCheckIntervalMin(v int) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.AddHealthCheckIntervalMin(v)
+	})
+}
+
+// UpdateHealthCheckIntervalMin sets the "health_check_interval_min" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateHealthCheckIntervalMin() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateHealthCheckIntervalMin()
 	})
 }
 
@@ -3953,6 +4017,27 @@ func (u *GroupUpsertBulk) UpdateActiveEndTime() *GroupUpsertBulk {
 func (u *GroupUpsertBulk) ClearActiveEndTime() *GroupUpsertBulk {
 	return u.Update(func(s *GroupUpsert) {
 		s.ClearActiveEndTime()
+	})
+}
+
+// SetHealthCheckIntervalMin sets the "health_check_interval_min" field.
+func (u *GroupUpsertBulk) SetHealthCheckIntervalMin(v int) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetHealthCheckIntervalMin(v)
+	})
+}
+
+// AddHealthCheckIntervalMin adds v to the "health_check_interval_min" field.
+func (u *GroupUpsertBulk) AddHealthCheckIntervalMin(v int) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.AddHealthCheckIntervalMin(v)
+	})
+}
+
+// UpdateHealthCheckIntervalMin sets the "health_check_interval_min" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateHealthCheckIntervalMin() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateHealthCheckIntervalMin()
 	})
 }
 

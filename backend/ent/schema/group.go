@@ -193,6 +193,11 @@ func (Group) Fields() []ent.Field {
 			MaxLen(5).
 			Comment("每日可用结束时间（HH:MM），与 active_start_time 配合使用"),
 
+		// 健康检查间隔（分钟），默认 30
+		field.Int("health_check_interval_min").
+			Default(30).
+			Comment("健康检查间隔（分钟），默认 30"),
+
 		// 分组健康检查状态
 		field.String("health_status").
 			MaxLen(20).

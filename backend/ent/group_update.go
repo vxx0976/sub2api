@@ -760,6 +760,27 @@ func (_u *GroupUpdate) ClearActiveEndTime() *GroupUpdate {
 	return _u
 }
 
+// SetHealthCheckIntervalMin sets the "health_check_interval_min" field.
+func (_u *GroupUpdate) SetHealthCheckIntervalMin(v int) *GroupUpdate {
+	_u.mutation.ResetHealthCheckIntervalMin()
+	_u.mutation.SetHealthCheckIntervalMin(v)
+	return _u
+}
+
+// SetNillableHealthCheckIntervalMin sets the "health_check_interval_min" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillableHealthCheckIntervalMin(v *int) *GroupUpdate {
+	if v != nil {
+		_u.SetHealthCheckIntervalMin(*v)
+	}
+	return _u
+}
+
+// AddHealthCheckIntervalMin adds value to the "health_check_interval_min" field.
+func (_u *GroupUpdate) AddHealthCheckIntervalMin(v int) *GroupUpdate {
+	_u.mutation.AddHealthCheckIntervalMin(v)
+	return _u
+}
+
 // SetHealthStatus sets the "health_status" field.
 func (_u *GroupUpdate) SetHealthStatus(v string) *GroupUpdate {
 	_u.mutation.SetHealthStatus(v)
@@ -1412,6 +1433,12 @@ func (_u *GroupUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.ActiveEndTimeCleared() {
 		_spec.ClearField(group.FieldActiveEndTime, field.TypeString)
+	}
+	if value, ok := _u.mutation.HealthCheckIntervalMin(); ok {
+		_spec.SetField(group.FieldHealthCheckIntervalMin, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedHealthCheckIntervalMin(); ok {
+		_spec.AddField(group.FieldHealthCheckIntervalMin, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.HealthStatus(); ok {
 		_spec.SetField(group.FieldHealthStatus, field.TypeString, value)
@@ -2517,6 +2544,27 @@ func (_u *GroupUpdateOne) ClearActiveEndTime() *GroupUpdateOne {
 	return _u
 }
 
+// SetHealthCheckIntervalMin sets the "health_check_interval_min" field.
+func (_u *GroupUpdateOne) SetHealthCheckIntervalMin(v int) *GroupUpdateOne {
+	_u.mutation.ResetHealthCheckIntervalMin()
+	_u.mutation.SetHealthCheckIntervalMin(v)
+	return _u
+}
+
+// SetNillableHealthCheckIntervalMin sets the "health_check_interval_min" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillableHealthCheckIntervalMin(v *int) *GroupUpdateOne {
+	if v != nil {
+		_u.SetHealthCheckIntervalMin(*v)
+	}
+	return _u
+}
+
+// AddHealthCheckIntervalMin adds value to the "health_check_interval_min" field.
+func (_u *GroupUpdateOne) AddHealthCheckIntervalMin(v int) *GroupUpdateOne {
+	_u.mutation.AddHealthCheckIntervalMin(v)
+	return _u
+}
+
 // SetHealthStatus sets the "health_status" field.
 func (_u *GroupUpdateOne) SetHealthStatus(v string) *GroupUpdateOne {
 	_u.mutation.SetHealthStatus(v)
@@ -3199,6 +3247,12 @@ func (_u *GroupUpdateOne) sqlSave(ctx context.Context) (_node *Group, err error)
 	}
 	if _u.mutation.ActiveEndTimeCleared() {
 		_spec.ClearField(group.FieldActiveEndTime, field.TypeString)
+	}
+	if value, ok := _u.mutation.HealthCheckIntervalMin(); ok {
+		_spec.SetField(group.FieldHealthCheckIntervalMin, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedHealthCheckIntervalMin(); ok {
+		_spec.AddField(group.FieldHealthCheckIntervalMin, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.HealthStatus(); ok {
 		_spec.SetField(group.FieldHealthStatus, field.TypeString, value)

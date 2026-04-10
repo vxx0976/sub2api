@@ -147,6 +147,7 @@ func GroupFromServiceAdmin(g *service.Group) *AdminGroup {
 		ActiveAccountCount:      g.ActiveAccountCount,
 		RateLimitedAccountCount: g.RateLimitedAccountCount,
 		SortOrder:               g.SortOrder,
+		HealthCheckIntervalMin:  g.HealthCheckIntervalMin,
 		HealthStatus:            g.HealthStatus,
 		HealthyAccounts:         g.HealthyAccounts,
 		TotalCheckedAccounts:    g.TotalCheckedAccounts,

@@ -1,0 +1,1 @@
+ALTER TABLE groups ADD COLUMN IF NOT EXISTS health_check_interval_min INTEGER NOT NULL DEFAULT 30;

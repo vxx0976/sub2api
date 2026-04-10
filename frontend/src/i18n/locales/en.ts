@@ -1907,6 +1907,11 @@ export default {
         defaultModelPlaceholder: 'e.g., gpt-4.1',
         defaultModelHint: 'When account has no model mapping configured, all request models will be mapped to this model'
       },
+      healthCheck: {
+        intervalLabel: 'Health Check Interval',
+        intervalUnit: 'minutes',
+        intervalHint: 'Interval for automatic group availability checks, default 30 minutes'
+      },
       invalidRequestFallback: {
         title: 'Invalid Request Fallback Group',
         hint: 'Triggered only when upstream explicitly returns prompt too long. Leave empty to disable fallback.',

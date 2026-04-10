@@ -162,6 +162,8 @@ type CreateGroupInput struct {
 	RequirePrivacySet     bool
 	// 从指定分组复制账号（创建分组后在同一事务内绑定）
 	CopyAccountsFromGroupIDs []int64
+	// 健康检查间隔（分钟）
+	HealthCheckIntervalMin int
 	// 支付相关
 	DefaultValidityDays int
 	Price               *float64
@@ -205,6 +207,8 @@ type UpdateGroupInput struct {
 	RequirePrivacySet     *bool
 	// 从指定分组复制账号（同步操作：先清空当前分组的账号绑定，再绑定源分组的账号）
 	CopyAccountsFromGroupIDs []int64
+	// 健康检查间隔（分钟）
+	HealthCheckIntervalMin *int
 	// 支付相关
 	DefaultValidityDays *int
 	Price               *float64
@@ -928,6 +932,12 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 		defaultValidityDays = 30
 	}
 
+	// 健康检查间隔，默认 30 分钟
+	healthCheckInterval := input.HealthCheckIntervalMin
+	if healthCheckInterval <= 0 {
+		healthCheckInterval = 30
+	}
+
 	group := &Group{
 		Name:                            input.Name,
 		Description:                     input.Description,
@@ -952,6 +962,7 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 		MCPXMLInject:                    mcpXMLInject,
 		SupportedModelScopes:            input.SupportedModelScopes,
 		DefaultValidityDays:             defaultValidityDays,
+		HealthCheckIntervalMin:          healthCheckInterval,
 		Price:                           input.Price,
 		IsPurchasable:                   input.IsPurchasable,
 		SortOrder:                       input.SortOrder,
@@ -1176,6 +1187,15 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 	// 支持的模型系列（仅 antigravity 平台使用）
 	if input.SupportedModelScopes != nil {
 		group.SupportedModelScopes = *input.SupportedModelScopes
+	}
+
+	// 健康检查间隔
+	if input.HealthCheckIntervalMin != nil {
+		v := *input.HealthCheckIntervalMin
+		if v <= 0 {
+			v = 30
+		}
+		group.HealthCheckIntervalMin = v
 	}
 
 	// 支付相关

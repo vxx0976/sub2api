@@ -235,6 +235,11 @@ func ActiveEndTime(v string) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldActiveEndTime, v))
 }
 
+// HealthCheckIntervalMin applies equality check predicate on the "health_check_interval_min" field. It's identical to HealthCheckIntervalMinEQ.
+func HealthCheckIntervalMin(v int) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldHealthCheckIntervalMin, v))
+}
+
 // HealthStatus applies equality check predicate on the "health_status" field. It's identical to HealthStatusEQ.
 func HealthStatus(v string) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldHealthStatus, v))
@@ -1808,6 +1813,46 @@ func ActiveEndTimeEqualFold(v string) predicate.Group {
 // ActiveEndTimeContainsFold applies the ContainsFold predicate on the "active_end_time" field.
 func ActiveEndTimeContainsFold(v string) predicate.Group {
 	return predicate.Group(sql.FieldContainsFold(FieldActiveEndTime, v))
+}
+
+// HealthCheckIntervalMinEQ applies the EQ predicate on the "health_check_interval_min" field.
+func HealthCheckIntervalMinEQ(v int) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldHealthCheckIntervalMin, v))
+}
+
+// HealthCheckIntervalMinNEQ applies the NEQ predicate on the "health_check_interval_min" field.
+func HealthCheckIntervalMinNEQ(v int) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldHealthCheckIntervalMin, v))
+}
+
+// HealthCheckIntervalMinIn applies the In predicate on the "health_check_interval_min" field.
+func HealthCheckIntervalMinIn(vs ...int) predicate.Group {
+	return predicate.Group(sql.FieldIn(FieldHealthCheckIntervalMin, vs...))
+}
+
+// HealthCheckIntervalMinNotIn applies the NotIn predicate on the "health_check_interval_min" field.
+func HealthCheckIntervalMinNotIn(vs ...int) predicate.Group {
+	return predicate.Group(sql.FieldNotIn(FieldHealthCheckIntervalMin, vs...))
+}
+
+// HealthCheckIntervalMinGT applies the GT predicate on the "health_check_interval_min" field.
+func HealthCheckIntervalMinGT(v int) predicate.Group {
+	return predicate.Group(sql.FieldGT(FieldHealthCheckIntervalMin, v))
+}
+
+// HealthCheckIntervalMinGTE applies the GTE predicate on the "health_check_interval_min" field.
+func HealthCheckIntervalMinGTE(v int) predicate.Group {
+	return predicate.Group(sql.FieldGTE(FieldHealthCheckIntervalMin, v))
+}
+
+// HealthCheckIntervalMinLT applies the LT predicate on the "health_check_interval_min" field.
+func HealthCheckIntervalMinLT(v int) predicate.Group {
+	return predicate.Group(sql.FieldLT(FieldHealthCheckIntervalMin, v))
+}
+
+// HealthCheckIntervalMinLTE applies the LTE predicate on the "health_check_interval_min" field.
+func HealthCheckIntervalMinLTE(v int) predicate.Group {
+	return predicate.Group(sql.FieldLTE(FieldHealthCheckIntervalMin, v))
 }
 
 // HealthStatusEQ applies the EQ predicate on the "health_status" field.

@@ -121,8 +121,9 @@ type CreateGroupRequest struct {
 	// 从指定分组复制账号（创建后自动绑定）
 	CopyAccountsFromGroupIDs []int64 `json:"copy_accounts_from_group_ids"`
 	// 支付相关
-	DefaultValidityDays int      `json:"default_validity_days"`
-	Price               *float64 `json:"price"`
+	HealthCheckIntervalMin int      `json:"health_check_interval_min"`
+	DefaultValidityDays    int      `json:"default_validity_days"`
+	Price                  *float64 `json:"price"`
 	IsPurchasable       bool     `json:"is_purchasable"`
 	SortOrder           int      `json:"sort_order"`
 	IsRecommended       bool     `json:"is_recommended"`
@@ -164,8 +165,9 @@ type UpdateGroupRequest struct {
 	// 从指定分组复制账号（同步操作：先清空当前分组的账号绑定，再绑定源分组的账号）
 	CopyAccountsFromGroupIDs []int64 `json:"copy_accounts_from_group_ids"`
 	// 支付相关
-	DefaultValidityDays *int     `json:"default_validity_days"`
-	Price               *float64 `json:"price"`
+	HealthCheckIntervalMin *int     `json:"health_check_interval_min"`
+	DefaultValidityDays    *int     `json:"default_validity_days"`
+	Price                  *float64 `json:"price"`
 	IsPurchasable       *bool    `json:"is_purchasable"`
 	SortOrder           *int     `json:"sort_order"`
 	IsRecommended       *bool    `json:"is_recommended"`
@@ -295,6 +297,7 @@ func (h *GroupHandler) Create(c *gin.Context) {
 		RequirePrivacySet:               req.RequirePrivacySet,
 		DefaultMappedModel:              req.DefaultMappedModel,
 		CopyAccountsFromGroupIDs:        req.CopyAccountsFromGroupIDs,
+		HealthCheckIntervalMin:          req.HealthCheckIntervalMin,
 		DefaultValidityDays:             req.DefaultValidityDays,
 		Price:                           req.Price,
 		IsPurchasable:                   req.IsPurchasable,
@@ -353,6 +356,7 @@ func (h *GroupHandler) Update(c *gin.Context) {
 		RequirePrivacySet:               req.RequirePrivacySet,
 		DefaultMappedModel:              req.DefaultMappedModel,
 		CopyAccountsFromGroupIDs:        req.CopyAccountsFromGroupIDs,
+		HealthCheckIntervalMin:          req.HealthCheckIntervalMin,
 		DefaultValidityDays:             req.DefaultValidityDays,
 		Price:                           req.Price,
 		IsPurchasable:                   req.IsPurchasable,

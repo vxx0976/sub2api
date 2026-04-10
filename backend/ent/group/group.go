@@ -95,6 +95,8 @@ const (
 	FieldActiveStartTime = "active_start_time"
 	// FieldActiveEndTime holds the string denoting the active_end_time field in the database.
 	FieldActiveEndTime = "active_end_time"
+	// FieldHealthCheckIntervalMin holds the string denoting the health_check_interval_min field in the database.
+	FieldHealthCheckIntervalMin = "health_check_interval_min"
 	// FieldHealthStatus holds the string denoting the health_status field in the database.
 	FieldHealthStatus = "health_status"
 	// FieldHealthyAccounts holds the string denoting the healthy_accounts field in the database.
@@ -227,6 +229,7 @@ var Columns = []string{
 	FieldDefaultMappedModel,
 	FieldActiveStartTime,
 	FieldActiveEndTime,
+	FieldHealthCheckIntervalMin,
 	FieldHealthStatus,
 	FieldHealthyAccounts,
 	FieldTotalCheckedAccounts,
@@ -316,6 +319,8 @@ var (
 	ActiveStartTimeValidator func(string) error
 	// ActiveEndTimeValidator is a validator for the "active_end_time" field. It is called by the builders before save.
 	ActiveEndTimeValidator func(string) error
+	// DefaultHealthCheckIntervalMin holds the default value on creation for the "health_check_interval_min" field.
+	DefaultHealthCheckIntervalMin int
 	// DefaultHealthStatus holds the default value on creation for the "health_status" field.
 	DefaultHealthStatus string
 	// HealthStatusValidator is a validator for the "health_status" field. It is called by the builders before save.
@@ -512,6 +517,11 @@ func ByActiveStartTime(opts ...sql.OrderTermOption) OrderOption {
 // ByActiveEndTime orders the results by the active_end_time field.
 func ByActiveEndTime(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldActiveEndTime, opts...).ToFunc()
+}
+
+// ByHealthCheckIntervalMin orders the results by the health_check_interval_min field.
+func ByHealthCheckIntervalMin(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldHealthCheckIntervalMin, opts...).ToFunc()
 }
 
 // ByHealthStatus orders the results by the health_status field.

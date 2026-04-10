@@ -514,6 +514,21 @@
           </div>
         </div>
 
+        <!-- 健康检查间隔 -->
+        <div class="border-t pt-4">
+          <label class="input-label">{{ t('admin.groups.healthCheck.intervalLabel') }}</label>
+          <div class="flex items-center gap-2">
+            <input
+              v-model.number="createForm.health_check_interval_min"
+              type="number"
+              min="1"
+              class="input w-32"
+            />
+            <span class="text-sm text-gray-500 dark:text-gray-400">{{ t('admin.groups.healthCheck.intervalUnit') }}</span>
+          </div>
+          <p class="input-hint">{{ t('admin.groups.healthCheck.intervalHint') }}</p>
+        </div>
+
         <!-- Payment Settings (only show when subscription type is selected) -->
         <div v-if="createForm.subscription_type === 'subscription'" class="border-t pt-4">
           <label class="block mb-2 font-medium text-gray-700 dark:text-gray-300">
@@ -1353,6 +1368,21 @@
               />
             </div>
           </div>
+        </div>
+
+        <!-- 健康检查间隔 -->
+        <div class="border-t pt-4">
+          <label class="input-label">{{ t('admin.groups.healthCheck.intervalLabel') }}</label>
+          <div class="flex items-center gap-2">
+            <input
+              v-model.number="editForm.health_check_interval_min"
+              type="number"
+              min="1"
+              class="input w-32"
+            />
+            <span class="text-sm text-gray-500 dark:text-gray-400">{{ t('admin.groups.healthCheck.intervalUnit') }}</span>
+          </div>
+          <p class="input-hint">{{ t('admin.groups.healthCheck.intervalHint') }}</p>
         </div>
 
         <!-- Payment Settings (only show when subscription type is selected) -->
@@ -2287,6 +2317,8 @@ const createForm = reactive({
   require_privacy_set: false,
   // 模型路由开关
   model_routing_enabled: false,
+  // 健康检查间隔（分钟）
+  health_check_interval_min: 30,
   // 支付相关
   default_validity_days: 30,
   price: null as number | null,
@@ -2540,6 +2572,8 @@ const editForm = reactive({
   // 定时上线时间窗口
   active_start_time: '' as string,
   active_end_time: '' as string,
+  // 健康检查间隔（分钟）
+  health_check_interval_min: 30,
   // 支付相关
   default_validity_days: 30,
   price: null as number | null,
@@ -2722,6 +2756,7 @@ const closeCreateModal = () => {
   createForm.image_price_4k = null
   createForm.claude_code_only = false
   createForm.fallback_group_id = null
+  createForm.health_check_interval_min = 30
   createForm.default_validity_days = 30
   createForm.price = null
   createForm.is_purchasable = false
@@ -2820,6 +2855,7 @@ const handleEdit = async (group: AdminGroup) => {
   editForm.require_privacy_set = group.require_privacy_set ?? false
   editForm.default_mapped_model = group.default_mapped_model || ''
   editForm.model_routing_enabled = group.model_routing_enabled || false
+  editForm.health_check_interval_min = group.health_check_interval_min || 30
   editForm.default_validity_days = group.default_validity_days || 30
   editForm.price = group.price
   editForm.is_purchasable = group.is_purchasable || false

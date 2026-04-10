@@ -1909,6 +1909,11 @@ export default {
         defaultModelPlaceholder: '例如: gpt-4.1',
         defaultModelHint: '当账号未配置模型映射时，所有请求模型将映射到此模型'
       },
+      healthCheck: {
+        intervalLabel: '健康检查间隔',
+        intervalUnit: '分钟',
+        intervalHint: '自动检测分组可用性的时间间隔，默认 30 分钟'
+      },
       invalidRequestFallback: {
         title: '无效请求兜底分组',
         hint: '仅当上游明确返回 prompt too long 时才会触发，留空表示不兜底',

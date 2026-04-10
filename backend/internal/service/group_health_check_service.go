@@ -64,14 +64,14 @@ func (s *GroupHealthCheckService) Start() {
 			cron.Minute|cron.Hour|cron.Dom|cron.Month|cron.Dow,
 		)), cron.WithLocation(loc))
 
-		_, err := c.AddFunc("*/30 * * * *", func() { s.runHealthCheck() })
+		_, err := c.AddFunc("*/5 * * * *", func() { s.runHealthCheck() })
 		if err != nil {
 			logger.LegacyPrintf("service.group_health_check", "[GroupHealthCheck] not started (invalid schedule): %v", err)
 			return
 		}
 		s.cron = c
 		s.cron.Start()
-		logger.LegacyPrintf("service.group_health_check", "[GroupHealthCheck] started (tick=every 30 minutes)")
+		logger.LegacyPrintf("service.group_health_check", "[GroupHealthCheck] started (tick=every 5 minutes, per-group interval)")
 	})
 }
 
@@ -111,19 +111,38 @@ func (s *GroupHealthCheckService) runHealthCheck() {
 		return
 	}
 
-	logger.LegacyPrintf("service.group_health_check", "[GroupHealthCheck] checking %d active groups", len(groups))
+	// 根据每个分组的检查间隔过滤需要检查的分组
+	now := time.Now()
+	var dueGroups []*Group
+	for i := range groups {
+		g := &groups[i]
+		interval := g.HealthCheckIntervalMin
+		if interval <= 0 {
+			interval = 30 // 默认 30 分钟
+		}
+		if g.LastHealthCheckAt != nil && now.Sub(*g.LastHealthCheckAt) < time.Duration(interval)*time.Minute {
+			continue // 未到检查时间，跳过
+		}
+		dueGroups = append(dueGroups, g)
+	}
+
+	if len(dueGroups) == 0 {
+		return
+	}
+
+	logger.LegacyPrintf("service.group_health_check", "[GroupHealthCheck] checking %d/%d active groups", len(dueGroups), len(groups))
 
 	sem := make(chan struct{}, groupHealthMaxWorkers)
 	var wg sync.WaitGroup
 
-	for i := range groups {
+	for _, g := range dueGroups {
 		sem <- struct{}{}
 		wg.Add(1)
 		go func(g *Group) {
 			defer wg.Done()
 			defer func() { <-sem }()
 			s.checkOneGroup(ctx, g)
-		}(&groups[i])
+		}(g)
 	}
 
 	wg.Wait()

@@ -464,7 +464,8 @@ export interface Group {
   active_end_time?: string | null
   require_oauth_only: boolean
   require_privacy_set: boolean
-  // 健康检查状态（用于展示分组可用性指示）
+  // 健康检查
+  health_check_interval_min?: number
   health_status?: string // 'available' | 'unavailable' | ''
   created_at: string
   updated_at: string
@@ -492,7 +493,8 @@ export interface AdminGroup extends Group {
   // OpenAI Messages 调度配置（仅 openai 平台使用）
   default_mapped_model?: string
 
-  // 健康检查状态
+  // 健康检查
+  health_check_interval_min: number
   health_status: string // 'available' | 'unavailable' | ''
   healthy_accounts: number
   total_checked_accounts: number
@@ -587,6 +589,7 @@ export interface CreateGroupRequest {
   supported_model_scopes?: string[]
   require_oauth_only?: boolean
   require_privacy_set?: boolean
+  health_check_interval_min?: number
   // 从指定分组复制账号
   copy_accounts_from_group_ids?: number[]
 }
@@ -615,6 +618,7 @@ export interface UpdateGroupRequest {
   supported_model_scopes?: string[]
   require_oauth_only?: boolean
   require_privacy_set?: boolean
+  health_check_interval_min?: number
   copy_accounts_from_group_ids?: number[]
 }
 

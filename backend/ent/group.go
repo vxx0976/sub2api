@@ -98,6 +98,8 @@ type Group struct {
 	ActiveStartTime *string `json:"active_start_time,omitempty"`
 	// 每日可用结束时间（HH:MM），与 active_start_time 配合使用
 	ActiveEndTime *string `json:"active_end_time,omitempty"`
+	// 健康检查间隔（分钟），默认 30
+	HealthCheckIntervalMin int `json:"health_check_interval_min,omitempty"`
 	// 分组可用性状态：available/unavailable/空=未检查
 	HealthStatus string `json:"health_status,omitempty"`
 	// 最近一次健康检查中可用的账号数
@@ -229,7 +231,7 @@ func (*Group) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case group.FieldRateMultiplier, group.FieldDailyLimitUsd, group.FieldWeeklyLimitUsd, group.FieldMonthlyLimitUsd, group.FieldImagePrice1k, group.FieldImagePrice2k, group.FieldImagePrice4k, group.FieldPrice:
 			values[i] = new(sql.NullFloat64)
-		case group.FieldID, group.FieldDefaultValidityDays, group.FieldFallbackGroupID, group.FieldFallbackGroupIDOnInvalidRequest, group.FieldSortOrder, group.FieldOwnerID, group.FieldSourceGroupID, group.FieldHealthyAccounts, group.FieldTotalCheckedAccounts:
+		case group.FieldID, group.FieldDefaultValidityDays, group.FieldFallbackGroupID, group.FieldFallbackGroupIDOnInvalidRequest, group.FieldSortOrder, group.FieldOwnerID, group.FieldSourceGroupID, group.FieldHealthCheckIntervalMin, group.FieldHealthyAccounts, group.FieldTotalCheckedAccounts:
 			values[i] = new(sql.NullInt64)
 		case group.FieldName, group.FieldDescription, group.FieldStatus, group.FieldPlatform, group.FieldSubscriptionType, group.FieldExternalBuyURL, group.FieldDefaultMappedModel, group.FieldActiveStartTime, group.FieldActiveEndTime, group.FieldHealthStatus:
 			values[i] = new(sql.NullString)
@@ -520,6 +522,12 @@ func (_m *Group) assignValues(columns []string, values []any) error {
 				_m.ActiveEndTime = new(string)
 				*_m.ActiveEndTime = value.String
 			}
+		case group.FieldHealthCheckIntervalMin:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field health_check_interval_min", values[i])
+			} else if value.Valid {
+				_m.HealthCheckIntervalMin = int(value.Int64)
+			}
 		case group.FieldHealthStatus:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field health_status", values[i])
@@ -777,6 +785,9 @@ func (_m *Group) String() string {
 		builder.WriteString("active_end_time=")
 		builder.WriteString(*v)
 	}
+	builder.WriteString(", ")
+	builder.WriteString("health_check_interval_min=")
+	builder.WriteString(fmt.Sprintf("%v", _m.HealthCheckIntervalMin))
 	builder.WriteString(", ")
 	builder.WriteString("health_status=")
 	builder.WriteString(_m.HealthStatus)

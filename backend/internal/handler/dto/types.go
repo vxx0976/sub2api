@@ -148,6 +148,8 @@ type AdminGroup struct {
 	// 分组排序
 	SortOrder int `json:"sort_order"`
 
+	// 健康检查配置
+	HealthCheckIntervalMin int       `json:"health_check_interval_min"`
 	// 健康检查状态
 	HealthStatus         string     `json:"health_status"`
 	HealthyAccounts      int        `json:"healthy_accounts"`

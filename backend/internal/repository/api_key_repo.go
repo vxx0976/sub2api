@@ -725,6 +725,7 @@ func groupEntityToService(g *dbent.Group) *service.Group {
 		DefaultMappedModel:              g.DefaultMappedModel,
 		ActiveStartTime:                 g.ActiveStartTime,
 		ActiveEndTime:                   g.ActiveEndTime,
+		HealthCheckIntervalMin:          g.HealthCheckIntervalMin,
 		HealthStatus:                    g.HealthStatus,
 		HealthyAccounts:                 g.HealthyAccounts,
 		TotalCheckedAccounts:            g.TotalCheckedAccounts,

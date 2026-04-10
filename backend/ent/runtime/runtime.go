@@ -576,18 +576,22 @@ func init() {
 	groupDescActiveEndTime := groupFields[36].Descriptor()
 	// group.ActiveEndTimeValidator is a validator for the "active_end_time" field. It is called by the builders before save.
 	group.ActiveEndTimeValidator = groupDescActiveEndTime.Validators[0].(func(string) error)
+	// groupDescHealthCheckIntervalMin is the schema descriptor for health_check_interval_min field.
+	groupDescHealthCheckIntervalMin := groupFields[37].Descriptor()
+	// group.DefaultHealthCheckIntervalMin holds the default value on creation for the health_check_interval_min field.
+	group.DefaultHealthCheckIntervalMin = groupDescHealthCheckIntervalMin.Default.(int)
 	// groupDescHealthStatus is the schema descriptor for health_status field.
-	groupDescHealthStatus := groupFields[37].Descriptor()
+	groupDescHealthStatus := groupFields[38].Descriptor()
 	// group.DefaultHealthStatus holds the default value on creation for the health_status field.
 	group.DefaultHealthStatus = groupDescHealthStatus.Default.(string)
 	// group.HealthStatusValidator is a validator for the "health_status" field. It is called by the builders before save.
 	group.HealthStatusValidator = groupDescHealthStatus.Validators[0].(func(string) error)
 	// groupDescHealthyAccounts is the schema descriptor for healthy_accounts field.
-	groupDescHealthyAccounts := groupFields[38].Descriptor()
+	groupDescHealthyAccounts := groupFields[39].Descriptor()
 	// group.DefaultHealthyAccounts holds the default value on creation for the healthy_accounts field.
 	group.DefaultHealthyAccounts = groupDescHealthyAccounts.Default.(int)
 	// groupDescTotalCheckedAccounts is the schema descriptor for total_checked_accounts field.
-	groupDescTotalCheckedAccounts := groupFields[39].Descriptor()
+	groupDescTotalCheckedAccounts := groupFields[40].Descriptor()
 	// group.DefaultTotalCheckedAccounts holds the default value on creation for the total_checked_accounts field.
 	group.DefaultTotalCheckedAccounts = groupDescTotalCheckedAccounts.Default.(int)
 	idempotencyrecordMixin := schema.IdempotencyRecord{}.Mixin()
