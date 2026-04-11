@@ -20,6 +20,14 @@ const (
 	failoverProbeTimeout          = 60 * time.Second
 )
 
+type failoverActiveTransitionWriter interface {
+	TransitionFailoverActive(ctx context.Context, groupID int64, newMemberID int64, expectedVersion int64, event *FailoverGroupEvent) (bool, error)
+}
+
+type failoverPinStateWriter interface {
+	UpdateFailoverPinState(ctx context.Context, groupID int64, memberID *int64, expiresAt *time.Time, event *FailoverGroupEvent) error
+}
+
 // FailoverGroupService 负责维护"智能路由"虚拟分组的激活成员。
 //
 // 三个独立的 reconciler 共同驱动状态迁移：
@@ -165,8 +173,15 @@ func (s *FailoverGroupService) runSoftReconcileOnce() {
 	if release != nil {
 		defer release()
 	}
-	if err := s.ReconcileAll(ctx, 0); err != nil {
-		logger.LegacyPrintf("service.failover_group", "[FailoverGroup] soft reconcile failed: %v", err)
+	groups, err := s.groupRepo.ListFailoverGroups(ctx)
+	if err != nil {
+		logger.LegacyPrintf("service.failover_group", "[FailoverGroup] list for soft reconcile failed: %v", err)
+		return
+	}
+	for _, g := range groups {
+		if err := s.softReconcileOne(ctx, g); err != nil {
+			logger.LegacyPrintf("service.failover_group", "[FailoverGroup] soft reconcile group=%d err=%v", g.ID, err)
+		}
 	}
 }
 
@@ -249,12 +264,16 @@ func (s *FailoverGroupService) probeMemberOnce(ctx context.Context, g *Group, me
 
 // ReconcileAll 遍历所有虚拟分组执行 reconcile；triggeredBy=0 表示系统触发。
 func (s *FailoverGroupService) ReconcileAll(ctx context.Context, triggeredBy int64) error {
+	return s.reconcileAllWithReason(ctx, FailoverEventReasonHealthReconcile, triggeredBy)
+}
+
+func (s *FailoverGroupService) reconcileAllWithReason(ctx context.Context, reason string, triggeredBy int64) error {
 	groups, err := s.groupRepo.ListFailoverGroups(ctx)
 	if err != nil {
 		return err
 	}
 	for _, g := range groups {
-		if err := s.reconcileOne(ctx, g, triggeredBy); err != nil {
+		if err := s.reconcileOne(ctx, g, reason, triggeredBy); err != nil {
 			logger.LegacyPrintf("service.failover_group", "[FailoverGroup] reconcile group=%d err=%v", g.ID, err)
 		}
 	}
@@ -270,27 +289,75 @@ func (s *FailoverGroupService) ForceReconcile(ctx context.Context, virtualGroupI
 	if g == nil || !g.IsFailoverGroup {
 		return nil
 	}
-	return s.reconcileOne(ctx, g, triggeredBy)
+	return s.reconcileOne(ctx, g, FailoverEventReasonConfigChange, triggeredBy)
 }
 
-func (s *FailoverGroupService) reconcileOne(ctx context.Context, g *Group, triggeredBy int64) error {
+func (s *FailoverGroupService) softReconcileOne(ctx context.Context, g *Group) error {
+	if g == nil || !g.IsFailoverGroup || len(g.FailoverMemberIDs) == 0 {
+		return nil
+	}
+
+	now := time.Now()
+	reloaded, err := s.handleExpiredPin(ctx, g, now)
+	if err != nil {
+		return err
+	}
+	if reloaded != nil {
+		g = reloaded
+	}
+	if g.IsFailoverPinActive(now) {
+		return nil
+	}
+
+	activePtr := g.EffectiveFailoverActiveMemberID(now)
+	if activePtr == nil {
+		return nil
+	}
+	currentActive := *activePtr
+	currentIdx := indexOfInt64(g.FailoverMemberIDs, currentActive)
+	if currentIdx < 0 {
+		return s.reconcileOne(ctx, g, FailoverEventReasonSoftDemote, 0)
+	}
+
+	currentCount, err := s.groupRepo.CountSchedulableAccountsByGroup(ctx, currentActive)
+	if err != nil {
+		return err
+	}
+	if currentCount > 0 {
+		return nil
+	}
+
+	for i := currentIdx + 1; i < len(g.FailoverMemberIDs); i++ {
+		memberID := g.FailoverMemberIDs[i]
+		count, err := s.groupRepo.CountSchedulableAccountsByGroup(ctx, memberID)
+		if err != nil {
+			return err
+		}
+		if count == 0 {
+			continue
+		}
+		reason := FailoverEventReasonSoftDemote
+		if g.FailoverActiveMemberID == nil {
+			reason = FailoverEventReasonBootstrap
+		}
+		return s.switchActive(ctx, g, memberID, reason, nil, nil)
+	}
+
+	return nil
+}
+
+func (s *FailoverGroupService) reconcileOne(ctx context.Context, g *Group, reason string, triggeredBy int64) error {
 	if g == nil || !g.IsFailoverGroup || len(g.FailoverMemberIDs) == 0 {
 		return nil
 	}
 
 	now := time.Now()
 
-	// 1. 处理过期 pin
-	if g.FailoverPinMemberID != nil && g.FailoverPinExpiresAt != nil && !g.FailoverPinExpiresAt.After(now) {
-		if err := s.groupRepo.ClearFailoverPin(ctx, g.ID); err != nil {
-			return err
-		}
-		_ = s.writeEvent(ctx, g, g.FailoverActiveMemberID, g.FailoverActiveMemberID, FailoverEventReasonManualUnpinExpired, nil, nil)
-		// 重新加载以获取最新状态
-		reloaded, err := s.groupRepo.GetByIDLite(ctx, g.ID)
-		if err != nil {
-			return err
-		}
+	reloaded, err := s.handleExpiredPin(ctx, g, now)
+	if err != nil {
+		return err
+	}
+	if reloaded != nil {
 		g = reloaded
 	}
 
@@ -298,7 +365,7 @@ func (s *FailoverGroupService) reconcileOne(ctx context.Context, g *Group, trigg
 	if g.IsFailoverPinActive(now) {
 		pin := *g.FailoverPinMemberID
 		if g.FailoverActiveMemberID == nil || *g.FailoverActiveMemberID != pin {
-			return s.switchActive(ctx, g, pin, FailoverEventReasonManualPin, nil, triggerByPtr(triggeredBy))
+			return s.syncActiveNoEvent(ctx, g, pin)
 		}
 		return nil
 	}
@@ -339,18 +406,45 @@ func (s *FailoverGroupService) reconcileOne(ctx context.Context, g *Group, trigg
 	if chosen == current {
 		return nil
 	}
-	reason := FailoverEventReasonSoftDemote
 	if g.FailoverActiveMemberID == nil {
 		reason = FailoverEventReasonBootstrap
 	}
 	return s.switchActive(ctx, g, chosen, reason, nil, triggerByPtr(triggeredBy))
 }
 
+func (s *FailoverGroupService) handleExpiredPin(ctx context.Context, g *Group, now time.Time) (*Group, error) {
+	if g == nil || g.FailoverPinMemberID == nil || g.FailoverPinExpiresAt == nil || g.FailoverPinExpiresAt.After(now) {
+		return nil, nil
+	}
+	event := &FailoverGroupEvent{
+		VirtualGroupID: g.ID,
+		FromMemberID:   g.FailoverActiveMemberID,
+		ToMemberID:     g.FailoverActiveMemberID,
+		Reason:         FailoverEventReasonManualUnpinExpired,
+	}
+	if err := s.updatePinState(ctx, g.ID, nil, nil, event); err != nil {
+		return nil, err
+	}
+	reloaded, err := s.groupRepo.GetByIDLite(ctx, g.ID)
+	if err != nil {
+		return nil, err
+	}
+	return reloaded, nil
+}
+
 // switchActive 在 CAS 成功时写入事件；CAS 抢输视为另一个节点已处理，静默返回。
 // CAS 成功后会同步刷新 in-memory 的 active member id 与 version，避免同一个 g 快照被二次 CAS。
 func (s *FailoverGroupService) switchActive(ctx context.Context, g *Group, toMemberID int64, reason string, note *string, triggeredBy *int64) error {
 	prev := g.FailoverActiveMemberID
-	ok, err := s.groupRepo.UpdateFailoverActive(ctx, g.ID, toMemberID, g.FailoverActiveVersion)
+	event := &FailoverGroupEvent{
+		VirtualGroupID: g.ID,
+		FromMemberID:   prev,
+		ToMemberID:     &toMemberID,
+		Reason:         reason,
+		Note:           note,
+		TriggeredBy:    triggeredBy,
+	}
+	ok, err := s.transitionActive(ctx, g.ID, toMemberID, g.FailoverActiveVersion, event)
 	if err != nil {
 		return err
 	}
@@ -360,7 +454,7 @@ func (s *FailoverGroupService) switchActive(ctx context.Context, g *Group, toMem
 	to := toMemberID
 	g.FailoverActiveMemberID = &to
 	g.FailoverActiveVersion++
-	return s.writeEvent(ctx, g, prev, &to, reason, note, triggeredBy)
+	return nil
 }
 
 func (s *FailoverGroupService) writeEvent(ctx context.Context, g *Group, from *int64, to *int64, reason string, note *string, triggeredBy *int64) error {
@@ -373,6 +467,55 @@ func (s *FailoverGroupService) writeEvent(ctx context.Context, g *Group, from *i
 		TriggeredBy:    triggeredBy,
 	}
 	return s.eventRepo.Create(ctx, ev)
+}
+
+func (s *FailoverGroupService) transitionActive(ctx context.Context, groupID int64, toMemberID int64, expectedVersion int64, event *FailoverGroupEvent) (bool, error) {
+	if writer, ok := s.groupRepo.(failoverActiveTransitionWriter); ok {
+		return writer.TransitionFailoverActive(ctx, groupID, toMemberID, expectedVersion, event)
+	}
+	ok, err := s.groupRepo.UpdateFailoverActive(ctx, groupID, toMemberID, expectedVersion)
+	if err != nil || !ok {
+		return ok, err
+	}
+	if event != nil {
+		g := &Group{ID: groupID}
+		return true, s.writeEvent(ctx, g, event.FromMemberID, event.ToMemberID, event.Reason, event.Note, event.TriggeredBy)
+	}
+	return true, nil
+}
+
+func (s *FailoverGroupService) syncActiveNoEvent(ctx context.Context, g *Group, toMemberID int64) error {
+	ok, err := s.groupRepo.UpdateFailoverActive(ctx, g.ID, toMemberID, g.FailoverActiveVersion)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return nil
+	}
+	to := toMemberID
+	g.FailoverActiveMemberID = &to
+	g.FailoverActiveVersion++
+	return nil
+}
+
+func (s *FailoverGroupService) updatePinState(ctx context.Context, groupID int64, memberID *int64, expiresAt *time.Time, event *FailoverGroupEvent) error {
+	if writer, ok := s.groupRepo.(failoverPinStateWriter); ok {
+		return writer.UpdateFailoverPinState(ctx, groupID, memberID, expiresAt, event)
+	}
+	var err error
+	if memberID != nil {
+		err = s.groupRepo.SetFailoverPin(ctx, groupID, *memberID, expiresAt)
+	} else {
+		err = s.groupRepo.ClearFailoverPin(ctx, groupID)
+	}
+	if err != nil {
+		return err
+	}
+	if event != nil {
+		g := &Group{ID: groupID}
+		return s.writeEvent(ctx, g, event.FromMemberID, event.ToMemberID, event.Reason, event.Note, event.TriggeredBy)
+	}
+	return nil
 }
 
 // SetManualPin 手动锁定某个成员；ttl<=0 表示永久。
@@ -392,16 +535,18 @@ func (s *FailoverGroupService) SetManualPin(ctx context.Context, virtualGroupID 
 		t := time.Now().Add(ttl)
 		expiresAt = &t
 	}
-	if err := s.groupRepo.SetFailoverPin(ctx, virtualGroupID, memberID, expiresAt); err != nil {
+	note := fmt.Sprintf("ttl=%s", ttl.String())
+	event := &FailoverGroupEvent{
+		VirtualGroupID: g.ID,
+		FromMemberID:   g.FailoverActiveMemberID,
+		ToMemberID:     &memberID,
+		Reason:         FailoverEventReasonManualPin,
+		Note:           &note,
+		TriggeredBy:    triggerByPtr(adminUserID),
+	}
+	if err := s.updatePinState(ctx, virtualGroupID, &memberID, expiresAt, event); err != nil {
 		return err
 	}
-	// 重新加载以拿到最新的 active member id 作为事件 from，避免和并发 reconciler 的结果冲突。
-	if reloaded, err := s.groupRepo.GetByIDLite(ctx, virtualGroupID); err == nil && reloaded != nil {
-		g = reloaded
-	}
-	admin := adminUserID
-	note := fmt.Sprintf("ttl=%s", ttl.String())
-	_ = s.writeEvent(ctx, g, g.FailoverActiveMemberID, &memberID, FailoverEventReasonManualPin, &note, &admin)
 	return s.ForceReconcile(ctx, virtualGroupID, adminUserID)
 }
 
@@ -414,14 +559,16 @@ func (s *FailoverGroupService) ClearManualPin(ctx context.Context, virtualGroupI
 	if g == nil || !g.IsFailoverGroup {
 		return fmt.Errorf("group is not a failover group")
 	}
-	if err := s.groupRepo.ClearFailoverPin(ctx, virtualGroupID); err != nil {
+	event := &FailoverGroupEvent{
+		VirtualGroupID: g.ID,
+		FromMemberID:   g.FailoverActiveMemberID,
+		ToMemberID:     g.FailoverActiveMemberID,
+		Reason:         FailoverEventReasonManualUnpin,
+		TriggeredBy:    triggerByPtr(adminUserID),
+	}
+	if err := s.updatePinState(ctx, virtualGroupID, nil, nil, event); err != nil {
 		return err
 	}
-	if reloaded, err := s.groupRepo.GetByIDLite(ctx, virtualGroupID); err == nil && reloaded != nil {
-		g = reloaded
-	}
-	admin := adminUserID
-	_ = s.writeEvent(ctx, g, g.FailoverActiveMemberID, g.FailoverActiveMemberID, FailoverEventReasonManualUnpin, nil, &admin)
 	return s.ForceReconcile(ctx, virtualGroupID, adminUserID)
 }
 

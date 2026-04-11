@@ -1970,6 +1970,7 @@ export default {
           soft_demote: '软降级',
           probe_recovered: '探测恢复',
           health_reconcile: '健康检查调和',
+          config_change: '配置变更',
           manual_pin: '手动锁定',
           manual_unpin: '手动解锁',
           manual_unpin_expired: '锁定过期',

@@ -20,31 +20,7 @@ func NewFailoverEventRepository(client *dbent.Client, sqlDB *sql.DB) service.Fai
 }
 
 func (r *failoverEventRepository) Create(ctx context.Context, event *service.FailoverGroupEvent) error {
-	builder := r.client.FailoverGroupEvent.Create().
-		SetVirtualGroupID(event.VirtualGroupID).
-		SetReason(event.Reason)
-	if event.FromMemberID != nil {
-		builder = builder.SetFromMemberID(*event.FromMemberID)
-	}
-	if event.ToMemberID != nil {
-		builder = builder.SetToMemberID(*event.ToMemberID)
-	}
-	if event.TriggeredBy != nil {
-		builder = builder.SetTriggeredBy(*event.TriggeredBy)
-	}
-	if event.Note != nil {
-		builder = builder.SetNote(*event.Note)
-	}
-	if !event.OccurredAt.IsZero() {
-		builder = builder.SetOccurredAt(event.OccurredAt)
-	}
-	created, err := builder.Save(ctx)
-	if err != nil {
-		return err
-	}
-	event.ID = created.ID
-	event.OccurredAt = created.OccurredAt
-	return nil
+	return createFailoverEventWithClient(ctx, r.client, event)
 }
 
 func (r *failoverEventRepository) ListByGroupID(ctx context.Context, virtualGroupID int64, limit int) ([]*service.FailoverGroupEvent, error) {

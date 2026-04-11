@@ -303,6 +303,8 @@ const eventDotClass = (reason: string): string => {
       return 'bg-green-500'
     case 'health_reconcile':
       return 'bg-blue-500'
+    case 'config_change':
+      return 'bg-sky-500'
     case 'manual_pin':
       return 'bg-amber-500'
     case 'manual_unpin':

@@ -1270,6 +1270,7 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 		}
 
 		if memberChanged {
+			invalidatedPin := group.FailoverPinMemberID != nil && !failoverContainsInt64(memberIDs, *group.FailoverPinMemberID)
 			var activeMemberID *int64
 			if group.FailoverActiveMemberID != nil {
 				for _, m := range memberIDs {
@@ -1289,6 +1290,32 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 			}
 			group.FailoverMemberIDs = memberIDs
 			group.FailoverActiveMemberID = activeMemberID
+			if invalidatedPin {
+				note := "pin target removed from member list"
+				event := &FailoverGroupEvent{
+					VirtualGroupID: id,
+					FromMemberID:   group.FailoverActiveMemberID,
+					ToMemberID:     group.FailoverActiveMemberID,
+					Reason:         FailoverEventReasonManualUnpin,
+					Note:           &note,
+				}
+				if writer, ok := s.groupRepo.(failoverPinStateWriter); ok {
+					if err := writer.UpdateFailoverPinState(ctx, id, nil, nil, event); err != nil {
+						return nil, fmt.Errorf("failed to clear invalidated failover pin: %w", err)
+					}
+				} else {
+					if err := s.groupRepo.ClearFailoverPin(ctx, id); err != nil {
+						return nil, fmt.Errorf("failed to clear invalidated failover pin: %w", err)
+					}
+					if s.failoverEventRepo != nil {
+						if err := s.failoverEventRepo.Create(ctx, event); err != nil {
+							return nil, fmt.Errorf("failed to append invalidated failover pin event: %w", err)
+						}
+					}
+				}
+				group.FailoverPinMemberID = nil
+				group.FailoverPinExpiresAt = nil
+			}
 			if s.failoverGroupSvc != nil {
 				_ = s.failoverGroupSvc.ForceReconcile(ctx, id, 0)
 			}
@@ -1950,12 +1977,16 @@ func (s *adminServiceImpl) CreateAccount(ctx context.Context, input *CreateAccou
 		groups, err := s.groupRepo.ListActiveByPlatform(ctx, input.Platform)
 		if err == nil {
 			for _, g := range groups {
-				if g.Name == defaultGroupName {
+				if g.Name == defaultGroupName && !g.IsFailoverGroup {
 					groupIDs = []int64{g.ID}
 					break
 				}
 			}
 		}
+	}
+
+	if err := s.validateBindableGroupIDs(ctx, groupIDs); err != nil {
+		return nil, err
 	}
 
 	// 检查混合渠道风险（除非用户已确认）
@@ -2142,7 +2173,7 @@ func (s *adminServiceImpl) UpdateAccount(ctx context.Context, id int64, input *U
 
 	// 先验证分组是否存在（在任何写操作之前）
 	if input.GroupIDs != nil {
-		if err := s.validateGroupIDsExist(ctx, *input.GroupIDs); err != nil {
+		if err := s.validateBindableGroupIDs(ctx, *input.GroupIDs); err != nil {
 			return nil, err
 		}
 
@@ -2186,7 +2217,7 @@ func (s *adminServiceImpl) BulkUpdateAccounts(ctx context.Context, input *BulkUp
 		return result, nil
 	}
 	if input.GroupIDs != nil {
-		if err := s.validateGroupIDsExist(ctx, *input.GroupIDs); err != nil {
+		if err := s.validateBindableGroupIDs(ctx, *input.GroupIDs); err != nil {
 			return nil, err
 		}
 	}
@@ -2981,6 +3012,25 @@ func (s *adminServiceImpl) validateGroupIDsExist(ctx context.Context, groupIDs [
 	for _, groupID := range groupIDs {
 		if _, err := s.groupRepo.GetByID(ctx, groupID); err != nil {
 			return fmt.Errorf("get group: %w", err)
+		}
+	}
+	return nil
+}
+
+func (s *adminServiceImpl) validateBindableGroupIDs(ctx context.Context, groupIDs []int64) error {
+	if err := s.validateGroupIDsExist(ctx, groupIDs); err != nil {
+		return err
+	}
+	for _, groupID := range groupIDs {
+		if groupID <= 0 {
+			continue
+		}
+		group, err := s.groupRepo.GetByIDLite(ctx, groupID)
+		if err != nil {
+			return fmt.Errorf("get group: %w", err)
+		}
+		if group != nil && group.IsFailoverGroup {
+			return fmt.Errorf("group %d is a failover group and cannot bind accounts", groupID)
 		}
 	}
 	return nil

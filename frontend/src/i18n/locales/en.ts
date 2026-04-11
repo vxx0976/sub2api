@@ -1968,6 +1968,7 @@ export default {
           soft_demote: 'Soft demote',
           probe_recovered: 'Probe recovered',
           health_reconcile: 'Health reconcile',
+          config_change: 'Config change',
           manual_pin: 'Manual pin',
           manual_unpin: 'Manual unpin',
           manual_unpin_expired: 'Pin expired',

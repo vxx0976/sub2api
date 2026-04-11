@@ -969,6 +969,41 @@ func (r *groupRepository) UpdateFailoverActive(ctx context.Context, groupID int6
 	return affected > 0, nil
 }
 
+// TransitionFailoverActive atomically updates the active member and appends the
+// corresponding event in the same transaction.
+func (r *groupRepository) TransitionFailoverActive(ctx context.Context, groupID int64, newMemberID int64, expectedVersion int64, event *service.FailoverGroupEvent) (bool, error) {
+	tx, err := r.client.Tx(ctx)
+	if err != nil {
+		return false, err
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	affected, err := tx.Group.Update().
+		Where(
+			group.IDEQ(groupID),
+			group.FailoverActiveVersionEQ(expectedVersion),
+			group.DeletedAtIsNil(),
+		).
+		SetFailoverActiveMemberID(newMemberID).
+		AddFailoverActiveVersion(1).
+		Save(ctx)
+	if err != nil {
+		return false, err
+	}
+	if affected == 0 {
+		return false, nil
+	}
+	if event != nil {
+		if err := createFailoverEventWithClient(ctx, tx.Client(), event); err != nil {
+			return false, err
+		}
+	}
+	if err := tx.Commit(); err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 // SetFailoverPin 设置手动锁定；expiresAt=nil 表示永久 pin。
 func (r *groupRepository) SetFailoverPin(ctx context.Context, groupID int64, memberID int64, expiresAt *time.Time) error {
 	_, err := r.sql.ExecContext(
@@ -995,6 +1030,36 @@ func (r *groupRepository) ClearFailoverPin(ctx context.Context, groupID int64) e
 		groupID,
 	)
 	return err
+}
+
+// UpdateFailoverPinState atomically updates pin fields and appends an event.
+func (r *groupRepository) UpdateFailoverPinState(ctx context.Context, groupID int64, memberID *int64, expiresAt *time.Time, event *service.FailoverGroupEvent) error {
+	tx, err := r.client.Tx(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	builder := tx.Group.UpdateOneID(groupID)
+	if memberID != nil {
+		builder = builder.SetFailoverPinMemberID(*memberID)
+	} else {
+		builder = builder.ClearFailoverPinMemberID()
+	}
+	if expiresAt != nil {
+		builder = builder.SetFailoverPinExpiresAt(*expiresAt)
+	} else {
+		builder = builder.ClearFailoverPinExpiresAt()
+	}
+	if _, err := builder.Save(ctx); err != nil {
+		return translatePersistenceError(err, service.ErrGroupNotFound, nil)
+	}
+	if event != nil {
+		if err := createFailoverEventWithClient(ctx, tx.Client(), event); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
 }
 
 // UpdateFailoverConfig 更新智能路由的成员列表 / 启用位 / 初始激活成员。
@@ -1035,4 +1100,35 @@ func (r *groupRepository) CountSchedulableAccountsByGroup(ctx context.Context, g
 		[]any{groupID}, &count,
 	)
 	return count, err
+}
+
+func createFailoverEventWithClient(ctx context.Context, client *dbent.Client, event *service.FailoverGroupEvent) error {
+	if client == nil || event == nil {
+		return nil
+	}
+	builder := client.FailoverGroupEvent.Create().
+		SetVirtualGroupID(event.VirtualGroupID).
+		SetReason(event.Reason)
+	if event.FromMemberID != nil {
+		builder = builder.SetFromMemberID(*event.FromMemberID)
+	}
+	if event.ToMemberID != nil {
+		builder = builder.SetToMemberID(*event.ToMemberID)
+	}
+	if event.TriggeredBy != nil {
+		builder = builder.SetTriggeredBy(*event.TriggeredBy)
+	}
+	if event.Note != nil {
+		builder = builder.SetNote(*event.Note)
+	}
+	if !event.OccurredAt.IsZero() {
+		builder = builder.SetOccurredAt(event.OccurredAt)
+	}
+	created, err := builder.Save(ctx)
+	if err != nil {
+		return err
+	}
+	event.ID = created.ID
+	event.OccurredAt = created.OccurredAt
+	return nil
 }

@@ -333,11 +333,13 @@ func TestUsageLogRepositoryGetStatsWithFiltersRequestTypePriority(t *testing.T) 
 			"total_input_tokens",
 			"total_output_tokens",
 			"total_cache_tokens",
+			"total_cache_read_tokens",
+			"total_cache_creation_tokens",
 			"total_cost",
 			"total_actual_cost",
 			"total_account_cost",
 			"avg_duration_ms",
-		}).AddRow(int64(1), int64(2), int64(3), int64(4), 1.2, 1.0, 1.2, 20.0))
+		}).AddRow(int64(1), int64(2), int64(3), int64(4), int64(1), int64(3), 1.2, 1.0, 1.2, 20.0))
 
 	mock.ExpectQuery(`SELECT .* FROM usage_logs WHERE created_at >= \$1 AND created_at < \$2 AND \(request_type = \$3 OR \(request_type = 0 AND stream = FALSE AND openai_ws_mode = FALSE\)\) GROUP BY endpoint ORDER BY requests DESC`).
 		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), requestType).
