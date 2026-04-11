@@ -290,6 +290,18 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/admin/groups/:id/failover',
+    name: 'AdminSmartRouterDetail',
+    component: () => import('@/views/admin/SmartRouterDetailView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: 'Smart Router',
+      titleKey: 'admin.groups.smartRouter.detailTitle',
+      descriptionKey: 'admin.groups.smartRouter.detailDescription'
+    }
+  },
+  {
     path: '/admin/channels',
     name: 'AdminChannels',
     component: () => import('@/views/admin/ChannelsView.vue'),

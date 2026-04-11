@@ -18,16 +18,26 @@ const (
 )
 
 type GroupHealthCheckService struct {
-	groupRepo      GroupRepository
-	accountRepo    AccountRepository
-	accountTestSvc *AccountTestService
-	rateLimitSvc   *RateLimitService
-	cfg            *config.Config
-	locker         *LeaderLocker
+	groupRepo        GroupRepository
+	accountRepo      AccountRepository
+	accountTestSvc   *AccountTestService
+	rateLimitSvc     *RateLimitService
+	cfg              *config.Config
+	locker           *LeaderLocker
+	failoverGroupSvc *FailoverGroupService
 
 	cron      *cron.Cron
 	startOnce sync.Once
 	stopOnce  sync.Once
+}
+
+// SetFailoverGroupService 由 wiring 阶段注入，避免构造时的循环依赖。
+// 当设置后，每轮健康检查结束会触发一次智能路由 reconcile。
+func (s *GroupHealthCheckService) SetFailoverGroupService(svc *FailoverGroupService) {
+	if s == nil {
+		return
+	}
+	s.failoverGroupSvc = svc
 }
 
 func NewGroupHealthCheckService(
@@ -116,6 +126,10 @@ func (s *GroupHealthCheckService) runHealthCheck() {
 	var dueGroups []*Group
 	for i := range groups {
 		g := &groups[i]
+		// 智能路由（虚拟故障转移分组）没有自己的账号，跳过硬健康检查
+		if g.IsFailoverGroup {
+			continue
+		}
 		interval := g.HealthCheckIntervalMin
 		if interval <= 0 {
 			interval = 30 // 默认 30 分钟
@@ -127,6 +141,8 @@ func (s *GroupHealthCheckService) runHealthCheck() {
 	}
 
 	if len(dueGroups) == 0 {
+		// 即使没有成员分组需要检查，仍然触发一次虚拟路由的 reconcile（它依赖 DB 快照）
+		s.runFailoverReconcile(ctx)
 		return
 	}
 
@@ -146,6 +162,20 @@ func (s *GroupHealthCheckService) runHealthCheck() {
 	}
 
 	wg.Wait()
+
+	// 健康检查写入的最新 health_status 是故障转移 reconcile 的关键辅助信号
+	s.runFailoverReconcile(ctx)
+}
+
+// runFailoverReconcile 在仍持有 leader 锁的前提下触发智能路由 reconcile。
+// 失败不影响健康检查本身的正确性，仅打一条日志。
+func (s *GroupHealthCheckService) runFailoverReconcile(ctx context.Context) {
+	if s.failoverGroupSvc == nil {
+		return
+	}
+	if err := s.failoverGroupSvc.ReconcileAll(ctx, 0); err != nil {
+		logger.LegacyPrintf("service.group_health_check", "[GroupHealthCheck] failover reconcile failed: %v", err)
+	}
 }
 
 // CheckGroupByID 手动触发单个分组的健康检查

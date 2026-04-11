@@ -48,6 +48,13 @@ type AdminService interface {
 	BatchSetGroupRateMultipliers(ctx context.Context, groupID int64, entries []GroupRateMultiplierInput) error
 	UpdateGroupSortOrders(ctx context.Context, updates []GroupSortOrderUpdate) error
 
+	// Smart router (failover group) management
+	GetFailoverStatus(ctx context.Context, virtualGroupID int64) (*FailoverStatus, error)
+	SetFailoverPin(ctx context.Context, virtualGroupID int64, memberID int64, ttlSeconds int, adminUserID int64) error
+	ClearFailoverPin(ctx context.Context, virtualGroupID int64, adminUserID int64) error
+	TriggerFailoverMemberProbe(ctx context.Context, virtualGroupID int64, memberID int64) (bool, error)
+	GetFailoverUsage(ctx context.Context, virtualGroupID int64, sinceDays int) ([]FailoverMemberUsage, error)
+
 	// API Key management (admin)
 	AdminUpdateAPIKeyGroupID(ctx context.Context, keyID int64, groupID *int64) (*AdminUpdateAPIKeyGroupIDResult, error)
 
@@ -171,6 +178,10 @@ type CreateGroupInput struct {
 	SortOrder           int
 	IsRecommended  bool
 	ExternalBuyURL *string
+
+	// 智能路由（虚拟故障转移分组）
+	IsFailoverGroup   bool
+	FailoverMemberIDs []int64
 }
 
 type UpdateGroupInput struct {
@@ -219,6 +230,10 @@ type UpdateGroupInput struct {
 	// 定时上线时间窗口（格式 "HH:MM"，空字符串表示清除）
 	ActiveStartTime *string
 	ActiveEndTime   *string
+
+	// 智能路由（虚拟故障转移分组）
+	IsFailoverGroup   *bool
+	FailoverMemberIDs *[]int64
 }
 
 type CreateAccountInput struct {
@@ -464,6 +479,29 @@ type adminServiceImpl struct {
 	defaultSubAssigner   DefaultSubscriptionAssigner
 	userSubRepo          UserSubscriptionRepository
 	privacyClientFactory PrivacyClientFactory
+	failoverGroupSvc     *FailoverGroupService
+	failoverEventRepo    FailoverEventRepository
+	usageLogRepo         UsageLogRepository
+}
+
+// SetFailoverGroupService allows wiring the failover group service after
+// construction to avoid a circular dependency: adminService is built before
+// the failover service (which itself may depend on adminService in the future).
+func (s *adminServiceImpl) SetFailoverGroupService(svc *FailoverGroupService) {
+	if s == nil {
+		return
+	}
+	s.failoverGroupSvc = svc
+}
+
+// SetFailoverExtras 注入智能路由详情页所需的只读仓储（事件 + 用量日志）。
+// 与 SetFailoverGroupService 一样，为避免扩宽构造函数而采用延迟注入。
+func (s *adminServiceImpl) SetFailoverExtras(eventRepo FailoverEventRepository, usageLogRepo UsageLogRepository) {
+	if s == nil {
+		return
+	}
+	s.failoverEventRepo = eventRepo
+	s.usageLogRepo = usageLogRepo
 }
 
 type userGroupRateBatchReader interface {
@@ -861,6 +899,38 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 		subscriptionType = SubscriptionTypeStandard
 	}
 
+	// 智能路由：在写入前完成校验，其余字段忽略（虚拟分组不持有账号 / 费率 / 限额）
+	if input.IsFailoverGroup {
+		if err := s.validateFailoverMembers(ctx, 0, platform, input.FailoverMemberIDs); err != nil {
+			return nil, err
+		}
+		// 禁止 smart router 绑定任何账号 / 拷贝
+		if len(input.CopyAccountsFromGroupIDs) > 0 {
+			return nil, fmt.Errorf("failover group cannot copy accounts from other groups")
+		}
+		// 清理虚拟分组不持有的字段
+		input.RateMultiplier = 0
+		input.DailyLimitUSD = nil
+		input.WeeklyLimitUSD = nil
+		input.MonthlyLimitUSD = nil
+		input.ImagePrice1K = nil
+		input.ImagePrice2K = nil
+		input.ImagePrice4K = nil
+		input.ClaudeCodeOnly = false
+		input.FallbackGroupID = nil
+		input.FallbackGroupIDOnInvalidRequest = nil
+		input.ModelRouting = nil
+		input.ModelRoutingEnabled = false
+		input.AllowMessagesDispatch = false
+		input.RequireOAuthOnly = false
+		input.RequirePrivacySet = false
+		input.DefaultMappedModel = ""
+		input.SubscriptionType = SubscriptionTypeStandard
+		input.Price = nil
+		input.IsPurchasable = false
+		subscriptionType = SubscriptionTypeStandard
+	}
+
 	// 限额字段：nil/负数 表示"无限制"，0 表示"不允许用量"，正数表示具体限额
 	dailyLimit := normalizeLimit(input.DailyLimitUSD)
 	weeklyLimit := normalizeLimit(input.WeeklyLimitUSD)
@@ -977,6 +1047,25 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 		return nil, err
 	}
 
+	// 智能路由：写入 failover_* 列并触发一次即时 reconcile
+	if input.IsFailoverGroup {
+		var initialActive *int64
+		if len(input.FailoverMemberIDs) > 0 {
+			first := input.FailoverMemberIDs[0]
+			initialActive = &first
+		}
+		if err := s.groupRepo.UpdateFailoverConfig(ctx, group.ID, true, input.FailoverMemberIDs, initialActive); err != nil {
+			return nil, fmt.Errorf("failed to write failover config: %w", err)
+		}
+		group.IsFailoverGroup = true
+		group.FailoverMemberIDs = append([]int64(nil), input.FailoverMemberIDs...)
+		group.FailoverActiveMemberID = initialActive
+		if s.failoverGroupSvc != nil {
+			_ = s.failoverGroupSvc.ForceReconcile(ctx, group.ID, 0)
+		}
+		return group, nil
+	}
+
 	// require_oauth_only: 过滤掉 apikey 类型账号
 	if group.RequireOAuthOnly && (group.Platform == PlatformOpenAI || group.Platform == PlatformAntigravity || group.Platform == PlatformAnthropic || group.Platform == PlatformGemini) && len(accountIDsToCopy) > 0 {
 		accounts, err := s.accountRepo.GetByIDs(ctx, accountIDsToCopy)
@@ -1063,6 +1152,46 @@ func (s *adminServiceImpl) validateFallbackGroup(ctx context.Context, currentGro
 	}
 }
 
+// validateFailoverMembers 校验智能路由（虚拟故障转移分组）的成员配置。
+// currentGroupID: 当前分组 ID（新建时为 0）
+// platform: 虚拟分组的平台
+// memberIDs: 有序成员 id 列表
+func (s *adminServiceImpl) validateFailoverMembers(ctx context.Context, currentGroupID int64, platform string, memberIDs []int64) error {
+	if len(memberIDs) == 0 {
+		return fmt.Errorf("failover group must have at least one member")
+	}
+	if len(memberIDs) > 10 {
+		return fmt.Errorf("failover group supports at most 10 members")
+	}
+	seen := make(map[int64]struct{}, len(memberIDs))
+	for _, id := range memberIDs {
+		if id <= 0 {
+			return fmt.Errorf("invalid member id: %d", id)
+		}
+		if _, dup := seen[id]; dup {
+			return fmt.Errorf("duplicate member id: %d", id)
+		}
+		seen[id] = struct{}{}
+		if currentGroupID > 0 && id == currentGroupID {
+			return fmt.Errorf("failover group cannot reference itself")
+		}
+		member, err := s.groupRepo.GetByIDLite(ctx, id)
+		if err != nil {
+			return fmt.Errorf("member group %d not found: %w", id, err)
+		}
+		if member.Status != StatusActive {
+			return fmt.Errorf("member group %d is not active", id)
+		}
+		if member.IsFailoverGroup {
+			return fmt.Errorf("member group %d is itself a failover group (nesting is not allowed)", id)
+		}
+		if member.Platform != platform {
+			return fmt.Errorf("member group %d platform mismatch: expected %s, got %s", id, platform, member.Platform)
+		}
+	}
+	return nil
+}
+
 // validateFallbackGroupOnInvalidRequest 校验无效请求兜底分组的有效性
 // currentGroupID: 当前分组 ID（新建时为 0）
 // platform/subscriptionType: 当前分组的有效平台/订阅类型
@@ -1098,6 +1227,82 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 	group, err := s.groupRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
+	}
+
+	// 禁止通过 Update 切换智能路由开关（结构完全不同，必须走 Create/Delete）
+	if input.IsFailoverGroup != nil && *input.IsFailoverGroup != group.IsFailoverGroup {
+		return nil, fmt.Errorf("cannot toggle is_failover_group via update; delete and recreate the group")
+	}
+
+	// 智能路由分组的更新路径非常窄：只允许修改名称/描述/状态/排序/推荐 和成员列表
+	if group.IsFailoverGroup {
+		if input.Name != "" {
+			group.Name = input.Name
+		}
+		if input.Description != "" {
+			group.Description = input.Description
+		}
+		group.NameI18n = input.NameI18n
+		group.DescriptionI18n = input.DescriptionI18n
+		if input.Status != "" {
+			group.Status = input.Status
+		}
+		if input.SortOrder != nil {
+			group.SortOrder = *input.SortOrder
+		}
+		if input.IsRecommended != nil {
+			group.IsRecommended = *input.IsRecommended
+		}
+
+		memberIDs := group.FailoverMemberIDs
+		memberChanged := false
+		if input.FailoverMemberIDs != nil {
+			newIDs := *input.FailoverMemberIDs
+			if err := s.validateFailoverMembers(ctx, id, group.Platform, newIDs); err != nil {
+				return nil, err
+			}
+			memberIDs = append([]int64(nil), newIDs...)
+			memberChanged = true
+		}
+
+		if err := s.groupRepo.Update(ctx, group); err != nil {
+			return nil, err
+		}
+
+		if memberChanged {
+			var activeMemberID *int64
+			if group.FailoverActiveMemberID != nil {
+				for _, m := range memberIDs {
+					if m == *group.FailoverActiveMemberID {
+						v := m
+						activeMemberID = &v
+						break
+					}
+				}
+			}
+			if activeMemberID == nil && len(memberIDs) > 0 {
+				first := memberIDs[0]
+				activeMemberID = &first
+			}
+			if err := s.groupRepo.UpdateFailoverConfig(ctx, id, true, memberIDs, activeMemberID); err != nil {
+				return nil, fmt.Errorf("failed to update failover config: %w", err)
+			}
+			group.FailoverMemberIDs = memberIDs
+			group.FailoverActiveMemberID = activeMemberID
+			if s.failoverGroupSvc != nil {
+				_ = s.failoverGroupSvc.ForceReconcile(ctx, id, 0)
+			}
+		}
+
+		if s.authCacheInvalidator != nil {
+			s.authCacheInvalidator.InvalidateAuthCacheByGroupID(ctx, id)
+		}
+		return group, nil
+	}
+
+	// 禁止把普通分组通过 Update 变成智能路由成员后又加字段 —— 普通分组不能持有成员列表
+	if input.FailoverMemberIDs != nil {
+		return nil, fmt.Errorf("failover_member_ids can only be set on failover groups")
 	}
 
 	if input.Name != "" {
@@ -1342,6 +1547,19 @@ func (s *adminServiceImpl) DeleteGroup(ctx context.Context, id int64, migrateToG
 		}
 	}
 
+	// 禁止删除被智能路由引用的成员分组
+	referencing, err := s.groupRepo.ListFailoverGroupsReferencing(ctx, id)
+	if err != nil {
+		return fmt.Errorf("failed to check failover references: %w", err)
+	}
+	if len(referencing) > 0 {
+		names := make([]string, 0, len(referencing))
+		for _, vg := range referencing {
+			names = append(names, vg.Name)
+		}
+		return fmt.Errorf("group is referenced by failover groups: %v", names)
+	}
+
 	var groupKeys []string
 	if s.authCacheInvalidator != nil {
 		keys, err := s.apiKeyRepo.ListKeysByGroupID(ctx, id)
@@ -1410,6 +1628,116 @@ func (s *adminServiceImpl) BatchSetGroupRateMultipliers(ctx context.Context, gro
 
 func (s *adminServiceImpl) UpdateGroupSortOrders(ctx context.Context, updates []GroupSortOrderUpdate) error {
 	return s.groupRepo.UpdateSortOrders(ctx, updates)
+}
+
+// GetFailoverStatus 汇总智能路由的成员健康、pin 状态和最近事件，供详情页使用。
+func (s *adminServiceImpl) GetFailoverStatus(ctx context.Context, virtualGroupID int64) (*FailoverStatus, error) {
+	g, err := s.groupRepo.GetByID(ctx, virtualGroupID)
+	if err != nil {
+		return nil, err
+	}
+	if g == nil || !g.IsFailoverGroup {
+		return nil, fmt.Errorf("group %d is not a failover group", virtualGroupID)
+	}
+	members := make([]FailoverMemberSnapshot, 0, len(g.FailoverMemberIDs))
+	for _, mid := range g.FailoverMemberIDs {
+		m, err := s.groupRepo.GetByIDLite(ctx, mid)
+		if err != nil || m == nil {
+			members = append(members, FailoverMemberSnapshot{GroupID: mid})
+			continue
+		}
+		count, _ := s.groupRepo.CountSchedulableAccountsByGroup(ctx, mid)
+		members = append(members, FailoverMemberSnapshot{
+			GroupID:              m.ID,
+			Name:                 m.Name,
+			Platform:             m.Platform,
+			HealthStatus:         m.HealthStatus,
+			SchedulableAccounts:  count,
+			LastHealthCheckAt:    m.LastHealthCheckAt,
+			HealthyAccounts:      m.HealthyAccounts,
+			TotalCheckedAccounts: m.TotalCheckedAccounts,
+		})
+	}
+	var events []*FailoverGroupEvent
+	if s.failoverEventRepo != nil {
+		events, _ = s.failoverEventRepo.ListByGroupID(ctx, virtualGroupID, 50)
+	}
+	return &FailoverStatus{
+		VirtualGroupID: g.ID,
+		Name:           g.Name,
+		Platform:       g.Platform,
+		ActiveMemberID: g.FailoverActiveMemberID,
+		PinMemberID:    g.FailoverPinMemberID,
+		PinExpiresAt:   g.FailoverPinExpiresAt,
+		Members:        members,
+		RecentEvents:   events,
+	}, nil
+}
+
+func (s *adminServiceImpl) SetFailoverPin(ctx context.Context, virtualGroupID int64, memberID int64, ttlSeconds int, adminUserID int64) error {
+	if s.failoverGroupSvc == nil {
+		return fmt.Errorf("failover service not available")
+	}
+	var ttl time.Duration
+	if ttlSeconds > 0 {
+		ttl = time.Duration(ttlSeconds) * time.Second
+	}
+	return s.failoverGroupSvc.SetManualPin(ctx, virtualGroupID, memberID, ttl, adminUserID)
+}
+
+func (s *adminServiceImpl) ClearFailoverPin(ctx context.Context, virtualGroupID int64, adminUserID int64) error {
+	if s.failoverGroupSvc == nil {
+		return fmt.Errorf("failover service not available")
+	}
+	return s.failoverGroupSvc.ClearManualPin(ctx, virtualGroupID, adminUserID)
+}
+
+func (s *adminServiceImpl) TriggerFailoverMemberProbe(ctx context.Context, virtualGroupID int64, memberID int64) (bool, error) {
+	if s.failoverGroupSvc == nil {
+		return false, fmt.Errorf("failover service not available")
+	}
+	return s.failoverGroupSvc.TriggerMemberProbe(ctx, virtualGroupID, memberID)
+}
+
+func (s *adminServiceImpl) GetFailoverUsage(ctx context.Context, virtualGroupID int64, sinceDays int) ([]FailoverMemberUsage, error) {
+	if s.usageLogRepo == nil {
+		return nil, fmt.Errorf("usage log repo not available")
+	}
+	g, err := s.groupRepo.GetByID(ctx, virtualGroupID)
+	if err != nil {
+		return nil, err
+	}
+	if g == nil || !g.IsFailoverGroup {
+		return nil, fmt.Errorf("group %d is not a failover group", virtualGroupID)
+	}
+	if sinceDays <= 0 {
+		sinceDays = 7
+	}
+	since := time.Now().Add(-time.Duration(sinceDays) * 24 * time.Hour)
+	rows, err := s.usageLogRepo.GetFailoverMemberUsage(ctx, virtualGroupID, since)
+	if err != nil {
+		return nil, err
+	}
+	byID := make(map[int64]FailoverMemberUsageRow, len(rows))
+	for _, row := range rows {
+		byID[row.GroupID] = row
+	}
+	out := make([]FailoverMemberUsage, 0, len(g.FailoverMemberIDs))
+	for _, mid := range g.FailoverMemberIDs {
+		name := ""
+		if m, err := s.groupRepo.GetByIDLite(ctx, mid); err == nil && m != nil {
+			name = m.Name
+		}
+		row := byID[mid]
+		out = append(out, FailoverMemberUsage{
+			GroupID:  mid,
+			Name:     name,
+			Requests: row.Requests,
+			Tokens:   row.Tokens,
+			Cost:     row.Cost,
+		})
+	}
+	return out, nil
 }
 
 // AdminUpdateAPIKeyGroupID 管理员修改 API Key 分组绑定

@@ -123,8 +123,12 @@ type UsageLog struct {
 	// UpstreamEndpoint is the normalized upstream endpoint path, e.g. /v1/responses.
 	UpstreamEndpoint *string
 
-	GroupID        *int64
-	SubscriptionID *int64
+	GroupID *int64
+	// RequestedGroupID 记录用户请求的"虚拟分组"（智能路由）ID。
+	// 当请求通过智能路由透明转发到某成员分组时，GroupID 记录实际承接的成员分组，
+	// RequestedGroupID 记录原始虚拟分组，用于双视角统计。非故障转移流量为 nil。
+	RequestedGroupID *int64
+	SubscriptionID   *int64
 
 	InputTokens         int
 	OutputTokens        int

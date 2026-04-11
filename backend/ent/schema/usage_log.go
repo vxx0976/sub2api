@@ -60,6 +60,14 @@ func (UsageLog) Fields() []ent.Field {
 		field.Int64("group_id").
 			Optional().
 			Nillable(),
+		// requested_group_id: 用户请求时绑定的"虚拟分组"（智能路由）ID。
+		// 当请求通过智能路由被透明转发到某个成员分组时，group_id 记录实际承接的
+		// 成员分组 ID，requested_group_id 记录原始虚拟分组 ID，方便按虚拟分组聚合统计。
+		// 非故障转移流量为 NULL。
+		field.Int64("requested_group_id").
+			Optional().
+			Nillable().
+			Comment("智能路由虚拟分组 ID（非故障转移流量为 NULL）"),
 		field.Int64("subscription_id").
 			Optional().
 			Nillable(),

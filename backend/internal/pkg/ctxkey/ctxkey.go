@@ -55,4 +55,14 @@ const (
 
 	// ClaudeCodeVersion stores the extracted Claude Code version from User-Agent (e.g. "2.1.22")
 	ClaudeCodeVersion Key = "ctx_claude_code_version"
+
+	// RequestedGroupID 记录请求最初绑定的"虚拟分组"（智能路由）ID。
+	// 当请求经由智能路由透明转发到某个成员分组时由网关 resolver 设置，
+	// 用于在 usage_logs 中同时记录"用户看到的分组"和"实际承接的分组"。
+	RequestedGroupID Key = "ctx_requested_group_id"
+
+	// ResolvedGroupID 记录请求最终承接的成员分组 ID。
+	// 当请求经由智能路由透明重定向时，resolver 会把解析后的成员 id 写入此 key，
+	// 用于让 usage_logs.group_id 记录实际承接成员而非 api_key 上绑定的虚拟分组。
+	ResolvedGroupID Key = "ctx_resolved_group_id"
 )

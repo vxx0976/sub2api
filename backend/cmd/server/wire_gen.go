@@ -85,6 +85,7 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	userHandler := handler.NewUserHandler(userService)
 	apiKeyHandler := handler.NewAPIKeyHandler(apiKeyService)
 	usageLogRepository := repository.NewUsageLogRepository(client, db)
+	failoverEventRepository := repository.NewFailoverEventRepository(client, db)
 	usageService := service.NewUsageService(usageLogRepository, userRepository, client, apiKeyAuthCacheInvalidator)
 	usageHandler := handler.NewUsageHandler(usageService, apiKeyService)
 	redeemHandler := handler.NewRedeemHandler(redeemService)
@@ -269,6 +270,8 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	scheduledTestRunnerService := service.ProvideScheduledTestRunnerService(scheduledTestPlanRepository, scheduledTestService, accountTestService, rateLimitService, configConfig, leaderLocker)
 	groupHealthCheckService := service.ProvideGroupHealthCheckService(groupRepository, accountRepository, accountTestService, rateLimitService, configConfig, leaderLocker)
 	groupHandler.SetHealthCheckService(groupHealthCheckService)
+	failoverGroupService := service.ProvideFailoverGroupService(groupRepository, accountRepository, failoverEventRepository, usageLogRepository, accountTestService, leaderLocker, groupHealthCheckService, adminService)
+	_ = failoverGroupService
 	v := provideCleanup(client, redisClient, opsMetricsCollector, opsAggregationService, opsAlertEvaluatorService, opsCleanupService, opsScheduledReportService, opsSystemLogSink, schedulerSnapshotService, tokenRefreshService, accountExpiryService, subscriptionExpiryService, usageCleanupService, idempotencyCleanupService, pricingService, emailQueueService, billingCacheService, usageRecordWorkerPool, subscriptionService, rechargeService, oAuthService, openAIOAuthService, geminiOAuthService, antigravityOAuthService, openAIGatewayService, scheduledTestRunnerService, groupHealthCheckService, backupService)
 	application := &Application{
 		Server:  httpServer,

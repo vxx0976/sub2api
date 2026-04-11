@@ -19,6 +19,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/apikey"
 	"github.com/Wei-Shaw/sub2api/ent/channel"
 	"github.com/Wei-Shaw/sub2api/ent/errorpassthroughrule"
+	"github.com/Wei-Shaw/sub2api/ent/failovergroupevent"
 	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/idempotencyrecord"
 	"github.com/Wei-Shaw/sub2api/ent/order"
@@ -108,6 +109,7 @@ func checkColumn(t, c string) error {
 			announcementread.Table:        announcementread.ValidColumn,
 			channel.Table:                 channel.ValidColumn,
 			errorpassthroughrule.Table:    errorpassthroughrule.ValidColumn,
+			failovergroupevent.Table:      failovergroupevent.ValidColumn,
 			group.Table:                   group.ValidColumn,
 			idempotencyrecord.Table:       idempotencyrecord.ValidColumn,
 			order.Table:                   order.ValidColumn,

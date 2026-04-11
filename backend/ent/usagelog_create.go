@@ -155,6 +155,20 @@ func (_c *UsageLogCreate) SetNillableGroupID(v *int64) *UsageLogCreate {
 	return _c
 }
 
+// SetRequestedGroupID sets the "requested_group_id" field.
+func (_c *UsageLogCreate) SetRequestedGroupID(v int64) *UsageLogCreate {
+	_c.mutation.SetRequestedGroupID(v)
+	return _c
+}
+
+// SetNillableRequestedGroupID sets the "requested_group_id" field if the given value is not nil.
+func (_c *UsageLogCreate) SetNillableRequestedGroupID(v *int64) *UsageLogCreate {
+	if v != nil {
+		_c.SetRequestedGroupID(*v)
+	}
+	return _c
+}
+
 // SetSubscriptionID sets the "subscription_id" field.
 func (_c *UsageLogCreate) SetSubscriptionID(v int64) *UsageLogCreate {
 	_c.mutation.SetSubscriptionID(v)
@@ -875,6 +889,10 @@ func (_c *UsageLogCreate) createSpec() (*UsageLog, *sqlgraph.CreateSpec) {
 		_spec.SetField(usagelog.FieldBillingMode, field.TypeString, value)
 		_node.BillingMode = &value
 	}
+	if value, ok := _c.mutation.RequestedGroupID(); ok {
+		_spec.SetField(usagelog.FieldRequestedGroupID, field.TypeInt64, value)
+		_node.RequestedGroupID = &value
+	}
 	if value, ok := _c.mutation.InputTokens(); ok {
 		_spec.SetField(usagelog.FieldInputTokens, field.TypeInt, value)
 		_node.InputTokens = value
@@ -1309,6 +1327,30 @@ func (u *UsageLogUpsert) UpdateGroupID() *UsageLogUpsert {
 // ClearGroupID clears the value of the "group_id" field.
 func (u *UsageLogUpsert) ClearGroupID() *UsageLogUpsert {
 	u.SetNull(usagelog.FieldGroupID)
+	return u
+}
+
+// SetRequestedGroupID sets the "requested_group_id" field.
+func (u *UsageLogUpsert) SetRequestedGroupID(v int64) *UsageLogUpsert {
+	u.Set(usagelog.FieldRequestedGroupID, v)
+	return u
+}
+
+// UpdateRequestedGroupID sets the "requested_group_id" field to the value that was provided on create.
+func (u *UsageLogUpsert) UpdateRequestedGroupID() *UsageLogUpsert {
+	u.SetExcluded(usagelog.FieldRequestedGroupID)
+	return u
+}
+
+// AddRequestedGroupID adds v to the "requested_group_id" field.
+func (u *UsageLogUpsert) AddRequestedGroupID(v int64) *UsageLogUpsert {
+	u.Add(usagelog.FieldRequestedGroupID, v)
+	return u
+}
+
+// ClearRequestedGroupID clears the value of the "requested_group_id" field.
+func (u *UsageLogUpsert) ClearRequestedGroupID() *UsageLogUpsert {
+	u.SetNull(usagelog.FieldRequestedGroupID)
 	return u
 }
 
@@ -2082,6 +2124,34 @@ func (u *UsageLogUpsertOne) UpdateGroupID() *UsageLogUpsertOne {
 func (u *UsageLogUpsertOne) ClearGroupID() *UsageLogUpsertOne {
 	return u.Update(func(s *UsageLogUpsert) {
 		s.ClearGroupID()
+	})
+}
+
+// SetRequestedGroupID sets the "requested_group_id" field.
+func (u *UsageLogUpsertOne) SetRequestedGroupID(v int64) *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.SetRequestedGroupID(v)
+	})
+}
+
+// AddRequestedGroupID adds v to the "requested_group_id" field.
+func (u *UsageLogUpsertOne) AddRequestedGroupID(v int64) *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.AddRequestedGroupID(v)
+	})
+}
+
+// UpdateRequestedGroupID sets the "requested_group_id" field to the value that was provided on create.
+func (u *UsageLogUpsertOne) UpdateRequestedGroupID() *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.UpdateRequestedGroupID()
+	})
+}
+
+// ClearRequestedGroupID clears the value of the "requested_group_id" field.
+func (u *UsageLogUpsertOne) ClearRequestedGroupID() *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.ClearRequestedGroupID()
 	})
 }
 
@@ -3105,6 +3175,34 @@ func (u *UsageLogUpsertBulk) UpdateGroupID() *UsageLogUpsertBulk {
 func (u *UsageLogUpsertBulk) ClearGroupID() *UsageLogUpsertBulk {
 	return u.Update(func(s *UsageLogUpsert) {
 		s.ClearGroupID()
+	})
+}
+
+// SetRequestedGroupID sets the "requested_group_id" field.
+func (u *UsageLogUpsertBulk) SetRequestedGroupID(v int64) *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.SetRequestedGroupID(v)
+	})
+}
+
+// AddRequestedGroupID adds v to the "requested_group_id" field.
+func (u *UsageLogUpsertBulk) AddRequestedGroupID(v int64) *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.AddRequestedGroupID(v)
+	})
+}
+
+// UpdateRequestedGroupID sets the "requested_group_id" field to the value that was provided on create.
+func (u *UsageLogUpsertBulk) UpdateRequestedGroupID() *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.UpdateRequestedGroupID()
+	})
+}
+
+// ClearRequestedGroupID clears the value of the "requested_group_id" field.
+func (u *UsageLogUpsertBulk) ClearRequestedGroupID() *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.ClearRequestedGroupID()
 	})
 }
 

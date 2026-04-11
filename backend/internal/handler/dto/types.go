@@ -155,6 +155,13 @@ type AdminGroup struct {
 	HealthyAccounts      int        `json:"healthy_accounts"`
 	TotalCheckedAccounts int        `json:"total_checked_accounts"`
 	LastHealthCheckAt    *time.Time `json:"last_health_check_at"`
+
+	// 智能路由（虚拟故障转移分组）
+	IsFailoverGroup        bool       `json:"is_failover_group"`
+	FailoverMemberIDs      []int64    `json:"failover_member_ids,omitempty"`
+	FailoverActiveMemberID *int64     `json:"failover_active_member_id,omitempty"`
+	FailoverPinMemberID    *int64     `json:"failover_pin_member_id,omitempty"`
+	FailoverPinExpiresAt   *time.Time `json:"failover_pin_expires_at,omitempty"`
 }
 
 type Account struct {

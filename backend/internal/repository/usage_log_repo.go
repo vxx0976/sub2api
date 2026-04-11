@@ -28,7 +28,7 @@ import (
 	gocache "github.com/patrickmn/go-cache"
 )
 
-const usageLogSelectColumns = "id, user_id, api_key_id, account_id, request_id, model, requested_model, upstream_model, group_id, subscription_id, input_tokens, output_tokens, cache_creation_tokens, cache_read_tokens, cache_creation_5m_tokens, cache_creation_1h_tokens, image_output_tokens, image_output_cost, input_cost, output_cost, cache_creation_cost, cache_read_cost, total_cost, actual_cost, rate_multiplier, account_rate_multiplier, billing_type, request_type, stream, openai_ws_mode, duration_ms, first_token_ms, user_agent, ip_address, country_code, image_count, image_size, service_tier, reasoning_effort, inbound_endpoint, upstream_endpoint, cache_ttl_overridden, merchant_rate_snapshot, platform_cost_snapshot, channel_id, model_mapping_chain, billing_tier, billing_mode, created_at"
+const usageLogSelectColumns = "id, user_id, api_key_id, account_id, request_id, model, requested_model, upstream_model, group_id, subscription_id, input_tokens, output_tokens, cache_creation_tokens, cache_read_tokens, cache_creation_5m_tokens, cache_creation_1h_tokens, image_output_tokens, image_output_cost, input_cost, output_cost, cache_creation_cost, cache_read_cost, total_cost, actual_cost, rate_multiplier, account_rate_multiplier, billing_type, request_type, stream, openai_ws_mode, duration_ms, first_token_ms, user_agent, ip_address, country_code, image_count, image_size, service_tier, reasoning_effort, inbound_endpoint, upstream_endpoint, cache_ttl_overridden, merchant_rate_snapshot, platform_cost_snapshot, channel_id, model_mapping_chain, billing_tier, billing_mode, created_at, requested_group_id"
 
 // usageLogInsertArgTypes must stay in the same order as:
 //  1. prepareUsageLogInsert().args
@@ -86,6 +86,7 @@ var usageLogInsertArgTypes = [...]string{
 	"text",        // billing_tier
 	"text",        // billing_mode
 	"timestamptz", // created_at
+	"bigint",      // requested_group_id
 }
 
 const rawUsageLogModelColumn = "model"
@@ -366,14 +367,15 @@ func (r *usageLogRepository) createSingle(ctx context.Context, sqlq sqlExecutor,
 			model_mapping_chain,
 			billing_tier,
 			billing_mode,
-			created_at
+			created_at,
+			requested_group_id
 		) VALUES (
 			$1, $2, $3, $4, $5, $6, $7,
 			$8, $9,
 			$10, $11, $12, $13,
 			$14, $15, $16, $17,
 			$18, $19, $20, $21, $22, $23,
-			$24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48
+			$24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49
 		)
 		ON CONFLICT (request_id, api_key_id) DO NOTHING
 		RETURNING id, created_at
@@ -806,10 +808,11 @@ func buildUsageLogBatchInsertQuery(keys []string, preparedByKey map[string]usage
 			model_mapping_chain,
 			billing_tier,
 			billing_mode,
-			created_at
+			created_at,
+			requested_group_id
 		) AS (VALUES `)
 
-	args := make([]any, 0, len(keys)*48)
+	args := make([]any, 0, len(keys)*50)
 	argPos := 1
 	for idx, key := range keys {
 		if idx > 0 {
@@ -885,7 +888,8 @@ func buildUsageLogBatchInsertQuery(keys []string, preparedByKey map[string]usage
 				model_mapping_chain,
 				billing_tier,
 				billing_mode,
-				created_at
+				created_at,
+				requested_group_id
 			)
 			SELECT
 				user_id,
@@ -935,7 +939,8 @@ func buildUsageLogBatchInsertQuery(keys []string, preparedByKey map[string]usage
 				model_mapping_chain,
 				billing_tier,
 				billing_mode,
-				created_at
+				created_at,
+				requested_group_id
 			FROM input
 			ON CONFLICT (request_id, api_key_id) DO NOTHING
 			RETURNING request_id, api_key_id, id, created_at
@@ -1025,10 +1030,11 @@ func buildUsageLogBestEffortInsertQuery(preparedList []usageLogInsertPrepared) (
 			model_mapping_chain,
 			billing_tier,
 			billing_mode,
-			created_at
+			created_at,
+			requested_group_id
 		) AS (VALUES `)
 
-	args := make([]any, 0, len(preparedList)*48)
+	args := make([]any, 0, len(preparedList)*49)
 	argPos := 1
 	for idx, prepared := range preparedList {
 		if idx > 0 {
@@ -1101,7 +1107,8 @@ func buildUsageLogBestEffortInsertQuery(preparedList []usageLogInsertPrepared) (
 			model_mapping_chain,
 			billing_tier,
 			billing_mode,
-			created_at
+			created_at,
+			requested_group_id
 		)
 		SELECT
 			user_id,
@@ -1151,7 +1158,8 @@ func buildUsageLogBestEffortInsertQuery(preparedList []usageLogInsertPrepared) (
 			model_mapping_chain,
 			billing_tier,
 			billing_mode,
-			created_at
+			created_at,
+			requested_group_id
 		FROM input
 		ON CONFLICT (request_id, api_key_id) DO NOTHING
 	`)
@@ -1209,14 +1217,15 @@ func execUsageLogInsertNoResult(ctx context.Context, sqlq sqlExecutor, prepared 
 			model_mapping_chain,
 			billing_tier,
 			billing_mode,
-			created_at
+			created_at,
+			requested_group_id
 		) VALUES (
 			$1, $2, $3, $4, $5, $6, $7,
 			$8, $9,
 			$10, $11, $12, $13,
 			$14, $15, $16, $17,
 			$18, $19, $20, $21, $22, $23,
-			$24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48
+			$24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49
 		)
 		ON CONFLICT (request_id, api_key_id) DO NOTHING
 	`, prepared.args...)
@@ -1237,6 +1246,7 @@ func prepareUsageLogInsert(log *service.UsageLog) usageLogInsertPrepared {
 	requestType := int16(log.RequestType)
 
 	groupID := nullInt64(log.GroupID)
+	requestedGroupID := nullInt64(log.RequestedGroupID)
 	subscriptionID := nullInt64(log.SubscriptionID)
 	duration := nullInt(log.DurationMs)
 	firstToken := nullInt(log.FirstTokenMs)
@@ -1317,6 +1327,7 @@ func prepareUsageLogInsert(log *service.UsageLog) usageLogInsertPrepared {
 			billingTier,
 			billingMode,
 			createdAt,
+			requestedGroupID,
 		},
 	}
 }
@@ -4127,6 +4138,7 @@ func scanUsageLog(scanner interface{ Scan(...any) error }) (*service.UsageLog, e
 		requestedModel        sql.NullString
 		upstreamModel         sql.NullString
 		groupID               sql.NullInt64
+		requestedGroupID      sql.NullInt64
 		subscriptionID        sql.NullInt64
 		inputTokens           int
 		outputTokens          int
@@ -4219,6 +4231,7 @@ func scanUsageLog(scanner interface{ Scan(...any) error }) (*service.UsageLog, e
 		&billingTier,
 		&billingMode,
 		&createdAt,
+		&requestedGroupID,
 	); err != nil {
 		return nil, err
 	}
@@ -4266,6 +4279,10 @@ func scanUsageLog(scanner interface{ Scan(...any) error }) (*service.UsageLog, e
 	if groupID.Valid {
 		value := groupID.Int64
 		log.GroupID = &value
+	}
+	if requestedGroupID.Valid {
+		value := requestedGroupID.Int64
+		log.RequestedGroupID = &value
 	}
 	if subscriptionID.Valid {
 		value := subscriptionID.Int64
@@ -4594,6 +4611,39 @@ func (r *usageLogRepository) SumTodayCostByUserIDs(ctx context.Context, userIDs 
 
 // BackfillMerchantRateSnapshot fills in NULL merchant_rate_snapshot and platform_cost_snapshot values
 // for users with a parent reseller that has valid price_multiplier and platform_cost settings.
+// GetFailoverMemberUsage 聚合某虚拟分组（requested_group_id）的承接成员用量。
+func (r *usageLogRepository) GetFailoverMemberUsage(ctx context.Context, virtualGroupID int64, since time.Time) ([]service.FailoverMemberUsageRow, error) {
+	query := `
+		SELECT group_id,
+		       COUNT(*)::bigint AS requests,
+		       COALESCE(SUM(total_tokens), 0)::bigint AS tokens,
+		       COALESCE(SUM(total_cost), 0)::float8 AS cost
+		FROM usage_logs
+		WHERE requested_group_id = $1
+		  AND created_at >= $2
+		  AND group_id IS NOT NULL
+		GROUP BY group_id
+		ORDER BY cost DESC
+	`
+	rows, err := r.sql.QueryContext(ctx, query, virtualGroupID, since)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := make([]service.FailoverMemberUsageRow, 0)
+	for rows.Next() {
+		var row service.FailoverMemberUsageRow
+		if err := rows.Scan(&row.GroupID, &row.Requests, &row.Tokens, &row.Cost); err != nil {
+			return nil, err
+		}
+		out = append(out, row)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (r *usageLogRepository) BackfillMerchantRateSnapshot(ctx context.Context) (int64, error) {
 	query := `
 		UPDATE usage_logs ul

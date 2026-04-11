@@ -502,8 +502,63 @@ export interface AdminGroup extends Group {
 
   // 分组排序
   sort_order: number
+
+  // 智能路由（虚拟故障转移分组）
+  is_failover_group?: boolean
+  failover_member_ids?: number[]
+  failover_active_member_id?: number | null
+  failover_pin_member_id?: number | null
+  failover_pin_expires_at?: string | null
+
   created_at: string
   updated_at: string
+}
+
+// 智能路由详情 API 响应
+export interface SmartRouterMemberSnapshot {
+  group_id: number
+  name: string
+  platform: string
+  health_status: string
+  schedulable_accounts: number
+  last_health_check_at?: string | null
+  healthy_accounts: number
+  total_checked_accounts: number
+}
+
+export interface SmartRouterEvent {
+  id: number
+  virtual_group_id: number
+  from_member_id?: number | null
+  to_member_id?: number | null
+  reason: string
+  triggered_by?: number | null
+  note?: string | null
+  occurred_at: string
+}
+
+export interface SmartRouterStatus {
+  virtual_group_id: number
+  name: string
+  platform: string
+  active_member_id?: number | null
+  pin_member_id?: number | null
+  pin_expires_at?: string | null
+  members: SmartRouterMemberSnapshot[]
+  recent_events: SmartRouterEvent[]
+}
+
+export interface SmartRouterMemberUsage {
+  group_id: number
+  name: string
+  requests: number
+  tokens: number
+  cost: number
+}
+
+export interface SmartRouterUsageResponse {
+  members: SmartRouterMemberUsage[]
+  days: number
 }
 
 export interface ApiKey {
@@ -592,6 +647,9 @@ export interface CreateGroupRequest {
   health_check_interval_min?: number
   // 从指定分组复制账号
   copy_accounts_from_group_ids?: number[]
+  // 智能路由（虚拟故障转移分组）
+  is_failover_group?: boolean
+  failover_member_ids?: number[]
 }
 
 export interface UpdateGroupRequest {
@@ -620,6 +678,9 @@ export interface UpdateGroupRequest {
   require_privacy_set?: boolean
   health_check_interval_min?: number
   copy_accounts_from_group_ids?: number[]
+  // 智能路由（虚拟故障转移分组）
+  is_failover_group?: boolean
+  failover_member_ids?: number[]
 }
 
 // ==================== Account & Proxy Types ====================

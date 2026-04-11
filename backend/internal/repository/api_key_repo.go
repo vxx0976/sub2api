@@ -730,6 +730,12 @@ func groupEntityToService(g *dbent.Group) *service.Group {
 		HealthyAccounts:                 g.HealthyAccounts,
 		TotalCheckedAccounts:            g.TotalCheckedAccounts,
 		LastHealthCheckAt:               g.LastHealthCheckAt,
+		IsFailoverGroup:                 g.IsFailoverGroup,
+		FailoverMemberIDs:               append([]int64(nil), g.FailoverMemberIds...),
+		FailoverActiveMemberID:          g.FailoverActiveMemberID,
+		FailoverActiveVersion:           g.FailoverActiveVersion,
+		FailoverPinMemberID:             g.FailoverPinMemberID,
+		FailoverPinExpiresAt:            g.FailoverPinExpiresAt,
 		CreatedAt:                       g.CreatedAt,
 		UpdatedAt:                       g.UpdatedAt,
 	}

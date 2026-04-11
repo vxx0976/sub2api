@@ -887,3 +887,152 @@ func (r *groupRepository) CountByOwnerID(ctx context.Context, ownerID int64) (in
 		Count(ctx)
 	return int64(count), err
 }
+
+// ListFailoverGroups 返回所有启用状态的智能路由（虚拟故障转移分组）。
+func (r *groupRepository) ListFailoverGroups(ctx context.Context) ([]*service.Group, error) {
+	groups, err := r.client.Group.Query().
+		Where(
+			group.IsFailoverGroupEQ(true),
+			group.StatusEQ(service.StatusActive),
+			group.DeletedAtIsNil(),
+		).
+		Order(dbent.Asc(group.FieldSortOrder), dbent.Asc(group.FieldID)).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]*service.Group, 0, len(groups))
+	for i := range groups {
+		out = append(out, groupEntityToService(groups[i]))
+	}
+	return out, nil
+}
+
+// ListFailoverGroupsReferencing 返回 failover_member_ids 包含 memberID 的虚拟分组。
+func (r *groupRepository) ListFailoverGroupsReferencing(ctx context.Context, memberID int64) ([]*service.Group, error) {
+	// 利用 jsonb @> 判断数组包含
+	rows, err := r.sql.QueryContext(
+		ctx,
+		`SELECT id FROM groups
+		 WHERE deleted_at IS NULL
+		   AND is_failover_group = TRUE
+		   AND failover_member_ids @> $1::jsonb`,
+		fmt.Sprintf("[%d]", memberID),
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+	ids := make([]int64, 0)
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	if len(ids) == 0 {
+		return nil, nil
+	}
+	groups, err := r.client.Group.Query().Where(group.IDIn(ids...)).All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]*service.Group, 0, len(groups))
+	for i := range groups {
+		out = append(out, groupEntityToService(groups[i]))
+	}
+	return out, nil
+}
+
+// UpdateFailoverActive 以 CAS 方式更新激活成员（expectedVersion 不匹配返回 false，err=nil）。
+func (r *groupRepository) UpdateFailoverActive(ctx context.Context, groupID int64, newMemberID int64, expectedVersion int64) (bool, error) {
+	res, err := r.sql.ExecContext(
+		ctx,
+		`UPDATE groups
+		 SET failover_active_member_id = $1,
+		     failover_active_version = failover_active_version + 1,
+		     updated_at = NOW()
+		 WHERE id = $2 AND failover_active_version = $3 AND deleted_at IS NULL`,
+		newMemberID, groupID, expectedVersion,
+	)
+	if err != nil {
+		return false, err
+	}
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+	return affected > 0, nil
+}
+
+// SetFailoverPin 设置手动锁定；expiresAt=nil 表示永久 pin。
+func (r *groupRepository) SetFailoverPin(ctx context.Context, groupID int64, memberID int64, expiresAt *time.Time) error {
+	_, err := r.sql.ExecContext(
+		ctx,
+		`UPDATE groups
+		 SET failover_pin_member_id = $1,
+		     failover_pin_expires_at = $2,
+		     updated_at = NOW()
+		 WHERE id = $3 AND deleted_at IS NULL`,
+		memberID, expiresAt, groupID,
+	)
+	return err
+}
+
+// ClearFailoverPin 清除手动锁定。
+func (r *groupRepository) ClearFailoverPin(ctx context.Context, groupID int64) error {
+	_, err := r.sql.ExecContext(
+		ctx,
+		`UPDATE groups
+		 SET failover_pin_member_id = NULL,
+		     failover_pin_expires_at = NULL,
+		     updated_at = NOW()
+		 WHERE id = $1 AND deleted_at IS NULL`,
+		groupID,
+	)
+	return err
+}
+
+// UpdateFailoverConfig 更新智能路由的成员列表 / 启用位 / 初始激活成员。
+func (r *groupRepository) UpdateFailoverConfig(ctx context.Context, groupID int64, isFailover bool, memberIDs []int64, activeMemberID *int64) error {
+	builder := r.client.Group.UpdateOneID(groupID).
+		SetIsFailoverGroup(isFailover).
+		SetFailoverMemberIds(memberIDs)
+	if activeMemberID != nil {
+		builder = builder.SetFailoverActiveMemberID(*activeMemberID)
+	} else {
+		builder = builder.ClearFailoverActiveMemberID()
+	}
+	if _, err := builder.Save(ctx); err != nil {
+		return translatePersistenceError(err, service.ErrGroupNotFound, nil)
+	}
+	if err := enqueueSchedulerOutbox(ctx, r.sql, service.SchedulerOutboxEventGroupChanged, nil, &groupID, nil); err != nil {
+		logger.LegacyPrintf("repository.group", "[SchedulerOutbox] enqueue failover config update failed: group=%d err=%v", groupID, err)
+	}
+	return nil
+}
+
+// CountSchedulableAccountsByGroup 统计指定分组当前可调度账号数（与 scheduler 实际使用的条件保持一致）。
+func (r *groupRepository) CountSchedulableAccountsByGroup(ctx context.Context, groupID int64) (int, error) {
+	var count int
+	err := scanSingleRow(
+		ctx, r.sql,
+		`SELECT COUNT(*)
+		 FROM account_groups ag
+		 JOIN accounts a ON a.id = ag.account_id
+		 WHERE ag.group_id = $1
+		   AND a.deleted_at IS NULL
+		   AND a.status = 'active'
+		   AND a.schedulable = TRUE
+		   AND (a.temp_unschedulable_until IS NULL OR a.temp_unschedulable_until <= NOW())
+		   AND (a.expires_at IS NULL OR a.expires_at > NOW())
+		   AND (a.overload_until IS NULL OR a.overload_until <= NOW())
+		   AND (a.rate_limit_reset_at IS NULL OR a.rate_limit_reset_at <= NOW())`,
+		[]any{groupID}, &count,
+	)
+	return count, err
+}

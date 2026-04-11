@@ -260,6 +260,31 @@ func LastHealthCheckAt(v time.Time) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldLastHealthCheckAt, v))
 }
 
+// IsFailoverGroup applies equality check predicate on the "is_failover_group" field. It's identical to IsFailoverGroupEQ.
+func IsFailoverGroup(v bool) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldIsFailoverGroup, v))
+}
+
+// FailoverActiveMemberID applies equality check predicate on the "failover_active_member_id" field. It's identical to FailoverActiveMemberIDEQ.
+func FailoverActiveMemberID(v int64) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldFailoverActiveMemberID, v))
+}
+
+// FailoverActiveVersion applies equality check predicate on the "failover_active_version" field. It's identical to FailoverActiveVersionEQ.
+func FailoverActiveVersion(v int64) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldFailoverActiveVersion, v))
+}
+
+// FailoverPinMemberID applies equality check predicate on the "failover_pin_member_id" field. It's identical to FailoverPinMemberIDEQ.
+func FailoverPinMemberID(v int64) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldFailoverPinMemberID, v))
+}
+
+// FailoverPinExpiresAt applies equality check predicate on the "failover_pin_expires_at" field. It's identical to FailoverPinExpiresAtEQ.
+func FailoverPinExpiresAt(v time.Time) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldFailoverPinExpiresAt, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldCreatedAt, v))
@@ -2048,6 +2073,216 @@ func LastHealthCheckAtIsNil() predicate.Group {
 // LastHealthCheckAtNotNil applies the NotNil predicate on the "last_health_check_at" field.
 func LastHealthCheckAtNotNil() predicate.Group {
 	return predicate.Group(sql.FieldNotNull(FieldLastHealthCheckAt))
+}
+
+// IsFailoverGroupEQ applies the EQ predicate on the "is_failover_group" field.
+func IsFailoverGroupEQ(v bool) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldIsFailoverGroup, v))
+}
+
+// IsFailoverGroupNEQ applies the NEQ predicate on the "is_failover_group" field.
+func IsFailoverGroupNEQ(v bool) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldIsFailoverGroup, v))
+}
+
+// FailoverMemberIdsIsNil applies the IsNil predicate on the "failover_member_ids" field.
+func FailoverMemberIdsIsNil() predicate.Group {
+	return predicate.Group(sql.FieldIsNull(FieldFailoverMemberIds))
+}
+
+// FailoverMemberIdsNotNil applies the NotNil predicate on the "failover_member_ids" field.
+func FailoverMemberIdsNotNil() predicate.Group {
+	return predicate.Group(sql.FieldNotNull(FieldFailoverMemberIds))
+}
+
+// FailoverActiveMemberIDEQ applies the EQ predicate on the "failover_active_member_id" field.
+func FailoverActiveMemberIDEQ(v int64) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldFailoverActiveMemberID, v))
+}
+
+// FailoverActiveMemberIDNEQ applies the NEQ predicate on the "failover_active_member_id" field.
+func FailoverActiveMemberIDNEQ(v int64) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldFailoverActiveMemberID, v))
+}
+
+// FailoverActiveMemberIDIn applies the In predicate on the "failover_active_member_id" field.
+func FailoverActiveMemberIDIn(vs ...int64) predicate.Group {
+	return predicate.Group(sql.FieldIn(FieldFailoverActiveMemberID, vs...))
+}
+
+// FailoverActiveMemberIDNotIn applies the NotIn predicate on the "failover_active_member_id" field.
+func FailoverActiveMemberIDNotIn(vs ...int64) predicate.Group {
+	return predicate.Group(sql.FieldNotIn(FieldFailoverActiveMemberID, vs...))
+}
+
+// FailoverActiveMemberIDGT applies the GT predicate on the "failover_active_member_id" field.
+func FailoverActiveMemberIDGT(v int64) predicate.Group {
+	return predicate.Group(sql.FieldGT(FieldFailoverActiveMemberID, v))
+}
+
+// FailoverActiveMemberIDGTE applies the GTE predicate on the "failover_active_member_id" field.
+func FailoverActiveMemberIDGTE(v int64) predicate.Group {
+	return predicate.Group(sql.FieldGTE(FieldFailoverActiveMemberID, v))
+}
+
+// FailoverActiveMemberIDLT applies the LT predicate on the "failover_active_member_id" field.
+func FailoverActiveMemberIDLT(v int64) predicate.Group {
+	return predicate.Group(sql.FieldLT(FieldFailoverActiveMemberID, v))
+}
+
+// FailoverActiveMemberIDLTE applies the LTE predicate on the "failover_active_member_id" field.
+func FailoverActiveMemberIDLTE(v int64) predicate.Group {
+	return predicate.Group(sql.FieldLTE(FieldFailoverActiveMemberID, v))
+}
+
+// FailoverActiveMemberIDIsNil applies the IsNil predicate on the "failover_active_member_id" field.
+func FailoverActiveMemberIDIsNil() predicate.Group {
+	return predicate.Group(sql.FieldIsNull(FieldFailoverActiveMemberID))
+}
+
+// FailoverActiveMemberIDNotNil applies the NotNil predicate on the "failover_active_member_id" field.
+func FailoverActiveMemberIDNotNil() predicate.Group {
+	return predicate.Group(sql.FieldNotNull(FieldFailoverActiveMemberID))
+}
+
+// FailoverActiveVersionEQ applies the EQ predicate on the "failover_active_version" field.
+func FailoverActiveVersionEQ(v int64) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldFailoverActiveVersion, v))
+}
+
+// FailoverActiveVersionNEQ applies the NEQ predicate on the "failover_active_version" field.
+func FailoverActiveVersionNEQ(v int64) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldFailoverActiveVersion, v))
+}
+
+// FailoverActiveVersionIn applies the In predicate on the "failover_active_version" field.
+func FailoverActiveVersionIn(vs ...int64) predicate.Group {
+	return predicate.Group(sql.FieldIn(FieldFailoverActiveVersion, vs...))
+}
+
+// FailoverActiveVersionNotIn applies the NotIn predicate on the "failover_active_version" field.
+func FailoverActiveVersionNotIn(vs ...int64) predicate.Group {
+	return predicate.Group(sql.FieldNotIn(FieldFailoverActiveVersion, vs...))
+}
+
+// FailoverActiveVersionGT applies the GT predicate on the "failover_active_version" field.
+func FailoverActiveVersionGT(v int64) predicate.Group {
+	return predicate.Group(sql.FieldGT(FieldFailoverActiveVersion, v))
+}
+
+// FailoverActiveVersionGTE applies the GTE predicate on the "failover_active_version" field.
+func FailoverActiveVersionGTE(v int64) predicate.Group {
+	return predicate.Group(sql.FieldGTE(FieldFailoverActiveVersion, v))
+}
+
+// FailoverActiveVersionLT applies the LT predicate on the "failover_active_version" field.
+func FailoverActiveVersionLT(v int64) predicate.Group {
+	return predicate.Group(sql.FieldLT(FieldFailoverActiveVersion, v))
+}
+
+// FailoverActiveVersionLTE applies the LTE predicate on the "failover_active_version" field.
+func FailoverActiveVersionLTE(v int64) predicate.Group {
+	return predicate.Group(sql.FieldLTE(FieldFailoverActiveVersion, v))
+}
+
+// FailoverPinMemberIDEQ applies the EQ predicate on the "failover_pin_member_id" field.
+func FailoverPinMemberIDEQ(v int64) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldFailoverPinMemberID, v))
+}
+
+// FailoverPinMemberIDNEQ applies the NEQ predicate on the "failover_pin_member_id" field.
+func FailoverPinMemberIDNEQ(v int64) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldFailoverPinMemberID, v))
+}
+
+// FailoverPinMemberIDIn applies the In predicate on the "failover_pin_member_id" field.
+func FailoverPinMemberIDIn(vs ...int64) predicate.Group {
+	return predicate.Group(sql.FieldIn(FieldFailoverPinMemberID, vs...))
+}
+
+// FailoverPinMemberIDNotIn applies the NotIn predicate on the "failover_pin_member_id" field.
+func FailoverPinMemberIDNotIn(vs ...int64) predicate.Group {
+	return predicate.Group(sql.FieldNotIn(FieldFailoverPinMemberID, vs...))
+}
+
+// FailoverPinMemberIDGT applies the GT predicate on the "failover_pin_member_id" field.
+func FailoverPinMemberIDGT(v int64) predicate.Group {
+	return predicate.Group(sql.FieldGT(FieldFailoverPinMemberID, v))
+}
+
+// FailoverPinMemberIDGTE applies the GTE predicate on the "failover_pin_member_id" field.
+func FailoverPinMemberIDGTE(v int64) predicate.Group {
+	return predicate.Group(sql.FieldGTE(FieldFailoverPinMemberID, v))
+}
+
+// FailoverPinMemberIDLT applies the LT predicate on the "failover_pin_member_id" field.
+func FailoverPinMemberIDLT(v int64) predicate.Group {
+	return predicate.Group(sql.FieldLT(FieldFailoverPinMemberID, v))
+}
+
+// FailoverPinMemberIDLTE applies the LTE predicate on the "failover_pin_member_id" field.
+func FailoverPinMemberIDLTE(v int64) predicate.Group {
+	return predicate.Group(sql.FieldLTE(FieldFailoverPinMemberID, v))
+}
+
+// FailoverPinMemberIDIsNil applies the IsNil predicate on the "failover_pin_member_id" field.
+func FailoverPinMemberIDIsNil() predicate.Group {
+	return predicate.Group(sql.FieldIsNull(FieldFailoverPinMemberID))
+}
+
+// FailoverPinMemberIDNotNil applies the NotNil predicate on the "failover_pin_member_id" field.
+func FailoverPinMemberIDNotNil() predicate.Group {
+	return predicate.Group(sql.FieldNotNull(FieldFailoverPinMemberID))
+}
+
+// FailoverPinExpiresAtEQ applies the EQ predicate on the "failover_pin_expires_at" field.
+func FailoverPinExpiresAtEQ(v time.Time) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldFailoverPinExpiresAt, v))
+}
+
+// FailoverPinExpiresAtNEQ applies the NEQ predicate on the "failover_pin_expires_at" field.
+func FailoverPinExpiresAtNEQ(v time.Time) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldFailoverPinExpiresAt, v))
+}
+
+// FailoverPinExpiresAtIn applies the In predicate on the "failover_pin_expires_at" field.
+func FailoverPinExpiresAtIn(vs ...time.Time) predicate.Group {
+	return predicate.Group(sql.FieldIn(FieldFailoverPinExpiresAt, vs...))
+}
+
+// FailoverPinExpiresAtNotIn applies the NotIn predicate on the "failover_pin_expires_at" field.
+func FailoverPinExpiresAtNotIn(vs ...time.Time) predicate.Group {
+	return predicate.Group(sql.FieldNotIn(FieldFailoverPinExpiresAt, vs...))
+}
+
+// FailoverPinExpiresAtGT applies the GT predicate on the "failover_pin_expires_at" field.
+func FailoverPinExpiresAtGT(v time.Time) predicate.Group {
+	return predicate.Group(sql.FieldGT(FieldFailoverPinExpiresAt, v))
+}
+
+// FailoverPinExpiresAtGTE applies the GTE predicate on the "failover_pin_expires_at" field.
+func FailoverPinExpiresAtGTE(v time.Time) predicate.Group {
+	return predicate.Group(sql.FieldGTE(FieldFailoverPinExpiresAt, v))
+}
+
+// FailoverPinExpiresAtLT applies the LT predicate on the "failover_pin_expires_at" field.
+func FailoverPinExpiresAtLT(v time.Time) predicate.Group {
+	return predicate.Group(sql.FieldLT(FieldFailoverPinExpiresAt, v))
+}
+
+// FailoverPinExpiresAtLTE applies the LTE predicate on the "failover_pin_expires_at" field.
+func FailoverPinExpiresAtLTE(v time.Time) predicate.Group {
+	return predicate.Group(sql.FieldLTE(FieldFailoverPinExpiresAt, v))
+}
+
+// FailoverPinExpiresAtIsNil applies the IsNil predicate on the "failover_pin_expires_at" field.
+func FailoverPinExpiresAtIsNil() predicate.Group {
+	return predicate.Group(sql.FieldIsNull(FieldFailoverPinExpiresAt))
+}
+
+// FailoverPinExpiresAtNotNil applies the NotNil predicate on the "failover_pin_expires_at" field.
+func FailoverPinExpiresAtNotNil() predicate.Group {
+	return predicate.Group(sql.FieldNotNull(FieldFailoverPinExpiresAt))
 }
 
 // HasAPIKeys applies the HasEdge predicate on the "api_keys" edge.

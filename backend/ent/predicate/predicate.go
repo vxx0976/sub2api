@@ -27,6 +27,9 @@ type Channel func(*sql.Selector)
 // ErrorPassthroughRule is the predicate function for errorpassthroughrule builders.
 type ErrorPassthroughRule func(*sql.Selector)
 
+// FailoverGroupEvent is the predicate function for failovergroupevent builders.
+type FailoverGroupEvent func(*sql.Selector)
+
 // Group is the predicate function for group builders.
 type Group func(*sql.Selector)
 

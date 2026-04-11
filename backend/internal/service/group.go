@@ -86,6 +86,46 @@ type Group struct {
 	AccountCount            int64          `json:"account_count,omitempty"`
 	ActiveAccountCount      int64          `json:"active_account_count,omitempty"`
 	RateLimitedAccountCount int64          `json:"rate_limited_account_count,omitempty"`
+
+	// 智能路由（虚拟故障转移分组）字段
+	// IsFailoverGroup = true 表示此分组是纯路由层，本身不持有账号/费率/限额。
+	IsFailoverGroup        bool       `json:"is_failover_group"`
+	FailoverMemberIDs      []int64    `json:"failover_member_ids,omitempty"`
+	FailoverActiveMemberID *int64     `json:"failover_active_member_id,omitempty"`
+	FailoverActiveVersion  int64      `json:"failover_active_version"`
+	FailoverPinMemberID    *int64     `json:"failover_pin_member_id,omitempty"`
+	FailoverPinExpiresAt   *time.Time `json:"failover_pin_expires_at,omitempty"`
+}
+
+// IsFailoverPinActive reports whether a manual pin is present and not expired.
+func (g *Group) IsFailoverPinActive(now time.Time) bool {
+	if g == nil || g.FailoverPinMemberID == nil {
+		return false
+	}
+	if g.FailoverPinExpiresAt == nil {
+		return true // 永久 pin
+	}
+	return g.FailoverPinExpiresAt.After(now)
+}
+
+// EffectiveFailoverActiveMemberID returns the current active member id, preferring
+// an active manual pin over the stored active_member_id, falling back to the first
+// member in the ordered list.
+func (g *Group) EffectiveFailoverActiveMemberID(now time.Time) *int64 {
+	if g == nil || !g.IsFailoverGroup {
+		return nil
+	}
+	if g.IsFailoverPinActive(now) {
+		return g.FailoverPinMemberID
+	}
+	if g.FailoverActiveMemberID != nil {
+		return g.FailoverActiveMemberID
+	}
+	if len(g.FailoverMemberIDs) > 0 {
+		id := g.FailoverMemberIDs[0]
+		return &id
+	}
+	return nil
 }
 
 func (g *Group) IsActive() bool {

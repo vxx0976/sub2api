@@ -10,6 +10,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/handler/dto"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/timezone"
+	"github.com/Wei-Shaw/sub2api/internal/server/middleware"
 	"github.com/Wei-Shaw/sub2api/internal/service"
 
 	"github.com/gin-gonic/gin"
@@ -128,6 +129,9 @@ type CreateGroupRequest struct {
 	SortOrder           int      `json:"sort_order"`
 	IsRecommended       bool     `json:"is_recommended"`
 	ExternalBuyURL      *string  `json:"external_buy_url"`
+	// 智能路由（虚拟故障转移分组）
+	IsFailoverGroup   bool    `json:"is_failover_group"`
+	FailoverMemberIDs []int64 `json:"failover_member_ids"`
 }
 
 // UpdateGroupRequest represents update group request
@@ -175,6 +179,9 @@ type UpdateGroupRequest struct {
 	// 定时上线时间窗口（格式 "HH:MM"，传空字符串清除）
 	ActiveStartTime *string `json:"active_start_time"`
 	ActiveEndTime   *string `json:"active_end_time"`
+	// 智能路由成员列表（仅当已是智能路由分组时有效）
+	FailoverMemberIDs *[]int64 `json:"failover_member_ids"`
+	IsFailoverGroup   *bool    `json:"is_failover_group"`
 }
 
 // List handles listing all groups with pagination
@@ -304,6 +311,8 @@ func (h *GroupHandler) Create(c *gin.Context) {
 		SortOrder:                       req.SortOrder,
 		IsRecommended:                   req.IsRecommended,
 		ExternalBuyURL:                  req.ExternalBuyURL,
+		IsFailoverGroup:                 req.IsFailoverGroup,
+		FailoverMemberIDs:               req.FailoverMemberIDs,
 	})
 	if err != nil {
 		response.ErrorFrom(c, err)
@@ -365,6 +374,8 @@ func (h *GroupHandler) Update(c *gin.Context) {
 		ExternalBuyURL:                  req.ExternalBuyURL,
 		ActiveStartTime:                 req.ActiveStartTime,
 		ActiveEndTime:                   req.ActiveEndTime,
+		IsFailoverGroup:                 req.IsFailoverGroup,
+		FailoverMemberIDs:               req.FailoverMemberIDs,
 	})
 	if err != nil {
 		response.ErrorFrom(c, err)
@@ -593,4 +604,117 @@ func (h *GroupHandler) CheckHealth(c *gin.Context) {
 	}
 
 	response.Success(c, dto.GroupFromServiceAdmin(group))
+}
+
+// GetFailoverStatus 返回智能路由详情（成员健康快照 + pin + 事件时间线）
+// GET /api/v1/admin/groups/:id/failover/status
+func (h *GroupHandler) GetFailoverStatus(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.BadRequest(c, "Invalid group ID")
+		return
+	}
+	status, err := h.adminService.GetFailoverStatus(c.Request.Context(), id)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, status)
+}
+
+// SetFailoverPinRequest 手动锁定请求。ttl_seconds<=0 表示永久。
+type SetFailoverPinRequest struct {
+	MemberID   int64 `json:"member_id" binding:"required"`
+	TTLSeconds int   `json:"ttl_seconds"`
+}
+
+// SetFailoverPin 手动锁定某个成员
+// POST /api/v1/admin/groups/:id/failover/pin
+func (h *GroupHandler) SetFailoverPin(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.BadRequest(c, "Invalid group ID")
+		return
+	}
+	var req SetFailoverPinRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+	adminID := int64(0)
+	if subj, ok := middleware.GetAuthSubjectFromContext(c); ok {
+		adminID = subj.UserID
+	}
+	if err := h.adminService.SetFailoverPin(c.Request.Context(), id, req.MemberID, req.TTLSeconds, adminID); err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, gin.H{"message": "pin updated"})
+}
+
+// ClearFailoverPin 解除手动锁定
+// DELETE /api/v1/admin/groups/:id/failover/pin
+func (h *GroupHandler) ClearFailoverPin(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.BadRequest(c, "Invalid group ID")
+		return
+	}
+	adminID := int64(0)
+	if subj, ok := middleware.GetAuthSubjectFromContext(c); ok {
+		adminID = subj.UserID
+	}
+	if err := h.adminService.ClearFailoverPin(c.Request.Context(), id, adminID); err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, gin.H{"message": "pin cleared"})
+}
+
+// TriggerFailoverProbeRequest 单个成员立即探测请求
+type TriggerFailoverProbeRequest struct {
+	MemberID int64 `json:"member_id" binding:"required"`
+}
+
+// TriggerFailoverProbe 立即对单个成员发起一次探测
+// POST /api/v1/admin/groups/:id/failover/probe
+func (h *GroupHandler) TriggerFailoverProbe(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.BadRequest(c, "Invalid group ID")
+		return
+	}
+	var req TriggerFailoverProbeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+	ok, err := h.adminService.TriggerFailoverMemberProbe(c.Request.Context(), id, req.MemberID)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, gin.H{"success": ok})
+}
+
+// GetFailoverUsage 返回智能路由下各成员在指定时间窗内的用量分布
+// GET /api/v1/admin/groups/:id/failover/usage?days=7
+func (h *GroupHandler) GetFailoverUsage(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.BadRequest(c, "Invalid group ID")
+		return
+	}
+	days := 7
+	if v := c.Query("days"); v != "" {
+		if parsed, err := strconv.Atoi(v); err == nil && parsed > 0 && parsed <= 365 {
+			days = parsed
+		}
+	}
+	usage, err := h.adminService.GetFailoverUsage(c.Request.Context(), id, days)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, gin.H{"members": usage, "days": days})
 }

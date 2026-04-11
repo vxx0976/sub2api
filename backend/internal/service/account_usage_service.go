@@ -91,6 +91,18 @@ type UsageLogRepository interface {
 	// BackfillMerchantRateSnapshot fills in NULL merchant_rate_snapshot values
 	// using the current price_multiplier from reseller_settings. Returns the number of rows updated.
 	BackfillMerchantRateSnapshot(ctx context.Context) (int64, error)
+
+	// GetFailoverMemberUsage 按 requested_group_id 过滤，聚合各成员（group_id）的用量。
+	// 用于智能路由详情页展示哪个成员承接了多少实际流量。
+	GetFailoverMemberUsage(ctx context.Context, virtualGroupID int64, since time.Time) ([]FailoverMemberUsageRow, error)
+}
+
+// FailoverMemberUsageRow 原始聚合结果（不含成员名），由上层拼接 Group 信息。
+type FailoverMemberUsageRow struct {
+	GroupID  int64
+	Requests int64
+	Tokens   int64
+	Cost     float64
 }
 
 type accountWindowStatsBatchReader interface {

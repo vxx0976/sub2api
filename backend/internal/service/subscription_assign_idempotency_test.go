@@ -67,6 +67,27 @@ func (groupRepoNoop) ListPurchasable(context.Context) ([]Group, error) {
 func (groupRepoNoop) ListPurchasableByOwnerID(context.Context, int64) ([]Group, error) {
 	panic("unexpected ListPurchasableByOwnerID call")
 }
+func (groupRepoNoop) ListFailoverGroups(context.Context) ([]*Group, error) {
+	panic("unexpected ListFailoverGroups call")
+}
+func (groupRepoNoop) ListFailoverGroupsReferencing(context.Context, int64) ([]*Group, error) {
+	panic("unexpected ListFailoverGroupsReferencing call")
+}
+func (groupRepoNoop) UpdateFailoverActive(context.Context, int64, int64, int64) (bool, error) {
+	panic("unexpected UpdateFailoverActive call")
+}
+func (groupRepoNoop) SetFailoverPin(context.Context, int64, int64, *time.Time) error {
+	panic("unexpected SetFailoverPin call")
+}
+func (groupRepoNoop) ClearFailoverPin(context.Context, int64) error {
+	panic("unexpected ClearFailoverPin call")
+}
+func (groupRepoNoop) UpdateFailoverConfig(context.Context, int64, bool, []int64, *int64) error {
+	panic("unexpected UpdateFailoverConfig call")
+}
+func (groupRepoNoop) CountSchedulableAccountsByGroup(context.Context, int64) (int, error) {
+	panic("unexpected CountSchedulableAccountsByGroup call")
+}
 
 type subscriptionGroupRepoStub struct {
 	groupRepoNoop

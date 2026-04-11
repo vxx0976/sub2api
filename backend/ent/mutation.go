@@ -19,6 +19,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/apikey"
 	"github.com/Wei-Shaw/sub2api/ent/channel"
 	"github.com/Wei-Shaw/sub2api/ent/errorpassthroughrule"
+	"github.com/Wei-Shaw/sub2api/ent/failovergroupevent"
 	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/idempotencyrecord"
 	"github.com/Wei-Shaw/sub2api/ent/order"
@@ -61,6 +62,7 @@ const (
 	TypeAnnouncementRead        = "AnnouncementRead"
 	TypeChannel                 = "Channel"
 	TypeErrorPassthroughRule    = "ErrorPassthroughRule"
+	TypeFailoverGroupEvent      = "FailoverGroupEvent"
 	TypeGroup                   = "Group"
 	TypeIdempotencyRecord       = "IdempotencyRecord"
 	TypeOrder                   = "Order"
@@ -9993,6 +9995,873 @@ func (m *ErrorPassthroughRuleMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown ErrorPassthroughRule edge %s", name)
 }
 
+// FailoverGroupEventMutation represents an operation that mutates the FailoverGroupEvent nodes in the graph.
+type FailoverGroupEventMutation struct {
+	config
+	op                  Op
+	typ                 string
+	id                  *int64
+	virtual_group_id    *int64
+	addvirtual_group_id *int64
+	from_member_id      *int64
+	addfrom_member_id   *int64
+	to_member_id        *int64
+	addto_member_id     *int64
+	reason              *string
+	triggered_by        *int64
+	addtriggered_by     *int64
+	note                *string
+	occurred_at         *time.Time
+	clearedFields       map[string]struct{}
+	done                bool
+	oldValue            func(context.Context) (*FailoverGroupEvent, error)
+	predicates          []predicate.FailoverGroupEvent
+}
+
+var _ ent.Mutation = (*FailoverGroupEventMutation)(nil)
+
+// failovergroupeventOption allows management of the mutation configuration using functional options.
+type failovergroupeventOption func(*FailoverGroupEventMutation)
+
+// newFailoverGroupEventMutation creates new mutation for the FailoverGroupEvent entity.
+func newFailoverGroupEventMutation(c config, op Op, opts ...failovergroupeventOption) *FailoverGroupEventMutation {
+	m := &FailoverGroupEventMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeFailoverGroupEvent,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withFailoverGroupEventID sets the ID field of the mutation.
+func withFailoverGroupEventID(id int64) failovergroupeventOption {
+	return func(m *FailoverGroupEventMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *FailoverGroupEvent
+		)
+		m.oldValue = func(ctx context.Context) (*FailoverGroupEvent, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().FailoverGroupEvent.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withFailoverGroupEvent sets the old FailoverGroupEvent of the mutation.
+func withFailoverGroupEvent(node *FailoverGroupEvent) failovergroupeventOption {
+	return func(m *FailoverGroupEventMutation) {
+		m.oldValue = func(context.Context) (*FailoverGroupEvent, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m FailoverGroupEventMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m FailoverGroupEventMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *FailoverGroupEventMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *FailoverGroupEventMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().FailoverGroupEvent.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetVirtualGroupID sets the "virtual_group_id" field.
+func (m *FailoverGroupEventMutation) SetVirtualGroupID(i int64) {
+	m.virtual_group_id = &i
+	m.addvirtual_group_id = nil
+}
+
+// VirtualGroupID returns the value of the "virtual_group_id" field in the mutation.
+func (m *FailoverGroupEventMutation) VirtualGroupID() (r int64, exists bool) {
+	v := m.virtual_group_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVirtualGroupID returns the old "virtual_group_id" field's value of the FailoverGroupEvent entity.
+// If the FailoverGroupEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FailoverGroupEventMutation) OldVirtualGroupID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldVirtualGroupID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldVirtualGroupID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVirtualGroupID: %w", err)
+	}
+	return oldValue.VirtualGroupID, nil
+}
+
+// AddVirtualGroupID adds i to the "virtual_group_id" field.
+func (m *FailoverGroupEventMutation) AddVirtualGroupID(i int64) {
+	if m.addvirtual_group_id != nil {
+		*m.addvirtual_group_id += i
+	} else {
+		m.addvirtual_group_id = &i
+	}
+}
+
+// AddedVirtualGroupID returns the value that was added to the "virtual_group_id" field in this mutation.
+func (m *FailoverGroupEventMutation) AddedVirtualGroupID() (r int64, exists bool) {
+	v := m.addvirtual_group_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetVirtualGroupID resets all changes to the "virtual_group_id" field.
+func (m *FailoverGroupEventMutation) ResetVirtualGroupID() {
+	m.virtual_group_id = nil
+	m.addvirtual_group_id = nil
+}
+
+// SetFromMemberID sets the "from_member_id" field.
+func (m *FailoverGroupEventMutation) SetFromMemberID(i int64) {
+	m.from_member_id = &i
+	m.addfrom_member_id = nil
+}
+
+// FromMemberID returns the value of the "from_member_id" field in the mutation.
+func (m *FailoverGroupEventMutation) FromMemberID() (r int64, exists bool) {
+	v := m.from_member_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFromMemberID returns the old "from_member_id" field's value of the FailoverGroupEvent entity.
+// If the FailoverGroupEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FailoverGroupEventMutation) OldFromMemberID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFromMemberID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFromMemberID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFromMemberID: %w", err)
+	}
+	return oldValue.FromMemberID, nil
+}
+
+// AddFromMemberID adds i to the "from_member_id" field.
+func (m *FailoverGroupEventMutation) AddFromMemberID(i int64) {
+	if m.addfrom_member_id != nil {
+		*m.addfrom_member_id += i
+	} else {
+		m.addfrom_member_id = &i
+	}
+}
+
+// AddedFromMemberID returns the value that was added to the "from_member_id" field in this mutation.
+func (m *FailoverGroupEventMutation) AddedFromMemberID() (r int64, exists bool) {
+	v := m.addfrom_member_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearFromMemberID clears the value of the "from_member_id" field.
+func (m *FailoverGroupEventMutation) ClearFromMemberID() {
+	m.from_member_id = nil
+	m.addfrom_member_id = nil
+	m.clearedFields[failovergroupevent.FieldFromMemberID] = struct{}{}
+}
+
+// FromMemberIDCleared returns if the "from_member_id" field was cleared in this mutation.
+func (m *FailoverGroupEventMutation) FromMemberIDCleared() bool {
+	_, ok := m.clearedFields[failovergroupevent.FieldFromMemberID]
+	return ok
+}
+
+// ResetFromMemberID resets all changes to the "from_member_id" field.
+func (m *FailoverGroupEventMutation) ResetFromMemberID() {
+	m.from_member_id = nil
+	m.addfrom_member_id = nil
+	delete(m.clearedFields, failovergroupevent.FieldFromMemberID)
+}
+
+// SetToMemberID sets the "to_member_id" field.
+func (m *FailoverGroupEventMutation) SetToMemberID(i int64) {
+	m.to_member_id = &i
+	m.addto_member_id = nil
+}
+
+// ToMemberID returns the value of the "to_member_id" field in the mutation.
+func (m *FailoverGroupEventMutation) ToMemberID() (r int64, exists bool) {
+	v := m.to_member_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldToMemberID returns the old "to_member_id" field's value of the FailoverGroupEvent entity.
+// If the FailoverGroupEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FailoverGroupEventMutation) OldToMemberID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldToMemberID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldToMemberID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldToMemberID: %w", err)
+	}
+	return oldValue.ToMemberID, nil
+}
+
+// AddToMemberID adds i to the "to_member_id" field.
+func (m *FailoverGroupEventMutation) AddToMemberID(i int64) {
+	if m.addto_member_id != nil {
+		*m.addto_member_id += i
+	} else {
+		m.addto_member_id = &i
+	}
+}
+
+// AddedToMemberID returns the value that was added to the "to_member_id" field in this mutation.
+func (m *FailoverGroupEventMutation) AddedToMemberID() (r int64, exists bool) {
+	v := m.addto_member_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearToMemberID clears the value of the "to_member_id" field.
+func (m *FailoverGroupEventMutation) ClearToMemberID() {
+	m.to_member_id = nil
+	m.addto_member_id = nil
+	m.clearedFields[failovergroupevent.FieldToMemberID] = struct{}{}
+}
+
+// ToMemberIDCleared returns if the "to_member_id" field was cleared in this mutation.
+func (m *FailoverGroupEventMutation) ToMemberIDCleared() bool {
+	_, ok := m.clearedFields[failovergroupevent.FieldToMemberID]
+	return ok
+}
+
+// ResetToMemberID resets all changes to the "to_member_id" field.
+func (m *FailoverGroupEventMutation) ResetToMemberID() {
+	m.to_member_id = nil
+	m.addto_member_id = nil
+	delete(m.clearedFields, failovergroupevent.FieldToMemberID)
+}
+
+// SetReason sets the "reason" field.
+func (m *FailoverGroupEventMutation) SetReason(s string) {
+	m.reason = &s
+}
+
+// Reason returns the value of the "reason" field in the mutation.
+func (m *FailoverGroupEventMutation) Reason() (r string, exists bool) {
+	v := m.reason
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldReason returns the old "reason" field's value of the FailoverGroupEvent entity.
+// If the FailoverGroupEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FailoverGroupEventMutation) OldReason(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldReason is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldReason requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldReason: %w", err)
+	}
+	return oldValue.Reason, nil
+}
+
+// ResetReason resets all changes to the "reason" field.
+func (m *FailoverGroupEventMutation) ResetReason() {
+	m.reason = nil
+}
+
+// SetTriggeredBy sets the "triggered_by" field.
+func (m *FailoverGroupEventMutation) SetTriggeredBy(i int64) {
+	m.triggered_by = &i
+	m.addtriggered_by = nil
+}
+
+// TriggeredBy returns the value of the "triggered_by" field in the mutation.
+func (m *FailoverGroupEventMutation) TriggeredBy() (r int64, exists bool) {
+	v := m.triggered_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTriggeredBy returns the old "triggered_by" field's value of the FailoverGroupEvent entity.
+// If the FailoverGroupEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FailoverGroupEventMutation) OldTriggeredBy(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTriggeredBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTriggeredBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTriggeredBy: %w", err)
+	}
+	return oldValue.TriggeredBy, nil
+}
+
+// AddTriggeredBy adds i to the "triggered_by" field.
+func (m *FailoverGroupEventMutation) AddTriggeredBy(i int64) {
+	if m.addtriggered_by != nil {
+		*m.addtriggered_by += i
+	} else {
+		m.addtriggered_by = &i
+	}
+}
+
+// AddedTriggeredBy returns the value that was added to the "triggered_by" field in this mutation.
+func (m *FailoverGroupEventMutation) AddedTriggeredBy() (r int64, exists bool) {
+	v := m.addtriggered_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearTriggeredBy clears the value of the "triggered_by" field.
+func (m *FailoverGroupEventMutation) ClearTriggeredBy() {
+	m.triggered_by = nil
+	m.addtriggered_by = nil
+	m.clearedFields[failovergroupevent.FieldTriggeredBy] = struct{}{}
+}
+
+// TriggeredByCleared returns if the "triggered_by" field was cleared in this mutation.
+func (m *FailoverGroupEventMutation) TriggeredByCleared() bool {
+	_, ok := m.clearedFields[failovergroupevent.FieldTriggeredBy]
+	return ok
+}
+
+// ResetTriggeredBy resets all changes to the "triggered_by" field.
+func (m *FailoverGroupEventMutation) ResetTriggeredBy() {
+	m.triggered_by = nil
+	m.addtriggered_by = nil
+	delete(m.clearedFields, failovergroupevent.FieldTriggeredBy)
+}
+
+// SetNote sets the "note" field.
+func (m *FailoverGroupEventMutation) SetNote(s string) {
+	m.note = &s
+}
+
+// Note returns the value of the "note" field in the mutation.
+func (m *FailoverGroupEventMutation) Note() (r string, exists bool) {
+	v := m.note
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNote returns the old "note" field's value of the FailoverGroupEvent entity.
+// If the FailoverGroupEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FailoverGroupEventMutation) OldNote(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNote is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNote requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNote: %w", err)
+	}
+	return oldValue.Note, nil
+}
+
+// ClearNote clears the value of the "note" field.
+func (m *FailoverGroupEventMutation) ClearNote() {
+	m.note = nil
+	m.clearedFields[failovergroupevent.FieldNote] = struct{}{}
+}
+
+// NoteCleared returns if the "note" field was cleared in this mutation.
+func (m *FailoverGroupEventMutation) NoteCleared() bool {
+	_, ok := m.clearedFields[failovergroupevent.FieldNote]
+	return ok
+}
+
+// ResetNote resets all changes to the "note" field.
+func (m *FailoverGroupEventMutation) ResetNote() {
+	m.note = nil
+	delete(m.clearedFields, failovergroupevent.FieldNote)
+}
+
+// SetOccurredAt sets the "occurred_at" field.
+func (m *FailoverGroupEventMutation) SetOccurredAt(t time.Time) {
+	m.occurred_at = &t
+}
+
+// OccurredAt returns the value of the "occurred_at" field in the mutation.
+func (m *FailoverGroupEventMutation) OccurredAt() (r time.Time, exists bool) {
+	v := m.occurred_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOccurredAt returns the old "occurred_at" field's value of the FailoverGroupEvent entity.
+// If the FailoverGroupEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FailoverGroupEventMutation) OldOccurredAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOccurredAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOccurredAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOccurredAt: %w", err)
+	}
+	return oldValue.OccurredAt, nil
+}
+
+// ResetOccurredAt resets all changes to the "occurred_at" field.
+func (m *FailoverGroupEventMutation) ResetOccurredAt() {
+	m.occurred_at = nil
+}
+
+// Where appends a list predicates to the FailoverGroupEventMutation builder.
+func (m *FailoverGroupEventMutation) Where(ps ...predicate.FailoverGroupEvent) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the FailoverGroupEventMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *FailoverGroupEventMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.FailoverGroupEvent, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *FailoverGroupEventMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *FailoverGroupEventMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (FailoverGroupEvent).
+func (m *FailoverGroupEventMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *FailoverGroupEventMutation) Fields() []string {
+	fields := make([]string, 0, 7)
+	if m.virtual_group_id != nil {
+		fields = append(fields, failovergroupevent.FieldVirtualGroupID)
+	}
+	if m.from_member_id != nil {
+		fields = append(fields, failovergroupevent.FieldFromMemberID)
+	}
+	if m.to_member_id != nil {
+		fields = append(fields, failovergroupevent.FieldToMemberID)
+	}
+	if m.reason != nil {
+		fields = append(fields, failovergroupevent.FieldReason)
+	}
+	if m.triggered_by != nil {
+		fields = append(fields, failovergroupevent.FieldTriggeredBy)
+	}
+	if m.note != nil {
+		fields = append(fields, failovergroupevent.FieldNote)
+	}
+	if m.occurred_at != nil {
+		fields = append(fields, failovergroupevent.FieldOccurredAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *FailoverGroupEventMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case failovergroupevent.FieldVirtualGroupID:
+		return m.VirtualGroupID()
+	case failovergroupevent.FieldFromMemberID:
+		return m.FromMemberID()
+	case failovergroupevent.FieldToMemberID:
+		return m.ToMemberID()
+	case failovergroupevent.FieldReason:
+		return m.Reason()
+	case failovergroupevent.FieldTriggeredBy:
+		return m.TriggeredBy()
+	case failovergroupevent.FieldNote:
+		return m.Note()
+	case failovergroupevent.FieldOccurredAt:
+		return m.OccurredAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *FailoverGroupEventMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case failovergroupevent.FieldVirtualGroupID:
+		return m.OldVirtualGroupID(ctx)
+	case failovergroupevent.FieldFromMemberID:
+		return m.OldFromMemberID(ctx)
+	case failovergroupevent.FieldToMemberID:
+		return m.OldToMemberID(ctx)
+	case failovergroupevent.FieldReason:
+		return m.OldReason(ctx)
+	case failovergroupevent.FieldTriggeredBy:
+		return m.OldTriggeredBy(ctx)
+	case failovergroupevent.FieldNote:
+		return m.OldNote(ctx)
+	case failovergroupevent.FieldOccurredAt:
+		return m.OldOccurredAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown FailoverGroupEvent field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *FailoverGroupEventMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case failovergroupevent.FieldVirtualGroupID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetVirtualGroupID(v)
+		return nil
+	case failovergroupevent.FieldFromMemberID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFromMemberID(v)
+		return nil
+	case failovergroupevent.FieldToMemberID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetToMemberID(v)
+		return nil
+	case failovergroupevent.FieldReason:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetReason(v)
+		return nil
+	case failovergroupevent.FieldTriggeredBy:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTriggeredBy(v)
+		return nil
+	case failovergroupevent.FieldNote:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNote(v)
+		return nil
+	case failovergroupevent.FieldOccurredAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOccurredAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown FailoverGroupEvent field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *FailoverGroupEventMutation) AddedFields() []string {
+	var fields []string
+	if m.addvirtual_group_id != nil {
+		fields = append(fields, failovergroupevent.FieldVirtualGroupID)
+	}
+	if m.addfrom_member_id != nil {
+		fields = append(fields, failovergroupevent.FieldFromMemberID)
+	}
+	if m.addto_member_id != nil {
+		fields = append(fields, failovergroupevent.FieldToMemberID)
+	}
+	if m.addtriggered_by != nil {
+		fields = append(fields, failovergroupevent.FieldTriggeredBy)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *FailoverGroupEventMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case failovergroupevent.FieldVirtualGroupID:
+		return m.AddedVirtualGroupID()
+	case failovergroupevent.FieldFromMemberID:
+		return m.AddedFromMemberID()
+	case failovergroupevent.FieldToMemberID:
+		return m.AddedToMemberID()
+	case failovergroupevent.FieldTriggeredBy:
+		return m.AddedTriggeredBy()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *FailoverGroupEventMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case failovergroupevent.FieldVirtualGroupID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddVirtualGroupID(v)
+		return nil
+	case failovergroupevent.FieldFromMemberID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddFromMemberID(v)
+		return nil
+	case failovergroupevent.FieldToMemberID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddToMemberID(v)
+		return nil
+	case failovergroupevent.FieldTriggeredBy:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTriggeredBy(v)
+		return nil
+	}
+	return fmt.Errorf("unknown FailoverGroupEvent numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *FailoverGroupEventMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(failovergroupevent.FieldFromMemberID) {
+		fields = append(fields, failovergroupevent.FieldFromMemberID)
+	}
+	if m.FieldCleared(failovergroupevent.FieldToMemberID) {
+		fields = append(fields, failovergroupevent.FieldToMemberID)
+	}
+	if m.FieldCleared(failovergroupevent.FieldTriggeredBy) {
+		fields = append(fields, failovergroupevent.FieldTriggeredBy)
+	}
+	if m.FieldCleared(failovergroupevent.FieldNote) {
+		fields = append(fields, failovergroupevent.FieldNote)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *FailoverGroupEventMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *FailoverGroupEventMutation) ClearField(name string) error {
+	switch name {
+	case failovergroupevent.FieldFromMemberID:
+		m.ClearFromMemberID()
+		return nil
+	case failovergroupevent.FieldToMemberID:
+		m.ClearToMemberID()
+		return nil
+	case failovergroupevent.FieldTriggeredBy:
+		m.ClearTriggeredBy()
+		return nil
+	case failovergroupevent.FieldNote:
+		m.ClearNote()
+		return nil
+	}
+	return fmt.Errorf("unknown FailoverGroupEvent nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *FailoverGroupEventMutation) ResetField(name string) error {
+	switch name {
+	case failovergroupevent.FieldVirtualGroupID:
+		m.ResetVirtualGroupID()
+		return nil
+	case failovergroupevent.FieldFromMemberID:
+		m.ResetFromMemberID()
+		return nil
+	case failovergroupevent.FieldToMemberID:
+		m.ResetToMemberID()
+		return nil
+	case failovergroupevent.FieldReason:
+		m.ResetReason()
+		return nil
+	case failovergroupevent.FieldTriggeredBy:
+		m.ResetTriggeredBy()
+		return nil
+	case failovergroupevent.FieldNote:
+		m.ResetNote()
+		return nil
+	case failovergroupevent.FieldOccurredAt:
+		m.ResetOccurredAt()
+		return nil
+	}
+	return fmt.Errorf("unknown FailoverGroupEvent field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *FailoverGroupEventMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *FailoverGroupEventMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *FailoverGroupEventMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *FailoverGroupEventMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *FailoverGroupEventMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *FailoverGroupEventMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *FailoverGroupEventMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown FailoverGroupEvent unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *FailoverGroupEventMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown FailoverGroupEvent edge %s", name)
+}
+
 // GroupMutation represents an operation that mutates the Group nodes in the graph.
 type GroupMutation struct {
 	config
@@ -10062,6 +10931,16 @@ type GroupMutation struct {
 	total_checked_accounts                  *int
 	addtotal_checked_accounts               *int
 	last_health_check_at                    *time.Time
+	is_failover_group                       *bool
+	failover_member_ids                     *[]int64
+	appendfailover_member_ids               []int64
+	failover_active_member_id               *int64
+	addfailover_active_member_id            *int64
+	failover_active_version                 *int64
+	addfailover_active_version              *int64
+	failover_pin_member_id                  *int64
+	addfailover_pin_member_id               *int64
+	failover_pin_expires_at                 *time.Time
 	clearedFields                           map[string]struct{}
 	api_keys                                map[int64]struct{}
 	removedapi_keys                         map[int64]struct{}
@@ -12433,6 +13312,352 @@ func (m *GroupMutation) ResetLastHealthCheckAt() {
 	delete(m.clearedFields, group.FieldLastHealthCheckAt)
 }
 
+// SetIsFailoverGroup sets the "is_failover_group" field.
+func (m *GroupMutation) SetIsFailoverGroup(b bool) {
+	m.is_failover_group = &b
+}
+
+// IsFailoverGroup returns the value of the "is_failover_group" field in the mutation.
+func (m *GroupMutation) IsFailoverGroup() (r bool, exists bool) {
+	v := m.is_failover_group
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIsFailoverGroup returns the old "is_failover_group" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldIsFailoverGroup(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIsFailoverGroup is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIsFailoverGroup requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIsFailoverGroup: %w", err)
+	}
+	return oldValue.IsFailoverGroup, nil
+}
+
+// ResetIsFailoverGroup resets all changes to the "is_failover_group" field.
+func (m *GroupMutation) ResetIsFailoverGroup() {
+	m.is_failover_group = nil
+}
+
+// SetFailoverMemberIds sets the "failover_member_ids" field.
+func (m *GroupMutation) SetFailoverMemberIds(i []int64) {
+	m.failover_member_ids = &i
+	m.appendfailover_member_ids = nil
+}
+
+// FailoverMemberIds returns the value of the "failover_member_ids" field in the mutation.
+func (m *GroupMutation) FailoverMemberIds() (r []int64, exists bool) {
+	v := m.failover_member_ids
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFailoverMemberIds returns the old "failover_member_ids" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldFailoverMemberIds(ctx context.Context) (v []int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFailoverMemberIds is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFailoverMemberIds requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFailoverMemberIds: %w", err)
+	}
+	return oldValue.FailoverMemberIds, nil
+}
+
+// AppendFailoverMemberIds adds i to the "failover_member_ids" field.
+func (m *GroupMutation) AppendFailoverMemberIds(i []int64) {
+	m.appendfailover_member_ids = append(m.appendfailover_member_ids, i...)
+}
+
+// AppendedFailoverMemberIds returns the list of values that were appended to the "failover_member_ids" field in this mutation.
+func (m *GroupMutation) AppendedFailoverMemberIds() ([]int64, bool) {
+	if len(m.appendfailover_member_ids) == 0 {
+		return nil, false
+	}
+	return m.appendfailover_member_ids, true
+}
+
+// ClearFailoverMemberIds clears the value of the "failover_member_ids" field.
+func (m *GroupMutation) ClearFailoverMemberIds() {
+	m.failover_member_ids = nil
+	m.appendfailover_member_ids = nil
+	m.clearedFields[group.FieldFailoverMemberIds] = struct{}{}
+}
+
+// FailoverMemberIdsCleared returns if the "failover_member_ids" field was cleared in this mutation.
+func (m *GroupMutation) FailoverMemberIdsCleared() bool {
+	_, ok := m.clearedFields[group.FieldFailoverMemberIds]
+	return ok
+}
+
+// ResetFailoverMemberIds resets all changes to the "failover_member_ids" field.
+func (m *GroupMutation) ResetFailoverMemberIds() {
+	m.failover_member_ids = nil
+	m.appendfailover_member_ids = nil
+	delete(m.clearedFields, group.FieldFailoverMemberIds)
+}
+
+// SetFailoverActiveMemberID sets the "failover_active_member_id" field.
+func (m *GroupMutation) SetFailoverActiveMemberID(i int64) {
+	m.failover_active_member_id = &i
+	m.addfailover_active_member_id = nil
+}
+
+// FailoverActiveMemberID returns the value of the "failover_active_member_id" field in the mutation.
+func (m *GroupMutation) FailoverActiveMemberID() (r int64, exists bool) {
+	v := m.failover_active_member_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFailoverActiveMemberID returns the old "failover_active_member_id" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldFailoverActiveMemberID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFailoverActiveMemberID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFailoverActiveMemberID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFailoverActiveMemberID: %w", err)
+	}
+	return oldValue.FailoverActiveMemberID, nil
+}
+
+// AddFailoverActiveMemberID adds i to the "failover_active_member_id" field.
+func (m *GroupMutation) AddFailoverActiveMemberID(i int64) {
+	if m.addfailover_active_member_id != nil {
+		*m.addfailover_active_member_id += i
+	} else {
+		m.addfailover_active_member_id = &i
+	}
+}
+
+// AddedFailoverActiveMemberID returns the value that was added to the "failover_active_member_id" field in this mutation.
+func (m *GroupMutation) AddedFailoverActiveMemberID() (r int64, exists bool) {
+	v := m.addfailover_active_member_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearFailoverActiveMemberID clears the value of the "failover_active_member_id" field.
+func (m *GroupMutation) ClearFailoverActiveMemberID() {
+	m.failover_active_member_id = nil
+	m.addfailover_active_member_id = nil
+	m.clearedFields[group.FieldFailoverActiveMemberID] = struct{}{}
+}
+
+// FailoverActiveMemberIDCleared returns if the "failover_active_member_id" field was cleared in this mutation.
+func (m *GroupMutation) FailoverActiveMemberIDCleared() bool {
+	_, ok := m.clearedFields[group.FieldFailoverActiveMemberID]
+	return ok
+}
+
+// ResetFailoverActiveMemberID resets all changes to the "failover_active_member_id" field.
+func (m *GroupMutation) ResetFailoverActiveMemberID() {
+	m.failover_active_member_id = nil
+	m.addfailover_active_member_id = nil
+	delete(m.clearedFields, group.FieldFailoverActiveMemberID)
+}
+
+// SetFailoverActiveVersion sets the "failover_active_version" field.
+func (m *GroupMutation) SetFailoverActiveVersion(i int64) {
+	m.failover_active_version = &i
+	m.addfailover_active_version = nil
+}
+
+// FailoverActiveVersion returns the value of the "failover_active_version" field in the mutation.
+func (m *GroupMutation) FailoverActiveVersion() (r int64, exists bool) {
+	v := m.failover_active_version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFailoverActiveVersion returns the old "failover_active_version" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldFailoverActiveVersion(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFailoverActiveVersion is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFailoverActiveVersion requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFailoverActiveVersion: %w", err)
+	}
+	return oldValue.FailoverActiveVersion, nil
+}
+
+// AddFailoverActiveVersion adds i to the "failover_active_version" field.
+func (m *GroupMutation) AddFailoverActiveVersion(i int64) {
+	if m.addfailover_active_version != nil {
+		*m.addfailover_active_version += i
+	} else {
+		m.addfailover_active_version = &i
+	}
+}
+
+// AddedFailoverActiveVersion returns the value that was added to the "failover_active_version" field in this mutation.
+func (m *GroupMutation) AddedFailoverActiveVersion() (r int64, exists bool) {
+	v := m.addfailover_active_version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetFailoverActiveVersion resets all changes to the "failover_active_version" field.
+func (m *GroupMutation) ResetFailoverActiveVersion() {
+	m.failover_active_version = nil
+	m.addfailover_active_version = nil
+}
+
+// SetFailoverPinMemberID sets the "failover_pin_member_id" field.
+func (m *GroupMutation) SetFailoverPinMemberID(i int64) {
+	m.failover_pin_member_id = &i
+	m.addfailover_pin_member_id = nil
+}
+
+// FailoverPinMemberID returns the value of the "failover_pin_member_id" field in the mutation.
+func (m *GroupMutation) FailoverPinMemberID() (r int64, exists bool) {
+	v := m.failover_pin_member_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFailoverPinMemberID returns the old "failover_pin_member_id" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldFailoverPinMemberID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFailoverPinMemberID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFailoverPinMemberID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFailoverPinMemberID: %w", err)
+	}
+	return oldValue.FailoverPinMemberID, nil
+}
+
+// AddFailoverPinMemberID adds i to the "failover_pin_member_id" field.
+func (m *GroupMutation) AddFailoverPinMemberID(i int64) {
+	if m.addfailover_pin_member_id != nil {
+		*m.addfailover_pin_member_id += i
+	} else {
+		m.addfailover_pin_member_id = &i
+	}
+}
+
+// AddedFailoverPinMemberID returns the value that was added to the "failover_pin_member_id" field in this mutation.
+func (m *GroupMutation) AddedFailoverPinMemberID() (r int64, exists bool) {
+	v := m.addfailover_pin_member_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearFailoverPinMemberID clears the value of the "failover_pin_member_id" field.
+func (m *GroupMutation) ClearFailoverPinMemberID() {
+	m.failover_pin_member_id = nil
+	m.addfailover_pin_member_id = nil
+	m.clearedFields[group.FieldFailoverPinMemberID] = struct{}{}
+}
+
+// FailoverPinMemberIDCleared returns if the "failover_pin_member_id" field was cleared in this mutation.
+func (m *GroupMutation) FailoverPinMemberIDCleared() bool {
+	_, ok := m.clearedFields[group.FieldFailoverPinMemberID]
+	return ok
+}
+
+// ResetFailoverPinMemberID resets all changes to the "failover_pin_member_id" field.
+func (m *GroupMutation) ResetFailoverPinMemberID() {
+	m.failover_pin_member_id = nil
+	m.addfailover_pin_member_id = nil
+	delete(m.clearedFields, group.FieldFailoverPinMemberID)
+}
+
+// SetFailoverPinExpiresAt sets the "failover_pin_expires_at" field.
+func (m *GroupMutation) SetFailoverPinExpiresAt(t time.Time) {
+	m.failover_pin_expires_at = &t
+}
+
+// FailoverPinExpiresAt returns the value of the "failover_pin_expires_at" field in the mutation.
+func (m *GroupMutation) FailoverPinExpiresAt() (r time.Time, exists bool) {
+	v := m.failover_pin_expires_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFailoverPinExpiresAt returns the old "failover_pin_expires_at" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldFailoverPinExpiresAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFailoverPinExpiresAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFailoverPinExpiresAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFailoverPinExpiresAt: %w", err)
+	}
+	return oldValue.FailoverPinExpiresAt, nil
+}
+
+// ClearFailoverPinExpiresAt clears the value of the "failover_pin_expires_at" field.
+func (m *GroupMutation) ClearFailoverPinExpiresAt() {
+	m.failover_pin_expires_at = nil
+	m.clearedFields[group.FieldFailoverPinExpiresAt] = struct{}{}
+}
+
+// FailoverPinExpiresAtCleared returns if the "failover_pin_expires_at" field was cleared in this mutation.
+func (m *GroupMutation) FailoverPinExpiresAtCleared() bool {
+	_, ok := m.clearedFields[group.FieldFailoverPinExpiresAt]
+	return ok
+}
+
+// ResetFailoverPinExpiresAt resets all changes to the "failover_pin_expires_at" field.
+func (m *GroupMutation) ResetFailoverPinExpiresAt() {
+	m.failover_pin_expires_at = nil
+	delete(m.clearedFields, group.FieldFailoverPinExpiresAt)
+}
+
 // AddAPIKeyIDs adds the "api_keys" edge to the APIKey entity by ids.
 func (m *GroupMutation) AddAPIKeyIDs(ids ...int64) {
 	if m.api_keys == nil {
@@ -12845,7 +14070,7 @@ func (m *GroupMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *GroupMutation) Fields() []string {
-	fields := make([]string, 0, 45)
+	fields := make([]string, 0, 51)
 	if m.created_at != nil {
 		fields = append(fields, group.FieldCreatedAt)
 	}
@@ -12981,6 +14206,24 @@ func (m *GroupMutation) Fields() []string {
 	if m.last_health_check_at != nil {
 		fields = append(fields, group.FieldLastHealthCheckAt)
 	}
+	if m.is_failover_group != nil {
+		fields = append(fields, group.FieldIsFailoverGroup)
+	}
+	if m.failover_member_ids != nil {
+		fields = append(fields, group.FieldFailoverMemberIds)
+	}
+	if m.failover_active_member_id != nil {
+		fields = append(fields, group.FieldFailoverActiveMemberID)
+	}
+	if m.failover_active_version != nil {
+		fields = append(fields, group.FieldFailoverActiveVersion)
+	}
+	if m.failover_pin_member_id != nil {
+		fields = append(fields, group.FieldFailoverPinMemberID)
+	}
+	if m.failover_pin_expires_at != nil {
+		fields = append(fields, group.FieldFailoverPinExpiresAt)
+	}
 	return fields
 }
 
@@ -13079,6 +14322,18 @@ func (m *GroupMutation) Field(name string) (ent.Value, bool) {
 		return m.TotalCheckedAccounts()
 	case group.FieldLastHealthCheckAt:
 		return m.LastHealthCheckAt()
+	case group.FieldIsFailoverGroup:
+		return m.IsFailoverGroup()
+	case group.FieldFailoverMemberIds:
+		return m.FailoverMemberIds()
+	case group.FieldFailoverActiveMemberID:
+		return m.FailoverActiveMemberID()
+	case group.FieldFailoverActiveVersion:
+		return m.FailoverActiveVersion()
+	case group.FieldFailoverPinMemberID:
+		return m.FailoverPinMemberID()
+	case group.FieldFailoverPinExpiresAt:
+		return m.FailoverPinExpiresAt()
 	}
 	return nil, false
 }
@@ -13178,6 +14433,18 @@ func (m *GroupMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldTotalCheckedAccounts(ctx)
 	case group.FieldLastHealthCheckAt:
 		return m.OldLastHealthCheckAt(ctx)
+	case group.FieldIsFailoverGroup:
+		return m.OldIsFailoverGroup(ctx)
+	case group.FieldFailoverMemberIds:
+		return m.OldFailoverMemberIds(ctx)
+	case group.FieldFailoverActiveMemberID:
+		return m.OldFailoverActiveMemberID(ctx)
+	case group.FieldFailoverActiveVersion:
+		return m.OldFailoverActiveVersion(ctx)
+	case group.FieldFailoverPinMemberID:
+		return m.OldFailoverPinMemberID(ctx)
+	case group.FieldFailoverPinExpiresAt:
+		return m.OldFailoverPinExpiresAt(ctx)
 	}
 	return nil, fmt.Errorf("unknown Group field %s", name)
 }
@@ -13502,6 +14769,48 @@ func (m *GroupMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetLastHealthCheckAt(v)
 		return nil
+	case group.FieldIsFailoverGroup:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIsFailoverGroup(v)
+		return nil
+	case group.FieldFailoverMemberIds:
+		v, ok := value.([]int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFailoverMemberIds(v)
+		return nil
+	case group.FieldFailoverActiveMemberID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFailoverActiveMemberID(v)
+		return nil
+	case group.FieldFailoverActiveVersion:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFailoverActiveVersion(v)
+		return nil
+	case group.FieldFailoverPinMemberID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFailoverPinMemberID(v)
+		return nil
+	case group.FieldFailoverPinExpiresAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFailoverPinExpiresAt(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Group field %s", name)
 }
@@ -13561,6 +14870,15 @@ func (m *GroupMutation) AddedFields() []string {
 	if m.addtotal_checked_accounts != nil {
 		fields = append(fields, group.FieldTotalCheckedAccounts)
 	}
+	if m.addfailover_active_member_id != nil {
+		fields = append(fields, group.FieldFailoverActiveMemberID)
+	}
+	if m.addfailover_active_version != nil {
+		fields = append(fields, group.FieldFailoverActiveVersion)
+	}
+	if m.addfailover_pin_member_id != nil {
+		fields = append(fields, group.FieldFailoverPinMemberID)
+	}
 	return fields
 }
 
@@ -13603,6 +14921,12 @@ func (m *GroupMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedHealthyAccounts()
 	case group.FieldTotalCheckedAccounts:
 		return m.AddedTotalCheckedAccounts()
+	case group.FieldFailoverActiveMemberID:
+		return m.AddedFailoverActiveMemberID()
+	case group.FieldFailoverActiveVersion:
+		return m.AddedFailoverActiveVersion()
+	case group.FieldFailoverPinMemberID:
+		return m.AddedFailoverPinMemberID()
 	}
 	return nil, false
 }
@@ -13731,6 +15055,27 @@ func (m *GroupMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddTotalCheckedAccounts(v)
 		return nil
+	case group.FieldFailoverActiveMemberID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddFailoverActiveMemberID(v)
+		return nil
+	case group.FieldFailoverActiveVersion:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddFailoverActiveVersion(v)
+		return nil
+	case group.FieldFailoverPinMemberID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddFailoverPinMemberID(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Group numeric field %s", name)
 }
@@ -13798,6 +15143,18 @@ func (m *GroupMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(group.FieldLastHealthCheckAt) {
 		fields = append(fields, group.FieldLastHealthCheckAt)
+	}
+	if m.FieldCleared(group.FieldFailoverMemberIds) {
+		fields = append(fields, group.FieldFailoverMemberIds)
+	}
+	if m.FieldCleared(group.FieldFailoverActiveMemberID) {
+		fields = append(fields, group.FieldFailoverActiveMemberID)
+	}
+	if m.FieldCleared(group.FieldFailoverPinMemberID) {
+		fields = append(fields, group.FieldFailoverPinMemberID)
+	}
+	if m.FieldCleared(group.FieldFailoverPinExpiresAt) {
+		fields = append(fields, group.FieldFailoverPinExpiresAt)
 	}
 	return fields
 }
@@ -13872,6 +15229,18 @@ func (m *GroupMutation) ClearField(name string) error {
 		return nil
 	case group.FieldLastHealthCheckAt:
 		m.ClearLastHealthCheckAt()
+		return nil
+	case group.FieldFailoverMemberIds:
+		m.ClearFailoverMemberIds()
+		return nil
+	case group.FieldFailoverActiveMemberID:
+		m.ClearFailoverActiveMemberID()
+		return nil
+	case group.FieldFailoverPinMemberID:
+		m.ClearFailoverPinMemberID()
+		return nil
+	case group.FieldFailoverPinExpiresAt:
+		m.ClearFailoverPinExpiresAt()
 		return nil
 	}
 	return fmt.Errorf("unknown Group nullable field %s", name)
@@ -14015,6 +15384,24 @@ func (m *GroupMutation) ResetField(name string) error {
 		return nil
 	case group.FieldLastHealthCheckAt:
 		m.ResetLastHealthCheckAt()
+		return nil
+	case group.FieldIsFailoverGroup:
+		m.ResetIsFailoverGroup()
+		return nil
+	case group.FieldFailoverMemberIds:
+		m.ResetFailoverMemberIds()
+		return nil
+	case group.FieldFailoverActiveMemberID:
+		m.ResetFailoverActiveMemberID()
+		return nil
+	case group.FieldFailoverActiveVersion:
+		m.ResetFailoverActiveVersion()
+		return nil
+	case group.FieldFailoverPinMemberID:
+		m.ResetFailoverPinMemberID()
+		return nil
+	case group.FieldFailoverPinExpiresAt:
+		m.ResetFailoverPinExpiresAt()
 		return nil
 	}
 	return fmt.Errorf("unknown Group field %s", name)
@@ -29116,6 +30503,8 @@ type UsageLogMutation struct {
 	model_mapping_chain         *string
 	billing_tier                *string
 	billing_mode                *string
+	requested_group_id          *int64
+	addrequested_group_id       *int64
 	input_tokens                *int
 	addinput_tokens             *int
 	output_tokens               *int
@@ -29819,6 +31208,76 @@ func (m *UsageLogMutation) GroupIDCleared() bool {
 func (m *UsageLogMutation) ResetGroupID() {
 	m.group = nil
 	delete(m.clearedFields, usagelog.FieldGroupID)
+}
+
+// SetRequestedGroupID sets the "requested_group_id" field.
+func (m *UsageLogMutation) SetRequestedGroupID(i int64) {
+	m.requested_group_id = &i
+	m.addrequested_group_id = nil
+}
+
+// RequestedGroupID returns the value of the "requested_group_id" field in the mutation.
+func (m *UsageLogMutation) RequestedGroupID() (r int64, exists bool) {
+	v := m.requested_group_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRequestedGroupID returns the old "requested_group_id" field's value of the UsageLog entity.
+// If the UsageLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageLogMutation) OldRequestedGroupID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRequestedGroupID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRequestedGroupID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRequestedGroupID: %w", err)
+	}
+	return oldValue.RequestedGroupID, nil
+}
+
+// AddRequestedGroupID adds i to the "requested_group_id" field.
+func (m *UsageLogMutation) AddRequestedGroupID(i int64) {
+	if m.addrequested_group_id != nil {
+		*m.addrequested_group_id += i
+	} else {
+		m.addrequested_group_id = &i
+	}
+}
+
+// AddedRequestedGroupID returns the value that was added to the "requested_group_id" field in this mutation.
+func (m *UsageLogMutation) AddedRequestedGroupID() (r int64, exists bool) {
+	v := m.addrequested_group_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearRequestedGroupID clears the value of the "requested_group_id" field.
+func (m *UsageLogMutation) ClearRequestedGroupID() {
+	m.requested_group_id = nil
+	m.addrequested_group_id = nil
+	m.clearedFields[usagelog.FieldRequestedGroupID] = struct{}{}
+}
+
+// RequestedGroupIDCleared returns if the "requested_group_id" field was cleared in this mutation.
+func (m *UsageLogMutation) RequestedGroupIDCleared() bool {
+	_, ok := m.clearedFields[usagelog.FieldRequestedGroupID]
+	return ok
+}
+
+// ResetRequestedGroupID resets all changes to the "requested_group_id" field.
+func (m *UsageLogMutation) ResetRequestedGroupID() {
+	m.requested_group_id = nil
+	m.addrequested_group_id = nil
+	delete(m.clearedFields, usagelog.FieldRequestedGroupID)
 }
 
 // SetSubscriptionID sets the "subscription_id" field.
@@ -31533,7 +32992,7 @@ func (m *UsageLogMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UsageLogMutation) Fields() []string {
-	fields := make([]string, 0, 40)
+	fields := make([]string, 0, 41)
 	if m.user != nil {
 		fields = append(fields, usagelog.FieldUserID)
 	}
@@ -31569,6 +33028,9 @@ func (m *UsageLogMutation) Fields() []string {
 	}
 	if m.group != nil {
 		fields = append(fields, usagelog.FieldGroupID)
+	}
+	if m.requested_group_id != nil {
+		fields = append(fields, usagelog.FieldRequestedGroupID)
 	}
 	if m.subscription != nil {
 		fields = append(fields, usagelog.FieldSubscriptionID)
@@ -31686,6 +33148,8 @@ func (m *UsageLogMutation) Field(name string) (ent.Value, bool) {
 		return m.BillingMode()
 	case usagelog.FieldGroupID:
 		return m.GroupID()
+	case usagelog.FieldRequestedGroupID:
+		return m.RequestedGroupID()
 	case usagelog.FieldSubscriptionID:
 		return m.SubscriptionID()
 	case usagelog.FieldInputTokens:
@@ -31775,6 +33239,8 @@ func (m *UsageLogMutation) OldField(ctx context.Context, name string) (ent.Value
 		return m.OldBillingMode(ctx)
 	case usagelog.FieldGroupID:
 		return m.OldGroupID(ctx)
+	case usagelog.FieldRequestedGroupID:
+		return m.OldRequestedGroupID(ctx)
 	case usagelog.FieldSubscriptionID:
 		return m.OldSubscriptionID(ctx)
 	case usagelog.FieldInputTokens:
@@ -31923,6 +33389,13 @@ func (m *UsageLogMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetGroupID(v)
+		return nil
+	case usagelog.FieldRequestedGroupID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRequestedGroupID(v)
 		return nil
 	case usagelog.FieldSubscriptionID:
 		v, ok := value.(int64)
@@ -32131,6 +33604,9 @@ func (m *UsageLogMutation) AddedFields() []string {
 	if m.addchannel_id != nil {
 		fields = append(fields, usagelog.FieldChannelID)
 	}
+	if m.addrequested_group_id != nil {
+		fields = append(fields, usagelog.FieldRequestedGroupID)
+	}
 	if m.addinput_tokens != nil {
 		fields = append(fields, usagelog.FieldInputTokens)
 	}
@@ -32201,6 +33677,8 @@ func (m *UsageLogMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
 	case usagelog.FieldChannelID:
 		return m.AddedChannelID()
+	case usagelog.FieldRequestedGroupID:
+		return m.AddedRequestedGroupID()
 	case usagelog.FieldInputTokens:
 		return m.AddedInputTokens()
 	case usagelog.FieldOutputTokens:
@@ -32256,6 +33734,13 @@ func (m *UsageLogMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddChannelID(v)
+		return nil
+	case usagelog.FieldRequestedGroupID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddRequestedGroupID(v)
 		return nil
 	case usagelog.FieldInputTokens:
 		v, ok := value.(int)
@@ -32426,6 +33911,9 @@ func (m *UsageLogMutation) ClearedFields() []string {
 	if m.FieldCleared(usagelog.FieldGroupID) {
 		fields = append(fields, usagelog.FieldGroupID)
 	}
+	if m.FieldCleared(usagelog.FieldRequestedGroupID) {
+		fields = append(fields, usagelog.FieldRequestedGroupID)
+	}
 	if m.FieldCleared(usagelog.FieldSubscriptionID) {
 		fields = append(fields, usagelog.FieldSubscriptionID)
 	}
@@ -32490,6 +33978,9 @@ func (m *UsageLogMutation) ClearField(name string) error {
 		return nil
 	case usagelog.FieldGroupID:
 		m.ClearGroupID()
+		return nil
+	case usagelog.FieldRequestedGroupID:
+		m.ClearRequestedGroupID()
 		return nil
 	case usagelog.FieldSubscriptionID:
 		m.ClearSubscriptionID()
@@ -32564,6 +34055,9 @@ func (m *UsageLogMutation) ResetField(name string) error {
 		return nil
 	case usagelog.FieldGroupID:
 		m.ResetGroupID()
+		return nil
+	case usagelog.FieldRequestedGroupID:
+		m.ResetRequestedGroupID()
 		return nil
 	case usagelog.FieldSubscriptionID:
 		m.ResetSubscriptionID()

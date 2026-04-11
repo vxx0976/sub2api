@@ -438,6 +438,35 @@ var (
 			},
 		},
 	}
+	// FailoverGroupEventsColumns holds the columns for the "failover_group_events" table.
+	FailoverGroupEventsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "virtual_group_id", Type: field.TypeInt64},
+		{Name: "from_member_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "to_member_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "reason", Type: field.TypeString, Size: 40},
+		{Name: "triggered_by", Type: field.TypeInt64, Nullable: true},
+		{Name: "note", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "occurred_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+	}
+	// FailoverGroupEventsTable holds the schema information for the "failover_group_events" table.
+	FailoverGroupEventsTable = &schema.Table{
+		Name:       "failover_group_events",
+		Columns:    FailoverGroupEventsColumns,
+		PrimaryKey: []*schema.Column{FailoverGroupEventsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "failovergroupevent_virtual_group_id_occurred_at",
+				Unique:  false,
+				Columns: []*schema.Column{FailoverGroupEventsColumns[1], FailoverGroupEventsColumns[7]},
+			},
+			{
+				Name:    "failovergroupevent_occurred_at",
+				Unique:  false,
+				Columns: []*schema.Column{FailoverGroupEventsColumns[7]},
+			},
+		},
+	}
 	// GroupsColumns holds the columns for the "groups" table.
 	GroupsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -486,6 +515,12 @@ var (
 		{Name: "healthy_accounts", Type: field.TypeInt, Default: 0},
 		{Name: "total_checked_accounts", Type: field.TypeInt, Default: 0},
 		{Name: "last_health_check_at", Type: field.TypeTime, Nullable: true},
+		{Name: "is_failover_group", Type: field.TypeBool, Default: false},
+		{Name: "failover_member_ids", Type: field.TypeJSON, Nullable: true, SchemaType: map[string]string{"postgres": "jsonb"}},
+		{Name: "failover_active_member_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "failover_active_version", Type: field.TypeInt64, Default: 0},
+		{Name: "failover_pin_member_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "failover_pin_expires_at", Type: field.TypeTime, Nullable: true},
 	}
 	// GroupsTable holds the schema information for the "groups" table.
 	GroupsTable = &schema.Table{
@@ -1123,6 +1158,7 @@ var (
 		{Name: "model_mapping_chain", Type: field.TypeString, Nullable: true, Size: 500},
 		{Name: "billing_tier", Type: field.TypeString, Nullable: true, Size: 50},
 		{Name: "billing_mode", Type: field.TypeString, Nullable: true, Size: 20},
+		{Name: "requested_group_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "input_tokens", Type: field.TypeInt, Default: 0},
 		{Name: "output_tokens", Type: field.TypeInt, Default: 0},
 		{Name: "cache_creation_tokens", Type: field.TypeInt, Default: 0},
@@ -1164,31 +1200,31 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "usage_logs_api_keys_usage_logs",
-				Columns:    []*schema.Column{UsageLogsColumns[36]},
+				Columns:    []*schema.Column{UsageLogsColumns[37]},
 				RefColumns: []*schema.Column{APIKeysColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "usage_logs_accounts_usage_logs",
-				Columns:    []*schema.Column{UsageLogsColumns[37]},
+				Columns:    []*schema.Column{UsageLogsColumns[38]},
 				RefColumns: []*schema.Column{AccountsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "usage_logs_groups_usage_logs",
-				Columns:    []*schema.Column{UsageLogsColumns[38]},
+				Columns:    []*schema.Column{UsageLogsColumns[39]},
 				RefColumns: []*schema.Column{GroupsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "usage_logs_users_usage_logs",
-				Columns:    []*schema.Column{UsageLogsColumns[39]},
+				Columns:    []*schema.Column{UsageLogsColumns[40]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "usage_logs_user_subscriptions_usage_logs",
-				Columns:    []*schema.Column{UsageLogsColumns[40]},
+				Columns:    []*schema.Column{UsageLogsColumns[41]},
 				RefColumns: []*schema.Column{UserSubscriptionsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -1197,32 +1233,32 @@ var (
 			{
 				Name:    "usagelog_user_id",
 				Unique:  false,
-				Columns: []*schema.Column{UsageLogsColumns[39]},
+				Columns: []*schema.Column{UsageLogsColumns[40]},
 			},
 			{
 				Name:    "usagelog_api_key_id",
 				Unique:  false,
-				Columns: []*schema.Column{UsageLogsColumns[36]},
+				Columns: []*schema.Column{UsageLogsColumns[37]},
 			},
 			{
 				Name:    "usagelog_account_id",
 				Unique:  false,
-				Columns: []*schema.Column{UsageLogsColumns[37]},
+				Columns: []*schema.Column{UsageLogsColumns[38]},
 			},
 			{
 				Name:    "usagelog_group_id",
 				Unique:  false,
-				Columns: []*schema.Column{UsageLogsColumns[38]},
+				Columns: []*schema.Column{UsageLogsColumns[39]},
 			},
 			{
 				Name:    "usagelog_subscription_id",
 				Unique:  false,
-				Columns: []*schema.Column{UsageLogsColumns[40]},
+				Columns: []*schema.Column{UsageLogsColumns[41]},
 			},
 			{
 				Name:    "usagelog_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{UsageLogsColumns[35]},
+				Columns: []*schema.Column{UsageLogsColumns[36]},
 			},
 			{
 				Name:    "usagelog_model",
@@ -1242,22 +1278,22 @@ var (
 			{
 				Name:    "usagelog_user_id_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{UsageLogsColumns[39], UsageLogsColumns[35]},
+				Columns: []*schema.Column{UsageLogsColumns[40], UsageLogsColumns[36]},
 			},
 			{
 				Name:    "usagelog_api_key_id_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{UsageLogsColumns[36], UsageLogsColumns[35]},
+				Columns: []*schema.Column{UsageLogsColumns[37], UsageLogsColumns[36]},
 			},
 			{
 				Name:    "usagelog_country_code_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{UsageLogsColumns[31], UsageLogsColumns[35]},
+				Columns: []*schema.Column{UsageLogsColumns[32], UsageLogsColumns[36]},
 			},
 			{
 				Name:    "usagelog_group_id_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{UsageLogsColumns[38], UsageLogsColumns[35]},
+				Columns: []*schema.Column{UsageLogsColumns[39], UsageLogsColumns[36]},
 			},
 		},
 	}
@@ -1534,6 +1570,7 @@ var (
 		AnnouncementReadsTable,
 		ChannelsTable,
 		ErrorPassthroughRulesTable,
+		FailoverGroupEventsTable,
 		GroupsTable,
 		IdempotencyRecordsTable,
 		OrdersTable,
@@ -1587,6 +1624,9 @@ func init() {
 	}
 	ErrorPassthroughRulesTable.Annotation = &entsql.Annotation{
 		Table: "error_passthrough_rules",
+	}
+	FailoverGroupEventsTable.Annotation = &entsql.Annotation{
+		Table: "failover_group_events",
 	}
 	GroupsTable.Annotation = &entsql.Annotation{
 		Table: "groups",

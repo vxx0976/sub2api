@@ -43,6 +43,21 @@ type GroupRepository interface {
 	UpdateHealthStatus(ctx context.Context, groupID int64, status string, healthy int, total int, checkedAt time.Time) error
 	// CountByOwnerID returns the number of groups owned by the given user.
 	CountByOwnerID(ctx context.Context, ownerID int64) (int64, error)
+
+	// ListFailoverGroups 返回所有启用状态的智能路由（虚拟故障转移分组），包括成员 ID 列表和激活成员。
+	ListFailoverGroups(ctx context.Context) ([]*Group, error)
+	// ListFailoverGroupsReferencing 返回将 memberID 包含在 failover_member_ids 内的虚拟分组，用于删除校验。
+	ListFailoverGroupsReferencing(ctx context.Context, memberID int64) ([]*Group, error)
+	// UpdateFailoverActive 以乐观锁方式更新激活成员 id，成功返回 true；版本号不匹配返回 false 且 err=nil。
+	UpdateFailoverActive(ctx context.Context, groupID int64, newMemberID int64, expectedVersion int64) (bool, error)
+	// SetFailoverPin 设置或刷新手动锁定；expiresAt 为 nil 表示永久 pin。
+	SetFailoverPin(ctx context.Context, groupID int64, memberID int64, expiresAt *time.Time) error
+	// ClearFailoverPin 清除手动锁定。
+	ClearFailoverPin(ctx context.Context, groupID int64) error
+	// UpdateFailoverConfig 更新智能路由的成员列表、启用位以及初始激活成员（用于 admin 创建/更新）。
+	UpdateFailoverConfig(ctx context.Context, groupID int64, isFailover bool, memberIDs []int64, activeMemberID *int64) error
+	// CountSchedulableAccountsByGroup 统计给定分组当前 available 状态下可调度的账号数量。
+	CountSchedulableAccountsByGroup(ctx context.Context, groupID int64) (int, error)
 }
 
 // GroupSortOrderUpdate 分组排序更新

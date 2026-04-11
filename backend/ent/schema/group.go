@@ -213,6 +213,30 @@ func (Group) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			Comment("最近一次健康检查时间"),
+
+		// 智能路由（故障转移）分组字段 (added by migration 095)
+		field.Bool("is_failover_group").
+			Default(false).
+			Comment("是否为智能路由（虚拟故障转移分组）"),
+		field.JSON("failover_member_ids", []int64{}).
+			Optional().
+			SchemaType(map[string]string{dialect.Postgres: "jsonb"}).
+			Comment("故障转移成员分组 ID 有序列表（仅 is_failover_group=true 时生效）"),
+		field.Int64("failover_active_member_id").
+			Optional().
+			Nillable().
+			Comment("当前激活成员 ID；为空表示尚未 reconcile"),
+		field.Int64("failover_active_version").
+			Default(0).
+			Comment("active_member_id 的乐观锁版本号（CAS）"),
+		field.Int64("failover_pin_member_id").
+			Optional().
+			Nillable().
+			Comment("手动锁定的成员 ID；非空时自动 reconcile 被短路"),
+		field.Time("failover_pin_expires_at").
+			Optional().
+			Nillable().
+			Comment("手动锁定过期时间；到期后自动清除"),
 	}
 }
 

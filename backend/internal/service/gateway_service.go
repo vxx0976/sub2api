@@ -1211,11 +1211,12 @@ func (s *GatewayService) SelectAccountForModelWithExclusions(ctx context.Context
 	if hasForcePlatform && forcePlatform != "" {
 		platform = forcePlatform
 	} else if groupID != nil {
-		group, resolvedGroupID, err := s.resolveGatewayGroup(ctx, groupID)
+		group, resolvedGroupID, virtualID, err := s.resolveGatewayGroupWithVirtual(ctx, groupID)
 		if err != nil {
 			return nil, err
 		}
 		groupID = resolvedGroupID
+		ctx = withFailoverRouteContext(ctx, virtualID, resolvedGroupID)
 		ctx = s.withGroupContext(ctx, group)
 		platform = group.Platform
 	} else {
@@ -1269,8 +1270,11 @@ func (s *GatewayService) SelectAccountWithLoadAwareness(ctx context.Context, gro
 
 	cfg := s.schedulingConfig()
 
-	// 检查 Claude Code 客户端限制（可能会替换 groupID 为降级分组）
-	group, groupID, err := s.checkClaudeCodeRestriction(ctx, groupID)
+	// 检查 Claude Code 客户端限制（可能会替换 groupID 为降级分组；
+	// 若原请求走智能路由则 ctx 会附带 ctxkey.RequestedGroupID）
+	var group *Group
+	var err error
+	ctx, group, groupID, err = s.checkClaudeCodeRestriction(ctx, groupID)
 	if err != nil {
 		return nil, err
 	}
@@ -1936,29 +1940,68 @@ func (s *GatewayService) routingAccountIDsForRequest(ctx context.Context, groupI
 }
 
 func (s *GatewayService) resolveGatewayGroup(ctx context.Context, groupID *int64) (*Group, *int64, error) {
+	group, resolvedID, _, err := s.resolveGatewayGroupWithVirtual(ctx, groupID)
+	return group, resolvedID, err
+}
+
+// withFailoverRouteContext 把虚拟分组 id 与实际承接的成员分组 id 注入 ctx。
+// 下游使用这两个 key 写入 usage_logs.requested_group_id / group_id，让成员维度的用量统计正确归因。
+func withFailoverRouteContext(ctx context.Context, virtualGroupID *int64, resolvedGroupID *int64) context.Context {
+	if virtualGroupID != nil && *virtualGroupID > 0 {
+		if existing, ok := ctx.Value(ctxkey.RequestedGroupID).(int64); !ok || existing != *virtualGroupID {
+			ctx = context.WithValue(ctx, ctxkey.RequestedGroupID, *virtualGroupID)
+		}
+		if resolvedGroupID != nil && *resolvedGroupID > 0 {
+			if existing, ok := ctx.Value(ctxkey.ResolvedGroupID).(int64); !ok || existing != *resolvedGroupID {
+				ctx = context.WithValue(ctx, ctxkey.ResolvedGroupID, *resolvedGroupID)
+			}
+		}
+	}
+	return ctx
+}
+
+// resolveGatewayGroupWithVirtual 与 resolveGatewayGroup 相同，但额外返回请求最初命中的"虚拟分组"（智能路由）ID。
+// 当请求没有经过智能路由时返回 nil；非 nil 的 virtualGroupID 表示发生了透明重定向。
+func (s *GatewayService) resolveGatewayGroupWithVirtual(ctx context.Context, groupID *int64) (*Group, *int64, *int64, error) {
 	if groupID == nil {
-		return nil, nil, nil
+		return nil, nil, nil, nil
 	}
 
+	var virtualGroupID *int64
 	currentID := *groupID
 	visited := map[int64]struct{}{}
 	for {
 		if _, seen := visited[currentID]; seen {
-			return nil, nil, fmt.Errorf("fallback group cycle detected")
+			return nil, nil, nil, fmt.Errorf("fallback group cycle detected")
 		}
 		visited[currentID] = struct{}{}
 
 		group, err := s.resolveGroupByID(ctx, currentID)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
+		}
+
+		// 智能路由：透明重定向到当前激活成员。
+		if group.IsFailoverGroup {
+			now := time.Now()
+			activePtr := group.EffectiveFailoverActiveMemberID(now)
+			if activePtr == nil {
+				return nil, nil, nil, fmt.Errorf("failover group %d has no active member", group.ID)
+			}
+			if virtualGroupID == nil {
+				vid := group.ID
+				virtualGroupID = &vid
+			}
+			currentID = *activePtr
+			continue
 		}
 
 		if !group.ClaudeCodeOnly || IsClaudeCodeClient(ctx) {
-			return group, &currentID, nil
+			return group, &currentID, virtualGroupID, nil
 		}
 
 		if group.FallbackGroupID == nil {
-			return nil, nil, ErrClaudeCodeOnly
+			return nil, nil, nil, ErrClaudeCodeOnly
 		}
 		currentID = *group.FallbackGroupID
 	}
@@ -1968,22 +2011,25 @@ func (s *GatewayService) resolveGatewayGroup(ctx context.Context, groupID *int64
 // 如果分组启用了 claude_code_only 且请求不是来自 Claude Code 客户端：
 //   - 有降级分组：返回降级分组的 ID
 //   - 无降级分组：返回 ErrClaudeCodeOnly 错误
-func (s *GatewayService) checkClaudeCodeRestriction(ctx context.Context, groupID *int64) (*Group, *int64, error) {
+//
+// 返回的 ctx 可能附带 ctxkey.RequestedGroupID（当原请求经过智能路由透明转发时）。
+func (s *GatewayService) checkClaudeCodeRestriction(ctx context.Context, groupID *int64) (context.Context, *Group, *int64, error) {
 	if groupID == nil {
-		return nil, groupID, nil
+		return ctx, nil, groupID, nil
 	}
 
 	// 强制平台模式不检查 Claude Code 限制
 	if forcePlatform, hasForcePlatform := ctx.Value(ctxkey.ForcePlatform).(string); hasForcePlatform && forcePlatform != "" {
-		return nil, groupID, nil
+		return ctx, nil, groupID, nil
 	}
 
-	group, resolvedID, err := s.resolveGatewayGroup(ctx, groupID)
+	group, resolvedID, virtualID, err := s.resolveGatewayGroupWithVirtual(ctx, groupID)
 	if err != nil {
-		return nil, nil, err
+		return ctx, nil, nil, err
 	}
 
-	return group, resolvedID, nil
+	ctx = withFailoverRouteContext(ctx, virtualID, resolvedID)
+	return ctx, group, resolvedID, nil
 }
 
 func (s *GatewayService) resolvePlatform(ctx context.Context, groupID *int64, group *Group) (string, bool, error) {
@@ -8178,8 +8224,17 @@ func (s *GatewayService) RecordUsage(ctx context.Context, input *RecordUsageInpu
 	}
 
 	// 添加分组和订阅关联
-	if apiKey.GroupID != nil {
+	// 优先使用 resolver 解析出的实际承接成员 id（智能路由透明重定向场景下非 nil），
+	// 否则退回 api_key 绑定的分组。这样成员维度的用量统计不会被虚拟路由吞掉。
+	if resolved, ok := ctx.Value(ctxkey.ResolvedGroupID).(int64); ok && resolved > 0 {
+		rid := resolved
+		usageLog.GroupID = &rid
+	} else if apiKey.GroupID != nil {
 		usageLog.GroupID = apiKey.GroupID
+	}
+	if v, ok := ctx.Value(ctxkey.RequestedGroupID).(int64); ok && v > 0 {
+		requested := v
+		usageLog.RequestedGroupID = &requested
 	}
 	if subscription != nil {
 		usageLog.SubscriptionID = &subscription.ID

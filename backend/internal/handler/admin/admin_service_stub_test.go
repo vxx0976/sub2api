@@ -460,5 +460,25 @@ func (s *stubAdminService) ReplaceUserGroup(ctx context.Context, userID, oldGrou
 	return &service.ReplaceUserGroupResult{MigratedKeys: 0}, nil
 }
 
+func (s *stubAdminService) GetFailoverStatus(context.Context, int64) (*service.FailoverStatus, error) {
+	return nil, nil
+}
+
+func (s *stubAdminService) SetFailoverPin(context.Context, int64, int64, int, int64) error {
+	return nil
+}
+
+func (s *stubAdminService) ClearFailoverPin(context.Context, int64, int64) error {
+	return nil
+}
+
+func (s *stubAdminService) TriggerFailoverMemberProbe(context.Context, int64, int64) (bool, error) {
+	return false, nil
+}
+
+func (s *stubAdminService) GetFailoverUsage(context.Context, int64, int) ([]service.FailoverMemberUsage, error) {
+	return nil, nil
+}
+
 // Ensure stub implements interface.
 var _ service.AdminService = (*stubAdminService)(nil)

@@ -264,6 +264,12 @@ func registerGroupRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 		groups.DELETE("/:id/rate-multipliers", h.Admin.Group.ClearGroupRateMultipliers)
 		groups.GET("/:id/api-keys", h.Admin.Group.GetGroupAPIKeys)
 		groups.POST("/:id/check-health", h.Admin.Group.CheckHealth)
+		// 智能路由（虚拟故障转移分组）相关端点
+		groups.GET("/:id/failover/status", h.Admin.Group.GetFailoverStatus)
+		groups.POST("/:id/failover/pin", h.Admin.Group.SetFailoverPin)
+		groups.DELETE("/:id/failover/pin", h.Admin.Group.ClearFailoverPin)
+		groups.POST("/:id/failover/probe", h.Admin.Group.TriggerFailoverProbe)
+		groups.GET("/:id/failover/usage", h.Admin.Group.GetFailoverUsage)
 	}
 }
 

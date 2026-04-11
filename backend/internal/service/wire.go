@@ -342,6 +342,37 @@ func ProvideGroupHealthCheckService(
 	return svc
 }
 
+// ProvideFailoverGroupService 构造并启动智能路由服务，同时把它回注到
+// GroupHealthCheckService（用于每轮健康检查后的 reconcile 钩子）和
+// AdminService（用于配置变更后立即 reconcile 以及详情页只读查询）。
+func ProvideFailoverGroupService(
+	groupRepo GroupRepository,
+	accountRepo AccountRepository,
+	eventRepo FailoverEventRepository,
+	usageLogRepo UsageLogRepository,
+	accountTestSvc *AccountTestService,
+	locker *LeaderLocker,
+	healthCheckSvc *GroupHealthCheckService,
+	adminSvc AdminService,
+) *FailoverGroupService {
+	svc := NewFailoverGroupService(groupRepo, accountRepo, eventRepo, accountTestSvc, locker)
+	if healthCheckSvc != nil {
+		healthCheckSvc.SetFailoverGroupService(svc)
+	}
+	if setter, ok := adminSvc.(interface {
+		SetFailoverGroupService(*FailoverGroupService)
+	}); ok {
+		setter.SetFailoverGroupService(svc)
+	}
+	if extras, ok := adminSvc.(interface {
+		SetFailoverExtras(FailoverEventRepository, UsageLogRepository)
+	}); ok {
+		extras.SetFailoverExtras(eventRepo, usageLogRepo)
+	}
+	svc.Start()
+	return svc
+}
+
 // ProvideScheduledTestRunnerService creates and starts ScheduledTestRunnerService.
 func ProvideScheduledTestRunnerService(
 	planRepo ScheduledTestPlanRepository,
@@ -506,6 +537,7 @@ var ProviderSet = wire.NewSet(
 	ProvideScheduledTestService,
 	ProvideScheduledTestRunnerService,
 	ProvideGroupHealthCheckService,
+	ProvideFailoverGroupService,
 	NewGroupCapacityService,
 	NewRechargeService,
 	NewModelPricingResolver,

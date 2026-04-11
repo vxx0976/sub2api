@@ -335,6 +335,65 @@
           />
           <p class="input-hint">{{ t('admin.groups.platformHint') }}</p>
         </div>
+        <!-- 智能路由（虚拟故障转移分组） -->
+        <div class="rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-800/50 dark:bg-amber-900/10 p-3">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              v-model="createForm.is_failover_group"
+              class="form-checkbox"
+              @change="createForm.failover_member_ids = []"
+            />
+            <span class="text-sm font-medium text-gray-800 dark:text-gray-200">
+              {{ t('admin.groups.smartRouter.enable') }}
+            </span>
+          </label>
+          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            {{ t('admin.groups.smartRouter.enableHint') }}
+          </p>
+          <div v-if="createForm.is_failover_group" class="mt-3 space-y-2">
+            <label class="input-label">{{ t('admin.groups.smartRouter.members') }}</label>
+            <div v-if="createForm.failover_member_ids.length > 0" class="flex flex-wrap gap-1.5">
+              <span
+                v-for="(mid, idx) in createForm.failover_member_ids"
+                :key="mid"
+                class="inline-flex items-center gap-1 rounded-full bg-primary-100 px-2.5 py-1 text-xs font-medium text-primary-700 dark:bg-primary-900/30 dark:text-primary-300"
+              >
+                <span class="text-[10px] opacity-60">#{{ idx + 1 }}</span>
+                {{ failoverMemberCandidatesCreate.find(g => g.id === mid)?.name || `#${mid}` }}
+                <button
+                  type="button"
+                  @click="createForm.failover_member_ids = createForm.failover_member_ids.filter(id => id !== mid)"
+                  class="ml-0.5 text-primary-500 hover:text-primary-700 dark:hover:text-primary-200"
+                >
+                  <Icon name="x" size="xs" />
+                </button>
+              </span>
+            </div>
+            <select
+              class="input"
+              @change="(e) => {
+                const val = Number((e.target as HTMLSelectElement).value)
+                if (val && !createForm.failover_member_ids.includes(val)) {
+                  createForm.failover_member_ids.push(val)
+                }
+                (e.target as HTMLSelectElement).value = ''
+              }"
+            >
+              <option value="">{{ t('admin.groups.smartRouter.addMember') }}</option>
+              <option
+                v-for="g in failoverMemberCandidatesCreate.filter(g => !createForm.failover_member_ids.includes(g.id))"
+                :key="g.id"
+                :value="g.id"
+              >
+                {{ g.name }}
+              </option>
+            </select>
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+              {{ t('admin.groups.smartRouter.membersHint') }}
+            </p>
+          </div>
+        </div>
         <!-- 从分组复制账号 -->
         <div v-if="copyAccountsGroupOptions.length > 0">
           <div class="mb-1.5 flex items-center gap-1">
@@ -1146,6 +1205,64 @@
             data-tour="group-form-platform"
           />
           <p class="input-hint">{{ t('admin.groups.platformNotEditable') }}</p>
+        </div>
+        <!-- 智能路由（编辑时） -->
+        <div v-if="editForm.is_failover_group" class="rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-800/50 dark:bg-amber-900/10 p-3">
+          <div class="flex items-center justify-between">
+            <span class="text-sm font-medium text-gray-800 dark:text-gray-200">
+              {{ t('admin.groups.smartRouter.enabledBadge') }}
+            </span>
+            <router-link
+              v-if="editingGroup"
+              :to="`/admin/groups/${editingGroup.id}/failover`"
+              class="text-xs text-primary-600 hover:underline dark:text-primary-400"
+              target="_blank"
+            >
+              {{ t('admin.groups.smartRouter.openDetail') }}
+            </router-link>
+          </div>
+          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            {{ t('admin.groups.smartRouter.editHint') }}
+          </p>
+          <div class="mt-3 space-y-2">
+            <label class="input-label">{{ t('admin.groups.smartRouter.members') }}</label>
+            <div v-if="editForm.failover_member_ids.length > 0" class="flex flex-wrap gap-1.5">
+              <span
+                v-for="(mid, idx) in editForm.failover_member_ids"
+                :key="mid"
+                class="inline-flex items-center gap-1 rounded-full bg-primary-100 px-2.5 py-1 text-xs font-medium text-primary-700 dark:bg-primary-900/30 dark:text-primary-300"
+              >
+                <span class="text-[10px] opacity-60">#{{ idx + 1 }}</span>
+                {{ failoverMemberCandidatesEdit.find(g => g.id === mid)?.name || `#${mid}` }}
+                <button
+                  type="button"
+                  @click="editForm.failover_member_ids = editForm.failover_member_ids.filter(id => id !== mid)"
+                  class="ml-0.5 text-primary-500 hover:text-primary-700 dark:hover:text-primary-200"
+                >
+                  <Icon name="x" size="xs" />
+                </button>
+              </span>
+            </div>
+            <select
+              class="input"
+              @change="(e) => {
+                const val = Number((e.target as HTMLSelectElement).value)
+                if (val && !editForm.failover_member_ids.includes(val)) {
+                  editForm.failover_member_ids.push(val)
+                }
+                (e.target as HTMLSelectElement).value = ''
+              }"
+            >
+              <option value="">{{ t('admin.groups.smartRouter.addMember') }}</option>
+              <option
+                v-for="g in failoverMemberCandidatesEdit.filter(g => !editForm.failover_member_ids.includes(g.id))"
+                :key="g.id"
+                :value="g.id"
+              >
+                {{ g.name }}
+              </option>
+            </select>
+          </div>
         </div>
         <!-- 从分组复制账号（编辑时） -->
         <div v-if="copyAccountsGroupOptionsForEdit.length > 0">
@@ -2257,6 +2374,24 @@ const copyAccountsGroupOptionsForEdit = computed(() => {
   }))
 })
 
+// 智能路由成员候选 - 相同平台、非失败转移本身、active
+const failoverMemberCandidatesCreate = computed(() => {
+  return groups.value.filter(
+    (g) => g.platform === createForm.platform && !g.is_failover_group && g.status === 'active'
+  )
+})
+
+const failoverMemberCandidatesEdit = computed(() => {
+  const currentId = editingGroup.value?.id
+  return groups.value.filter(
+    (g) =>
+      g.platform === editForm.platform &&
+      !g.is_failover_group &&
+      g.status === 'active' &&
+      g.id !== currentId
+  )
+})
+
 const groups = ref<AdminGroup[]>([])
 const loading = ref(false)
 const usageMap = ref<Map<number, { today_cost: number; total_cost: number }>>(new Map())
@@ -2331,7 +2466,10 @@ const createForm = reactive({
   // MCP XML 协议注入开关（仅 antigravity 平台）
   mcp_xml_inject: true,
   // 从分组复制账号
-  copy_accounts_from_group_ids: [] as number[]
+  copy_accounts_from_group_ids: [] as number[],
+  // 智能路由（虚拟故障转移分组）
+  is_failover_group: false,
+  failover_member_ids: [] as number[]
 })
 
 // 简单账号类型（用于模型路由选择）
@@ -2586,7 +2724,10 @@ const editForm = reactive({
   // MCP XML 协议注入开关（仅 antigravity 平台）
   mcp_xml_inject: true,
   // 从分组复制账号
-  copy_accounts_from_group_ids: [] as number[]
+  copy_accounts_from_group_ids: [] as number[],
+  // 智能路由（虚拟故障转移分组）
+  is_failover_group: false,
+  failover_member_ids: [] as number[]
 })
 
 // 状态切换时清除定时上线配置，避免脏数据提交
@@ -2771,6 +2912,8 @@ const closeCreateModal = () => {
   createForm.supported_model_scopes = ['claude', 'gemini_text', 'gemini_image']
   createForm.mcp_xml_inject = true
   createForm.copy_accounts_from_group_ids = []
+  createForm.is_failover_group = false
+  createForm.failover_member_ids = []
   createModelRoutingRules.value = []
 }
 
@@ -2867,6 +3010,8 @@ const handleEdit = async (group: AdminGroup) => {
   editForm.active_start_time = group.active_start_time || ''
   editForm.active_end_time = group.active_end_time || ''
   editForm.copy_accounts_from_group_ids = [] // 复制账号字段每次编辑时重置为空
+  editForm.is_failover_group = group.is_failover_group || false
+  editForm.failover_member_ids = [...(group.failover_member_ids || [])]
   // 加载模型路由规则（异步加载账号名称）
   editModelRoutingRules.value = await convertApiFormatToRoutingRules(group.model_routing)
   showEditModal.value = true

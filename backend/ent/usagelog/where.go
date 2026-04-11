@@ -115,6 +115,11 @@ func GroupID(v int64) predicate.UsageLog {
 	return predicate.UsageLog(sql.FieldEQ(FieldGroupID, v))
 }
 
+// RequestedGroupID applies equality check predicate on the "requested_group_id" field. It's identical to RequestedGroupIDEQ.
+func RequestedGroupID(v int64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldEQ(FieldRequestedGroupID, v))
+}
+
 // SubscriptionID applies equality check predicate on the "subscription_id" field. It's identical to SubscriptionIDEQ.
 func SubscriptionID(v int64) predicate.UsageLog {
 	return predicate.UsageLog(sql.FieldEQ(FieldSubscriptionID, v))
@@ -898,6 +903,56 @@ func GroupIDIsNil() predicate.UsageLog {
 // GroupIDNotNil applies the NotNil predicate on the "group_id" field.
 func GroupIDNotNil() predicate.UsageLog {
 	return predicate.UsageLog(sql.FieldNotNull(FieldGroupID))
+}
+
+// RequestedGroupIDEQ applies the EQ predicate on the "requested_group_id" field.
+func RequestedGroupIDEQ(v int64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldEQ(FieldRequestedGroupID, v))
+}
+
+// RequestedGroupIDNEQ applies the NEQ predicate on the "requested_group_id" field.
+func RequestedGroupIDNEQ(v int64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNEQ(FieldRequestedGroupID, v))
+}
+
+// RequestedGroupIDIn applies the In predicate on the "requested_group_id" field.
+func RequestedGroupIDIn(vs ...int64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldIn(FieldRequestedGroupID, vs...))
+}
+
+// RequestedGroupIDNotIn applies the NotIn predicate on the "requested_group_id" field.
+func RequestedGroupIDNotIn(vs ...int64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNotIn(FieldRequestedGroupID, vs...))
+}
+
+// RequestedGroupIDGT applies the GT predicate on the "requested_group_id" field.
+func RequestedGroupIDGT(v int64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldGT(FieldRequestedGroupID, v))
+}
+
+// RequestedGroupIDGTE applies the GTE predicate on the "requested_group_id" field.
+func RequestedGroupIDGTE(v int64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldGTE(FieldRequestedGroupID, v))
+}
+
+// RequestedGroupIDLT applies the LT predicate on the "requested_group_id" field.
+func RequestedGroupIDLT(v int64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldLT(FieldRequestedGroupID, v))
+}
+
+// RequestedGroupIDLTE applies the LTE predicate on the "requested_group_id" field.
+func RequestedGroupIDLTE(v int64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldLTE(FieldRequestedGroupID, v))
+}
+
+// RequestedGroupIDIsNil applies the IsNil predicate on the "requested_group_id" field.
+func RequestedGroupIDIsNil() predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldIsNull(FieldRequestedGroupID))
+}
+
+// RequestedGroupIDNotNil applies the NotNil predicate on the "requested_group_id" field.
+func RequestedGroupIDNotNil() predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNotNull(FieldRequestedGroupID))
 }
 
 // SubscriptionIDEQ applies the EQ predicate on the "subscription_id" field.

@@ -152,6 +152,11 @@ func GroupFromServiceAdmin(g *service.Group) *AdminGroup {
 		HealthyAccounts:         g.HealthyAccounts,
 		TotalCheckedAccounts:    g.TotalCheckedAccounts,
 		LastHealthCheckAt:       g.LastHealthCheckAt,
+		IsFailoverGroup:         g.IsFailoverGroup,
+		FailoverMemberIDs:       g.FailoverMemberIDs,
+		FailoverActiveMemberID:  g.FailoverActiveMemberID,
+		FailoverPinMemberID:     g.FailoverPinMemberID,
+		FailoverPinExpiresAt:    g.FailoverPinExpiresAt,
 	}
 	if len(g.AccountGroups) > 0 {
 		out.AccountGroups = make([]AccountGroup, 0, len(g.AccountGroups))

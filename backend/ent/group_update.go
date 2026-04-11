@@ -857,6 +857,133 @@ func (_u *GroupUpdate) ClearLastHealthCheckAt() *GroupUpdate {
 	return _u
 }
 
+// SetIsFailoverGroup sets the "is_failover_group" field.
+func (_u *GroupUpdate) SetIsFailoverGroup(v bool) *GroupUpdate {
+	_u.mutation.SetIsFailoverGroup(v)
+	return _u
+}
+
+// SetNillableIsFailoverGroup sets the "is_failover_group" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillableIsFailoverGroup(v *bool) *GroupUpdate {
+	if v != nil {
+		_u.SetIsFailoverGroup(*v)
+	}
+	return _u
+}
+
+// SetFailoverMemberIds sets the "failover_member_ids" field.
+func (_u *GroupUpdate) SetFailoverMemberIds(v []int64) *GroupUpdate {
+	_u.mutation.SetFailoverMemberIds(v)
+	return _u
+}
+
+// AppendFailoverMemberIds appends value to the "failover_member_ids" field.
+func (_u *GroupUpdate) AppendFailoverMemberIds(v []int64) *GroupUpdate {
+	_u.mutation.AppendFailoverMemberIds(v)
+	return _u
+}
+
+// ClearFailoverMemberIds clears the value of the "failover_member_ids" field.
+func (_u *GroupUpdate) ClearFailoverMemberIds() *GroupUpdate {
+	_u.mutation.ClearFailoverMemberIds()
+	return _u
+}
+
+// SetFailoverActiveMemberID sets the "failover_active_member_id" field.
+func (_u *GroupUpdate) SetFailoverActiveMemberID(v int64) *GroupUpdate {
+	_u.mutation.ResetFailoverActiveMemberID()
+	_u.mutation.SetFailoverActiveMemberID(v)
+	return _u
+}
+
+// SetNillableFailoverActiveMemberID sets the "failover_active_member_id" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillableFailoverActiveMemberID(v *int64) *GroupUpdate {
+	if v != nil {
+		_u.SetFailoverActiveMemberID(*v)
+	}
+	return _u
+}
+
+// AddFailoverActiveMemberID adds value to the "failover_active_member_id" field.
+func (_u *GroupUpdate) AddFailoverActiveMemberID(v int64) *GroupUpdate {
+	_u.mutation.AddFailoverActiveMemberID(v)
+	return _u
+}
+
+// ClearFailoverActiveMemberID clears the value of the "failover_active_member_id" field.
+func (_u *GroupUpdate) ClearFailoverActiveMemberID() *GroupUpdate {
+	_u.mutation.ClearFailoverActiveMemberID()
+	return _u
+}
+
+// SetFailoverActiveVersion sets the "failover_active_version" field.
+func (_u *GroupUpdate) SetFailoverActiveVersion(v int64) *GroupUpdate {
+	_u.mutation.ResetFailoverActiveVersion()
+	_u.mutation.SetFailoverActiveVersion(v)
+	return _u
+}
+
+// SetNillableFailoverActiveVersion sets the "failover_active_version" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillableFailoverActiveVersion(v *int64) *GroupUpdate {
+	if v != nil {
+		_u.SetFailoverActiveVersion(*v)
+	}
+	return _u
+}
+
+// AddFailoverActiveVersion adds value to the "failover_active_version" field.
+func (_u *GroupUpdate) AddFailoverActiveVersion(v int64) *GroupUpdate {
+	_u.mutation.AddFailoverActiveVersion(v)
+	return _u
+}
+
+// SetFailoverPinMemberID sets the "failover_pin_member_id" field.
+func (_u *GroupUpdate) SetFailoverPinMemberID(v int64) *GroupUpdate {
+	_u.mutation.ResetFailoverPinMemberID()
+	_u.mutation.SetFailoverPinMemberID(v)
+	return _u
+}
+
+// SetNillableFailoverPinMemberID sets the "failover_pin_member_id" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillableFailoverPinMemberID(v *int64) *GroupUpdate {
+	if v != nil {
+		_u.SetFailoverPinMemberID(*v)
+	}
+	return _u
+}
+
+// AddFailoverPinMemberID adds value to the "failover_pin_member_id" field.
+func (_u *GroupUpdate) AddFailoverPinMemberID(v int64) *GroupUpdate {
+	_u.mutation.AddFailoverPinMemberID(v)
+	return _u
+}
+
+// ClearFailoverPinMemberID clears the value of the "failover_pin_member_id" field.
+func (_u *GroupUpdate) ClearFailoverPinMemberID() *GroupUpdate {
+	_u.mutation.ClearFailoverPinMemberID()
+	return _u
+}
+
+// SetFailoverPinExpiresAt sets the "failover_pin_expires_at" field.
+func (_u *GroupUpdate) SetFailoverPinExpiresAt(v time.Time) *GroupUpdate {
+	_u.mutation.SetFailoverPinExpiresAt(v)
+	return _u
+}
+
+// SetNillableFailoverPinExpiresAt sets the "failover_pin_expires_at" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillableFailoverPinExpiresAt(v *time.Time) *GroupUpdate {
+	if v != nil {
+		_u.SetFailoverPinExpiresAt(*v)
+	}
+	return _u
+}
+
+// ClearFailoverPinExpiresAt clears the value of the "failover_pin_expires_at" field.
+func (_u *GroupUpdate) ClearFailoverPinExpiresAt() *GroupUpdate {
+	_u.mutation.ClearFailoverPinExpiresAt()
+	return _u
+}
+
 // AddAPIKeyIDs adds the "api_keys" edge to the APIKey entity by IDs.
 func (_u *GroupUpdate) AddAPIKeyIDs(ids ...int64) *GroupUpdate {
 	_u.mutation.AddAPIKeyIDs(ids...)
@@ -1460,6 +1587,50 @@ func (_u *GroupUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.LastHealthCheckAtCleared() {
 		_spec.ClearField(group.FieldLastHealthCheckAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.IsFailoverGroup(); ok {
+		_spec.SetField(group.FieldIsFailoverGroup, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.FailoverMemberIds(); ok {
+		_spec.SetField(group.FieldFailoverMemberIds, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedFailoverMemberIds(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, group.FieldFailoverMemberIds, value)
+		})
+	}
+	if _u.mutation.FailoverMemberIdsCleared() {
+		_spec.ClearField(group.FieldFailoverMemberIds, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.FailoverActiveMemberID(); ok {
+		_spec.SetField(group.FieldFailoverActiveMemberID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedFailoverActiveMemberID(); ok {
+		_spec.AddField(group.FieldFailoverActiveMemberID, field.TypeInt64, value)
+	}
+	if _u.mutation.FailoverActiveMemberIDCleared() {
+		_spec.ClearField(group.FieldFailoverActiveMemberID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.FailoverActiveVersion(); ok {
+		_spec.SetField(group.FieldFailoverActiveVersion, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedFailoverActiveVersion(); ok {
+		_spec.AddField(group.FieldFailoverActiveVersion, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.FailoverPinMemberID(); ok {
+		_spec.SetField(group.FieldFailoverPinMemberID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedFailoverPinMemberID(); ok {
+		_spec.AddField(group.FieldFailoverPinMemberID, field.TypeInt64, value)
+	}
+	if _u.mutation.FailoverPinMemberIDCleared() {
+		_spec.ClearField(group.FieldFailoverPinMemberID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.FailoverPinExpiresAt(); ok {
+		_spec.SetField(group.FieldFailoverPinExpiresAt, field.TypeTime, value)
+	}
+	if _u.mutation.FailoverPinExpiresAtCleared() {
+		_spec.ClearField(group.FieldFailoverPinExpiresAt, field.TypeTime)
 	}
 	if _u.mutation.APIKeysCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -2641,6 +2812,133 @@ func (_u *GroupUpdateOne) ClearLastHealthCheckAt() *GroupUpdateOne {
 	return _u
 }
 
+// SetIsFailoverGroup sets the "is_failover_group" field.
+func (_u *GroupUpdateOne) SetIsFailoverGroup(v bool) *GroupUpdateOne {
+	_u.mutation.SetIsFailoverGroup(v)
+	return _u
+}
+
+// SetNillableIsFailoverGroup sets the "is_failover_group" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillableIsFailoverGroup(v *bool) *GroupUpdateOne {
+	if v != nil {
+		_u.SetIsFailoverGroup(*v)
+	}
+	return _u
+}
+
+// SetFailoverMemberIds sets the "failover_member_ids" field.
+func (_u *GroupUpdateOne) SetFailoverMemberIds(v []int64) *GroupUpdateOne {
+	_u.mutation.SetFailoverMemberIds(v)
+	return _u
+}
+
+// AppendFailoverMemberIds appends value to the "failover_member_ids" field.
+func (_u *GroupUpdateOne) AppendFailoverMemberIds(v []int64) *GroupUpdateOne {
+	_u.mutation.AppendFailoverMemberIds(v)
+	return _u
+}
+
+// ClearFailoverMemberIds clears the value of the "failover_member_ids" field.
+func (_u *GroupUpdateOne) ClearFailoverMemberIds() *GroupUpdateOne {
+	_u.mutation.ClearFailoverMemberIds()
+	return _u
+}
+
+// SetFailoverActiveMemberID sets the "failover_active_member_id" field.
+func (_u *GroupUpdateOne) SetFailoverActiveMemberID(v int64) *GroupUpdateOne {
+	_u.mutation.ResetFailoverActiveMemberID()
+	_u.mutation.SetFailoverActiveMemberID(v)
+	return _u
+}
+
+// SetNillableFailoverActiveMemberID sets the "failover_active_member_id" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillableFailoverActiveMemberID(v *int64) *GroupUpdateOne {
+	if v != nil {
+		_u.SetFailoverActiveMemberID(*v)
+	}
+	return _u
+}
+
+// AddFailoverActiveMemberID adds value to the "failover_active_member_id" field.
+func (_u *GroupUpdateOne) AddFailoverActiveMemberID(v int64) *GroupUpdateOne {
+	_u.mutation.AddFailoverActiveMemberID(v)
+	return _u
+}
+
+// ClearFailoverActiveMemberID clears the value of the "failover_active_member_id" field.
+func (_u *GroupUpdateOne) ClearFailoverActiveMemberID() *GroupUpdateOne {
+	_u.mutation.ClearFailoverActiveMemberID()
+	return _u
+}
+
+// SetFailoverActiveVersion sets the "failover_active_version" field.
+func (_u *GroupUpdateOne) SetFailoverActiveVersion(v int64) *GroupUpdateOne {
+	_u.mutation.ResetFailoverActiveVersion()
+	_u.mutation.SetFailoverActiveVersion(v)
+	return _u
+}
+
+// SetNillableFailoverActiveVersion sets the "failover_active_version" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillableFailoverActiveVersion(v *int64) *GroupUpdateOne {
+	if v != nil {
+		_u.SetFailoverActiveVersion(*v)
+	}
+	return _u
+}
+
+// AddFailoverActiveVersion adds value to the "failover_active_version" field.
+func (_u *GroupUpdateOne) AddFailoverActiveVersion(v int64) *GroupUpdateOne {
+	_u.mutation.AddFailoverActiveVersion(v)
+	return _u
+}
+
+// SetFailoverPinMemberID sets the "failover_pin_member_id" field.
+func (_u *GroupUpdateOne) SetFailoverPinMemberID(v int64) *GroupUpdateOne {
+	_u.mutation.ResetFailoverPinMemberID()
+	_u.mutation.SetFailoverPinMemberID(v)
+	return _u
+}
+
+// SetNillableFailoverPinMemberID sets the "failover_pin_member_id" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillableFailoverPinMemberID(v *int64) *GroupUpdateOne {
+	if v != nil {
+		_u.SetFailoverPinMemberID(*v)
+	}
+	return _u
+}
+
+// AddFailoverPinMemberID adds value to the "failover_pin_member_id" field.
+func (_u *GroupUpdateOne) AddFailoverPinMemberID(v int64) *GroupUpdateOne {
+	_u.mutation.AddFailoverPinMemberID(v)
+	return _u
+}
+
+// ClearFailoverPinMemberID clears the value of the "failover_pin_member_id" field.
+func (_u *GroupUpdateOne) ClearFailoverPinMemberID() *GroupUpdateOne {
+	_u.mutation.ClearFailoverPinMemberID()
+	return _u
+}
+
+// SetFailoverPinExpiresAt sets the "failover_pin_expires_at" field.
+func (_u *GroupUpdateOne) SetFailoverPinExpiresAt(v time.Time) *GroupUpdateOne {
+	_u.mutation.SetFailoverPinExpiresAt(v)
+	return _u
+}
+
+// SetNillableFailoverPinExpiresAt sets the "failover_pin_expires_at" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillableFailoverPinExpiresAt(v *time.Time) *GroupUpdateOne {
+	if v != nil {
+		_u.SetFailoverPinExpiresAt(*v)
+	}
+	return _u
+}
+
+// ClearFailoverPinExpiresAt clears the value of the "failover_pin_expires_at" field.
+func (_u *GroupUpdateOne) ClearFailoverPinExpiresAt() *GroupUpdateOne {
+	_u.mutation.ClearFailoverPinExpiresAt()
+	return _u
+}
+
 // AddAPIKeyIDs adds the "api_keys" edge to the APIKey entity by IDs.
 func (_u *GroupUpdateOne) AddAPIKeyIDs(ids ...int64) *GroupUpdateOne {
 	_u.mutation.AddAPIKeyIDs(ids...)
@@ -3274,6 +3572,50 @@ func (_u *GroupUpdateOne) sqlSave(ctx context.Context) (_node *Group, err error)
 	}
 	if _u.mutation.LastHealthCheckAtCleared() {
 		_spec.ClearField(group.FieldLastHealthCheckAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.IsFailoverGroup(); ok {
+		_spec.SetField(group.FieldIsFailoverGroup, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.FailoverMemberIds(); ok {
+		_spec.SetField(group.FieldFailoverMemberIds, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedFailoverMemberIds(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, group.FieldFailoverMemberIds, value)
+		})
+	}
+	if _u.mutation.FailoverMemberIdsCleared() {
+		_spec.ClearField(group.FieldFailoverMemberIds, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.FailoverActiveMemberID(); ok {
+		_spec.SetField(group.FieldFailoverActiveMemberID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedFailoverActiveMemberID(); ok {
+		_spec.AddField(group.FieldFailoverActiveMemberID, field.TypeInt64, value)
+	}
+	if _u.mutation.FailoverActiveMemberIDCleared() {
+		_spec.ClearField(group.FieldFailoverActiveMemberID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.FailoverActiveVersion(); ok {
+		_spec.SetField(group.FieldFailoverActiveVersion, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedFailoverActiveVersion(); ok {
+		_spec.AddField(group.FieldFailoverActiveVersion, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.FailoverPinMemberID(); ok {
+		_spec.SetField(group.FieldFailoverPinMemberID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedFailoverPinMemberID(); ok {
+		_spec.AddField(group.FieldFailoverPinMemberID, field.TypeInt64, value)
+	}
+	if _u.mutation.FailoverPinMemberIDCleared() {
+		_spec.ClearField(group.FieldFailoverPinMemberID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.FailoverPinExpiresAt(); ok {
+		_spec.SetField(group.FieldFailoverPinExpiresAt, field.TypeTime, value)
+	}
+	if _u.mutation.FailoverPinExpiresAtCleared() {
+		_spec.ClearField(group.FieldFailoverPinExpiresAt, field.TypeTime)
 	}
 	if _u.mutation.APIKeysCleared() {
 		edge := &sqlgraph.EdgeSpec{
