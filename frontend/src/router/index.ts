@@ -32,15 +32,7 @@ const routes: RouteRecordRaw[] = [
   // ==================== Public Routes ====================
   {
     path: '/home',
-    name: 'Home',
-    component: () => import('@/views/HomeView.vue'),
-    meta: {
-      requiresAuth: false,
-      title: 'Home',
-      titleKey: 'home.seo.title',
-      descriptionKey: 'home.seo.description',
-      keywordsKey: 'home.seo.keywords'
-    }
+    redirect: '/'
   },
   {
     path: '/login',
@@ -126,7 +118,15 @@ const routes: RouteRecordRaw[] = [
   // ==================== User Routes ====================
   {
     path: '/',
-    redirect: '/home'
+    name: 'Home',
+    component: () => import('@/views/HomeView.vue'),
+    meta: {
+      requiresAuth: false,
+      title: 'Home',
+      titleKey: 'home.seo.title',
+      descriptionKey: 'home.seo.description',
+      keywordsKey: 'home.seo.keywords'
+    }
   },
   {
     path: '/dashboard',
