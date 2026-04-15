@@ -100,6 +100,8 @@ type Group struct {
 	ActiveEndTime *string `json:"active_end_time,omitempty"`
 	// 健康检查间隔（分钟），默认 30
 	HealthCheckIntervalMin int `json:"health_check_interval_min,omitempty"`
+	// 健康检查使用的测试模型 ID，空表示按平台使用默认
+	HealthCheckTestModel string `json:"health_check_test_model,omitempty"`
 	// 分组可用性状态：available/unavailable/空=未检查
 	HealthStatus string `json:"health_status,omitempty"`
 	// 最近一次健康检查中可用的账号数
@@ -245,7 +247,7 @@ func (*Group) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullFloat64)
 		case group.FieldID, group.FieldDefaultValidityDays, group.FieldFallbackGroupID, group.FieldFallbackGroupIDOnInvalidRequest, group.FieldSortOrder, group.FieldOwnerID, group.FieldSourceGroupID, group.FieldHealthCheckIntervalMin, group.FieldHealthyAccounts, group.FieldTotalCheckedAccounts, group.FieldFailoverActiveMemberID, group.FieldFailoverActiveVersion, group.FieldFailoverPinMemberID:
 			values[i] = new(sql.NullInt64)
-		case group.FieldName, group.FieldDescription, group.FieldStatus, group.FieldPlatform, group.FieldSubscriptionType, group.FieldExternalBuyURL, group.FieldDefaultMappedModel, group.FieldActiveStartTime, group.FieldActiveEndTime, group.FieldHealthStatus:
+		case group.FieldName, group.FieldDescription, group.FieldStatus, group.FieldPlatform, group.FieldSubscriptionType, group.FieldExternalBuyURL, group.FieldDefaultMappedModel, group.FieldActiveStartTime, group.FieldActiveEndTime, group.FieldHealthCheckTestModel, group.FieldHealthStatus:
 			values[i] = new(sql.NullString)
 		case group.FieldCreatedAt, group.FieldUpdatedAt, group.FieldDeletedAt, group.FieldLastHealthCheckAt, group.FieldFailoverPinExpiresAt:
 			values[i] = new(sql.NullTime)
@@ -539,6 +541,12 @@ func (_m *Group) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field health_check_interval_min", values[i])
 			} else if value.Valid {
 				_m.HealthCheckIntervalMin = int(value.Int64)
+			}
+		case group.FieldHealthCheckTestModel:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field health_check_test_model", values[i])
+			} else if value.Valid {
+				_m.HealthCheckTestModel = value.String
 			}
 		case group.FieldHealthStatus:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -841,6 +849,9 @@ func (_m *Group) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("health_check_interval_min=")
 	builder.WriteString(fmt.Sprintf("%v", _m.HealthCheckIntervalMin))
+	builder.WriteString(", ")
+	builder.WriteString("health_check_test_model=")
+	builder.WriteString(_m.HealthCheckTestModel)
 	builder.WriteString(", ")
 	builder.WriteString("health_status=")
 	builder.WriteString(_m.HealthStatus)

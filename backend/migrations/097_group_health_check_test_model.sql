@@ -1,0 +1,1 @@
+ALTER TABLE groups ADD COLUMN IF NOT EXISTS health_check_test_model VARCHAR(128) NOT NULL DEFAULT '';

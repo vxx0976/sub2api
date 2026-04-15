@@ -171,6 +171,8 @@ type CreateGroupInput struct {
 	CopyAccountsFromGroupIDs []int64
 	// 健康检查间隔（分钟）
 	HealthCheckIntervalMin int
+	// 健康检查测试模型（空=按平台默认）
+	HealthCheckTestModel string
 	// 支付相关
 	DefaultValidityDays int
 	Price               *float64
@@ -220,6 +222,8 @@ type UpdateGroupInput struct {
 	CopyAccountsFromGroupIDs []int64
 	// 健康检查间隔（分钟）
 	HealthCheckIntervalMin *int
+	// 健康检查测试模型（传指针，空字符串=清除覆盖）
+	HealthCheckTestModel *string
 	// 支付相关
 	DefaultValidityDays *int
 	Price               *float64
@@ -1033,6 +1037,7 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 		SupportedModelScopes:            input.SupportedModelScopes,
 		DefaultValidityDays:             defaultValidityDays,
 		HealthCheckIntervalMin:          healthCheckInterval,
+		HealthCheckTestModel:            strings.TrimSpace(input.HealthCheckTestModel),
 		Price:                           input.Price,
 		IsPurchasable:                   input.IsPurchasable,
 		SortOrder:                       input.SortOrder,
@@ -1428,6 +1433,10 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 			v = 30
 		}
 		group.HealthCheckIntervalMin = v
+	}
+	// 健康检查测试模型（空字符串表示清除覆盖，回退到平台默认）
+	if input.HealthCheckTestModel != nil {
+		group.HealthCheckTestModel = strings.TrimSpace(*input.HealthCheckTestModel)
 	}
 
 	// 支付相关

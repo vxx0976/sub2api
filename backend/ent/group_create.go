@@ -563,6 +563,20 @@ func (_c *GroupCreate) SetNillableHealthCheckIntervalMin(v *int) *GroupCreate {
 	return _c
 }
 
+// SetHealthCheckTestModel sets the "health_check_test_model" field.
+func (_c *GroupCreate) SetHealthCheckTestModel(v string) *GroupCreate {
+	_c.mutation.SetHealthCheckTestModel(v)
+	return _c
+}
+
+// SetNillableHealthCheckTestModel sets the "health_check_test_model" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableHealthCheckTestModel(v *string) *GroupCreate {
+	if v != nil {
+		_c.SetHealthCheckTestModel(*v)
+	}
+	return _c
+}
+
 // SetHealthStatus sets the "health_status" field.
 func (_c *GroupCreate) SetHealthStatus(v string) *GroupCreate {
 	_c.mutation.SetHealthStatus(v)
@@ -927,6 +941,10 @@ func (_c *GroupCreate) defaults() error {
 		v := group.DefaultHealthCheckIntervalMin
 		_c.mutation.SetHealthCheckIntervalMin(v)
 	}
+	if _, ok := _c.mutation.HealthCheckTestModel(); !ok {
+		v := group.DefaultHealthCheckTestModel
+		_c.mutation.SetHealthCheckTestModel(v)
+	}
 	if _, ok := _c.mutation.HealthStatus(); !ok {
 		v := group.DefaultHealthStatus
 		_c.mutation.SetHealthStatus(v)
@@ -1052,6 +1070,14 @@ func (_c *GroupCreate) check() error {
 	}
 	if _, ok := _c.mutation.HealthCheckIntervalMin(); !ok {
 		return &ValidationError{Name: "health_check_interval_min", err: errors.New(`ent: missing required field "Group.health_check_interval_min"`)}
+	}
+	if _, ok := _c.mutation.HealthCheckTestModel(); !ok {
+		return &ValidationError{Name: "health_check_test_model", err: errors.New(`ent: missing required field "Group.health_check_test_model"`)}
+	}
+	if v, ok := _c.mutation.HealthCheckTestModel(); ok {
+		if err := group.HealthCheckTestModelValidator(v); err != nil {
+			return &ValidationError{Name: "health_check_test_model", err: fmt.Errorf(`ent: validator failed for field "Group.health_check_test_model": %w`, err)}
+		}
 	}
 	if _, ok := _c.mutation.HealthStatus(); !ok {
 		return &ValidationError{Name: "health_status", err: errors.New(`ent: missing required field "Group.health_status"`)}
@@ -1263,6 +1289,10 @@ func (_c *GroupCreate) createSpec() (*Group, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.HealthCheckIntervalMin(); ok {
 		_spec.SetField(group.FieldHealthCheckIntervalMin, field.TypeInt, value)
 		_node.HealthCheckIntervalMin = value
+	}
+	if value, ok := _c.mutation.HealthCheckTestModel(); ok {
+		_spec.SetField(group.FieldHealthCheckTestModel, field.TypeString, value)
+		_node.HealthCheckTestModel = value
 	}
 	if value, ok := _c.mutation.HealthStatus(); ok {
 		_spec.SetField(group.FieldHealthStatus, field.TypeString, value)
@@ -2157,6 +2187,18 @@ func (u *GroupUpsert) UpdateHealthCheckIntervalMin() *GroupUpsert {
 // AddHealthCheckIntervalMin adds v to the "health_check_interval_min" field.
 func (u *GroupUpsert) AddHealthCheckIntervalMin(v int) *GroupUpsert {
 	u.Add(group.FieldHealthCheckIntervalMin, v)
+	return u
+}
+
+// SetHealthCheckTestModel sets the "health_check_test_model" field.
+func (u *GroupUpsert) SetHealthCheckTestModel(v string) *GroupUpsert {
+	u.Set(group.FieldHealthCheckTestModel, v)
+	return u
+}
+
+// UpdateHealthCheckTestModel sets the "health_check_test_model" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateHealthCheckTestModel() *GroupUpsert {
+	u.SetExcluded(group.FieldHealthCheckTestModel)
 	return u
 }
 
@@ -3180,6 +3222,20 @@ func (u *GroupUpsertOne) AddHealthCheckIntervalMin(v int) *GroupUpsertOne {
 func (u *GroupUpsertOne) UpdateHealthCheckIntervalMin() *GroupUpsertOne {
 	return u.Update(func(s *GroupUpsert) {
 		s.UpdateHealthCheckIntervalMin()
+	})
+}
+
+// SetHealthCheckTestModel sets the "health_check_test_model" field.
+func (u *GroupUpsertOne) SetHealthCheckTestModel(v string) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetHealthCheckTestModel(v)
+	})
+}
+
+// UpdateHealthCheckTestModel sets the "health_check_test_model" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateHealthCheckTestModel() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateHealthCheckTestModel()
 	})
 }
 
@@ -4399,6 +4455,20 @@ func (u *GroupUpsertBulk) AddHealthCheckIntervalMin(v int) *GroupUpsertBulk {
 func (u *GroupUpsertBulk) UpdateHealthCheckIntervalMin() *GroupUpsertBulk {
 	return u.Update(func(s *GroupUpsert) {
 		s.UpdateHealthCheckIntervalMin()
+	})
+}
+
+// SetHealthCheckTestModel sets the "health_check_test_model" field.
+func (u *GroupUpsertBulk) SetHealthCheckTestModel(v string) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetHealthCheckTestModel(v)
+	})
+}
+
+// UpdateHealthCheckTestModel sets the "health_check_test_model" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateHealthCheckTestModel() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateHealthCheckTestModel()
 	})
 }
 

@@ -511,6 +511,7 @@ var (
 		{Name: "active_start_time", Type: field.TypeString, Nullable: true, Size: 5},
 		{Name: "active_end_time", Type: field.TypeString, Nullable: true, Size: 5},
 		{Name: "health_check_interval_min", Type: field.TypeInt, Default: 30},
+		{Name: "health_check_test_model", Type: field.TypeString, Size: 128, Default: ""},
 		{Name: "health_status", Type: field.TypeString, Size: 20, Default: ""},
 		{Name: "healthy_accounts", Type: field.TypeInt, Default: 0},
 		{Name: "total_checked_accounts", Type: field.TypeInt, Default: 0},

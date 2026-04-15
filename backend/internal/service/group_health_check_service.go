@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"log/slog"
+	"strings"
 	"sync"
 	"time"
 
@@ -203,8 +204,11 @@ func (s *GroupHealthCheckService) checkOneGroup(ctx context.Context, group *Grou
 		return
 	}
 
-	// Determine test model based on platform
-	modelID := getDefaultTestModel(group.Platform)
+	// Determine test model: group-level override wins over platform default
+	modelID := strings.TrimSpace(group.HealthCheckTestModel)
+	if modelID == "" {
+		modelID = getDefaultTestModel(group.Platform)
+	}
 
 	// 逐个测试所有账号，第一个成功即绿灯并停止
 	healthy := 0

@@ -123,6 +123,7 @@ type CreateGroupRequest struct {
 	CopyAccountsFromGroupIDs []int64 `json:"copy_accounts_from_group_ids"`
 	// 支付相关
 	HealthCheckIntervalMin int      `json:"health_check_interval_min"`
+	HealthCheckTestModel   string   `json:"health_check_test_model"`
 	DefaultValidityDays    int      `json:"default_validity_days"`
 	Price                  *float64 `json:"price"`
 	IsPurchasable       bool     `json:"is_purchasable"`
@@ -170,6 +171,7 @@ type UpdateGroupRequest struct {
 	CopyAccountsFromGroupIDs []int64 `json:"copy_accounts_from_group_ids"`
 	// 支付相关
 	HealthCheckIntervalMin *int     `json:"health_check_interval_min"`
+	HealthCheckTestModel   *string  `json:"health_check_test_model"`
 	DefaultValidityDays    *int     `json:"default_validity_days"`
 	Price                  *float64 `json:"price"`
 	IsPurchasable       *bool    `json:"is_purchasable"`
@@ -305,6 +307,7 @@ func (h *GroupHandler) Create(c *gin.Context) {
 		DefaultMappedModel:              req.DefaultMappedModel,
 		CopyAccountsFromGroupIDs:        req.CopyAccountsFromGroupIDs,
 		HealthCheckIntervalMin:          req.HealthCheckIntervalMin,
+		HealthCheckTestModel:            req.HealthCheckTestModel,
 		DefaultValidityDays:             req.DefaultValidityDays,
 		Price:                           req.Price,
 		IsPurchasable:                   req.IsPurchasable,
@@ -366,6 +369,7 @@ func (h *GroupHandler) Update(c *gin.Context) {
 		DefaultMappedModel:              req.DefaultMappedModel,
 		CopyAccountsFromGroupIDs:        req.CopyAccountsFromGroupIDs,
 		HealthCheckIntervalMin:          req.HealthCheckIntervalMin,
+		HealthCheckTestModel:            req.HealthCheckTestModel,
 		DefaultValidityDays:             req.DefaultValidityDays,
 		Price:                           req.Price,
 		IsPurchasable:                   req.IsPurchasable,

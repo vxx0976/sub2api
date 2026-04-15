@@ -97,6 +97,8 @@ const (
 	FieldActiveEndTime = "active_end_time"
 	// FieldHealthCheckIntervalMin holds the string denoting the health_check_interval_min field in the database.
 	FieldHealthCheckIntervalMin = "health_check_interval_min"
+	// FieldHealthCheckTestModel holds the string denoting the health_check_test_model field in the database.
+	FieldHealthCheckTestModel = "health_check_test_model"
 	// FieldHealthStatus holds the string denoting the health_status field in the database.
 	FieldHealthStatus = "health_status"
 	// FieldHealthyAccounts holds the string denoting the healthy_accounts field in the database.
@@ -242,6 +244,7 @@ var Columns = []string{
 	FieldActiveStartTime,
 	FieldActiveEndTime,
 	FieldHealthCheckIntervalMin,
+	FieldHealthCheckTestModel,
 	FieldHealthStatus,
 	FieldHealthyAccounts,
 	FieldTotalCheckedAccounts,
@@ -339,6 +342,10 @@ var (
 	ActiveEndTimeValidator func(string) error
 	// DefaultHealthCheckIntervalMin holds the default value on creation for the "health_check_interval_min" field.
 	DefaultHealthCheckIntervalMin int
+	// DefaultHealthCheckTestModel holds the default value on creation for the "health_check_test_model" field.
+	DefaultHealthCheckTestModel string
+	// HealthCheckTestModelValidator is a validator for the "health_check_test_model" field. It is called by the builders before save.
+	HealthCheckTestModelValidator func(string) error
 	// DefaultHealthStatus holds the default value on creation for the "health_status" field.
 	DefaultHealthStatus string
 	// HealthStatusValidator is a validator for the "health_status" field. It is called by the builders before save.
@@ -544,6 +551,11 @@ func ByActiveEndTime(opts ...sql.OrderTermOption) OrderOption {
 // ByHealthCheckIntervalMin orders the results by the health_check_interval_min field.
 func ByHealthCheckIntervalMin(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldHealthCheckIntervalMin, opts...).ToFunc()
+}
+
+// ByHealthCheckTestModel orders the results by the health_check_test_model field.
+func ByHealthCheckTestModel(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldHealthCheckTestModel, opts...).ToFunc()
 }
 
 // ByHealthStatus orders the results by the health_status field.

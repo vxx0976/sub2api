@@ -1912,7 +1912,10 @@ export default {
       healthCheck: {
         intervalLabel: '健康检查间隔',
         intervalUnit: '分钟',
-        intervalHint: '自动检测分组可用性的时间间隔，默认 30 分钟'
+        intervalHint: '自动检测分组可用性的时间间隔，默认 30 分钟',
+        testModelLabel: '健康检查测试模型',
+        testModelPlaceholder: '留空使用平台默认模型',
+        testModelHint: '指定健康检查请求使用的模型 ID，例如 claude-haiku-4-5-20251001、gpt-4o-mini、gemini-2.0-flash。留空则按平台选择默认轻量模型'
       },
       invalidRequestFallback: {
         title: '无效请求兜底分组',

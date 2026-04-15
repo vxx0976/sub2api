@@ -781,6 +781,20 @@ func (_u *GroupUpdate) AddHealthCheckIntervalMin(v int) *GroupUpdate {
 	return _u
 }
 
+// SetHealthCheckTestModel sets the "health_check_test_model" field.
+func (_u *GroupUpdate) SetHealthCheckTestModel(v string) *GroupUpdate {
+	_u.mutation.SetHealthCheckTestModel(v)
+	return _u
+}
+
+// SetNillableHealthCheckTestModel sets the "health_check_test_model" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillableHealthCheckTestModel(v *string) *GroupUpdate {
+	if v != nil {
+		_u.SetHealthCheckTestModel(*v)
+	}
+	return _u
+}
+
 // SetHealthStatus sets the "health_status" field.
 func (_u *GroupUpdate) SetHealthStatus(v string) *GroupUpdate {
 	_u.mutation.SetHealthStatus(v)
@@ -1320,6 +1334,11 @@ func (_u *GroupUpdate) check() error {
 			return &ValidationError{Name: "active_end_time", err: fmt.Errorf(`ent: validator failed for field "Group.active_end_time": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.HealthCheckTestModel(); ok {
+		if err := group.HealthCheckTestModelValidator(v); err != nil {
+			return &ValidationError{Name: "health_check_test_model", err: fmt.Errorf(`ent: validator failed for field "Group.health_check_test_model": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.HealthStatus(); ok {
 		if err := group.HealthStatusValidator(v); err != nil {
 			return &ValidationError{Name: "health_status", err: fmt.Errorf(`ent: validator failed for field "Group.health_status": %w`, err)}
@@ -1566,6 +1585,9 @@ func (_u *GroupUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.AddedHealthCheckIntervalMin(); ok {
 		_spec.AddField(group.FieldHealthCheckIntervalMin, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.HealthCheckTestModel(); ok {
+		_spec.SetField(group.FieldHealthCheckTestModel, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.HealthStatus(); ok {
 		_spec.SetField(group.FieldHealthStatus, field.TypeString, value)
@@ -2736,6 +2758,20 @@ func (_u *GroupUpdateOne) AddHealthCheckIntervalMin(v int) *GroupUpdateOne {
 	return _u
 }
 
+// SetHealthCheckTestModel sets the "health_check_test_model" field.
+func (_u *GroupUpdateOne) SetHealthCheckTestModel(v string) *GroupUpdateOne {
+	_u.mutation.SetHealthCheckTestModel(v)
+	return _u
+}
+
+// SetNillableHealthCheckTestModel sets the "health_check_test_model" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillableHealthCheckTestModel(v *string) *GroupUpdateOne {
+	if v != nil {
+		_u.SetHealthCheckTestModel(*v)
+	}
+	return _u
+}
+
 // SetHealthStatus sets the "health_status" field.
 func (_u *GroupUpdateOne) SetHealthStatus(v string) *GroupUpdateOne {
 	_u.mutation.SetHealthStatus(v)
@@ -3288,6 +3324,11 @@ func (_u *GroupUpdateOne) check() error {
 			return &ValidationError{Name: "active_end_time", err: fmt.Errorf(`ent: validator failed for field "Group.active_end_time": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.HealthCheckTestModel(); ok {
+		if err := group.HealthCheckTestModelValidator(v); err != nil {
+			return &ValidationError{Name: "health_check_test_model", err: fmt.Errorf(`ent: validator failed for field "Group.health_check_test_model": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.HealthStatus(); ok {
 		if err := group.HealthStatusValidator(v); err != nil {
 			return &ValidationError{Name: "health_status", err: fmt.Errorf(`ent: validator failed for field "Group.health_status": %w`, err)}
@@ -3551,6 +3592,9 @@ func (_u *GroupUpdateOne) sqlSave(ctx context.Context) (_node *Group, err error)
 	}
 	if value, ok := _u.mutation.AddedHealthCheckIntervalMin(); ok {
 		_spec.AddField(group.FieldHealthCheckIntervalMin, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.HealthCheckTestModel(); ok {
+		_spec.SetField(group.FieldHealthCheckTestModel, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.HealthStatus(); ok {
 		_spec.SetField(group.FieldHealthStatus, field.TypeString, value)

@@ -586,6 +586,15 @@
             <span class="text-sm text-gray-500 dark:text-gray-400">{{ t('admin.groups.healthCheck.intervalUnit') }}</span>
           </div>
           <p class="input-hint">{{ t('admin.groups.healthCheck.intervalHint') }}</p>
+
+          <label class="input-label mt-4">{{ t('admin.groups.healthCheck.testModelLabel') }}</label>
+          <input
+            v-model.trim="createForm.health_check_test_model"
+            type="text"
+            class="input"
+            :placeholder="t('admin.groups.healthCheck.testModelPlaceholder')"
+          />
+          <p class="input-hint">{{ t('admin.groups.healthCheck.testModelHint') }}</p>
         </div>
 
         <!-- Payment Settings (only show when subscription type is selected) -->
@@ -1500,6 +1509,15 @@
             <span class="text-sm text-gray-500 dark:text-gray-400">{{ t('admin.groups.healthCheck.intervalUnit') }}</span>
           </div>
           <p class="input-hint">{{ t('admin.groups.healthCheck.intervalHint') }}</p>
+
+          <label class="input-label mt-4">{{ t('admin.groups.healthCheck.testModelLabel') }}</label>
+          <input
+            v-model.trim="editForm.health_check_test_model"
+            type="text"
+            class="input"
+            :placeholder="t('admin.groups.healthCheck.testModelPlaceholder')"
+          />
+          <p class="input-hint">{{ t('admin.groups.healthCheck.testModelHint') }}</p>
         </div>
 
         <!-- Payment Settings (only show when subscription type is selected) -->
@@ -2454,6 +2472,8 @@ const createForm = reactive({
   model_routing_enabled: false,
   // 健康检查间隔（分钟）
   health_check_interval_min: 30,
+  // 健康检查自定义测试模型（空=使用平台默认）
+  health_check_test_model: '' as string,
   // 支付相关
   default_validity_days: 30,
   price: null as number | null,
@@ -2712,6 +2732,8 @@ const editForm = reactive({
   active_end_time: '' as string,
   // 健康检查间隔（分钟）
   health_check_interval_min: 30,
+  // 健康检查自定义测试模型（空=使用平台默认）
+  health_check_test_model: '' as string,
   // 支付相关
   default_validity_days: 30,
   price: null as number | null,
@@ -2898,6 +2920,7 @@ const closeCreateModal = () => {
   createForm.claude_code_only = false
   createForm.fallback_group_id = null
   createForm.health_check_interval_min = 30
+  createForm.health_check_test_model = ''
   createForm.default_validity_days = 30
   createForm.price = null
   createForm.is_purchasable = false
@@ -2999,6 +3022,7 @@ const handleEdit = async (group: AdminGroup) => {
   editForm.default_mapped_model = group.default_mapped_model || ''
   editForm.model_routing_enabled = group.model_routing_enabled || false
   editForm.health_check_interval_min = group.health_check_interval_min || 30
+  editForm.health_check_test_model = group.health_check_test_model || ''
   editForm.default_validity_days = group.default_validity_days || 30
   editForm.price = group.price
   editForm.is_purchasable = group.is_purchasable || false

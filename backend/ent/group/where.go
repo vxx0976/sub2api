@@ -240,6 +240,11 @@ func HealthCheckIntervalMin(v int) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldHealthCheckIntervalMin, v))
 }
 
+// HealthCheckTestModel applies equality check predicate on the "health_check_test_model" field. It's identical to HealthCheckTestModelEQ.
+func HealthCheckTestModel(v string) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldHealthCheckTestModel, v))
+}
+
 // HealthStatus applies equality check predicate on the "health_status" field. It's identical to HealthStatusEQ.
 func HealthStatus(v string) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldHealthStatus, v))
@@ -1878,6 +1883,71 @@ func HealthCheckIntervalMinLT(v int) predicate.Group {
 // HealthCheckIntervalMinLTE applies the LTE predicate on the "health_check_interval_min" field.
 func HealthCheckIntervalMinLTE(v int) predicate.Group {
 	return predicate.Group(sql.FieldLTE(FieldHealthCheckIntervalMin, v))
+}
+
+// HealthCheckTestModelEQ applies the EQ predicate on the "health_check_test_model" field.
+func HealthCheckTestModelEQ(v string) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldHealthCheckTestModel, v))
+}
+
+// HealthCheckTestModelNEQ applies the NEQ predicate on the "health_check_test_model" field.
+func HealthCheckTestModelNEQ(v string) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldHealthCheckTestModel, v))
+}
+
+// HealthCheckTestModelIn applies the In predicate on the "health_check_test_model" field.
+func HealthCheckTestModelIn(vs ...string) predicate.Group {
+	return predicate.Group(sql.FieldIn(FieldHealthCheckTestModel, vs...))
+}
+
+// HealthCheckTestModelNotIn applies the NotIn predicate on the "health_check_test_model" field.
+func HealthCheckTestModelNotIn(vs ...string) predicate.Group {
+	return predicate.Group(sql.FieldNotIn(FieldHealthCheckTestModel, vs...))
+}
+
+// HealthCheckTestModelGT applies the GT predicate on the "health_check_test_model" field.
+func HealthCheckTestModelGT(v string) predicate.Group {
+	return predicate.Group(sql.FieldGT(FieldHealthCheckTestModel, v))
+}
+
+// HealthCheckTestModelGTE applies the GTE predicate on the "health_check_test_model" field.
+func HealthCheckTestModelGTE(v string) predicate.Group {
+	return predicate.Group(sql.FieldGTE(FieldHealthCheckTestModel, v))
+}
+
+// HealthCheckTestModelLT applies the LT predicate on the "health_check_test_model" field.
+func HealthCheckTestModelLT(v string) predicate.Group {
+	return predicate.Group(sql.FieldLT(FieldHealthCheckTestModel, v))
+}
+
+// HealthCheckTestModelLTE applies the LTE predicate on the "health_check_test_model" field.
+func HealthCheckTestModelLTE(v string) predicate.Group {
+	return predicate.Group(sql.FieldLTE(FieldHealthCheckTestModel, v))
+}
+
+// HealthCheckTestModelContains applies the Contains predicate on the "health_check_test_model" field.
+func HealthCheckTestModelContains(v string) predicate.Group {
+	return predicate.Group(sql.FieldContains(FieldHealthCheckTestModel, v))
+}
+
+// HealthCheckTestModelHasPrefix applies the HasPrefix predicate on the "health_check_test_model" field.
+func HealthCheckTestModelHasPrefix(v string) predicate.Group {
+	return predicate.Group(sql.FieldHasPrefix(FieldHealthCheckTestModel, v))
+}
+
+// HealthCheckTestModelHasSuffix applies the HasSuffix predicate on the "health_check_test_model" field.
+func HealthCheckTestModelHasSuffix(v string) predicate.Group {
+	return predicate.Group(sql.FieldHasSuffix(FieldHealthCheckTestModel, v))
+}
+
+// HealthCheckTestModelEqualFold applies the EqualFold predicate on the "health_check_test_model" field.
+func HealthCheckTestModelEqualFold(v string) predicate.Group {
+	return predicate.Group(sql.FieldEqualFold(FieldHealthCheckTestModel, v))
+}
+
+// HealthCheckTestModelContainsFold applies the ContainsFold predicate on the "health_check_test_model" field.
+func HealthCheckTestModelContainsFold(v string) predicate.Group {
+	return predicate.Group(sql.FieldContainsFold(FieldHealthCheckTestModel, v))
 }
 
 // HealthStatusEQ applies the EQ predicate on the "health_status" field.

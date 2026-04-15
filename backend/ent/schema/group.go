@@ -198,6 +198,12 @@ func (Group) Fields() []ent.Field {
 			Default(30).
 			Comment("健康检查间隔（分钟），默认 30"),
 
+		// 健康检查自定义测试模型（空=使用平台默认）
+		field.String("health_check_test_model").
+			Default("").
+			MaxLen(128).
+			Comment("健康检查使用的测试模型 ID，空表示按平台使用默认"),
+
 		// 分组健康检查状态
 		field.String("health_status").
 			MaxLen(20).

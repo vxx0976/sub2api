@@ -466,6 +466,7 @@ export interface Group {
   require_privacy_set: boolean
   // 健康检查
   health_check_interval_min?: number
+  health_check_test_model?: string
   health_status?: string // 'available' | 'unavailable' | ''
   created_at: string
   updated_at: string
@@ -495,6 +496,7 @@ export interface AdminGroup extends Group {
 
   // 健康检查
   health_check_interval_min: number
+  health_check_test_model?: string
   health_status: string // 'available' | 'unavailable' | ''
   healthy_accounts: number
   total_checked_accounts: number
@@ -645,6 +647,7 @@ export interface CreateGroupRequest {
   require_oauth_only?: boolean
   require_privacy_set?: boolean
   health_check_interval_min?: number
+  health_check_test_model?: string
   // 从指定分组复制账号
   copy_accounts_from_group_ids?: number[]
   // 智能路由（虚拟故障转移分组）
@@ -677,6 +680,7 @@ export interface UpdateGroupRequest {
   require_oauth_only?: boolean
   require_privacy_set?: boolean
   health_check_interval_min?: number
+  health_check_test_model?: string
   copy_accounts_from_group_ids?: number[]
   // 智能路由（虚拟故障转移分组）
   is_failover_group?: boolean
