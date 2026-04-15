@@ -238,6 +238,12 @@ const (
 	SettingKeyEnableMetadataPassthrough = "enable_metadata_passthrough"
 	// SettingKeyEnableCCHSigning 是否对 billing header 中的 cch 进行 xxHash64 签名（默认 false）
 	SettingKeyEnableCCHSigning = "enable_cch_signing"
+
+	// 商户级开关（存储在 reseller_settings 表，按商户独立配置）
+	// SettingKeyResellerRegistrationDisabled 关闭该商户站点的注册入口（"true"=关闭）
+	SettingKeyResellerRegistrationDisabled = "reseller_registration_disabled"
+	// SettingKeyResellerLoginDisabled 关闭该商户站点下级用户的登录（"true"=关闭）
+	SettingKeyResellerLoginDisabled = "reseller_login_disabled"
 )
 
 // AdminAPIKeyPrefix is the prefix for admin API keys (distinct from user "sk-" keys).

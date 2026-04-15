@@ -153,10 +153,17 @@ func (h *AuthHandler) Register(c *gin.Context) {
 
 	// Determine parentID: explicit request field takes priority, then reseller domain context
 	parentID := req.ParentID
+	resellerCtx := middleware2.GetResellerDomainFromContext(c)
 	if parentID == nil {
-		if resellerCtx := middleware2.GetResellerDomainFromContext(c); resellerCtx != nil {
+		if resellerCtx != nil {
 			parentID = &resellerCtx.ResellerID
 		}
+	}
+
+	// 商户级注册开关：若当前站点为商户域名且商户已关闭注册，则拒绝
+	if resellerCtx != nil && resellerCtx.ResellerSettings[service.SettingKeyResellerRegistrationDisabled] == "true" {
+		response.Forbidden(c, "该站点已关闭注册")
+		return
 	}
 
 	// 获取注册来源域名
@@ -203,6 +210,24 @@ func (h *AuthHandler) SendVerifyCode(c *gin.Context) {
 		Message:   "Verification code sent successfully",
 		Countdown: result.Countdown,
 	})
+}
+
+// checkResellerLoginDisabled returns false (and writes 403) if the current site is a
+// reseller domain whose owner has disabled login for sub-users. Admin/reseller roles
+// are exempt so that account owners are not locked out by their own toggle.
+func (h *AuthHandler) checkResellerLoginDisabled(c *gin.Context, user *service.User) bool {
+	if user.Role == service.RoleAdmin || user.Role == service.RoleReseller {
+		return true
+	}
+	resellerCtx := middleware2.GetResellerDomainFromContext(c)
+	if resellerCtx == nil {
+		return true
+	}
+	if resellerCtx.ResellerSettings[service.SettingKeyResellerLoginDisabled] == "true" {
+		response.Forbidden(c, "该站点已关闭登录")
+		return false
+	}
+	return true
 }
 
 // checkLoginDomain verifies that the user is logging in from the correct domain.
@@ -261,6 +286,11 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	// Enforce login domain restriction
 	if !h.checkLoginDomain(c, user) {
+		return
+	}
+
+	// 商户级登录开关
+	if !h.checkResellerLoginDisabled(c, user) {
 		return
 	}
 
@@ -352,6 +382,11 @@ func (h *AuthHandler) Login2FA(c *gin.Context) {
 
 	// Enforce login domain restriction
 	if !h.checkLoginDomain(c, user) {
+		return
+	}
+
+	// 商户级登录开关
+	if !h.checkResellerLoginDisabled(c, user) {
 		return
 	}
 

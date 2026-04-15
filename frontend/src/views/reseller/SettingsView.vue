@@ -34,7 +34,49 @@
         <!-- Pricing Config (only when agent mode enabled) -->
         <!-- 管理员统一定价，商户不再能自定义价格，此 section 已移除 -->
 
-        <!-- Contact Info -->
+        <!-- Access Control -->
+      <div class="card p-6">
+        <h2 class="mb-1 text-lg font-semibold text-gray-900 dark:text-white">
+          {{ t('reseller.settings.accessSection') }}
+        </h2>
+        <p class="mb-4 text-xs text-gray-500 dark:text-gray-400">{{ t('reseller.settings.accessHint') }}</p>
+        <div class="space-y-3">
+          <label class="flex cursor-pointer items-start gap-3">
+            <input
+              type="checkbox"
+              :checked="settings.reseller_registration_disabled === 'true'"
+              @change="(e) => settings.reseller_registration_disabled = (e.target as HTMLInputElement).checked ? 'true' : 'false'"
+              class="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+            />
+            <div class="flex-1">
+              <div class="text-sm font-medium text-gray-900 dark:text-white">
+                {{ t('reseller.settings.disableRegistration') }}
+              </div>
+              <div class="text-xs text-gray-500 dark:text-gray-400">
+                {{ t('reseller.settings.disableRegistrationHint') }}
+              </div>
+            </div>
+          </label>
+          <label class="flex cursor-pointer items-start gap-3">
+            <input
+              type="checkbox"
+              :checked="settings.reseller_login_disabled === 'true'"
+              @change="(e) => settings.reseller_login_disabled = (e.target as HTMLInputElement).checked ? 'true' : 'false'"
+              class="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+            />
+            <div class="flex-1">
+              <div class="text-sm font-medium text-gray-900 dark:text-white">
+                {{ t('reseller.settings.disableLogin') }}
+              </div>
+              <div class="text-xs text-gray-500 dark:text-gray-400">
+                {{ t('reseller.settings.disableLoginHint') }}
+              </div>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Contact Info -->
         <div class="card p-6">
           <h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
             {{ t('reseller.settings.contactSection') }}
@@ -148,6 +190,8 @@ const settings = ref<Record<string, string>>({
   contact_wechat: '',
   contact_telegram: '',
   contact_qq: '',
+  reseller_registration_disabled: 'false',
+  reseller_login_disabled: 'false',
 })
 
 // SimpleAnnouncement list (stored as JSON in settings.announcements)
