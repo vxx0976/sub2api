@@ -215,9 +215,6 @@ func (s *CommissionService) GetSummary(ctx context.Context, resellerID int64) (*
 	}
 
 	available := totalCommission - withdrawn - pending
-	if available < 0 {
-		available = 0
-	}
 
 	return &CommissionSummary{
 		CommissionRate:  rate,
