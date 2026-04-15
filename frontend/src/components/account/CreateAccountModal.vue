@@ -1509,16 +1509,33 @@
         />
       </div>
 
-      <!-- 客户端屏蔽列表 -->
+      <!-- 定时上线时间窗口 -->
       <div class="border-t border-gray-200 pt-4 dark:border-dark-600">
-        <label class="input-label">{{ t('admin.accounts.blockedClients') }}</label>
-        <textarea
-          v-model="blockedClients"
-          rows="3"
-          class="input font-mono text-sm"
-          :placeholder="t('admin.accounts.blockedClientsPlaceholder')"
-        />
-        <p class="input-hint">{{ t('admin.accounts.blockedClientsHint') }}</p>
+        <div class="flex items-center gap-1.5 mb-2">
+          <label class="input-label mb-0">{{ t('admin.accounts.schedule.title') }}</label>
+          <span class="text-xs text-gray-400 dark:text-gray-500">{{ t('admin.accounts.schedule.hint') }}</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="flex-1">
+            <label class="text-xs text-gray-500 dark:text-gray-400 mb-1 block">{{ t('admin.accounts.schedule.startTime') }}</label>
+            <input v-model="activeStartTime" type="time" class="input" />
+          </div>
+          <span class="text-gray-400 mt-5">—</span>
+          <div class="flex-1">
+            <label class="text-xs text-gray-500 dark:text-gray-400 mb-1 block">{{ t('admin.accounts.schedule.endTime') }}</label>
+            <input v-model="activeEndTime" type="time" class="input" />
+          </div>
+          <button
+            v-if="activeStartTime || activeEndTime"
+            type="button"
+            @click="activeStartTime = ''; activeEndTime = ''"
+            class="mt-5 text-xs text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+          >{{ t('common.clear') }}</button>
+        </div>
+        <p v-if="activeStartTime && activeEndTime" class="input-hint mt-2">
+          {{ t('admin.accounts.schedule.activeHint', { start: activeStartTime, end: activeEndTime }) }}
+        </p>
+        <p v-else class="input-hint mt-2">{{ t('admin.accounts.schedule.noScheduleHint') }}</p>
       </div>
 
       <!-- OpenAI OAuth Model Mapping (OAuth 类型没有 apikey 容器，需要独立的模型映射区域) -->
@@ -2990,7 +3007,8 @@ const selectedErrorCodes = ref<number[]>([])
 const customErrorCodeInput = ref<number | null>(null)
 const interceptWarmupRequests = ref(false)
 const autoPauseOnExpired = ref(true)
-const blockedClients = ref('')
+const activeStartTime = ref('')
+const activeEndTime = ref('')
 const openaiPassthroughEnabled = ref(false)
 const openaiOAuthResponsesWebSocketV2Mode = ref<OpenAIWSMode>(OPENAI_WS_MODE_OFF)
 const openaiAPIKeyResponsesWebSocketV2Mode = ref<OpenAIWSMode>(OPENAI_WS_MODE_OFF)
@@ -3702,7 +3720,8 @@ const resetForm = () => {
   customErrorCodeInput.value = null
   interceptWarmupRequests.value = false
   autoPauseOnExpired.value = true
-  blockedClients.value = ''
+  activeStartTime.value = ''
+  activeEndTime.value = ''
   openaiPassthroughEnabled.value = false
   openaiOAuthResponsesWebSocketV2Mode.value = OPENAI_WS_MODE_OFF
   openaiAPIKeyResponsesWebSocketV2Mode.value = OPENAI_WS_MODE_OFF
@@ -4100,13 +4119,6 @@ const createAccountAndFinish = async (
       finalExtra = quotaExtra
     }
   }
-  // Inject blocked_clients for all account types
-  if (blockedClients.value.trim()) {
-    const clients = blockedClients.value.split('\n').map(s => s.trim()).filter(Boolean)
-    if (clients.length > 0) {
-      finalExtra = { ...(finalExtra || {}), blocked_clients: clients }
-    }
-  }
   await doCreateAccount({
     name: form.name,
     notes: form.notes,
@@ -4121,7 +4133,9 @@ const createAccountAndFinish = async (
     rate_multiplier: form.rate_multiplier,
     group_ids: form.group_ids,
     expires_at: form.expires_at,
-    auto_pause_on_expired: autoPauseOnExpired.value
+    auto_pause_on_expired: autoPauseOnExpired.value,
+    active_start_time: activeStartTime.value || undefined,
+    active_end_time: activeEndTime.value || undefined
   })
 }
 

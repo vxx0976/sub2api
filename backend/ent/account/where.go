@@ -185,6 +185,16 @@ func SessionWindowStatus(v string) predicate.Account {
 	return predicate.Account(sql.FieldEQ(FieldSessionWindowStatus, v))
 }
 
+// ActiveStartTime applies equality check predicate on the "active_start_time" field. It's identical to ActiveStartTimeEQ.
+func ActiveStartTime(v string) predicate.Account {
+	return predicate.Account(sql.FieldEQ(FieldActiveStartTime, v))
+}
+
+// ActiveEndTime applies equality check predicate on the "active_end_time" field. It's identical to ActiveEndTimeEQ.
+func ActiveEndTime(v string) predicate.Account {
+	return predicate.Account(sql.FieldEQ(FieldActiveEndTime, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Account {
 	return predicate.Account(sql.FieldEQ(FieldCreatedAt, v))
@@ -1493,6 +1503,156 @@ func SessionWindowStatusEqualFold(v string) predicate.Account {
 // SessionWindowStatusContainsFold applies the ContainsFold predicate on the "session_window_status" field.
 func SessionWindowStatusContainsFold(v string) predicate.Account {
 	return predicate.Account(sql.FieldContainsFold(FieldSessionWindowStatus, v))
+}
+
+// ActiveStartTimeEQ applies the EQ predicate on the "active_start_time" field.
+func ActiveStartTimeEQ(v string) predicate.Account {
+	return predicate.Account(sql.FieldEQ(FieldActiveStartTime, v))
+}
+
+// ActiveStartTimeNEQ applies the NEQ predicate on the "active_start_time" field.
+func ActiveStartTimeNEQ(v string) predicate.Account {
+	return predicate.Account(sql.FieldNEQ(FieldActiveStartTime, v))
+}
+
+// ActiveStartTimeIn applies the In predicate on the "active_start_time" field.
+func ActiveStartTimeIn(vs ...string) predicate.Account {
+	return predicate.Account(sql.FieldIn(FieldActiveStartTime, vs...))
+}
+
+// ActiveStartTimeNotIn applies the NotIn predicate on the "active_start_time" field.
+func ActiveStartTimeNotIn(vs ...string) predicate.Account {
+	return predicate.Account(sql.FieldNotIn(FieldActiveStartTime, vs...))
+}
+
+// ActiveStartTimeGT applies the GT predicate on the "active_start_time" field.
+func ActiveStartTimeGT(v string) predicate.Account {
+	return predicate.Account(sql.FieldGT(FieldActiveStartTime, v))
+}
+
+// ActiveStartTimeGTE applies the GTE predicate on the "active_start_time" field.
+func ActiveStartTimeGTE(v string) predicate.Account {
+	return predicate.Account(sql.FieldGTE(FieldActiveStartTime, v))
+}
+
+// ActiveStartTimeLT applies the LT predicate on the "active_start_time" field.
+func ActiveStartTimeLT(v string) predicate.Account {
+	return predicate.Account(sql.FieldLT(FieldActiveStartTime, v))
+}
+
+// ActiveStartTimeLTE applies the LTE predicate on the "active_start_time" field.
+func ActiveStartTimeLTE(v string) predicate.Account {
+	return predicate.Account(sql.FieldLTE(FieldActiveStartTime, v))
+}
+
+// ActiveStartTimeContains applies the Contains predicate on the "active_start_time" field.
+func ActiveStartTimeContains(v string) predicate.Account {
+	return predicate.Account(sql.FieldContains(FieldActiveStartTime, v))
+}
+
+// ActiveStartTimeHasPrefix applies the HasPrefix predicate on the "active_start_time" field.
+func ActiveStartTimeHasPrefix(v string) predicate.Account {
+	return predicate.Account(sql.FieldHasPrefix(FieldActiveStartTime, v))
+}
+
+// ActiveStartTimeHasSuffix applies the HasSuffix predicate on the "active_start_time" field.
+func ActiveStartTimeHasSuffix(v string) predicate.Account {
+	return predicate.Account(sql.FieldHasSuffix(FieldActiveStartTime, v))
+}
+
+// ActiveStartTimeIsNil applies the IsNil predicate on the "active_start_time" field.
+func ActiveStartTimeIsNil() predicate.Account {
+	return predicate.Account(sql.FieldIsNull(FieldActiveStartTime))
+}
+
+// ActiveStartTimeNotNil applies the NotNil predicate on the "active_start_time" field.
+func ActiveStartTimeNotNil() predicate.Account {
+	return predicate.Account(sql.FieldNotNull(FieldActiveStartTime))
+}
+
+// ActiveStartTimeEqualFold applies the EqualFold predicate on the "active_start_time" field.
+func ActiveStartTimeEqualFold(v string) predicate.Account {
+	return predicate.Account(sql.FieldEqualFold(FieldActiveStartTime, v))
+}
+
+// ActiveStartTimeContainsFold applies the ContainsFold predicate on the "active_start_time" field.
+func ActiveStartTimeContainsFold(v string) predicate.Account {
+	return predicate.Account(sql.FieldContainsFold(FieldActiveStartTime, v))
+}
+
+// ActiveEndTimeEQ applies the EQ predicate on the "active_end_time" field.
+func ActiveEndTimeEQ(v string) predicate.Account {
+	return predicate.Account(sql.FieldEQ(FieldActiveEndTime, v))
+}
+
+// ActiveEndTimeNEQ applies the NEQ predicate on the "active_end_time" field.
+func ActiveEndTimeNEQ(v string) predicate.Account {
+	return predicate.Account(sql.FieldNEQ(FieldActiveEndTime, v))
+}
+
+// ActiveEndTimeIn applies the In predicate on the "active_end_time" field.
+func ActiveEndTimeIn(vs ...string) predicate.Account {
+	return predicate.Account(sql.FieldIn(FieldActiveEndTime, vs...))
+}
+
+// ActiveEndTimeNotIn applies the NotIn predicate on the "active_end_time" field.
+func ActiveEndTimeNotIn(vs ...string) predicate.Account {
+	return predicate.Account(sql.FieldNotIn(FieldActiveEndTime, vs...))
+}
+
+// ActiveEndTimeGT applies the GT predicate on the "active_end_time" field.
+func ActiveEndTimeGT(v string) predicate.Account {
+	return predicate.Account(sql.FieldGT(FieldActiveEndTime, v))
+}
+
+// ActiveEndTimeGTE applies the GTE predicate on the "active_end_time" field.
+func ActiveEndTimeGTE(v string) predicate.Account {
+	return predicate.Account(sql.FieldGTE(FieldActiveEndTime, v))
+}
+
+// ActiveEndTimeLT applies the LT predicate on the "active_end_time" field.
+func ActiveEndTimeLT(v string) predicate.Account {
+	return predicate.Account(sql.FieldLT(FieldActiveEndTime, v))
+}
+
+// ActiveEndTimeLTE applies the LTE predicate on the "active_end_time" field.
+func ActiveEndTimeLTE(v string) predicate.Account {
+	return predicate.Account(sql.FieldLTE(FieldActiveEndTime, v))
+}
+
+// ActiveEndTimeContains applies the Contains predicate on the "active_end_time" field.
+func ActiveEndTimeContains(v string) predicate.Account {
+	return predicate.Account(sql.FieldContains(FieldActiveEndTime, v))
+}
+
+// ActiveEndTimeHasPrefix applies the HasPrefix predicate on the "active_end_time" field.
+func ActiveEndTimeHasPrefix(v string) predicate.Account {
+	return predicate.Account(sql.FieldHasPrefix(FieldActiveEndTime, v))
+}
+
+// ActiveEndTimeHasSuffix applies the HasSuffix predicate on the "active_end_time" field.
+func ActiveEndTimeHasSuffix(v string) predicate.Account {
+	return predicate.Account(sql.FieldHasSuffix(FieldActiveEndTime, v))
+}
+
+// ActiveEndTimeIsNil applies the IsNil predicate on the "active_end_time" field.
+func ActiveEndTimeIsNil() predicate.Account {
+	return predicate.Account(sql.FieldIsNull(FieldActiveEndTime))
+}
+
+// ActiveEndTimeNotNil applies the NotNil predicate on the "active_end_time" field.
+func ActiveEndTimeNotNil() predicate.Account {
+	return predicate.Account(sql.FieldNotNull(FieldActiveEndTime))
+}
+
+// ActiveEndTimeEqualFold applies the EqualFold predicate on the "active_end_time" field.
+func ActiveEndTimeEqualFold(v string) predicate.Account {
+	return predicate.Account(sql.FieldEqualFold(FieldActiveEndTime, v))
+}
+
+// ActiveEndTimeContainsFold applies the ContainsFold predicate on the "active_end_time" field.
+func ActiveEndTimeContainsFold(v string) predicate.Account {
+	return predicate.Account(sql.FieldContainsFold(FieldActiveEndTime, v))
 }
 
 // HasGroups applies the HasEdge predicate on the "groups" edge.

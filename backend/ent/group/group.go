@@ -91,10 +91,6 @@ const (
 	FieldAllowMessagesDispatch = "allow_messages_dispatch"
 	// FieldDefaultMappedModel holds the string denoting the default_mapped_model field in the database.
 	FieldDefaultMappedModel = "default_mapped_model"
-	// FieldActiveStartTime holds the string denoting the active_start_time field in the database.
-	FieldActiveStartTime = "active_start_time"
-	// FieldActiveEndTime holds the string denoting the active_end_time field in the database.
-	FieldActiveEndTime = "active_end_time"
 	// FieldHealthCheckIntervalMin holds the string denoting the health_check_interval_min field in the database.
 	FieldHealthCheckIntervalMin = "health_check_interval_min"
 	// FieldHealthCheckTestModel holds the string denoting the health_check_test_model field in the database.
@@ -241,8 +237,6 @@ var Columns = []string{
 	FieldRequirePrivacySet,
 	FieldAllowMessagesDispatch,
 	FieldDefaultMappedModel,
-	FieldActiveStartTime,
-	FieldActiveEndTime,
 	FieldHealthCheckIntervalMin,
 	FieldHealthCheckTestModel,
 	FieldHealthStatus,
@@ -336,10 +330,6 @@ var (
 	DefaultDefaultMappedModel string
 	// DefaultMappedModelValidator is a validator for the "default_mapped_model" field. It is called by the builders before save.
 	DefaultMappedModelValidator func(string) error
-	// ActiveStartTimeValidator is a validator for the "active_start_time" field. It is called by the builders before save.
-	ActiveStartTimeValidator func(string) error
-	// ActiveEndTimeValidator is a validator for the "active_end_time" field. It is called by the builders before save.
-	ActiveEndTimeValidator func(string) error
 	// DefaultHealthCheckIntervalMin holds the default value on creation for the "health_check_interval_min" field.
 	DefaultHealthCheckIntervalMin int
 	// DefaultHealthCheckTestModel holds the default value on creation for the "health_check_test_model" field.
@@ -536,16 +526,6 @@ func ByAllowMessagesDispatch(opts ...sql.OrderTermOption) OrderOption {
 // ByDefaultMappedModel orders the results by the default_mapped_model field.
 func ByDefaultMappedModel(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDefaultMappedModel, opts...).ToFunc()
-}
-
-// ByActiveStartTime orders the results by the active_start_time field.
-func ByActiveStartTime(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldActiveStartTime, opts...).ToFunc()
-}
-
-// ByActiveEndTime orders the results by the active_end_time field.
-func ByActiveEndTime(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldActiveEndTime, opts...).ToFunc()
 }
 
 // ByHealthCheckIntervalMin orders the results by the health_check_interval_min field.

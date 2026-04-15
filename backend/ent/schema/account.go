@@ -193,6 +193,18 @@ func (Account) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			MaxLen(20),
+
+		// 定时上线时间窗口（格式 "HH:MM"，两者都设置时生效）
+		field.String("active_start_time").
+			Optional().
+			Nillable().
+			MaxLen(5).
+			Comment("每日可用开始时间（HH:MM），与 active_end_time 配合使用"),
+		field.String("active_end_time").
+			Optional().
+			Nillable().
+			MaxLen(5).
+			Comment("每日可用结束时间（HH:MM），与 active_start_time 配合使用"),
 	}
 }
 

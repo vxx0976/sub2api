@@ -252,6 +252,14 @@ func init() {
 	accountDescSessionWindowStatus := accountFields[24].Descriptor()
 	// account.SessionWindowStatusValidator is a validator for the "session_window_status" field. It is called by the builders before save.
 	account.SessionWindowStatusValidator = accountDescSessionWindowStatus.Validators[0].(func(string) error)
+	// accountDescActiveStartTime is the schema descriptor for active_start_time field.
+	accountDescActiveStartTime := accountFields[25].Descriptor()
+	// account.ActiveStartTimeValidator is a validator for the "active_start_time" field. It is called by the builders before save.
+	account.ActiveStartTimeValidator = accountDescActiveStartTime.Validators[0].(func(string) error)
+	// accountDescActiveEndTime is the schema descriptor for active_end_time field.
+	accountDescActiveEndTime := accountFields[26].Descriptor()
+	// account.ActiveEndTimeValidator is a validator for the "active_end_time" field. It is called by the builders before save.
+	account.ActiveEndTimeValidator = accountDescActiveEndTime.Validators[0].(func(string) error)
 	accountgroupFields := schema.AccountGroup{}.Fields()
 	_ = accountgroupFields
 	// accountgroupDescPriority is the schema descriptor for priority field.
@@ -579,44 +587,36 @@ func init() {
 	group.DefaultDefaultMappedModel = groupDescDefaultMappedModel.Default.(string)
 	// group.DefaultMappedModelValidator is a validator for the "default_mapped_model" field. It is called by the builders before save.
 	group.DefaultMappedModelValidator = groupDescDefaultMappedModel.Validators[0].(func(string) error)
-	// groupDescActiveStartTime is the schema descriptor for active_start_time field.
-	groupDescActiveStartTime := groupFields[35].Descriptor()
-	// group.ActiveStartTimeValidator is a validator for the "active_start_time" field. It is called by the builders before save.
-	group.ActiveStartTimeValidator = groupDescActiveStartTime.Validators[0].(func(string) error)
-	// groupDescActiveEndTime is the schema descriptor for active_end_time field.
-	groupDescActiveEndTime := groupFields[36].Descriptor()
-	// group.ActiveEndTimeValidator is a validator for the "active_end_time" field. It is called by the builders before save.
-	group.ActiveEndTimeValidator = groupDescActiveEndTime.Validators[0].(func(string) error)
 	// groupDescHealthCheckIntervalMin is the schema descriptor for health_check_interval_min field.
-	groupDescHealthCheckIntervalMin := groupFields[37].Descriptor()
+	groupDescHealthCheckIntervalMin := groupFields[35].Descriptor()
 	// group.DefaultHealthCheckIntervalMin holds the default value on creation for the health_check_interval_min field.
 	group.DefaultHealthCheckIntervalMin = groupDescHealthCheckIntervalMin.Default.(int)
 	// groupDescHealthCheckTestModel is the schema descriptor for health_check_test_model field.
-	groupDescHealthCheckTestModel := groupFields[38].Descriptor()
+	groupDescHealthCheckTestModel := groupFields[36].Descriptor()
 	// group.DefaultHealthCheckTestModel holds the default value on creation for the health_check_test_model field.
 	group.DefaultHealthCheckTestModel = groupDescHealthCheckTestModel.Default.(string)
 	// group.HealthCheckTestModelValidator is a validator for the "health_check_test_model" field. It is called by the builders before save.
 	group.HealthCheckTestModelValidator = groupDescHealthCheckTestModel.Validators[0].(func(string) error)
 	// groupDescHealthStatus is the schema descriptor for health_status field.
-	groupDescHealthStatus := groupFields[39].Descriptor()
+	groupDescHealthStatus := groupFields[37].Descriptor()
 	// group.DefaultHealthStatus holds the default value on creation for the health_status field.
 	group.DefaultHealthStatus = groupDescHealthStatus.Default.(string)
 	// group.HealthStatusValidator is a validator for the "health_status" field. It is called by the builders before save.
 	group.HealthStatusValidator = groupDescHealthStatus.Validators[0].(func(string) error)
 	// groupDescHealthyAccounts is the schema descriptor for healthy_accounts field.
-	groupDescHealthyAccounts := groupFields[40].Descriptor()
+	groupDescHealthyAccounts := groupFields[38].Descriptor()
 	// group.DefaultHealthyAccounts holds the default value on creation for the healthy_accounts field.
 	group.DefaultHealthyAccounts = groupDescHealthyAccounts.Default.(int)
 	// groupDescTotalCheckedAccounts is the schema descriptor for total_checked_accounts field.
-	groupDescTotalCheckedAccounts := groupFields[41].Descriptor()
+	groupDescTotalCheckedAccounts := groupFields[39].Descriptor()
 	// group.DefaultTotalCheckedAccounts holds the default value on creation for the total_checked_accounts field.
 	group.DefaultTotalCheckedAccounts = groupDescTotalCheckedAccounts.Default.(int)
 	// groupDescIsFailoverGroup is the schema descriptor for is_failover_group field.
-	groupDescIsFailoverGroup := groupFields[43].Descriptor()
+	groupDescIsFailoverGroup := groupFields[41].Descriptor()
 	// group.DefaultIsFailoverGroup holds the default value on creation for the is_failover_group field.
 	group.DefaultIsFailoverGroup = groupDescIsFailoverGroup.Default.(bool)
 	// groupDescFailoverActiveVersion is the schema descriptor for failover_active_version field.
-	groupDescFailoverActiveVersion := groupFields[46].Descriptor()
+	groupDescFailoverActiveVersion := groupFields[44].Descriptor()
 	// group.DefaultFailoverActiveVersion holds the default value on creation for the failover_active_version field.
 	group.DefaultFailoverActiveVersion = groupDescFailoverActiveVersion.Default.(int64)
 	idempotencyrecordMixin := schema.IdempotencyRecord{}.Mixin()

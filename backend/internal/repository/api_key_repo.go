@@ -723,8 +723,6 @@ func groupEntityToService(g *dbent.Group) *service.Group {
 		RequireOAuthOnly:                g.RequireOauthOnly,
 		RequirePrivacySet:               g.RequirePrivacySet,
 		DefaultMappedModel:              g.DefaultMappedModel,
-		ActiveStartTime:                 g.ActiveStartTime,
-		ActiveEndTime:                   g.ActiveEndTime,
 		HealthCheckIntervalMin:          g.HealthCheckIntervalMin,
 		HealthCheckTestModel:            g.HealthCheckTestModel,
 		HealthStatus:                    g.HealthStatus,

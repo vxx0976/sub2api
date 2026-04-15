@@ -52,6 +52,10 @@ type Account struct {
 	SessionWindowEnd    *time.Time
 	SessionWindowStatus string
 
+	// 定时上线时间窗口（格式 "HH:MM"，两者都设置时生效）
+	ActiveStartTime *string
+	ActiveEndTime   *string
+
 	Proxy         *Proxy
 	AccountGroups []AccountGroup
 	GroupIDs      []int64
@@ -121,7 +125,49 @@ func (a *Account) IsSchedulable() bool {
 	if a.TempUnschedulableUntil != nil && now.Before(*a.TempUnschedulableUntil) {
 		return false
 	}
+	if !a.IsWithinActiveWindow(now) {
+		return false
+	}
 	return true
+}
+
+// parseHHMM 将 "HH:MM" 解析为分钟数，失败返回 -1
+func parseHHMM(s string) int {
+	hStr, mStr, ok := strings.Cut(s, ":")
+	if !ok {
+		return -1
+	}
+	h, err := strconv.Atoi(hStr)
+	if err != nil {
+		return -1
+	}
+	m, err := strconv.Atoi(mStr)
+	if err != nil {
+		return -1
+	}
+	if h < 0 || h > 23 || m < 0 || m > 59 {
+		return -1
+	}
+	return h*60 + m
+}
+
+// IsWithinActiveWindow 判断当前时间是否在账号的定时上线窗口内。
+// 未配置窗口（任一字段为 nil）时视为全天可用。
+func (a *Account) IsWithinActiveWindow(now time.Time) bool {
+	if a == nil || a.ActiveStartTime == nil || a.ActiveEndTime == nil {
+		return true
+	}
+	start := parseHHMM(*a.ActiveStartTime)
+	end := parseHHMM(*a.ActiveEndTime)
+	if start < 0 || end < 0 || start == end {
+		return true
+	}
+	current := now.Hour()*60 + now.Minute()
+	if start < end {
+		return current >= start && current < end
+	}
+	// 跨午夜
+	return current >= start || current < end
 }
 
 func (a *Account) IsRateLimited() bool {
@@ -1334,44 +1380,6 @@ func (a *Account) GetCacheTTLOverrideTarget() string {
 		}
 	}
 	return "5m"
-}
-
-// GetBlockedClients 获取账号禁止使用的客户端列表（User-Agent 模糊匹配模式）
-func (a *Account) GetBlockedClients() []string {
-	if a.Extra == nil {
-		return nil
-	}
-	raw, ok := a.Extra["blocked_clients"]
-	if !ok {
-		return nil
-	}
-	arr, ok := raw.([]interface{})
-	if !ok {
-		return nil
-	}
-	result := make([]string, 0, len(arr))
-	for _, v := range arr {
-		if s, ok := v.(string); ok && s != "" {
-			result = append(result, s)
-		}
-	}
-	return result
-}
-
-// IsClientBlocked 检查指定 User-Agent 是否被此账号屏蔽
-// 使用大小写不敏感的子串匹配
-func (a *Account) IsClientBlocked(userAgent string) bool {
-	clients := a.GetBlockedClients()
-	if len(clients) == 0 {
-		return false
-	}
-	uaLower := strings.ToLower(userAgent)
-	for _, pattern := range clients {
-		if strings.Contains(uaLower, strings.ToLower(pattern)) {
-			return true
-		}
-	}
-	return false
 }
 
 // GetQuota5hLimit 获取 5 小时滚动窗口配额限制（美元），0 表示未启用

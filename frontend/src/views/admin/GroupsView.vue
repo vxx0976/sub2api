@@ -1406,43 +1406,6 @@
           <Select v-model="editForm.status" :options="editStatusOptions" />
         </div>
 
-        <!-- 定时上线时间窗口 -->
-        <div v-if="editForm.status === 'active'" class="border border-gray-200 dark:border-dark-400 rounded-lg p-4">
-          <div class="flex items-center gap-1.5 mb-3">
-            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('admin.groups.schedule.title') }}</label>
-            <span class="text-xs text-gray-400 dark:text-gray-500">{{ t('admin.groups.schedule.hint') }}</span>
-          </div>
-          <div class="flex items-center gap-3">
-            <div class="flex-1">
-              <label class="text-xs text-gray-500 dark:text-gray-400 mb-1 block">{{ t('admin.groups.schedule.startTime') }}</label>
-              <input
-                v-model="editForm.active_start_time"
-                type="time"
-                class="input"
-              />
-            </div>
-            <span class="text-gray-400 mt-5">—</span>
-            <div class="flex-1">
-              <label class="text-xs text-gray-500 dark:text-gray-400 mb-1 block">{{ t('admin.groups.schedule.endTime') }}</label>
-              <input
-                v-model="editForm.active_end_time"
-                type="time"
-                class="input"
-              />
-            </div>
-            <button
-              v-if="editForm.active_start_time || editForm.active_end_time"
-              type="button"
-              @click="editForm.active_start_time = ''; editForm.active_end_time = ''"
-              class="mt-5 text-xs text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
-            >{{ t('common.clear') }}</button>
-          </div>
-          <p v-if="editForm.active_start_time && editForm.active_end_time" class="input-hint mt-2">
-            {{ t('admin.groups.schedule.activeHint', { start: editForm.active_start_time, end: editForm.active_end_time }) }}
-          </p>
-          <p v-else class="input-hint mt-2">{{ t('admin.groups.schedule.noScheduleHint') }}</p>
-        </div>
-
         <!-- Subscription Configuration -->
         <div class="mt-4 border-t pt-4">
           <div>
@@ -2727,9 +2690,6 @@ const editForm = reactive({
   require_privacy_set: false,
   // 模型路由开关
   model_routing_enabled: false,
-  // 定时上线时间窗口
-  active_start_time: '' as string,
-  active_end_time: '' as string,
   // 健康检查间隔（分钟）
   health_check_interval_min: 30,
   // 健康检查自定义测试模型（空=使用平台默认）
@@ -2750,14 +2710,6 @@ const editForm = reactive({
   // 智能路由（虚拟故障转移分组）
   is_failover_group: false,
   failover_member_ids: [] as number[]
-})
-
-// 状态切换时清除定时上线配置，避免脏数据提交
-watch(() => editForm.status, (newStatus) => {
-  if (newStatus !== 'active') {
-    editForm.active_start_time = ''
-    editForm.active_end_time = ''
-  }
 })
 
 // 根据分组类型返回不同的删除确认消息
@@ -3031,8 +2983,6 @@ const handleEdit = async (group: AdminGroup) => {
   editForm.external_buy_url = group.external_buy_url || ''
   editForm.supported_model_scopes = group.supported_model_scopes || ['claude', 'gemini_text', 'gemini_image']
   editForm.mcp_xml_inject = group.mcp_xml_inject ?? true
-  editForm.active_start_time = group.active_start_time || ''
-  editForm.active_end_time = group.active_end_time || ''
   editForm.copy_accounts_from_group_ids = [] // 复制账号字段每次编辑时重置为空
   editForm.is_failover_group = group.is_failover_group || false
   editForm.failover_member_ids = [...(group.failover_member_ids || [])]
@@ -3062,7 +3012,7 @@ const handleUpdateGroup = async () => {
   submitting.value = true
   try {
     // 转换 fallback_group_id: null -> 0 (后端使用 0 表示清除)
-    const payload = {
+    const payload: Record<string, unknown> = {
       ...editForm,
       name_i18n: cleanI18nMap(editForm.name_i18n),
       description_i18n: cleanI18nMap(editForm.description_i18n),
@@ -3075,6 +3025,10 @@ const handleUpdateGroup = async () => {
           ? 0
           : editForm.fallback_group_id_on_invalid_request,
       model_routing: convertRoutingRulesToApiFormat(editModelRoutingRules.value)
+    }
+    // 仅在智能路由分组时提交 failover_member_ids，普通分组提交会被后端拒绝
+    if (!editForm.is_failover_group) {
+      delete payload.failover_member_ids
     }
     // v-model.number 清空输入框时产生 ""，转为 null 让后端设为无限制
     const emptyToNull = (v: any) => v === '' ? null : v

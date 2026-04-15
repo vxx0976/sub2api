@@ -71,6 +71,10 @@ const (
 	FieldSessionWindowEnd = "session_window_end"
 	// FieldSessionWindowStatus holds the string denoting the session_window_status field in the database.
 	FieldSessionWindowStatus = "session_window_status"
+	// FieldActiveStartTime holds the string denoting the active_start_time field in the database.
+	FieldActiveStartTime = "active_start_time"
+	// FieldActiveEndTime holds the string denoting the active_end_time field in the database.
+	FieldActiveEndTime = "active_end_time"
 	// EdgeGroups holds the string denoting the groups edge name in mutations.
 	EdgeGroups = "groups"
 	// EdgeProxy holds the string denoting the proxy edge name in mutations.
@@ -140,6 +144,8 @@ var Columns = []string{
 	FieldSessionWindowStart,
 	FieldSessionWindowEnd,
 	FieldSessionWindowStatus,
+	FieldActiveStartTime,
+	FieldActiveEndTime,
 }
 
 var (
@@ -198,6 +204,10 @@ var (
 	DefaultSchedulable bool
 	// SessionWindowStatusValidator is a validator for the "session_window_status" field. It is called by the builders before save.
 	SessionWindowStatusValidator func(string) error
+	// ActiveStartTimeValidator is a validator for the "active_start_time" field. It is called by the builders before save.
+	ActiveStartTimeValidator func(string) error
+	// ActiveEndTimeValidator is a validator for the "active_end_time" field. It is called by the builders before save.
+	ActiveEndTimeValidator func(string) error
 )
 
 // OrderOption defines the ordering options for the Account queries.
@@ -336,6 +346,16 @@ func BySessionWindowEnd(opts ...sql.OrderTermOption) OrderOption {
 // BySessionWindowStatus orders the results by the session_window_status field.
 func BySessionWindowStatus(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSessionWindowStatus, opts...).ToFunc()
+}
+
+// ByActiveStartTime orders the results by the active_start_time field.
+func ByActiveStartTime(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldActiveStartTime, opts...).ToFunc()
+}
+
+// ByActiveEndTime orders the results by the active_end_time field.
+func ByActiveEndTime(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldActiveEndTime, opts...).ToFunc()
 }
 
 // ByGroupsCount orders the results by groups count.

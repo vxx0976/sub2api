@@ -112,10 +112,6 @@ type Group struct {
 	RequireOAuthOnly  bool `json:"require_oauth_only"`
 	RequirePrivacySet bool `json:"require_privacy_set"`
 
-	// 定时上线时间窗口
-	ActiveStartTime *string `json:"active_start_time"`
-	ActiveEndTime   *string `json:"active_end_time"`
-
 	// 健康检查状态（用户侧用于展示分组可用性指示）
 	HealthStatus string `json:"health_status"`
 
@@ -199,6 +195,10 @@ type Account struct {
 	SessionWindowEnd    *time.Time `json:"session_window_end"`
 	SessionWindowStatus string     `json:"session_window_status"`
 
+	// 定时上线时间窗口（格式 "HH:MM"）
+	ActiveStartTime *string `json:"active_start_time"`
+	ActiveEndTime   *string `json:"active_end_time"`
+
 	// 5h窗口费用控制（仅 Anthropic OAuth/SetupToken 账号有效）
 	// 从 extra 字段提取，方便前端显示和编辑
 	WindowCostLimit         *float64 `json:"window_cost_limit,omitempty"`
@@ -254,9 +254,6 @@ type Account struct {
 	QuotaResetTimezone   *string `json:"quota_reset_timezone,omitempty"`
 	QuotaDailyResetAt    *string `json:"quota_daily_reset_at,omitempty"`
 	QuotaWeeklyResetAt   *string `json:"quota_weekly_reset_at,omitempty"`
-
-	// 客户端屏蔽列表（User-Agent 模糊匹配）
-	BlockedClients []string `json:"blocked_clients,omitempty"`
 
 	Proxy         *Proxy         `json:"proxy,omitempty"`
 	AccountGroups []AccountGroup `json:"account_groups,omitempty"`

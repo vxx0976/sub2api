@@ -1190,16 +1190,33 @@
         />
       </div>
 
-      <!-- 客户端屏蔽列表 -->
+      <!-- 定时上线时间窗口 -->
       <div class="border-t border-gray-200 pt-4 dark:border-dark-600">
-        <label class="input-label">{{ t('admin.accounts.blockedClients') }}</label>
-        <textarea
-          v-model="blockedClients"
-          rows="3"
-          class="input font-mono text-sm"
-          :placeholder="t('admin.accounts.blockedClientsPlaceholder')"
-        />
-        <p class="input-hint">{{ t('admin.accounts.blockedClientsHint') }}</p>
+        <div class="flex items-center gap-1.5 mb-2">
+          <label class="input-label mb-0">{{ t('admin.accounts.schedule.title') }}</label>
+          <span class="text-xs text-gray-400 dark:text-gray-500">{{ t('admin.accounts.schedule.hint') }}</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="flex-1">
+            <label class="text-xs text-gray-500 dark:text-gray-400 mb-1 block">{{ t('admin.accounts.schedule.startTime') }}</label>
+            <input v-model="editActiveStartTime" type="time" class="input" />
+          </div>
+          <span class="text-gray-400 mt-5">—</span>
+          <div class="flex-1">
+            <label class="text-xs text-gray-500 dark:text-gray-400 mb-1 block">{{ t('admin.accounts.schedule.endTime') }}</label>
+            <input v-model="editActiveEndTime" type="time" class="input" />
+          </div>
+          <button
+            v-if="editActiveStartTime || editActiveEndTime"
+            type="button"
+            @click="editActiveStartTime = ''; editActiveEndTime = ''"
+            class="mt-5 text-xs text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+          >{{ t('common.clear') }}</button>
+        </div>
+        <p v-if="editActiveStartTime && editActiveEndTime" class="input-hint mt-2">
+          {{ t('admin.accounts.schedule.activeHint', { start: editActiveStartTime, end: editActiveEndTime }) }}
+        </p>
+        <p v-else class="input-hint mt-2">{{ t('admin.accounts.schedule.noScheduleHint') }}</p>
       </div>
 
       <!-- OpenAI OAuth Codex 官方客户端限制开关 -->
@@ -1922,7 +1939,8 @@ const openaiOAuthResponsesWebSocketV2Mode = ref<OpenAIWSMode>(OPENAI_WS_MODE_OFF
 const openaiAPIKeyResponsesWebSocketV2Mode = ref<OpenAIWSMode>(OPENAI_WS_MODE_OFF)
 const codexCLIOnlyEnabled = ref(false)
 const anthropicPassthroughEnabled = ref(false)
-const blockedClients = ref('')
+const editActiveStartTime = ref('')
+const editActiveEndTime = ref('')
 const editQuotaLimit = ref<number | null>(null)
 const editQuota5hLimit = ref<number | null>(null)
 const editQuotaDailyLimit = ref<number | null>(null)
@@ -2154,13 +2172,9 @@ const syncFormFromAccount = (newAccount: Account | null) => {
     editResetTimezone.value = null
   }
 
-  // Load blocked_clients from extra
-  const rawBlockedClients = extra?.blocked_clients
-  if (Array.isArray(rawBlockedClients) && rawBlockedClients.length > 0) {
-    blockedClients.value = rawBlockedClients.join('\n')
-  } else {
-    blockedClients.value = ''
-  }
+  // Load active time window
+  editActiveStartTime.value = newAccount.active_start_time || ''
+  editActiveEndTime.value = newAccount.active_end_time || ''
 
   // Load antigravity model mapping (Antigravity 只支持映射模式)
   if (newAccount.platform === 'antigravity') {
@@ -3202,18 +3216,16 @@ const handleSubmit = async () => {
       updatePayload.extra = newExtra
     }
 
-    // Handle blocked_clients for all account types
-    {
-      const currentExtra = (updatePayload.extra as Record<string, unknown>) ||
-        (props.account.extra as Record<string, unknown>) || {}
-      const newExtra: Record<string, unknown> = { ...currentExtra }
-      if (blockedClients.value.trim()) {
-        const clients = blockedClients.value.split('\n').map(s => s.trim()).filter(Boolean)
-        newExtra.blocked_clients = clients
-      } else {
-        delete newExtra.blocked_clients
+    // Active time window (空字符串让后端清除)
+    updatePayload.active_start_time = editActiveStartTime.value || ''
+    updatePayload.active_end_time = editActiveEndTime.value || ''
+
+    // Ensure any stale blocked_clients in extra is cleaned up
+    if (updatePayload.extra && typeof updatePayload.extra === 'object') {
+      const extraObj = updatePayload.extra as Record<string, unknown>
+      if ('blocked_clients' in extraObj) {
+        delete extraObj.blocked_clients
       }
-      updatePayload.extra = newExtra
     }
 
     const canContinue = await ensureAntigravityMixedChannelConfirmed(async () => {

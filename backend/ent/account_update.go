@@ -503,6 +503,46 @@ func (_u *AccountUpdate) ClearSessionWindowStatus() *AccountUpdate {
 	return _u
 }
 
+// SetActiveStartTime sets the "active_start_time" field.
+func (_u *AccountUpdate) SetActiveStartTime(v string) *AccountUpdate {
+	_u.mutation.SetActiveStartTime(v)
+	return _u
+}
+
+// SetNillableActiveStartTime sets the "active_start_time" field if the given value is not nil.
+func (_u *AccountUpdate) SetNillableActiveStartTime(v *string) *AccountUpdate {
+	if v != nil {
+		_u.SetActiveStartTime(*v)
+	}
+	return _u
+}
+
+// ClearActiveStartTime clears the value of the "active_start_time" field.
+func (_u *AccountUpdate) ClearActiveStartTime() *AccountUpdate {
+	_u.mutation.ClearActiveStartTime()
+	return _u
+}
+
+// SetActiveEndTime sets the "active_end_time" field.
+func (_u *AccountUpdate) SetActiveEndTime(v string) *AccountUpdate {
+	_u.mutation.SetActiveEndTime(v)
+	return _u
+}
+
+// SetNillableActiveEndTime sets the "active_end_time" field if the given value is not nil.
+func (_u *AccountUpdate) SetNillableActiveEndTime(v *string) *AccountUpdate {
+	if v != nil {
+		_u.SetActiveEndTime(*v)
+	}
+	return _u
+}
+
+// ClearActiveEndTime clears the value of the "active_end_time" field.
+func (_u *AccountUpdate) ClearActiveEndTime() *AccountUpdate {
+	_u.mutation.ClearActiveEndTime()
+	return _u
+}
+
 // AddGroupIDs adds the "groups" edge to the Group entity by IDs.
 func (_u *AccountUpdate) AddGroupIDs(ids ...int64) *AccountUpdate {
 	_u.mutation.AddGroupIDs(ids...)
@@ -660,6 +700,16 @@ func (_u *AccountUpdate) check() error {
 			return &ValidationError{Name: "session_window_status", err: fmt.Errorf(`ent: validator failed for field "Account.session_window_status": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.ActiveStartTime(); ok {
+		if err := account.ActiveStartTimeValidator(v); err != nil {
+			return &ValidationError{Name: "active_start_time", err: fmt.Errorf(`ent: validator failed for field "Account.active_start_time": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.ActiveEndTime(); ok {
+		if err := account.ActiveEndTimeValidator(v); err != nil {
+			return &ValidationError{Name: "active_end_time", err: fmt.Errorf(`ent: validator failed for field "Account.active_end_time": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -806,6 +856,18 @@ func (_u *AccountUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.SessionWindowStatusCleared() {
 		_spec.ClearField(account.FieldSessionWindowStatus, field.TypeString)
+	}
+	if value, ok := _u.mutation.ActiveStartTime(); ok {
+		_spec.SetField(account.FieldActiveStartTime, field.TypeString, value)
+	}
+	if _u.mutation.ActiveStartTimeCleared() {
+		_spec.ClearField(account.FieldActiveStartTime, field.TypeString)
+	}
+	if value, ok := _u.mutation.ActiveEndTime(); ok {
+		_spec.SetField(account.FieldActiveEndTime, field.TypeString, value)
+	}
+	if _u.mutation.ActiveEndTimeCleared() {
+		_spec.ClearField(account.FieldActiveEndTime, field.TypeString)
 	}
 	if _u.mutation.GroupsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -1430,6 +1492,46 @@ func (_u *AccountUpdateOne) ClearSessionWindowStatus() *AccountUpdateOne {
 	return _u
 }
 
+// SetActiveStartTime sets the "active_start_time" field.
+func (_u *AccountUpdateOne) SetActiveStartTime(v string) *AccountUpdateOne {
+	_u.mutation.SetActiveStartTime(v)
+	return _u
+}
+
+// SetNillableActiveStartTime sets the "active_start_time" field if the given value is not nil.
+func (_u *AccountUpdateOne) SetNillableActiveStartTime(v *string) *AccountUpdateOne {
+	if v != nil {
+		_u.SetActiveStartTime(*v)
+	}
+	return _u
+}
+
+// ClearActiveStartTime clears the value of the "active_start_time" field.
+func (_u *AccountUpdateOne) ClearActiveStartTime() *AccountUpdateOne {
+	_u.mutation.ClearActiveStartTime()
+	return _u
+}
+
+// SetActiveEndTime sets the "active_end_time" field.
+func (_u *AccountUpdateOne) SetActiveEndTime(v string) *AccountUpdateOne {
+	_u.mutation.SetActiveEndTime(v)
+	return _u
+}
+
+// SetNillableActiveEndTime sets the "active_end_time" field if the given value is not nil.
+func (_u *AccountUpdateOne) SetNillableActiveEndTime(v *string) *AccountUpdateOne {
+	if v != nil {
+		_u.SetActiveEndTime(*v)
+	}
+	return _u
+}
+
+// ClearActiveEndTime clears the value of the "active_end_time" field.
+func (_u *AccountUpdateOne) ClearActiveEndTime() *AccountUpdateOne {
+	_u.mutation.ClearActiveEndTime()
+	return _u
+}
+
 // AddGroupIDs adds the "groups" edge to the Group entity by IDs.
 func (_u *AccountUpdateOne) AddGroupIDs(ids ...int64) *AccountUpdateOne {
 	_u.mutation.AddGroupIDs(ids...)
@@ -1600,6 +1702,16 @@ func (_u *AccountUpdateOne) check() error {
 			return &ValidationError{Name: "session_window_status", err: fmt.Errorf(`ent: validator failed for field "Account.session_window_status": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.ActiveStartTime(); ok {
+		if err := account.ActiveStartTimeValidator(v); err != nil {
+			return &ValidationError{Name: "active_start_time", err: fmt.Errorf(`ent: validator failed for field "Account.active_start_time": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.ActiveEndTime(); ok {
+		if err := account.ActiveEndTimeValidator(v); err != nil {
+			return &ValidationError{Name: "active_end_time", err: fmt.Errorf(`ent: validator failed for field "Account.active_end_time": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -1763,6 +1875,18 @@ func (_u *AccountUpdateOne) sqlSave(ctx context.Context) (_node *Account, err er
 	}
 	if _u.mutation.SessionWindowStatusCleared() {
 		_spec.ClearField(account.FieldSessionWindowStatus, field.TypeString)
+	}
+	if value, ok := _u.mutation.ActiveStartTime(); ok {
+		_spec.SetField(account.FieldActiveStartTime, field.TypeString, value)
+	}
+	if _u.mutation.ActiveStartTimeCleared() {
+		_spec.ClearField(account.FieldActiveStartTime, field.TypeString)
+	}
+	if value, ok := _u.mutation.ActiveEndTime(); ok {
+		_spec.SetField(account.FieldActiveEndTime, field.TypeString, value)
+	}
+	if _u.mutation.ActiveEndTimeCleared() {
+		_spec.ClearField(account.FieldActiveEndTime, field.TypeString)
 	}
 	if _u.mutation.GroupsCleared() {
 		edge := &sqlgraph.EdgeSpec{

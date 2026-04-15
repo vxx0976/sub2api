@@ -521,34 +521,6 @@ func (_c *GroupCreate) SetNillableDefaultMappedModel(v *string) *GroupCreate {
 	return _c
 }
 
-// SetActiveStartTime sets the "active_start_time" field.
-func (_c *GroupCreate) SetActiveStartTime(v string) *GroupCreate {
-	_c.mutation.SetActiveStartTime(v)
-	return _c
-}
-
-// SetNillableActiveStartTime sets the "active_start_time" field if the given value is not nil.
-func (_c *GroupCreate) SetNillableActiveStartTime(v *string) *GroupCreate {
-	if v != nil {
-		_c.SetActiveStartTime(*v)
-	}
-	return _c
-}
-
-// SetActiveEndTime sets the "active_end_time" field.
-func (_c *GroupCreate) SetActiveEndTime(v string) *GroupCreate {
-	_c.mutation.SetActiveEndTime(v)
-	return _c
-}
-
-// SetNillableActiveEndTime sets the "active_end_time" field if the given value is not nil.
-func (_c *GroupCreate) SetNillableActiveEndTime(v *string) *GroupCreate {
-	if v != nil {
-		_c.SetActiveEndTime(*v)
-	}
-	return _c
-}
-
 // SetHealthCheckIntervalMin sets the "health_check_interval_min" field.
 func (_c *GroupCreate) SetHealthCheckIntervalMin(v int) *GroupCreate {
 	_c.mutation.SetHealthCheckIntervalMin(v)
@@ -1058,16 +1030,6 @@ func (_c *GroupCreate) check() error {
 			return &ValidationError{Name: "default_mapped_model", err: fmt.Errorf(`ent: validator failed for field "Group.default_mapped_model": %w`, err)}
 		}
 	}
-	if v, ok := _c.mutation.ActiveStartTime(); ok {
-		if err := group.ActiveStartTimeValidator(v); err != nil {
-			return &ValidationError{Name: "active_start_time", err: fmt.Errorf(`ent: validator failed for field "Group.active_start_time": %w`, err)}
-		}
-	}
-	if v, ok := _c.mutation.ActiveEndTime(); ok {
-		if err := group.ActiveEndTimeValidator(v); err != nil {
-			return &ValidationError{Name: "active_end_time", err: fmt.Errorf(`ent: validator failed for field "Group.active_end_time": %w`, err)}
-		}
-	}
 	if _, ok := _c.mutation.HealthCheckIntervalMin(); !ok {
 		return &ValidationError{Name: "health_check_interval_min", err: errors.New(`ent: missing required field "Group.health_check_interval_min"`)}
 	}
@@ -1277,14 +1239,6 @@ func (_c *GroupCreate) createSpec() (*Group, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.DefaultMappedModel(); ok {
 		_spec.SetField(group.FieldDefaultMappedModel, field.TypeString, value)
 		_node.DefaultMappedModel = value
-	}
-	if value, ok := _c.mutation.ActiveStartTime(); ok {
-		_spec.SetField(group.FieldActiveStartTime, field.TypeString, value)
-		_node.ActiveStartTime = &value
-	}
-	if value, ok := _c.mutation.ActiveEndTime(); ok {
-		_spec.SetField(group.FieldActiveEndTime, field.TypeString, value)
-		_node.ActiveEndTime = &value
 	}
 	if value, ok := _c.mutation.HealthCheckIntervalMin(); ok {
 		_spec.SetField(group.FieldHealthCheckIntervalMin, field.TypeInt, value)
@@ -2133,42 +2087,6 @@ func (u *GroupUpsert) SetDefaultMappedModel(v string) *GroupUpsert {
 // UpdateDefaultMappedModel sets the "default_mapped_model" field to the value that was provided on create.
 func (u *GroupUpsert) UpdateDefaultMappedModel() *GroupUpsert {
 	u.SetExcluded(group.FieldDefaultMappedModel)
-	return u
-}
-
-// SetActiveStartTime sets the "active_start_time" field.
-func (u *GroupUpsert) SetActiveStartTime(v string) *GroupUpsert {
-	u.Set(group.FieldActiveStartTime, v)
-	return u
-}
-
-// UpdateActiveStartTime sets the "active_start_time" field to the value that was provided on create.
-func (u *GroupUpsert) UpdateActiveStartTime() *GroupUpsert {
-	u.SetExcluded(group.FieldActiveStartTime)
-	return u
-}
-
-// ClearActiveStartTime clears the value of the "active_start_time" field.
-func (u *GroupUpsert) ClearActiveStartTime() *GroupUpsert {
-	u.SetNull(group.FieldActiveStartTime)
-	return u
-}
-
-// SetActiveEndTime sets the "active_end_time" field.
-func (u *GroupUpsert) SetActiveEndTime(v string) *GroupUpsert {
-	u.Set(group.FieldActiveEndTime, v)
-	return u
-}
-
-// UpdateActiveEndTime sets the "active_end_time" field to the value that was provided on create.
-func (u *GroupUpsert) UpdateActiveEndTime() *GroupUpsert {
-	u.SetExcluded(group.FieldActiveEndTime)
-	return u
-}
-
-// ClearActiveEndTime clears the value of the "active_end_time" field.
-func (u *GroupUpsert) ClearActiveEndTime() *GroupUpsert {
-	u.SetNull(group.FieldActiveEndTime)
 	return u
 }
 
@@ -3159,48 +3077,6 @@ func (u *GroupUpsertOne) SetDefaultMappedModel(v string) *GroupUpsertOne {
 func (u *GroupUpsertOne) UpdateDefaultMappedModel() *GroupUpsertOne {
 	return u.Update(func(s *GroupUpsert) {
 		s.UpdateDefaultMappedModel()
-	})
-}
-
-// SetActiveStartTime sets the "active_start_time" field.
-func (u *GroupUpsertOne) SetActiveStartTime(v string) *GroupUpsertOne {
-	return u.Update(func(s *GroupUpsert) {
-		s.SetActiveStartTime(v)
-	})
-}
-
-// UpdateActiveStartTime sets the "active_start_time" field to the value that was provided on create.
-func (u *GroupUpsertOne) UpdateActiveStartTime() *GroupUpsertOne {
-	return u.Update(func(s *GroupUpsert) {
-		s.UpdateActiveStartTime()
-	})
-}
-
-// ClearActiveStartTime clears the value of the "active_start_time" field.
-func (u *GroupUpsertOne) ClearActiveStartTime() *GroupUpsertOne {
-	return u.Update(func(s *GroupUpsert) {
-		s.ClearActiveStartTime()
-	})
-}
-
-// SetActiveEndTime sets the "active_end_time" field.
-func (u *GroupUpsertOne) SetActiveEndTime(v string) *GroupUpsertOne {
-	return u.Update(func(s *GroupUpsert) {
-		s.SetActiveEndTime(v)
-	})
-}
-
-// UpdateActiveEndTime sets the "active_end_time" field to the value that was provided on create.
-func (u *GroupUpsertOne) UpdateActiveEndTime() *GroupUpsertOne {
-	return u.Update(func(s *GroupUpsert) {
-		s.UpdateActiveEndTime()
-	})
-}
-
-// ClearActiveEndTime clears the value of the "active_end_time" field.
-func (u *GroupUpsertOne) ClearActiveEndTime() *GroupUpsertOne {
-	return u.Update(func(s *GroupUpsert) {
-		s.ClearActiveEndTime()
 	})
 }
 
@@ -4392,48 +4268,6 @@ func (u *GroupUpsertBulk) SetDefaultMappedModel(v string) *GroupUpsertBulk {
 func (u *GroupUpsertBulk) UpdateDefaultMappedModel() *GroupUpsertBulk {
 	return u.Update(func(s *GroupUpsert) {
 		s.UpdateDefaultMappedModel()
-	})
-}
-
-// SetActiveStartTime sets the "active_start_time" field.
-func (u *GroupUpsertBulk) SetActiveStartTime(v string) *GroupUpsertBulk {
-	return u.Update(func(s *GroupUpsert) {
-		s.SetActiveStartTime(v)
-	})
-}
-
-// UpdateActiveStartTime sets the "active_start_time" field to the value that was provided on create.
-func (u *GroupUpsertBulk) UpdateActiveStartTime() *GroupUpsertBulk {
-	return u.Update(func(s *GroupUpsert) {
-		s.UpdateActiveStartTime()
-	})
-}
-
-// ClearActiveStartTime clears the value of the "active_start_time" field.
-func (u *GroupUpsertBulk) ClearActiveStartTime() *GroupUpsertBulk {
-	return u.Update(func(s *GroupUpsert) {
-		s.ClearActiveStartTime()
-	})
-}
-
-// SetActiveEndTime sets the "active_end_time" field.
-func (u *GroupUpsertBulk) SetActiveEndTime(v string) *GroupUpsertBulk {
-	return u.Update(func(s *GroupUpsert) {
-		s.SetActiveEndTime(v)
-	})
-}
-
-// UpdateActiveEndTime sets the "active_end_time" field to the value that was provided on create.
-func (u *GroupUpsertBulk) UpdateActiveEndTime() *GroupUpsertBulk {
-	return u.Update(func(s *GroupUpsert) {
-		s.UpdateActiveEndTime()
-	})
-}
-
-// ClearActiveEndTime clears the value of the "active_end_time" field.
-func (u *GroupUpsertBulk) ClearActiveEndTime() *GroupUpsertBulk {
-	return u.Update(func(s *GroupUpsert) {
-		s.ClearActiveEndTime()
 	})
 }
 

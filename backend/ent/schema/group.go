@@ -181,18 +181,6 @@ func (Group) Fields() []ent.Field {
 			Default("").
 			Comment("默认映射模型 ID，当账号级映射找不到时使用此值"),
 
-		// 定时上线时间窗口（格式 "HH:MM"，两者都设置时生效）
-		field.String("active_start_time").
-			Optional().
-			Nillable().
-			MaxLen(5).
-			Comment("每日可用开始时间（HH:MM），与 active_end_time 配合使用"),
-		field.String("active_end_time").
-			Optional().
-			Nillable().
-			MaxLen(5).
-			Comment("每日可用结束时间（HH:MM），与 active_start_time 配合使用"),
-
 		// 健康检查间隔（分钟），默认 30
 		field.Int("health_check_interval_min").
 			Default(30).

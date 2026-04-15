@@ -2049,16 +2049,6 @@ export default {
         geminiImage: 'Gemini Image',
         hint: 'Select at least one model family'
       },
-      schedule: {
-        title: 'Scheduled Availability',
-        hint: '(optional)',
-        startTime: 'Start Time',
-        endTime: 'End Time',
-        startTimePlaceholder: '08:00',
-        endTimePlaceholder: '20:00',
-        activeHint: 'Group is available daily from {start} to {end}',
-        noScheduleHint: 'No schedule set — available all day (both times required)'
-      }
     },
 
     // Channel Management
@@ -2504,9 +2494,14 @@ export default {
       quotaTotalLimit: 'Total Limit',
       quotaTotalLimitHint: 'Cumulative spending limit. Does not auto-reset — use "Reset Quota" to clear.',
       quotaUsedLabel: 'Used',
-      blockedClients: 'Blocked Clients',
-      blockedClientsPlaceholder: 'One pattern per line, e.g.:\nCursor\nClaude Desktop',
-      blockedClientsHint: 'Block specific clients by User-Agent fuzzy match. Requests from matching clients will skip this account.',
+      schedule: {
+        title: 'Scheduled Availability',
+        hint: '(optional)',
+        startTime: 'Start Time',
+        endTime: 'End Time',
+        activeHint: 'Account is schedulable daily from {start} to {end}',
+        noScheduleHint: 'No schedule set — always schedulable (both times required)'
+      },
       quotaResetMode: 'Reset Mode',
       quotaResetModeRolling: 'Rolling Window',
       quotaResetModeFixed: 'Fixed Time',

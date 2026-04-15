@@ -2044,16 +2044,6 @@ export default {
         geminiImage: 'Gemini Image',
         hint: '至少选择一个模型系列'
       },
-      schedule: {
-        title: '定时上线',
-        hint: '（可选）',
-        startTime: '开始时间',
-        endTime: '结束时间',
-        startTimePlaceholder: '08:00',
-        endTimePlaceholder: '20:00',
-        activeHint: '每天 {start} ~ {end} 期间分组可用',
-        noScheduleHint: '未设置时间段，全天可用（两个时间均需填写才生效）'
-      }
     },
 
     // Channel Management
@@ -2419,9 +2409,14 @@ export default {
       quotaTotalLimit: '总限额',
       quotaTotalLimitHint: '累计消费上限，不会自动重置 — 使用「重置配额」手动清零。',
       quotaUsedLabel: '已用',
-      blockedClients: '客户端屏蔽',
-      blockedClientsPlaceholder: '每行一个匹配模式，例如：\nCursor\nClaude Desktop',
-      blockedClientsHint: '按 User-Agent 模糊匹配屏蔽特定客户端，匹配的请求将跳过此账号。',
+      schedule: {
+        title: '定时上线',
+        hint: '（可选）',
+        startTime: '开始时间',
+        endTime: '结束时间',
+        activeHint: '每天 {start} ~ {end} 期间账号参与调度',
+        noScheduleHint: '未设置时间段，全天可调度（两个时间均需填写才生效）'
+      },
       quotaResetMode: '重置方式',
       quotaResetModeRolling: '滚动窗口',
       quotaResetModeFixed: '固定时间',

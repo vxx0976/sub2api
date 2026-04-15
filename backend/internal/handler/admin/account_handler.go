@@ -109,6 +109,8 @@ type CreateAccountRequest struct {
 	GroupIDs                []int64        `json:"group_ids"`
 	ExpiresAt               *int64         `json:"expires_at"`
 	AutoPauseOnExpired      *bool          `json:"auto_pause_on_expired"`
+	ActiveStartTime         *string        `json:"active_start_time"`
+	ActiveEndTime           *string        `json:"active_end_time"`
 	ConfirmMixedChannelRisk *bool          `json:"confirm_mixed_channel_risk"` // 用户确认混合渠道风险
 }
 
@@ -129,6 +131,8 @@ type UpdateAccountRequest struct {
 	GroupIDs                *[]int64       `json:"group_ids"`
 	ExpiresAt               *int64         `json:"expires_at"`
 	AutoPauseOnExpired      *bool          `json:"auto_pause_on_expired"`
+	ActiveStartTime         *string        `json:"active_start_time"`
+	ActiveEndTime           *string        `json:"active_end_time"`
 	ConfirmMixedChannelRisk *bool          `json:"confirm_mixed_channel_risk"` // 用户确认混合渠道风险
 }
 
@@ -623,6 +627,8 @@ func (h *AccountHandler) Create(c *gin.Context) {
 			GroupIDs:              req.GroupIDs,
 			ExpiresAt:             req.ExpiresAt,
 			AutoPauseOnExpired:    req.AutoPauseOnExpired,
+			ActiveStartTime:       req.ActiveStartTime,
+			ActiveEndTime:         req.ActiveEndTime,
 			SkipMixedChannelCheck: skipCheck,
 		})
 		if execErr != nil {
@@ -698,6 +704,8 @@ func (h *AccountHandler) Update(c *gin.Context) {
 		GroupIDs:              req.GroupIDs,
 		ExpiresAt:             req.ExpiresAt,
 		AutoPauseOnExpired:    req.AutoPauseOnExpired,
+		ActiveStartTime:       req.ActiveStartTime,
+		ActiveEndTime:         req.ActiveEndTime,
 		SkipMixedChannelCheck: skipCheck,
 	})
 	if err != nil {

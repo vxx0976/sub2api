@@ -325,18 +325,6 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 			account := selection.Account
 			setOpsSelectedAccount(c, account.ID, account.Platform)
 
-			// 检查客户端是否被此账号屏蔽
-			if account.IsClientBlocked(c.GetHeader("User-Agent")) {
-				if selection.Acquired && selection.ReleaseFunc != nil {
-					selection.ReleaseFunc()
-				}
-				fs.FailedAccountIDs[account.ID] = struct{}{}
-				reqLog.Info("gateway.account_client_blocked",
-					zap.Int64("account_id", account.ID),
-					zap.String("user_agent", c.GetHeader("User-Agent")))
-				continue
-			}
-
 			// 检查请求拦截（预热请求、SUGGESTION MODE等）
 			if account.IsInterceptWarmupEnabled() {
 				interceptType := detectInterceptType(body, reqModel, parsedReq.MaxTokens, reqStream, isClaudeCodeClient)
@@ -565,18 +553,6 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 			}
 			account := selection.Account
 			setOpsSelectedAccount(c, account.ID, account.Platform)
-
-			// 检查客户端是否被此账号屏蔽
-			if account.IsClientBlocked(c.GetHeader("User-Agent")) {
-				if selection.Acquired && selection.ReleaseFunc != nil {
-					selection.ReleaseFunc()
-				}
-				fs.FailedAccountIDs[account.ID] = struct{}{}
-				reqLog.Info("gateway.account_client_blocked",
-					zap.Int64("account_id", account.ID),
-					zap.String("user_agent", c.GetHeader("User-Agent")))
-				continue
-			}
 
 			// 检查请求拦截（预热请求、SUGGESTION MODE等）
 			if account.IsInterceptWarmupEnabled() {
@@ -1494,22 +1470,12 @@ func (h *GatewayHandler) CountTokens(c *gin.Context) {
 	}
 	sessionHash := h.gatewayService.GenerateSessionHash(parsedReq)
 
-	// 选择支持该模型的账号（含客户端屏蔽重试）
-	var account *service.Account
-	excludedIDs := map[int64]struct{}{}
-	for {
-		selected, err := h.gatewayService.SelectAccountForModelWithExclusions(c.Request.Context(), apiKey.GroupID, sessionHash, parsedReq.Model, excludedIDs)
-		if err != nil {
-			reqLog.Warn("gateway.count_tokens_select_account_failed", zap.Error(err))
-			h.errorResponse(c, http.StatusServiceUnavailable, "api_error", "Service temporarily unavailable")
-			return
-		}
-		if selected.IsClientBlocked(c.GetHeader("User-Agent")) {
-			excludedIDs[selected.ID] = struct{}{}
-			continue
-		}
-		account = selected
-		break
+	// 选择支持该模型的账号
+	account, err := h.gatewayService.SelectAccountForModelWithExclusions(c.Request.Context(), apiKey.GroupID, sessionHash, parsedReq.Model, map[int64]struct{}{})
+	if err != nil {
+		reqLog.Warn("gateway.count_tokens_select_account_failed", zap.Error(err))
+		h.errorResponse(c, http.StatusServiceUnavailable, "api_error", "Service temporarily unavailable")
+		return
 	}
 	setOpsSelectedAccount(c, account.ID, account.Platform)
 

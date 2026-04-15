@@ -199,8 +199,6 @@ func groupFromServiceBase(g *service.Group) Group {
 		AllowMessagesDispatch:           g.AllowMessagesDispatch,
 		RequireOAuthOnly:                g.RequireOAuthOnly,
 		RequirePrivacySet:               g.RequirePrivacySet,
-		ActiveStartTime:                 g.ActiveStartTime,
-		ActiveEndTime:                   g.ActiveEndTime,
 		HealthStatus:                    g.HealthStatus,
 		CreatedAt:                       g.CreatedAt,
 		UpdatedAt:                       g.UpdatedAt,
@@ -240,6 +238,8 @@ func AccountFromServiceShallow(a *service.Account) *Account {
 		SessionWindowStart:      a.SessionWindowStart,
 		SessionWindowEnd:        a.SessionWindowEnd,
 		SessionWindowStatus:     a.SessionWindowStatus,
+		ActiveStartTime:         a.ActiveStartTime,
+		ActiveEndTime:           a.ActiveEndTime,
 		GroupIDs:                a.GroupIDs,
 	}
 
@@ -352,11 +352,6 @@ func AccountFromServiceShallow(a *service.Account) *Account {
 				out.QuotaWeeklyResetAt = &v
 			}
 		}
-	}
-
-	// 提取客户端屏蔽列表（所有账号类型均可配置）
-	if clients := a.GetBlockedClients(); len(clients) > 0 {
-		out.BlockedClients = clients
 	}
 
 	return out

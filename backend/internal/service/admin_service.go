@@ -231,9 +231,6 @@ type UpdateGroupInput struct {
 	SortOrder           *int
 	IsRecommended  *bool
 	ExternalBuyURL *string
-	// 定时上线时间窗口（格式 "HH:MM"，空字符串表示清除）
-	ActiveStartTime *string
-	ActiveEndTime   *string
 
 	// 智能路由（虚拟故障转移分组）
 	IsFailoverGroup   *bool
@@ -260,6 +257,9 @@ type CreateAccountInput struct {
 	// SkipMixedChannelCheck skips the mixed channel risk check when binding groups.
 	// This should only be set when the caller has explicitly confirmed the risk.
 	SkipMixedChannelCheck bool
+	// 定时上线时间窗口（格式 "HH:MM"，两者都设置时生效）
+	ActiveStartTime *string
+	ActiveEndTime   *string
 }
 
 type UpdateAccountInput struct {
@@ -278,6 +278,9 @@ type UpdateAccountInput struct {
 	ExpiresAt             *int64
 	AutoPauseOnExpired    *bool
 	SkipMixedChannelCheck bool // 跳过混合渠道检查（用户已确认风险）
+	// 定时上线时间窗口（空字符串表示清除）
+	ActiveStartTime *string
+	ActiveEndTime   *string
 }
 
 // BulkUpdateAccountsInput describes the payload for bulk updating accounts.
@@ -1477,22 +1480,6 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 		group.DefaultMappedModel = *input.DefaultMappedModel
 	}
 
-	// 定时上线时间窗口（空字符串表示清除）
-	if input.ActiveStartTime != nil {
-		if *input.ActiveStartTime == "" {
-			group.ActiveStartTime = nil
-		} else {
-			group.ActiveStartTime = input.ActiveStartTime
-		}
-	}
-	if input.ActiveEndTime != nil {
-		if *input.ActiveEndTime == "" {
-			group.ActiveEndTime = nil
-		} else {
-			group.ActiveEndTime = input.ActiveEndTime
-		}
-	}
-
 	if err := s.groupRepo.Update(ctx, group); err != nil {
 		return nil, err
 	}
@@ -2046,6 +2033,12 @@ func (s *adminServiceImpl) CreateAccount(ctx context.Context, input *CreateAccou
 		}
 		account.LoadFactor = input.LoadFactor
 	}
+	if input.ActiveStartTime != nil && *input.ActiveStartTime != "" {
+		account.ActiveStartTime = input.ActiveStartTime
+	}
+	if input.ActiveEndTime != nil && *input.ActiveEndTime != "" {
+		account.ActiveEndTime = input.ActiveEndTime
+	}
 	if err := s.accountRepo.Create(ctx, account); err != nil {
 		return nil, err
 	}
@@ -2178,6 +2171,21 @@ func (s *adminServiceImpl) UpdateAccount(ctx context.Context, id int64, input *U
 	}
 	if input.AutoPauseOnExpired != nil {
 		account.AutoPauseOnExpired = *input.AutoPauseOnExpired
+	}
+	// 定时上线时间窗口（空字符串表示清除）
+	if input.ActiveStartTime != nil {
+		if *input.ActiveStartTime == "" {
+			account.ActiveStartTime = nil
+		} else {
+			account.ActiveStartTime = input.ActiveStartTime
+		}
+	}
+	if input.ActiveEndTime != nil {
+		if *input.ActiveEndTime == "" {
+			account.ActiveEndTime = nil
+		} else {
+			account.ActiveEndTime = input.ActiveEndTime
+		}
 	}
 
 	// 先验证分组是否存在（在任何写操作之前）

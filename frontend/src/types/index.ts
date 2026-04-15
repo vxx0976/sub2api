@@ -459,9 +459,6 @@ export interface Group {
   account_groups?: GroupAccountInfo[]
   // OpenAI Messages 调度开关（用户侧需要此字段判断是否展示 Claude Code 教程）
   allow_messages_dispatch?: boolean
-  // 定时上线时间窗口
-  active_start_time?: string | null
-  active_end_time?: string | null
   require_oauth_only: boolean
   require_privacy_set: boolean
   // 健康检查
@@ -915,8 +912,9 @@ export interface Account {
   quota_daily_reset_at?: string | null
   quota_weekly_reset_at?: string | null
 
-  // 客户端屏蔽列表
-  blocked_clients?: string[] | null
+  // 定时上线时间窗口（格式 "HH:MM"）
+  active_start_time?: string | null
+  active_end_time?: string | null
 
   // 运行时状态（仅当启用对应限制时返回）
   current_daily_cost?: number | null // 当前每日费用
@@ -1025,6 +1023,8 @@ export interface CreateAccountRequest {
   group_ids?: number[]
   expires_at?: number | null
   auto_pause_on_expired?: boolean
+  active_start_time?: string
+  active_end_time?: string
   confirm_mixed_channel_risk?: boolean
 }
 
@@ -1044,6 +1044,8 @@ export interface UpdateAccountRequest {
   group_ids?: number[]
   expires_at?: number | null
   auto_pause_on_expired?: boolean
+  active_start_time?: string
+  active_end_time?: string
   confirm_mixed_channel_risk?: boolean
 }
 

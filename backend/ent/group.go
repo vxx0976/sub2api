@@ -94,10 +94,6 @@ type Group struct {
 	AllowMessagesDispatch bool `json:"allow_messages_dispatch,omitempty"`
 	// 默认映射模型 ID，当账号级映射找不到时使用此值
 	DefaultMappedModel string `json:"default_mapped_model,omitempty"`
-	// 每日可用开始时间（HH:MM），与 active_end_time 配合使用
-	ActiveStartTime *string `json:"active_start_time,omitempty"`
-	// 每日可用结束时间（HH:MM），与 active_start_time 配合使用
-	ActiveEndTime *string `json:"active_end_time,omitempty"`
 	// 健康检查间隔（分钟），默认 30
 	HealthCheckIntervalMin int `json:"health_check_interval_min,omitempty"`
 	// 健康检查使用的测试模型 ID，空表示按平台使用默认
@@ -247,7 +243,7 @@ func (*Group) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullFloat64)
 		case group.FieldID, group.FieldDefaultValidityDays, group.FieldFallbackGroupID, group.FieldFallbackGroupIDOnInvalidRequest, group.FieldSortOrder, group.FieldOwnerID, group.FieldSourceGroupID, group.FieldHealthCheckIntervalMin, group.FieldHealthyAccounts, group.FieldTotalCheckedAccounts, group.FieldFailoverActiveMemberID, group.FieldFailoverActiveVersion, group.FieldFailoverPinMemberID:
 			values[i] = new(sql.NullInt64)
-		case group.FieldName, group.FieldDescription, group.FieldStatus, group.FieldPlatform, group.FieldSubscriptionType, group.FieldExternalBuyURL, group.FieldDefaultMappedModel, group.FieldActiveStartTime, group.FieldActiveEndTime, group.FieldHealthCheckTestModel, group.FieldHealthStatus:
+		case group.FieldName, group.FieldDescription, group.FieldStatus, group.FieldPlatform, group.FieldSubscriptionType, group.FieldExternalBuyURL, group.FieldDefaultMappedModel, group.FieldHealthCheckTestModel, group.FieldHealthStatus:
 			values[i] = new(sql.NullString)
 		case group.FieldCreatedAt, group.FieldUpdatedAt, group.FieldDeletedAt, group.FieldLastHealthCheckAt, group.FieldFailoverPinExpiresAt:
 			values[i] = new(sql.NullTime)
@@ -521,20 +517,6 @@ func (_m *Group) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field default_mapped_model", values[i])
 			} else if value.Valid {
 				_m.DefaultMappedModel = value.String
-			}
-		case group.FieldActiveStartTime:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field active_start_time", values[i])
-			} else if value.Valid {
-				_m.ActiveStartTime = new(string)
-				*_m.ActiveStartTime = value.String
-			}
-		case group.FieldActiveEndTime:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field active_end_time", values[i])
-			} else if value.Valid {
-				_m.ActiveEndTime = new(string)
-				*_m.ActiveEndTime = value.String
 			}
 		case group.FieldHealthCheckIntervalMin:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -836,16 +818,6 @@ func (_m *Group) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("default_mapped_model=")
 	builder.WriteString(_m.DefaultMappedModel)
-	builder.WriteString(", ")
-	if v := _m.ActiveStartTime; v != nil {
-		builder.WriteString("active_start_time=")
-		builder.WriteString(*v)
-	}
-	builder.WriteString(", ")
-	if v := _m.ActiveEndTime; v != nil {
-		builder.WriteString("active_end_time=")
-		builder.WriteString(*v)
-	}
 	builder.WriteString(", ")
 	builder.WriteString("health_check_interval_min=")
 	builder.WriteString(fmt.Sprintf("%v", _m.HealthCheckIntervalMin))

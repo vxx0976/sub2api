@@ -130,6 +130,8 @@ var (
 		{Name: "session_window_start", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
 		{Name: "session_window_end", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
 		{Name: "session_window_status", Type: field.TypeString, Nullable: true, Size: 20},
+		{Name: "active_start_time", Type: field.TypeString, Nullable: true, Size: 5},
+		{Name: "active_end_time", Type: field.TypeString, Nullable: true, Size: 5},
 		{Name: "proxy_id", Type: field.TypeInt64, Nullable: true},
 	}
 	// AccountsTable holds the schema information for the "accounts" table.
@@ -140,7 +142,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "accounts_proxies_proxy",
-				Columns:    []*schema.Column{AccountsColumns[28]},
+				Columns:    []*schema.Column{AccountsColumns[30]},
 				RefColumns: []*schema.Column{ProxiesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -164,7 +166,7 @@ var (
 			{
 				Name:    "account_proxy_id",
 				Unique:  false,
-				Columns: []*schema.Column{AccountsColumns[28]},
+				Columns: []*schema.Column{AccountsColumns[30]},
 			},
 			{
 				Name:    "account_priority",
@@ -508,8 +510,6 @@ var (
 		{Name: "require_privacy_set", Type: field.TypeBool, Default: false},
 		{Name: "allow_messages_dispatch", Type: field.TypeBool, Default: false},
 		{Name: "default_mapped_model", Type: field.TypeString, Size: 100, Default: ""},
-		{Name: "active_start_time", Type: field.TypeString, Nullable: true, Size: 5},
-		{Name: "active_end_time", Type: field.TypeString, Nullable: true, Size: 5},
 		{Name: "health_check_interval_min", Type: field.TypeInt, Default: 30},
 		{Name: "health_check_test_model", Type: field.TypeString, Size: 128, Default: ""},
 		{Name: "health_status", Type: field.TypeString, Size: 20, Default: ""},

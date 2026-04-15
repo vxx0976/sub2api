@@ -377,6 +377,34 @@ func (_c *AccountCreate) SetNillableSessionWindowStatus(v *string) *AccountCreat
 	return _c
 }
 
+// SetActiveStartTime sets the "active_start_time" field.
+func (_c *AccountCreate) SetActiveStartTime(v string) *AccountCreate {
+	_c.mutation.SetActiveStartTime(v)
+	return _c
+}
+
+// SetNillableActiveStartTime sets the "active_start_time" field if the given value is not nil.
+func (_c *AccountCreate) SetNillableActiveStartTime(v *string) *AccountCreate {
+	if v != nil {
+		_c.SetActiveStartTime(*v)
+	}
+	return _c
+}
+
+// SetActiveEndTime sets the "active_end_time" field.
+func (_c *AccountCreate) SetActiveEndTime(v string) *AccountCreate {
+	_c.mutation.SetActiveEndTime(v)
+	return _c
+}
+
+// SetNillableActiveEndTime sets the "active_end_time" field if the given value is not nil.
+func (_c *AccountCreate) SetNillableActiveEndTime(v *string) *AccountCreate {
+	if v != nil {
+		_c.SetActiveEndTime(*v)
+	}
+	return _c
+}
+
 // AddGroupIDs adds the "groups" edge to the Group entity by IDs.
 func (_c *AccountCreate) AddGroupIDs(ids ...int64) *AccountCreate {
 	_c.mutation.AddGroupIDs(ids...)
@@ -570,6 +598,16 @@ func (_c *AccountCreate) check() error {
 			return &ValidationError{Name: "session_window_status", err: fmt.Errorf(`ent: validator failed for field "Account.session_window_status": %w`, err)}
 		}
 	}
+	if v, ok := _c.mutation.ActiveStartTime(); ok {
+		if err := account.ActiveStartTimeValidator(v); err != nil {
+			return &ValidationError{Name: "active_start_time", err: fmt.Errorf(`ent: validator failed for field "Account.active_start_time": %w`, err)}
+		}
+	}
+	if v, ok := _c.mutation.ActiveEndTime(); ok {
+		if err := account.ActiveEndTimeValidator(v); err != nil {
+			return &ValidationError{Name: "active_end_time", err: fmt.Errorf(`ent: validator failed for field "Account.active_end_time": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -704,6 +742,14 @@ func (_c *AccountCreate) createSpec() (*Account, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.SessionWindowStatus(); ok {
 		_spec.SetField(account.FieldSessionWindowStatus, field.TypeString, value)
 		_node.SessionWindowStatus = &value
+	}
+	if value, ok := _c.mutation.ActiveStartTime(); ok {
+		_spec.SetField(account.FieldActiveStartTime, field.TypeString, value)
+		_node.ActiveStartTime = &value
+	}
+	if value, ok := _c.mutation.ActiveEndTime(); ok {
+		_spec.SetField(account.FieldActiveEndTime, field.TypeString, value)
+		_node.ActiveEndTime = &value
 	}
 	if nodes := _c.mutation.GroupsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -1245,6 +1291,42 @@ func (u *AccountUpsert) UpdateSessionWindowStatus() *AccountUpsert {
 // ClearSessionWindowStatus clears the value of the "session_window_status" field.
 func (u *AccountUpsert) ClearSessionWindowStatus() *AccountUpsert {
 	u.SetNull(account.FieldSessionWindowStatus)
+	return u
+}
+
+// SetActiveStartTime sets the "active_start_time" field.
+func (u *AccountUpsert) SetActiveStartTime(v string) *AccountUpsert {
+	u.Set(account.FieldActiveStartTime, v)
+	return u
+}
+
+// UpdateActiveStartTime sets the "active_start_time" field to the value that was provided on create.
+func (u *AccountUpsert) UpdateActiveStartTime() *AccountUpsert {
+	u.SetExcluded(account.FieldActiveStartTime)
+	return u
+}
+
+// ClearActiveStartTime clears the value of the "active_start_time" field.
+func (u *AccountUpsert) ClearActiveStartTime() *AccountUpsert {
+	u.SetNull(account.FieldActiveStartTime)
+	return u
+}
+
+// SetActiveEndTime sets the "active_end_time" field.
+func (u *AccountUpsert) SetActiveEndTime(v string) *AccountUpsert {
+	u.Set(account.FieldActiveEndTime, v)
+	return u
+}
+
+// UpdateActiveEndTime sets the "active_end_time" field to the value that was provided on create.
+func (u *AccountUpsert) UpdateActiveEndTime() *AccountUpsert {
+	u.SetExcluded(account.FieldActiveEndTime)
+	return u
+}
+
+// ClearActiveEndTime clears the value of the "active_end_time" field.
+func (u *AccountUpsert) ClearActiveEndTime() *AccountUpsert {
+	u.SetNull(account.FieldActiveEndTime)
 	return u
 }
 
@@ -1801,6 +1883,48 @@ func (u *AccountUpsertOne) UpdateSessionWindowStatus() *AccountUpsertOne {
 func (u *AccountUpsertOne) ClearSessionWindowStatus() *AccountUpsertOne {
 	return u.Update(func(s *AccountUpsert) {
 		s.ClearSessionWindowStatus()
+	})
+}
+
+// SetActiveStartTime sets the "active_start_time" field.
+func (u *AccountUpsertOne) SetActiveStartTime(v string) *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetActiveStartTime(v)
+	})
+}
+
+// UpdateActiveStartTime sets the "active_start_time" field to the value that was provided on create.
+func (u *AccountUpsertOne) UpdateActiveStartTime() *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateActiveStartTime()
+	})
+}
+
+// ClearActiveStartTime clears the value of the "active_start_time" field.
+func (u *AccountUpsertOne) ClearActiveStartTime() *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.ClearActiveStartTime()
+	})
+}
+
+// SetActiveEndTime sets the "active_end_time" field.
+func (u *AccountUpsertOne) SetActiveEndTime(v string) *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetActiveEndTime(v)
+	})
+}
+
+// UpdateActiveEndTime sets the "active_end_time" field to the value that was provided on create.
+func (u *AccountUpsertOne) UpdateActiveEndTime() *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateActiveEndTime()
+	})
+}
+
+// ClearActiveEndTime clears the value of the "active_end_time" field.
+func (u *AccountUpsertOne) ClearActiveEndTime() *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.ClearActiveEndTime()
 	})
 }
 
@@ -2523,6 +2647,48 @@ func (u *AccountUpsertBulk) UpdateSessionWindowStatus() *AccountUpsertBulk {
 func (u *AccountUpsertBulk) ClearSessionWindowStatus() *AccountUpsertBulk {
 	return u.Update(func(s *AccountUpsert) {
 		s.ClearSessionWindowStatus()
+	})
+}
+
+// SetActiveStartTime sets the "active_start_time" field.
+func (u *AccountUpsertBulk) SetActiveStartTime(v string) *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetActiveStartTime(v)
+	})
+}
+
+// UpdateActiveStartTime sets the "active_start_time" field to the value that was provided on create.
+func (u *AccountUpsertBulk) UpdateActiveStartTime() *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateActiveStartTime()
+	})
+}
+
+// ClearActiveStartTime clears the value of the "active_start_time" field.
+func (u *AccountUpsertBulk) ClearActiveStartTime() *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.ClearActiveStartTime()
+	})
+}
+
+// SetActiveEndTime sets the "active_end_time" field.
+func (u *AccountUpsertBulk) SetActiveEndTime(v string) *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetActiveEndTime(v)
+	})
+}
+
+// UpdateActiveEndTime sets the "active_end_time" field to the value that was provided on create.
+func (u *AccountUpsertBulk) UpdateActiveEndTime() *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateActiveEndTime()
+	})
+}
+
+// ClearActiveEndTime clears the value of the "active_end_time" field.
+func (u *AccountUpsertBulk) ClearActiveEndTime() *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.ClearActiveEndTime()
 	})
 }
 

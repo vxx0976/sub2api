@@ -75,6 +75,10 @@ type Account struct {
 	SessionWindowEnd *time.Time `json:"session_window_end,omitempty"`
 	// SessionWindowStatus holds the value of the "session_window_status" field.
 	SessionWindowStatus *string `json:"session_window_status,omitempty"`
+	// 每日可用开始时间（HH:MM），与 active_end_time 配合使用
+	ActiveStartTime *string `json:"active_start_time,omitempty"`
+	// 每日可用结束时间（HH:MM），与 active_start_time 配合使用
+	ActiveEndTime *string `json:"active_end_time,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the AccountQuery when eager-loading is set.
 	Edges        AccountEdges `json:"edges"`
@@ -147,7 +151,7 @@ func (*Account) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullFloat64)
 		case account.FieldID, account.FieldProxyID, account.FieldConcurrency, account.FieldLoadFactor, account.FieldPriority:
 			values[i] = new(sql.NullInt64)
-		case account.FieldName, account.FieldNotes, account.FieldPlatform, account.FieldType, account.FieldStatus, account.FieldErrorMessage, account.FieldTempUnschedulableReason, account.FieldSessionWindowStatus:
+		case account.FieldName, account.FieldNotes, account.FieldPlatform, account.FieldType, account.FieldStatus, account.FieldErrorMessage, account.FieldTempUnschedulableReason, account.FieldSessionWindowStatus, account.FieldActiveStartTime, account.FieldActiveEndTime:
 			values[i] = new(sql.NullString)
 		case account.FieldCreatedAt, account.FieldUpdatedAt, account.FieldDeletedAt, account.FieldLastUsedAt, account.FieldExpiresAt, account.FieldRateLimitedAt, account.FieldRateLimitResetAt, account.FieldOverloadUntil, account.FieldTempUnschedulableUntil, account.FieldSessionWindowStart, account.FieldSessionWindowEnd:
 			values[i] = new(sql.NullTime)
@@ -359,6 +363,20 @@ func (_m *Account) assignValues(columns []string, values []any) error {
 				_m.SessionWindowStatus = new(string)
 				*_m.SessionWindowStatus = value.String
 			}
+		case account.FieldActiveStartTime:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field active_start_time", values[i])
+			} else if value.Valid {
+				_m.ActiveStartTime = new(string)
+				*_m.ActiveStartTime = value.String
+			}
+		case account.FieldActiveEndTime:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field active_end_time", values[i])
+			} else if value.Valid {
+				_m.ActiveEndTime = new(string)
+				*_m.ActiveEndTime = value.String
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -526,6 +544,16 @@ func (_m *Account) String() string {
 	builder.WriteString(", ")
 	if v := _m.SessionWindowStatus; v != nil {
 		builder.WriteString("session_window_status=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	if v := _m.ActiveStartTime; v != nil {
+		builder.WriteString("active_start_time=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	if v := _m.ActiveEndTime; v != nil {
+		builder.WriteString("active_end_time=")
 		builder.WriteString(*v)
 	}
 	builder.WriteByte(')')

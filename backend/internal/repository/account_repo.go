@@ -129,6 +129,12 @@ func (r *accountRepository) Create(ctx context.Context, account *service.Account
 	if account.SessionWindowStatus != "" {
 		builder.SetSessionWindowStatus(account.SessionWindowStatus)
 	}
+	if account.ActiveStartTime != nil {
+		builder.SetActiveStartTime(*account.ActiveStartTime)
+	}
+	if account.ActiveEndTime != nil {
+		builder.SetActiveEndTime(*account.ActiveEndTime)
+	}
 
 	created, err := builder.Save(ctx)
 	if err != nil {
@@ -385,6 +391,16 @@ func (r *accountRepository) Update(ctx context.Context, account *service.Account
 		builder.SetSessionWindowStatus(account.SessionWindowStatus)
 	} else {
 		builder.ClearSessionWindowStatus()
+	}
+	if account.ActiveStartTime != nil {
+		builder.SetActiveStartTime(*account.ActiveStartTime)
+	} else {
+		builder.ClearActiveStartTime()
+	}
+	if account.ActiveEndTime != nil {
+		builder.SetActiveEndTime(*account.ActiveEndTime)
+	} else {
+		builder.ClearActiveEndTime()
 	}
 	if account.Notes == nil {
 		builder.ClearNotes()
@@ -1663,6 +1679,8 @@ func accountEntityToService(m *dbent.Account) *service.Account {
 		SessionWindowStart:      m.SessionWindowStart,
 		SessionWindowEnd:        m.SessionWindowEnd,
 		SessionWindowStatus:     derefString(m.SessionWindowStatus),
+		ActiveStartTime:         m.ActiveStartTime,
+		ActiveEndTime:           m.ActiveEndTime,
 	}
 }
 
