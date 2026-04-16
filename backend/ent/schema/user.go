@@ -111,6 +111,21 @@ func (User) Fields() []ent.Field {
 			Default(0).
 			Comment("角色版本号，角色变更时递增"),
 
+		// 余额不足通知（来自 main）
+		field.Bool("balance_notify_enabled").
+			Default(true),
+		field.String("balance_notify_threshold_type").
+			Default("fixed"), // "fixed" | "percentage"
+		field.Float("balance_notify_threshold").
+			SchemaType(map[string]string{dialect.Postgres: "decimal(20,8)"}).
+			Optional().
+			Nillable(),
+		field.String("balance_notify_extra_emails").
+			SchemaType(map[string]string{dialect.Postgres: "text"}).
+			Default("[]"),
+		field.Float("total_recharged").
+			SchemaType(map[string]string{dialect.Postgres: "decimal(20,8)"}).
+			Default(0),
 	}
 }
 
@@ -141,6 +156,8 @@ func (User) Edges() []ent.Edge {
 			Unique(),
 		// 分销商自定义域名
 		edge.To("reseller_domains", ResellerDomain.Type),
+		// 来自 main 的支付系统
+		edge.To("payment_orders", PaymentOrder.Type),
 	}
 }
 

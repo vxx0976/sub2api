@@ -154,6 +154,8 @@ type UsageLog struct {
 	MerchantRateSnapshot *float64
 	// PlatformCostSnapshot 商户平台进价快照（nil 表示非商户用户或未配置）
 	PlatformCostSnapshot *float64
+	// AccountStatsCost 账号统计定价预计算费用（nil = 使用默认公式 total_cost × account_rate_multiplier）
+	AccountStatsCost *float64
 
 	BillingType  int8
 	RequestType  RequestType

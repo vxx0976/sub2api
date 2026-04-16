@@ -29,6 +29,7 @@ import rechargeOrdersAPI from './rechargeOrders'
 import backupAPI from './backup'
 import tlsFingerprintProfileAPI from './tlsFingerprintProfile'
 import channelsAPI from './channels'
+import adminPaymentAPI from './payment'
 
 /**
  * Unified admin API object for convenient access
@@ -59,7 +60,8 @@ export const adminAPI = {
   merchantWithdrawals: merchantWithdrawalsAPI,
   rechargeOrders: rechargeOrdersAPI,
   backup: backupAPI,
-  tlsFingerprintProfiles: tlsFingerprintProfileAPI
+  tlsFingerprintProfiles: tlsFingerprintProfileAPI,
+  payment: adminPaymentAPI
 }
 
 export {
@@ -88,7 +90,8 @@ export {
   merchantWithdrawalsAPI,
   rechargeOrdersAPI,
   backupAPI,
-  tlsFingerprintProfileAPI
+  tlsFingerprintProfileAPI,
+  adminPaymentAPI
 }
 
 export default adminAPI

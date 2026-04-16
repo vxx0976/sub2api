@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/Wei-Shaw/sub2api/ent/group"
+	"github.com/Wei-Shaw/sub2api/internal/domain"
 )
 
 // Group is the model entity for the Group schema.
@@ -118,6 +119,8 @@ type Group struct {
 	FailoverPinMemberID *int64 `json:"failover_pin_member_id,omitempty"`
 	// 手动锁定过期时间；到期后自动清除
 	FailoverPinExpiresAt *time.Time `json:"failover_pin_expires_at,omitempty"`
+	// OpenAI Messages 调度模型配置：按 Claude 系列/精确模型映射到目标 GPT 模型
+	MessagesDispatchModelConfig domain.OpenAIMessagesDispatchModelConfig `json:"messages_dispatch_model_config,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the GroupQuery when eager-loading is set.
 	Edges        GroupEdges `json:"edges"`
@@ -235,7 +238,7 @@ func (*Group) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case group.FieldNameI18n, group.FieldDescriptionI18n, group.FieldModelRouting, group.FieldSupportedModelScopes, group.FieldFailoverMemberIds:
+		case group.FieldNameI18n, group.FieldDescriptionI18n, group.FieldModelRouting, group.FieldSupportedModelScopes, group.FieldFailoverMemberIds, group.FieldMessagesDispatchModelConfig:
 			values[i] = new([]byte)
 		case group.FieldIsExclusive, group.FieldClaudeCodeOnly, group.FieldModelRoutingEnabled, group.FieldMcpXMLInject, group.FieldIsPurchasable, group.FieldIsRecommended, group.FieldResellerTemplate, group.FieldRequireOauthOnly, group.FieldRequirePrivacySet, group.FieldAllowMessagesDispatch, group.FieldIsFailoverGroup:
 			values[i] = new(sql.NullBool)
@@ -596,6 +599,14 @@ func (_m *Group) assignValues(columns []string, values []any) error {
 				_m.FailoverPinExpiresAt = new(time.Time)
 				*_m.FailoverPinExpiresAt = value.Time
 			}
+		case group.FieldMessagesDispatchModelConfig:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field messages_dispatch_model_config", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.MessagesDispatchModelConfig); err != nil {
+					return fmt.Errorf("unmarshal field messages_dispatch_model_config: %w", err)
+				}
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -862,6 +873,9 @@ func (_m *Group) String() string {
 		builder.WriteString("failover_pin_expires_at=")
 		builder.WriteString(v.Format(time.ANSIC))
 	}
+	builder.WriteString(", ")
+	builder.WriteString("messages_dispatch_model_config=")
+	builder.WriteString(fmt.Sprintf("%v", _m.MessagesDispatchModelConfig))
 	builder.WriteByte(')')
 	return builder.String()
 }

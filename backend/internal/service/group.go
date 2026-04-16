@@ -3,7 +3,11 @@ package service
 import (
 	"strings"
 	"time"
+
+	"github.com/Wei-Shaw/sub2api/internal/domain"
 )
+
+type OpenAIMessagesDispatchModelConfig = domain.OpenAIMessagesDispatchModelConfig
 
 type Group struct {
 	ID             int64   `json:"id"`
@@ -61,10 +65,11 @@ type Group struct {
 	SourceGroupID *int64 `json:"source_group_id"`
 
 	// OpenAI Messages 调度配置（仅 openai 平台使用）
-	AllowMessagesDispatch bool   `json:"allow_messages_dispatch"`
-	RequireOAuthOnly      bool   `json:"require_oauth_only"`  // 仅允许非 apikey 类型账号关联（OpenAI/Antigravity/Anthropic/Gemini）
-	RequirePrivacySet     bool   `json:"require_privacy_set"` // 调度时仅允许 privacy 已成功设置的账号（OpenAI/Antigravity/Anthropic/Gemini）
-	DefaultMappedModel    string `json:"default_mapped_model"`
+	AllowMessagesDispatch       bool                              `json:"allow_messages_dispatch"`
+	RequireOAuthOnly            bool                              `json:"require_oauth_only"`  // 仅允许非 apikey 类型账号关联（OpenAI/Antigravity/Anthropic/Gemini）
+	RequirePrivacySet           bool                              `json:"require_privacy_set"` // 调度时仅允许 privacy 已成功设置的账号（OpenAI/Antigravity/Anthropic/Gemini）
+	DefaultMappedModel          string                            `json:"default_mapped_model"`
+	MessagesDispatchModelConfig OpenAIMessagesDispatchModelConfig `json:"messages_dispatch_model_config"`
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`

@@ -8,6 +8,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/Wei-Shaw/sub2api/internal/domain"
 )
 
 const (
@@ -115,6 +116,8 @@ const (
 	FieldFailoverPinMemberID = "failover_pin_member_id"
 	// FieldFailoverPinExpiresAt holds the string denoting the failover_pin_expires_at field in the database.
 	FieldFailoverPinExpiresAt = "failover_pin_expires_at"
+	// FieldMessagesDispatchModelConfig holds the string denoting the messages_dispatch_model_config field in the database.
+	FieldMessagesDispatchModelConfig = "messages_dispatch_model_config"
 	// EdgeAPIKeys holds the string denoting the api_keys edge name in mutations.
 	EdgeAPIKeys = "api_keys"
 	// EdgeRedeemCodes holds the string denoting the redeem_codes edge name in mutations.
@@ -249,6 +252,7 @@ var Columns = []string{
 	FieldFailoverActiveVersion,
 	FieldFailoverPinMemberID,
 	FieldFailoverPinExpiresAt,
+	FieldMessagesDispatchModelConfig,
 }
 
 var (
@@ -348,6 +352,8 @@ var (
 	DefaultIsFailoverGroup bool
 	// DefaultFailoverActiveVersion holds the default value on creation for the "failover_active_version" field.
 	DefaultFailoverActiveVersion int64
+	// DefaultMessagesDispatchModelConfig holds the default value on creation for the "messages_dispatch_model_config" field.
+	DefaultMessagesDispatchModelConfig domain.OpenAIMessagesDispatchModelConfig
 )
 
 // OrderOption defines the ordering options for the Group queries.

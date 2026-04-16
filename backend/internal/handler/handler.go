@@ -35,6 +35,7 @@ type AdminHandlers struct {
 	ScheduledTest         *admin.ScheduledTestHandler
 	Merchant              *admin.MerchantHandler
 	AdminWithdrawal       *admin.AdminWithdrawalHandler
+	Payment               *admin.PaymentHandler
 }
 
 // ResellerHandlers contains all reseller-related HTTP handlers
@@ -52,22 +53,24 @@ type ResellerHandlers struct {
 
 // Handlers contains all HTTP handlers
 type Handlers struct {
-	Auth          *AuthHandler
-	User          *UserHandler
-	APIKey        *APIKeyHandler
-	Usage         *UsageHandler
-	Redeem        *RedeemHandler
-	Subscription  *SubscriptionHandler
-	Announcement  *AnnouncementHandler
-	Admin         *AdminHandlers
-	Reseller      *ResellerHandlers
-	Gateway       *GatewayHandler
-	OpenAIGateway *OpenAIGatewayHandler
-	Setting       *SettingHandler
-	Referral      *ReferralHandler
-	Totp          *TotpHandler
-	KeyQuery      *KeyQueryHandler
-	Recharge      *RechargeHandler
+	Auth           *AuthHandler
+	User           *UserHandler
+	APIKey         *APIKeyHandler
+	Usage          *UsageHandler
+	Redeem         *RedeemHandler
+	Subscription   *SubscriptionHandler
+	Announcement   *AnnouncementHandler
+	Admin          *AdminHandlers
+	Reseller       *ResellerHandlers
+	Gateway        *GatewayHandler
+	OpenAIGateway  *OpenAIGatewayHandler
+	Setting        *SettingHandler
+	Referral       *ReferralHandler
+	Totp           *TotpHandler
+	KeyQuery       *KeyQueryHandler
+	Recharge       *RechargeHandler
+	Payment        *PaymentHandler
+	PaymentWebhook *PaymentWebhookHandler
 }
 
 // BuildInfo contains build-time information

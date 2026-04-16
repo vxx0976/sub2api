@@ -10,6 +10,8 @@ import (
 	"io"
 	"io/fs"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -42,11 +44,12 @@ type PublicSettingsProvider interface {
 
 // FrontendServer serves the embedded frontend with settings injection
 type FrontendServer struct {
-	distFS     fs.FS
-	fileServer http.Handler
-	baseHTML   []byte
-	cache      *HTMLCache
-	settings   PublicSettingsProvider
+	distFS      fs.FS
+	fileServer  http.Handler
+	baseHTML    []byte
+	cache       *HTMLCache
+	settings    PublicSettingsProvider
+	overrideDir string // local file override directory
 }
 
 // NewFrontendServer creates a new frontend server with settings injection
@@ -72,11 +75,12 @@ func NewFrontendServer(settingsProvider PublicSettingsProvider) (*FrontendServer
 	cache.SetBaseHTML(baseHTML)
 
 	return &FrontendServer{
-		distFS:     distFS,
-		fileServer: http.FileServer(http.FS(distFS)),
-		baseHTML:   baseHTML,
-		cache:      cache,
-		settings:   settingsProvider,
+		distFS:      distFS,
+		fileServer:  http.FileServer(http.FS(distFS)),
+		baseHTML:    baseHTML,
+		cache:       cache,
+		settings:    settingsProvider,
+		overrideDir: filepath.Join("data", "public"),
 	}, nil
 }
 
@@ -116,6 +120,11 @@ func (s *FrontendServer) Middleware() gin.HandlerFunc {
 			return
 		}
 
+		// Try local override first
+		if s.tryServeOverride(c, cleanPath) {
+			return
+		}
+
 		// Serve static files normally
 		s.fileServer.ServeHTTP(c.Writer, c.Request)
 		c.Abort()
@@ -128,6 +137,22 @@ func (s *FrontendServer) fileExists(path string) bool {
 		return false
 	}
 	_ = file.Close()
+	return true
+}
+
+// tryServeOverride checks if a local override file exists and serves it.
+// Files in overrideDir take precedence over embedded files.
+func (s *FrontendServer) tryServeOverride(c *gin.Context, cleanPath string) bool {
+	if s.overrideDir == "" {
+		return false
+	}
+	filePath := filepath.Join(s.overrideDir, filepath.Clean("/"+cleanPath))
+	info, err := os.Stat(filePath)
+	if err != nil || info.IsDir() {
+		return false
+	}
+	c.File(filePath)
+	c.Abort()
 	return true
 }
 
@@ -440,6 +465,7 @@ func ServeEmbeddedFrontend() gin.HandlerFunc {
 		panic("failed to get dist subdirectory: " + err.Error())
 	}
 	fileServer := http.FileServer(http.FS(distFS))
+	overrideDir := filepath.Join("data", "public")
 
 	return func(c *gin.Context) {
 		path := c.Request.URL.Path
@@ -456,6 +482,10 @@ func ServeEmbeddedFrontend() gin.HandlerFunc {
 
 		if file, err := distFS.Open(cleanPath); err == nil {
 			_ = file.Close()
+			// Try local override first
+			if tryServeOverrideFile(c, overrideDir, cleanPath) {
+				return
+			}
 			fileServer.ServeHTTP(c.Writer, c.Request)
 			c.Abort()
 			return
@@ -463,6 +493,21 @@ func ServeEmbeddedFrontend() gin.HandlerFunc {
 
 		serveIndexHTML(c, distFS)
 	}
+}
+
+// tryServeOverrideFile is a standalone version of tryServeOverride for legacy usage.
+func tryServeOverrideFile(c *gin.Context, overrideDir, cleanPath string) bool {
+	if overrideDir == "" {
+		return false
+	}
+	filePath := filepath.Join(overrideDir, filepath.Clean("/"+cleanPath))
+	info, err := os.Stat(filePath)
+	if err != nil || info.IsDir() {
+		return false
+	}
+	c.File(filePath)
+	c.Abort()
+	return true
 }
 
 func shouldBypassEmbeddedFrontend(path string) bool {

@@ -6,6 +6,7 @@
 import { apiClient } from '../client'
 import type {
   Group,
+  AdminGroup,
   GroupPlatform,
   CreateGroupRequest,
   UpdateGroupRequest,
@@ -30,6 +31,8 @@ export async function list(
     is_exclusive?: boolean
     is_purchasable?: boolean
     search?: string
+    sort_by?: string
+    sort_order?: 'asc' | 'desc'
   },
   options?: {
     signal?: AbortSignal
@@ -51,8 +54,8 @@ export async function list(
  * @param platform - Optional platform filter
  * @returns List of all active groups
  */
-export async function getAll(platform?: GroupPlatform): Promise<Group[]> {
-  const { data } = await apiClient.get<Group[]>('/admin/groups/all', {
+export async function getAll(platform?: GroupPlatform): Promise<AdminGroup[]> {
+  const { data } = await apiClient.get<AdminGroup[]>('/admin/groups/all', {
     params: platform ? { platform } : undefined
   })
   return data

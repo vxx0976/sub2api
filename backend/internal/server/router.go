@@ -145,6 +145,7 @@ func registerRoutes(
 	routes.RegisterRechargeRoutes(v1, h, jwtAuth, settingService)
 	routes.RegisterResellerRoutes(v1, h, resellerAuth)
 	routes.RegisterGatewayRoutes(r, h, apiKeyAuth, apiKeyService, subscriptionService, opsService, settingService, cfg)
+	routes.RegisterPaymentRoutes(v1, h.Payment, h.PaymentWebhook, h.Admin.Payment, jwtAuth, adminAuth, settingService)
 }
 
 // caddyAskTLS returns a handler for Caddy's on-demand TLS ask endpoint.

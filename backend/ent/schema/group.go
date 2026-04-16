@@ -231,6 +231,12 @@ func (Group) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			Comment("手动锁定过期时间；到期后自动清除"),
+
+		// OpenAI Messages 调度模型映射配置（来自 main）
+		field.JSON("messages_dispatch_model_config", domain.OpenAIMessagesDispatchModelConfig{}).
+			Default(domain.OpenAIMessagesDispatchModelConfig{}).
+			SchemaType(map[string]string{dialect.Postgres: "jsonb"}).
+			Comment("OpenAI Messages 调度模型配置：按 Claude 系列/精确模型映射到目标 GPT 模型"),
 	}
 }
 

@@ -61,7 +61,15 @@
 
       <!-- Redeem Codes Table -->
       <template #table>
-        <DataTable :columns="columns" :data="codes" :loading="loading">
+        <DataTable
+          :columns="columns"
+          :data="codes"
+          :loading="loading"
+          :server-side-sort="true"
+          default-sort-key="id"
+          default-sort-order="desc"
+          @sort="handleSort"
+        >
           <!-- Select All Header -->
           <template #header-select>
             <input
@@ -580,6 +588,10 @@ const pagination = reactive({
   total: 0,
   pages: 0
 })
+const sortState = reactive({
+  sort_by: 'id',
+  sort_order: 'desc' as 'asc' | 'desc'
+})
 
 let abortController: AbortController | null = null
 
@@ -609,6 +621,14 @@ watch(
   }
 )
 
+const buildRedeemQueryFilters = () => ({
+  type: (filters.type || undefined) as RedeemCodeType | undefined,
+  status: (filters.status || undefined) as 'used' | 'expired' | 'unused' | undefined,
+  search: searchQuery.value || undefined,
+  sort_by: sortState.sort_by,
+  sort_order: sortState.sort_order
+})
+
 const loadCodes = async () => {
   if (abortController) {
     abortController.abort()
@@ -621,11 +641,7 @@ const loadCodes = async () => {
     const response = await adminAPI.redeem.list(
       pagination.page,
       pagination.page_size,
-      {
-        type: filters.type as RedeemCodeType,
-        status: filters.status as any,
-        search: searchQuery.value || undefined
-      },
+      buildRedeemQueryFilters(),
       {
         signal: currentController.signal
       }
@@ -674,6 +690,13 @@ const handlePageSizeChange = (pageSize: number) => {
   loadCodes()
 }
 
+const handleSort = (key: string, order: 'asc' | 'desc') => {
+  sortState.sort_by = key
+  sortState.sort_order = order
+  pagination.page = 1
+  loadCodes()
+}
+
 const handleGenerateCodes = async () => {
   if (generateForm.type === 'subscription' && !generateForm.group_id) {
     appStore.showError(t('admin.redeem.groupRequired'))
@@ -715,10 +738,7 @@ const copyToClipboard = async (text: string) => {
 
 const handleExportCodes = async () => {
   try {
-    const blob = await adminAPI.redeem.exportCodes({
-      type: filters.type as RedeemCodeType,
-      status: filters.status as any
-    })
+    const blob = await adminAPI.redeem.exportCodes(buildRedeemQueryFilters())
 
     const url = window.URL.createObjectURL(blob)
     const link = document.createElement('a')

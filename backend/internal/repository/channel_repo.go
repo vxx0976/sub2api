@@ -46,12 +46,16 @@ func (r *channelRepository) Create(ctx context.Context, channel *service.Channel
 		if err != nil {
 			return err
 		}
+		featuresConfigJSON, err := marshalFeaturesConfig(channel.FeaturesConfig)
+		if err != nil {
+			return err
+		}
 		err = tx.QueryRowContext(ctx,
-			`INSERT INTO channels (name, description, status, model_mapping, billing_model_source, restrict_models,
+			`INSERT INTO channels (name, description, status, model_mapping, billing_model_source, restrict_models, features, features_config, apply_pricing_to_account_stats,
 			 balance_url, balance_method, balance_headers, balance_body, balance_path, balance_unit)
-			 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+			 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
 			 RETURNING id, created_at, updated_at`,
-			channel.Name, channel.Description, channel.Status, modelMappingJSON, channel.BillingModelSource, channel.RestrictModels,
+			channel.Name, channel.Description, channel.Status, modelMappingJSON, channel.BillingModelSource, channel.RestrictModels, channel.Features, featuresConfigJSON, channel.ApplyPricingToAccountStats,
 			channel.BalanceURL, channel.BalanceMethod, balanceHeadersJSON, channel.BalanceBody, channel.BalancePath, channel.BalanceUnit,
 		).Scan(&channel.ID, &channel.CreatedAt, &channel.UpdatedAt)
 		if err != nil {
@@ -75,24 +79,31 @@ func (r *channelRepository) Create(ctx context.Context, channel *service.Channel
 			}
 		}
 
+		// 设置账号统计定价规则
+		if len(channel.AccountStatsPricingRules) > 0 {
+			if err := replaceAccountStatsPricingRulesTx(ctx, tx, channel.ID, channel.AccountStatsPricingRules); err != nil {
+				return err
+			}
+		}
+
 		return nil
 	})
 }
 
 func (r *channelRepository) GetByID(ctx context.Context, id int64) (*service.Channel, error) {
 	ch := &service.Channel{}
-	var modelMappingJSON []byte
+	var modelMappingJSON, featuresConfigJSON []byte
 	var balanceHeadersJSON []byte
 	var desc sql.NullString
 	var balanceURL, balanceMethod, balanceBody, balancePath, balanceUnit, lastError sql.NullString
 	var cachedBalance sql.NullFloat64
 	var lastCheckAt sql.NullTime
 	err := r.db.QueryRowContext(ctx,
-		`SELECT id, name, description, status, model_mapping, billing_model_source, restrict_models, created_at, updated_at,
+		`SELECT id, name, description, status, model_mapping, billing_model_source, restrict_models, features, features_config, apply_pricing_to_account_stats, created_at, updated_at,
 		 balance_url, balance_method, balance_headers, balance_body, balance_path, balance_unit,
 		 cached_balance, last_check_at, last_error
 		 FROM channels WHERE id = $1`, id,
-	).Scan(&ch.ID, &ch.Name, &desc, &ch.Status, &modelMappingJSON, &ch.BillingModelSource, &ch.RestrictModels, &ch.CreatedAt, &ch.UpdatedAt,
+	).Scan(&ch.ID, &ch.Name, &desc, &ch.Status, &modelMappingJSON, &ch.BillingModelSource, &ch.RestrictModels, &ch.Features, &featuresConfigJSON, &ch.ApplyPricingToAccountStats, &ch.CreatedAt, &ch.UpdatedAt,
 		&balanceURL, &balanceMethod, &balanceHeadersJSON, &balanceBody, &balancePath, &balanceUnit,
 		&cachedBalance, &lastCheckAt, &lastError)
 	ch.Description = desc.String
@@ -116,6 +127,7 @@ func (r *channelRepository) GetByID(ctx context.Context, id int64) (*service.Cha
 		return nil, fmt.Errorf("get channel: %w", err)
 	}
 	ch.ModelMapping = unmarshalModelMapping(modelMappingJSON)
+	ch.FeaturesConfig = unmarshalFeaturesConfig(featuresConfigJSON)
 
 	groupIDs, err := r.GetGroupIDs(ctx, id)
 	if err != nil {
@@ -128,6 +140,12 @@ func (r *channelRepository) GetByID(ctx context.Context, id int64) (*service.Cha
 		return nil, err
 	}
 	ch.ModelPricing = pricing
+
+	statsPricingRules, err := r.loadAccountStatsPricingRules(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	ch.AccountStatsPricingRules = statsPricingRules
 
 	return ch, nil
 }
@@ -142,12 +160,16 @@ func (r *channelRepository) Update(ctx context.Context, channel *service.Channel
 		if err != nil {
 			return err
 		}
+		featuresConfigJSON, err := marshalFeaturesConfig(channel.FeaturesConfig)
+		if err != nil {
+			return err
+		}
 		result, err := tx.ExecContext(ctx,
-			`UPDATE channels SET name = $1, description = $2, status = $3, model_mapping = $4, billing_model_source = $5, restrict_models = $6,
-			 balance_url = $7, balance_method = $8, balance_headers = $9, balance_body = $10, balance_path = $11, balance_unit = $12,
+			`UPDATE channels SET name = $1, description = $2, status = $3, model_mapping = $4, billing_model_source = $5, restrict_models = $6, features = $7, features_config = $8, apply_pricing_to_account_stats = $9,
+			 balance_url = $10, balance_method = $11, balance_headers = $12, balance_body = $13, balance_path = $14, balance_unit = $15,
 			 updated_at = NOW()
-			 WHERE id = $13`,
-			channel.Name, channel.Description, channel.Status, modelMappingJSON, channel.BillingModelSource, channel.RestrictModels,
+			 WHERE id = $16`,
+			channel.Name, channel.Description, channel.Status, modelMappingJSON, channel.BillingModelSource, channel.RestrictModels, channel.Features, featuresConfigJSON, channel.ApplyPricingToAccountStats,
 			channel.BalanceURL, channel.BalanceMethod, balanceHeadersJSON, channel.BalanceBody, channel.BalancePath, channel.BalanceUnit,
 			channel.ID,
 		)
@@ -172,6 +194,13 @@ func (r *channelRepository) Update(ctx context.Context, channel *service.Channel
 		// 更新模型定价
 		if channel.ModelPricing != nil {
 			if err := replaceModelPricingTx(ctx, tx, channel.ID, channel.ModelPricing); err != nil {
+				return err
+			}
+		}
+
+		// 更新账号统计定价规则
+		if channel.AccountStatsPricingRules != nil {
+			if err := replaceAccountStatsPricingRulesTx(ctx, tx, channel.ID, channel.AccountStatsPricingRules); err != nil {
 				return err
 			}
 		}
@@ -226,11 +255,11 @@ func (r *channelRepository) List(ctx context.Context, params pagination.Paginati
 
 	// 查询 channel 列表
 	dataQuery := fmt.Sprintf(
-		`SELECT c.id, c.name, c.description, c.status, c.model_mapping, c.billing_model_source, c.restrict_models, c.created_at, c.updated_at,
+		`SELECT c.id, c.name, c.description, c.status, c.model_mapping, c.billing_model_source, c.restrict_models, c.features, c.features_config, c.apply_pricing_to_account_stats, c.created_at, c.updated_at,
 		 c.balance_url, c.balance_method, c.balance_headers, c.balance_body, c.balance_path, c.balance_unit,
 		 c.cached_balance, c.last_check_at, c.last_error
-		 FROM channels c WHERE %s ORDER BY c.id ASC LIMIT $%d OFFSET $%d`,
-		whereClause, argIdx, argIdx+1,
+		 FROM channels c WHERE %s ORDER BY %s LIMIT $%d OFFSET $%d`,
+		whereClause, channelListOrderBy(params), argIdx, argIdx+1,
 	)
 	args = append(args, pageSize, offset)
 
@@ -244,19 +273,20 @@ func (r *channelRepository) List(ctx context.Context, params pagination.Paginati
 	var channelIDs []int64
 	for rows.Next() {
 		var ch service.Channel
-		var modelMappingJSON []byte
+		var modelMappingJSON, featuresConfigJSON []byte
 		var balanceHeadersJSON []byte
 		var desc sql.NullString
 		var balanceURL, balanceMethod, balanceBody, balancePath, balanceUnit, lastError sql.NullString
 		var cachedBalance sql.NullFloat64
 		var lastCheckAt sql.NullTime
-		if err := rows.Scan(&ch.ID, &ch.Name, &desc, &ch.Status, &modelMappingJSON, &ch.BillingModelSource, &ch.RestrictModels, &ch.CreatedAt, &ch.UpdatedAt,
+		if err := rows.Scan(&ch.ID, &ch.Name, &desc, &ch.Status, &modelMappingJSON, &ch.BillingModelSource, &ch.RestrictModels, &ch.Features, &featuresConfigJSON, &ch.ApplyPricingToAccountStats, &ch.CreatedAt, &ch.UpdatedAt,
 			&balanceURL, &balanceMethod, &balanceHeadersJSON, &balanceBody, &balancePath, &balanceUnit,
 			&cachedBalance, &lastCheckAt, &lastError); err != nil {
 			return nil, nil, fmt.Errorf("scan channel: %w", err)
 		}
 		ch.Description = desc.String
 		ch.ModelMapping = unmarshalModelMapping(modelMappingJSON)
+		ch.FeaturesConfig = unmarshalFeaturesConfig(featuresConfigJSON)
 		ch.BalanceURL = balanceURL.String
 		ch.BalanceMethod = balanceMethod.String
 		ch.BalanceHeaders = unmarshalBalanceHeaders(balanceHeadersJSON)
@@ -287,9 +317,14 @@ func (r *channelRepository) List(ctx context.Context, params pagination.Paginati
 		if err != nil {
 			return nil, nil, err
 		}
+		statsRulesMap, err := r.batchLoadAccountStatsPricingRules(ctx, channelIDs)
+		if err != nil {
+			return nil, nil, err
+		}
 		for i := range channels {
 			channels[i].GroupIDs = groupMap[channels[i].ID]
 			channels[i].ModelPricing = pricingMap[channels[i].ID]
+			channels[i].AccountStatsPricingRules = statsRulesMap[channels[i].ID]
 		}
 	}
 
@@ -308,9 +343,34 @@ func (r *channelRepository) List(ctx context.Context, params pagination.Paginati
 	return channels, paginationResult, nil
 }
 
+func channelListOrderBy(params pagination.PaginationParams) string {
+	sortBy := strings.ToLower(strings.TrimSpace(params.SortBy))
+	sortOrder := strings.ToUpper(params.NormalizedSortOrder(pagination.SortOrderAsc))
+
+	var column string
+	switch sortBy {
+	case "":
+		column = "c.id"
+		sortOrder = "ASC"
+	case "id":
+		column = "c.id"
+	case "name":
+		column = "c.name"
+	case "status":
+		column = "c.status"
+	case "created_at":
+		column = "c.created_at"
+	default:
+		column = "c.id"
+		sortOrder = "ASC"
+	}
+
+	return fmt.Sprintf("%s %s, c.id %s", column, sortOrder, sortOrder)
+}
+
 func (r *channelRepository) ListAll(ctx context.Context) ([]service.Channel, error) {
 	rows, err := r.db.QueryContext(ctx,
-		`SELECT id, name, description, status, model_mapping, billing_model_source, restrict_models, created_at, updated_at,
+		`SELECT id, name, description, status, model_mapping, billing_model_source, restrict_models, features, features_config, apply_pricing_to_account_stats, created_at, updated_at,
 		 balance_url, balance_method, balance_headers, balance_body, balance_path, balance_unit,
 		 cached_balance, last_check_at, last_error
 		 FROM channels ORDER BY id`,
@@ -324,19 +384,20 @@ func (r *channelRepository) ListAll(ctx context.Context) ([]service.Channel, err
 	var channelIDs []int64
 	for rows.Next() {
 		var ch service.Channel
-		var modelMappingJSON []byte
+		var modelMappingJSON, featuresConfigJSON []byte
 		var balanceHeadersJSON []byte
 		var desc sql.NullString
 		var balanceURL, balanceMethod, balanceBody, balancePath, balanceUnit, lastError sql.NullString
 		var cachedBalance sql.NullFloat64
 		var lastCheckAt sql.NullTime
-		if err := rows.Scan(&ch.ID, &ch.Name, &desc, &ch.Status, &modelMappingJSON, &ch.BillingModelSource, &ch.RestrictModels, &ch.CreatedAt, &ch.UpdatedAt,
+		if err := rows.Scan(&ch.ID, &ch.Name, &desc, &ch.Status, &modelMappingJSON, &ch.BillingModelSource, &ch.RestrictModels, &ch.Features, &featuresConfigJSON, &ch.ApplyPricingToAccountStats, &ch.CreatedAt, &ch.UpdatedAt,
 			&balanceURL, &balanceMethod, &balanceHeadersJSON, &balanceBody, &balancePath, &balanceUnit,
 			&cachedBalance, &lastCheckAt, &lastError); err != nil {
 			return nil, fmt.Errorf("scan channel: %w", err)
 		}
 		ch.Description = desc.String
 		ch.ModelMapping = unmarshalModelMapping(modelMappingJSON)
+		ch.FeaturesConfig = unmarshalFeaturesConfig(featuresConfigJSON)
 		ch.BalanceURL = balanceURL.String
 		ch.BalanceMethod = balanceMethod.String
 		ch.BalanceHeaders = unmarshalBalanceHeaders(balanceHeadersJSON)
@@ -373,9 +434,16 @@ func (r *channelRepository) ListAll(ctx context.Context) ([]service.Channel, err
 		return nil, err
 	}
 
+	// 批量加载账号统计定价规则
+	statsRulesMap, err := r.batchLoadAccountStatsPricingRules(ctx, channelIDs)
+	if err != nil {
+		return nil, err
+	}
+
 	for i := range channels {
 		channels[i].GroupIDs = groupMap[channels[i].ID]
 		channels[i].ModelPricing = pricingMap[channels[i].ID]
+		channels[i].AccountStatsPricingRules = statsRulesMap[channels[i].ID]
 	}
 
 	return channels, nil
@@ -559,6 +627,28 @@ func unmarshalModelMapping(data []byte) map[string]map[string]string {
 		return nil
 	}
 	var m map[string]map[string]string
+	if err := json.Unmarshal(data, &m); err != nil {
+		return nil
+	}
+	return m
+}
+
+func marshalFeaturesConfig(m map[string]any) ([]byte, error) {
+	if len(m) == 0 {
+		return []byte("{}"), nil
+	}
+	data, err := json.Marshal(m)
+	if err != nil {
+		return nil, fmt.Errorf("marshal features_config: %w", err)
+	}
+	return data, nil
+}
+
+func unmarshalFeaturesConfig(data []byte) map[string]any {
+	if len(data) == 0 {
+		return nil
+	}
+	var m map[string]any
 	if err := json.Unmarshal(data, &m); err != nil {
 		return nil
 	}
