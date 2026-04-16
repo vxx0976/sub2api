@@ -279,6 +279,26 @@ const isTempUnschedulable = computed(() => {
   return new Date(props.account.temp_unschedulable_until) > new Date()
 })
 
+// Computed: is outside active time window (定时上线)
+const isOutsideActiveWindow = computed(() => {
+  const start = props.account.active_start_time
+  const end = props.account.active_end_time
+  if (!start || !end) return false
+  const parseHHMM = (s: string) => {
+    const [h, m] = s.split(':').map(Number)
+    return h * 60 + (m || 0)
+  }
+  const startMin = parseHHMM(start)
+  const endMin = parseHHMM(end)
+  if (startMin === endMin) return false
+  const now = new Date()
+  const current = now.getHours() * 60 + now.getMinutes()
+  if (startMin < endMin) {
+    return current < startMin || current >= endMin
+  }
+  return current < startMin && current >= endMin
+})
+
 // Computed: has error status
 const hasError = computed(() => {
   return props.account.status === 'error'
@@ -304,7 +324,7 @@ const statusClass = computed(() => {
   if (hasError.value) {
     return 'badge-danger'
   }
-  if (isTempUnschedulable.value) {
+  if (isTempUnschedulable.value || isOutsideActiveWindow.value) {
     return 'badge-warning'
   }
   if (!props.account.schedulable) {
@@ -329,6 +349,9 @@ const statusText = computed(() => {
   }
   if (isTempUnschedulable.value) {
     return t('admin.accounts.status.tempUnschedulable')
+  }
+  if (isOutsideActiveWindow.value) {
+    return t('admin.accounts.status.outsideActiveWindow')
   }
   if (!props.account.schedulable) {
     return t('admin.accounts.status.paused')
