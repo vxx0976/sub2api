@@ -107,6 +107,12 @@ func (f fakeAPIKeyRepo) GetRateLimitData(ctx context.Context, id int64) (*servic
 func (f fakeAPIKeyRepo) UpdateGroupIDByUserAndGroup(ctx context.Context, userID, oldGroupID, newGroupID int64) (int64, error) {
 	return 0, errors.New("not implemented")
 }
+func (f fakeAPIKeyRepo) CountActiveByUserID(ctx context.Context, userID int64) (int64, error) {
+	return 0, nil
+}
+func (f fakeAPIKeyRepo) SumQuotaUsedByUserID(ctx context.Context, userID int64) (float64, error) {
+	return 0, nil
+}
 
 func (f fakeGoogleSubscriptionRepo) Create(ctx context.Context, sub *service.UserSubscription) error {
 	return errors.New("not implemented")
@@ -154,6 +160,15 @@ func (f fakeGoogleSubscriptionRepo) UpdateStatus(ctx context.Context, subscripti
 	return errors.New("not implemented")
 }
 func (f fakeGoogleSubscriptionRepo) UpdateNotes(ctx context.Context, subscriptionID int64, notes string) error {
+	return errors.New("not implemented")
+}
+func (f fakeGoogleSubscriptionRepo) DeductAndResetMonthlyUsage(ctx context.Context, id int64, currentUsage, deductAmount float64, newWindowStart time.Time) error {
+	return errors.New("not implemented")
+}
+func (f fakeGoogleSubscriptionRepo) ListByUserIDs(ctx context.Context, userIDs []int64, params pagination.PaginationParams) ([]service.UserSubscription, *pagination.PaginationResult, error) {
+	return nil, nil, errors.New("not implemented")
+}
+func (f fakeGoogleSubscriptionRepo) ResetAllUsageWindows(ctx context.Context, id int64, newWindowStart time.Time) error {
 	return errors.New("not implemented")
 }
 func (f fakeGoogleSubscriptionRepo) ActivateWindows(ctx context.Context, id int64, start time.Time) error {
