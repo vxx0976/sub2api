@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
@@ -183,8 +184,8 @@ func channelToResponse(ch *service.Channel) *channelResponse {
 		FeaturesConfig: ch.FeaturesConfig,
 		GroupIDs:       ch.GroupIDs,
 		ModelMapping:   ch.ModelMapping,
-		CreatedAt:      ch.CreatedAt.Format("2006-01-02T15:04:05Z"),
-		UpdatedAt:      ch.UpdatedAt.Format("2006-01-02T15:04:05Z"),
+		CreatedAt:      ch.CreatedAt.UTC().Format(time.RFC3339),
+		UpdatedAt:      ch.UpdatedAt.UTC().Format(time.RFC3339),
 
 		BalanceURL:     ch.BalanceURL,
 		BalanceMethod:  ch.BalanceMethod,
@@ -196,7 +197,7 @@ func channelToResponse(ch *service.Channel) *channelResponse {
 		LastError:      ch.LastError,
 	}
 	if ch.LastCheckAt != nil {
-		t := ch.LastCheckAt.Format("2006-01-02T15:04:05Z")
+		t := ch.LastCheckAt.UTC().Format(time.RFC3339)
 		resp.LastCheckAt = &t
 	}
 	if resp.BalanceHeaders == nil {

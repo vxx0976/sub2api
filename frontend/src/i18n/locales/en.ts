@@ -2156,6 +2156,7 @@ export default {
       columns: {
         name: 'Name',
         description: 'Description',
+        balance: 'Balance',
         status: 'Status',
         groups: 'Groups',
         pricing: 'Pricing',

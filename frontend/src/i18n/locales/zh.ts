@@ -2150,6 +2150,7 @@ export default {
       columns: {
         name: '名称',
         description: '描述',
+        balance: '余额',
         status: '状态',
         groups: '分组',
         pricing: '定价',
