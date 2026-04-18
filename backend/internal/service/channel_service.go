@@ -7,6 +7,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -919,50 +920,66 @@ func (s *ChannelService) RefreshBalance(ctx context.Context, id int64) (*Channel
 
 // fetchBalance 执行 HTTP 请求获取余额
 func (s *ChannelService) fetchBalance(ctx context.Context, channel *Channel) (float64, error) {
-	method := strings.ToUpper(channel.BalanceMethod)
-	if method == "" {
-		method = "GET"
+	status, body, err := requestBalance(ctx, channel.BalanceURL, channel.BalanceMethod, channel.BalanceHeaders, channel.BalanceBody)
+	if err != nil {
+		return 0, err
+	}
+	if status < 200 || status >= 300 {
+		errBody := string(body)
+		if len(errBody) > 200 {
+			errBody = errBody[:200] + "..."
+		}
+		return 0, fmt.Errorf("unexpected status %d: %s", status, errBody)
+	}
+	return extractBalanceValue(body, channel.BalancePath)
+}
+
+// requestBalance 发起余额查询 HTTP 请求，返回状态码与响应体（1MB 截断）。
+func requestBalance(ctx context.Context, url, method string, headers map[string]string, reqBody string) (int, []byte, error) {
+	m := strings.ToUpper(strings.TrimSpace(method))
+	if m == "" {
+		m = "GET"
 	}
 
 	var bodyReader io.Reader
-	if method == "POST" && channel.BalanceBody != "" {
-		bodyReader = bytes.NewBufferString(channel.BalanceBody)
+	if m == "POST" && reqBody != "" {
+		bodyReader = bytes.NewBufferString(reqBody)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, method, channel.BalanceURL, bodyReader)
+	req, err := http.NewRequestWithContext(ctx, m, url, bodyReader)
 	if err != nil {
-		return 0, fmt.Errorf("create request: %w", err)
+		return 0, nil, fmt.Errorf("create request: %w", err)
 	}
-
-	for k, v := range channel.BalanceHeaders {
+	for k, v := range headers {
 		req.Header.Set(k, v)
 	}
-	if method == "POST" && req.Header.Get("Content-Type") == "" {
+	if m == "POST" && req.Header.Get("Content-Type") == "" {
 		req.Header.Set("Content-Type", "application/json")
 	}
 
 	client := &http.Client{Timeout: 30 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
-		return 0, fmt.Errorf("http request: %w", err)
+		return 0, nil, fmt.Errorf("http request: %w", err)
 	}
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20)) // 1MB limit
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
 	if err != nil {
-		return 0, fmt.Errorf("read response: %w", err)
+		return resp.StatusCode, nil, fmt.Errorf("read response: %w", err)
 	}
+	return resp.StatusCode, body, nil
+}
 
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		errBody := string(body)
-		if len(errBody) > 200 {
-			errBody = errBody[:200] + "..."
-		}
-		return 0, fmt.Errorf("unexpected status %d: %s", resp.StatusCode, errBody)
-	}
-
-	if channel.BalancePath == "" {
-		// 尝试将整个响应体解析为数字
+// extractBalanceValue 从响应体中按 path 提取余额。
+//
+// path 支持两种写法：
+//  1. 单个 gjson 路径，如 "data.balance"
+//  2. 算术表达式，如 "data.limit - data.used"。仅支持 + - * /，运算符两侧必须有空格；
+//     两端可以是 gjson 路径或纯数字字面量（如 "data.credits / 100"）。
+func extractBalanceValue(body []byte, path string) (float64, error) {
+	path = strings.TrimSpace(path)
+	if path == "" {
 		result := gjson.ParseBytes(body)
 		if result.Type == gjson.Number {
 			return result.Float(), nil
@@ -970,12 +987,110 @@ func (s *ChannelService) fetchBalance(ctx context.Context, channel *Channel) (fl
 		return 0, fmt.Errorf("balance_path is empty and response is not a number")
 	}
 
-	result := gjson.GetBytes(body, channel.BalancePath)
-	if !result.Exists() {
-		return 0, fmt.Errorf("path %q not found in response", channel.BalancePath)
+	for _, op := range []string{" - ", " + ", " * ", " / "} {
+		idx := strings.Index(path, op)
+		if idx <= 0 {
+			continue
+		}
+		left := strings.TrimSpace(path[:idx])
+		right := strings.TrimSpace(path[idx+len(op):])
+
+		leftVal, err := lookupBalanceOperand(body, left)
+		if err != nil {
+			return 0, err
+		}
+		rightVal, err := lookupBalanceOperand(body, right)
+		if err != nil {
+			return 0, err
+		}
+
+		switch strings.TrimSpace(op) {
+		case "+":
+			return leftVal + rightVal, nil
+		case "-":
+			return leftVal - rightVal, nil
+		case "*":
+			return leftVal * rightVal, nil
+		case "/":
+			if rightVal == 0 {
+				return 0, fmt.Errorf("division by zero")
+			}
+			return leftVal / rightVal, nil
+		}
 	}
 
+	return lookupBalanceOperand(body, path)
+}
+
+// lookupBalanceOperand 解析一个表达式操作数：数字字面量或 gjson 路径。
+func lookupBalanceOperand(body []byte, operand string) (float64, error) {
+	if v, err := strconv.ParseFloat(operand, 64); err == nil {
+		return v, nil
+	}
+	result := gjson.GetBytes(body, operand)
+	if !result.Exists() {
+		return 0, fmt.Errorf("path %q not found in response", operand)
+	}
 	return result.Float(), nil
+}
+
+// TestBalanceOptions 测试余额查询时的输入。
+type TestBalanceOptions struct {
+	URL     string
+	Method  string
+	Headers map[string]string
+	Body    string
+	Path    string
+}
+
+// TestBalanceResult 测试余额查询返回给上层的结果。
+// Status / Body 一定有（只要请求发出去并收到响应）；Value 在 Path 能成功解析时返回；
+// 若请求失败或 Path 解析失败，Error 非空，其余字段尽力填充。
+type TestBalanceResult struct {
+	Status    int
+	Body      string
+	BodyTrunc bool
+	Value     *float64
+	Error     string
+}
+
+// TestBalance 不落库地试跑一次余额查询，返回原始响应与解析结果，供管理员预览。
+func (s *ChannelService) TestBalance(ctx context.Context, opts TestBalanceOptions) (*TestBalanceResult, error) {
+	if strings.TrimSpace(opts.URL) == "" {
+		return nil, infraerrors.BadRequest("BALANCE_URL_EMPTY", "balance url is required")
+	}
+
+	status, body, err := requestBalance(ctx, opts.URL, opts.Method, opts.Headers, opts.Body)
+	if err != nil {
+		return &TestBalanceResult{Error: err.Error()}, nil
+	}
+
+	const maxPreview = 16 << 10 // 16KB 预览上限
+	preview := body
+	truncated := false
+	if len(preview) > maxPreview {
+		preview = preview[:maxPreview]
+		truncated = true
+	}
+
+	res := &TestBalanceResult{
+		Status:    status,
+		Body:      string(preview),
+		BodyTrunc: truncated,
+	}
+
+	if status < 200 || status >= 300 {
+		res.Error = fmt.Sprintf("unexpected status %d", status)
+		return res, nil
+	}
+
+	val, extractErr := extractBalanceValue(body, opts.Path)
+	if extractErr != nil {
+		res.Error = extractErr.Error()
+		return res, nil
+	}
+	res.Value = &val
+	return res, nil
 }
 
 // List 获取渠道列表

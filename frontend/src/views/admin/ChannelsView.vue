@@ -278,9 +278,16 @@
               </div>
 
               <div>
-                <label class="input-label text-xs">{{ t('admin.channels.form.balancePath', 'JSON Path') }}</label>
-                <input v-model="form.balance_path" type="text" class="input" placeholder="data.balance" />
-                <p class="mt-1 text-xs text-gray-400">{{ t('admin.channels.form.balancePathHint', 'JSON path to extract balance value, e.g. data.balance') }}</p>
+                <label class="input-label text-xs">{{ t('admin.channels.form.balancePath', 'JSON Path / 表达式') }}</label>
+                <input
+                  v-model="form.balance_path"
+                  type="text"
+                  class="input"
+                  :placeholder="t('admin.channels.form.balancePathPlaceholder', 'data.balance 或 data.limit - data.used')"
+                />
+                <p class="mt-1 text-xs text-gray-400">
+                  {{ t('admin.channels.form.balancePathHint', '支持 gjson 路径或算术表达式（+ - * /），两侧需有空格，如 data.limit - data.used') }}
+                </p>
               </div>
 
               <div>
@@ -291,6 +298,44 @@
               <div v-if="form.balance_method === 'POST'">
                 <label class="input-label text-xs">{{ t('admin.channels.form.balanceBody', 'Request Body') }}</label>
                 <textarea v-model="form.balance_body" rows="2" class="input font-mono text-xs" placeholder='{"action": "getBalance"}' />
+              </div>
+
+              <!-- Test balance: preview response & extracted value -->
+              <div class="rounded-md border border-gray-200 p-3 dark:border-dark-700">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-xs text-gray-500 dark:text-gray-400">
+                    {{ t('admin.channels.form.testBalanceHint', '试跑一次查询以预览响应结构（不会保存）') }}
+                  </span>
+                  <button
+                    type="button"
+                    class="btn btn-secondary btn-sm"
+                    :disabled="balanceTestLoading || !form.balance_url.trim()"
+                    @click="handleTestBalance"
+                  >
+                    <Icon v-if="balanceTestLoading" name="refresh" size="sm" class="mr-1 animate-spin" />
+                    {{ t('admin.channels.form.testBalance', '测试') }}
+                  </button>
+                </div>
+                <div v-if="balanceTestResult" class="mt-3 space-y-2">
+                  <div class="flex flex-wrap items-center gap-2 text-xs">
+                    <span
+                      class="rounded px-2 py-0.5 font-mono"
+                      :class="balanceTestResult.status >= 200 && balanceTestResult.status < 300
+                        ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                        : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'"
+                    >HTTP {{ balanceTestResult.status || '—' }}</span>
+                    <span v-if="balanceTestResult.value !== undefined" class="rounded bg-primary-50 px-2 py-0.5 text-primary-700 dark:bg-primary-900/20 dark:text-primary-300">
+                      {{ t('admin.channels.form.extractedValue', '解析结果') }}: {{ balanceTestResult.value }}
+                    </span>
+                    <span v-if="balanceTestResult.truncated" class="text-amber-600 dark:text-amber-400">
+                      {{ t('admin.channels.form.responseTruncated', '响应过长，已截断前 16KB') }}
+                    </span>
+                  </div>
+                  <div v-if="balanceTestResult.error" class="rounded bg-red-50 px-2 py-1 text-xs text-red-700 dark:bg-red-900/20 dark:text-red-300">
+                    {{ balanceTestResult.error }}
+                  </div>
+                  <pre class="max-h-64 overflow-auto rounded bg-gray-50 p-2 text-xs font-mono leading-relaxed dark:bg-dark-800">{{ formattedBalanceBody }}</pre>
+                </div>
               </div>
             </div>
 
@@ -656,7 +701,7 @@ import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
 import { extractApiErrorMessage } from '@/utils/apiError'
 import { adminAPI } from '@/api/admin'
-import type { Channel, ChannelModelPricing, CreateChannelRequest, UpdateChannelRequest, AccountStatsPricingRule } from '@/api/admin/channels'
+import type { Channel, ChannelModelPricing, CreateChannelRequest, UpdateChannelRequest, AccountStatsPricingRule, TestBalanceResult } from '@/api/admin/channels'
 import type { PricingFormEntry } from '@/components/admin/channel/types'
 import { mTokToPerToken, perTokenToMTok, apiIntervalsToForm, formIntervalsToAPI, findModelConflict, validateIntervals } from '@/components/admin/channel/types'
 import type { Group, GroupPlatform } from '@/types'
@@ -773,6 +818,50 @@ async function handleRefreshBalance(channel: Channel) {
     appStore.showError(error?.message || t('admin.channels.refreshBalanceFailed', 'Failed to refresh balance'))
   } finally {
     refreshingBalanceId.value = null
+  }
+}
+
+// ── Test balance (form preview) ──
+const balanceTestLoading = ref(false)
+const balanceTestResult = ref<TestBalanceResult | null>(null)
+const formattedBalanceBody = computed(() => {
+  const body = balanceTestResult.value?.body || ''
+  if (!body) return ''
+  try {
+    return JSON.stringify(JSON.parse(body), null, 2)
+  } catch {
+    return body
+  }
+})
+
+async function handleTestBalance() {
+  const url = form.balance_url.trim()
+  if (!url) {
+    appStore.showError(t('admin.channels.form.balanceUrlRequired', 'Balance URL is required'))
+    return
+  }
+  let headers: Record<string, string> | null = null
+  if (form.balance_headers_text.trim()) {
+    try {
+      headers = JSON.parse(form.balance_headers_text)
+    } catch {
+      appStore.showError(t('admin.channels.form.invalidBalanceHeaders', 'Balance headers must be valid JSON'))
+      return
+    }
+  }
+  balanceTestLoading.value = true
+  try {
+    balanceTestResult.value = await adminAPI.channels.testBalance({
+      balance_url: url,
+      balance_method: form.balance_method,
+      balance_headers: headers,
+      balance_body: form.balance_body.trim() || null,
+      balance_path: form.balance_path.trim() || null,
+    })
+  } catch (error: any) {
+    appStore.showError(extractApiErrorMessage(error, t('admin.channels.form.testBalanceFailed', 'Test request failed')))
+  } finally {
+    balanceTestLoading.value = false
   }
 }
 
@@ -1318,6 +1407,7 @@ function resetForm() {
   form.balance_unit = '$'
   form.apply_pricing_to_account_stats = false
   activeTab.value = 'basic'
+  balanceTestResult.value = null
   ruleAccountSearchRunner.clearAll()
   clearAllRuleAccountSearchState()
   ruleAccountNameCache.value = {}

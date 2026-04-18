@@ -193,5 +193,26 @@ export async function refreshBalance(id: number): Promise<Channel> {
   return data
 }
 
-const channelsAPI = { list, getById, create, update, remove, getModelDefaultPricing, refreshBalance }
+export interface TestBalanceRequest {
+  balance_url: string
+  balance_method?: string
+  balance_headers?: Record<string, string> | null
+  balance_body?: string | null
+  balance_path?: string | null
+}
+
+export interface TestBalanceResult {
+  status: number
+  body: string
+  truncated: boolean
+  value?: number
+  error?: string
+}
+
+export async function testBalance(req: TestBalanceRequest): Promise<TestBalanceResult> {
+  const { data } = await apiClient.post<TestBalanceResult>('/admin/channels/test-balance', req)
+  return data
+}
+
+const channelsAPI = { list, getById, create, update, remove, getModelDefaultPricing, refreshBalance, testBalance }
 export default channelsAPI

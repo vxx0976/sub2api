@@ -534,6 +534,47 @@ func (h *ChannelHandler) Delete(c *gin.Context) {
 	response.Success(c, gin.H{"message": "Channel deleted successfully"})
 }
 
+// TestBalance 试跑余额查询（不落库），用于管理员在填写配置时预览响应。
+// POST /api/v1/admin/channels/test-balance
+func (h *ChannelHandler) TestBalance(c *gin.Context) {
+	var req struct {
+		URL     string            `json:"balance_url" binding:"required"`
+		Method  string            `json:"balance_method"`
+		Headers map[string]string `json:"balance_headers"`
+		Body    string            `json:"balance_body"`
+		Path    string            `json:"balance_path"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.ErrorFrom(c, infraerrors.BadRequest("VALIDATION_ERROR", err.Error()))
+		return
+	}
+
+	res, err := h.channelService.TestBalance(c.Request.Context(), service.TestBalanceOptions{
+		URL:     req.URL,
+		Method:  req.Method,
+		Headers: req.Headers,
+		Body:    req.Body,
+		Path:    req.Path,
+	})
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+
+	out := gin.H{
+		"status":    res.Status,
+		"body":      res.Body,
+		"truncated": res.BodyTrunc,
+	}
+	if res.Value != nil {
+		out["value"] = *res.Value
+	}
+	if res.Error != "" {
+		out["error"] = res.Error
+	}
+	response.Success(c, out)
+}
+
 // RefreshBalance 刷新渠道余额
 // POST /api/v1/admin/channels/:id/refresh-balance
 func (h *ChannelHandler) RefreshBalance(c *gin.Context) {
