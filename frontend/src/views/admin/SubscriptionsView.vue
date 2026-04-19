@@ -203,7 +203,7 @@
             <GroupBadge
               v-if="row.group"
               :name="row.group.name"
-              :platform="getDisplayPlatform(row.group)"
+              :platform="row.group.platform"
               :subscription-type="row.group.subscription_type"
               :rate-multiplier="row.group.rate_multiplier"
               :show-rate="false"
@@ -786,7 +786,6 @@ import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
 import { adminAPI } from '@/api/admin'
-import { getDisplayPlatform } from '@/types'
 import type { UserSubscription, Group, GroupPlatform, SubscriptionType } from '@/types'
 import type { SimpleUser } from '@/api/admin/usage'
 import type { Column } from '@/components/common/types'
@@ -1027,7 +1026,7 @@ const subscriptionGroupOptions = computed(() =>
       value: g.id,
       label: g.name,
       description: g.description,
-      platform: getDisplayPlatform(g),
+      platform: g.platform,
       subscriptionType: g.subscription_type,
       rate: g.rate_multiplier
     }))

@@ -3166,7 +3166,6 @@ import type {
   WebSearchProviderConfig,
   WebSearchTestResult,
 } from '@/api/admin/settings'
-import { getDisplayPlatform } from '@/types'
 import type { AdminGroup, Proxy, NotifyEmailEntry } from '@/types'
 import type { ProviderInstance } from '@/types/payment'
 import AppLayout from '@/components/layout/AppLayout.vue'
@@ -3610,7 +3609,7 @@ const defaultSubscriptionGroupOptions = computed<DefaultSubscriptionGroupOption[
     value: group.id,
     label: group.name,
     description: group.description,
-    platform: getDisplayPlatform(group),
+    platform: group.platform,
     subscriptionType: group.subscription_type,
     rate: group.rate_multiplier
   }))

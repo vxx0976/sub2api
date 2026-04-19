@@ -6,7 +6,7 @@
         v-for="group in displayGroups"
         :key="group.id"
         :name="group.name"
-        :platform="getDisplayPlatform(group)"
+        :platform="group.platform"
         :subscription-type="group.subscription_type"
         :rate-multiplier="group.rate_multiplier"
         :show-rate="false"
@@ -57,7 +57,7 @@
               v-for="group in sortedGroups"
               :key="group.id"
               :name="group.name"
-              :platform="getDisplayPlatform(group)"
+              :platform="group.platform"
               :subscription-type="group.subscription_type"
               :rate-multiplier="group.rate_multiplier"
               :show-rate="false"
@@ -81,7 +81,6 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import GroupBadge from '@/components/common/GroupBadge.vue'
-import { getDisplayPlatform } from '@/types'
 import type { Group } from '@/types'
 
 interface Props {

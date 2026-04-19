@@ -108,7 +108,7 @@
                 <template v-if="row.group">
                   <GroupBadge
                     :name="row.group.name"
-                    :platform="getDisplayPlatform(row.group)"
+                    :platform="row.group.platform"
                     :subscription-type="row.group.subscription_type"
                     :rate-multiplier="row.group.rate_multiplier"
                     :user-rate-multiplier="userGroupRates[row.group.id]"
@@ -914,7 +914,7 @@
       :show="showUseKeyModal"
       :api-key="selectedKey?.key || ''"
       :base-url="publicSettings?.api_base_url || ''"
-      :platform="selectedKey?.group ? getDisplayPlatform(selectedKey.group) : null"
+      :platform="selectedKey?.group?.platform || null"
       :allow-messages-dispatch="selectedKey?.group?.allow_messages_dispatch || false"
       @close="closeUseKeyModal"
     />
@@ -1060,8 +1060,7 @@ import TablePageLayout from '@/components/layout/TablePageLayout.vue'
 	import EndpointPopover from '@/components/keys/EndpointPopover.vue'
 	import GroupBadge from '@/components/common/GroupBadge.vue'
 	import GroupOptionItem from '@/components/common/GroupOptionItem.vue'
-	import { getDisplayPlatform } from '@/types'
-import type { ApiKey, Group, PublicSettings, SubscriptionType, GroupPlatform } from '@/types'
+	import type { ApiKey, Group, PublicSettings, SubscriptionType, GroupPlatform } from '@/types'
 import type { Column } from '@/components/common/types'
 import type { BatchApiKeyUsageStats } from '@/api/usage'
 import { formatDateTime } from '@/utils/format'
@@ -1248,7 +1247,7 @@ const groupOptions = computed(() =>
     rate: group.rate_multiplier,
     userRate: userGroupRates.value[group.id] ?? null,
     subscriptionType: group.subscription_type,
-    platform: getDisplayPlatform(group),
+    platform: group.platform,
     healthStatus: group.health_status
   }))
 )
@@ -1709,7 +1708,7 @@ const resetRateLimitUsage = async () => {
 }
 
 const importToCcswitch = (row: ApiKey) => {
-  const platform = row.group ? getDisplayPlatform(row.group) : 'anthropic'
+  const platform = row.group?.platform || 'anthropic'
 
   // For antigravity platform, show client selection dialog
   if (platform === 'antigravity') {
@@ -1724,7 +1723,7 @@ const importToCcswitch = (row: ApiKey) => {
 
 const executeCcsImport = (row: ApiKey, clientType: 'claude' | 'gemini') => {
   const baseUrl = publicSettings.value?.api_base_url || window.location.origin
-  const platform = row.group ? getDisplayPlatform(row.group) : 'anthropic'
+  const platform = row.group?.platform || 'anthropic'
 
   // Determine app name and endpoint based on platform and client type
   let app: string

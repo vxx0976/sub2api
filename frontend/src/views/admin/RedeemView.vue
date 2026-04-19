@@ -418,7 +418,6 @@ import { useClipboard } from '@/composables/useClipboard'
 import { getPersistedPageSize } from '@/composables/usePersistedPageSize'
 import { adminAPI } from '@/api/admin'
 import { formatDateTime } from '@/utils/format'
-import { getDisplayPlatform } from '@/types'
 import type { RedeemCode, RedeemCodeType, Group, GroupPlatform, SubscriptionType } from '@/types'
 import type { Column } from '@/components/common/types'
 import AppLayout from '@/components/layout/AppLayout.vue'
@@ -486,7 +485,7 @@ const subscriptionGroupOptions = computed(() => {
       value: g.id,
       label: g.name,
       description: g.description,
-      platform: getDisplayPlatform(g),
+      platform: g.platform,
       subscriptionType: g.subscription_type,
       rate: g.rate_multiplier
     }))

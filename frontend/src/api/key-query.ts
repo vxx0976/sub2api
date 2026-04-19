@@ -92,7 +92,6 @@ export interface GroupInfo {
   subscription_type: SubscriptionType
   rate_multiplier: number
   health_status: string
-  allow_messages_dispatch?: boolean
   has_subscription: boolean
   status: string
   expires_at: string | null
