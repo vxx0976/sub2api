@@ -162,6 +162,8 @@ export interface PublicSettings {
   custom_css?: string
   purchase_enabled?: boolean
   purchase_url?: string
+  reseller_registration_disabled?: boolean
+  reseller_login_disabled?: boolean
   login_redirect?: string
   seo_title?: string
   seo_description?: string

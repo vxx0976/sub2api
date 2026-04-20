@@ -322,6 +322,13 @@ func mergeResellerBranding(baseJSON []byte, info *middleware.ResellerDomainConte
 		if v := rs["contact_qq"]; v != "" {
 			m["contact_qq"] = v
 		}
+		// 访问控制：把商户站点的注册/登录开关暴露给前端，用于隐藏首页入口
+		if rs["reseller_registration_disabled"] == "true" {
+			m["reseller_registration_disabled"] = true
+		}
+		if rs["reseller_login_disabled"] == "true" {
+			m["reseller_login_disabled"] = true
+		}
 		// When merchant_mode is enabled, expose the payment page.
 		// Use reseller's own pay_url if configured, otherwise fall back to main site URL.
 		// 系统总开关关闭时不暴露支付入口。

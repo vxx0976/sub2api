@@ -88,12 +88,14 @@
           </template>
           <template v-else>
             <router-link
+              v-if="!loginDisabled"
               :to="loginPath"
               class="inline-flex items-center rounded-full border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-dark-600 dark:bg-dark-800 dark:text-dark-200 dark:hover:bg-dark-700"
             >
               {{ t('home.login') }}
             </router-link>
             <router-link
+              v-if="!registrationDisabled"
               :to="registerPath"
               class="inline-flex items-center rounded-full bg-gray-900 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-gray-800 dark:bg-gray-800 dark:hover:bg-gray-700"
             >
@@ -126,6 +128,9 @@ const siteSubtitle = computed(() => appStore.cachedPublicSettings?.site_subtitle
 // Reseller domain detection
 const isResellerDomain = computed(() => !!appStore.cachedPublicSettings?.reseller_id)
 const resellerDocUrl = computed(() => appStore.cachedPublicSettings?.doc_url || '')
+// 商户站点访问控制：被关闭时隐藏首页入口（仍可通过 /login、/register 直接访问路由，供管理员/商户进入）
+const registrationDisabled = computed(() => !!appStore.cachedPublicSettings?.reseller_registration_disabled)
+const loginDisabled = computed(() => !!appStore.cachedPublicSettings?.reseller_login_disabled)
 
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 const isAdmin = computed(() => authStore.isAdmin)

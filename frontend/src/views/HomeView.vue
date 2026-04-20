@@ -28,7 +28,7 @@
         {{ appStore.cachedPublicSettings.site_subtitle }}
       </p>
       <div class="mt-10 flex flex-wrap justify-center gap-3">
-        <router-link :to="isAuthenticated ? dashboardPath : loginPath" class="inline-flex items-center gap-2 rounded-xl bg-white px-7 py-3 text-sm font-semibold text-slate-900 shadow-lg transition hover:bg-slate-100">
+        <router-link v-if="showPrimaryCta" :to="isAuthenticated ? dashboardPath : loginPath" class="inline-flex items-center gap-2 rounded-xl bg-white px-7 py-3 text-sm font-semibold text-slate-900 shadow-lg transition hover:bg-slate-100">
           {{ isAuthenticated ? t('home.goToDashboard') : t('home.getStarted') }}
           <Icon name="arrowRight" size="sm" :stroke-width="2.5" />
         </router-link>
@@ -75,7 +75,7 @@
         <p v-if="appStore.cachedPublicSettings?.site_subtitle" class="mt-3 text-base text-gray-500 dark:text-gray-400">
           {{ appStore.cachedPublicSettings.site_subtitle }}
         </p>
-        <router-link :to="isAuthenticated ? dashboardPath : loginPath" class="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-primary-600 py-3.5 text-sm font-semibold text-white shadow-lg transition hover:bg-primary-700">
+        <router-link v-if="showPrimaryCta" :to="isAuthenticated ? dashboardPath : loginPath" class="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-primary-600 py-3.5 text-sm font-semibold text-white shadow-lg transition hover:bg-primary-700">
           {{ isAuthenticated ? t('home.goToDashboard') : t('home.getStarted') }}
           <Icon name="arrowRight" size="sm" :stroke-width="2.5" />
         </router-link>
@@ -116,7 +116,7 @@
           {{ appStore.cachedPublicSettings.site_subtitle }}
         </p>
         <div class="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-          <router-link :to="isAuthenticated ? dashboardPath : loginPath" class="btn btn-primary btn-lg px-8">
+          <router-link v-if="showPrimaryCta" :to="isAuthenticated ? dashboardPath : loginPath" class="btn btn-primary btn-lg px-8">
             {{ isAuthenticated ? t('home.goToDashboard') : t('home.getStarted') }}
             <Icon name="arrowRight" size="md" :stroke-width="2" />
           </router-link>
@@ -203,7 +203,7 @@
               </p>
 
               <div class="mt-7 flex flex-col items-center gap-3 sm:flex-row lg:justify-start">
-                <router-link :to="isAuthenticated ? dashboardPath : loginPath" class="btn btn-primary btn-lg px-7">
+                <router-link v-if="showPrimaryCta" :to="isAuthenticated ? dashboardPath : loginPath" class="btn btn-primary btn-lg px-7">
                   {{ isAuthenticated ? t('home.goToDashboard') : t('home.getStarted') }}
                   <Icon name="arrowRight" size="md" :stroke-width="2" />
                 </router-link>
@@ -688,6 +688,7 @@
 
             <div class="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
               <router-link
+                v-if="showPrimaryCta"
                 :to="isAuthenticated ? dashboardPath : loginPath"
                 class="btn btn-primary btn-lg w-full px-7 sm:w-auto"
               >
@@ -783,11 +784,15 @@ const apiBaseRoot = computed(() => {
 
 // Reseller domain detection
 const isResellerDomain = computed(() => !!appStore.cachedPublicSettings?.reseller_id)
+// 商户站点访问控制：未登录时，商户关闭登录则隐藏"立即开始"入口（指向 /login）
+const loginDisabled = computed(() => !!appStore.cachedPublicSettings?.reseller_login_disabled)
 
 // Auth state
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 const isAdmin = computed(() => authStore.isAdmin)
 const dashboardPath = computed(() => (isAdmin.value ? '/admin/dashboard' : '/dashboard'))
+// 已登录用户始终可回到控制台；未登录且登录入口被关闭时隐藏 CTA
+const showPrimaryCta = computed(() => isAuthenticated.value || !loginDisabled.value)
 
 // Current year for footer
 const currentYear = computed(() => new Date().getFullYear())
