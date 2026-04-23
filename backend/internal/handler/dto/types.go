@@ -7,16 +7,17 @@ import (
 )
 
 type User struct {
-	ID            int64     `json:"id"`
-	Email         string    `json:"email"`
-	Username      string    `json:"username"`
-	Role          string    `json:"role"`
-	Balance       float64   `json:"balance"`
-	Concurrency   int       `json:"concurrency"`
-	Status        string    `json:"status"`
-	AllowedGroups []int64   `json:"allowed_groups"`
-	CreatedAt     time.Time `json:"created_at"`
-	UpdatedAt     time.Time `json:"updated_at"`
+	ID            int64      `json:"id"`
+	Email         string     `json:"email"`
+	Username      string     `json:"username"`
+	Role          string     `json:"role"`
+	Balance       float64    `json:"balance"`
+	Concurrency   int        `json:"concurrency"`
+	Status        string     `json:"status"`
+	AllowedGroups []int64    `json:"allowed_groups"`
+	LastActiveAt  *time.Time `json:"last_active_at,omitempty"`
+	CreatedAt     time.Time  `json:"created_at"`
+	UpdatedAt     time.Time  `json:"updated_at"`
 
 	ParentID *int64 `json:"parent_id,omitempty"`
 
@@ -27,6 +28,9 @@ type User struct {
 	BalanceNotifyExtraEmails   []NotifyEmailEntry `json:"balance_notify_extra_emails"`
 	TotalRecharged             float64            `json:"total_recharged"`
 
+	// RPMLimit 用户级每分钟请求数上限（0 = 不限制），仅在所用分组未设置 rpm_limit 时作为兜底生效。
+	RPMLimit int `json:"rpm_limit"`
+
 	APIKeys       []APIKey           `json:"api_keys,omitempty"`
 	Subscriptions []UserSubscription `json:"subscriptions,omitempty"`
 }
@@ -36,10 +40,10 @@ type User struct {
 type AdminUser struct {
 	User
 
-	Notes          string `json:"notes"`
-	RegisterDomain string `json:"register_domain,omitempty"`
-	ParentID       *int64 `json:"parent_id,omitempty"`
-	ParentDomain   string `json:"parent_domain,omitempty"`
+	Notes          string     `json:"notes"`
+	LastUsedAt     *time.Time `json:"last_used_at"`
+	RegisterDomain string     `json:"register_domain,omitempty"`
+	ParentDomain   string     `json:"parent_domain,omitempty"`
 	// GroupRates 用户专属分组倍率配置
 	// map[groupID]rateMultiplier
 	GroupRates            map[int64]float64 `json:"group_rates,omitempty"`
@@ -126,6 +130,9 @@ type Group struct {
 
 	// 健康检查状态（用户侧用于展示分组可用性指示）
 	HealthStatus string `json:"health_status"`
+
+	// RPMLimit 分组级每分钟请求数上限（0 = 不限制），设置后覆盖用户级 rpm_limit。
+	RPMLimit int `json:"rpm_limit"`
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`

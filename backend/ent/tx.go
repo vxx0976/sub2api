@@ -24,6 +24,10 @@ type Tx struct {
 	Announcement *AnnouncementClient
 	// AnnouncementRead is the client for interacting with the AnnouncementRead builders.
 	AnnouncementRead *AnnouncementReadClient
+	// AuthIdentity is the client for interacting with the AuthIdentity builders.
+	AuthIdentity *AuthIdentityClient
+	// AuthIdentityChannel is the client for interacting with the AuthIdentityChannel builders.
+	AuthIdentityChannel *AuthIdentityChannelClient
 	// Channel is the client for interacting with the Channel builders.
 	Channel *ChannelClient
 	// ErrorPassthroughRule is the client for interacting with the ErrorPassthroughRule builders.
@@ -34,6 +38,8 @@ type Tx struct {
 	Group *GroupClient
 	// IdempotencyRecord is the client for interacting with the IdempotencyRecord builders.
 	IdempotencyRecord *IdempotencyRecordClient
+	// IdentityAdoptionDecision is the client for interacting with the IdentityAdoptionDecision builders.
+	IdentityAdoptionDecision *IdentityAdoptionDecisionClient
 	// Order is the client for interacting with the Order builders.
 	Order *OrderClient
 	// PaymentAuditLog is the client for interacting with the PaymentAuditLog builders.
@@ -42,6 +48,8 @@ type Tx struct {
 	PaymentOrder *PaymentOrderClient
 	// PaymentProviderInstance is the client for interacting with the PaymentProviderInstance builders.
 	PaymentProviderInstance *PaymentProviderInstanceClient
+	// PendingAuthSession is the client for interacting with the PendingAuthSession builders.
+	PendingAuthSession *PendingAuthSessionClient
 	// PromoCode is the client for interacting with the PromoCode builders.
 	PromoCode *PromoCodeClient
 	// PromoCodeUsage is the client for interacting with the PromoCodeUsage builders.
@@ -218,15 +226,19 @@ func (tx *Tx) init() {
 	tx.AccountGroup = NewAccountGroupClient(tx.config)
 	tx.Announcement = NewAnnouncementClient(tx.config)
 	tx.AnnouncementRead = NewAnnouncementReadClient(tx.config)
+	tx.AuthIdentity = NewAuthIdentityClient(tx.config)
+	tx.AuthIdentityChannel = NewAuthIdentityChannelClient(tx.config)
 	tx.Channel = NewChannelClient(tx.config)
 	tx.ErrorPassthroughRule = NewErrorPassthroughRuleClient(tx.config)
 	tx.FailoverGroupEvent = NewFailoverGroupEventClient(tx.config)
 	tx.Group = NewGroupClient(tx.config)
 	tx.IdempotencyRecord = NewIdempotencyRecordClient(tx.config)
+	tx.IdentityAdoptionDecision = NewIdentityAdoptionDecisionClient(tx.config)
 	tx.Order = NewOrderClient(tx.config)
 	tx.PaymentAuditLog = NewPaymentAuditLogClient(tx.config)
 	tx.PaymentOrder = NewPaymentOrderClient(tx.config)
 	tx.PaymentProviderInstance = NewPaymentProviderInstanceClient(tx.config)
+	tx.PendingAuthSession = NewPendingAuthSessionClient(tx.config)
 	tx.PromoCode = NewPromoCodeClient(tx.config)
 	tx.PromoCodeUsage = NewPromoCodeUsageClient(tx.config)
 	tx.Proxy = NewProxyClient(tx.config)

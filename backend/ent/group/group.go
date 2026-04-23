@@ -118,6 +118,8 @@ const (
 	FieldFailoverPinExpiresAt = "failover_pin_expires_at"
 	// FieldMessagesDispatchModelConfig holds the string denoting the messages_dispatch_model_config field in the database.
 	FieldMessagesDispatchModelConfig = "messages_dispatch_model_config"
+	// FieldRpmLimit holds the string denoting the rpm_limit field in the database.
+	FieldRpmLimit = "rpm_limit"
 	// EdgeAPIKeys holds the string denoting the api_keys edge name in mutations.
 	EdgeAPIKeys = "api_keys"
 	// EdgeRedeemCodes holds the string denoting the redeem_codes edge name in mutations.
@@ -253,6 +255,7 @@ var Columns = []string{
 	FieldFailoverPinMemberID,
 	FieldFailoverPinExpiresAt,
 	FieldMessagesDispatchModelConfig,
+	FieldRpmLimit,
 }
 
 var (
@@ -354,6 +357,8 @@ var (
 	DefaultFailoverActiveVersion int64
 	// DefaultMessagesDispatchModelConfig holds the default value on creation for the "messages_dispatch_model_config" field.
 	DefaultMessagesDispatchModelConfig domain.OpenAIMessagesDispatchModelConfig
+	// DefaultRpmLimit holds the default value on creation for the "rpm_limit" field.
+	DefaultRpmLimit int
 )
 
 // OrderOption defines the ordering options for the Group queries.
@@ -587,6 +592,11 @@ func ByFailoverPinMemberID(opts ...sql.OrderTermOption) OrderOption {
 // ByFailoverPinExpiresAt orders the results by the failover_pin_expires_at field.
 func ByFailoverPinExpiresAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldFailoverPinExpiresAt, opts...).ToFunc()
+}
+
+// ByRpmLimit orders the results by the rpm_limit field.
+func ByRpmLimit(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRpmLimit, opts...).ToFunc()
 }
 
 // ByAPIKeysCount orders the results by api_keys count.

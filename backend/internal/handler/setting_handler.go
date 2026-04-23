@@ -47,6 +47,7 @@ func (h *SettingHandler) GetPublicSettings(c *gin.Context) {
 	result := dto.PublicSettings{
 		RegistrationEnabled:              settings.RegistrationEnabled,
 		EmailVerifyEnabled:               settings.EmailVerifyEnabled,
+		ForceEmailOnThirdPartySignup:     settings.ForceEmailOnThirdPartySignup,
 		RegistrationEmailSuffixWhitelist: settings.RegistrationEmailSuffixWhitelist,
 		PromoCodeEnabled:                 settings.PromoCodeEnabled,
 		PasswordResetEnabled:             settings.PasswordResetEnabled,
@@ -70,6 +71,10 @@ func (h *SettingHandler) GetPublicSettings(c *gin.Context) {
 		CustomEndpoints:                  dto.ParseCustomEndpoints(settings.CustomEndpoints),
 		RechargeEnabled:                  settings.RechargeEnabled,
 		LinuxDoOAuthEnabled:              settings.LinuxDoOAuthEnabled,
+		WeChatOAuthEnabled:               settings.WeChatOAuthEnabled,
+		WeChatOAuthOpenEnabled:           settings.WeChatOAuthOpenEnabled,
+		WeChatOAuthMPEnabled:             settings.WeChatOAuthMPEnabled,
+		WeChatOAuthMobileEnabled:         settings.WeChatOAuthMobileEnabled,
 		OIDCOAuthEnabled:                 settings.OIDCOAuthEnabled,
 		OIDCOAuthProviderName:            settings.OIDCOAuthProviderName,
 		BackendModeEnabled:               settings.BackendModeEnabled,

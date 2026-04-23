@@ -22,6 +22,7 @@ func UserFromServiceShallow(u *service.User) *User {
 		Status:                     u.Status,
 		AllowedGroups:              u.AllowedGroups,
 		ParentID:                   u.ParentID,
+		LastActiveAt:               u.LastActiveAt,
 		CreatedAt:                  u.CreatedAt,
 		UpdatedAt:                  u.UpdatedAt,
 		BalanceNotifyEnabled:       u.BalanceNotifyEnabled,
@@ -29,6 +30,7 @@ func UserFromServiceShallow(u *service.User) *User {
 		BalanceNotifyThreshold:     u.BalanceNotifyThreshold,
 		BalanceNotifyExtraEmails:   NotifyEmailEntriesFromService(u.BalanceNotifyExtraEmails),
 		TotalRecharged:             u.TotalRecharged,
+		RPMLimit:                   u.RPMLimit,
 	}
 }
 
@@ -65,11 +67,11 @@ func UserFromServiceAdmin(u *service.User) *AdminUser {
 		return nil
 	}
 	return &AdminUser{
-		User:                  *base,
-		Notes:                 u.Notes,
-		RegisterDomain:        u.RegisterDomain,
-		ParentID:              u.ParentID,
-		GroupRates:            u.GroupRates,
+		User:           *base,
+		Notes:          u.Notes,
+		RegisterDomain: u.RegisterDomain,
+		LastUsedAt:     u.LastUsedAt,
+		GroupRates:     u.GroupRates,
 	}
 }
 
@@ -206,6 +208,7 @@ func groupFromServiceBase(g *service.Group) Group {
 		RequireOAuthOnly:                g.RequireOAuthOnly,
 		RequirePrivacySet:               g.RequirePrivacySet,
 		HealthStatus:                    g.HealthStatus,
+		RPMLimit:                        g.RPMLimit,
 		CreatedAt:                       g.CreatedAt,
 		UpdatedAt:                       g.UpdatedAt,
 	}

@@ -13,9 +13,11 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/Wei-Shaw/sub2api/ent/announcementread"
 	"github.com/Wei-Shaw/sub2api/ent/apikey"
+	"github.com/Wei-Shaw/sub2api/ent/authidentity"
 	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/order"
 	"github.com/Wei-Shaw/sub2api/ent/paymentorder"
+	"github.com/Wei-Shaw/sub2api/ent/pendingauthsession"
 	"github.com/Wei-Shaw/sub2api/ent/promocodeusage"
 	"github.com/Wei-Shaw/sub2api/ent/rechargeorder"
 	"github.com/Wei-Shaw/sub2api/ent/redeemcode"
@@ -257,6 +259,48 @@ func (_c *UserCreate) SetNillableTotpEnabledAt(v *time.Time) *UserCreate {
 	return _c
 }
 
+// SetSignupSource sets the "signup_source" field.
+func (_c *UserCreate) SetSignupSource(v string) *UserCreate {
+	_c.mutation.SetSignupSource(v)
+	return _c
+}
+
+// SetNillableSignupSource sets the "signup_source" field if the given value is not nil.
+func (_c *UserCreate) SetNillableSignupSource(v *string) *UserCreate {
+	if v != nil {
+		_c.SetSignupSource(*v)
+	}
+	return _c
+}
+
+// SetLastLoginAt sets the "last_login_at" field.
+func (_c *UserCreate) SetLastLoginAt(v time.Time) *UserCreate {
+	_c.mutation.SetLastLoginAt(v)
+	return _c
+}
+
+// SetNillableLastLoginAt sets the "last_login_at" field if the given value is not nil.
+func (_c *UserCreate) SetNillableLastLoginAt(v *time.Time) *UserCreate {
+	if v != nil {
+		_c.SetLastLoginAt(*v)
+	}
+	return _c
+}
+
+// SetLastActiveAt sets the "last_active_at" field.
+func (_c *UserCreate) SetLastActiveAt(v time.Time) *UserCreate {
+	_c.mutation.SetLastActiveAt(v)
+	return _c
+}
+
+// SetNillableLastActiveAt sets the "last_active_at" field if the given value is not nil.
+func (_c *UserCreate) SetNillableLastActiveAt(v *time.Time) *UserCreate {
+	if v != nil {
+		_c.SetLastActiveAt(*v)
+	}
+	return _c
+}
+
 // SetRegisterDomain sets the "register_domain" field.
 func (_c *UserCreate) SetRegisterDomain(v string) *UserCreate {
 	_c.mutation.SetRegisterDomain(v)
@@ -379,6 +423,20 @@ func (_c *UserCreate) SetTotalRecharged(v float64) *UserCreate {
 func (_c *UserCreate) SetNillableTotalRecharged(v *float64) *UserCreate {
 	if v != nil {
 		_c.SetTotalRecharged(*v)
+	}
+	return _c
+}
+
+// SetRpmLimit sets the "rpm_limit" field.
+func (_c *UserCreate) SetRpmLimit(v int) *UserCreate {
+	_c.mutation.SetRpmLimit(v)
+	return _c
+}
+
+// SetNillableRpmLimit sets the "rpm_limit" field if the given value is not nil.
+func (_c *UserCreate) SetNillableRpmLimit(v *int) *UserCreate {
+	if v != nil {
+		_c.SetRpmLimit(*v)
 	}
 	return _c
 }
@@ -628,6 +686,36 @@ func (_c *UserCreate) AddPaymentOrders(v ...*PaymentOrder) *UserCreate {
 	return _c.AddPaymentOrderIDs(ids...)
 }
 
+// AddAuthIdentityIDs adds the "auth_identities" edge to the AuthIdentity entity by IDs.
+func (_c *UserCreate) AddAuthIdentityIDs(ids ...int64) *UserCreate {
+	_c.mutation.AddAuthIdentityIDs(ids...)
+	return _c
+}
+
+// AddAuthIdentities adds the "auth_identities" edges to the AuthIdentity entity.
+func (_c *UserCreate) AddAuthIdentities(v ...*AuthIdentity) *UserCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddAuthIdentityIDs(ids...)
+}
+
+// AddPendingAuthSessionIDs adds the "pending_auth_sessions" edge to the PendingAuthSession entity by IDs.
+func (_c *UserCreate) AddPendingAuthSessionIDs(ids ...int64) *UserCreate {
+	_c.mutation.AddPendingAuthSessionIDs(ids...)
+	return _c
+}
+
+// AddPendingAuthSessions adds the "pending_auth_sessions" edges to the PendingAuthSession entity.
+func (_c *UserCreate) AddPendingAuthSessions(v ...*PendingAuthSession) *UserCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddPendingAuthSessionIDs(ids...)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (_c *UserCreate) Mutation() *UserMutation {
 	return _c.mutation
@@ -711,6 +799,10 @@ func (_c *UserCreate) defaults() error {
 		v := user.DefaultTotpEnabled
 		_c.mutation.SetTotpEnabled(v)
 	}
+	if _, ok := _c.mutation.SignupSource(); !ok {
+		v := user.DefaultSignupSource
+		_c.mutation.SetSignupSource(v)
+	}
 	if _, ok := _c.mutation.RegisterDomain(); !ok {
 		v := user.DefaultRegisterDomain
 		_c.mutation.SetRegisterDomain(v)
@@ -738,6 +830,10 @@ func (_c *UserCreate) defaults() error {
 	if _, ok := _c.mutation.TotalRecharged(); !ok {
 		v := user.DefaultTotalRecharged
 		_c.mutation.SetTotalRecharged(v)
+	}
+	if _, ok := _c.mutation.RpmLimit(); !ok {
+		v := user.DefaultRpmLimit
+		_c.mutation.SetRpmLimit(v)
 	}
 	return nil
 }
@@ -810,6 +906,14 @@ func (_c *UserCreate) check() error {
 	if _, ok := _c.mutation.TotpEnabled(); !ok {
 		return &ValidationError{Name: "totp_enabled", err: errors.New(`ent: missing required field "User.totp_enabled"`)}
 	}
+	if _, ok := _c.mutation.SignupSource(); !ok {
+		return &ValidationError{Name: "signup_source", err: errors.New(`ent: missing required field "User.signup_source"`)}
+	}
+	if v, ok := _c.mutation.SignupSource(); ok {
+		if err := user.SignupSourceValidator(v); err != nil {
+			return &ValidationError{Name: "signup_source", err: fmt.Errorf(`ent: validator failed for field "User.signup_source": %w`, err)}
+		}
+	}
 	if v, ok := _c.mutation.RegisterDomain(); ok {
 		if err := user.RegisterDomainValidator(v); err != nil {
 			return &ValidationError{Name: "register_domain", err: fmt.Errorf(`ent: validator failed for field "User.register_domain": %w`, err)}
@@ -832,6 +936,9 @@ func (_c *UserCreate) check() error {
 	}
 	if _, ok := _c.mutation.TotalRecharged(); !ok {
 		return &ValidationError{Name: "total_recharged", err: errors.New(`ent: missing required field "User.total_recharged"`)}
+	}
+	if _, ok := _c.mutation.RpmLimit(); !ok {
+		return &ValidationError{Name: "rpm_limit", err: errors.New(`ent: missing required field "User.rpm_limit"`)}
 	}
 	return nil
 }
@@ -928,6 +1035,18 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 		_spec.SetField(user.FieldTotpEnabledAt, field.TypeTime, value)
 		_node.TotpEnabledAt = &value
 	}
+	if value, ok := _c.mutation.SignupSource(); ok {
+		_spec.SetField(user.FieldSignupSource, field.TypeString, value)
+		_node.SignupSource = value
+	}
+	if value, ok := _c.mutation.LastLoginAt(); ok {
+		_spec.SetField(user.FieldLastLoginAt, field.TypeTime, value)
+		_node.LastLoginAt = &value
+	}
+	if value, ok := _c.mutation.LastActiveAt(); ok {
+		_spec.SetField(user.FieldLastActiveAt, field.TypeTime, value)
+		_node.LastActiveAt = &value
+	}
 	if value, ok := _c.mutation.RegisterDomain(); ok {
 		_spec.SetField(user.FieldRegisterDomain, field.TypeString, value)
 		_node.RegisterDomain = value
@@ -959,6 +1078,10 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.TotalRecharged(); ok {
 		_spec.SetField(user.FieldTotalRecharged, field.TypeFloat64, value)
 		_node.TotalRecharged = value
+	}
+	if value, ok := _c.mutation.RpmLimit(); ok {
+		_spec.SetField(user.FieldRpmLimit, field.TypeInt, value)
+		_node.RpmLimit = value
 	}
 	if nodes := _c.mutation.APIKeysIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -1230,6 +1353,38 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(paymentorder.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.AuthIdentitiesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.AuthIdentitiesTable,
+			Columns: []string{user.AuthIdentitiesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(authidentity.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.PendingAuthSessionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.PendingAuthSessionsTable,
+			Columns: []string{user.PendingAuthSessionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(pendingauthsession.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -1529,6 +1684,54 @@ func (u *UserUpsert) ClearTotpEnabledAt() *UserUpsert {
 	return u
 }
 
+// SetSignupSource sets the "signup_source" field.
+func (u *UserUpsert) SetSignupSource(v string) *UserUpsert {
+	u.Set(user.FieldSignupSource, v)
+	return u
+}
+
+// UpdateSignupSource sets the "signup_source" field to the value that was provided on create.
+func (u *UserUpsert) UpdateSignupSource() *UserUpsert {
+	u.SetExcluded(user.FieldSignupSource)
+	return u
+}
+
+// SetLastLoginAt sets the "last_login_at" field.
+func (u *UserUpsert) SetLastLoginAt(v time.Time) *UserUpsert {
+	u.Set(user.FieldLastLoginAt, v)
+	return u
+}
+
+// UpdateLastLoginAt sets the "last_login_at" field to the value that was provided on create.
+func (u *UserUpsert) UpdateLastLoginAt() *UserUpsert {
+	u.SetExcluded(user.FieldLastLoginAt)
+	return u
+}
+
+// ClearLastLoginAt clears the value of the "last_login_at" field.
+func (u *UserUpsert) ClearLastLoginAt() *UserUpsert {
+	u.SetNull(user.FieldLastLoginAt)
+	return u
+}
+
+// SetLastActiveAt sets the "last_active_at" field.
+func (u *UserUpsert) SetLastActiveAt(v time.Time) *UserUpsert {
+	u.Set(user.FieldLastActiveAt, v)
+	return u
+}
+
+// UpdateLastActiveAt sets the "last_active_at" field to the value that was provided on create.
+func (u *UserUpsert) UpdateLastActiveAt() *UserUpsert {
+	u.SetExcluded(user.FieldLastActiveAt)
+	return u
+}
+
+// ClearLastActiveAt clears the value of the "last_active_at" field.
+func (u *UserUpsert) ClearLastActiveAt() *UserUpsert {
+	u.SetNull(user.FieldLastActiveAt)
+	return u
+}
+
 // SetRegisterDomain sets the "register_domain" field.
 func (u *UserUpsert) SetRegisterDomain(v string) *UserUpsert {
 	u.Set(user.FieldRegisterDomain, v)
@@ -1676,6 +1879,24 @@ func (u *UserUpsert) UpdateTotalRecharged() *UserUpsert {
 // AddTotalRecharged adds v to the "total_recharged" field.
 func (u *UserUpsert) AddTotalRecharged(v float64) *UserUpsert {
 	u.Add(user.FieldTotalRecharged, v)
+	return u
+}
+
+// SetRpmLimit sets the "rpm_limit" field.
+func (u *UserUpsert) SetRpmLimit(v int) *UserUpsert {
+	u.Set(user.FieldRpmLimit, v)
+	return u
+}
+
+// UpdateRpmLimit sets the "rpm_limit" field to the value that was provided on create.
+func (u *UserUpsert) UpdateRpmLimit() *UserUpsert {
+	u.SetExcluded(user.FieldRpmLimit)
+	return u
+}
+
+// AddRpmLimit adds v to the "rpm_limit" field.
+func (u *UserUpsert) AddRpmLimit(v int) *UserUpsert {
+	u.Add(user.FieldRpmLimit, v)
 	return u
 }
 
@@ -2004,6 +2225,62 @@ func (u *UserUpsertOne) ClearTotpEnabledAt() *UserUpsertOne {
 	})
 }
 
+// SetSignupSource sets the "signup_source" field.
+func (u *UserUpsertOne) SetSignupSource(v string) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.SetSignupSource(v)
+	})
+}
+
+// UpdateSignupSource sets the "signup_source" field to the value that was provided on create.
+func (u *UserUpsertOne) UpdateSignupSource() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateSignupSource()
+	})
+}
+
+// SetLastLoginAt sets the "last_login_at" field.
+func (u *UserUpsertOne) SetLastLoginAt(v time.Time) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.SetLastLoginAt(v)
+	})
+}
+
+// UpdateLastLoginAt sets the "last_login_at" field to the value that was provided on create.
+func (u *UserUpsertOne) UpdateLastLoginAt() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateLastLoginAt()
+	})
+}
+
+// ClearLastLoginAt clears the value of the "last_login_at" field.
+func (u *UserUpsertOne) ClearLastLoginAt() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearLastLoginAt()
+	})
+}
+
+// SetLastActiveAt sets the "last_active_at" field.
+func (u *UserUpsertOne) SetLastActiveAt(v time.Time) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.SetLastActiveAt(v)
+	})
+}
+
+// UpdateLastActiveAt sets the "last_active_at" field to the value that was provided on create.
+func (u *UserUpsertOne) UpdateLastActiveAt() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateLastActiveAt()
+	})
+}
+
+// ClearLastActiveAt clears the value of the "last_active_at" field.
+func (u *UserUpsertOne) ClearLastActiveAt() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearLastActiveAt()
+	})
+}
+
 // SetRegisterDomain sets the "register_domain" field.
 func (u *UserUpsertOne) SetRegisterDomain(v string) *UserUpsertOne {
 	return u.Update(func(s *UserUpsert) {
@@ -2176,6 +2453,27 @@ func (u *UserUpsertOne) AddTotalRecharged(v float64) *UserUpsertOne {
 func (u *UserUpsertOne) UpdateTotalRecharged() *UserUpsertOne {
 	return u.Update(func(s *UserUpsert) {
 		s.UpdateTotalRecharged()
+	})
+}
+
+// SetRpmLimit sets the "rpm_limit" field.
+func (u *UserUpsertOne) SetRpmLimit(v int) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.SetRpmLimit(v)
+	})
+}
+
+// AddRpmLimit adds v to the "rpm_limit" field.
+func (u *UserUpsertOne) AddRpmLimit(v int) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.AddRpmLimit(v)
+	})
+}
+
+// UpdateRpmLimit sets the "rpm_limit" field to the value that was provided on create.
+func (u *UserUpsertOne) UpdateRpmLimit() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateRpmLimit()
 	})
 }
 
@@ -2670,6 +2968,62 @@ func (u *UserUpsertBulk) ClearTotpEnabledAt() *UserUpsertBulk {
 	})
 }
 
+// SetSignupSource sets the "signup_source" field.
+func (u *UserUpsertBulk) SetSignupSource(v string) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.SetSignupSource(v)
+	})
+}
+
+// UpdateSignupSource sets the "signup_source" field to the value that was provided on create.
+func (u *UserUpsertBulk) UpdateSignupSource() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateSignupSource()
+	})
+}
+
+// SetLastLoginAt sets the "last_login_at" field.
+func (u *UserUpsertBulk) SetLastLoginAt(v time.Time) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.SetLastLoginAt(v)
+	})
+}
+
+// UpdateLastLoginAt sets the "last_login_at" field to the value that was provided on create.
+func (u *UserUpsertBulk) UpdateLastLoginAt() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateLastLoginAt()
+	})
+}
+
+// ClearLastLoginAt clears the value of the "last_login_at" field.
+func (u *UserUpsertBulk) ClearLastLoginAt() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearLastLoginAt()
+	})
+}
+
+// SetLastActiveAt sets the "last_active_at" field.
+func (u *UserUpsertBulk) SetLastActiveAt(v time.Time) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.SetLastActiveAt(v)
+	})
+}
+
+// UpdateLastActiveAt sets the "last_active_at" field to the value that was provided on create.
+func (u *UserUpsertBulk) UpdateLastActiveAt() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateLastActiveAt()
+	})
+}
+
+// ClearLastActiveAt clears the value of the "last_active_at" field.
+func (u *UserUpsertBulk) ClearLastActiveAt() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearLastActiveAt()
+	})
+}
+
 // SetRegisterDomain sets the "register_domain" field.
 func (u *UserUpsertBulk) SetRegisterDomain(v string) *UserUpsertBulk {
 	return u.Update(func(s *UserUpsert) {
@@ -2842,6 +3196,27 @@ func (u *UserUpsertBulk) AddTotalRecharged(v float64) *UserUpsertBulk {
 func (u *UserUpsertBulk) UpdateTotalRecharged() *UserUpsertBulk {
 	return u.Update(func(s *UserUpsert) {
 		s.UpdateTotalRecharged()
+	})
+}
+
+// SetRpmLimit sets the "rpm_limit" field.
+func (u *UserUpsertBulk) SetRpmLimit(v int) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.SetRpmLimit(v)
+	})
+}
+
+// AddRpmLimit adds v to the "rpm_limit" field.
+func (u *UserUpsertBulk) AddRpmLimit(v int) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.AddRpmLimit(v)
+	})
+}
+
+// UpdateRpmLimit sets the "rpm_limit" field to the value that was provided on create.
+func (u *UserUpsertBulk) UpdateRpmLimit() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateRpmLimit()
 	})
 }
 

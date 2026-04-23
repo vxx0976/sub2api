@@ -1,12 +1,14 @@
 package handler
 
 import (
+	"context"
 	"log/slog"
 	"strconv"
 	"strings"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/Wei-Shaw/sub2api/internal/handler/dto"
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/ip"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
 	middleware2 "github.com/Wei-Shaw/sub2api/internal/server/middleware"
@@ -108,9 +110,24 @@ type AuthResponse struct {
 	User         *dto.User `json:"user"`
 }
 
+func ensureLoginUserActive(user *service.User) error {
+	if user == nil {
+		return infraerrors.Unauthorized("INVALID_USER", "user not found")
+	}
+	if !user.IsActive() {
+		return service.ErrUserNotActive
+	}
+	return nil
+}
+
 // respondWithTokenPair 生成 Token 对并返回认证响应
 // 如果 Token 对生成失败，回退到只返回 Access Token（向后兼容）
 func (h *AuthHandler) respondWithTokenPair(c *gin.Context, user *service.User) {
+	if err := ensureLoginUserActive(user); err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+
 	tokenPair, err := h.authService.GenerateTokenPair(c.Request.Context(), user, "")
 	if err != nil {
 		slog.Error("failed to generate token pair", "error", err, "user_id", user.ID)
@@ -134,6 +151,34 @@ func (h *AuthHandler) respondWithTokenPair(c *gin.Context, user *service.User) {
 		TokenType:    "Bearer",
 		User:         dto.UserFromService(user),
 	})
+}
+
+func (h *AuthHandler) ensureBackendModeAllowsUser(ctx context.Context, user *service.User) error {
+	if user == nil {
+		return infraerrors.Unauthorized("INVALID_USER", "user not found")
+	}
+	if h == nil || !h.isBackendModeEnabled(ctx) || user.IsAdmin() {
+		return nil
+	}
+	return infraerrors.Forbidden("BACKEND_MODE_ADMIN_ONLY", "Backend mode is active. Only admin login is allowed.")
+}
+
+func (h *AuthHandler) ensureBackendModeAllowsNewUserLogin(ctx context.Context) error {
+	if h == nil || !h.isBackendModeEnabled(ctx) {
+		return nil
+	}
+	return infraerrors.Forbidden("BACKEND_MODE_ADMIN_ONLY", "Backend mode is active. Only admin login is allowed.")
+}
+
+func (h *AuthHandler) isBackendModeEnabled(ctx context.Context) bool {
+	if h == nil || h.settingSvc == nil {
+		return false
+	}
+	settings, err := h.settingSvc.GetPublicSettings(ctx)
+	if err == nil && settings != nil {
+		return settings.BackendModeEnabled
+	}
+	return h.settingSvc.IsBackendModeEnabled(ctx)
 }
 
 // Register handles user registration
@@ -284,13 +329,19 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 	_ = token // token 由 authService.Login 返回但此处由 respondWithTokenPair 重新生成
 
-	// Enforce login domain restriction
+	// 来自 dev：登录域名限制
 	if !h.checkLoginDomain(c, user) {
 		return
 	}
 
-	// 商户级登录开关
+	// 来自 dev：商户级登录开关
 	if !h.checkResellerLoginDisabled(c, user) {
+		return
+	}
+
+	// 来自 main：后端模式禁止普通用户登录
+	if err := h.ensureBackendModeAllowsUser(c.Request.Context(), user); err != nil {
+		response.ErrorFrom(c, err)
 		return
 	}
 
@@ -311,11 +362,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	// Backend mode: only admin can login
-	if h.settingSvc.IsBackendModeEnabled(c.Request.Context()) && !user.IsAdmin() {
-		response.Forbidden(c, "Backend mode is active. Only admin login is allowed.")
-		return
-	}
+	h.authService.RecordSuccessfulLogin(c.Request.Context(), user.ID)
 
 	h.respondWithTokenPair(c, user)
 }
@@ -380,24 +427,90 @@ func (h *AuthHandler) Login2FA(c *gin.Context) {
 		return
 	}
 
-	// Enforce login domain restriction
+	// 来自 dev：登录域名限制
 	if !h.checkLoginDomain(c, user) {
 		return
 	}
 
-	// 商户级登录开关
+	// 来自 dev：商户级登录开关
 	if !h.checkResellerLoginDisabled(c, user) {
 		return
 	}
 
-	// Backend mode: only admin can login (check BEFORE deleting session)
-	if h.settingSvc.IsBackendModeEnabled(c.Request.Context()) && !user.IsAdmin() {
-		response.Forbidden(c, "Backend mode is active. Only admin login is allowed.")
+	// 来自 main：确保用户处于 active 状态
+	if err := ensureLoginUserActive(user); err != nil {
+		response.ErrorFrom(c, err)
 		return
+	}
+
+	if err := h.ensureBackendModeAllowsUser(c.Request.Context(), user); err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+
+	if session.PendingOAuthBind != nil {
+		pendingSvc, err := h.pendingIdentityService()
+		if err != nil {
+			response.ErrorFrom(c, err)
+			return
+		}
+
+		pendingSession, err := pendingSvc.GetBrowserSession(
+			c.Request.Context(),
+			session.PendingOAuthBind.PendingSessionToken,
+			session.PendingOAuthBind.BrowserSessionKey,
+		)
+		if err != nil {
+			response.ErrorFrom(c, err)
+			return
+		}
+
+		decision, err := h.ensurePendingOAuthAdoptionDecision(c, pendingSession.ID, oauthAdoptionDecisionRequest{})
+		if err != nil {
+			response.ErrorFrom(c, err)
+			return
+		}
+		if err := applyPendingOAuthBinding(
+			c.Request.Context(),
+			h.entClient(),
+			h.authService,
+			h.userService,
+			pendingSession,
+			decision,
+			&user.ID,
+			true,
+			true,
+		); err != nil {
+			response.ErrorFrom(c, infraerrors.InternalServer("PENDING_AUTH_BIND_APPLY_FAILED", "failed to bind pending oauth identity").WithCause(err))
+			return
+		}
+		if _, err := pendingSvc.ConsumeBrowserSession(
+			c.Request.Context(),
+			pendingSession.SessionToken,
+			pendingSession.BrowserSessionKey,
+		); err != nil {
+			response.ErrorFrom(c, err)
+			return
+		}
+
+		secureCookie := isRequestHTTPS(c)
+		clearOAuthPendingSessionCookie(c, secureCookie)
+		clearOAuthPendingBrowserCookie(c, secureCookie)
+		h.authService.RecordSuccessfulLogin(c.Request.Context(), user.ID)
+
+		user, err = h.userService.GetByID(c.Request.Context(), session.UserID)
+		if err != nil {
+			response.ErrorFrom(c, err)
+			return
+		}
 	}
 
 	// Delete the login session (only after all checks pass)
 	_ = h.totpService.DeleteLoginSession(c.Request.Context(), req.TempToken)
+
+	if session.PendingOAuthBind == nil {
+		h.authService.RecordSuccessfulLogin(c.Request.Context(), user.ID)
+	}
 
 	h.respondWithTokenPair(c, user)
 }
@@ -417,8 +530,14 @@ func (h *AuthHandler) GetCurrentUser(c *gin.Context) {
 		return
 	}
 
+	identities, err := h.userService.GetProfileIdentitySummaries(c.Request.Context(), subject.UserID, user)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+
 	type UserResponse struct {
-		*dto.User
+		userProfileResponse
 		RunMode                 string   `json:"run_mode"`
 		ResellerPriceMultiplier *float64 `json:"_x_pm,omitempty"`
 		ResellerAgentEnabled    bool     `json:"reseller_agent_enabled,omitempty"`
@@ -431,31 +550,30 @@ func (h *AuthHandler) GetCurrentUser(c *gin.Context) {
 		runMode = h.cfg.RunMode
 	}
 
-	resp := UserResponse{User: dto.UserFromService(user), RunMode: runMode}
+	resp := UserResponse{
+		userProfileResponse: userProfileResponseFromService(user, identities),
+		RunMode:             runMode,
+	}
 
-	// If the user belongs to a reseller with merchant_mode enabled, expose the
-	// reseller's price_multiplier so the payment service can apply the correct
-	// balance ratio. Requires merchant_mode == "enabled" as the guard.
+	// 来自 dev：如果用户属于一个开启 merchant_mode 的 reseller，暴露其 price_multiplier
+	// 供支付服务应用正确的余额比例。以 merchant_mode == "enabled" 为门槛。
 	if user.ParentID != nil && h.resellerSettingRepo != nil {
 		if rs, err := h.resellerSettingRepo.GetAll(c.Request.Context(), *user.ParentID); err == nil && rs["merchant_mode"] == "enabled" {
 			resp.ResellerAgentEnabled = true
-			// pay_url is no longer per-merchant; purchase URL comes from main site config
 			if mult, err := strconv.ParseFloat(rs["price_multiplier"], 64); err == nil && mult > 0 {
 				resp.ResellerPriceMultiplier = &mult
 			}
-			// selling_price 不再由商户自定义，统一使用平台定价，不传 _x_sp
 		}
 	}
 
-	// If the user IS a reseller themselves and merchant_mode is enabled, also set ResellerAgentEnabled.
-	// This makes the dashboard stats visible to the reseller owner as well.
+	// 来自 dev：用户自身即 reseller 且开启 merchant_mode，也标记 ResellerAgentEnabled。
 	if user.Role == service.RoleReseller && h.resellerSettingRepo != nil {
 		if rs, err := h.resellerSettingRepo.GetAll(c.Request.Context(), user.ID); err == nil && rs["merchant_mode"] == "enabled" {
 			resp.ResellerAgentEnabled = true
 		}
 	}
 
-	// Expose platform_selling_price as _x_sp for all users so sub2apipay can use it.
+	// 来自 dev：对所有用户暴露 platform_selling_price（_x_sp），供 sub2apipay 使用。
 	if resp.ResellerSellingPrice == nil && h.settingSvc != nil {
 		if sp := h.settingSvc.GetPlatformSellingPrice(c.Request.Context()); sp > 0 {
 			resp.ResellerSellingPrice = &sp
@@ -778,6 +896,8 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 			// 不影响登出流程
 		}
 	}
+	h.consumePendingOAuthSessionOnLogout(c)
+	clearOAuthLogoutCookies(c)
 
 	response.Success(c, LogoutResponse{
 		Message: "Logged out successfully",
@@ -798,7 +918,7 @@ func (h *AuthHandler) RevokeAllSessions(c *gin.Context) {
 		return
 	}
 
-	if err := h.authService.RevokeAllUserSessions(c.Request.Context(), subject.UserID); err != nil {
+	if err := h.authService.RevokeAllUserTokens(c.Request.Context(), subject.UserID); err != nil {
 		slog.Error("failed to revoke all sessions", "user_id", subject.UserID, "error", err)
 		response.InternalError(c, "Failed to revoke sessions")
 		return

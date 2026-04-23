@@ -73,7 +73,8 @@ func (r *groupRepository) Create(ctx context.Context, groupIn *service.Group) er
 		SetRequireOauthOnly(groupIn.RequireOAuthOnly).
 		SetRequirePrivacySet(groupIn.RequirePrivacySet).
 		SetDefaultMappedModel(groupIn.DefaultMappedModel).
-		SetMessagesDispatchModelConfig(groupIn.MessagesDispatchModelConfig)
+		SetMessagesDispatchModelConfig(groupIn.MessagesDispatchModelConfig).
+		SetRpmLimit(groupIn.RPMLimit)
 
 	// 多语言字段
 	if len(groupIn.NameI18n) > 0 {
@@ -155,7 +156,8 @@ func (r *groupRepository) Update(ctx context.Context, groupIn *service.Group) er
 		SetRequireOauthOnly(groupIn.RequireOAuthOnly).
 		SetRequirePrivacySet(groupIn.RequirePrivacySet).
 		SetDefaultMappedModel(groupIn.DefaultMappedModel).
-		SetMessagesDispatchModelConfig(groupIn.MessagesDispatchModelConfig)
+		SetMessagesDispatchModelConfig(groupIn.MessagesDispatchModelConfig).
+		SetRpmLimit(groupIn.RPMLimit)
 
 	// 多语言字段
 	if len(groupIn.NameI18n) > 0 {

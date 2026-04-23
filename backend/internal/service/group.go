@@ -71,6 +71,10 @@ type Group struct {
 	DefaultMappedModel          string                            `json:"default_mapped_model"`
 	MessagesDispatchModelConfig OpenAIMessagesDispatchModelConfig `json:"messages_dispatch_model_config"`
 
+	// RPMLimit 分组级每分钟请求数上限（0 = 不限制）。
+	// 一旦设置即接管该分组用户的限流（覆盖用户级 rpm_limit），可被 user-group rpm_override 进一步覆盖。
+	RPMLimit int `json:"rpm_limit,omitempty"`
+
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 
@@ -131,10 +135,6 @@ func (g *Group) EffectiveFailoverActiveMemberID(now time.Time) *int64 {
 
 func (g *Group) IsSubscriptionType() bool {
 	return g.SubscriptionType == SubscriptionTypeSubscription
-}
-
-func (g *Group) IsFreeSubscription() bool {
-	return g.IsSubscriptionType() && g.RateMultiplier == 0
 }
 
 func (g *Group) HasDailyLimit() bool {
