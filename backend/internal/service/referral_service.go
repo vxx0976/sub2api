@@ -301,22 +301,22 @@ func (s *ReferralService) distributeReward(ctx context.Context, referrerID, invi
 	return giveToReferrer, true, nil
 }
 
-// MaskEmail masks an email address for privacy
-// e.g., "user@example.com" -> "u***@example.com"
+// MaskEmail masks an email address for privacy.
+// e.g., "user@example.com" -> "u***r@example.com".
 func MaskEmail(email string) string {
-	parts := strings.Split(email, "@")
-	if len(parts) != 2 {
+	parts := strings.SplitN(email, "@", 2)
+	if len(parts) != 2 || parts[0] == "" {
 		return "***"
 	}
 
 	localPart := parts[0]
 	domain := parts[1]
 
-	if len(localPart) <= 1 {
-		return localPart + "***@" + domain
+	if len(localPart) <= 2 {
+		return string(localPart[0]) + "***@" + domain
 	}
 
-	return string(localPart[0]) + "***@" + domain
+	return string(localPart[0]) + "***" + string(localPart[len(localPart)-1]) + "@" + domain
 }
 
 // AdminReferralRecord represents a referral record for admin view
@@ -336,13 +336,13 @@ type AdminReferralRecord struct {
 
 // AdminReferralStats represents overall referral statistics for admin
 type AdminReferralStats struct {
-	TotalRecords       int     `json:"total_records"`
-	TotalReferrers     int     `json:"total_referrers"`
-	TotalInvitees      int     `json:"total_invitees"`
-	TotalPending       int     `json:"total_pending"`
-	TotalRewarded      int     `json:"total_rewarded"`
-	TotalReferrerPaid  float64 `json:"total_referrer_paid"`
-	TotalInviteePaid   float64 `json:"total_invitee_paid"`
+	TotalRecords      int     `json:"total_records"`
+	TotalReferrers    int     `json:"total_referrers"`
+	TotalInvitees     int     `json:"total_invitees"`
+	TotalPending      int     `json:"total_pending"`
+	TotalRewarded     int     `json:"total_rewarded"`
+	TotalReferrerPaid float64 `json:"total_referrer_paid"`
+	TotalInviteePaid  float64 `json:"total_invitee_paid"`
 }
 
 // GetAllReferralRecords gets all referral records for admin

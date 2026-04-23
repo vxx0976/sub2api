@@ -1125,6 +1125,272 @@
           </div>
         </div>
 
+        <!-- WeChat Connect OAuth 登录 -->
+        <div class="card">
+          <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+              {{ t('admin.settings.wechatConnect.title') }}
+            </h2>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              {{ t('admin.settings.wechatConnect.description') }}
+            </p>
+          </div>
+          <div class="space-y-5 p-6">
+            <div class="flex items-center justify-between">
+              <div>
+                <label class="font-medium text-gray-900 dark:text-white">
+                  {{ t('admin.settings.wechatConnect.enabledLabel') }}
+                </label>
+                <p class="text-sm text-gray-500 dark:text-gray-400">
+                  {{ t('admin.settings.wechatConnect.enabledHint') }}
+                </p>
+              </div>
+              <Toggle v-model="form.wechat_connect_enabled" data-testid="wechat-connect-enabled" />
+            </div>
+
+            <div
+              v-if="form.wechat_connect_enabled"
+              class="space-y-6 border-t border-gray-100 pt-4 dark:border-dark-700"
+            >
+              <div class="space-y-4">
+                <div class="rounded-lg border border-gray-200 p-4 dark:border-dark-700">
+                  <div class="flex items-start justify-between gap-4">
+                    <div>
+                      <h3 class="font-medium text-gray-900 dark:text-white">
+                        {{ localText('PC 应用', 'PC App') }}
+                      </h3>
+                      <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                        {{
+                          localText(
+                            '桌面浏览器通过微信开放平台扫码登录。可与公众号或移动应用同时存在。',
+                            'Desktop browsers sign in through WeChat Open Platform QR login. This can coexist with Official Account or Mobile App.'
+                          )
+                        }}
+                      </p>
+                    </div>
+                    <Toggle
+                      :model-value="form.wechat_connect_open_enabled"
+                      data-testid="wechat-connect-open-enabled"
+                      @update:model-value="handleWeChatOpenEnabledChange"
+                    />
+                  </div>
+                  <div
+                    v-if="form.wechat_connect_open_enabled"
+                    class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2"
+                  >
+                    <div>
+                      <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {{ localText('PC AppID', 'PC App ID') }}
+                      </label>
+                      <input
+                        v-model="form.wechat_connect_open_app_id"
+                        data-testid="wechat-connect-open-app-id"
+                        type="text"
+                        class="input font-mono text-sm"
+                        :placeholder="localText('微信开放平台 PC 应用 AppID', 'WeChat Open Platform PC App ID')"
+                      />
+                    </div>
+                    <div>
+                      <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {{ localText('PC AppSecret', 'PC App Secret') }}
+                      </label>
+                      <input
+                        v-model="form.wechat_connect_open_app_secret"
+                        data-testid="wechat-connect-open-app-secret"
+                        type="password"
+                        class="input font-mono text-sm"
+                        :placeholder="
+                          form.wechat_connect_open_app_secret_configured
+                            ? localText('密钥已配置，留空以保留当前值。', 'Secret configured. Leave empty to keep the current value.')
+                            : localText('微信开放平台 PC 应用 AppSecret', 'WeChat Open Platform PC App Secret')
+                        "
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div class="rounded-lg border border-gray-200 p-4 dark:border-dark-700">
+                  <div class="flex items-start justify-between gap-4">
+                    <div>
+                      <h3 class="font-medium text-gray-900 dark:text-white">
+                        {{ localText('公众号', 'Official Account') }}
+                      </h3>
+                      <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                        {{
+                          localText(
+                            '仅在微信内浏览器可用；非微信环境下会显示不可用。',
+                            'Only available inside the WeChat browser. It is shown as unavailable outside WeChat.'
+                          )
+                        }}
+                      </p>
+                    </div>
+                    <Toggle
+                      :model-value="form.wechat_connect_mp_enabled"
+                      data-testid="wechat-connect-mp-enabled"
+                      @update:model-value="handleWeChatMPEnabledChange"
+                    />
+                  </div>
+                  <div
+                    v-if="form.wechat_connect_mp_enabled"
+                    class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2"
+                  >
+                    <div>
+                      <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {{ localText('公众号 AppID', 'Official Account App ID') }}
+                      </label>
+                      <input
+                        v-model="form.wechat_connect_mp_app_id"
+                        data-testid="wechat-connect-mp-app-id"
+                        type="text"
+                        class="input font-mono text-sm"
+                        :placeholder="localText('公众号 AppID', 'Official Account App ID')"
+                      />
+                    </div>
+                    <div>
+                      <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {{ localText('公众号 AppSecret', 'Official Account App Secret') }}
+                      </label>
+                      <input
+                        v-model="form.wechat_connect_mp_app_secret"
+                        data-testid="wechat-connect-mp-app-secret"
+                        type="password"
+                        class="input font-mono text-sm"
+                        :placeholder="
+                          form.wechat_connect_mp_app_secret_configured
+                            ? localText('密钥已配置，留空以保留当前值。', 'Secret configured. Leave empty to keep the current value.')
+                            : localText('公众号 AppSecret', 'Official Account App Secret')
+                        "
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div class="rounded-lg border border-gray-200 p-4 dark:border-dark-700">
+                  <div class="flex items-start justify-between gap-4">
+                    <div>
+                      <h3 class="font-medium text-gray-900 dark:text-white">
+                        {{ localText('移动应用', 'Mobile App') }}
+                      </h3>
+                      <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                        {{
+                          localText(
+                            '原生移动端通过微信 SDK 唤起授权，网页端不会直接发起该流程。',
+                            'Native mobile clients start authorization through the WeChat SDK. The web UI does not launch this flow directly.'
+                          )
+                        }}
+                      </p>
+                    </div>
+                    <Toggle
+                      :model-value="form.wechat_connect_mobile_enabled"
+                      data-testid="wechat-connect-mobile-enabled"
+                      @update:model-value="handleWeChatMobileEnabledChange"
+                    />
+                  </div>
+                  <div
+                    v-if="form.wechat_connect_mobile_enabled"
+                    class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2"
+                  >
+                    <div>
+                      <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {{ localText('移动应用 AppID', 'Mobile App ID') }}
+                      </label>
+                      <input
+                        v-model="form.wechat_connect_mobile_app_id"
+                        data-testid="wechat-connect-mobile-app-id"
+                        type="text"
+                        class="input font-mono text-sm"
+                        :placeholder="localText('移动应用 AppID', 'Mobile App ID')"
+                      />
+                    </div>
+                    <div>
+                      <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {{ localText('移动应用 AppSecret', 'Mobile App Secret') }}
+                      </label>
+                      <input
+                        v-model="form.wechat_connect_mobile_app_secret"
+                        data-testid="wechat-connect-mobile-app-secret"
+                        type="password"
+                        class="input font-mono text-sm"
+                        :placeholder="
+                          form.wechat_connect_mobile_app_secret_configured
+                            ? localText('密钥已配置，留空以保留当前值。', 'Secret configured. Leave empty to keep the current value.')
+                            : localText('移动应用 AppSecret', 'Mobile App Secret')
+                        "
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div
+                v-if="form.wechat_connect_open_enabled && (form.wechat_connect_mp_enabled || form.wechat_connect_mobile_enabled)"
+                class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:border-amber-900/40 dark:bg-amber-900/10 dark:text-amber-300"
+              >
+                {{
+                  localText(
+                    '如果同时启用 PC 应用和公众号/移动应用，这些应用需要挂在同一个微信开放平台主体下，否则 UnionID 无法稳定归并账号。',
+                    'When PC App is enabled together with Official Account or Mobile App, they should belong to the same WeChat Open Platform account so UnionID can merge identities reliably.'
+                  )
+                }}
+              </div>
+
+              <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                <div>
+                  <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {{ localText('浏览器回调地址', 'Browser Redirect URL') }}
+                  </label>
+                  <input
+                    data-testid="wechat-connect-redirect-url"
+                    v-model="form.wechat_connect_redirect_url"
+                    type="url"
+                    class="input font-mono text-sm"
+                    :placeholder="t('admin.settings.wechatConnect.redirectUrlPlaceholder')"
+                  />
+                  <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                    {{
+                      localText(
+                        '用于 PC 应用和公众号的网页回调。移动应用走原生 SDK 时不直接使用这个浏览器回调。',
+                        'Used by PC App and Official Account browser callbacks. Native mobile SDK flows do not start from this browser callback directly.'
+                      )
+                    }}
+                  </p>
+                  <div class="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+                    <button
+                      type="button"
+                      class="btn btn-secondary btn-sm w-fit"
+                      @click="setAndCopyWeChatRedirectUrl"
+                    >
+                      {{ t('admin.settings.wechatConnect.generateAndCopy') }}
+                    </button>
+                    <code
+                      v-if="wechatRedirectUrlSuggestion"
+                      class="select-all break-all rounded bg-gray-50 px-2 py-1 font-mono text-xs text-gray-600 dark:bg-dark-800 dark:text-gray-300"
+                    >
+                      {{ wechatRedirectUrlSuggestion }}
+                    </code>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {{ t('admin.settings.wechatConnect.frontendRedirectUrlLabel') }}
+                </label>
+                <input
+                  data-testid="wechat-connect-frontend-redirect-url"
+                  v-model="form.wechat_connect_frontend_redirect_url"
+                  type="text"
+                  class="input font-mono text-sm"
+                  :placeholder="t('admin.settings.wechatConnect.frontendRedirectUrlPlaceholder')"
+                />
+                <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                  {{ t('admin.settings.wechatConnect.frontendRedirectUrlHint') }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Generic OIDC OAuth 登录 -->
         <div class="card">
           <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
@@ -1491,6 +1757,22 @@
                   {{ t('admin.settings.defaults.defaultConcurrencyHint') }}
                 </p>
               </div>
+              <div>
+                <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {{ t('admin.settings.defaults.defaultUserRpmLimit') }}
+                </label>
+                <input
+                  v-model.number="form.default_user_rpm_limit"
+                  type="number"
+                  min="0"
+                  step="1"
+                  class="input"
+                  placeholder="0"
+                />
+                <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                  {{ t('admin.settings.defaults.defaultUserRpmLimitHint') }}
+                </p>
+              </div>
             </div>
 
             <div class="border-t border-gray-100 pt-4 dark:border-dark-700">
@@ -1586,6 +1868,193 @@
             </div>
           </div>
         </div>
+
+        <div class="card">
+          <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+              {{ t('admin.settings.authSourceDefaults.title') }}
+            </h2>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              {{ t('admin.settings.authSourceDefaults.description') }}
+            </p>
+          </div>
+          <div class="space-y-6 p-6">
+            <div class="flex items-center justify-between rounded border border-gray-200 px-4 py-3 dark:border-dark-700">
+              <div>
+                <label class="font-medium text-gray-900 dark:text-white">
+                  {{ t('admin.settings.authSourceDefaults.requireEmailLabel') }}
+                </label>
+                <p class="text-sm text-gray-500 dark:text-gray-400">
+                  {{ t('admin.settings.authSourceDefaults.requireEmailHint') }}
+                </p>
+              </div>
+              <Toggle v-model="form.force_email_on_third_party_signup" />
+            </div>
+
+            <div class="space-y-4">
+              <div
+                v-for="authSource in authSourceDefaultsMeta"
+                :key="authSource.source"
+                class="rounded-xl border border-gray-200 p-4 dark:border-dark-700"
+              >
+                <div class="flex items-center justify-between gap-4">
+                  <div>
+                    <div class="font-medium text-gray-900 dark:text-white">
+                      {{ authSource.title }}
+                    </div>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                      {{ authSource.description }}
+                    </p>
+                  </div>
+                  <Toggle
+                    v-model="authSourceDefaults[authSource.source].grant_on_signup"
+                    :data-testid="`auth-source-${authSource.source}-enabled`"
+                  />
+                </div>
+
+                <div
+                  v-if="authSourceDefaults[authSource.source].grant_on_signup"
+                  :data-testid="`auth-source-${authSource.source}-panel`"
+                  class="mt-4 space-y-4 border-t border-gray-100 pt-4 dark:border-dark-700"
+                >
+                  <p class="text-sm text-gray-500 dark:text-gray-400">
+                    {{ t('admin.settings.authSourceDefaults.enabledHint') }}
+                  </p>
+
+                  <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div>
+                      <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {{ t('admin.settings.defaults.defaultBalance') }}
+                      </label>
+                      <input
+                        v-model.number="authSourceDefaults[authSource.source].balance"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        class="input"
+                        placeholder="0.00"
+                      />
+                    </div>
+                    <div>
+                      <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {{ t('admin.settings.defaults.defaultConcurrency') }}
+                      </label>
+                      <input
+                        v-model.number="authSourceDefaults[authSource.source].concurrency"
+                        type="number"
+                        min="1"
+                        class="input"
+                        placeholder="5"
+                      />
+                    </div>
+                  </div>
+
+                  <div class="flex items-center justify-between rounded border border-gray-200 px-4 py-3 dark:border-dark-700">
+                    <div>
+                      <label class="font-medium text-gray-900 dark:text-white">
+                        {{ t('admin.settings.authSourceDefaults.grantOnFirstBindLabel') }}
+                      </label>
+                      <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                        {{ t('admin.settings.authSourceDefaults.grantOnFirstBindHint') }}
+                      </p>
+                    </div>
+                    <Toggle v-model="authSourceDefaults[authSource.source].grant_on_first_bind" />
+                  </div>
+
+                  <div class="mb-3 flex items-center justify-between">
+                    <div>
+                      <label class="font-medium text-gray-900 dark:text-white">
+                        {{ t('admin.settings.authSourceDefaults.defaultSubscriptionsLabel') }}
+                      </label>
+                      <p class="text-sm text-gray-500 dark:text-gray-400">
+                        {{ t('admin.settings.authSourceDefaults.defaultSubscriptionsHint') }}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      class="btn btn-secondary btn-sm"
+                      @click="addAuthSourceDefaultSubscription(authSource.source)"
+                      :disabled="subscriptionGroups.length === 0"
+                    >
+                      {{ t('admin.settings.defaults.addDefaultSubscription') }}
+                    </button>
+                  </div>
+
+                  <div
+                    v-if="authSourceDefaults[authSource.source].subscriptions.length === 0"
+                    class="rounded border border-dashed border-gray-300 px-4 py-3 text-sm text-gray-500 dark:border-dark-600 dark:text-gray-400"
+                  >
+                    {{ t('admin.settings.authSourceDefaults.noSourceSubscriptions') }}
+                  </div>
+
+                  <div v-else class="space-y-3">
+                    <div
+                      v-for="(item, index) in authSourceDefaults[authSource.source].subscriptions"
+                      :key="`${authSource.source}-sub-${index}`"
+                      class="grid grid-cols-1 gap-3 rounded border border-gray-200 p-3 md:grid-cols-[1fr_160px_auto] dark:border-dark-600"
+                    >
+                      <div>
+                        <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
+                          {{ t('admin.settings.defaults.subscriptionGroup') }}
+                        </label>
+                        <Select
+                          v-model="item.group_id"
+                          class="default-sub-group-select"
+                          :options="defaultSubscriptionGroupOptions"
+                          :placeholder="t('admin.settings.defaults.subscriptionGroup')"
+                        >
+                          <template #selected="{ option }">
+                            <GroupBadge
+                              v-if="option"
+                              :name="(option as unknown as DefaultSubscriptionGroupOption).label"
+                              :platform="(option as unknown as DefaultSubscriptionGroupOption).platform"
+                              :subscription-type="(option as unknown as DefaultSubscriptionGroupOption).subscriptionType"
+                              :rate-multiplier="(option as unknown as DefaultSubscriptionGroupOption).rate"
+                            />
+                            <span v-else class="text-gray-400">
+                              {{ t('admin.settings.defaults.subscriptionGroup') }}
+                            </span>
+                          </template>
+                          <template #option="{ option, selected }">
+                            <GroupOptionItem
+                              :name="(option as unknown as DefaultSubscriptionGroupOption).label"
+                              :platform="(option as unknown as DefaultSubscriptionGroupOption).platform"
+                              :subscription-type="(option as unknown as DefaultSubscriptionGroupOption).subscriptionType"
+                              :rate-multiplier="(option as unknown as DefaultSubscriptionGroupOption).rate"
+                              :description="(option as unknown as DefaultSubscriptionGroupOption).description"
+                              :selected="selected"
+                            />
+                          </template>
+                        </Select>
+                      </div>
+                      <div>
+                        <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
+                          {{ t('admin.settings.defaults.subscriptionValidityDays') }}
+                        </label>
+                        <input
+                          v-model.number="item.validity_days"
+                          type="number"
+                          min="1"
+                          max="36500"
+                          class="input h-[42px]"
+                        />
+                      </div>
+                      <div class="flex items-end">
+                        <button
+                          type="button"
+                          class="btn btn-secondary w-full text-red-600 hover:text-red-700 dark:text-red-400"
+                          @click="removeAuthSourceDefaultSubscription(authSource.source, index)"
+                        >
+                          {{ t('common.delete') }}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
         </div><!-- /Tab: Users -->
 
         <!-- Tab: Gateway — Claude Code, Scheduling -->
@@ -1642,7 +2111,7 @@
               {{ t('admin.settings.scheduling.description') }}
             </p>
           </div>
-          <div class="p-6">
+          <div class="space-y-5 p-6">
             <div class="flex items-center justify-between">
               <div>
                 <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -1656,6 +2125,18 @@
                 <input v-model="form.allow_ungrouped_key_scheduling" type="checkbox" />
                 <span class="toggle-slider"></span>
               </label>
+            </div>
+
+            <div class="flex items-center justify-between">
+              <div>
+                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {{ t('admin.settings.openaiExperimentalScheduler.title') }}
+                </label>
+                <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                  {{ t('admin.settings.openaiExperimentalScheduler.description') }}
+                </p>
+              </div>
+              <Toggle v-model="form.openai_advanced_scheduler_enabled" />
             </div>
           </div>
         </div>
@@ -2678,7 +3159,7 @@
             <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('admin.settings.payment.title') }}</h2>
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
               {{ t('admin.settings.payment.description') }}
-              <a :href="locale === 'zh' ? 'https://github.com/Wei-Shaw/sub2api/blob/main/docs/PAYMENT_CN.md' : 'https://github.com/Wei-Shaw/sub2api/blob/main/docs/PAYMENT.md'" target="_blank" rel="noopener noreferrer" class="ml-2 inline-flex items-center text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300">
+              <a :href="paymentGuideHref" target="_blank" rel="noopener noreferrer" class="ml-2 inline-flex items-center text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300">
                 <svg class="mr-0.5 h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
                 {{ t('admin.settings.payment.configGuide') }}
               </a>
@@ -2774,7 +3255,7 @@
                 </div>
                 <p class="mt-2 text-xs text-gray-400 dark:text-gray-500">
                   {{ t('admin.settings.payment.enabledPaymentTypesHint') }}
-                  <a :href="locale === 'zh' ? 'https://github.com/Wei-Shaw/sub2api/blob/main/docs/PAYMENT_CN.md#%E6%94%AF%E6%8C%81%E7%9A%84%E6%94%AF%E4%BB%98%E6%96%B9%E5%BC%8F' : 'https://github.com/Wei-Shaw/sub2api/blob/main/docs/PAYMENT.md#supported-payment-methods'" target="_blank" rel="noopener noreferrer" class="ml-1 text-primary-500 hover:text-primary-600 dark:text-primary-400 dark:hover:text-primary-300">
+                  <a :href="paymentMethodsHref" target="_blank" rel="noopener noreferrer" class="ml-1 text-primary-500 hover:text-primary-600 dark:text-primary-400 dark:hover:text-primary-300">
                     {{ t('admin.settings.payment.findProvider') }}
                     <svg class="mb-0.5 ml-0.5 inline h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
                   </a>
@@ -2784,7 +3265,12 @@
               <div class="grid grid-cols-2 gap-3">
                 <div>
                   <label class="input-label">{{ t('admin.settings.payment.helpImage') }}</label>
-                  <ImageUpload v-model="form.payment_help_image_url" :placeholder="t('admin.settings.payment.helpImagePlaceholder')" />
+                  <ImageUpload
+                    v-model="form.payment_help_image_url"
+                    :upload-label="t('admin.settings.site.uploadImage')"
+                    :remove-label="t('admin.settings.site.remove')"
+                    :placeholder="t('admin.settings.payment.helpImagePlaceholder')"
+                  />
                 </div>
                 <div>
                   <label class="input-label">{{ t('admin.settings.payment.helpText') }}</label>
@@ -3158,10 +3644,21 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { availableLocales } from '@/i18n'
 import { adminAPI } from '@/api'
+import {
+  appendAuthSourceDefaultsToUpdateRequest,
+  buildAuthSourceDefaultsState,
+  defaultWeChatConnectScopesForMode,
+  deriveWeChatConnectStoredMode,
+  normalizeDefaultSubscriptionSettings,
+  resolveWeChatConnectModeCapabilities,
+} from '@/api/admin/settings'
 import type {
+  AuthSourceDefaultsState,
+  AuthSourceType,
   SystemSettings,
   UpdateSettingsRequest,
   DefaultSubscriptionSetting,
+  WeChatConnectMode,
   WebSearchEmulationConfig,
   WebSearchProviderConfig,
   WebSearchTestResult,
@@ -3195,6 +3692,22 @@ import {
 const { t, locale } = useI18n()
 const appStore = useAppStore()
 const adminSettingsStore = useAdminSettingsStore()
+
+function localText(zh: string, en: string): string {
+  return locale.value.startsWith('zh') ? zh : en
+}
+
+const paymentGuideHref = computed(() =>
+  locale.value.startsWith('zh')
+    ? 'https://github.com/Wei-Shaw/sub2api/blob/main/docs/PAYMENT_CN.md'
+    : 'https://github.com/Wei-Shaw/sub2api/blob/main/docs/PAYMENT.md'
+)
+
+const paymentMethodsHref = computed(() =>
+  locale.value.startsWith('zh')
+    ? 'https://github.com/Wei-Shaw/sub2api/blob/main/docs/PAYMENT_CN.md#支持的支付方式'
+    : 'https://github.com/Wei-Shaw/sub2api/blob/main/docs/PAYMENT.md#supported-payment-methods'
+)
 
 type SettingsTab = 'general' | 'security' | 'users' | 'gateway' | 'payment' | 'email' | 'backup'
 const activeTab = ref<SettingsTab>('general')
@@ -3298,8 +3811,17 @@ type SettingsForm = SystemSettings & {
   smtp_password: string
   turnstile_secret_key: string
   linuxdo_connect_client_secret: string
+  wechat_connect_app_secret: string
+  wechat_connect_open_app_secret: string
+  wechat_connect_mp_app_secret: string
+  wechat_connect_mobile_app_secret: string
+  wechat_connect_open_enabled: boolean
+  wechat_connect_mp_enabled: boolean
+  wechat_connect_mobile_enabled: boolean
   epay_key: string
   oidc_connect_client_secret: string
+  force_email_on_third_party_signup: boolean
+  openai_advanced_scheduler_enabled: boolean
 }
 
 const form = reactive<SettingsForm>({
@@ -3336,15 +3858,18 @@ const form = reactive<SettingsForm>({
   auth_source_default_wechat_subscriptions: [],
   auth_source_default_wechat_grant_on_signup: false,
   auth_source_default_wechat_grant_on_first_bind: false,
-  // WeChat Connect（main 新增，当前 SettingsView UI 未实现控件，仅占位以通过类型检查）
   wechat_connect_enabled: false,
   wechat_connect_app_id: '',
+  wechat_connect_app_secret: '',
   wechat_connect_app_secret_configured: false,
   wechat_connect_open_app_id: '',
+  wechat_connect_open_app_secret: '',
   wechat_connect_open_app_secret_configured: false,
   wechat_connect_mp_app_id: '',
+  wechat_connect_mp_app_secret: '',
   wechat_connect_mp_app_secret_configured: false,
   wechat_connect_mobile_app_id: '',
+  wechat_connect_mobile_app_secret: '',
   wechat_connect_mobile_app_secret_configured: false,
   wechat_connect_open_enabled: false,
   wechat_connect_mp_enabled: false,
@@ -3485,6 +4010,33 @@ const form = reactive<SettingsForm>({
   account_quota_notify_enabled: false,
   account_quota_notify_emails: [] as NotifyEmailEntry[]
 })
+
+const authSourceDefaults = reactive<AuthSourceDefaultsState>(
+  buildAuthSourceDefaultsState({})
+)
+
+const authSourceDefaultsMeta = computed(() => [
+  {
+    source: 'email' as AuthSourceType,
+    title: t('admin.settings.authSourceDefaults.sources.email.title'),
+    description: t('admin.settings.authSourceDefaults.sources.email.description'),
+  },
+  {
+    source: 'linuxdo' as AuthSourceType,
+    title: t('admin.settings.authSourceDefaults.sources.linuxdo.title'),
+    description: t('admin.settings.authSourceDefaults.sources.linuxdo.description'),
+  },
+  {
+    source: 'oidc' as AuthSourceType,
+    title: t('admin.settings.authSourceDefaults.sources.oidc.title'),
+    description: t('admin.settings.authSourceDefaults.sources.oidc.description'),
+  },
+  {
+    source: 'wechat' as AuthSourceType,
+    title: t('admin.settings.authSourceDefaults.sources.wechat.title'),
+    description: t('admin.settings.authSourceDefaults.sources.wechat.description'),
+  },
+])
 
 // Proxies for web search emulation ProxySelector
 const webSearchProxies = ref<Proxy[]>([])
@@ -3753,6 +4305,69 @@ async function setAndCopyLinuxdoRedirectUrl() {
   await copyToClipboard(url, t('admin.settings.linuxdo.redirectUrlSetAndCopied'))
 }
 
+const wechatRedirectUrlSuggestion = computed(() => {
+  if (typeof window === 'undefined') return ''
+  const origin =
+    window.location.origin || `${window.location.protocol}//${window.location.host}`
+  return `${origin}/api/v1/auth/oauth/wechat/callback`
+})
+
+function syncWeChatConnectMode(preferredMode?: WeChatConnectMode) {
+  if (form.wechat_connect_mp_enabled && form.wechat_connect_mobile_enabled) {
+    if (preferredMode === 'mobile') {
+      form.wechat_connect_mp_enabled = false
+    } else {
+      form.wechat_connect_mobile_enabled = false
+    }
+  }
+
+  const capabilities = resolveWeChatConnectModeCapabilities(
+    form.wechat_connect_open_enabled,
+    form.wechat_connect_mp_enabled,
+    form.wechat_connect_mobile_enabled,
+    form.wechat_connect_mode
+  )
+  form.wechat_connect_open_enabled = capabilities.openEnabled
+  form.wechat_connect_mp_enabled = capabilities.mpEnabled
+  form.wechat_connect_mobile_enabled = capabilities.mobileEnabled
+  form.wechat_connect_mode = deriveWeChatConnectStoredMode(
+    capabilities.openEnabled,
+    capabilities.mpEnabled,
+    capabilities.mobileEnabled,
+    form.wechat_connect_mode
+  )
+  form.wechat_connect_scopes = defaultWeChatConnectScopesForMode(form.wechat_connect_mode)
+}
+
+function handleWeChatOpenEnabledChange(value: boolean) {
+  form.wechat_connect_open_enabled = value
+  syncWeChatConnectMode(value ? 'open' : undefined)
+}
+
+function handleWeChatMPEnabledChange(value: boolean) {
+  form.wechat_connect_mp_enabled = value
+  if (value) {
+    form.wechat_connect_mobile_enabled = false
+  }
+  syncWeChatConnectMode(value ? 'mp' : undefined)
+}
+
+function handleWeChatMobileEnabledChange(value: boolean) {
+  form.wechat_connect_mobile_enabled = value
+  if (value) {
+    form.wechat_connect_mp_enabled = false
+  }
+  syncWeChatConnectMode(value ? 'mobile' : undefined)
+}
+
+async function setAndCopyWeChatRedirectUrl() {
+  const url = wechatRedirectUrlSuggestion.value
+  if (!url) return
+
+  form.wechat_connect_redirect_url = url
+  await copyToClipboard(url, t('admin.settings.wechatConnect.redirectUrlSetAndCopied'))
+}
+
 const oidcRedirectUrlSuggestion = computed(() => {
   if (typeof window === 'undefined') return ''
   const origin =
@@ -3852,16 +4467,10 @@ async function loadSettings() {
         (form as Record<string, unknown>)[key] = value
       }
     }
+    Object.assign(authSourceDefaults, buildAuthSourceDefaultsState(settings))
     form.epay_key = ''
     form.backend_mode_enabled = settings.backend_mode_enabled
-    form.default_subscriptions = Array.isArray(settings.default_subscriptions)
-      ? settings.default_subscriptions
-          .filter((item) => item.group_id > 0 && item.validity_days > 0)
-          .map((item) => ({
-            group_id: item.group_id,
-            validity_days: item.validity_days
-          }))
-      : []
+    form.default_subscriptions = normalizeDefaultSubscriptionSettings(settings.default_subscriptions)
     registrationEmailSuffixWhitelistTags.value = normalizeRegistrationEmailSuffixDomains(
       settings.registration_email_suffix_whitelist
     )
@@ -3873,6 +4482,46 @@ async function loadSettings() {
     smtpPasswordManuallyEdited.value = false
     form.turnstile_secret_key = ''
     form.linuxdo_connect_client_secret = ''
+    form.wechat_connect_app_secret = ''
+    form.wechat_connect_open_app_secret = ''
+    form.wechat_connect_mp_app_secret = ''
+    form.wechat_connect_mobile_app_secret = ''
+    const wechatCapabilities = resolveWeChatConnectModeCapabilities(
+      settings.wechat_connect_open_enabled,
+      settings.wechat_connect_mp_enabled,
+      settings.wechat_connect_mobile_enabled,
+      settings.wechat_connect_mode
+    )
+    form.wechat_connect_open_enabled = wechatCapabilities.openEnabled
+    form.wechat_connect_mp_enabled = wechatCapabilities.mpEnabled
+    form.wechat_connect_mobile_enabled = wechatCapabilities.mobileEnabled
+    form.wechat_connect_mode = deriveWeChatConnectStoredMode(
+      wechatCapabilities.openEnabled,
+      wechatCapabilities.mpEnabled,
+      wechatCapabilities.mobileEnabled,
+      settings.wechat_connect_mode
+    )
+    const legacyWeChatAppID = String(settings.wechat_connect_app_id || '').trim()
+    const legacyWeChatSecretConfigured = Boolean(settings.wechat_connect_app_secret_configured)
+    if (!form.wechat_connect_open_app_id && wechatCapabilities.openEnabled) {
+      form.wechat_connect_open_app_id = legacyWeChatAppID
+    }
+    if (!form.wechat_connect_mp_app_id && wechatCapabilities.mpEnabled) {
+      form.wechat_connect_mp_app_id = legacyWeChatAppID
+    }
+    if (!form.wechat_connect_mobile_app_id && wechatCapabilities.mobileEnabled) {
+      form.wechat_connect_mobile_app_id = legacyWeChatAppID
+    }
+    if (!form.wechat_connect_open_app_secret_configured && wechatCapabilities.openEnabled) {
+      form.wechat_connect_open_app_secret_configured = legacyWeChatSecretConfigured
+    }
+    if (!form.wechat_connect_mp_app_secret_configured && wechatCapabilities.mpEnabled) {
+      form.wechat_connect_mp_app_secret_configured = legacyWeChatSecretConfigured
+    }
+    if (!form.wechat_connect_mobile_app_secret_configured && wechatCapabilities.mobileEnabled) {
+      form.wechat_connect_mobile_app_secret_configured = legacyWeChatSecretConfigured
+    }
+    form.wechat_connect_scopes = defaultWeChatConnectScopesForMode(form.wechat_connect_mode)
     form.oidc_connect_client_secret = ''
 
     // Load web search emulation config separately
@@ -3898,8 +4547,9 @@ async function loadSubscriptionGroups() {
 
 function addDefaultSubscription() {
   if (subscriptionGroups.value.length === 0) return
-  const existing = new Set(form.default_subscriptions.map((item) => item.group_id))
-  const candidate = subscriptionGroups.value.find((group) => !existing.has(group.id))
+  const candidate = findNextAvailableSubscriptionGroup(
+    form.default_subscriptions.map((item) => item.group_id)
+  )
   if (!candidate) return
   form.default_subscriptions.push({
     group_id: candidate.id,
@@ -3909,6 +4559,41 @@ function addDefaultSubscription() {
 
 function removeDefaultSubscription(index: number) {
   form.default_subscriptions.splice(index, 1)
+}
+
+function findNextAvailableSubscriptionGroup(existingGroupIDs: number[]): AdminGroup | undefined {
+  const existing = new Set(existingGroupIDs)
+  return subscriptionGroups.value.find((group) => !existing.has(group.id))
+}
+
+function addAuthSourceDefaultSubscription(source: AuthSourceType) {
+  if (subscriptionGroups.value.length === 0) return
+  const candidate = findNextAvailableSubscriptionGroup(
+    authSourceDefaults[source].subscriptions.map((item) => item.group_id)
+  )
+  if (!candidate) return
+  authSourceDefaults[source].subscriptions.push({
+    group_id: candidate.id,
+    validity_days: 30
+  })
+}
+
+function removeAuthSourceDefaultSubscription(source: AuthSourceType, index: number) {
+  authSourceDefaults[source].subscriptions.splice(index, 1)
+}
+
+function findDuplicateDefaultSubscription(
+  subscriptions: DefaultSubscriptionSetting[]
+): DefaultSubscriptionSetting | undefined {
+  const seenGroupIDs = new Set<number>()
+
+  return subscriptions.find((item) => {
+    if (seenGroupIDs.has(item.group_id)) {
+      return true
+    }
+    seenGroupIDs.add(item.group_id)
+    return false
+  })
 }
 
 async function saveSettings() {
@@ -3945,26 +4630,45 @@ async function saveSettings() {
     form.table_default_page_size = normalizedTableDefaultPageSize
     form.table_page_size_options = normalizedTablePageSizeOptions
 
-    const normalizedDefaultSubscriptions = form.default_subscriptions
-      .filter((item) => item.group_id > 0 && item.validity_days > 0)
-      .map((item: DefaultSubscriptionSetting) => ({
-        group_id: item.group_id,
-        validity_days: Math.min(36500, Math.max(1, Math.floor(item.validity_days)))
-      }))
+    const normalizedDefaultSubscriptions = normalizeDefaultSubscriptionSettings(
+      form.default_subscriptions
+    )
 
-    const seenGroupIDs = new Set<number>()
-    const duplicateDefaultSubscription = normalizedDefaultSubscriptions.find((item) => {
-      if (seenGroupIDs.has(item.group_id)) {
-        return true
-      }
-      seenGroupIDs.add(item.group_id)
-      return false
-    })
+    const duplicateDefaultSubscription = findDuplicateDefaultSubscription(
+      normalizedDefaultSubscriptions
+    )
     if (duplicateDefaultSubscription) {
       appStore.showError(
         t('admin.settings.defaults.defaultSubscriptionsDuplicate', {
           groupId: duplicateDefaultSubscription.group_id
         })
+      )
+      return
+    }
+
+    for (const authSource of authSourceDefaultsMeta.value) {
+      authSourceDefaults[authSource.source].subscriptions = normalizeDefaultSubscriptionSettings(
+        authSourceDefaults[authSource.source].subscriptions
+      )
+      const duplicate = findDuplicateDefaultSubscription(
+        authSourceDefaults[authSource.source].subscriptions
+      )
+      if (duplicate) {
+        appStore.showError(
+          `${authSource.title}: ${t('admin.settings.defaults.defaultSubscriptionsDuplicate', {
+            groupId: duplicate.group_id
+          })}`
+        )
+        return
+      }
+    }
+
+    if (form.wechat_connect_mp_enabled && form.wechat_connect_mobile_enabled) {
+      appStore.showError(
+        localText(
+          '公众号和移动应用不能同时启用。',
+          'Official Account and Mobile App cannot be enabled at the same time.'
+        )
       )
       return
     }
@@ -3982,6 +4686,13 @@ async function saveSettings() {
     // Optional URL fields: auto-clear invalid values so they don't cause backend 400 errors
     if (!isValidHttpUrl(form.frontend_url)) form.frontend_url = ''
     if (!isValidHttpUrl(form.doc_url)) form.doc_url = ''
+    syncWeChatConnectMode()
+    const wechatStoredMode = deriveWeChatConnectStoredMode(
+      form.wechat_connect_open_enabled,
+      form.wechat_connect_mp_enabled,
+      form.wechat_connect_mobile_enabled,
+      form.wechat_connect_mode
+    )
 
     const payload: UpdateSettingsRequest = {
       registration_enabled: form.registration_enabled,
@@ -3996,6 +4707,8 @@ async function saveSettings() {
       default_balance: form.default_balance,
       default_concurrency: form.default_concurrency,
       default_subscriptions: normalizedDefaultSubscriptions,
+      force_email_on_third_party_signup: form.force_email_on_third_party_signup,
+      default_user_rpm_limit: form.default_user_rpm_limit,
       site_name: form.site_name,
       site_logo: form.site_logo,
       site_subtitle: form.site_subtitle,
@@ -4031,6 +4744,26 @@ async function saveSettings() {
       linuxdo_connect_client_id: form.linuxdo_connect_client_id,
       linuxdo_connect_client_secret: form.linuxdo_connect_client_secret || undefined,
       linuxdo_connect_redirect_url: form.linuxdo_connect_redirect_url,
+      wechat_connect_enabled: form.wechat_connect_enabled,
+      wechat_connect_app_id:
+        form.wechat_connect_open_app_id ||
+        form.wechat_connect_mp_app_id ||
+        form.wechat_connect_mobile_app_id ||
+        form.wechat_connect_app_id,
+      wechat_connect_app_secret: form.wechat_connect_app_secret || undefined,
+      wechat_connect_open_app_id: form.wechat_connect_open_app_id,
+      wechat_connect_open_app_secret: form.wechat_connect_open_app_secret || undefined,
+      wechat_connect_mp_app_id: form.wechat_connect_mp_app_id,
+      wechat_connect_mp_app_secret: form.wechat_connect_mp_app_secret || undefined,
+      wechat_connect_mobile_app_id: form.wechat_connect_mobile_app_id,
+      wechat_connect_mobile_app_secret: form.wechat_connect_mobile_app_secret || undefined,
+      wechat_connect_open_enabled: form.wechat_connect_open_enabled,
+      wechat_connect_mp_enabled: form.wechat_connect_mp_enabled,
+      wechat_connect_mobile_enabled: form.wechat_connect_mobile_enabled,
+      wechat_connect_mode: wechatStoredMode,
+      wechat_connect_scopes: defaultWeChatConnectScopesForMode(wechatStoredMode),
+      wechat_connect_redirect_url: form.wechat_connect_redirect_url,
+      wechat_connect_frontend_redirect_url: form.wechat_connect_frontend_redirect_url,
       oidc_connect_enabled: form.oidc_connect_enabled,
       oidc_connect_provider_name: form.oidc_connect_provider_name,
       oidc_connect_client_id: form.oidc_connect_client_id,
@@ -4063,6 +4796,7 @@ async function saveSettings() {
       min_claude_code_version: form.min_claude_code_version,
       max_claude_code_version: form.max_claude_code_version,
       allow_ungrouped_key_scheduling: form.allow_ungrouped_key_scheduling,
+      openai_advanced_scheduler_enabled: form.openai_advanced_scheduler_enabled,
       platform_selling_price: form.platform_selling_price,
       recharge_enabled: form.recharge_enabled,
       recharge_min_amount: form.recharge_min_amount,
@@ -4103,12 +4837,15 @@ async function saveSettings() {
       account_quota_notify_emails: (form.account_quota_notify_emails || []).filter((e) => e.email.trim() !== ''),
     }
 
+    appendAuthSourceDefaultsToUpdateRequest(payload, authSourceDefaults)
+
     const updated = await adminAPI.settings.updateSettings(payload)
     for (const [key, value] of Object.entries(updated)) {
       if (value !== null && value !== undefined) {
         (form as Record<string, unknown>)[key] = value
       }
     }
+    Object.assign(authSourceDefaults, buildAuthSourceDefaultsState(updated))
     registrationEmailSuffixWhitelistTags.value = normalizeRegistrationEmailSuffixDomains(
       updated.registration_email_suffix_whitelist
     )
@@ -4120,7 +4857,27 @@ async function saveSettings() {
     smtpPasswordManuallyEdited.value = false
     form.turnstile_secret_key = ''
     form.linuxdo_connect_client_secret = ''
+    form.wechat_connect_app_secret = ''
+    form.wechat_connect_open_app_secret = ''
+    form.wechat_connect_mp_app_secret = ''
+    form.wechat_connect_mobile_app_secret = ''
     form.epay_key = ''
+    const updatedWechatCapabilities = resolveWeChatConnectModeCapabilities(
+      updated.wechat_connect_open_enabled,
+      updated.wechat_connect_mp_enabled,
+      updated.wechat_connect_mobile_enabled,
+      updated.wechat_connect_mode
+    )
+    form.wechat_connect_open_enabled = updatedWechatCapabilities.openEnabled
+    form.wechat_connect_mp_enabled = updatedWechatCapabilities.mpEnabled
+    form.wechat_connect_mobile_enabled = updatedWechatCapabilities.mobileEnabled
+    form.wechat_connect_mode = deriveWeChatConnectStoredMode(
+      updatedWechatCapabilities.openEnabled,
+      updatedWechatCapabilities.mpEnabled,
+      updatedWechatCapabilities.mobileEnabled,
+      updated.wechat_connect_mode
+    )
+    form.wechat_connect_scopes = defaultWeChatConnectScopesForMode(form.wechat_connect_mode)
     form.oidc_connect_client_secret = ''
     // Save web search emulation config separately (errors handled internally)
     const wsOk = await saveWebSearchConfig()
@@ -4622,7 +5379,10 @@ async function handleToggleField(provider: ProviderInstance, field: 'enabled' | 
   }
   try {
     await adminAPI.payment.updateProvider(provider.id, payload)
-    if (field === 'enabled') provider.enabled = newValue
+    if (field === 'enabled') {
+      provider.enabled = newValue
+      await loadProviders()
+    }
     else if (field === 'refund_enabled') {
       provider.refund_enabled = newValue
       if (!newValue) provider.allow_user_refund = false
