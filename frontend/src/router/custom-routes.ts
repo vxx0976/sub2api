@@ -161,18 +161,8 @@ export const customRoutes: RouteRecordRaw[] = [
   },
 
   // ==================== Custom Admin Routes ====================
-  {
-    path: '/admin/channels',
-    name: 'AdminChannels',
-    component: () => import('@/views/admin/ChannelsView.vue'),
-    meta: {
-      requiresAuth: true,
-      requiresAdmin: true,
-      title: 'Channel Management',
-      titleKey: 'admin.channels.title',
-      descriptionKey: 'admin.channels.description'
-    }
-  },
+  // 注意：/admin/channels 路由由 router/index.ts 统一注册（redirect → /admin/channels/pricing）
+  // 不要在这里重复定义，否则 name='AdminChannels' 会和 index.ts 冲突导致页面打不开
   {
     path: '/admin/merchants',
     name: 'AdminMerchants',
