@@ -204,9 +204,6 @@ func channelToResponse(ch *service.Channel) *channelResponse {
 		resp.BalanceHeaders = map[string]string{}
 	}
 	resp.BillingModelSource = ch.BillingModelSource
-	if resp.BillingModelSource == "" {
-		resp.BillingModelSource = service.BillingModelSourceChannelMapped
-	}
 	if resp.GroupIDs == nil {
 		resp.GroupIDs = []int64{}
 	}

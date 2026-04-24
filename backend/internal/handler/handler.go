@@ -7,35 +7,37 @@ import (
 
 // AdminHandlers contains all admin-related HTTP handlers
 type AdminHandlers struct {
-	Dashboard             *admin.DashboardHandler
-	User                  *admin.UserHandler
-	Group                 *admin.GroupHandler
-	Account               *admin.AccountHandler
-	Announcement          *admin.AnnouncementHandler
-	DataManagement        *admin.DataManagementHandler
-	Backup                *admin.BackupHandler
-	OAuth                 *admin.OAuthHandler
-	OpenAIOAuth           *admin.OpenAIOAuthHandler
-	GeminiOAuth           *admin.GeminiOAuthHandler
-	AntigravityOAuth      *admin.AntigravityOAuthHandler
-	Proxy                 *admin.ProxyHandler
-	Redeem                *admin.RedeemHandler
-	Promo                 *admin.PromoHandler
-	Setting               *admin.SettingHandler
-	Ops                   *admin.OpsHandler
-	System                *admin.SystemHandler
-	Subscription          *admin.SubscriptionHandler
-	Usage                 *admin.UsageHandler
-	UserAttribute         *admin.UserAttributeHandler
-	Referral              *admin.ReferralHandler
-	Channel               *admin.ChannelHandler
-	ErrorPassthrough      *admin.ErrorPassthroughHandler
-	TLSFingerprintProfile *admin.TLSFingerprintProfileHandler
-	APIKey                *admin.AdminAPIKeyHandler
-	ScheduledTest         *admin.ScheduledTestHandler
-	Merchant              *admin.MerchantHandler
-	AdminWithdrawal       *admin.AdminWithdrawalHandler
-	Payment               *admin.PaymentHandler
+	Dashboard              *admin.DashboardHandler
+	User                   *admin.UserHandler
+	Group                  *admin.GroupHandler
+	Account                *admin.AccountHandler
+	Announcement           *admin.AnnouncementHandler
+	DataManagement         *admin.DataManagementHandler
+	Backup                 *admin.BackupHandler
+	OAuth                  *admin.OAuthHandler
+	OpenAIOAuth            *admin.OpenAIOAuthHandler
+	GeminiOAuth            *admin.GeminiOAuthHandler
+	AntigravityOAuth       *admin.AntigravityOAuthHandler
+	Proxy                  *admin.ProxyHandler
+	Redeem                 *admin.RedeemHandler
+	Promo                  *admin.PromoHandler
+	Setting                *admin.SettingHandler
+	Ops                    *admin.OpsHandler
+	System                 *admin.SystemHandler
+	Subscription           *admin.SubscriptionHandler
+	Usage                  *admin.UsageHandler
+	UserAttribute          *admin.UserAttributeHandler
+	Referral               *admin.ReferralHandler
+	Channel                *admin.ChannelHandler
+	ChannelMonitor         *admin.ChannelMonitorHandler
+	ChannelMonitorTemplate *admin.ChannelMonitorRequestTemplateHandler
+	ErrorPassthrough       *admin.ErrorPassthroughHandler
+	TLSFingerprintProfile  *admin.TLSFingerprintProfileHandler
+	APIKey                 *admin.AdminAPIKeyHandler
+	ScheduledTest          *admin.ScheduledTestHandler
+	Merchant               *admin.MerchantHandler
+	AdminWithdrawal        *admin.AdminWithdrawalHandler
+	Payment                *admin.PaymentHandler
 }
 
 // ResellerHandlers contains all reseller-related HTTP handlers
@@ -53,25 +55,27 @@ type ResellerHandlers struct {
 
 // Handlers contains all HTTP handlers
 type Handlers struct {
-	Auth           *AuthHandler
-	User           *UserHandler
-	APIKey         *APIKeyHandler
-	Usage          *UsageHandler
-	Redeem         *RedeemHandler
-	Subscription   *SubscriptionHandler
-	Announcement   *AnnouncementHandler
-	Admin          *AdminHandlers
-	Reseller       *ResellerHandlers
-	Gateway        *GatewayHandler
-	OpenAIGateway  *OpenAIGatewayHandler
-	Setting        *SettingHandler
-	Referral       *ReferralHandler
-	Totp           *TotpHandler
-	KeyQuery       *KeyQueryHandler
-	Recharge       *RechargeHandler
-	Order          *OrderHandler
-	Payment        *PaymentHandler
-	PaymentWebhook *PaymentWebhookHandler
+	Auth             *AuthHandler
+	User             *UserHandler
+	APIKey           *APIKeyHandler
+	Usage            *UsageHandler
+	Redeem           *RedeemHandler
+	Subscription     *SubscriptionHandler
+	Announcement     *AnnouncementHandler
+	ChannelMonitor   *ChannelMonitorUserHandler
+	Admin            *AdminHandlers
+	Reseller         *ResellerHandlers
+	Gateway          *GatewayHandler
+	OpenAIGateway    *OpenAIGatewayHandler
+	Setting          *SettingHandler
+	Referral         *ReferralHandler
+	Totp             *TotpHandler
+	KeyQuery         *KeyQueryHandler
+	Recharge         *RechargeHandler
+	Order            *OrderHandler
+	Payment          *PaymentHandler
+	PaymentWebhook   *PaymentWebhookHandler
+	AvailableChannel *AvailableChannelHandler
 }
 
 // BuildInfo contains build-time information

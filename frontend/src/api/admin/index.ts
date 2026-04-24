@@ -31,6 +31,8 @@ import alimpayConfigAPI from './alimpayConfig'
 import backupAPI from './backup'
 import tlsFingerprintProfileAPI from './tlsFingerprintProfile'
 import channelsAPI from './channels'
+import channelMonitorAPI from './channelMonitor'
+import channelMonitorTemplateAPI from './channelMonitorTemplate'
 import adminPaymentAPI from './payment'
 
 /**
@@ -65,6 +67,8 @@ export const adminAPI = {
   alimpayConfig: alimpayConfigAPI,
   backup: backupAPI,
   tlsFingerprintProfiles: tlsFingerprintProfileAPI,
+  channelMonitor: channelMonitorAPI,
+  channelMonitorTemplate: channelMonitorTemplateAPI,
   payment: adminPaymentAPI
 }
 
@@ -97,6 +101,8 @@ export {
   alimpayConfigAPI,
   backupAPI,
   tlsFingerprintProfileAPI,
+  channelMonitorAPI,
+  channelMonitorTemplateAPI,
   adminPaymentAPI
 }
 

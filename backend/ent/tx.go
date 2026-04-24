@@ -30,6 +30,14 @@ type Tx struct {
 	AuthIdentityChannel *AuthIdentityChannelClient
 	// Channel is the client for interacting with the Channel builders.
 	Channel *ChannelClient
+	// ChannelMonitor is the client for interacting with the ChannelMonitor builders.
+	ChannelMonitor *ChannelMonitorClient
+	// ChannelMonitorDailyRollup is the client for interacting with the ChannelMonitorDailyRollup builders.
+	ChannelMonitorDailyRollup *ChannelMonitorDailyRollupClient
+	// ChannelMonitorHistory is the client for interacting with the ChannelMonitorHistory builders.
+	ChannelMonitorHistory *ChannelMonitorHistoryClient
+	// ChannelMonitorRequestTemplate is the client for interacting with the ChannelMonitorRequestTemplate builders.
+	ChannelMonitorRequestTemplate *ChannelMonitorRequestTemplateClient
 	// ErrorPassthroughRule is the client for interacting with the ErrorPassthroughRule builders.
 	ErrorPassthroughRule *ErrorPassthroughRuleClient
 	// FailoverGroupEvent is the client for interacting with the FailoverGroupEvent builders.
@@ -229,6 +237,10 @@ func (tx *Tx) init() {
 	tx.AuthIdentity = NewAuthIdentityClient(tx.config)
 	tx.AuthIdentityChannel = NewAuthIdentityChannelClient(tx.config)
 	tx.Channel = NewChannelClient(tx.config)
+	tx.ChannelMonitor = NewChannelMonitorClient(tx.config)
+	tx.ChannelMonitorDailyRollup = NewChannelMonitorDailyRollupClient(tx.config)
+	tx.ChannelMonitorHistory = NewChannelMonitorHistoryClient(tx.config)
+	tx.ChannelMonitorRequestTemplate = NewChannelMonitorRequestTemplateClient(tx.config)
 	tx.ErrorPassthroughRule = NewErrorPassthroughRuleClient(tx.config)
 	tx.FailoverGroupEvent = NewFailoverGroupEventClient(tx.config)
 	tx.Group = NewGroupClient(tx.config)
