@@ -37,27 +37,17 @@ type AlipayMonitor struct {
 	wg     sync.WaitGroup
 
 	// Track matched bill IDs to prevent duplicate matching
-	mu          sync.Mutex
+	mu           sync.Mutex
 	matchedBills map[string]time.Time // alipayOrderNo -> matchTime
 }
 
 // NewAlipayMonitor creates a new payment monitor
 func NewAlipayMonitor(alipay *AlipayPayment, orderMatcher OrderMatcher) *AlipayMonitor {
-	interval := time.Duration(alipay.cfg.MonitorIntervalSeconds) * time.Second
-	if interval < 5*time.Second {
-		interval = 10 * time.Second
-	}
-
-	queryMinutes := alipay.cfg.QueryMinutesBack
-	if queryMinutes <= 0 {
-		queryMinutes = 30
-	}
-
 	return &AlipayMonitor{
 		alipay:       alipay,
 		orderMatcher: orderMatcher,
-		interval:     interval,
-		queryMinutes: queryMinutes,
+		interval:     alipay.MonitorInterval(),
+		queryMinutes: alipay.QueryMinutesBack(),
 		stopCh:       make(chan struct{}),
 		matchedBills: make(map[string]time.Time),
 	}
@@ -118,7 +108,9 @@ func (m *AlipayMonitor) runCycle() {
 	loc := time.FixedZone("CST", 8*3600)
 	now := time.Now().In(loc)
 	endTime := now
-	startTime := now.Add(-time.Duration(m.queryMinutes)*time.Minute - 5*time.Minute)
+	queryMinutes := m.alipay.QueryMinutesBack()
+	m.queryMinutes = queryMinutes
+	startTime := now.Add(-time.Duration(queryMinutes)*time.Minute - 5*time.Minute)
 
 	bills, err := m.alipay.QueryAccountBills(ctx, startTime, endTime)
 	if err != nil {
@@ -132,7 +124,7 @@ func (m *AlipayMonitor) runCycle() {
 		return
 	}
 
-	log.Printf("[AlipayMonitor] Found %d bills, %d pending orders, mode=%s", len(bills), len(orders), m.alipay.cfg.Mode)
+	log.Printf("[AlipayMonitor] Found %d bills, %d pending orders, mode=%s", len(bills), len(orders), m.alipay.Mode())
 	for i, b := range bills {
 		log.Printf("[AlipayMonitor] Bill[%d]: orderNo=%s, amount=%s, direction=%s, type=%s, memo=%s, time=%s",
 			i, b.AlipayOrderNo, b.TransAmount, b.Direction, b.Type, b.TransMemo, b.TransDt)
@@ -169,7 +161,7 @@ func (m *AlipayMonitor) markMatched(alipayOrderNo string) {
 }
 
 func (m *AlipayMonitor) matchBills(ctx context.Context, orders []PendingOrder, bills []AccountBill) {
-	if m.alipay.cfg.Mode == "transfer" {
+	if m.alipay.Mode() == "transfer" {
 		m.matchTransferBills(ctx, orders, bills)
 	} else {
 		m.matchBusinessQRBills(ctx, orders, bills)
@@ -177,10 +169,7 @@ func (m *AlipayMonitor) matchBills(ctx context.Context, orders []PendingOrder, b
 }
 
 func (m *AlipayMonitor) matchBusinessQRBills(ctx context.Context, orders []PendingOrder, bills []AccountBill) {
-	tolerance := time.Duration(m.alipay.cfg.MatchToleranceSeconds) * time.Second
-	if tolerance == 0 {
-		tolerance = 5 * time.Minute
-	}
+	tolerance := m.alipay.MatchTolerance()
 
 	// Sort orders by CreatedAt descending - prefer matching newer orders first
 	sort.Slice(orders, func(i, j int) bool {
@@ -251,7 +240,6 @@ func (m *AlipayMonitor) matchBusinessQRBills(ctx context.Context, orders []Pendi
 			if err := m.orderMatcher.ConfirmOrderPaid(ctx, order.OrderNo, bill.AlipayOrderNo, "alipay"); err != nil {
 				log.Printf("[AlipayMonitor] Failed to confirm order %s: %v", order.OrderNo, err)
 			} else {
-				m.alipay.ReleaseAmount(order.PaymentAmount)
 				m.markMatched(bill.AlipayOrderNo)
 			}
 			matched = true
@@ -270,13 +258,23 @@ func (m *AlipayMonitor) matchTransferBills(ctx context.Context, orders []Pending
 		orderMap[o.OrderNo] = o
 	}
 
+	tolerance := m.alipay.MatchTolerance()
+	loc := time.FixedZone("CST", 8*3600)
+
 	for _, bill := range bills {
 		if m.isMatched(bill.AlipayOrderNo) {
+			continue
+		}
+		if bill.Direction == "支出" {
 			continue
 		}
 
 		amount := bill.TransAmountFloat()
 		if amount <= 0 {
+			continue
+		}
+		billTime, err := time.ParseInLocation("2006-01-02 15:04:05", bill.TransDt, loc)
+		if err != nil {
 			continue
 		}
 
@@ -287,6 +285,12 @@ func (m *AlipayMonitor) matchTransferBills(ctx context.Context, orders []Pending
 			}
 
 			if math.Abs(amount-order.Amount) > 0.1 {
+				continue
+			}
+			if billTime.Before(order.CreatedAt.Add(-tolerance)) {
+				continue
+			}
+			if order.ExpiredAt != nil && billTime.After(*order.ExpiredAt) {
 				continue
 			}
 

@@ -2,6 +2,8 @@ package repository
 
 import (
 	"context"
+	"fmt"
+	"math"
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/ent"
@@ -18,14 +20,113 @@ func NewOrderRepo(client *ent.Client) service.OrderRepository {
 }
 
 func (r *orderRepo) Create(ctx context.Context, o *service.Order) error {
-	builder := r.client.Order.Create().
+	return createOrder(ctx, r.client, o)
+}
+
+func (r *orderRepo) CreateWithUniquePaymentAmount(ctx context.Context, o *service.Order, baseAmount float64, amountOffset float64, reuseWindow time.Duration) error {
+	if amountOffset <= 0 {
+		amountOffset = 0.01
+	}
+	if reuseWindow <= 0 {
+		reuseWindow = 2 * time.Hour
+	}
+
+	const maxAttempts = 3
+	var lastErr error
+	for attempt := 0; attempt < maxAttempts; attempt++ {
+		tx, err := r.client.Tx(ctx)
+		if err != nil {
+			return err
+		}
+
+		err = createWithUniquePaymentAmountTx(ctx, tx.Client(), o, baseAmount, amountOffset, reuseWindow)
+		if err != nil {
+			_ = tx.Rollback()
+			if ent.IsConstraintError(err) {
+				lastErr = err
+				continue
+			}
+			return err
+		}
+		if err := tx.Commit(); err != nil {
+			if ent.IsConstraintError(err) {
+				lastErr = err
+				continue
+			}
+			return err
+		}
+		return nil
+	}
+	if lastErr != nil {
+		return fmt.Errorf("allocate payment amount: %w", lastErr)
+	}
+	return service.ErrOrderPaymentAmountUnavailable
+}
+
+func createWithUniquePaymentAmountTx(ctx context.Context, client *ent.Client, o *service.Order, baseAmount float64, amountOffset float64, reuseWindow time.Duration) error {
+	candidates := paymentAmountCandidates(baseAmount, amountOffset, 100)
+	cutoff := time.Now().Add(-reuseWindow)
+
+	rows, err := client.Order.Query().
+		Where(
+			order.PaymentAmountIn(candidates...),
+			order.Or(
+				order.StatusEQ("pending"),
+				order.And(
+					order.StatusEQ("expired"),
+					order.ExpiredAtGT(cutoff),
+				),
+			),
+		).
+		All(ctx)
+	if err != nil {
+		return err
+	}
+
+	used := make(map[string]struct{}, len(rows))
+	for _, row := range rows {
+		used[formatPaymentAmount(row.PaymentAmount)] = struct{}{}
+	}
+	for _, candidate := range candidates {
+		if _, ok := used[formatPaymentAmount(candidate)]; ok {
+			continue
+		}
+		o.PaymentAmount = candidate
+		return createOrder(ctx, client, o)
+	}
+	return service.ErrOrderPaymentAmountUnavailable
+}
+
+func paymentAmountCandidates(baseAmount float64, amountOffset float64, limit int) []float64 {
+	baseCents := int64(math.Round(baseAmount * 100))
+	stepCents := int64(math.Round(amountOffset * 100))
+	if stepCents < 1 {
+		stepCents = 1
+	}
+	out := make([]float64, 0, limit)
+	for i := 0; i < limit; i++ {
+		out = append(out, float64(baseCents+int64(i)*stepCents)/100)
+	}
+	return out
+}
+
+func formatPaymentAmount(amount float64) string {
+	return fmt.Sprintf("%.2f", amount)
+}
+
+func createOrder(ctx context.Context, client *ent.Client, o *service.Order) error {
+	builder := client.Order.Create().
 		SetOrderNo(o.OrderNo).
 		SetUserID(o.UserID).
 		SetAmount(o.Amount).
-		SetPaymentAmount(o.PaymentAmount).
 		SetCreditAmount(o.CreditAmount).
 		SetMultiplier(o.Multiplier).
 		SetStatus(o.Status)
+
+	// transfer 模式无需唯一金额匹配；payment_amount 留 NULL 避免命中唯一 partial index
+	if o.PaymentAmount > 0 {
+		builder.SetPaymentAmount(o.PaymentAmount)
+	}
 
 	if o.TradeNo != "" {
 		builder.SetTradeNo(o.TradeNo)

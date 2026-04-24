@@ -376,6 +376,7 @@ export const useAppStore = defineStore('app', () => {
         custom_menu_items: [],
         custom_endpoints: [],
         recharge_enabled: false,
+        alimpay_enabled: false,
         linuxdo_oauth_enabled: false,
         wechat_oauth_enabled: false,
         wechat_oauth_open_enabled: false,

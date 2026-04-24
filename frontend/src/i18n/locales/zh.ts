@@ -453,11 +453,13 @@ export default {
     resellerAnnouncements: '公告管理',
     resellerSettings: '系统设置',
     recharge: '充值',
+    alimpayRecharge: '支付宝充值',
     myOrders: '我的订单',
     orderManagement: '订单管理',
     paymentDashboard: '支付概览',
     paymentConfig: '支付配置',
-    paymentPlans: '订阅套餐'
+    paymentPlans: '订阅套餐',
+    adminAliMPayOrders: '支付宝订单'
   },
 
   // Auth

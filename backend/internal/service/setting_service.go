@@ -471,6 +471,7 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		SettingKeyWeChatConnectFrontendRedirectURL,
 		SettingKeyBackendModeEnabled,
 		SettingKeyRechargeEnabled,
+		SettingKeyAliMPayEnabled,
 		SettingPaymentEnabled,
 		SettingKeyOIDCConnectEnabled,
 		SettingKeyOIDCConnectProviderName,
@@ -566,6 +567,7 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		WeChatOAuthMobileEnabled:         weChatMobileEnabled,
 		BackendModeEnabled:               settings[SettingKeyBackendModeEnabled] == "true",
 		RechargeEnabled:                  settings[SettingKeyRechargeEnabled] == "true",
+		AliMPayEnabled:                   settings[SettingKeyAliMPayEnabled] == "true",
 		PaymentEnabled:                   settings[SettingPaymentEnabled] == "true",
 		OIDCOAuthEnabled:                 oidcEnabled,
 		OIDCOAuthProviderName:            oidcProviderName,
@@ -581,7 +583,6 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 func (s *SettingService) SetOnUpdateCallback(callback func()) {
 	s.onUpdate = callback
 }
-
 
 // SetVersion sets the application version for injection into public settings
 func (s *SettingService) SetVersion(version string) {
@@ -623,6 +624,7 @@ func (s *SettingService) GetPublicSettingsForInjection(ctx context.Context) (any
 		CustomMenuItems                  json.RawMessage      `json:"custom_menu_items"`
 		CustomEndpoints                  json.RawMessage      `json:"custom_endpoints"`
 		RechargeEnabled                  bool                 `json:"recharge_enabled"`
+		AliMPayEnabled                   bool                 `json:"alimpay_enabled"`
 		LinuxDoOAuthEnabled              bool                 `json:"linuxdo_oauth_enabled"`
 		WeChatOAuthEnabled               bool                 `json:"wechat_oauth_enabled"`
 		WeChatOAuthOpenEnabled           bool                 `json:"wechat_oauth_open_enabled"`
@@ -668,6 +670,7 @@ func (s *SettingService) GetPublicSettingsForInjection(ctx context.Context) (any
 		CustomMenuItems:                  filterUserVisibleMenuItems(settings.CustomMenuItems),
 		CustomEndpoints:                  safeRawJSONArray(settings.CustomEndpoints),
 		RechargeEnabled:                  settings.RechargeEnabled,
+		AliMPayEnabled:                   settings.AliMPayEnabled,
 		LinuxDoOAuthEnabled:              settings.LinuxDoOAuthEnabled,
 		WeChatOAuthEnabled:               settings.WeChatOAuthEnabled,
 		WeChatOAuthOpenEnabled:           settings.WeChatOAuthOpenEnabled,
@@ -3229,4 +3232,3 @@ func (s *SettingService) SetAnnouncements(ctx context.Context, announcements []S
 	}
 	return err
 }
-

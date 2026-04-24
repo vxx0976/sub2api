@@ -216,6 +216,7 @@ async function handleSave() {
     hasAlipayPublicKey.value = updated.has_alipay_public_key
     form.private_key = ''
     form.alipay_public_key = ''
+    await appStore.fetchPublicSettings(true)
     appStore.showSuccess(t('admin.settings.alimpay.saveSuccess'))
   } catch (e) {
     appStore.showError(extractApiErrorMessage(e))

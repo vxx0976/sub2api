@@ -1292,5 +1292,7 @@ export default {
     adminMerchants: '商户管理',
     adminMerchantWithdrawals: '提现审核',
     adminRechargeOrders: '充值订单',
+    alimpayRecharge: '支付宝充值',
+    adminAliMPayOrders: '支付宝订单',
   },
 } as const

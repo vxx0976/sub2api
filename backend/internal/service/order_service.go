@@ -39,8 +39,8 @@ type AdminAliMPayConfigUpdate struct {
 	Enabled                *bool    `json:"enabled"`
 	Mode                   *string  `json:"mode"`
 	AppID                  *string  `json:"app_id"`
-	PrivateKey             *string  `json:"private_key"`        // 空字符串 = 保留原值
-	AlipayPublicKey        *string  `json:"alipay_public_key"`  // 空字符串 = 保留原值
+	PrivateKey             *string  `json:"private_key"`       // 空字符串 = 保留原值
+	AlipayPublicKey        *string  `json:"alipay_public_key"` // 空字符串 = 保留原值
 	ServerURL              *string  `json:"server_url"`
 	TransferUserID         *string  `json:"transfer_user_id"`
 	BusinessQRURL          *string  `json:"business_qr_url"`
@@ -170,9 +170,9 @@ func (s *OrderService) GetConfig(ctx context.Context) (*OrderPublicConfig, error
 // CreateOrderAliMPayResult AliMPay 下单返回
 type CreateOrderAliMPayResult struct {
 	Order     *Order
-	QRCodeURL string  // 支付二维码链接（business_qr 模式是商家收款码 URL；transfer 模式是 alipays:// 深链）
-	Mode      string  // business_qr | transfer
-	ExpiresIn int     // 剩余支付秒数
+	QRCodeURL string // 支付二维码链接（business_qr 模式是商家收款码 URL；transfer 模式是 alipays:// 深链）
+	Mode      string // business_qr | transfer
+	ExpiresIn int    // 剩余支付秒数
 }
 
 // CreateOrder 创建 AliMPay 充值订单
@@ -226,23 +226,19 @@ func (s *OrderService) CreateOrder(ctx context.Context, userID int64, amount flo
 	randN, _ := rand.Int(rand.Reader, big.NewInt(1000000))
 	orderNo := fmt.Sprintf("A%s%06d", time.Now().Format("20060102150405"), randN.Int64())
 
-	// 5. 调 AliMPay SDK 分配唯一金额/生成二维码
-	payInfo, err := s.alipay.GeneratePaymentInfo(orderNo, amount)
-	if err != nil {
-		return nil, fmt.Errorf("generate payment info: %w", err)
-	}
-
-	// 6. 落库
+	// 5. 落库。business_qr 的唯一支付金额必须基于数据库里的活跃订单分配，
+	// 避免进程重启或多实例部署后复用未完成订单的金额。
 	expiresIn := s.alipay.OrderTimeoutSeconds()
 	if expiresIn <= 0 {
 		expiresIn = 300 // 默认 5 分钟
 	}
 	expiredAt := time.Now().Add(time.Duration(expiresIn) * time.Second)
+	mode := s.alipay.Mode()
 	order := &Order{
 		OrderNo:       orderNo,
 		UserID:        userID,
 		Amount:        amount,
-		PaymentAmount: payInfo.PaymentAmount,
+		PaymentAmount: amount,
 		CreditAmount:  creditAmount,
 		Multiplier:    multiplier,
 		Status:        "pending",
@@ -250,10 +246,24 @@ func (s *OrderService) CreateOrder(ctx context.Context, userID int64, amount flo
 		SourceDomain:  sourceDomain,
 		ExpiredAt:     &expiredAt,
 	}
-	if err := s.orderRepo.Create(ctx, order); err != nil {
-		// 释放已分配的金额池
-		s.alipay.ReleaseAmount(payInfo.PaymentAmount)
-		return nil, fmt.Errorf("create order: %w", err)
+	if mode == "transfer" {
+		// transfer 模式靠订单号 memo 匹配账单，不需要唯一支付金额；
+		// DB 里 payment_amount 留 NULL 避免和 business_qr 订单抢唯一 partial index。
+		order.PaymentAmount = 0
+		if err := s.orderRepo.Create(ctx, order); err != nil {
+			return nil, fmt.Errorf("create order: %w", err)
+		}
+		order.PaymentAmount = amount // 回填给前端展示
+	} else {
+		if err := s.orderRepo.CreateWithUniquePaymentAmount(ctx, order, amount, s.alipay.AmountOffset(), s.alipay.AmountReuseWindow()); err != nil {
+			return nil, fmt.Errorf("create order: %w", err)
+		}
+	}
+
+	// 6. 生成支付信息。business_qr 模式使用数据库分配后的 payment_amount。
+	payInfo, err := s.alipay.GeneratePaymentInfo(orderNo, order.PaymentAmount)
+	if err != nil {
+		return nil, fmt.Errorf("generate payment info: %w", err)
 	}
 
 	return &CreateOrderAliMPayResult{

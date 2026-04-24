@@ -9,6 +9,16 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// effectivePaymentAmount 返回展示给用户的支付金额：
+// business_qr 模式订单 DB 里存了唯一 payment_amount；transfer 模式 DB 留 NULL（以避免唯一索引冲突），
+// 此时用 amount 作为展示金额（transfer 用户只需支付原金额 + 备注订单号即可）。
+func effectivePaymentAmount(paymentAmount, amount float64) float64 {
+	if paymentAmount > 0 {
+		return paymentAmount
+	}
+	return amount
+}
+
 // OrderHandler AliMPay 个人免签充值接口
 // 和 RechargeHandler 平级：业务都是"CNY 入账 → USD 余额"，差异是支付通道
 type OrderHandler struct {
@@ -89,7 +99,7 @@ func (h *OrderHandler) GetOrderStatus(c *gin.Context) {
 	response.Success(c, gin.H{
 		"order_no":       o.OrderNo,
 		"amount":         o.Amount,
-		"payment_amount": o.PaymentAmount,
+		"payment_amount": effectivePaymentAmount(o.PaymentAmount, o.Amount),
 		"credit_amount":  o.CreditAmount,
 		"status":         o.Status,
 		"paid_at":        o.PaidAt,
@@ -127,7 +137,7 @@ func (h *OrderHandler) ListOrders(c *gin.Context) {
 			"trade_no":       o.TradeNo,
 			"user_id":        o.UserID,
 			"amount":         o.Amount,
-			"payment_amount": o.PaymentAmount,
+			"payment_amount": effectivePaymentAmount(o.PaymentAmount, o.Amount),
 			"credit_amount":  o.CreditAmount,
 			"multiplier":     o.Multiplier,
 			"status":         o.Status,
@@ -215,7 +225,7 @@ func (h *OrderHandler) AdminListOrders(c *gin.Context) {
 			"user_id":        o.UserID,
 			"user_email":     emailMap[o.UserID],
 			"amount":         o.Amount,
-			"payment_amount": o.PaymentAmount,
+			"payment_amount": effectivePaymentAmount(o.PaymentAmount, o.Amount),
 			"credit_amount":  o.CreditAmount,
 			"multiplier":     o.Multiplier,
 			"status":         o.Status,

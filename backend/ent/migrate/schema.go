@@ -787,6 +787,14 @@ var (
 				Columns: []*schema.Column{OrdersColumns[7]},
 			},
 			{
+				Name:    "order_payment_amount",
+				Unique:  true,
+				Columns: []*schema.Column{OrdersColumns[4]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "status = 'pending' AND payment_amount IS NOT NULL",
+				},
+			},
+			{
 				Name:    "order_order_no",
 				Unique:  false,
 				Columns: []*schema.Column{OrdersColumns[1]},

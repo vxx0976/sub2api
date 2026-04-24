@@ -13,6 +13,10 @@ ALTER TABLE orders ADD COLUMN IF NOT EXISTS source_domain varchar(255);
 
 ALTER TABLE orders ALTER COLUMN group_id DROP NOT NULL;
 
+CREATE UNIQUE INDEX IF NOT EXISTS order_payment_amount
+    ON orders (payment_amount)
+    WHERE status = 'pending' AND payment_amount IS NOT NULL;
+
 COMMENT ON COLUMN orders.credit_amount IS '实际到账余额（USD）';
 COMMENT ON COLUMN orders.multiplier    IS '倍率快照';
 COMMENT ON COLUMN orders.source_domain IS '下单时的来源域名（审计用，归属仍走 User.register_domain）';

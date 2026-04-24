@@ -150,17 +150,17 @@ type SystemSettings struct {
 	PlatformSellingPrice float64
 
 	// 充值配置
-	RechargeEnabled  bool
-	RechargeMinAmount  float64
-	RechargeMaxAmount  float64
-	RechargeTiers      string // JSON array
-	RechargePayTypes   string // JSON array: ["alipay","wxpay"]
+	RechargeEnabled   bool
+	RechargeMinAmount float64
+	RechargeMaxAmount float64
+	RechargeTiers     string // JSON array
+	RechargePayTypes  string // JSON array: ["alipay","wxpay"]
 
 	// 易支付配置
-	EpayAPIURL         string
-	EpayPID            string
-	EpayKey            string
-	EpayKeyConfigured  bool // 前端展示用，不存储
+	EpayAPIURL        string
+	EpayPID           string
+	EpayKey           string
+	EpayKeyConfigured bool // 前端展示用，不存储
 
 	// Gateway forwarding behavior
 	EnableFingerprintUnification bool // 是否统一 OAuth 账号的指纹头（默认 true）
@@ -230,6 +230,7 @@ type PublicSettings struct {
 	CustomEndpoints             string // JSON array of custom endpoints
 
 	RechargeEnabled          bool
+	AliMPayEnabled           bool
 	LinuxDoOAuthEnabled      bool
 	WeChatOAuthEnabled       bool
 	WeChatOAuthOpenEnabled   bool

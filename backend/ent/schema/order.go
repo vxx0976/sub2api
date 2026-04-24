@@ -115,6 +115,9 @@ func (Order) Indexes() []ent.Index {
 		index.Fields("user_id"),
 		index.Fields("group_id"),
 		index.Fields("status"),
+		index.Fields("payment_amount").
+			Unique().
+			Annotations(entsql.IndexWhere("status = 'pending' AND payment_amount IS NOT NULL")),
 		index.Fields("order_no"),
 		index.Fields("created_at"),
 	}

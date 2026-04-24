@@ -151,11 +151,11 @@ type SystemSettings struct {
 	PlatformSellingPrice float64 `json:"platform_selling_price"`
 
 	// 充值配置
-	RechargeEnabled    bool    `json:"recharge_enabled"`
-	RechargeMinAmount  float64 `json:"recharge_min_amount"`
-	RechargeMaxAmount  float64 `json:"recharge_max_amount"`
-	RechargeTiers      string  `json:"recharge_tiers"`
-	RechargePayTypes   string  `json:"recharge_pay_types"`
+	RechargeEnabled   bool    `json:"recharge_enabled"`
+	RechargeMinAmount float64 `json:"recharge_min_amount"`
+	RechargeMaxAmount float64 `json:"recharge_max_amount"`
+	RechargeTiers     string  `json:"recharge_tiers"`
+	RechargePayTypes  string  `json:"recharge_pay_types"`
 
 	// 易支付配置
 	EpayAPIURL        string `json:"epay_api_url"`
@@ -252,6 +252,7 @@ type PublicSettings struct {
 	CustomMenuItems                  []CustomMenuItem     `json:"custom_menu_items"`
 	CustomEndpoints                  []CustomEndpoint     `json:"custom_endpoints"`
 	RechargeEnabled                  bool                 `json:"recharge_enabled"`
+	AliMPayEnabled                   bool                 `json:"alimpay_enabled"`
 	LinuxDoOAuthEnabled              bool                 `json:"linuxdo_oauth_enabled"`
 	WeChatOAuthEnabled               bool                 `json:"wechat_oauth_enabled"`
 	WeChatOAuthOpenEnabled           bool                 `json:"wechat_oauth_open_enabled"`

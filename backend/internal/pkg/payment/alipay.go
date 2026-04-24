@@ -60,19 +60,15 @@ type AlipayPayment struct {
 
 	fallbackCfg config.AlipayPaymentConfig
 	settings    SettingGetter // 可为 nil（纯 yaml 模式）
-
-	// Amount allocation for business QR mode
-	allocatedAmounts map[string]time.Time // amount string -> allocation time
 }
 
 // NewAlipayPayment creates a new Alipay payment client
 // fallback 是 config.yaml 初始值，settings 若非 nil 则从数据库 setting 动态覆盖
 func NewAlipayPayment(fallback config.AlipayPaymentConfig, settings SettingGetter) (*AlipayPayment, error) {
 	ap := &AlipayPayment{
-		cfg:              fallback,
-		fallbackCfg:      fallback,
-		settings:         settings,
-		allocatedAmounts: make(map[string]time.Time),
+		cfg:         fallback,
+		fallbackCfg: fallback,
+		settings:    settings,
 	}
 	if err := ap.applyKeys(fallback.PrivateKey, fallback.AlipayPublicKey); err != nil {
 		return nil, err
@@ -193,6 +189,25 @@ func (ap *AlipayPayment) applyKeysLocked(private, public string) error {
 	return nil
 }
 
+type alipaySnapshot struct {
+	cfg        config.AlipayPaymentConfig
+	privateKey *rsa.PrivateKey
+	publicKey  *rsa.PublicKey
+}
+
+func (ap *AlipayPayment) snapshot() alipaySnapshot {
+	if ap == nil {
+		return alipaySnapshot{}
+	}
+	ap.mu.Lock()
+	defer ap.mu.Unlock()
+	return alipaySnapshot{
+		cfg:        ap.cfg,
+		privateKey: ap.privateKey,
+		publicKey:  ap.publicKey,
+	}
+}
+
 // PaymentInfo contains all payment info returned to frontend
 type PaymentInfo struct {
 	PaymentAmount float64 `json:"payment_amount"`
@@ -202,21 +217,17 @@ type PaymentInfo struct {
 
 // GeneratePaymentInfo generates payment info for an order
 func (ap *AlipayPayment) GeneratePaymentInfo(orderNo string, amount float64) (*PaymentInfo, error) {
-	if ap.cfg.Mode == "transfer" {
-		return ap.generateTransferPayment(orderNo, amount)
+	snap := ap.snapshot()
+	if snap.cfg.Mode == "transfer" {
+		return generateTransferPayment(snap.cfg, orderNo, amount)
 	}
-	return ap.generateBusinessQRPayment(orderNo, amount)
+	return generateBusinessQRPayment(snap.cfg, amount)
 }
 
-func (ap *AlipayPayment) generateBusinessQRPayment(orderNo string, amount float64) (*PaymentInfo, error) {
-	paymentAmount, err := ap.allocateUniqueAmount(amount)
-	if err != nil {
-		return nil, fmt.Errorf("allocate unique amount: %w", err)
-	}
-
-	qrURL := ap.cfg.BusinessQRURL
+func generateBusinessQRPayment(cfg config.AlipayPaymentConfig, paymentAmount float64) (*PaymentInfo, error) {
+	qrURL := cfg.BusinessQRURL
 	if qrURL == "" {
-		qrURL = fmt.Sprintf("https://qr.alipay.com/%s", ap.cfg.BusinessQRPath)
+		qrURL = fmt.Sprintf("https://qr.alipay.com/%s", cfg.BusinessQRPath)
 	}
 
 	return &PaymentInfo{
@@ -226,8 +237,8 @@ func (ap *AlipayPayment) generateBusinessQRPayment(orderNo string, amount float6
 	}, nil
 }
 
-func (ap *AlipayPayment) generateTransferPayment(orderNo string, amount float64) (*PaymentInfo, error) {
-	transferURL := ap.generateTransferLink(orderNo, amount)
+func generateTransferPayment(cfg config.AlipayPaymentConfig, orderNo string, amount float64) (*PaymentInfo, error) {
+	transferURL := generateTransferLink(cfg, orderNo, amount)
 	return &PaymentInfo{
 		PaymentAmount: amount,
 		QRCodeURL:     transferURL,
@@ -235,8 +246,8 @@ func (ap *AlipayPayment) generateTransferPayment(orderNo string, amount float64)
 	}, nil
 }
 
-func (ap *AlipayPayment) generateTransferLink(orderNo string, amount float64) string {
-	bizData := fmt.Sprintf(`{"s":"money","u":"%s","a":"%.2f","m":"%s"}`, ap.cfg.TransferUserID, amount, orderNo)
+func generateTransferLink(cfg config.AlipayPaymentConfig, orderNo string, amount float64) string {
+	bizData := fmt.Sprintf(`{"s":"money","u":"%s","a":"%.2f","m":"%s"}`, cfg.TransferUserID, amount, orderNo)
 	params := url.Values{}
 	params.Set("appId", "20000123")
 	params.Set("actionType", "scan")
@@ -244,53 +255,72 @@ func (ap *AlipayPayment) generateTransferLink(orderNo string, amount float64) st
 	return "alipays://platformapi/startapp?" + params.Encode()
 }
 
-func (ap *AlipayPayment) allocateUniqueAmount(baseAmount float64) (float64, error) {
-	ap.mu.Lock()
-	defer ap.mu.Unlock()
-
-	timeout := time.Duration(ap.cfg.OrderTimeoutSeconds) * time.Second
-	if timeout == 0 {
-		timeout = 30 * time.Minute
-	}
-	now := time.Now()
-	for k, t := range ap.allocatedAmounts {
-		if now.Sub(t) > timeout {
-			delete(ap.allocatedAmounts, k)
-		}
-	}
-
-	offset := ap.cfg.AmountOffset
-	if offset <= 0 {
-		offset = 0.01
-	}
-
-	for i := 0; i < 100; i++ {
-		candidate := baseAmount + float64(i)*offset
-		key := fmt.Sprintf("%.2f", candidate)
-		if _, exists := ap.allocatedAmounts[key]; !exists {
-			ap.allocatedAmounts[key] = now
-			return candidate, nil
-		}
-	}
-
-	return 0, fmt.Errorf("could not allocate unique amount after 100 attempts")
-}
-
-// ReleaseAmount releases an allocated amount
-func (ap *AlipayPayment) ReleaseAmount(amount float64) {
-	ap.mu.Lock()
-	defer ap.mu.Unlock()
-	delete(ap.allocatedAmounts, fmt.Sprintf("%.2f", amount))
-}
-
 // Mode returns the configured payment mode (business_qr | transfer).
 func (ap *AlipayPayment) Mode() string {
-	return ap.cfg.Mode
+	return ap.snapshot().cfg.Mode
 }
 
 // OrderTimeoutSeconds returns the configured order timeout in seconds.
 func (ap *AlipayPayment) OrderTimeoutSeconds() int {
-	return ap.cfg.OrderTimeoutSeconds
+	return ap.snapshot().cfg.OrderTimeoutSeconds
+}
+
+// AmountOffset returns the amount step used to distinguish business QR orders.
+func (ap *AlipayPayment) AmountOffset() float64 {
+	offset := ap.snapshot().cfg.AmountOffset
+	if offset <= 0 {
+		return 0.01
+	}
+	return offset
+}
+
+// MatchTolerance returns the bill/order time tolerance.
+func (ap *AlipayPayment) MatchTolerance() time.Duration {
+	seconds := ap.snapshot().cfg.MatchToleranceSeconds
+	if seconds <= 0 {
+		return 5 * time.Minute
+	}
+	return time.Duration(seconds) * time.Second
+}
+
+// QueryMinutesBack returns the bill query lookback window in minutes.
+func (ap *AlipayPayment) QueryMinutesBack() int {
+	minutes := ap.snapshot().cfg.QueryMinutesBack
+	if minutes <= 0 {
+		return 30
+	}
+	return minutes
+}
+
+// MonitorInterval returns the configured monitor interval.
+func (ap *AlipayPayment) MonitorInterval() time.Duration {
+	seconds := ap.snapshot().cfg.MonitorIntervalSeconds
+	if seconds < 5 {
+		return 10 * time.Second
+	}
+	return time.Duration(seconds) * time.Second
+}
+
+// AmountReuseWindow is the minimum time before a business QR payment amount can be reused.
+func (ap *AlipayPayment) AmountReuseWindow() time.Duration {
+	snap := ap.snapshot().cfg
+	timeout := time.Duration(snap.OrderTimeoutSeconds) * time.Second
+	if timeout <= 0 {
+		timeout = 5 * time.Minute
+	}
+	tolerance := time.Duration(snap.MatchToleranceSeconds) * time.Second
+	if tolerance <= 0 {
+		tolerance = 5 * time.Minute
+	}
+	queryBack := time.Duration(snap.QueryMinutesBack) * time.Minute
+	if queryBack <= 0 {
+		queryBack = 30 * time.Minute
+	}
+	window := timeout + tolerance + queryBack
+	if window < 2*time.Hour {
+		window = 2 * time.Hour
+	}
+	return window
 }
 
 // AccountBill represents a single account log entry from Alipay
@@ -315,7 +345,8 @@ func (b AccountBill) TransAmountFloat() float64 {
 
 // QueryAccountBills queries Alipay account logs via alipay.data.bill.accountlog.query
 func (ap *AlipayPayment) QueryAccountBills(ctx context.Context, startTime, endTime time.Time) ([]AccountBill, error) {
-	if ap.privateKey == nil {
+	snap := ap.snapshot()
+	if snap.privateKey == nil {
 		return nil, fmt.Errorf("alipay private key not configured")
 	}
 
@@ -328,7 +359,7 @@ func (ap *AlipayPayment) QueryAccountBills(ctx context.Context, startTime, endTi
 	bizContentJSON, _ := json.Marshal(bizContent)
 
 	params := map[string]string{
-		"app_id":      ap.cfg.AppID,
+		"app_id":      snap.cfg.AppID,
 		"method":      "alipay.data.bill.accountlog.query",
 		"charset":     "utf-8",
 		"sign_type":   "RSA2",
@@ -338,13 +369,13 @@ func (ap *AlipayPayment) QueryAccountBills(ctx context.Context, startTime, endTi
 	}
 
 	signStr := buildSignString(params)
-	signature, err := rsaSign(signStr, ap.privateKey)
+	signature, err := rsaSign(signStr, snap.privateKey)
 	if err != nil {
 		return nil, fmt.Errorf("sign request: %w", err)
 	}
 	params["sign"] = signature
 
-	serverURL := ap.cfg.ServerURL
+	serverURL := snap.cfg.ServerURL
 	if serverURL == "" {
 		serverURL = "https://openapi.alipay.com/gateway.do"
 	}

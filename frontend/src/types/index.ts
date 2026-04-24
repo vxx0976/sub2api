@@ -190,6 +190,7 @@ export interface PublicSettings {
   custom_menu_items: CustomMenuItem[]
   custom_endpoints: CustomEndpoint[]
   recharge_enabled: boolean
+  alimpay_enabled: boolean
   linuxdo_oauth_enabled: boolean
   wechat_oauth_enabled: boolean
   wechat_oauth_open_enabled?: boolean

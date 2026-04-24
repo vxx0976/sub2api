@@ -454,11 +454,13 @@ export default {
     resellerAnnouncements: 'Announcements',
     resellerSettings: 'Settings',
     recharge: 'Recharge',
+    alimpayRecharge: 'Alipay Recharge',
     myOrders: 'My Orders',
     orderManagement: 'Orders',
     paymentDashboard: 'Payment Dashboard',
     paymentConfig: 'Payment Config',
-    paymentPlans: 'Plans'
+    paymentPlans: 'Plans',
+    adminAliMPayOrders: 'AliMPay Orders'
   },
 
   // Auth

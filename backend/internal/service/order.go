@@ -19,7 +19,7 @@ type Order struct {
 	PaymentAmount float64    `json:"payment_amount"` // 实际支付金额（金额偏移后，用于账单匹配）
 	CreditAmount  float64    `json:"credit_amount"`  // 到账余额（USD）
 	Multiplier    float64    `json:"multiplier"`
-	Status        string     `json:"status"`  // pending/paid/expired/refunded
+	Status        string     `json:"status"` // pending/paid/expired/refunded
 	PayType       string     `json:"pay_type"`
 	PaidAt        *time.Time `json:"paid_at"`
 	SourceDomain  string     `json:"source_domain"`
@@ -42,6 +42,7 @@ type OrderPublicConfig struct {
 // OrderRepository AliMPay 订单数据访问接口
 type OrderRepository interface {
 	Create(ctx context.Context, order *Order) error
+	CreateWithUniquePaymentAmount(ctx context.Context, order *Order, baseAmount float64, amountOffset float64, reuseWindow time.Duration) error
 	GetByOrderNo(ctx context.Context, orderNo string) (*Order, error)
 	UpdateStatus(ctx context.Context, orderNo, fromStatus, toStatus string, tradeNo *string, paidAt *time.Time) error
 	ListByUserID(ctx context.Context, userID int64, limit, offset int) ([]*Order, int, error)
@@ -53,3 +54,4 @@ type OrderRepository interface {
 }
 
 var ErrOrderStatusConflict = errors.New("order status conflict")
+var ErrOrderPaymentAmountUnavailable = errors.New("no available payment amount")

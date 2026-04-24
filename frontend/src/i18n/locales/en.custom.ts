@@ -1280,5 +1280,7 @@ export default {
     adminMerchants: 'Merchants',
     adminMerchantWithdrawals: 'Withdrawal Review',
     adminRechargeOrders: 'Recharge Orders',
+    alimpayRecharge: 'Alipay Recharge',
+    adminAliMPayOrders: 'AliMPay Orders',
   },
 } as const

@@ -651,6 +651,9 @@ const userNavItems = computed((): NavItem[] => {
     ...(appStore.cachedPublicSettings?.recharge_enabled
       ? [{ path: '/recharge', label: t('nav.recharge'), icon: CreditCardIcon, hideInSimpleMode: true }]
       : []),
+    ...(appStore.cachedPublicSettings?.alimpay_enabled
+      ? [{ path: '/alimpay-recharge', label: t('nav.alimpayRecharge'), icon: CreditCardIcon, hideInSimpleMode: true }]
+      : []),
     { path: '/profile', label: t('nav.profile'), icon: UserIcon },
     ...customMenuItemsForUser.value.map((item): NavItem => ({
       path: `/custom/${item.id}`,
@@ -690,6 +693,9 @@ const resellerNavItems = computed(() => {
     ...(appStore.cachedPublicSettings?.recharge_enabled
       ? [{ path: '/recharge', label: t('nav.recharge'), icon: CreditCardIcon }]
       : []),
+    ...(appStore.cachedPublicSettings?.alimpay_enabled
+      ? [{ path: '/alimpay-recharge', label: t('nav.alimpayRecharge'), icon: CreditCardIcon }]
+      : []),
     { path: '/merchant/settings', label: t('nav.resellerSettings'), icon: CogIcon },
   ]
   return items
@@ -711,6 +717,9 @@ const personalNavItems = computed((): NavItem[] => {
     { path: '/redeem', label: t('nav.redeem'), icon: TicketIcon, hideInSimpleMode: true },
     ...(appStore.cachedPublicSettings?.recharge_enabled
       ? [{ path: '/recharge', label: t('nav.recharge'), icon: CreditCardIcon, hideInSimpleMode: true }]
+      : []),
+    ...(appStore.cachedPublicSettings?.alimpay_enabled
+      ? [{ path: '/alimpay-recharge', label: t('nav.alimpayRecharge'), icon: CreditCardIcon, hideInSimpleMode: true }]
       : []),
     { path: '/profile', label: t('nav.profile'), icon: UserIcon },
   ]
@@ -750,6 +759,9 @@ const adminNavItems = computed((): NavItem[] => {
     { path: '/admin/merchants', label: t('nav.adminMerchants'), icon: UsersIcon },
     { path: '/admin/merchant-withdrawals', label: t('nav.adminMerchantWithdrawals'), icon: CreditCardIcon },
     { path: '/admin/recharge-orders', label: t('nav.adminRechargeOrders'), icon: WalletIcon },
+    ...(appStore.cachedPublicSettings?.alimpay_enabled
+      ? [{ path: '/admin/alimpay-orders', label: t('nav.adminAliMPayOrders'), icon: WalletIcon }]
+      : []),
     ...(adminSettingsStore.paymentEnabled
       ? [
           {
