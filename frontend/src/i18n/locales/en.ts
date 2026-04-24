@@ -1044,7 +1044,10 @@ export default {
     title: 'Alipay Recharge',
     description: 'Alipay personal P2P recharge',
     formTitle: 'Recharge via Alipay QR',
-    payExactAmountNotice: 'Please pay the EXACT amount shown below. Any different amount will not be matched automatically:',
+    payExactAmountNotice: 'Pay EXACTLY the amount below (to the cent)',
+    amountMustMatch: 'Amount must match exactly, otherwise it cannot be auto-credited',
+    countdown: 'Time remaining: {time}',
+    expiredHint: 'Order expired. Please close and create a new order',
   },
 
   // Profile

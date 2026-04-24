@@ -126,6 +126,7 @@ func ProvideHandlers(
 	totpHandler *TotpHandler,
 	keyQueryHandler *KeyQueryHandler,
 	rechargeHandler *RechargeHandler,
+	orderHandler *OrderHandler,
 	paymentHandler *PaymentHandler,
 	paymentWebhookHandler *PaymentWebhookHandler,
 	_ *service.IdempotencyCoordinator,
@@ -148,6 +149,7 @@ func ProvideHandlers(
 		Totp:           totpHandler,
 		KeyQuery:       keyQueryHandler,
 		Recharge:       rechargeHandler,
+		Order:          orderHandler,
 		Payment:        paymentHandler,
 		PaymentWebhook: paymentWebhookHandler,
 	}

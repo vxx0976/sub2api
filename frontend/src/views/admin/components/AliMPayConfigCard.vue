@@ -161,8 +161,8 @@ const form = reactive<Required<AdminAliMPayConfigUpdate>>({
   amount_offset: 0.01,
   match_tolerance_seconds: 300,
   monitor_interval_seconds: 10,
-  query_minutes_back: 30,
-  order_timeout_seconds: 300
+  query_minutes_back: 10,
+  order_timeout_seconds: 600
 })
 
 async function loadConfig() {
@@ -179,8 +179,8 @@ async function loadConfig() {
     form.amount_offset = cfg.amount_offset > 0 ? cfg.amount_offset : 0.01
     form.match_tolerance_seconds = cfg.match_tolerance_seconds > 0 ? cfg.match_tolerance_seconds : 300
     form.monitor_interval_seconds = cfg.monitor_interval_seconds > 0 ? cfg.monitor_interval_seconds : 10
-    form.query_minutes_back = cfg.query_minutes_back > 0 ? cfg.query_minutes_back : 30
-    form.order_timeout_seconds = cfg.order_timeout_seconds > 0 ? cfg.order_timeout_seconds : 300
+    form.query_minutes_back = cfg.query_minutes_back > 0 ? cfg.query_minutes_back : 10
+    form.order_timeout_seconds = cfg.order_timeout_seconds > 0 ? cfg.order_timeout_seconds : 600
     hasPrivateKey.value = cfg.has_private_key
     hasAlipayPublicKey.value = cfg.has_alipay_public_key
     form.private_key = ''

@@ -92,6 +92,8 @@ func createWithUniquePaymentAmountTx(ctx context.Context, client *ent.Client, o 
 			continue
 		}
 		o.PaymentAmount = candidate
+		// 到账金额 = 实际支付金额：用户因金额偏移多付的部分（比如 +0.01）也一并入账，不让用户亏
+		o.CreditAmount = candidate
 		return createOrder(ctx, client, o)
 	}
 	return service.ErrOrderPaymentAmountUnavailable

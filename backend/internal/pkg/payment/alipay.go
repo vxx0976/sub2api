@@ -12,6 +12,7 @@ import (
 	"encoding/pem"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"sort"
@@ -141,7 +142,9 @@ func (ap *AlipayPayment) Reload(ctx context.Context) {
 		}
 	}
 	ap.cfg = cfg
-	_ = ap.applyKeysLocked(cfg.PrivateKey, cfg.AlipayPublicKey)
+	if err := ap.applyKeysLocked(cfg.PrivateKey, cfg.AlipayPublicKey); err != nil {
+		log.Printf("[AlipayPayment] Reload: apply RSA keys failed: %v (检查 settings 里的私钥/公钥格式，支付宝开放平台应用私钥通常是 PKCS1/PKCS8 RSA2)", err)
+	}
 }
 
 // IsEnabled 返回当前是否启用（查 setting alimpay_enabled，nil settings 下始终 false）
@@ -287,7 +290,7 @@ func (ap *AlipayPayment) MatchTolerance() time.Duration {
 func (ap *AlipayPayment) QueryMinutesBack() int {
 	minutes := ap.snapshot().cfg.QueryMinutesBack
 	if minutes <= 0 {
-		return 30
+		return 10
 	}
 	return minutes
 }
@@ -301,26 +304,25 @@ func (ap *AlipayPayment) MonitorInterval() time.Duration {
 	return time.Duration(seconds) * time.Second
 }
 
-// AmountReuseWindow is the minimum time before a business QR payment amount can be reused.
+// AmountReuseWindow 金额可以被下一笔订单复用前需等待的时间。
+// = max(OrderTimeout, QueryMinutesBack)：
+//   - 至少等订单过期（付款窗口关闭）
+//   - 至少等 Monitor 账单查询窗口（避免 Monitor 扫到老账单误匹配到新订单）
+// 默认两者都是 10 min，所以默认 reuseWindow=10 min。
 func (ap *AlipayPayment) AmountReuseWindow() time.Duration {
 	snap := ap.snapshot().cfg
 	timeout := time.Duration(snap.OrderTimeoutSeconds) * time.Second
 	if timeout <= 0 {
-		timeout = 5 * time.Minute
-	}
-	tolerance := time.Duration(snap.MatchToleranceSeconds) * time.Second
-	if tolerance <= 0 {
-		tolerance = 5 * time.Minute
+		timeout = 10 * time.Minute
 	}
 	queryBack := time.Duration(snap.QueryMinutesBack) * time.Minute
 	if queryBack <= 0 {
-		queryBack = 30 * time.Minute
+		queryBack = 10 * time.Minute
 	}
-	window := timeout + tolerance + queryBack
-	if window < 2*time.Hour {
-		window = 2 * time.Hour
+	if timeout > queryBack {
+		return timeout
 	}
-	return window
+	return queryBack
 }
 
 // AccountBill represents a single account log entry from Alipay

@@ -3,9 +3,7 @@ package service
 import (
 	"context"
 	"crypto/rand"
-	"encoding/json"
 	"fmt"
-	"math"
 	"math/big"
 	"strconv"
 	"sync"
@@ -142,7 +140,7 @@ func (s *OrderService) Stop() {
 	s.wg.Wait()
 }
 
-// GetConfig 获取 AliMPay 下单页面配置
+// GetConfig 获取 AliMPay 下单页面配置（1:1 到账，不走倍率/汇率换算）
 func (s *OrderService) GetConfig(ctx context.Context) (*OrderPublicConfig, error) {
 	cfg := &OrderPublicConfig{}
 
@@ -155,11 +153,10 @@ func (s *OrderService) GetConfig(ctx context.Context) (*OrderPublicConfig, error
 	if maxStr, _ := s.settingRepo.GetValue(ctx, SettingKeyRechargeMaxAmount); maxStr != "" {
 		cfg.MaxAmount, _ = strconv.ParseFloat(maxStr, 64)
 	}
-	if tiersJSON, _ := s.settingRepo.GetValue(ctx, SettingKeyRechargeTiers); tiersJSON != "" {
-		_ = json.Unmarshal([]byte(tiersJSON), &cfg.Tiers)
-	}
 
-	cfg.SellingPrice = s.settingService.GetPlatformSellingPrice(ctx)
+	// AliMPay 走 1:1（CNY 支付金额 = 到账平台余额），不读 recharge_tiers，不读 platform_selling_price
+	cfg.Tiers = nil
+	cfg.SellingPrice = 1
 	if s.alipay != nil {
 		cfg.Mode = s.alipay.Mode()
 	}
@@ -203,24 +200,9 @@ func (s *OrderService) CreateOrder(ctx context.Context, userID int64, amount flo
 		return nil, fmt.Errorf("amount must be between %.2f and %.2f", minAmount, maxAmount)
 	}
 
-	// 3. 计算到账金额
-	sellingPrice := s.settingService.GetPlatformSellingPrice(ctx)
-	if sellingPrice <= 0 {
-		return nil, fmt.Errorf("platform selling price not configured")
-	}
+	// 3. 到账金额：AliMPay 走 1:1（CNY 支付金额直接等于平台余额），不走倍率/汇率换算
 	multiplier := 1.0
-	if tiersJSON, _ := s.settingRepo.GetValue(ctx, SettingKeyRechargeTiers); tiersJSON != "" {
-		var tiers []RechargeTier
-		if err := json.Unmarshal([]byte(tiersJSON), &tiers); err == nil {
-			for _, t := range tiers {
-				if amount >= t.Min && (t.Max == nil || amount <= *t.Max) {
-					multiplier = t.Multiplier
-					break
-				}
-			}
-		}
-	}
-	creditAmount := math.Round(amount/sellingPrice*multiplier*100) / 100
+	creditAmount := amount
 
 	// 4. 生成订单号（AliMPay 专用前缀 A）
 	randN, _ := rand.Int(rand.Reader, big.NewInt(1000000))
@@ -230,7 +212,7 @@ func (s *OrderService) CreateOrder(ctx context.Context, userID int64, amount flo
 	// 避免进程重启或多实例部署后复用未完成订单的金额。
 	expiresIn := s.alipay.OrderTimeoutSeconds()
 	if expiresIn <= 0 {
-		expiresIn = 300 // 默认 5 分钟
+		expiresIn = 600 // 默认 10 分钟
 	}
 	expiredAt := time.Now().Add(time.Duration(expiresIn) * time.Second)
 	mode := s.alipay.Mode()

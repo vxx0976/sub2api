@@ -1047,7 +1047,10 @@ export default {
     title: '支付宝充值',
     description: '支付宝个人免签充值',
     formTitle: '支付宝扫码充值',
-    payExactAmountNotice: '请务必支付下方精确金额，否则系统无法自动到账：',
+    payExactAmountNotice: '请严格按以下金额支付（精确到分）',
+    amountMustMatch: '金额必须完全一致，否则系统无法自动到账',
+    countdown: '剩余支付时间 {time}',
+    expiredHint: '订单已过期，请关闭窗口后重新下单',
   },
 
   // Profile

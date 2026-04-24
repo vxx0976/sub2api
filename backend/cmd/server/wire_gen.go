@@ -263,11 +263,18 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	keyQueryHandler := handler.NewKeyQueryHandler(apiKeyService, subscriptionService, usageService, groupService, userService)
 	rechargeService := service.NewRechargeService(rechargeOrderRepository, settingRepository, adminService, settingService, leaderLocker)
 	rechargeHandler := handler.NewRechargeHandler(rechargeService, adminService)
+	settingGetter := service.ProvidePaymentSettingGetter(settingRepository)
+	alipayPayment, err := payment2.ProvideAlipayPayment(configConfig, settingGetter)
+	if err != nil {
+		return nil, err
+	}
+	orderService := service.NewOrderService(orderRepository, settingRepository, adminService, settingService, alipayPayment, leaderLocker)
+	orderHandler := handler.NewOrderHandler(orderService, adminService)
 	handlerPaymentHandler := handler.NewPaymentHandler(paymentService, paymentConfigService, channelService)
 	paymentWebhookHandler := handler.NewPaymentWebhookHandler(paymentService, registry)
 	idempotencyCoordinator := service.ProvideIdempotencyCoordinator(idempotencyRepository, configConfig)
 	idempotencyCleanupService := service.ProvideIdempotencyCleanupService(idempotencyRepository, configConfig, leaderLocker)
-	handlers := handler.ProvideHandlers(authHandler, userHandler, apiKeyHandler, usageHandler, redeemHandler, subscriptionHandler, announcementHandler, adminHandlers, resellerHandlers, gatewayHandler, openAIGatewayHandler, handlerSettingHandler, handlerReferralHandler, totpHandler, keyQueryHandler, rechargeHandler, handlerPaymentHandler, paymentWebhookHandler, idempotencyCoordinator, idempotencyCleanupService)
+	handlers := handler.ProvideHandlers(authHandler, userHandler, apiKeyHandler, usageHandler, redeemHandler, subscriptionHandler, announcementHandler, adminHandlers, resellerHandlers, gatewayHandler, openAIGatewayHandler, handlerSettingHandler, handlerReferralHandler, totpHandler, keyQueryHandler, rechargeHandler, orderHandler, handlerPaymentHandler, paymentWebhookHandler, idempotencyCoordinator, idempotencyCleanupService)
 	jwtAuthMiddleware := middleware.NewJWTAuthMiddleware(authService, userService)
 	adminAuthMiddleware := middleware.NewAdminAuthMiddleware(authService, userService, settingService)
 	apiKeyAuthMiddleware := middleware.NewAPIKeyAuthMiddleware(apiKeyService, subscriptionService, configConfig)
@@ -282,12 +289,6 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	tokenRefreshService := service.ProvideTokenRefreshService(accountRepository, oAuthService, openAIOAuthService, geminiOAuthService, antigravityOAuthService, compositeTokenCacheInvalidator, schedulerCache, configConfig, tempUnschedCache, privacyClientFactory, proxyRepository, oAuthRefreshAPI, leaderLocker)
 	accountExpiryService := service.ProvideAccountExpiryService(accountRepository, leaderLocker)
 	subscriptionExpiryService := service.ProvideSubscriptionExpiryService(userSubscriptionRepository, leaderLocker)
-	settingGetter := service.ProvidePaymentSettingGetter(settingRepository)
-	alipayPayment, err := payment2.ProvideAlipayPayment(configConfig, settingGetter)
-	if err != nil {
-		return nil, err
-	}
-	orderService := service.NewOrderService(orderRepository, settingRepository, adminService, settingService, alipayPayment, leaderLocker)
 	alipayMonitor := payment2.ProvideAlipayMonitor(alipayPayment, orderService)
 	scheduledTestRunnerService := service.ProvideScheduledTestRunnerService(scheduledTestPlanRepository, scheduledTestService, accountTestService, rateLimitService, configConfig, leaderLocker)
 	paymentOrderExpiryService := service.ProvidePaymentOrderExpiryService(paymentService)
