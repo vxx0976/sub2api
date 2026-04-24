@@ -100,6 +100,9 @@ func RegisterAdminRoutes(
 
 		// 充值订单管理
 		registerAdminRechargeRoutes(admin, h)
+
+		// AliMPay 订单管理
+		registerAdminAliMPayRoutes(admin, h)
 	}
 }
 
@@ -107,6 +110,15 @@ func registerAdminRechargeRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 	recharge := admin.Group("/recharge")
 	{
 		recharge.GET("/orders", h.Recharge.AdminListOrders)
+	}
+}
+
+func registerAdminAliMPayRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
+	alimpay := admin.Group("/alimpay")
+	{
+		alimpay.GET("/orders", h.Order.AdminListOrders)
+		alimpay.GET("/config", h.Order.AdminGetConfig)
+		alimpay.PUT("/config", h.Order.AdminUpdateConfig)
 	}
 }
 

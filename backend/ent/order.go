@@ -13,7 +13,6 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/order"
 	"github.com/Wei-Shaw/sub2api/ent/referralreward"
 	"github.com/Wei-Shaw/sub2api/ent/user"
-	"github.com/Wei-Shaw/sub2api/ent/usersubscription"
 )
 
 // Order is the model entity for the Order schema.
@@ -27,20 +26,24 @@ type Order struct {
 	TradeNo *string `json:"trade_no,omitempty"`
 	// 用户ID
 	UserID int64 `json:"user_id,omitempty"`
-	// 分组ID
-	GroupID int64 `json:"group_id,omitempty"`
+	// 分组ID（历史字段，AliMPay 充值订单不使用）
+	GroupID *int64 `json:"group_id,omitempty"`
 	// 订单金额
 	Amount float64 `json:"amount,omitempty"`
 	// 实际支付金额（唯一金额，用于匹配账单）
 	PaymentAmount float64 `json:"payment_amount,omitempty"`
+	// 实际到账余额
+	CreditAmount float64 `json:"credit_amount,omitempty"`
+	// 倍率快照
+	Multiplier float64 `json:"multiplier,omitempty"`
 	// 订单状态: pending/paid/expired/refunded
 	Status string `json:"status,omitempty"`
 	// 支付方式: alipay/wxpay
 	PayType *string `json:"pay_type,omitempty"`
 	// 支付时间
 	PaidAt *time.Time `json:"paid_at,omitempty"`
-	// 关联的订阅ID
-	SubscriptionID *int64 `json:"subscription_id,omitempty"`
+	// 下单时的来源域名（审计用，归属走 User.register_domain）
+	SourceDomain *string `json:"source_domain,omitempty"`
 	// 创建时间
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// 更新时间
@@ -59,13 +62,11 @@ type OrderEdges struct {
 	User *User `json:"user,omitempty"`
 	// Group holds the value of the group edge.
 	Group *Group `json:"group,omitempty"`
-	// Subscription holds the value of the subscription edge.
-	Subscription *UserSubscription `json:"subscription,omitempty"`
 	// ReferralReward holds the value of the referral_reward edge.
 	ReferralReward *ReferralReward `json:"referral_reward,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [4]bool
+	loadedTypes [3]bool
 }
 
 // UserOrErr returns the User value or an error if the edge
@@ -90,23 +91,12 @@ func (e OrderEdges) GroupOrErr() (*Group, error) {
 	return nil, &NotLoadedError{edge: "group"}
 }
 
-// SubscriptionOrErr returns the Subscription value or an error if the edge
-// was not loaded in eager-loading, or loaded but was not found.
-func (e OrderEdges) SubscriptionOrErr() (*UserSubscription, error) {
-	if e.Subscription != nil {
-		return e.Subscription, nil
-	} else if e.loadedTypes[2] {
-		return nil, &NotFoundError{label: usersubscription.Label}
-	}
-	return nil, &NotLoadedError{edge: "subscription"}
-}
-
 // ReferralRewardOrErr returns the ReferralReward value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e OrderEdges) ReferralRewardOrErr() (*ReferralReward, error) {
 	if e.ReferralReward != nil {
 		return e.ReferralReward, nil
-	} else if e.loadedTypes[3] {
+	} else if e.loadedTypes[2] {
 		return nil, &NotFoundError{label: referralreward.Label}
 	}
 	return nil, &NotLoadedError{edge: "referral_reward"}
@@ -117,11 +107,11 @@ func (*Order) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case order.FieldAmount, order.FieldPaymentAmount:
+		case order.FieldAmount, order.FieldPaymentAmount, order.FieldCreditAmount, order.FieldMultiplier:
 			values[i] = new(sql.NullFloat64)
-		case order.FieldID, order.FieldUserID, order.FieldGroupID, order.FieldSubscriptionID:
+		case order.FieldID, order.FieldUserID, order.FieldGroupID:
 			values[i] = new(sql.NullInt64)
-		case order.FieldOrderNo, order.FieldTradeNo, order.FieldStatus, order.FieldPayType:
+		case order.FieldOrderNo, order.FieldTradeNo, order.FieldStatus, order.FieldPayType, order.FieldSourceDomain:
 			values[i] = new(sql.NullString)
 		case order.FieldPaidAt, order.FieldCreatedAt, order.FieldUpdatedAt, order.FieldExpiredAt:
 			values[i] = new(sql.NullTime)
@@ -169,7 +159,8 @@ func (_m *Order) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field group_id", values[i])
 			} else if value.Valid {
-				_m.GroupID = value.Int64
+				_m.GroupID = new(int64)
+				*_m.GroupID = value.Int64
 			}
 		case order.FieldAmount:
 			if value, ok := values[i].(*sql.NullFloat64); !ok {
@@ -182,6 +173,18 @@ func (_m *Order) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field payment_amount", values[i])
 			} else if value.Valid {
 				_m.PaymentAmount = value.Float64
+			}
+		case order.FieldCreditAmount:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field credit_amount", values[i])
+			} else if value.Valid {
+				_m.CreditAmount = value.Float64
+			}
+		case order.FieldMultiplier:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field multiplier", values[i])
+			} else if value.Valid {
+				_m.Multiplier = value.Float64
 			}
 		case order.FieldStatus:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -203,12 +206,12 @@ func (_m *Order) assignValues(columns []string, values []any) error {
 				_m.PaidAt = new(time.Time)
 				*_m.PaidAt = value.Time
 			}
-		case order.FieldSubscriptionID:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field subscription_id", values[i])
+		case order.FieldSourceDomain:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field source_domain", values[i])
 			} else if value.Valid {
-				_m.SubscriptionID = new(int64)
-				*_m.SubscriptionID = value.Int64
+				_m.SourceDomain = new(string)
+				*_m.SourceDomain = value.String
 			}
 		case order.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -252,11 +255,6 @@ func (_m *Order) QueryGroup() *GroupQuery {
 	return NewOrderClient(_m.config).QueryGroup(_m)
 }
 
-// QuerySubscription queries the "subscription" edge of the Order entity.
-func (_m *Order) QuerySubscription() *UserSubscriptionQuery {
-	return NewOrderClient(_m.config).QuerySubscription(_m)
-}
-
 // QueryReferralReward queries the "referral_reward" edge of the Order entity.
 func (_m *Order) QueryReferralReward() *ReferralRewardQuery {
 	return NewOrderClient(_m.config).QueryReferralReward(_m)
@@ -296,14 +294,22 @@ func (_m *Order) String() string {
 	builder.WriteString("user_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.UserID))
 	builder.WriteString(", ")
-	builder.WriteString("group_id=")
-	builder.WriteString(fmt.Sprintf("%v", _m.GroupID))
+	if v := _m.GroupID; v != nil {
+		builder.WriteString("group_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
 	builder.WriteString("amount=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Amount))
 	builder.WriteString(", ")
 	builder.WriteString("payment_amount=")
 	builder.WriteString(fmt.Sprintf("%v", _m.PaymentAmount))
+	builder.WriteString(", ")
+	builder.WriteString("credit_amount=")
+	builder.WriteString(fmt.Sprintf("%v", _m.CreditAmount))
+	builder.WriteString(", ")
+	builder.WriteString("multiplier=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Multiplier))
 	builder.WriteString(", ")
 	builder.WriteString("status=")
 	builder.WriteString(_m.Status)
@@ -318,9 +324,9 @@ func (_m *Order) String() string {
 		builder.WriteString(v.Format(time.ANSIC))
 	}
 	builder.WriteString(", ")
-	if v := _m.SubscriptionID; v != nil {
-		builder.WriteString("subscription_id=")
-		builder.WriteString(fmt.Sprintf("%v", *v))
+	if v := _m.SourceDomain; v != nil {
+		builder.WriteString("source_domain=")
+		builder.WriteString(*v)
 	}
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")

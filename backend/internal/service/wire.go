@@ -10,6 +10,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/Wei-Shaw/sub2api/internal/payment"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
+	pkgpayment "github.com/Wei-Shaw/sub2api/internal/pkg/payment"
 	"github.com/google/wire"
 	"github.com/redis/go-redis/v9"
 )
@@ -559,6 +560,9 @@ var ProviderSet = wire.NewSet(
 	ProvideFailoverGroupService,
 	NewGroupCapacityService,
 	NewRechargeService,
+	NewOrderService,
+	wire.Bind(new(pkgpayment.OrderMatcher), new(*OrderService)),
+	ProvidePaymentSettingGetter,
 	NewModelPricingResolver,
 	ProvidePaymentConfigService,
 	NewPaymentService,
@@ -570,6 +574,12 @@ var ProviderSet = wire.NewSet(
 // payment.EncryptionKey type instead of raw []byte, avoiding Wire ambiguity.
 func ProvidePaymentConfigService(entClient *dbent.Client, settingRepo SettingRepository, key payment.EncryptionKey) *PaymentConfigService {
 	return NewPaymentConfigService(entClient, settingRepo, []byte(key))
+}
+
+// ProvidePaymentSettingGetter 将 SettingRepository 作为 pkgpayment.SettingGetter 提供给 AliMPay SDK
+// 允许 AliMPay 配置在 settings 表里动态覆盖 config.yaml
+func ProvidePaymentSettingGetter(repo SettingRepository) pkgpayment.SettingGetter {
+	return repo
 }
 
 // ProvideBalanceNotifyService creates BalanceNotifyService

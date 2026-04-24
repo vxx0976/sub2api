@@ -38,7 +38,9 @@ func (Order) Fields() []ent.Field {
 		field.Int64("user_id").
 			Comment("用户ID"),
 		field.Int64("group_id").
-			Comment("分组ID"),
+			Optional().
+			Nillable().
+			Comment("分组ID（历史字段，AliMPay 充值订单不使用）"),
 		field.Float("amount").
 			SchemaType(map[string]string{dialect.Postgres: "decimal(10,2)"}).
 			Comment("订单金额"),
@@ -46,6 +48,14 @@ func (Order) Fields() []ent.Field {
 			SchemaType(map[string]string{dialect.Postgres: "decimal(10,2)"}).
 			Optional().
 			Comment("实际支付金额（唯一金额，用于匹配账单）"),
+		field.Float("credit_amount").
+			SchemaType(map[string]string{dialect.Postgres: "decimal(10,2)"}).
+			Default(0).
+			Comment("实际到账余额"),
+		field.Float("multiplier").
+			Default(1.0).
+			SchemaType(map[string]string{dialect.Postgres: "decimal(10,2)"}).
+			Comment("倍率快照"),
 		field.String("status").
 			MaxLen(20).
 			Default("pending").
@@ -60,10 +70,11 @@ func (Order) Fields() []ent.Field {
 			Nillable().
 			SchemaType(map[string]string{dialect.Postgres: "timestamptz"}).
 			Comment("支付时间"),
-		field.Int64("subscription_id").
+		field.String("source_domain").
+			MaxLen(255).
 			Optional().
 			Nillable().
-			Comment("关联的订阅ID"),
+			Comment("下单时的来源域名（审计用，归属走 User.register_domain）"),
 		field.Time("created_at").
 			Default(time.Now).
 			Immutable().
@@ -92,11 +103,6 @@ func (Order) Edges() []ent.Edge {
 		edge.From("group", Group.Type).
 			Ref("orders").
 			Field("group_id").
-			Unique().
-			Required(),
-		edge.From("subscription", UserSubscription.Type).
-			Ref("orders").
-			Field("subscription_id").
 			Unique(),
 		// Referral reward triggered by this order (if any)
 		edge.To("referral_reward", ReferralReward.Type).

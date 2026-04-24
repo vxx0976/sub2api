@@ -2781,22 +2781,6 @@ func (c *OrderClient) QueryGroup(_m *Order) *GroupQuery {
 	return query
 }
 
-// QuerySubscription queries the subscription edge of a Order.
-func (c *OrderClient) QuerySubscription(_m *Order) *UserSubscriptionQuery {
-	query := (&UserSubscriptionClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := _m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(order.Table, order.FieldID, id),
-			sqlgraph.To(usersubscription.Table, usersubscription.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, order.SubscriptionTable, order.SubscriptionColumn),
-		)
-		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
 // QueryReferralReward queries the referral_reward edge of a Order.
 func (c *OrderClient) QueryReferralReward(_m *Order) *ReferralRewardQuery {
 	query := (&ReferralRewardClient{config: c.config}).Query()
@@ -6725,22 +6709,6 @@ func (c *UserSubscriptionClient) QueryUsageLogs(_m *UserSubscription) *UsageLogQ
 			sqlgraph.From(usersubscription.Table, usersubscription.FieldID, id),
 			sqlgraph.To(usagelog.Table, usagelog.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, usersubscription.UsageLogsTable, usersubscription.UsageLogsColumn),
-		)
-		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryOrders queries the orders edge of a UserSubscription.
-func (c *UserSubscriptionClient) QueryOrders(_m *UserSubscription) *OrderQuery {
-	query := (&OrderClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := _m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(usersubscription.Table, usersubscription.FieldID, id),
-			sqlgraph.To(order.Table, order.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, usersubscription.OrdersTable, usersubscription.OrdersColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil

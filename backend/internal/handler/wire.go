@@ -170,6 +170,7 @@ var ProviderSet = wire.NewSet(
 	NewReferralHandler,
 	NewKeyQueryHandler,
 	NewRechargeHandler,
+	NewOrderHandler,
 	NewPaymentHandler,
 	NewPaymentWebhookHandler,
 

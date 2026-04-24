@@ -223,6 +223,18 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/alimpay-recharge',
+    name: 'AliMPayRecharge',
+    component: () => import('@/views/user/AliMPayRechargeView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: false,
+      title: 'AliMPay Recharge',
+      titleKey: 'alimpay.title',
+      descriptionKey: 'alimpay.description'
+    }
+  },
+  {
     path: '/profile',
     name: 'Profile',
     component: () => import('@/views/user/ProfileView.vue'),

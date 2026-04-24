@@ -1268,6 +1268,13 @@ export default {
       paidAt: '支付时间',
       empty: '暂无充值订单',
     },
+    // AliMPay Orders
+    alimpayOrders: {
+      title: '支付宝免签订单',
+      description: '查看所有 AliMPay（支付宝个人免签）充值订单',
+      paymentAmount: '实付金额',
+      sourceDomain: '来源域名',
+    },
 
     settings: {
       site: {

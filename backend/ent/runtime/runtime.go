@@ -836,22 +836,34 @@ func init() {
 	orderDescTradeNo := orderFields[1].Descriptor()
 	// order.TradeNoValidator is a validator for the "trade_no" field. It is called by the builders before save.
 	order.TradeNoValidator = orderDescTradeNo.Validators[0].(func(string) error)
+	// orderDescCreditAmount is the schema descriptor for credit_amount field.
+	orderDescCreditAmount := orderFields[6].Descriptor()
+	// order.DefaultCreditAmount holds the default value on creation for the credit_amount field.
+	order.DefaultCreditAmount = orderDescCreditAmount.Default.(float64)
+	// orderDescMultiplier is the schema descriptor for multiplier field.
+	orderDescMultiplier := orderFields[7].Descriptor()
+	// order.DefaultMultiplier holds the default value on creation for the multiplier field.
+	order.DefaultMultiplier = orderDescMultiplier.Default.(float64)
 	// orderDescStatus is the schema descriptor for status field.
-	orderDescStatus := orderFields[6].Descriptor()
+	orderDescStatus := orderFields[8].Descriptor()
 	// order.DefaultStatus holds the default value on creation for the status field.
 	order.DefaultStatus = orderDescStatus.Default.(string)
 	// order.StatusValidator is a validator for the "status" field. It is called by the builders before save.
 	order.StatusValidator = orderDescStatus.Validators[0].(func(string) error)
 	// orderDescPayType is the schema descriptor for pay_type field.
-	orderDescPayType := orderFields[7].Descriptor()
+	orderDescPayType := orderFields[9].Descriptor()
 	// order.PayTypeValidator is a validator for the "pay_type" field. It is called by the builders before save.
 	order.PayTypeValidator = orderDescPayType.Validators[0].(func(string) error)
+	// orderDescSourceDomain is the schema descriptor for source_domain field.
+	orderDescSourceDomain := orderFields[11].Descriptor()
+	// order.SourceDomainValidator is a validator for the "source_domain" field. It is called by the builders before save.
+	order.SourceDomainValidator = orderDescSourceDomain.Validators[0].(func(string) error)
 	// orderDescCreatedAt is the schema descriptor for created_at field.
-	orderDescCreatedAt := orderFields[10].Descriptor()
+	orderDescCreatedAt := orderFields[12].Descriptor()
 	// order.DefaultCreatedAt holds the default value on creation for the created_at field.
 	order.DefaultCreatedAt = orderDescCreatedAt.Default.(func() time.Time)
 	// orderDescUpdatedAt is the schema descriptor for updated_at field.
-	orderDescUpdatedAt := orderFields[11].Descriptor()
+	orderDescUpdatedAt := orderFields[13].Descriptor()
 	// order.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	order.DefaultUpdatedAt = orderDescUpdatedAt.Default.(func() time.Time)
 	// order.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

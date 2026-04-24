@@ -208,6 +208,18 @@ export const customRoutes: RouteRecordRaw[] = [
     }
   },
 
+  {
+    path: '/admin/alimpay-orders',
+    name: 'AdminAliMPayOrders',
+    component: () => import('@/views/admin/AliMPayOrdersView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: 'AliMPay Orders',
+      titleKey: 'admin.alimpayOrders.title'
+    }
+  },
+
   // ==================== Public Key Query ====================
   {
     path: '/key-query',

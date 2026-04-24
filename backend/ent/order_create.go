@@ -15,7 +15,6 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/order"
 	"github.com/Wei-Shaw/sub2api/ent/referralreward"
 	"github.com/Wei-Shaw/sub2api/ent/user"
-	"github.com/Wei-Shaw/sub2api/ent/usersubscription"
 )
 
 // OrderCreate is the builder for creating a Order entity.
@@ -58,6 +57,14 @@ func (_c *OrderCreate) SetGroupID(v int64) *OrderCreate {
 	return _c
 }
 
+// SetNillableGroupID sets the "group_id" field if the given value is not nil.
+func (_c *OrderCreate) SetNillableGroupID(v *int64) *OrderCreate {
+	if v != nil {
+		_c.SetGroupID(*v)
+	}
+	return _c
+}
+
 // SetAmount sets the "amount" field.
 func (_c *OrderCreate) SetAmount(v float64) *OrderCreate {
 	_c.mutation.SetAmount(v)
@@ -74,6 +81,34 @@ func (_c *OrderCreate) SetPaymentAmount(v float64) *OrderCreate {
 func (_c *OrderCreate) SetNillablePaymentAmount(v *float64) *OrderCreate {
 	if v != nil {
 		_c.SetPaymentAmount(*v)
+	}
+	return _c
+}
+
+// SetCreditAmount sets the "credit_amount" field.
+func (_c *OrderCreate) SetCreditAmount(v float64) *OrderCreate {
+	_c.mutation.SetCreditAmount(v)
+	return _c
+}
+
+// SetNillableCreditAmount sets the "credit_amount" field if the given value is not nil.
+func (_c *OrderCreate) SetNillableCreditAmount(v *float64) *OrderCreate {
+	if v != nil {
+		_c.SetCreditAmount(*v)
+	}
+	return _c
+}
+
+// SetMultiplier sets the "multiplier" field.
+func (_c *OrderCreate) SetMultiplier(v float64) *OrderCreate {
+	_c.mutation.SetMultiplier(v)
+	return _c
+}
+
+// SetNillableMultiplier sets the "multiplier" field if the given value is not nil.
+func (_c *OrderCreate) SetNillableMultiplier(v *float64) *OrderCreate {
+	if v != nil {
+		_c.SetMultiplier(*v)
 	}
 	return _c
 }
@@ -120,16 +155,16 @@ func (_c *OrderCreate) SetNillablePaidAt(v *time.Time) *OrderCreate {
 	return _c
 }
 
-// SetSubscriptionID sets the "subscription_id" field.
-func (_c *OrderCreate) SetSubscriptionID(v int64) *OrderCreate {
-	_c.mutation.SetSubscriptionID(v)
+// SetSourceDomain sets the "source_domain" field.
+func (_c *OrderCreate) SetSourceDomain(v string) *OrderCreate {
+	_c.mutation.SetSourceDomain(v)
 	return _c
 }
 
-// SetNillableSubscriptionID sets the "subscription_id" field if the given value is not nil.
-func (_c *OrderCreate) SetNillableSubscriptionID(v *int64) *OrderCreate {
+// SetNillableSourceDomain sets the "source_domain" field if the given value is not nil.
+func (_c *OrderCreate) SetNillableSourceDomain(v *string) *OrderCreate {
 	if v != nil {
-		_c.SetSubscriptionID(*v)
+		_c.SetSourceDomain(*v)
 	}
 	return _c
 }
@@ -186,11 +221,6 @@ func (_c *OrderCreate) SetGroup(v *Group) *OrderCreate {
 	return _c.SetGroupID(v.ID)
 }
 
-// SetSubscription sets the "subscription" edge to the UserSubscription entity.
-func (_c *OrderCreate) SetSubscription(v *UserSubscription) *OrderCreate {
-	return _c.SetSubscriptionID(v.ID)
-}
-
 // SetReferralRewardID sets the "referral_reward" edge to the ReferralReward entity by ID.
 func (_c *OrderCreate) SetReferralRewardID(id int64) *OrderCreate {
 	_c.mutation.SetReferralRewardID(id)
@@ -245,6 +275,14 @@ func (_c *OrderCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (_c *OrderCreate) defaults() {
+	if _, ok := _c.mutation.CreditAmount(); !ok {
+		v := order.DefaultCreditAmount
+		_c.mutation.SetCreditAmount(v)
+	}
+	if _, ok := _c.mutation.Multiplier(); !ok {
+		v := order.DefaultMultiplier
+		_c.mutation.SetMultiplier(v)
+	}
 	if _, ok := _c.mutation.Status(); !ok {
 		v := order.DefaultStatus
 		_c.mutation.SetStatus(v)
@@ -277,11 +315,14 @@ func (_c *OrderCreate) check() error {
 	if _, ok := _c.mutation.UserID(); !ok {
 		return &ValidationError{Name: "user_id", err: errors.New(`ent: missing required field "Order.user_id"`)}
 	}
-	if _, ok := _c.mutation.GroupID(); !ok {
-		return &ValidationError{Name: "group_id", err: errors.New(`ent: missing required field "Order.group_id"`)}
-	}
 	if _, ok := _c.mutation.Amount(); !ok {
 		return &ValidationError{Name: "amount", err: errors.New(`ent: missing required field "Order.amount"`)}
+	}
+	if _, ok := _c.mutation.CreditAmount(); !ok {
+		return &ValidationError{Name: "credit_amount", err: errors.New(`ent: missing required field "Order.credit_amount"`)}
+	}
+	if _, ok := _c.mutation.Multiplier(); !ok {
+		return &ValidationError{Name: "multiplier", err: errors.New(`ent: missing required field "Order.multiplier"`)}
 	}
 	if _, ok := _c.mutation.Status(); !ok {
 		return &ValidationError{Name: "status", err: errors.New(`ent: missing required field "Order.status"`)}
@@ -296,6 +337,11 @@ func (_c *OrderCreate) check() error {
 			return &ValidationError{Name: "pay_type", err: fmt.Errorf(`ent: validator failed for field "Order.pay_type": %w`, err)}
 		}
 	}
+	if v, ok := _c.mutation.SourceDomain(); ok {
+		if err := order.SourceDomainValidator(v); err != nil {
+			return &ValidationError{Name: "source_domain", err: fmt.Errorf(`ent: validator failed for field "Order.source_domain": %w`, err)}
+		}
+	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "Order.created_at"`)}
 	}
@@ -304,9 +350,6 @@ func (_c *OrderCreate) check() error {
 	}
 	if len(_c.mutation.UserIDs()) == 0 {
 		return &ValidationError{Name: "user", err: errors.New(`ent: missing required edge "Order.user"`)}
-	}
-	if len(_c.mutation.GroupIDs()) == 0 {
-		return &ValidationError{Name: "group", err: errors.New(`ent: missing required edge "Order.group"`)}
 	}
 	return nil
 }
@@ -351,6 +394,14 @@ func (_c *OrderCreate) createSpec() (*Order, *sqlgraph.CreateSpec) {
 		_spec.SetField(order.FieldPaymentAmount, field.TypeFloat64, value)
 		_node.PaymentAmount = value
 	}
+	if value, ok := _c.mutation.CreditAmount(); ok {
+		_spec.SetField(order.FieldCreditAmount, field.TypeFloat64, value)
+		_node.CreditAmount = value
+	}
+	if value, ok := _c.mutation.Multiplier(); ok {
+		_spec.SetField(order.FieldMultiplier, field.TypeFloat64, value)
+		_node.Multiplier = value
+	}
 	if value, ok := _c.mutation.Status(); ok {
 		_spec.SetField(order.FieldStatus, field.TypeString, value)
 		_node.Status = value
@@ -362,6 +413,10 @@ func (_c *OrderCreate) createSpec() (*Order, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.PaidAt(); ok {
 		_spec.SetField(order.FieldPaidAt, field.TypeTime, value)
 		_node.PaidAt = &value
+	}
+	if value, ok := _c.mutation.SourceDomain(); ok {
+		_spec.SetField(order.FieldSourceDomain, field.TypeString, value)
+		_node.SourceDomain = &value
 	}
 	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(order.FieldCreatedAt, field.TypeTime, value)
@@ -406,24 +461,7 @@ func (_c *OrderCreate) createSpec() (*Order, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.GroupID = nodes[0]
-		_spec.Edges = append(_spec.Edges, edge)
-	}
-	if nodes := _c.mutation.SubscriptionIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   order.SubscriptionTable,
-			Columns: []string{order.SubscriptionColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(usersubscription.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_node.SubscriptionID = &nodes[0]
+		_node.GroupID = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := _c.mutation.ReferralRewardIDs(); len(nodes) > 0 {
@@ -548,6 +586,12 @@ func (u *OrderUpsert) UpdateGroupID() *OrderUpsert {
 	return u
 }
 
+// ClearGroupID clears the value of the "group_id" field.
+func (u *OrderUpsert) ClearGroupID() *OrderUpsert {
+	u.SetNull(order.FieldGroupID)
+	return u
+}
+
 // SetAmount sets the "amount" field.
 func (u *OrderUpsert) SetAmount(v float64) *OrderUpsert {
 	u.Set(order.FieldAmount, v)
@@ -587,6 +631,42 @@ func (u *OrderUpsert) AddPaymentAmount(v float64) *OrderUpsert {
 // ClearPaymentAmount clears the value of the "payment_amount" field.
 func (u *OrderUpsert) ClearPaymentAmount() *OrderUpsert {
 	u.SetNull(order.FieldPaymentAmount)
+	return u
+}
+
+// SetCreditAmount sets the "credit_amount" field.
+func (u *OrderUpsert) SetCreditAmount(v float64) *OrderUpsert {
+	u.Set(order.FieldCreditAmount, v)
+	return u
+}
+
+// UpdateCreditAmount sets the "credit_amount" field to the value that was provided on create.
+func (u *OrderUpsert) UpdateCreditAmount() *OrderUpsert {
+	u.SetExcluded(order.FieldCreditAmount)
+	return u
+}
+
+// AddCreditAmount adds v to the "credit_amount" field.
+func (u *OrderUpsert) AddCreditAmount(v float64) *OrderUpsert {
+	u.Add(order.FieldCreditAmount, v)
+	return u
+}
+
+// SetMultiplier sets the "multiplier" field.
+func (u *OrderUpsert) SetMultiplier(v float64) *OrderUpsert {
+	u.Set(order.FieldMultiplier, v)
+	return u
+}
+
+// UpdateMultiplier sets the "multiplier" field to the value that was provided on create.
+func (u *OrderUpsert) UpdateMultiplier() *OrderUpsert {
+	u.SetExcluded(order.FieldMultiplier)
+	return u
+}
+
+// AddMultiplier adds v to the "multiplier" field.
+func (u *OrderUpsert) AddMultiplier(v float64) *OrderUpsert {
+	u.Add(order.FieldMultiplier, v)
 	return u
 }
 
@@ -638,21 +718,21 @@ func (u *OrderUpsert) ClearPaidAt() *OrderUpsert {
 	return u
 }
 
-// SetSubscriptionID sets the "subscription_id" field.
-func (u *OrderUpsert) SetSubscriptionID(v int64) *OrderUpsert {
-	u.Set(order.FieldSubscriptionID, v)
+// SetSourceDomain sets the "source_domain" field.
+func (u *OrderUpsert) SetSourceDomain(v string) *OrderUpsert {
+	u.Set(order.FieldSourceDomain, v)
 	return u
 }
 
-// UpdateSubscriptionID sets the "subscription_id" field to the value that was provided on create.
-func (u *OrderUpsert) UpdateSubscriptionID() *OrderUpsert {
-	u.SetExcluded(order.FieldSubscriptionID)
+// UpdateSourceDomain sets the "source_domain" field to the value that was provided on create.
+func (u *OrderUpsert) UpdateSourceDomain() *OrderUpsert {
+	u.SetExcluded(order.FieldSourceDomain)
 	return u
 }
 
-// ClearSubscriptionID clears the value of the "subscription_id" field.
-func (u *OrderUpsert) ClearSubscriptionID() *OrderUpsert {
-	u.SetNull(order.FieldSubscriptionID)
+// ClearSourceDomain clears the value of the "source_domain" field.
+func (u *OrderUpsert) ClearSourceDomain() *OrderUpsert {
+	u.SetNull(order.FieldSourceDomain)
 	return u
 }
 
@@ -794,6 +874,13 @@ func (u *OrderUpsertOne) UpdateGroupID() *OrderUpsertOne {
 	})
 }
 
+// ClearGroupID clears the value of the "group_id" field.
+func (u *OrderUpsertOne) ClearGroupID() *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.ClearGroupID()
+	})
+}
+
 // SetAmount sets the "amount" field.
 func (u *OrderUpsertOne) SetAmount(v float64) *OrderUpsertOne {
 	return u.Update(func(s *OrderUpsert) {
@@ -840,6 +927,48 @@ func (u *OrderUpsertOne) UpdatePaymentAmount() *OrderUpsertOne {
 func (u *OrderUpsertOne) ClearPaymentAmount() *OrderUpsertOne {
 	return u.Update(func(s *OrderUpsert) {
 		s.ClearPaymentAmount()
+	})
+}
+
+// SetCreditAmount sets the "credit_amount" field.
+func (u *OrderUpsertOne) SetCreditAmount(v float64) *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.SetCreditAmount(v)
+	})
+}
+
+// AddCreditAmount adds v to the "credit_amount" field.
+func (u *OrderUpsertOne) AddCreditAmount(v float64) *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.AddCreditAmount(v)
+	})
+}
+
+// UpdateCreditAmount sets the "credit_amount" field to the value that was provided on create.
+func (u *OrderUpsertOne) UpdateCreditAmount() *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.UpdateCreditAmount()
+	})
+}
+
+// SetMultiplier sets the "multiplier" field.
+func (u *OrderUpsertOne) SetMultiplier(v float64) *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.SetMultiplier(v)
+	})
+}
+
+// AddMultiplier adds v to the "multiplier" field.
+func (u *OrderUpsertOne) AddMultiplier(v float64) *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.AddMultiplier(v)
+	})
+}
+
+// UpdateMultiplier sets the "multiplier" field to the value that was provided on create.
+func (u *OrderUpsertOne) UpdateMultiplier() *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.UpdateMultiplier()
 	})
 }
 
@@ -899,24 +1028,24 @@ func (u *OrderUpsertOne) ClearPaidAt() *OrderUpsertOne {
 	})
 }
 
-// SetSubscriptionID sets the "subscription_id" field.
-func (u *OrderUpsertOne) SetSubscriptionID(v int64) *OrderUpsertOne {
+// SetSourceDomain sets the "source_domain" field.
+func (u *OrderUpsertOne) SetSourceDomain(v string) *OrderUpsertOne {
 	return u.Update(func(s *OrderUpsert) {
-		s.SetSubscriptionID(v)
+		s.SetSourceDomain(v)
 	})
 }
 
-// UpdateSubscriptionID sets the "subscription_id" field to the value that was provided on create.
-func (u *OrderUpsertOne) UpdateSubscriptionID() *OrderUpsertOne {
+// UpdateSourceDomain sets the "source_domain" field to the value that was provided on create.
+func (u *OrderUpsertOne) UpdateSourceDomain() *OrderUpsertOne {
 	return u.Update(func(s *OrderUpsert) {
-		s.UpdateSubscriptionID()
+		s.UpdateSourceDomain()
 	})
 }
 
-// ClearSubscriptionID clears the value of the "subscription_id" field.
-func (u *OrderUpsertOne) ClearSubscriptionID() *OrderUpsertOne {
+// ClearSourceDomain clears the value of the "source_domain" field.
+func (u *OrderUpsertOne) ClearSourceDomain() *OrderUpsertOne {
 	return u.Update(func(s *OrderUpsert) {
-		s.ClearSubscriptionID()
+		s.ClearSourceDomain()
 	})
 }
 
@@ -1229,6 +1358,13 @@ func (u *OrderUpsertBulk) UpdateGroupID() *OrderUpsertBulk {
 	})
 }
 
+// ClearGroupID clears the value of the "group_id" field.
+func (u *OrderUpsertBulk) ClearGroupID() *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.ClearGroupID()
+	})
+}
+
 // SetAmount sets the "amount" field.
 func (u *OrderUpsertBulk) SetAmount(v float64) *OrderUpsertBulk {
 	return u.Update(func(s *OrderUpsert) {
@@ -1275,6 +1411,48 @@ func (u *OrderUpsertBulk) UpdatePaymentAmount() *OrderUpsertBulk {
 func (u *OrderUpsertBulk) ClearPaymentAmount() *OrderUpsertBulk {
 	return u.Update(func(s *OrderUpsert) {
 		s.ClearPaymentAmount()
+	})
+}
+
+// SetCreditAmount sets the "credit_amount" field.
+func (u *OrderUpsertBulk) SetCreditAmount(v float64) *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.SetCreditAmount(v)
+	})
+}
+
+// AddCreditAmount adds v to the "credit_amount" field.
+func (u *OrderUpsertBulk) AddCreditAmount(v float64) *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.AddCreditAmount(v)
+	})
+}
+
+// UpdateCreditAmount sets the "credit_amount" field to the value that was provided on create.
+func (u *OrderUpsertBulk) UpdateCreditAmount() *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.UpdateCreditAmount()
+	})
+}
+
+// SetMultiplier sets the "multiplier" field.
+func (u *OrderUpsertBulk) SetMultiplier(v float64) *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.SetMultiplier(v)
+	})
+}
+
+// AddMultiplier adds v to the "multiplier" field.
+func (u *OrderUpsertBulk) AddMultiplier(v float64) *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.AddMultiplier(v)
+	})
+}
+
+// UpdateMultiplier sets the "multiplier" field to the value that was provided on create.
+func (u *OrderUpsertBulk) UpdateMultiplier() *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.UpdateMultiplier()
 	})
 }
 
@@ -1334,24 +1512,24 @@ func (u *OrderUpsertBulk) ClearPaidAt() *OrderUpsertBulk {
 	})
 }
 
-// SetSubscriptionID sets the "subscription_id" field.
-func (u *OrderUpsertBulk) SetSubscriptionID(v int64) *OrderUpsertBulk {
+// SetSourceDomain sets the "source_domain" field.
+func (u *OrderUpsertBulk) SetSourceDomain(v string) *OrderUpsertBulk {
 	return u.Update(func(s *OrderUpsert) {
-		s.SetSubscriptionID(v)
+		s.SetSourceDomain(v)
 	})
 }
 
-// UpdateSubscriptionID sets the "subscription_id" field to the value that was provided on create.
-func (u *OrderUpsertBulk) UpdateSubscriptionID() *OrderUpsertBulk {
+// UpdateSourceDomain sets the "source_domain" field to the value that was provided on create.
+func (u *OrderUpsertBulk) UpdateSourceDomain() *OrderUpsertBulk {
 	return u.Update(func(s *OrderUpsert) {
-		s.UpdateSubscriptionID()
+		s.UpdateSourceDomain()
 	})
 }
 
-// ClearSubscriptionID clears the value of the "subscription_id" field.
-func (u *OrderUpsertBulk) ClearSubscriptionID() *OrderUpsertBulk {
+// ClearSourceDomain clears the value of the "source_domain" field.
+func (u *OrderUpsertBulk) ClearSourceDomain() *OrderUpsertBulk {
 	return u.Update(func(s *OrderUpsert) {
-		s.ClearSubscriptionID()
+		s.ClearSourceDomain()
 	})
 }
 

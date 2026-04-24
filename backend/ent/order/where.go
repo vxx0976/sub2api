@@ -85,6 +85,16 @@ func PaymentAmount(v float64) predicate.Order {
 	return predicate.Order(sql.FieldEQ(FieldPaymentAmount, v))
 }
 
+// CreditAmount applies equality check predicate on the "credit_amount" field. It's identical to CreditAmountEQ.
+func CreditAmount(v float64) predicate.Order {
+	return predicate.Order(sql.FieldEQ(FieldCreditAmount, v))
+}
+
+// Multiplier applies equality check predicate on the "multiplier" field. It's identical to MultiplierEQ.
+func Multiplier(v float64) predicate.Order {
+	return predicate.Order(sql.FieldEQ(FieldMultiplier, v))
+}
+
 // Status applies equality check predicate on the "status" field. It's identical to StatusEQ.
 func Status(v string) predicate.Order {
 	return predicate.Order(sql.FieldEQ(FieldStatus, v))
@@ -100,9 +110,9 @@ func PaidAt(v time.Time) predicate.Order {
 	return predicate.Order(sql.FieldEQ(FieldPaidAt, v))
 }
 
-// SubscriptionID applies equality check predicate on the "subscription_id" field. It's identical to SubscriptionIDEQ.
-func SubscriptionID(v int64) predicate.Order {
-	return predicate.Order(sql.FieldEQ(FieldSubscriptionID, v))
+// SourceDomain applies equality check predicate on the "source_domain" field. It's identical to SourceDomainEQ.
+func SourceDomain(v string) predicate.Order {
+	return predicate.Order(sql.FieldEQ(FieldSourceDomain, v))
 }
 
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
@@ -300,6 +310,16 @@ func GroupIDNotIn(vs ...int64) predicate.Order {
 	return predicate.Order(sql.FieldNotIn(FieldGroupID, vs...))
 }
 
+// GroupIDIsNil applies the IsNil predicate on the "group_id" field.
+func GroupIDIsNil() predicate.Order {
+	return predicate.Order(sql.FieldIsNull(FieldGroupID))
+}
+
+// GroupIDNotNil applies the NotNil predicate on the "group_id" field.
+func GroupIDNotNil() predicate.Order {
+	return predicate.Order(sql.FieldNotNull(FieldGroupID))
+}
+
 // AmountEQ applies the EQ predicate on the "amount" field.
 func AmountEQ(v float64) predicate.Order {
 	return predicate.Order(sql.FieldEQ(FieldAmount, v))
@@ -388,6 +408,86 @@ func PaymentAmountIsNil() predicate.Order {
 // PaymentAmountNotNil applies the NotNil predicate on the "payment_amount" field.
 func PaymentAmountNotNil() predicate.Order {
 	return predicate.Order(sql.FieldNotNull(FieldPaymentAmount))
+}
+
+// CreditAmountEQ applies the EQ predicate on the "credit_amount" field.
+func CreditAmountEQ(v float64) predicate.Order {
+	return predicate.Order(sql.FieldEQ(FieldCreditAmount, v))
+}
+
+// CreditAmountNEQ applies the NEQ predicate on the "credit_amount" field.
+func CreditAmountNEQ(v float64) predicate.Order {
+	return predicate.Order(sql.FieldNEQ(FieldCreditAmount, v))
+}
+
+// CreditAmountIn applies the In predicate on the "credit_amount" field.
+func CreditAmountIn(vs ...float64) predicate.Order {
+	return predicate.Order(sql.FieldIn(FieldCreditAmount, vs...))
+}
+
+// CreditAmountNotIn applies the NotIn predicate on the "credit_amount" field.
+func CreditAmountNotIn(vs ...float64) predicate.Order {
+	return predicate.Order(sql.FieldNotIn(FieldCreditAmount, vs...))
+}
+
+// CreditAmountGT applies the GT predicate on the "credit_amount" field.
+func CreditAmountGT(v float64) predicate.Order {
+	return predicate.Order(sql.FieldGT(FieldCreditAmount, v))
+}
+
+// CreditAmountGTE applies the GTE predicate on the "credit_amount" field.
+func CreditAmountGTE(v float64) predicate.Order {
+	return predicate.Order(sql.FieldGTE(FieldCreditAmount, v))
+}
+
+// CreditAmountLT applies the LT predicate on the "credit_amount" field.
+func CreditAmountLT(v float64) predicate.Order {
+	return predicate.Order(sql.FieldLT(FieldCreditAmount, v))
+}
+
+// CreditAmountLTE applies the LTE predicate on the "credit_amount" field.
+func CreditAmountLTE(v float64) predicate.Order {
+	return predicate.Order(sql.FieldLTE(FieldCreditAmount, v))
+}
+
+// MultiplierEQ applies the EQ predicate on the "multiplier" field.
+func MultiplierEQ(v float64) predicate.Order {
+	return predicate.Order(sql.FieldEQ(FieldMultiplier, v))
+}
+
+// MultiplierNEQ applies the NEQ predicate on the "multiplier" field.
+func MultiplierNEQ(v float64) predicate.Order {
+	return predicate.Order(sql.FieldNEQ(FieldMultiplier, v))
+}
+
+// MultiplierIn applies the In predicate on the "multiplier" field.
+func MultiplierIn(vs ...float64) predicate.Order {
+	return predicate.Order(sql.FieldIn(FieldMultiplier, vs...))
+}
+
+// MultiplierNotIn applies the NotIn predicate on the "multiplier" field.
+func MultiplierNotIn(vs ...float64) predicate.Order {
+	return predicate.Order(sql.FieldNotIn(FieldMultiplier, vs...))
+}
+
+// MultiplierGT applies the GT predicate on the "multiplier" field.
+func MultiplierGT(v float64) predicate.Order {
+	return predicate.Order(sql.FieldGT(FieldMultiplier, v))
+}
+
+// MultiplierGTE applies the GTE predicate on the "multiplier" field.
+func MultiplierGTE(v float64) predicate.Order {
+	return predicate.Order(sql.FieldGTE(FieldMultiplier, v))
+}
+
+// MultiplierLT applies the LT predicate on the "multiplier" field.
+func MultiplierLT(v float64) predicate.Order {
+	return predicate.Order(sql.FieldLT(FieldMultiplier, v))
+}
+
+// MultiplierLTE applies the LTE predicate on the "multiplier" field.
+func MultiplierLTE(v float64) predicate.Order {
+	return predicate.Order(sql.FieldLTE(FieldMultiplier, v))
 }
 
 // StatusEQ applies the EQ predicate on the "status" field.
@@ -580,34 +680,79 @@ func PaidAtNotNil() predicate.Order {
 	return predicate.Order(sql.FieldNotNull(FieldPaidAt))
 }
 
-// SubscriptionIDEQ applies the EQ predicate on the "subscription_id" field.
-func SubscriptionIDEQ(v int64) predicate.Order {
-	return predicate.Order(sql.FieldEQ(FieldSubscriptionID, v))
+// SourceDomainEQ applies the EQ predicate on the "source_domain" field.
+func SourceDomainEQ(v string) predicate.Order {
+	return predicate.Order(sql.FieldEQ(FieldSourceDomain, v))
 }
 
-// SubscriptionIDNEQ applies the NEQ predicate on the "subscription_id" field.
-func SubscriptionIDNEQ(v int64) predicate.Order {
-	return predicate.Order(sql.FieldNEQ(FieldSubscriptionID, v))
+// SourceDomainNEQ applies the NEQ predicate on the "source_domain" field.
+func SourceDomainNEQ(v string) predicate.Order {
+	return predicate.Order(sql.FieldNEQ(FieldSourceDomain, v))
 }
 
-// SubscriptionIDIn applies the In predicate on the "subscription_id" field.
-func SubscriptionIDIn(vs ...int64) predicate.Order {
-	return predicate.Order(sql.FieldIn(FieldSubscriptionID, vs...))
+// SourceDomainIn applies the In predicate on the "source_domain" field.
+func SourceDomainIn(vs ...string) predicate.Order {
+	return predicate.Order(sql.FieldIn(FieldSourceDomain, vs...))
 }
 
-// SubscriptionIDNotIn applies the NotIn predicate on the "subscription_id" field.
-func SubscriptionIDNotIn(vs ...int64) predicate.Order {
-	return predicate.Order(sql.FieldNotIn(FieldSubscriptionID, vs...))
+// SourceDomainNotIn applies the NotIn predicate on the "source_domain" field.
+func SourceDomainNotIn(vs ...string) predicate.Order {
+	return predicate.Order(sql.FieldNotIn(FieldSourceDomain, vs...))
 }
 
-// SubscriptionIDIsNil applies the IsNil predicate on the "subscription_id" field.
-func SubscriptionIDIsNil() predicate.Order {
-	return predicate.Order(sql.FieldIsNull(FieldSubscriptionID))
+// SourceDomainGT applies the GT predicate on the "source_domain" field.
+func SourceDomainGT(v string) predicate.Order {
+	return predicate.Order(sql.FieldGT(FieldSourceDomain, v))
 }
 
-// SubscriptionIDNotNil applies the NotNil predicate on the "subscription_id" field.
-func SubscriptionIDNotNil() predicate.Order {
-	return predicate.Order(sql.FieldNotNull(FieldSubscriptionID))
+// SourceDomainGTE applies the GTE predicate on the "source_domain" field.
+func SourceDomainGTE(v string) predicate.Order {
+	return predicate.Order(sql.FieldGTE(FieldSourceDomain, v))
+}
+
+// SourceDomainLT applies the LT predicate on the "source_domain" field.
+func SourceDomainLT(v string) predicate.Order {
+	return predicate.Order(sql.FieldLT(FieldSourceDomain, v))
+}
+
+// SourceDomainLTE applies the LTE predicate on the "source_domain" field.
+func SourceDomainLTE(v string) predicate.Order {
+	return predicate.Order(sql.FieldLTE(FieldSourceDomain, v))
+}
+
+// SourceDomainContains applies the Contains predicate on the "source_domain" field.
+func SourceDomainContains(v string) predicate.Order {
+	return predicate.Order(sql.FieldContains(FieldSourceDomain, v))
+}
+
+// SourceDomainHasPrefix applies the HasPrefix predicate on the "source_domain" field.
+func SourceDomainHasPrefix(v string) predicate.Order {
+	return predicate.Order(sql.FieldHasPrefix(FieldSourceDomain, v))
+}
+
+// SourceDomainHasSuffix applies the HasSuffix predicate on the "source_domain" field.
+func SourceDomainHasSuffix(v string) predicate.Order {
+	return predicate.Order(sql.FieldHasSuffix(FieldSourceDomain, v))
+}
+
+// SourceDomainIsNil applies the IsNil predicate on the "source_domain" field.
+func SourceDomainIsNil() predicate.Order {
+	return predicate.Order(sql.FieldIsNull(FieldSourceDomain))
+}
+
+// SourceDomainNotNil applies the NotNil predicate on the "source_domain" field.
+func SourceDomainNotNil() predicate.Order {
+	return predicate.Order(sql.FieldNotNull(FieldSourceDomain))
+}
+
+// SourceDomainEqualFold applies the EqualFold predicate on the "source_domain" field.
+func SourceDomainEqualFold(v string) predicate.Order {
+	return predicate.Order(sql.FieldEqualFold(FieldSourceDomain, v))
+}
+
+// SourceDomainContainsFold applies the ContainsFold predicate on the "source_domain" field.
+func SourceDomainContainsFold(v string) predicate.Order {
+	return predicate.Order(sql.FieldContainsFold(FieldSourceDomain, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
@@ -778,29 +923,6 @@ func HasGroup() predicate.Order {
 func HasGroupWith(preds ...predicate.Group) predicate.Order {
 	return predicate.Order(func(s *sql.Selector) {
 		step := newGroupStep()
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
-}
-
-// HasSubscription applies the HasEdge predicate on the "subscription" edge.
-func HasSubscription() predicate.Order {
-	return predicate.Order(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, SubscriptionTable, SubscriptionColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasSubscriptionWith applies the HasEdge predicate on the "subscription" edge with a given conditions (other predicates).
-func HasSubscriptionWith(preds ...predicate.UserSubscription) predicate.Order {
-	return predicate.Order(func(s *sql.Selector) {
-		step := newSubscriptionStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

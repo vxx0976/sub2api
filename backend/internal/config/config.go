@@ -91,6 +91,30 @@ type Config struct {
 	Gemini                  GeminiConfig                  `mapstructure:"gemini"`
 	Update                  UpdateConfig                  `mapstructure:"update"`
 	Idempotency             IdempotencyConfig             `mapstructure:"idempotency"`
+	Payment                 PaymentConfig                 `mapstructure:"payment"`
+}
+
+// PaymentConfig AliMPay 个人免签支付配置（Order 充值系统专用；与 EPAY RechargeOrder 无关）
+type PaymentConfig struct {
+	Enabled bool                `mapstructure:"enabled"`
+	Alipay  AlipayPaymentConfig `mapstructure:"alipay"`
+}
+
+// AlipayPaymentConfig 支付宝原生支付配置
+type AlipayPaymentConfig struct {
+	AppID                  string  `mapstructure:"app_id"`
+	PrivateKey             string  `mapstructure:"private_key"`
+	AlipayPublicKey        string  `mapstructure:"alipay_public_key"`
+	ServerURL              string  `mapstructure:"server_url"`
+	TransferUserID         string  `mapstructure:"transfer_user_id"`
+	Mode                   string  `mapstructure:"mode"` // business_qr | transfer
+	BusinessQRURL          string  `mapstructure:"business_qr_url"`
+	BusinessQRPath         string  `mapstructure:"business_qr_path"`
+	AmountOffset           float64 `mapstructure:"amount_offset"`
+	MatchToleranceSeconds  int     `mapstructure:"match_tolerance_seconds"`
+	MonitorIntervalSeconds int     `mapstructure:"monitor_interval_seconds"`
+	QueryMinutesBack       int     `mapstructure:"query_minutes_back"`
+	OrderTimeoutSeconds    int     `mapstructure:"order_timeout_seconds"`
 }
 
 type LogConfig struct {

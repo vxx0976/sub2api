@@ -3026,6 +3026,9 @@
           </div>
         </div>
 
+        <!-- AliMPay (Alipay 个人免签) Settings -->
+        <AliMPayConfigCard />
+
         <!-- Custom Menu Items -->
         <div class="card">
           <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
@@ -3678,6 +3681,7 @@ import ProxySelector from '@/components/common/ProxySelector.vue'
 import ImageUpload from '@/components/common/ImageUpload.vue'
 import MarkdownEditor from '@/components/common/MarkdownEditor.vue'
 import BackupSettings from '@/views/admin/BackupView.vue'
+import AliMPayConfigCard from '@/views/admin/components/AliMPayConfigCard.vue'
 import { useClipboard } from '@/composables/useClipboard'
 import { extractApiErrorMessage } from '@/utils/apiError'
 import { useAppStore } from '@/stores'

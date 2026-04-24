@@ -96,6 +96,7 @@ var ProviderSet = wire.NewSet(
 	wire.Bind(new(service.ResellerWithdrawalRepository), new(*ResellerWithdrawalRepo)),
 	NewTLSFingerprintProfileRepository,
 	NewRechargeOrderRepo,
+	NewOrderRepo,
 
 	// Cache implementations
 	NewGatewayCache,

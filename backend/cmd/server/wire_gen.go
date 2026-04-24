@@ -14,6 +14,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/handler/admin"
 	"github.com/Wei-Shaw/sub2api/internal/handler/reseller"
 	"github.com/Wei-Shaw/sub2api/internal/payment"
+	payment2 "github.com/Wei-Shaw/sub2api/internal/pkg/payment"
 	"github.com/Wei-Shaw/sub2api/internal/repository"
 	"github.com/Wei-Shaw/sub2api/internal/server"
 	"github.com/Wei-Shaw/sub2api/internal/server/middleware"
@@ -232,7 +233,8 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	resellerWithdrawalRepo := repository.NewResellerWithdrawalRepo(client)
 	sub2apipayService := service.ProvideSub2apipayService(settingRepository)
 	rechargeOrderRepository := repository.NewRechargeOrderRepo(client)
-	commissionService := service.NewCommissionService(resellerWithdrawalRepo, usageLogRepository, userRepository, resellerSettingRepository, resellerDomainRepository, sub2apipayService, rechargeOrderRepository)
+	orderRepository := repository.NewOrderRepo(client)
+	commissionService := service.NewCommissionService(resellerWithdrawalRepo, usageLogRepository, userRepository, resellerSettingRepository, resellerDomainRepository, sub2apipayService, rechargeOrderRepository, orderRepository)
 	merchantHandler := admin.NewMerchantHandler(commissionService, adminService)
 	adminWithdrawalHandler := admin.NewAdminWithdrawalHandler(commissionService)
 	paymentHandler := admin.NewPaymentHandler(paymentService, paymentConfigService)
@@ -280,9 +282,16 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	tokenRefreshService := service.ProvideTokenRefreshService(accountRepository, oAuthService, openAIOAuthService, geminiOAuthService, antigravityOAuthService, compositeTokenCacheInvalidator, schedulerCache, configConfig, tempUnschedCache, privacyClientFactory, proxyRepository, oAuthRefreshAPI, leaderLocker)
 	accountExpiryService := service.ProvideAccountExpiryService(accountRepository, leaderLocker)
 	subscriptionExpiryService := service.ProvideSubscriptionExpiryService(userSubscriptionRepository, leaderLocker)
+	settingGetter := service.ProvidePaymentSettingGetter(settingRepository)
+	alipayPayment, err := payment2.ProvideAlipayPayment(configConfig, settingGetter)
+	if err != nil {
+		return nil, err
+	}
+	orderService := service.NewOrderService(orderRepository, settingRepository, adminService, settingService, alipayPayment, leaderLocker)
+	alipayMonitor := payment2.ProvideAlipayMonitor(alipayPayment, orderService)
 	scheduledTestRunnerService := service.ProvideScheduledTestRunnerService(scheduledTestPlanRepository, scheduledTestService, accountTestService, rateLimitService, configConfig, leaderLocker)
 	paymentOrderExpiryService := service.ProvidePaymentOrderExpiryService(paymentService)
-	v := provideCleanup(client, redisClient, opsMetricsCollector, opsAggregationService, opsAlertEvaluatorService, opsCleanupService, opsScheduledReportService, opsSystemLogSink, schedulerSnapshotService, tokenRefreshService, accountExpiryService, subscriptionExpiryService, usageCleanupService, idempotencyCleanupService, pricingService, emailQueueService, billingCacheService, usageRecordWorkerPool, subscriptionService, rechargeService, oAuthService, openAIOAuthService, geminiOAuthService, antigravityOAuthService, openAIGatewayService, scheduledTestRunnerService, groupHealthCheckService, backupService, paymentOrderExpiryService)
+	v := provideCleanup(client, redisClient, opsMetricsCollector, opsAggregationService, opsAlertEvaluatorService, opsCleanupService, opsScheduledReportService, opsSystemLogSink, schedulerSnapshotService, tokenRefreshService, accountExpiryService, subscriptionExpiryService, usageCleanupService, idempotencyCleanupService, pricingService, emailQueueService, billingCacheService, usageRecordWorkerPool, subscriptionService, rechargeService, orderService, alipayMonitor, oAuthService, openAIOAuthService, geminiOAuthService, antigravityOAuthService, openAIGatewayService, scheduledTestRunnerService, groupHealthCheckService, backupService, paymentOrderExpiryService)
 	application := &Application{
 		Server:  httpServer,
 		Cleanup: v,
@@ -329,6 +338,8 @@ func provideCleanup(
 	usageRecordWorkerPool *service.UsageRecordWorkerPool,
 	subscriptionService *service.SubscriptionService,
 	rechargeService *service.RechargeService,
+	orderService *service.OrderService,
+	alipayMonitor *payment2.AlipayMonitor,
 	oauth *service.OAuthService,
 	openaiOAuth *service.OpenAIOAuthService,
 	geminiOAuth *service.GeminiOAuthService,
@@ -424,6 +435,18 @@ func provideCleanup(
 			{"RechargeService", func() error {
 				if rechargeService != nil {
 					rechargeService.Stop()
+				}
+				return nil
+			}},
+			{"OrderService", func() error {
+				if orderService != nil {
+					orderService.Stop()
+				}
+				return nil
+			}},
+			{"AlipayMonitor", func() error {
+				if alipayMonitor != nil {
+					alipayMonitor.Stop()
 				}
 				return nil
 			}},

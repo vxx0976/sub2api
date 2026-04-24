@@ -26,14 +26,18 @@ const (
 	FieldAmount = "amount"
 	// FieldPaymentAmount holds the string denoting the payment_amount field in the database.
 	FieldPaymentAmount = "payment_amount"
+	// FieldCreditAmount holds the string denoting the credit_amount field in the database.
+	FieldCreditAmount = "credit_amount"
+	// FieldMultiplier holds the string denoting the multiplier field in the database.
+	FieldMultiplier = "multiplier"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
 	// FieldPayType holds the string denoting the pay_type field in the database.
 	FieldPayType = "pay_type"
 	// FieldPaidAt holds the string denoting the paid_at field in the database.
 	FieldPaidAt = "paid_at"
-	// FieldSubscriptionID holds the string denoting the subscription_id field in the database.
-	FieldSubscriptionID = "subscription_id"
+	// FieldSourceDomain holds the string denoting the source_domain field in the database.
+	FieldSourceDomain = "source_domain"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
@@ -44,8 +48,6 @@ const (
 	EdgeUser = "user"
 	// EdgeGroup holds the string denoting the group edge name in mutations.
 	EdgeGroup = "group"
-	// EdgeSubscription holds the string denoting the subscription edge name in mutations.
-	EdgeSubscription = "subscription"
 	// EdgeReferralReward holds the string denoting the referral_reward edge name in mutations.
 	EdgeReferralReward = "referral_reward"
 	// Table holds the table name of the order in the database.
@@ -64,13 +66,6 @@ const (
 	GroupInverseTable = "groups"
 	// GroupColumn is the table column denoting the group relation/edge.
 	GroupColumn = "group_id"
-	// SubscriptionTable is the table that holds the subscription relation/edge.
-	SubscriptionTable = "orders"
-	// SubscriptionInverseTable is the table name for the UserSubscription entity.
-	// It exists in this package in order to avoid circular dependency with the "usersubscription" package.
-	SubscriptionInverseTable = "user_subscriptions"
-	// SubscriptionColumn is the table column denoting the subscription relation/edge.
-	SubscriptionColumn = "subscription_id"
 	// ReferralRewardTable is the table that holds the referral_reward relation/edge.
 	ReferralRewardTable = "referral_rewards"
 	// ReferralRewardInverseTable is the table name for the ReferralReward entity.
@@ -89,10 +84,12 @@ var Columns = []string{
 	FieldGroupID,
 	FieldAmount,
 	FieldPaymentAmount,
+	FieldCreditAmount,
+	FieldMultiplier,
 	FieldStatus,
 	FieldPayType,
 	FieldPaidAt,
-	FieldSubscriptionID,
+	FieldSourceDomain,
 	FieldCreatedAt,
 	FieldUpdatedAt,
 	FieldExpiredAt,
@@ -113,12 +110,18 @@ var (
 	OrderNoValidator func(string) error
 	// TradeNoValidator is a validator for the "trade_no" field. It is called by the builders before save.
 	TradeNoValidator func(string) error
+	// DefaultCreditAmount holds the default value on creation for the "credit_amount" field.
+	DefaultCreditAmount float64
+	// DefaultMultiplier holds the default value on creation for the "multiplier" field.
+	DefaultMultiplier float64
 	// DefaultStatus holds the default value on creation for the "status" field.
 	DefaultStatus string
 	// StatusValidator is a validator for the "status" field. It is called by the builders before save.
 	StatusValidator func(string) error
 	// PayTypeValidator is a validator for the "pay_type" field. It is called by the builders before save.
 	PayTypeValidator func(string) error
+	// SourceDomainValidator is a validator for the "source_domain" field. It is called by the builders before save.
+	SourceDomainValidator func(string) error
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
@@ -165,6 +168,16 @@ func ByPaymentAmount(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPaymentAmount, opts...).ToFunc()
 }
 
+// ByCreditAmount orders the results by the credit_amount field.
+func ByCreditAmount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCreditAmount, opts...).ToFunc()
+}
+
+// ByMultiplier orders the results by the multiplier field.
+func ByMultiplier(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldMultiplier, opts...).ToFunc()
+}
+
 // ByStatus orders the results by the status field.
 func ByStatus(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldStatus, opts...).ToFunc()
@@ -180,9 +193,9 @@ func ByPaidAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPaidAt, opts...).ToFunc()
 }
 
-// BySubscriptionID orders the results by the subscription_id field.
-func BySubscriptionID(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldSubscriptionID, opts...).ToFunc()
+// BySourceDomain orders the results by the source_domain field.
+func BySourceDomain(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSourceDomain, opts...).ToFunc()
 }
 
 // ByCreatedAt orders the results by the created_at field.
@@ -214,13 +227,6 @@ func ByGroupField(field string, opts ...sql.OrderTermOption) OrderOption {
 	}
 }
 
-// BySubscriptionField orders the results by subscription field.
-func BySubscriptionField(field string, opts ...sql.OrderTermOption) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newSubscriptionStep(), sql.OrderByField(field, opts...))
-	}
-}
-
 // ByReferralRewardField orders the results by referral_reward field.
 func ByReferralRewardField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -239,13 +245,6 @@ func newGroupStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(GroupInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, GroupTable, GroupColumn),
-	)
-}
-func newSubscriptionStep() *sqlgraph.Step {
-	return sqlgraph.NewStep(
-		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(SubscriptionInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.M2O, true, SubscriptionTable, SubscriptionColumn),
 	)
 }
 func newReferralRewardStep() *sqlgraph.Step {

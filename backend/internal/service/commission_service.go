@@ -117,6 +117,7 @@ type CommissionService struct {
 	domainRepo        ResellerDomainRepository
 	sub2apipayService *Sub2apipayService
 	rechargeOrderRepo RechargeOrderRepository
+	orderRepo         OrderRepository
 }
 
 func NewCommissionService(
@@ -127,6 +128,7 @@ func NewCommissionService(
 	domainRepo ResellerDomainRepository,
 	sub2apipayService *Sub2apipayService,
 	rechargeOrderRepo RechargeOrderRepository,
+	orderRepo OrderRepository,
 ) *CommissionService {
 	return &CommissionService{
 		withdrawalRepo:    withdrawalRepo,
@@ -136,6 +138,7 @@ func NewCommissionService(
 		domainRepo:        domainRepo,
 		sub2apipayService: sub2apipayService,
 		rechargeOrderRepo: rechargeOrderRepo,
+		orderRepo:         orderRepo,
 	}
 }
 
@@ -186,11 +189,17 @@ func (s *CommissionService) GetSummary(ctx context.Context, resellerID int64) (*
 		}
 	}
 
-	// 加上原生充值订单的到账金额
+	// 加上原生充值订单的到账金额（EPAY RechargeOrder + AliMPay Order 两路并行）
 	if s.rechargeOrderRepo != nil && len(userIDs) > 0 {
 		nativeTotal, err := s.rechargeOrderRepo.SumPaidCreditByUserIDs(ctx, userIDs)
 		if err == nil {
 			totalRecharge += nativeTotal
+		}
+	}
+	if s.orderRepo != nil && len(userIDs) > 0 {
+		alimpayTotal, err := s.orderRepo.SumPaidCreditByUserIDs(ctx, userIDs)
+		if err == nil {
+			totalRecharge += alimpayTotal
 		}
 	}
 
@@ -412,6 +421,36 @@ func (s *CommissionService) ListRechargeDetail(ctx context.Context, resellerID i
 					allRecords = append(allRecords, rec)
 				}
 				totalCount += nativeTotal
+			}
+		}
+	}
+
+	// 3. Native AliMPay orders from orders table
+	if s.orderRepo != nil {
+		userIDs, err := s.getSubUserIDs(ctx, resellerID)
+		if err == nil && len(userIDs) > 0 {
+			emailMap := make(map[int64]string)
+			for _, uid := range userIDs {
+				if u, err := s.userRepo.GetByID(ctx, uid); err == nil && u != nil {
+					emailMap[uid] = u.Email
+				}
+			}
+			if orders, alimpayTotal, err := s.orderRepo.ListPaidByUserIDs(ctx, userIDs, 10000, 0); err == nil {
+				for _, o := range orders {
+					rec := &RechargeDetailRecord{
+						UserID:       o.UserID,
+						UserEmail:    emailMap[o.UserID],
+						OrderNo:      o.OrderNo,
+						CreditAmount: o.CreditAmount,
+					}
+					if o.PaidAt != nil {
+						rec.PaidAt = *o.PaidAt
+					} else {
+						rec.PaidAt = o.CreatedAt
+					}
+					allRecords = append(allRecords, rec)
+				}
+				totalCount += alimpayTotal
 			}
 		}
 	}

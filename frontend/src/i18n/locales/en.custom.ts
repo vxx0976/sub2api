@@ -1256,6 +1256,13 @@ export default {
       paidAt: 'Paid At',
       empty: 'No recharge orders',
     },
+    // AliMPay Orders
+    alimpayOrders: {
+      title: 'AliMPay Orders',
+      description: 'All AliMPay (Alipay personal P2P) recharge orders',
+      paymentAmount: 'Paid Amount',
+      sourceDomain: 'Source Domain',
+    },
 
     settings: {
       site: {

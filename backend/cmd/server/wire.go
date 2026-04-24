@@ -14,6 +14,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/Wei-Shaw/sub2api/internal/handler"
 	"github.com/Wei-Shaw/sub2api/internal/payment"
+	pkgpayment "github.com/Wei-Shaw/sub2api/internal/pkg/payment"
 	"github.com/Wei-Shaw/sub2api/internal/repository"
 	"github.com/Wei-Shaw/sub2api/internal/server"
 	"github.com/Wei-Shaw/sub2api/internal/server/middleware"
@@ -37,6 +38,7 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 		repository.ProviderSet,
 		service.ProviderSet,
 		payment.ProviderSet,
+		pkgpayment.ProviderSet,
 		middleware.ProviderSet,
 		handler.ProviderSet,
 
@@ -90,6 +92,8 @@ func provideCleanup(
 	usageRecordWorkerPool *service.UsageRecordWorkerPool,
 	subscriptionService *service.SubscriptionService,
 	rechargeService *service.RechargeService,
+	orderService *service.OrderService,
+	alipayMonitor *pkgpayment.AlipayMonitor,
 	oauth *service.OAuthService,
 	openaiOAuth *service.OpenAIOAuthService,
 	geminiOAuth *service.GeminiOAuthService,
@@ -186,6 +190,18 @@ func provideCleanup(
 			{"RechargeService", func() error {
 				if rechargeService != nil {
 					rechargeService.Stop()
+				}
+				return nil
+			}},
+			{"OrderService", func() error {
+				if orderService != nil {
+					orderService.Stop()
+				}
+				return nil
+			}},
+			{"AlipayMonitor", func() error {
+				if alipayMonitor != nil {
+					alipayMonitor.Stop()
 				}
 				return nil
 			}},

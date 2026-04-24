@@ -69,6 +69,7 @@ type Handlers struct {
 	Totp           *TotpHandler
 	KeyQuery       *KeyQueryHandler
 	Recharge       *RechargeHandler
+	Order          *OrderHandler
 	Payment        *PaymentHandler
 	PaymentWebhook *PaymentWebhookHandler
 }

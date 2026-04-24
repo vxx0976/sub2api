@@ -16,7 +16,6 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/predicate"
 	"github.com/Wei-Shaw/sub2api/ent/referralreward"
 	"github.com/Wei-Shaw/sub2api/ent/user"
-	"github.com/Wei-Shaw/sub2api/ent/usersubscription"
 )
 
 // OrderUpdate is the builder for updating Order entities.
@@ -94,6 +93,12 @@ func (_u *OrderUpdate) SetNillableGroupID(v *int64) *OrderUpdate {
 	return _u
 }
 
+// ClearGroupID clears the value of the "group_id" field.
+func (_u *OrderUpdate) ClearGroupID() *OrderUpdate {
+	_u.mutation.ClearGroupID()
+	return _u
+}
+
 // SetAmount sets the "amount" field.
 func (_u *OrderUpdate) SetAmount(v float64) *OrderUpdate {
 	_u.mutation.ResetAmount()
@@ -139,6 +144,48 @@ func (_u *OrderUpdate) AddPaymentAmount(v float64) *OrderUpdate {
 // ClearPaymentAmount clears the value of the "payment_amount" field.
 func (_u *OrderUpdate) ClearPaymentAmount() *OrderUpdate {
 	_u.mutation.ClearPaymentAmount()
+	return _u
+}
+
+// SetCreditAmount sets the "credit_amount" field.
+func (_u *OrderUpdate) SetCreditAmount(v float64) *OrderUpdate {
+	_u.mutation.ResetCreditAmount()
+	_u.mutation.SetCreditAmount(v)
+	return _u
+}
+
+// SetNillableCreditAmount sets the "credit_amount" field if the given value is not nil.
+func (_u *OrderUpdate) SetNillableCreditAmount(v *float64) *OrderUpdate {
+	if v != nil {
+		_u.SetCreditAmount(*v)
+	}
+	return _u
+}
+
+// AddCreditAmount adds value to the "credit_amount" field.
+func (_u *OrderUpdate) AddCreditAmount(v float64) *OrderUpdate {
+	_u.mutation.AddCreditAmount(v)
+	return _u
+}
+
+// SetMultiplier sets the "multiplier" field.
+func (_u *OrderUpdate) SetMultiplier(v float64) *OrderUpdate {
+	_u.mutation.ResetMultiplier()
+	_u.mutation.SetMultiplier(v)
+	return _u
+}
+
+// SetNillableMultiplier sets the "multiplier" field if the given value is not nil.
+func (_u *OrderUpdate) SetNillableMultiplier(v *float64) *OrderUpdate {
+	if v != nil {
+		_u.SetMultiplier(*v)
+	}
+	return _u
+}
+
+// AddMultiplier adds value to the "multiplier" field.
+func (_u *OrderUpdate) AddMultiplier(v float64) *OrderUpdate {
+	_u.mutation.AddMultiplier(v)
 	return _u
 }
 
@@ -196,23 +243,23 @@ func (_u *OrderUpdate) ClearPaidAt() *OrderUpdate {
 	return _u
 }
 
-// SetSubscriptionID sets the "subscription_id" field.
-func (_u *OrderUpdate) SetSubscriptionID(v int64) *OrderUpdate {
-	_u.mutation.SetSubscriptionID(v)
+// SetSourceDomain sets the "source_domain" field.
+func (_u *OrderUpdate) SetSourceDomain(v string) *OrderUpdate {
+	_u.mutation.SetSourceDomain(v)
 	return _u
 }
 
-// SetNillableSubscriptionID sets the "subscription_id" field if the given value is not nil.
-func (_u *OrderUpdate) SetNillableSubscriptionID(v *int64) *OrderUpdate {
+// SetNillableSourceDomain sets the "source_domain" field if the given value is not nil.
+func (_u *OrderUpdate) SetNillableSourceDomain(v *string) *OrderUpdate {
 	if v != nil {
-		_u.SetSubscriptionID(*v)
+		_u.SetSourceDomain(*v)
 	}
 	return _u
 }
 
-// ClearSubscriptionID clears the value of the "subscription_id" field.
-func (_u *OrderUpdate) ClearSubscriptionID() *OrderUpdate {
-	_u.mutation.ClearSubscriptionID()
+// ClearSourceDomain clears the value of the "source_domain" field.
+func (_u *OrderUpdate) ClearSourceDomain() *OrderUpdate {
+	_u.mutation.ClearSourceDomain()
 	return _u
 }
 
@@ -252,11 +299,6 @@ func (_u *OrderUpdate) SetGroup(v *Group) *OrderUpdate {
 	return _u.SetGroupID(v.ID)
 }
 
-// SetSubscription sets the "subscription" edge to the UserSubscription entity.
-func (_u *OrderUpdate) SetSubscription(v *UserSubscription) *OrderUpdate {
-	return _u.SetSubscriptionID(v.ID)
-}
-
 // SetReferralRewardID sets the "referral_reward" edge to the ReferralReward entity by ID.
 func (_u *OrderUpdate) SetReferralRewardID(id int64) *OrderUpdate {
 	_u.mutation.SetReferralRewardID(id)
@@ -290,12 +332,6 @@ func (_u *OrderUpdate) ClearUser() *OrderUpdate {
 // ClearGroup clears the "group" edge to the Group entity.
 func (_u *OrderUpdate) ClearGroup() *OrderUpdate {
 	_u.mutation.ClearGroup()
-	return _u
-}
-
-// ClearSubscription clears the "subscription" edge to the UserSubscription entity.
-func (_u *OrderUpdate) ClearSubscription() *OrderUpdate {
-	_u.mutation.ClearSubscription()
 	return _u
 }
 
@@ -363,11 +399,13 @@ func (_u *OrderUpdate) check() error {
 			return &ValidationError{Name: "pay_type", err: fmt.Errorf(`ent: validator failed for field "Order.pay_type": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.SourceDomain(); ok {
+		if err := order.SourceDomainValidator(v); err != nil {
+			return &ValidationError{Name: "source_domain", err: fmt.Errorf(`ent: validator failed for field "Order.source_domain": %w`, err)}
+		}
+	}
 	if _u.mutation.UserCleared() && len(_u.mutation.UserIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Order.user"`)
-	}
-	if _u.mutation.GroupCleared() && len(_u.mutation.GroupIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "Order.group"`)
 	}
 	return nil
 }
@@ -408,6 +446,18 @@ func (_u *OrderUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if _u.mutation.PaymentAmountCleared() {
 		_spec.ClearField(order.FieldPaymentAmount, field.TypeFloat64)
 	}
+	if value, ok := _u.mutation.CreditAmount(); ok {
+		_spec.SetField(order.FieldCreditAmount, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedCreditAmount(); ok {
+		_spec.AddField(order.FieldCreditAmount, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.Multiplier(); ok {
+		_spec.SetField(order.FieldMultiplier, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedMultiplier(); ok {
+		_spec.AddField(order.FieldMultiplier, field.TypeFloat64, value)
+	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(order.FieldStatus, field.TypeString, value)
 	}
@@ -422,6 +472,12 @@ func (_u *OrderUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.PaidAtCleared() {
 		_spec.ClearField(order.FieldPaidAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.SourceDomain(); ok {
+		_spec.SetField(order.FieldSourceDomain, field.TypeString, value)
+	}
+	if _u.mutation.SourceDomainCleared() {
+		_spec.ClearField(order.FieldSourceDomain, field.TypeString)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(order.FieldUpdatedAt, field.TypeTime, value)
@@ -483,35 +539,6 @@ func (_u *OrderUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(group.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if _u.mutation.SubscriptionCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   order.SubscriptionTable,
-			Columns: []string{order.SubscriptionColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(usersubscription.FieldID, field.TypeInt64),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.SubscriptionIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   order.SubscriptionTable,
-			Columns: []string{order.SubscriptionColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(usersubscription.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -630,6 +657,12 @@ func (_u *OrderUpdateOne) SetNillableGroupID(v *int64) *OrderUpdateOne {
 	return _u
 }
 
+// ClearGroupID clears the value of the "group_id" field.
+func (_u *OrderUpdateOne) ClearGroupID() *OrderUpdateOne {
+	_u.mutation.ClearGroupID()
+	return _u
+}
+
 // SetAmount sets the "amount" field.
 func (_u *OrderUpdateOne) SetAmount(v float64) *OrderUpdateOne {
 	_u.mutation.ResetAmount()
@@ -675,6 +708,48 @@ func (_u *OrderUpdateOne) AddPaymentAmount(v float64) *OrderUpdateOne {
 // ClearPaymentAmount clears the value of the "payment_amount" field.
 func (_u *OrderUpdateOne) ClearPaymentAmount() *OrderUpdateOne {
 	_u.mutation.ClearPaymentAmount()
+	return _u
+}
+
+// SetCreditAmount sets the "credit_amount" field.
+func (_u *OrderUpdateOne) SetCreditAmount(v float64) *OrderUpdateOne {
+	_u.mutation.ResetCreditAmount()
+	_u.mutation.SetCreditAmount(v)
+	return _u
+}
+
+// SetNillableCreditAmount sets the "credit_amount" field if the given value is not nil.
+func (_u *OrderUpdateOne) SetNillableCreditAmount(v *float64) *OrderUpdateOne {
+	if v != nil {
+		_u.SetCreditAmount(*v)
+	}
+	return _u
+}
+
+// AddCreditAmount adds value to the "credit_amount" field.
+func (_u *OrderUpdateOne) AddCreditAmount(v float64) *OrderUpdateOne {
+	_u.mutation.AddCreditAmount(v)
+	return _u
+}
+
+// SetMultiplier sets the "multiplier" field.
+func (_u *OrderUpdateOne) SetMultiplier(v float64) *OrderUpdateOne {
+	_u.mutation.ResetMultiplier()
+	_u.mutation.SetMultiplier(v)
+	return _u
+}
+
+// SetNillableMultiplier sets the "multiplier" field if the given value is not nil.
+func (_u *OrderUpdateOne) SetNillableMultiplier(v *float64) *OrderUpdateOne {
+	if v != nil {
+		_u.SetMultiplier(*v)
+	}
+	return _u
+}
+
+// AddMultiplier adds value to the "multiplier" field.
+func (_u *OrderUpdateOne) AddMultiplier(v float64) *OrderUpdateOne {
+	_u.mutation.AddMultiplier(v)
 	return _u
 }
 
@@ -732,23 +807,23 @@ func (_u *OrderUpdateOne) ClearPaidAt() *OrderUpdateOne {
 	return _u
 }
 
-// SetSubscriptionID sets the "subscription_id" field.
-func (_u *OrderUpdateOne) SetSubscriptionID(v int64) *OrderUpdateOne {
-	_u.mutation.SetSubscriptionID(v)
+// SetSourceDomain sets the "source_domain" field.
+func (_u *OrderUpdateOne) SetSourceDomain(v string) *OrderUpdateOne {
+	_u.mutation.SetSourceDomain(v)
 	return _u
 }
 
-// SetNillableSubscriptionID sets the "subscription_id" field if the given value is not nil.
-func (_u *OrderUpdateOne) SetNillableSubscriptionID(v *int64) *OrderUpdateOne {
+// SetNillableSourceDomain sets the "source_domain" field if the given value is not nil.
+func (_u *OrderUpdateOne) SetNillableSourceDomain(v *string) *OrderUpdateOne {
 	if v != nil {
-		_u.SetSubscriptionID(*v)
+		_u.SetSourceDomain(*v)
 	}
 	return _u
 }
 
-// ClearSubscriptionID clears the value of the "subscription_id" field.
-func (_u *OrderUpdateOne) ClearSubscriptionID() *OrderUpdateOne {
-	_u.mutation.ClearSubscriptionID()
+// ClearSourceDomain clears the value of the "source_domain" field.
+func (_u *OrderUpdateOne) ClearSourceDomain() *OrderUpdateOne {
+	_u.mutation.ClearSourceDomain()
 	return _u
 }
 
@@ -788,11 +863,6 @@ func (_u *OrderUpdateOne) SetGroup(v *Group) *OrderUpdateOne {
 	return _u.SetGroupID(v.ID)
 }
 
-// SetSubscription sets the "subscription" edge to the UserSubscription entity.
-func (_u *OrderUpdateOne) SetSubscription(v *UserSubscription) *OrderUpdateOne {
-	return _u.SetSubscriptionID(v.ID)
-}
-
 // SetReferralRewardID sets the "referral_reward" edge to the ReferralReward entity by ID.
 func (_u *OrderUpdateOne) SetReferralRewardID(id int64) *OrderUpdateOne {
 	_u.mutation.SetReferralRewardID(id)
@@ -826,12 +896,6 @@ func (_u *OrderUpdateOne) ClearUser() *OrderUpdateOne {
 // ClearGroup clears the "group" edge to the Group entity.
 func (_u *OrderUpdateOne) ClearGroup() *OrderUpdateOne {
 	_u.mutation.ClearGroup()
-	return _u
-}
-
-// ClearSubscription clears the "subscription" edge to the UserSubscription entity.
-func (_u *OrderUpdateOne) ClearSubscription() *OrderUpdateOne {
-	_u.mutation.ClearSubscription()
 	return _u
 }
 
@@ -912,11 +976,13 @@ func (_u *OrderUpdateOne) check() error {
 			return &ValidationError{Name: "pay_type", err: fmt.Errorf(`ent: validator failed for field "Order.pay_type": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.SourceDomain(); ok {
+		if err := order.SourceDomainValidator(v); err != nil {
+			return &ValidationError{Name: "source_domain", err: fmt.Errorf(`ent: validator failed for field "Order.source_domain": %w`, err)}
+		}
+	}
 	if _u.mutation.UserCleared() && len(_u.mutation.UserIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Order.user"`)
-	}
-	if _u.mutation.GroupCleared() && len(_u.mutation.GroupIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "Order.group"`)
 	}
 	return nil
 }
@@ -974,6 +1040,18 @@ func (_u *OrderUpdateOne) sqlSave(ctx context.Context) (_node *Order, err error)
 	if _u.mutation.PaymentAmountCleared() {
 		_spec.ClearField(order.FieldPaymentAmount, field.TypeFloat64)
 	}
+	if value, ok := _u.mutation.CreditAmount(); ok {
+		_spec.SetField(order.FieldCreditAmount, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedCreditAmount(); ok {
+		_spec.AddField(order.FieldCreditAmount, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.Multiplier(); ok {
+		_spec.SetField(order.FieldMultiplier, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedMultiplier(); ok {
+		_spec.AddField(order.FieldMultiplier, field.TypeFloat64, value)
+	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(order.FieldStatus, field.TypeString, value)
 	}
@@ -988,6 +1066,12 @@ func (_u *OrderUpdateOne) sqlSave(ctx context.Context) (_node *Order, err error)
 	}
 	if _u.mutation.PaidAtCleared() {
 		_spec.ClearField(order.FieldPaidAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.SourceDomain(); ok {
+		_spec.SetField(order.FieldSourceDomain, field.TypeString, value)
+	}
+	if _u.mutation.SourceDomainCleared() {
+		_spec.ClearField(order.FieldSourceDomain, field.TypeString)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(order.FieldUpdatedAt, field.TypeTime, value)
@@ -1049,35 +1133,6 @@ func (_u *OrderUpdateOne) sqlSave(ctx context.Context) (_node *Order, err error)
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(group.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if _u.mutation.SubscriptionCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   order.SubscriptionTable,
-			Columns: []string{order.SubscriptionColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(usersubscription.FieldID, field.TypeInt64),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.SubscriptionIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   order.SubscriptionTable,
-			Columns: []string{order.SubscriptionColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(usersubscription.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

@@ -105,6 +105,7 @@ require (
 	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
+	github.com/google/subcommands v1.2.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.3 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/hashicorp/hcl/v2 v2.18.1 // indirect
@@ -143,6 +144,7 @@ require (
 	github.com/sagikazarmark/locafero v0.4.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
+	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e // indirect
 	github.com/smartwalle/ncrypto v1.0.4 // indirect
 	github.com/smartwalle/ngx v1.1.0 // indirect
 	github.com/smartwalle/nsign v1.0.9 // indirect

@@ -26,6 +26,8 @@ import scheduledTestsAPI from './scheduledTests'
 import merchantsAPI from './merchants'
 import merchantWithdrawalsAPI from './merchantWithdrawals'
 import rechargeOrdersAPI from './rechargeOrders'
+import alimpayOrdersAPI from './alimpayOrders'
+import alimpayConfigAPI from './alimpayConfig'
 import backupAPI from './backup'
 import tlsFingerprintProfileAPI from './tlsFingerprintProfile'
 import channelsAPI from './channels'
@@ -59,6 +61,8 @@ export const adminAPI = {
   merchants: merchantsAPI,
   merchantWithdrawals: merchantWithdrawalsAPI,
   rechargeOrders: rechargeOrdersAPI,
+  alimpayOrders: alimpayOrdersAPI,
+  alimpayConfig: alimpayConfigAPI,
   backup: backupAPI,
   tlsFingerprintProfiles: tlsFingerprintProfileAPI,
   payment: adminPaymentAPI
@@ -89,6 +93,8 @@ export {
   merchantsAPI,
   merchantWithdrawalsAPI,
   rechargeOrdersAPI,
+  alimpayOrdersAPI,
+  alimpayConfigAPI,
   backupAPI,
   tlsFingerprintProfileAPI,
   adminPaymentAPI
@@ -103,4 +109,6 @@ export type { BackupAgentHealth, DataManagementConfig } from './dataManagement'
 export type { MerchantUser, MerchantSettings } from './merchants'
 export type { AdminWithdrawalItem, AdminWithdrawalListResponse } from './merchantWithdrawals'
 export type { AdminRechargeOrderItem, AdminRechargeOrderListResponse } from './rechargeOrders'
+export type { AdminAliMPayOrderItem, AdminAliMPayOrderListResponse } from './alimpayOrders'
+export type { AdminAliMPayConfig, AdminAliMPayConfigUpdate } from './alimpayConfig'
 export type { TLSFingerprintProfile, CreateProfileRequest, UpdateProfileRequest } from './tlsFingerprintProfile'
