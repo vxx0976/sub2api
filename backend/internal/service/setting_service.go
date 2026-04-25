@@ -1252,9 +1252,6 @@ func (s *SettingService) buildSystemSettingsUpdates(ctx context.Context, setting
 	updates[SettingKeyRechargeEnabled] = strconv.FormatBool(settings.RechargeEnabled)
 	updates[SettingKeyRechargeMinAmount] = fmt.Sprintf("%.2f", settings.RechargeMinAmount)
 	updates[SettingKeyRechargeMaxAmount] = fmt.Sprintf("%.2f", settings.RechargeMaxAmount)
-	if settings.RechargeTiers != "" {
-		updates[SettingKeyRechargeTiers] = settings.RechargeTiers
-	}
 	if settings.RechargePayTypes != "" {
 		updates[SettingKeyRechargePayTypes] = settings.RechargePayTypes
 	}
@@ -2164,7 +2161,6 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 	} else {
 		result.RechargeMaxAmount = 10000
 	}
-	result.RechargeTiers = settings[SettingKeyRechargeTiers]
 	result.RechargePayTypes = settings[SettingKeyRechargePayTypes]
 
 	// 易支付配置

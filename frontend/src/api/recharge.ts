@@ -5,17 +5,10 @@
 
 import { apiClient } from './client'
 
-export interface RechargeTier {
-  min: number
-  max: number | null
-  multiplier: number
-}
-
 export interface RechargeConfig {
   enabled: boolean
   min_amount: number
   max_amount: number
-  tiers: RechargeTier[]
   pay_types: string[]
   selling_price: number
 }
@@ -24,7 +17,6 @@ export interface RechargeOrderResult {
   order_no: string
   amount: number
   credit_amount: number
-  multiplier: number
   pay_url: string
   qrcode: string
   expired_at: string
@@ -45,7 +37,6 @@ export interface RechargeOrderItem {
   user_id: number
   amount: number
   credit_amount: number
-  multiplier: number
   status: string
   pay_type: string
   paid_at: string | null

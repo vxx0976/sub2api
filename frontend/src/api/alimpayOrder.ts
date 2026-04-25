@@ -5,13 +5,11 @@
  */
 
 import { apiClient } from './client'
-import type { RechargeTier } from './recharge'
 
 export interface AliMPayConfig {
   enabled: boolean
   min_amount: number
   max_amount: number
-  tiers: RechargeTier[]
   selling_price: number
   mode: 'business_qr' | 'transfer' | ''
 }
@@ -21,7 +19,6 @@ export interface AliMPayOrderResult {
   amount: number
   payment_amount: number   // 实际支付金额（经过金额偏移的唯一金额）
   credit_amount: number
-  multiplier: number
   qrcode_url: string
   mode: 'business_qr' | 'transfer' | ''
   expires_in: number
@@ -45,7 +42,6 @@ export interface AliMPayOrderItem {
   amount: number
   payment_amount: number
   credit_amount: number
-  multiplier: number
   status: string
   pay_type: string
   paid_at: string | null

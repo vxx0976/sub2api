@@ -29,14 +29,13 @@ type Order struct {
 }
 
 // OrderPublicConfig 充值页面配置（AliMPay 下单页返回给前端）
-// 字段含义与 RechargePublicConfig 一致，倍率/限额从同一 Setting key 读，和 EPAY 共享
+// 字段含义与 RechargePublicConfig 一致，限额从同一 Setting key 读，和 EPAY 共享
 type OrderPublicConfig struct {
-	Enabled      bool           `json:"enabled"`
-	MinAmount    float64        `json:"min_amount"`
-	MaxAmount    float64        `json:"max_amount"`
-	Tiers        []RechargeTier `json:"tiers"`
-	SellingPrice float64        `json:"selling_price"`
-	Mode         string         `json:"mode"` // business_qr | transfer
+	Enabled      bool    `json:"enabled"`
+	MinAmount    float64 `json:"min_amount"`
+	MaxAmount    float64 `json:"max_amount"`
+	SellingPrice float64 `json:"selling_price"`
+	Mode         string  `json:"mode"` // business_qr | transfer
 }
 
 // OrderRepository AliMPay 订单数据访问接口

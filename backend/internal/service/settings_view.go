@@ -154,7 +154,6 @@ type SystemSettings struct {
 	RechargeEnabled   bool
 	RechargeMinAmount float64
 	RechargeMaxAmount float64
-	RechargeTiers     string // JSON array
 	RechargePayTypes  string // JSON array: ["alipay","wxpay"]
 
 	// 易支付配置

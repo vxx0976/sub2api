@@ -154,8 +154,7 @@ func (s *OrderService) GetConfig(ctx context.Context) (*OrderPublicConfig, error
 		cfg.MaxAmount, _ = strconv.ParseFloat(maxStr, 64)
 	}
 
-	// AliMPay 走 1:1（CNY 支付金额 = 到账平台余额），不读 recharge_tiers
-	cfg.Tiers = nil
+	// AliMPay 走 1:1（CNY 支付金额 = 到账平台余额）
 	cfg.SellingPrice = 1
 	if s.alipay != nil {
 		cfg.Mode = s.alipay.Mode()

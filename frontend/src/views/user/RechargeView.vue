@@ -43,19 +43,6 @@
               {{ t('recharge.formTitle') }}
             </h2>
 
-            <!-- Tier Info (only show when there are tiers with multiplier > 1) -->
-            <div v-if="hasEffectiveTiers" class="mb-4 rounded-lg bg-amber-50 p-3 dark:bg-amber-900/20">
-              <p class="mb-2 text-sm font-medium text-amber-800 dark:text-amber-300">{{ t('recharge.tierTitle') }}</p>
-              <div class="space-y-1">
-                <div v-for="(tier, idx) in config.tiers" :key="idx" class="flex items-center justify-between text-xs text-amber-700 dark:text-amber-400">
-                  <span>
-                    {{ t('recharge.tierRange', { min: tier.min, max: tier.max ? tier.max : '∞' }) }}
-                  </span>
-                  <span class="font-semibold">x{{ tier.multiplier }}</span>
-                </div>
-              </div>
-            </div>
-
             <form @submit.prevent="handleCreateOrder" class="space-y-5">
               <!-- Amount Input -->
               <div>
@@ -87,9 +74,6 @@
                 <div class="flex items-center justify-between">
                   <span class="text-sm text-emerald-700 dark:text-emerald-300">{{ t('recharge.creditPreview') }}</span>
                   <span class="text-lg font-bold text-emerald-600 dark:text-emerald-400">${{ creditPreview.toFixed(2) }}</span>
-                </div>
-                <div v-if="currentMultiplier > 1" class="mt-1 text-xs text-emerald-600 dark:text-emerald-400">
-                  {{ t('recharge.multiplierApplied', { multiplier: currentMultiplier }) }}
                 </div>
               </div>
 
@@ -263,7 +247,7 @@
           </div>
 
           <p class="mb-3 text-center text-sm text-gray-500 dark:text-dark-400">
-            {{ t('recharge.scanQRHint') }}
+            {{ payType === 'wxpay' ? t('recharge.scanQRHintWechat') : t('recharge.scanQRHintAlipay') }}
           </p>
 
           <!-- Fallback link -->
@@ -328,24 +312,9 @@ const qrCodeURL = ref('')
 const qrPayURL = ref('')
 const qrOrderAmount = ref<number | null>(null)
 
-const hasEffectiveTiers = computed(() => {
-  if (!config.value?.tiers || config.value.tiers.length === 0) return false
-  return config.value.tiers.some(t => t.multiplier !== 1)
-})
-
-const currentMultiplier = computed(() => {
-  if (!config.value?.tiers || !amount.value) return 1
-  for (const tier of config.value.tiers) {
-    if (amount.value >= tier.min && (tier.max === null || amount.value <= tier.max)) {
-      return tier.multiplier
-    }
-  }
-  return 1
-})
-
 const creditPreview = computed(() => {
   if (!config.value || !amount.value || config.value.selling_price <= 0) return 0
-  return Math.round(amount.value / config.value.selling_price * currentMultiplier.value * 100) / 100
+  return Math.round(amount.value / config.value.selling_price * 100) / 100
 })
 
 const canSubmit = computed(() => {

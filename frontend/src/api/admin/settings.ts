@@ -440,7 +440,6 @@ export interface SystemSettings {
   recharge_enabled: boolean
   recharge_min_amount: number
   recharge_max_amount: number
-  recharge_tiers: string
   recharge_pay_types: string
 
   // 易支付配置
@@ -617,7 +616,6 @@ export interface UpdateSettingsRequest {
   recharge_enabled?: boolean;
   recharge_min_amount?: number;
   recharge_max_amount?: number;
-  recharge_tiers?: string;
   recharge_pay_types?: string;
   epay_api_url?: string;
   epay_pid?: string;

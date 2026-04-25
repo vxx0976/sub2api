@@ -148,7 +148,6 @@ type SystemSettings struct {
 	RechargeEnabled   bool    `json:"recharge_enabled"`
 	RechargeMinAmount float64 `json:"recharge_min_amount"`
 	RechargeMaxAmount float64 `json:"recharge_max_amount"`
-	RechargeTiers     string  `json:"recharge_tiers"`
 	RechargePayTypes  string  `json:"recharge_pay_types"`
 
 	// 易支付配置

@@ -23,21 +23,13 @@ type RechargeOrder struct {
 	ExpiredAt    *time.Time `json:"expired_at"`
 }
 
-// RechargeTier 充值档位
-type RechargeTier struct {
-	Min        float64  `json:"min"`
-	Max        *float64 `json:"max"`
-	Multiplier float64  `json:"multiplier"`
-}
-
 // RechargePublicConfig 充值页面配置（返回给前端）
 type RechargePublicConfig struct {
-	Enabled      bool           `json:"enabled"`
-	MinAmount    float64        `json:"min_amount"`
-	MaxAmount    float64        `json:"max_amount"`
-	Tiers        []RechargeTier `json:"tiers"`
-	PayTypes     []string       `json:"pay_types"`
-	SellingPrice float64        `json:"selling_price"` // ¥/USD
+	Enabled      bool     `json:"enabled"`
+	MinAmount    float64  `json:"min_amount"`
+	MaxAmount    float64  `json:"max_amount"`
+	PayTypes     []string `json:"pay_types"`
+	SellingPrice float64  `json:"selling_price"` // ¥/USD
 }
 
 // RechargeOrderRepository 充值订单数据访问接口

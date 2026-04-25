@@ -208,7 +208,6 @@ func (h *SettingHandler) GetSettings(c *gin.Context) {
 		RechargeEnabled:                        settings.RechargeEnabled,
 		RechargeMinAmount:                      settings.RechargeMinAmount,
 		RechargeMaxAmount:                      settings.RechargeMaxAmount,
-		RechargeTiers:                          settings.RechargeTiers,
 		RechargePayTypes:                       settings.RechargePayTypes,
 		EpayAPIURL:                             settings.EpayAPIURL,
 		EpayPID:                                settings.EpayPID,
@@ -406,7 +405,6 @@ type UpdateSettingsRequest struct {
 	RechargeEnabled   *bool    `json:"recharge_enabled"`
 	RechargeMinAmount *float64 `json:"recharge_min_amount"`
 	RechargeMaxAmount *float64 `json:"recharge_max_amount"`
-	RechargeTiers     *string  `json:"recharge_tiers"`
 	RechargePayTypes  *string  `json:"recharge_pay_types"`
 
 	// 易支付配置
@@ -1151,12 +1149,6 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 			}
 			return previousSettings.RechargeMaxAmount
 		}(),
-		RechargeTiers: func() string {
-			if req.RechargeTiers != nil {
-				return *req.RechargeTiers
-			}
-			return previousSettings.RechargeTiers
-		}(),
 		RechargePayTypes: func() string {
 			if req.RechargePayTypes != nil {
 				return *req.RechargePayTypes
@@ -1505,7 +1497,6 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		RechargeEnabled:                        updatedSettings.RechargeEnabled,
 		RechargeMinAmount:                      updatedSettings.RechargeMinAmount,
 		RechargeMaxAmount:                      updatedSettings.RechargeMaxAmount,
-		RechargeTiers:                          updatedSettings.RechargeTiers,
 		RechargePayTypes:                       updatedSettings.RechargePayTypes,
 		EpayAPIURL:                             updatedSettings.EpayAPIURL,
 		EpayPID:                                updatedSettings.EpayPID,

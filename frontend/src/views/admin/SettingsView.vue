@@ -3875,7 +3875,6 @@ const form = reactive<SettingsForm>({
   recharge_enabled: false,
   recharge_min_amount: 10,
   recharge_max_amount: 10000,
-  recharge_tiers: '',
   recharge_pay_types: '',
   epay_api_url: '',
   epay_pid: '',
