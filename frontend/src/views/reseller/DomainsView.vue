@@ -808,7 +808,7 @@ const verifyInfoDomain = ref<ResellerDomain | null>(null)
 const verifying = ref(false)
 
 // Tabs definition — hide purchase tab when merchant agent mode is enabled
-// (purchase URL is managed globally by sub2apipay, not per-domain)
+// (purchase URL is managed globally, not per-domain)
 const tabs = computed(() => {
   const all = [
     { id: 'basic', label: t('reseller.sites.tabs.basic') },

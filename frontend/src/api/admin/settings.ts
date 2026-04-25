@@ -342,9 +342,6 @@ export interface SystemSettings {
   doc_url: string;
   home_content: string;
   hide_ccs_import_button: boolean;
-  purchase_subscription_enabled: boolean;
-  purchase_subscription_url: string;
-  sub2apipay_admin_token: string;
   default_locale: string;
   contact_wechat: string;
   contact_telegram: string;
@@ -438,9 +435,6 @@ export interface SystemSettings {
 
   // 分组隔离
   allow_ungrouped_key_scheduling: boolean;
-
-  // 平台定价（¥/USD）
-  platform_selling_price: number
 
   // 充值配置
   recharge_enabled: boolean
@@ -545,9 +539,6 @@ export interface UpdateSettingsRequest {
   doc_url?: string;
   home_content?: string;
   hide_ccs_import_button?: boolean;
-  purchase_subscription_enabled?: boolean;
-  purchase_subscription_url?: string;
-  sub2apipay_admin_token?: string;
   default_locale?: string;
   contact_wechat?: string;
   contact_telegram?: string;
@@ -623,7 +614,6 @@ export interface UpdateSettingsRequest {
   min_claude_code_version?: string;
   max_claude_code_version?: string;
   allow_ungrouped_key_scheduling?: boolean;
-  platform_selling_price?: number;
   recharge_enabled?: boolean;
   recharge_min_amount?: number;
   recharge_max_amount?: number;

@@ -5395,29 +5395,6 @@ export default {
         hideCcsImportButton: '隐藏 CCS 导入按钮',
         hideCcsImportButtonHint: '启用后将在 API Keys 页面隐藏"导入 CCS"按钮',
       },
-      purchase: {
-        title: '充值/订阅页面',
-        description: '在侧边栏展示“充值/订阅”入口，并在页面内通过 iframe 打开指定链接',
-        enabled: '显示充值/订阅入口',
-        enabledHint: '仅在标准模式（非简单模式）下展示',
-        url: '充值/订阅页面 URL',
-        urlPlaceholder: 'https://example.com/purchase',
-        urlHint: '必须是完整的 http(s) 链接',
-        iframeWarning:
-          '⚠️ iframe 提示：部分网站会通过 X-Frame-Options 或 CSP（frame-ancestors）禁止被 iframe 嵌入，出现空白时可引导用户使用”新窗口打开”。',
-        adminToken: 'Sub2apipay Admin Token',
-        adminTokenPlaceholder: '填入 sub2apipay 的 ADMIN_TOKEN',
-        adminTokenHint: '对应 sub2apipay 环境变量 ADMIN_TOKEN，用于服务间鉴权',
-        integrationDoc: '支付集成文档',
-        integrationDocHint: '包含接口说明、幂等语义及示例代码'
-      },
-      platformPricing: {
-        title: '定价设置',
-        description: '设置非商户用户充值时的价格换算比例',
-        label: '平台定价 (¥/USD)',
-        hint: '设为 0 表示使用支付系统默认比例；设置后所有非商户用户充值将按此价格换算',
-        preview: '¥{price} = $1'
-      },
       recharge: {
         title: '余额充值',
         description: '控制用户是否可以通过在线支付充值余额（需先配置易支付参数）',

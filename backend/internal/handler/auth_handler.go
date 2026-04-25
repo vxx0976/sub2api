@@ -542,7 +542,6 @@ func (h *AuthHandler) GetCurrentUser(c *gin.Context) {
 		ResellerPriceMultiplier *float64 `json:"_x_pm,omitempty"`
 		ResellerAgentEnabled    bool     `json:"reseller_agent_enabled,omitempty"`
 		ResellerPayURL          string   `json:"reseller_pay_url,omitempty"`
-		ResellerSellingPrice    *float64 `json:"_x_sp,omitempty"`
 	}
 
 	runMode := config.RunModeStandard
@@ -570,13 +569,6 @@ func (h *AuthHandler) GetCurrentUser(c *gin.Context) {
 	if user.Role == service.RoleReseller && h.resellerSettingRepo != nil {
 		if rs, err := h.resellerSettingRepo.GetAll(c.Request.Context(), user.ID); err == nil && rs["merchant_mode"] == "enabled" {
 			resp.ResellerAgentEnabled = true
-		}
-	}
-
-	// 来自 dev：对所有用户暴露 platform_selling_price（_x_sp），供 sub2apipay 使用。
-	if resp.ResellerSellingPrice == nil && h.settingSvc != nil {
-		if sp := h.settingSvc.GetPlatformSellingPrice(c.Request.Context()); sp > 0 {
-			resp.ResellerSellingPrice = &sp
 		}
 	}
 

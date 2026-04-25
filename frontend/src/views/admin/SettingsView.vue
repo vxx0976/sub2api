@@ -2874,124 +2874,6 @@
           </div>
         </div>
 
-        <!-- Purchase Subscription Page -->
-        <div class="card">
-          <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
-              {{ t('admin.settings.purchase.title') }}
-            </h2>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              {{ t('admin.settings.purchase.description') }}
-            </p>
-          </div>
-          <div class="space-y-6 p-6">
-            <!-- Enable Toggle -->
-            <div class="flex items-center justify-between">
-              <div>
-                <label class="font-medium text-gray-900 dark:text-white">{{
-                  t('admin.settings.purchase.enabled')
-                }}</label>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
-                  {{ t('admin.settings.purchase.enabledHint') }}
-                </p>
-              </div>
-              <Toggle v-model="form.purchase_subscription_enabled" />
-            </div>
-
-            <!-- URL -->
-            <div>
-              <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                {{ t('admin.settings.purchase.url') }}
-              </label>
-              <input
-                v-model="form.purchase_subscription_url"
-                type="url"
-                class="input font-mono text-sm"
-                :placeholder="t('admin.settings.purchase.urlPlaceholder')"
-              />
-              <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
-                {{ t('admin.settings.purchase.urlHint') }}
-              </p>
-              <p class="mt-2 text-xs text-amber-600 dark:text-amber-400">
-                {{ t('admin.settings.purchase.iframeWarning') }}
-              </p>
-            </div>
-
-            <!-- Sub2apipay Admin Token -->
-            <div>
-              <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                {{ t('admin.settings.purchase.adminToken') }}
-              </label>
-              <input
-                v-model="form.sub2apipay_admin_token"
-                type="password"
-                autocomplete="off"
-                class="input font-mono text-sm"
-                :placeholder="t('admin.settings.purchase.adminTokenPlaceholder')"
-              />
-              <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
-                {{ t('admin.settings.purchase.adminTokenHint') }}
-              </p>
-            </div>
-
-            <!-- Integration Docs -->
-            <div class="flex items-center gap-2 text-sm">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              <a
-                href="https://raw.githubusercontent.com/Wei-Shaw/sub2api/main/docs/ADMIN_PAYMENT_INTEGRATION_API.md"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="text-blue-600 hover:underline dark:text-blue-400"
-                download="ADMIN_PAYMENT_INTEGRATION_API.md"
-              >
-                {{ t('admin.settings.purchase.integrationDoc') }}
-              </a>
-              <span class="text-gray-400 dark:text-gray-500">—</span>
-              <span class="text-xs text-gray-500 dark:text-gray-400">
-                {{ t('admin.settings.purchase.integrationDocHint') }}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Platform Pricing Card -->
-        <div class="card">
-          <div class="border-b border-gray-200 bg-gray-50 px-6 py-4 dark:border-gray-700 dark:bg-gray-800/50">
-            <h3 class="text-base font-semibold text-gray-900 dark:text-white">
-              {{ t('admin.settings.platformPricing.title') }}
-            </h3>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              {{ t('admin.settings.platformPricing.description') }}
-            </p>
-          </div>
-          <div class="space-y-6 p-6">
-            <div>
-              <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                {{ t('admin.settings.platformPricing.label') }}
-              </label>
-              <input
-                v-model.number="form.platform_selling_price"
-                type="number"
-                min="0"
-                step="0.01"
-                class="input font-mono text-sm"
-                placeholder="0"
-              />
-              <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
-                {{ t('admin.settings.platformPricing.hint') }}
-              </p>
-              <p
-                v-if="form.platform_selling_price > 0"
-                class="mt-2 text-sm font-medium text-blue-600 dark:text-blue-400"
-              >
-                {{ t('admin.settings.platformPricing.preview', { price: form.platform_selling_price }) }}
-              </p>
-            </div>
-          </div>
-        </div>
-
         <!-- Recharge Settings -->
         <div class="card">
           <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
@@ -3327,7 +3209,7 @@
                   </div>
                 </div>
               </div>
-              <!-- Row 4: Enabled payment types (provider badges like sub2apipay) -->
+              <!-- Row 4: Enabled payment types (provider badges) -->
               <div>
                 <label class="input-label">{{ t('admin.settings.payment.enabledPaymentTypes') }}</label>
                 <div class="mt-1.5 flex flex-wrap gap-2">
@@ -3990,9 +3872,6 @@ const form = reactive<SettingsForm>({
   home_content: '',
   backend_mode_enabled: false,
   hide_ccs_import_button: false,
-  purchase_subscription_enabled: false,
-  purchase_subscription_url: '',
-  sub2apipay_admin_token: '',
   recharge_enabled: false,
   recharge_min_amount: 10,
   recharge_max_amount: 10000,
@@ -4088,8 +3967,6 @@ const form = reactive<SettingsForm>({
   max_claude_code_version: '',
   // 分组隔离
   allow_ungrouped_key_scheduling: false,
-  // 平台定价
-  platform_selling_price: 0,
   // Gateway forwarding behavior
   enable_fingerprint_unification: true,
   enable_metadata_passthrough: false,
@@ -4819,9 +4696,6 @@ async function saveSettings() {
       doc_url: form.doc_url,
       backend_mode_enabled: form.backend_mode_enabled,
       hide_ccs_import_button: form.hide_ccs_import_button,
-      purchase_subscription_enabled: form.purchase_subscription_enabled,
-      purchase_subscription_url: form.purchase_subscription_url,
-      sub2apipay_admin_token: form.sub2apipay_admin_token,
       default_locale: form.default_locale,
       table_default_page_size: form.table_default_page_size,
       table_page_size_options: form.table_page_size_options,
@@ -4895,7 +4769,6 @@ async function saveSettings() {
       max_claude_code_version: form.max_claude_code_version,
       allow_ungrouped_key_scheduling: form.allow_ungrouped_key_scheduling,
       openai_advanced_scheduler_enabled: form.openai_advanced_scheduler_enabled,
-      platform_selling_price: form.platform_selling_price,
       recharge_enabled: form.recharge_enabled,
       recharge_min_amount: form.recharge_min_amount,
       recharge_max_amount: form.recharge_max_amount,

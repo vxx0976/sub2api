@@ -30,16 +30,15 @@ const (
 
 // RechargeService 充值业务服务
 type RechargeService struct {
-	orderRepo      RechargeOrderRepository
-	settingRepo    SettingRepository
-	adminService   AdminService
-	settingService *SettingService
-	locker         *LeaderLocker
-	syncInterval   time.Duration
-	stopCh         chan struct{}
-	stopOnce       sync.Once
-	startOnce      sync.Once
-	wg             sync.WaitGroup
+	orderRepo    RechargeOrderRepository
+	settingRepo  SettingRepository
+	adminService AdminService
+	locker       *LeaderLocker
+	syncInterval time.Duration
+	stopCh       chan struct{}
+	stopOnce     sync.Once
+	startOnce    sync.Once
+	wg           sync.WaitGroup
 }
 
 // NewRechargeService creates a new RechargeService
@@ -47,17 +46,15 @@ func NewRechargeService(
 	orderRepo RechargeOrderRepository,
 	settingRepo SettingRepository,
 	adminService AdminService,
-	settingService *SettingService,
 	locker *LeaderLocker,
 ) *RechargeService {
 	svc := &RechargeService{
-		orderRepo:      orderRepo,
-		settingRepo:    settingRepo,
-		adminService:   adminService,
-		settingService: settingService,
-		locker:         locker,
-		syncInterval:   time.Minute,
-		stopCh:         make(chan struct{}),
+		orderRepo:    orderRepo,
+		settingRepo:  settingRepo,
+		adminService: adminService,
+		locker:       locker,
+		syncInterval: time.Minute,
+		stopCh:       make(chan struct{}),
 	}
 	svc.Start()
 	return svc
@@ -129,7 +126,8 @@ func (s *RechargeService) GetConfig(ctx context.Context) (*RechargePublicConfig,
 		cfg.PayTypes = []string{"alipay", "wxpay"}
 	}
 
-	cfg.SellingPrice = s.settingService.GetPlatformSellingPrice(ctx)
+	// 易支付走 1:1（¥1 = $1），与 AliMPay 保持统一
+	cfg.SellingPrice = 1
 
 	return cfg, nil
 }
@@ -162,13 +160,7 @@ func (s *RechargeService) CreateOrder(ctx context.Context, userID int64, amount 
 		return nil, fmt.Errorf("amount must be between %.2f and %.2f", minAmount, maxAmount)
 	}
 
-	// 3. 计算到账金额
-	sellingPrice := s.settingService.GetPlatformSellingPrice(ctx)
-	if sellingPrice <= 0 {
-		return nil, fmt.Errorf("platform selling price not configured")
-	}
-
-	// 查找倍率档位
+	// 3. 计算到账金额（¥1 = $1，仅按 tier 倍率换算）
 	multiplier := 1.0
 	if tiersJSON, _ := s.settingRepo.GetValue(ctx, SettingKeyRechargeTiers); tiersJSON != "" {
 		var tiers []RechargeTier
@@ -182,7 +174,7 @@ func (s *RechargeService) CreateOrder(ctx context.Context, userID int64, amount 
 		}
 	}
 
-	creditAmount := math.Round(amount/sellingPrice*multiplier*100) / 100
+	creditAmount := math.Round(amount*multiplier*100) / 100
 
 	// 4. 生成订单号（时间戳 + 6位随机数）
 	randN, _ := rand.Int(rand.Reader, big.NewInt(1000000))

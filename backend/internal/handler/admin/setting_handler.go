@@ -178,9 +178,6 @@ func (h *SettingHandler) GetSettings(c *gin.Context) {
 		DocURL:                                 settings.DocURL,
 		HomeContent:                            settings.HomeContent,
 		HideCcsImportButton:                    settings.HideCcsImportButton,
-		PurchaseSubscriptionEnabled:            settings.PurchaseSubscriptionEnabled,
-		PurchaseSubscriptionURL:                settings.PurchaseSubscriptionURL,
-		Sub2apipayAdminToken:                   settings.Sub2apipayAdminToken,
 		ContactWechat:                          settings.ContactWechat,
 		ContactTelegram:                        settings.ContactTelegram,
 		ContactQQ:                              settings.ContactQQ,
@@ -208,7 +205,6 @@ func (h *SettingHandler) GetSettings(c *gin.Context) {
 		MaxClaudeCodeVersion:                   settings.MaxClaudeCodeVersion,
 		AllowUngroupedKeyScheduling:            settings.AllowUngroupedKeyScheduling,
 		BackendModeEnabled:                     settings.BackendModeEnabled,
-		PlatformSellingPrice:                   settings.PlatformSellingPrice,
 		RechargeEnabled:                        settings.RechargeEnabled,
 		RechargeMinAmount:                      settings.RechargeMinAmount,
 		RechargeMaxAmount:                      settings.RechargeMaxAmount,
@@ -344,9 +340,6 @@ type UpdateSettingsRequest struct {
 	DocURL                      string                `json:"doc_url"`
 	HomeContent                 string                `json:"home_content"`
 	HideCcsImportButton         bool                  `json:"hide_ccs_import_button"`
-	PurchaseSubscriptionEnabled *bool                 `json:"purchase_subscription_enabled"`
-	PurchaseSubscriptionURL     *string               `json:"purchase_subscription_url"`
-	Sub2apipayAdminToken        *string               `json:"sub2apipay_admin_token"`
 	ContactWechat               string                `json:"contact_wechat"`
 	ContactTelegram             string                `json:"contact_telegram"`
 	ContactQQ                   string                `json:"contact_qq"`
@@ -408,9 +401,6 @@ type UpdateSettingsRequest struct {
 
 	// Backend Mode
 	BackendModeEnabled bool `json:"backend_mode_enabled"`
-
-	// 平台定价（¥/USD）
-	PlatformSellingPrice *float64 `json:"platform_selling_price"`
 
 	// 充值配置
 	RechargeEnabled   *bool    `json:"recharge_enabled"`
@@ -871,39 +861,6 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		}
 	}
 
-	// “购买订阅”页面配置验证
-	purchaseEnabled := previousSettings.PurchaseSubscriptionEnabled
-	if req.PurchaseSubscriptionEnabled != nil {
-		purchaseEnabled = *req.PurchaseSubscriptionEnabled
-	}
-	purchaseURL := previousSettings.PurchaseSubscriptionURL
-	if req.PurchaseSubscriptionURL != nil {
-		purchaseURL = strings.TrimSpace(*req.PurchaseSubscriptionURL)
-	}
-
-	// - 启用时要求 URL 合法且非空
-	// - 禁用时允许为空；若提供了 URL 也做基本校验，避免误配置
-	if purchaseEnabled {
-		if purchaseURL == "" {
-			response.BadRequest(c, "Purchase Subscription URL is required when enabled")
-			return
-		}
-		if err := config.ValidateAbsoluteHTTPURL(purchaseURL); err != nil {
-			response.BadRequest(c, "Purchase Subscription URL must be an absolute http(s) URL")
-			return
-		}
-	} else if purchaseURL != "" {
-		if err := config.ValidateAbsoluteHTTPURL(purchaseURL); err != nil {
-			response.BadRequest(c, "Purchase Subscription URL must be an absolute http(s) URL")
-			return
-		}
-	}
-
-	sub2apipayAdminToken := previousSettings.Sub2apipayAdminToken
-	if req.Sub2apipayAdminToken != nil {
-		sub2apipayAdminToken = strings.TrimSpace(*req.Sub2apipayAdminToken)
-	}
-
 	// Frontend URL 验证
 	req.FrontendURL = strings.TrimSpace(req.FrontendURL)
 	if req.FrontendURL != "" {
@@ -1153,9 +1110,6 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		DocURL:                           req.DocURL,
 		HomeContent:                      req.HomeContent,
 		HideCcsImportButton:              req.HideCcsImportButton,
-		PurchaseSubscriptionEnabled:      purchaseEnabled,
-		PurchaseSubscriptionURL:          purchaseURL,
-		Sub2apipayAdminToken:             sub2apipayAdminToken,
 		ContactWechat:                    req.ContactWechat,
 		ContactTelegram:                  req.ContactTelegram,
 		ContactQQ:                        req.ContactQQ,
@@ -1179,16 +1133,6 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		MaxClaudeCodeVersion:             req.MaxClaudeCodeVersion,
 		AllowUngroupedKeyScheduling:      req.AllowUngroupedKeyScheduling,
 		BackendModeEnabled:               req.BackendModeEnabled,
-		PlatformSellingPrice: func() float64 {
-			if req.PlatformSellingPrice != nil {
-				v := *req.PlatformSellingPrice
-				if v < 0 {
-					v = 0
-				}
-				return v
-			}
-			return previousSettings.PlatformSellingPrice
-		}(),
 		RechargeEnabled: func() bool {
 			if req.RechargeEnabled != nil {
 				return *req.RechargeEnabled
@@ -1531,9 +1475,6 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		DocURL:                                 updatedSettings.DocURL,
 		HomeContent:                            updatedSettings.HomeContent,
 		HideCcsImportButton:                    updatedSettings.HideCcsImportButton,
-		PurchaseSubscriptionEnabled:            updatedSettings.PurchaseSubscriptionEnabled,
-		PurchaseSubscriptionURL:                updatedSettings.PurchaseSubscriptionURL,
-		Sub2apipayAdminToken:                   updatedSettings.Sub2apipayAdminToken,
 		ContactWechat:                          updatedSettings.ContactWechat,
 		ContactTelegram:                        updatedSettings.ContactTelegram,
 		ContactQQ:                              updatedSettings.ContactQQ,
@@ -1561,7 +1502,6 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		MaxClaudeCodeVersion:                   updatedSettings.MaxClaudeCodeVersion,
 		AllowUngroupedKeyScheduling:            updatedSettings.AllowUngroupedKeyScheduling,
 		BackendModeEnabled:                     updatedSettings.BackendModeEnabled,
-		PlatformSellingPrice:                   updatedSettings.PlatformSellingPrice,
 		RechargeEnabled:                        updatedSettings.RechargeEnabled,
 		RechargeMinAmount:                      updatedSettings.RechargeMinAmount,
 		RechargeMaxAmount:                      updatedSettings.RechargeMaxAmount,
@@ -1917,15 +1857,6 @@ func diffSettings(before *service.SystemSettings, after *service.SystemSettings,
 	}
 	if before.BackendModeEnabled != after.BackendModeEnabled {
 		changed = append(changed, "backend_mode_enabled")
-	}
-	if before.PurchaseSubscriptionEnabled != after.PurchaseSubscriptionEnabled {
-		changed = append(changed, "purchase_subscription_enabled")
-	}
-	if before.PurchaseSubscriptionURL != after.PurchaseSubscriptionURL {
-		changed = append(changed, "purchase_subscription_url")
-	}
-	if before.Sub2apipayAdminToken != after.Sub2apipayAdminToken {
-		changed = append(changed, "sub2apipay_admin_token")
 	}
 	if before.TableDefaultPageSize != after.TableDefaultPageSize {
 		changed = append(changed, "table_default_page_size")

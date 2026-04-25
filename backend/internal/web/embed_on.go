@@ -268,13 +268,8 @@ func mergeResellerBranding(baseJSON []byte, info *middleware.ResellerDomainConte
 	if info.HomeTemplate != "" {
 		m["home_template"] = info.HomeTemplate
 	}
-	// Capture system purchase settings before clearing them (used as fallback for merchant_mode)
-	sysPurchaseEnabled, _ := m["purchase_subscription_enabled"].(bool)
-	sysPurchaseURL, _ := m["purchase_subscription_url"].(string)
-
-	// 系统总开关关闭时，所有域名（含商户）都不显示购买入口；
-	// 总开关开启时，由域名自身的 PurchaseEnabled 控制。
-	if sysPurchaseEnabled && info.PurchaseEnabled {
+	// Reseller 域名只展示 reseller 自己配置的购买入口
+	if info.PurchaseEnabled {
 		m["purchase_enabled"] = true
 		if info.PurchaseURL != "" {
 			m["purchase_url"] = info.PurchaseURL
@@ -283,9 +278,6 @@ func mergeResellerBranding(baseJSON []byte, info *middleware.ResellerDomainConte
 		delete(m, "purchase_enabled")
 		delete(m, "purchase_url")
 	}
-	// Also clear system-wide purchase settings on reseller domains
-	delete(m, "purchase_subscription_enabled")
-	delete(m, "purchase_subscription_url")
 	if info.SEOTitle != "" {
 		m["seo_title"] = info.SEOTitle
 	}
@@ -329,22 +321,12 @@ func mergeResellerBranding(baseJSON []byte, info *middleware.ResellerDomainConte
 		if rs["reseller_login_disabled"] == "true" {
 			m["reseller_login_disabled"] = true
 		}
-		// When merchant_mode is enabled, expose the payment page.
-		// Use reseller's own pay_url if configured, otherwise fall back to main site URL.
-		// 系统总开关关闭时不暴露支付入口。
+		// When merchant_mode is enabled, expose the payment page using reseller's own pay_url.
 		if rs["merchant_mode"] == "enabled" {
 			m["reseller_agent_enabled"] = true
-			if sysPurchaseEnabled {
-				payURL := rs["pay_url"]
-				if payURL == "" {
-					payURL = sysPurchaseURL
-				}
-				if payURL != "" {
-					m["purchase_enabled"] = true
-					m["purchase_url"] = payURL
-				} else {
-					m["purchase_enabled"] = true
-				}
+			if payURL := rs["pay_url"]; payURL != "" {
+				m["purchase_enabled"] = true
+				m["purchase_url"] = payURL
 			}
 		}
 	}

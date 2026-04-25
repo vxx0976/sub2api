@@ -100,9 +100,6 @@ type SystemSettings struct {
 	DocURL                      string           `json:"doc_url"`
 	HomeContent                 string           `json:"home_content"`
 	HideCcsImportButton         bool             `json:"hide_ccs_import_button"`
-	PurchaseSubscriptionEnabled bool             `json:"purchase_subscription_enabled"`
-	PurchaseSubscriptionURL     string           `json:"purchase_subscription_url"`
-	Sub2apipayAdminToken        string           `json:"sub2apipay_admin_token,omitempty"`
 	TableDefaultPageSize        int              `json:"table_default_page_size"`
 	TablePageSizeOptions        []int            `json:"table_page_size_options"`
 	CustomMenuItems             []CustomMenuItem `json:"custom_menu_items"`
@@ -146,9 +143,6 @@ type SystemSettings struct {
 
 	// Backend Mode
 	BackendModeEnabled bool `json:"backend_mode_enabled"`
-
-	// 平台定价（¥/USD）
-	PlatformSellingPrice float64 `json:"platform_selling_price"`
 
 	// 充值配置
 	RechargeEnabled   bool    `json:"recharge_enabled"`
@@ -250,8 +244,6 @@ type PublicSettings struct {
 	HomeContent                      string               `json:"home_content"`
 	HomeTemplate                     string               `json:"home_template,omitempty"`
 	HideCcsImportButton              bool                 `json:"hide_ccs_import_button"`
-	PurchaseSubscriptionEnabled      bool                 `json:"purchase_subscription_enabled"`
-	PurchaseSubscriptionURL          string               `json:"purchase_subscription_url"`
 	PurchaseEnabled                  bool                 `json:"purchase_enabled,omitempty"`
 	PurchaseURL                      string               `json:"purchase_url,omitempty"`
 	TableDefaultPageSize             int                  `json:"table_default_page_size"`

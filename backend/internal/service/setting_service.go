@@ -406,19 +406,6 @@ func (s *SettingService) GetFrontendURL(ctx context.Context) string {
 	return s.cfg.Server.FrontendURL
 }
 
-// GetPlatformSellingPrice 获取平台定价（¥/USD），0 表示未设置
-func (s *SettingService) GetPlatformSellingPrice(ctx context.Context) float64 {
-	val, err := s.settingRepo.GetValue(ctx, SettingKeyPlatformSellingPrice)
-	if err != nil {
-		return 0
-	}
-	sp, err := strconv.ParseFloat(strings.TrimSpace(val), 64)
-	if err != nil || sp <= 0 {
-		return 0
-	}
-	return sp
-}
-
 // GetPublicSettings 获取公开设置（无需登录）
 func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings, error) {
 	keys := []string{
@@ -441,8 +428,6 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		SettingKeyDocURL,
 		SettingKeyHomeContent,
 		SettingKeyHideCcsImportButton,
-		SettingKeyPurchaseSubscriptionEnabled,
-		SettingKeyPurchaseSubscriptionURL,
 		SettingKeyTableDefaultPageSize,
 		SettingKeyTablePageSizeOptions,
 		SettingKeyCustomMenuItems,
@@ -552,8 +537,6 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		DocURL:                           settings[SettingKeyDocURL],
 		HomeContent:                      settings[SettingKeyHomeContent],
 		HideCcsImportButton:              settings[SettingKeyHideCcsImportButton] == "true",
-		PurchaseSubscriptionEnabled:      settings[SettingKeyPurchaseSubscriptionEnabled] == "true",
-		PurchaseSubscriptionURL:          strings.TrimSpace(settings[SettingKeyPurchaseSubscriptionURL]),
 		TableDefaultPageSize:             tableDefaultPageSize,
 		TablePageSizeOptions:             tablePageSizeOptions,
 		CustomMenuItems:                  settings[SettingKeyCustomMenuItems],
@@ -703,8 +686,6 @@ type PublicSettingsInjectionPayload struct {
 	DocURL                           string               `json:"doc_url,omitempty"`
 	HomeContent                      string               `json:"home_content,omitempty"`
 	HideCcsImportButton              bool                 `json:"hide_ccs_import_button"`
-	PurchaseSubscriptionEnabled      bool                 `json:"purchase_subscription_enabled"`
-	PurchaseSubscriptionURL          string               `json:"purchase_subscription_url,omitempty"`
 	TableDefaultPageSize             int                  `json:"table_default_page_size"`
 	TablePageSizeOptions             []int                `json:"table_page_size_options"`
 	CustomMenuItems                  json.RawMessage      `json:"custom_menu_items"`
@@ -766,8 +747,6 @@ func (s *SettingService) GetPublicSettingsForInjection(ctx context.Context) (any
 		DocURL:                           settings.DocURL,
 		HomeContent:                      settings.HomeContent,
 		HideCcsImportButton:              settings.HideCcsImportButton,
-		PurchaseSubscriptionEnabled:      settings.PurchaseSubscriptionEnabled,
-		PurchaseSubscriptionURL:          settings.PurchaseSubscriptionURL,
 		TableDefaultPageSize:             settings.TableDefaultPageSize,
 		TablePageSizeOptions:             settings.TablePageSizeOptions,
 		CustomMenuItems:                  filterUserVisibleMenuItems(settings.CustomMenuItems),
@@ -906,8 +885,8 @@ func safeRawJSONArray(raw string) json.RawMessage {
 	return json.RawMessage("[]")
 }
 
-// GetFrameSrcOrigins returns deduplicated http(s) origins from home_content URL,
-// purchase_subscription_url, and all custom_menu_items URLs. Used by the router layer for CSP frame-src injection.
+// GetFrameSrcOrigins returns deduplicated http(s) origins from home_content URL
+// and all custom_menu_items URLs. Used by the router layer for CSP frame-src injection.
 func (s *SettingService) GetFrameSrcOrigins(ctx context.Context) ([]string, error) {
 	settings, err := s.GetPublicSettings(ctx)
 	if err != nil {
@@ -928,11 +907,6 @@ func (s *SettingService) GetFrameSrcOrigins(ctx context.Context) ([]string, erro
 
 	// home content URL (when home_content is set to a URL for iframe embedding)
 	addOrigin(settings.HomeContent)
-
-	// purchase subscription URL
-	if settings.PurchaseSubscriptionEnabled {
-		addOrigin(settings.PurchaseSubscriptionURL)
-	}
 
 	// all custom menu items (including admin-only, since CSP must allow all iframes)
 	for _, item := range parseCustomMenuItemURLs(settings.CustomMenuItems) {
@@ -1209,9 +1183,6 @@ func (s *SettingService) buildSystemSettingsUpdates(ctx context.Context, setting
 	updates[SettingKeyDocURL] = settings.DocURL
 	updates[SettingKeyHomeContent] = settings.HomeContent
 	updates[SettingKeyHideCcsImportButton] = strconv.FormatBool(settings.HideCcsImportButton)
-	updates[SettingKeyPurchaseSubscriptionEnabled] = strconv.FormatBool(settings.PurchaseSubscriptionEnabled)
-	updates[SettingKeyPurchaseSubscriptionURL] = strings.TrimSpace(settings.PurchaseSubscriptionURL)
-	updates[SettingKeySub2apipayAdminToken] = settings.Sub2apipayAdminToken
 	updates[SettingKeyDefaultLocale] = settings.DefaultLocale
 	updates[SettingKeyContactWechat] = settings.ContactWechat
 	updates[SettingKeyContactTelegram] = settings.ContactTelegram
@@ -1276,9 +1247,6 @@ func (s *SettingService) buildSystemSettingsUpdates(ctx context.Context, setting
 
 	// Backend Mode
 	updates[SettingKeyBackendModeEnabled] = strconv.FormatBool(settings.BackendModeEnabled)
-
-	// 平台定价
-	updates[SettingKeyPlatformSellingPrice] = strconv.FormatFloat(settings.PlatformSellingPrice, 'f', -1, 64)
 
 	// 充值配置
 	updates[SettingKeyRechargeEnabled] = strconv.FormatBool(settings.RechargeEnabled)
@@ -1764,9 +1732,6 @@ func (s *SettingService) InitializeDefaultSettings(ctx context.Context) error {
 		SettingKeyPromoCodeEnabled:                         "true", // 默认启用优惠码功能
 		SettingKeySiteName:                                 "Sub2API",
 		SettingKeySiteLogo:                                 "",
-		SettingKeyPurchaseSubscriptionEnabled:              "false",
-		SettingKeyPurchaseSubscriptionURL:                  "",
-		SettingKeySub2apipayAdminToken:                     "",
 		SettingKeyTableDefaultPageSize:                     "20",
 		SettingKeyTablePageSizeOptions:                     "[10,20,50,100]",
 		SettingKeyCustomMenuItems:                          "[]",
@@ -1905,9 +1870,6 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 		DocURL:                           settings[SettingKeyDocURL],
 		HomeContent:                      settings[SettingKeyHomeContent],
 		HideCcsImportButton:              settings[SettingKeyHideCcsImportButton] == "true",
-		PurchaseSubscriptionEnabled:      settings[SettingKeyPurchaseSubscriptionEnabled] == "true",
-		PurchaseSubscriptionURL:          strings.TrimSpace(settings[SettingKeyPurchaseSubscriptionURL]),
-		Sub2apipayAdminToken:             settings[SettingKeySub2apipayAdminToken],
 		DefaultLocale:                    settings[SettingKeyDefaultLocale],
 		ContactWechat:                    settings[SettingKeyContactWechat],
 		ContactTelegram:                  settings[SettingKeyContactTelegram],
@@ -2189,11 +2151,6 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 
 	// Backend Mode
 	result.BackendModeEnabled = settings[SettingKeyBackendModeEnabled] == "true"
-
-	// 平台定价
-	if sp, err := strconv.ParseFloat(settings[SettingKeyPlatformSellingPrice], 64); err == nil && sp >= 0 {
-		result.PlatformSellingPrice = sp
-	}
 
 	// 充值配置
 	result.RechargeEnabled = settings[SettingKeyRechargeEnabled] == "true"

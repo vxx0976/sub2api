@@ -5422,29 +5422,6 @@ export default {
         hideCcsImportButton: 'Hide CCS Import Button',
         hideCcsImportButtonHint: 'When enabled, the "Import CCS" button will be hidden on the API Keys page',
       },
-      purchase: {
-        title: 'Recharge / Subscription Page',
-        description: 'Show a "Recharge / Subscription" entry in the sidebar and open the configured URL in an iframe',
-        enabled: 'Show Recharge / Subscription Entry',
-        enabledHint: 'Only shown in standard mode (not simple mode)',
-        url: 'Recharge / Subscription URL',
-        urlPlaceholder: 'https://example.com/purchase',
-        urlHint: 'Must be an absolute http(s) URL',
-        iframeWarning:
-          '⚠️ iframe note: Some websites block embedding via X-Frame-Options or CSP (frame-ancestors). If the page is blank, provide an "Open in new tab" alternative.',
-        adminToken: 'Sub2apipay Admin Token',
-        adminTokenPlaceholder: 'Enter the ADMIN_TOKEN from sub2apipay',
-        adminTokenHint: 'Matches the ADMIN_TOKEN env var in sub2apipay, used for service-to-service auth',
-        integrationDoc: 'Payment Integration Docs',
-        integrationDocHint: 'Covers endpoint specs, idempotency semantics, and code samples'
-      },
-      platformPricing: {
-        title: 'Pricing Settings',
-        description: 'Set the price conversion ratio for non-merchant user top-ups',
-        label: 'Platform Pricing (¥/USD)',
-        hint: 'Set to 0 to use the payment system default ratio; once set, all non-merchant user top-ups will be converted at this price',
-        preview: '¥{price} = $1'
-      },
       recharge: {
         title: 'Balance Recharge',
         description: 'Control whether users can recharge balance via online payment (requires EasyPay configuration)',

@@ -63,8 +63,6 @@ func (h *SettingHandler) GetPublicSettings(c *gin.Context) {
 		DocURL:                           settings.DocURL,
 		HomeContent:                      settings.HomeContent,
 		HideCcsImportButton:              settings.HideCcsImportButton,
-		PurchaseSubscriptionEnabled:      settings.PurchaseSubscriptionEnabled,
-		PurchaseSubscriptionURL:          settings.PurchaseSubscriptionURL,
 		TableDefaultPageSize:             settings.TableDefaultPageSize,
 		TablePageSizeOptions:             settings.TablePageSizeOptions,
 		CustomMenuItems:                  dto.ParseUserVisibleMenuItems(settings.CustomMenuItems),
@@ -131,17 +129,11 @@ func (h *SettingHandler) GetPublicSettings(c *gin.Context) {
 			result.DocURL = ""
 		}
 
-		// Capture system purchase settings before clearing them (used as fallback for merchant_mode)
-		sysPurchaseEnabled := result.PurchaseSubscriptionEnabled
-		sysPurchaseURL := result.PurchaseSubscriptionURL
-
-		// Purchase: use reseller's or clear system defaults
+		// Purchase: use reseller's setting only (no system-level fallback)
 		if info.PurchaseEnabled {
 			result.PurchaseEnabled = true
 			result.PurchaseURL = info.PurchaseURL
 		}
-		result.PurchaseSubscriptionEnabled = false
-		result.PurchaseSubscriptionURL = ""
 
 		if info.SEOTitle != "" {
 			result.SEOTitle = info.SEOTitle
@@ -167,17 +159,10 @@ func (h *SettingHandler) GetPublicSettings(c *gin.Context) {
 			// Expose merchant_mode to regular users so sidebar can show subscription menus
 			if rs["merchant_mode"] == "enabled" {
 				result.ResellerAgentEnabled = true
-				// When merchant mode is enabled, expose the payment page.
-				// Use reseller's own pay_url if configured, otherwise fall back to main site URL.
-				payURL := rs["pay_url"]
-				if payURL == "" {
-					payURL = sysPurchaseURL
-				}
-				if payURL != "" {
+				// When merchant mode is enabled, expose the payment page if reseller has its own pay_url.
+				if payURL := rs["pay_url"]; payURL != "" {
 					result.PurchaseEnabled = true
 					result.PurchaseURL = payURL
-				} else if sysPurchaseEnabled {
-					result.PurchaseEnabled = true
 				}
 			}
 			if v := rs["contact_info"]; v != "" {

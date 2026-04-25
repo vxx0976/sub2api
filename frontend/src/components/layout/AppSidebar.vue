@@ -701,7 +701,7 @@ const userNavItems = computed((): NavItem[] => {
     { path: '/available-channels', label: t('nav.availableChannels'), icon: ChannelIcon, hideInSimpleMode: true, featureFlag: flagAvailableChannels },
     { path: '/monitor', label: t('nav.channelStatus'), icon: SignalIcon, featureFlag: flagChannelMonitor },
     ...(hasSubscriptions.value ? [{ path: '/subscriptions', label: t('nav.mySubscriptions'), icon: CreditCardIcon }] : []),
-    ...((appStore.cachedPublicSettings?.purchase_subscription_enabled || appStore.cachedPublicSettings?.purchase_enabled || appStore.cachedPublicSettings?.payment_enabled)
+    ...((appStore.cachedPublicSettings?.purchase_enabled || appStore.cachedPublicSettings?.payment_enabled)
       ? [
           {
             path: '/purchase',
@@ -759,7 +759,7 @@ const resellerNavItems = computed(() => {
       { path: '/merchant/commissions', label: t('nav.resellerCommissions'), icon: ChartIcon },
       { path: '/merchant/withdrawals', label: t('nav.resellerWithdrawals'), icon: CreditCardIcon },
     ] : []),
-    ...(appStore.cachedPublicSettings?.purchase_subscription_enabled || appStore.cachedPublicSettings?.purchase_enabled || appStore.cachedPublicSettings?.payment_enabled ? [
+    ...(appStore.cachedPublicSettings?.purchase_enabled || appStore.cachedPublicSettings?.payment_enabled ? [
       { path: '/purchase', label: t('nav.buySubscription'), icon: RechargeSubscriptionIcon },
     ] : []),
     ...(appStore.cachedPublicSettings?.payment_enabled ? [
@@ -785,7 +785,7 @@ const personalNavItems = computed((): NavItem[] => {
     { path: '/available-channels', label: t('nav.availableChannels'), icon: ChannelIcon, hideInSimpleMode: true, featureFlag: flagAvailableChannels },
     { path: '/monitor', label: t('nav.channelStatus'), icon: SignalIcon, featureFlag: flagChannelMonitor },
     ...(hasSubscriptions.value ? [{ path: '/subscriptions', label: t('nav.mySubscriptions'), icon: CreditCardIcon }] : []),
-    ...((appStore.cachedPublicSettings?.purchase_subscription_enabled || appStore.cachedPublicSettings?.purchase_enabled || appStore.cachedPublicSettings?.payment_enabled)
+    ...((appStore.cachedPublicSettings?.purchase_enabled || appStore.cachedPublicSettings?.payment_enabled)
       ? [{ path: '/purchase', label: t('nav.buySubscription'), icon: RechargeSubscriptionIcon, hideInSimpleMode: true }]
       : []),
     ...(appStore.cachedPublicSettings?.payment_enabled

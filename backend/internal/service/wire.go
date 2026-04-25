@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"database/sql"
-	"strings"
 	"time"
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
@@ -437,29 +436,6 @@ func ProvideSettingService(settingRepo SettingRepository, groupRepo GroupReposit
 	return svc
 }
 
-// ProvideSub2apipayService creates Sub2apipayService by reading settings from DB.
-// It extracts the base URL from purchase_subscription_url and uses the configured admin token for auth.
-func ProvideSub2apipayService(settingRepo SettingRepository) *Sub2apipayService {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	payURL, _ := settingRepo.GetValue(ctx, SettingKeyPurchaseSubscriptionURL)
-	if payURL == "" {
-		return nil
-	}
-
-	// 从 purchase_subscription_url 截取基础 URL（去掉路径部分）
-	apiURL := payURL
-	if idx := strings.Index(payURL, "://"); idx != -1 {
-		if pathIdx := strings.Index(payURL[idx+3:], "/"); pathIdx != -1 {
-			apiURL = payURL[:idx+3+pathIdx]
-		}
-	}
-
-	adminToken, _ := settingRepo.GetValue(ctx, SettingKeySub2apipayAdminToken)
-	return NewSub2apipayService(apiURL, adminToken)
-}
-
 // ProvideBillingCacheService wires BillingCacheService with its RPM dependencies.
 func ProvideBillingCacheService(
 	cache BillingCache,
@@ -493,7 +469,6 @@ var ProviderSet = wire.NewSet(
 	NewAnnouncementService,
 	NewAdminService,
 	NewGatewayService,
-	ProvideSub2apipayService,
 	NewOpenAIGatewayService,
 	NewOAuthService,
 	NewOpenAIOAuthService,

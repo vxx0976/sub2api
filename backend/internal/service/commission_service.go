@@ -115,7 +115,6 @@ type CommissionService struct {
 	userRepo          UserRepository
 	settingRepo       ResellerSettingRepository
 	domainRepo        ResellerDomainRepository
-	sub2apipayService *Sub2apipayService
 	rechargeOrderRepo RechargeOrderRepository
 	orderRepo         OrderRepository
 }
@@ -126,7 +125,6 @@ func NewCommissionService(
 	userRepo UserRepository,
 	settingRepo ResellerSettingRepository,
 	domainRepo ResellerDomainRepository,
-	sub2apipayService *Sub2apipayService,
 	rechargeOrderRepo RechargeOrderRepository,
 	orderRepo OrderRepository,
 ) *CommissionService {
@@ -136,7 +134,6 @@ func NewCommissionService(
 		userRepo:          userRepo,
 		settingRepo:       settingRepo,
 		domainRepo:        domainRepo,
-		sub2apipayService: sub2apipayService,
 		rechargeOrderRepo: rechargeOrderRepo,
 		orderRepo:         orderRepo,
 	}
@@ -172,24 +169,8 @@ func (s *CommissionService) GetSummary(ctx context.Context, resellerID int64) (*
 		return nil, err
 	}
 
-	// 查询充值总额：通过 sub2apipay HTTP API 按商户域名汇总
+	// 充值总额：原生充值订单的到账金额（EPAY RechargeOrder + AliMPay Order 两路并行）
 	var totalRecharge float64
-	if s.sub2apipayService != nil {
-		domains, _ := s.domainRepo.ListAllDomainNamesByResellerID(ctx, resellerID)
-		if len(domains) > 0 {
-			hosts := make([]string, len(domains))
-			for i, d := range domains {
-				hosts[i] = "https://" + d
-			}
-			if totals, err := s.sub2apipayService.SumRechargeByHosts(ctx, hosts); err == nil {
-				for _, v := range totals {
-					totalRecharge += v
-				}
-			}
-		}
-	}
-
-	// 加上原生充值订单的到账金额（EPAY RechargeOrder + AliMPay Order 两路并行）
 	if s.rechargeOrderRepo != nil && len(userIDs) > 0 {
 		nativeTotal, err := s.rechargeOrderRepo.SumPaidCreditByUserIDs(ctx, userIDs)
 		if err == nil {
@@ -378,23 +359,7 @@ func (s *CommissionService) ListRechargeDetail(ctx context.Context, resellerID i
 	var allRecords []*RechargeDetailRecord
 	totalCount := 0
 
-	// 1. External recharges from Sub2apipay
-	if s.sub2apipayService != nil {
-		domains, err := s.domainRepo.ListAllDomainNamesByResellerID(ctx, resellerID)
-		if err == nil && len(domains) > 0 {
-			hosts := make([]string, len(domains))
-			for i, d := range domains {
-				hosts[i] = "https://" + d
-			}
-			// Fetch all external records (use large page size to get all for merging)
-			if records, total, err := s.sub2apipayService.ListRechargesByHosts(ctx, hosts, 1, 10000); err == nil {
-				allRecords = append(allRecords, records...)
-				totalCount += total
-			}
-		}
-	}
-
-	// 2. Native recharges from recharge_orders table
+	// Native recharges from recharge_orders table
 	if s.rechargeOrderRepo != nil {
 		userIDs, err := s.getSubUserIDs(ctx, resellerID)
 		if err == nil && len(userIDs) > 0 {
@@ -425,7 +390,7 @@ func (s *CommissionService) ListRechargeDetail(ctx context.Context, resellerID i
 		}
 	}
 
-	// 3. Native AliMPay orders from orders table
+	// Native AliMPay orders from orders table
 	if s.orderRepo != nil {
 		userIDs, err := s.getSubUserIDs(ctx, resellerID)
 		if err == nil && len(userIDs) > 0 {

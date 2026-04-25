@@ -182,8 +182,6 @@ export interface PublicSettings {
   home_content: string
   home_template?: string
   hide_ccs_import_button: boolean
-  purchase_subscription_enabled: boolean
-  purchase_subscription_url: string
   payment_enabled: boolean
   table_default_page_size: number
   table_page_size_options: number[]
@@ -241,7 +239,6 @@ export interface CurrentUserResponse extends User {
   reseller_agent_enabled?: boolean
   _x_pm?: number
   reseller_pay_url?: string
-  _x_sp?: number
 }
 
 // ==================== Subscription Types ====================
