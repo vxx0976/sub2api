@@ -2211,6 +2211,7 @@ CREATE TABLE IF NOT EXISTS user_avatars (
 		nil, // promoService
 		nil, // referralService (来自 dev)
 		options.defaultSubAssigner,
+		nil,
 	)
 	userSvc := service.NewUserService(userRepo, nil, nil, nil)
 	var totpSvc *service.TotpService

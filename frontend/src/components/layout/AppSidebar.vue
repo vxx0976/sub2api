@@ -728,6 +728,7 @@ const userNavItems = computed((): NavItem[] => {
     ...(appStore.cachedPublicSettings?.alimpay_enabled
       ? [{ path: '/alimpay-recharge', label: t('nav.alimpayRecharge'), icon: CreditCardIcon, hideInSimpleMode: true }]
       : []),
+    { path: '/affiliate', label: t('nav.affiliate'), icon: UsersIcon, hideInSimpleMode: true },
     { path: '/profile', label: t('nav.profile'), icon: UserIcon },
     ...customMenuItemsForUser.value.map((item): NavItem => ({
       path: `/custom/${item.id}`,

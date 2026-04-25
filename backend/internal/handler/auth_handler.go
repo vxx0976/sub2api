@@ -80,6 +80,7 @@ type RegisterRequest struct {
 	PromoCode      string `json:"promo_code"`      // 注册优惠码
 	InvitationCode string `json:"invitation_code"` // 邀请码
 	ParentID       *int64 `json:"parent_id"`       // 上级分销商用户 ID
+	AffCode        string `json:"aff_code"`        // 邀请返利码
 }
 
 // SendVerifyCodeRequest 发送验证码请求
@@ -218,7 +219,17 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		registerDomain = registerDomain[:idx]
 	}
 
-	_, user, err := h.authService.RegisterWithVerification(c.Request.Context(), req.Email, req.Password, req.VerifyCode, req.PromoCode, req.InvitationCode, parentID, registerDomain)
+	_, user, err := h.authService.RegisterWithVerification(
+		c.Request.Context(),
+		req.Email,
+		req.Password,
+		req.VerifyCode,
+		req.PromoCode,
+		req.InvitationCode,
+		req.AffCode,
+		parentID,
+		registerDomain,
+	)
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return
