@@ -23,6 +23,7 @@ import (
 // --- mock: UserRepository ---
 
 type mockUserRepo struct {
+	UserRepository
 	updateBalanceErr        error
 	updateBalanceFn         func(ctx context.Context, id int64, amount float64) error
 	getByIDUser             *User

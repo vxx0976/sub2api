@@ -76,6 +76,7 @@ func (s *quotaStateCacheStub) SubscribeAuthCacheInvalidation(context.Context, fu
 }
 
 type quotaBaseAPIKeyRepoStub struct {
+	APIKeyRepository
 	getByIDCalls int
 }
 

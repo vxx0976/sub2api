@@ -13,6 +13,7 @@ import (
 )
 
 type userRepoStub struct {
+	UserRepository
 	user          *User
 	getErr        error
 	createErr     error
@@ -171,6 +172,7 @@ func (s *userRepoStub) DisableTotp(ctx context.Context, userID int64) error {
 }
 
 type groupRepoStub struct {
+	GroupRepository
 	affectedUserIDs []int64
 	deleteErr       error
 	deleteCalls     []int64
@@ -241,6 +243,10 @@ func (s *groupRepoStub) UpdateSortOrders(ctx context.Context, updates []GroupSor
 	return nil
 }
 
+func (s *groupRepoStub) ListFailoverGroupsReferencing(ctx context.Context, memberID int64) ([]*Group, error) {
+	return nil, nil
+}
+
 type proxyRepoStub struct {
 	deleteErr    error
 	countErr     error
@@ -305,6 +311,7 @@ func (s *proxyRepoStub) ListAccountSummariesByProxyID(ctx context.Context, proxy
 }
 
 type redeemRepoStub struct {
+	RedeemCodeRepository
 	deleteErrByID map[int64]error
 	deletedIDs    []int64
 }

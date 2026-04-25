@@ -25,9 +25,9 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/claude"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
-	"github.com/Wei-Shaw/sub2api/internal/pkg/timezone"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/geoip"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/timezone"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/usagestats"
 	"github.com/Wei-Shaw/sub2api/internal/util/responseheaders"
 	"github.com/Wei-Shaw/sub2api/internal/util/urlvalidator"
@@ -6226,9 +6226,10 @@ func (s *GatewayService) buildUpstreamRequest(ctx context.Context, c *gin.Contex
 		}
 	}
 
-	// 同步 billing header cc_version 与实际发送的 User-Agent 版本
-	if fingerprint != nil {
-		body = syncBillingHeaderVersion(body, fingerprint.UserAgent)
+	// 同步 billing header cc_version 与实际发送的 User-Agent 版本。
+	// mimic 模式稍后会强制覆盖 UA，因此这里必须提前使用同一个最终 UA。
+	if billingUserAgent := claudeBillingSyncUserAgent(tokenType, mimicClaudeCode, fingerprint); billingUserAgent != "" {
+		body = syncBillingHeaderVersion(body, billingUserAgent)
 	}
 	// CCH 签名：将 cch=00000 占位符替换为 xxHash64 签名（需在所有 body 修改之后）
 	if enableCCH {
@@ -6749,6 +6750,18 @@ func buildBetaTokenSet(tokens []string) map[string]struct{} {
 }
 
 var defaultDroppedBetasSet = buildBetaTokenSet(claude.DroppedBetas)
+
+func claudeBillingSyncUserAgent(tokenType string, mimicClaudeCode bool, fingerprint *Fingerprint) string {
+	if tokenType == "oauth" && mimicClaudeCode {
+		if ua := strings.TrimSpace(claude.DefaultHeaders["User-Agent"]); ua != "" {
+			return ua
+		}
+	}
+	if fingerprint == nil {
+		return ""
+	}
+	return strings.TrimSpace(fingerprint.UserAgent)
+}
 
 // applyClaudeCodeMimicHeaders forces "Claude Code-like" request headers.
 // This mirrors opencode-anthropic-auth behavior: do not trust downstream
@@ -9430,9 +9443,14 @@ func (s *GatewayService) buildCountTokensRequest(ctx context.Context, c *gin.Con
 		}
 	}
 
-	// 同步 billing header cc_version 与实际发送的 User-Agent 版本
-	if ctFingerprint != nil && ctEnableFP {
-		body = syncBillingHeaderVersion(body, ctFingerprint.UserAgent)
+	// 同步 billing header cc_version 与实际发送的 User-Agent 版本。
+	// mimic 模式稍后会强制覆盖 UA，因此这里必须提前使用同一个最终 UA。
+	ctBillingFingerprint := ctFingerprint
+	if !ctEnableFP {
+		ctBillingFingerprint = nil
+	}
+	if billingUserAgent := claudeBillingSyncUserAgent(tokenType, mimicClaudeCode, ctBillingFingerprint); billingUserAgent != "" {
+		body = syncBillingHeaderVersion(body, billingUserAgent)
 	}
 	if ctEnableCCH {
 		body = signBillingHeaderCCH(body)

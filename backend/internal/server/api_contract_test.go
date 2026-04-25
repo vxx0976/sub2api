@@ -203,6 +203,7 @@ func TestAPIContracts(t *testing.T) {
 					"user_id": 1,
 					"key": "sk_custom_1234567890",
 					"name": "Key One",
+					"notes": "",
 					"group_id": null,
 					"status": "active",
 					"ip_whitelist": null,
@@ -252,6 +253,7 @@ func TestAPIContracts(t *testing.T) {
 							"user_id": 1,
 							"key": "sk_custom_1234567890",
 							"name": "Key One",
+							"notes": "",
 							"group_id": null,
 							"status": "active",
 							"ip_whitelist": null,
@@ -322,6 +324,12 @@ func TestAPIContracts(t *testing.T) {
 						"is_exclusive": false,
 						"status": "active",
 						"subscription_type": "standard",
+						"is_purchasable": false,
+						"price": null,
+						"external_buy_url": null,
+						"default_validity_days": 0,
+						"is_recommended": false,
+						"sort_order": 0,
 						"daily_limit_usd": null,
 						"weekly_limit_usd": null,
 						"monthly_limit_usd": null,
@@ -335,6 +343,7 @@ func TestAPIContracts(t *testing.T) {
 						"require_oauth_only": false,
 						"require_privacy_set": false,
 						"rpm_limit": 0,
+						"health_status": "",
 						"created_at": "2025-01-02T03:04:05Z",
 						"updated_at": "2025-01-02T03:04:05Z"
 					}
@@ -478,6 +487,8 @@ func TestAPIContracts(t *testing.T) {
 					"total_input_tokens": 15,
 					"total_output_tokens": 35,
 					"total_cache_tokens": 3,
+					"total_cache_creation_tokens": 0,
+					"total_cache_read_tokens": 0,
 					"total_tokens": 53,
 					"total_cost": 0.75,
 					"total_actual_cost": 0.75,
@@ -691,6 +702,9 @@ func TestAPIContracts(t *testing.T) {
 						"site_subtitle": "Subtitle",
 						"api_base_url": "https://api.example.com",
 					"contact_info": "support",
+					"contact_qq": "",
+					"contact_telegram": "",
+					"contact_wechat": "",
 					"doc_url": "https://docs.example.com",
 					"auth_source_default_email_balance": 0,
 					"auth_source_default_email_concurrency": 5,
@@ -715,6 +729,7 @@ func TestAPIContracts(t *testing.T) {
 					"force_email_on_third_party_signup": false,
 					"default_concurrency": 5,
 					"default_balance": 1.25,
+					"default_locale": "",
 					"affiliate_rebate_rate": 20,
 					"default_user_rpm_limit": 0,
 					"default_subscriptions": [],
@@ -728,8 +743,10 @@ func TestAPIContracts(t *testing.T) {
 						"invitation_code_enabled": false,
 						"home_content": "",
 					"hide_ccs_import_button": false,
-					"purchase_subscription_enabled": false,
-					"purchase_subscription_url": "",
+					"recharge_enabled": false,
+					"recharge_min_amount": 10,
+					"recharge_max_amount": 10000,
+					"recharge_pay_types": "",
 					"table_default_page_size": 20,
 						"table_page_size_options": [10, 20, 50, 100],
 					"min_claude_code_version": "",
@@ -747,6 +764,9 @@ func TestAPIContracts(t *testing.T) {
 					"openai_advanced_scheduler_enabled": true,
 					"custom_menu_items": [],
 					"custom_endpoints": [],
+					"epay_api_url": "",
+					"epay_key_configured": false,
+					"epay_pid": "",
 					"payment_enabled": false,
 					"payment_min_amount": 0,
 					"payment_max_amount": 0,
@@ -790,7 +810,8 @@ func TestAPIContracts(t *testing.T) {
 					"wechat_connect_mobile_app_secret_configured": false,
 					"wechat_connect_redirect_url": "",
 					"wechat_connect_frontend_redirect_url": "/auth/wechat/callback",
-					"wechat_connect_scopes": "snsapi_login"
+					"wechat_connect_scopes": "snsapi_login",
+					"reseller_server_ip": ""
 				}
 			}`,
 		},
@@ -885,17 +906,23 @@ func TestAPIContracts(t *testing.T) {
 					"site_subtitle": "Subscription to API Conversion Platform",
 					"api_base_url": "",
 					"contact_info": "",
+					"contact_qq": "",
+					"contact_telegram": "",
+					"contact_wechat": "",
 					"doc_url": "",
 					"home_content": "",
 					"hide_ccs_import_button": false,
-					"purchase_subscription_enabled": false,
-					"purchase_subscription_url": "",
+					"recharge_enabled": false,
+					"recharge_min_amount": 10,
+					"recharge_max_amount": 10000,
+					"recharge_pay_types": "",
 					"table_default_page_size": 20,
 					"table_page_size_options": [10, 20, 50],
 					"custom_menu_items": [],
 					"custom_endpoints": [],
 					"default_concurrency": 0,
 					"default_balance": 0,
+					"default_locale": "",
 					"affiliate_rebate_rate": 20,
 					"default_user_rpm_limit": 0,
 					"default_subscriptions": [],
@@ -923,6 +950,9 @@ func TestAPIContracts(t *testing.T) {
 					"payment_visible_method_alipay_enabled": false,
 					"payment_visible_method_wxpay_enabled": false,
 					"openai_advanced_scheduler_enabled": false,
+					"epay_api_url": "",
+					"epay_key_configured": false,
+					"epay_pid": "",
 					"payment_enabled": false,
 					"payment_min_amount": 0,
 					"payment_max_amount": 0,
@@ -987,7 +1017,8 @@ func TestAPIContracts(t *testing.T) {
 					"auth_source_default_wechat_subscriptions": [],
 					"auth_source_default_wechat_grant_on_signup": false,
 					"auth_source_default_wechat_grant_on_first_bind": false,
-					"force_email_on_third_party_signup": false
+					"force_email_on_third_party_signup": false,
+					"reseller_server_ip": ""
 				}
 			}`,
 		},
@@ -1097,7 +1128,7 @@ func newContractDeps(t *testing.T) *contractDeps {
 	settingService := service.NewSettingService(settingRepo, cfg)
 
 	adminService := service.NewAdminService(userRepo, groupRepo, &accountRepo, proxyRepo, apiKeyRepo, redeemRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
-	authHandler := handler.NewAuthHandler(cfg, nil, userService, settingService, nil, redeemService, nil)
+	authHandler := handler.NewAuthHandler(cfg, nil, userService, settingService, nil, nil, redeemService, nil)
 	apiKeyHandler := handler.NewAPIKeyHandler(apiKeyService)
 	usageHandler := handler.NewUsageHandler(usageService, apiKeyService)
 	adminSettingHandler := adminhandler.NewSettingHandler(settingService, nil, nil, nil, nil, nil)
@@ -1185,6 +1216,7 @@ func doRequest(t *testing.T, router http.Handler, method, path, body string, hea
 func ptr[T any](v T) *T { return &v }
 
 type stubUserRepo struct {
+	service.UserRepository
 	users map[int64]*service.User
 }
 
@@ -1352,6 +1384,7 @@ func (stubApiKeyCache) SubscribeAuthCacheInvalidation(ctx context.Context, handl
 }
 
 type stubGroupRepo struct {
+	service.GroupRepository
 	active []service.Group
 }
 
@@ -1387,7 +1420,7 @@ func (stubGroupRepo) List(ctx context.Context, params pagination.PaginationParam
 	return nil, nil, errors.New("not implemented")
 }
 
-func (stubGroupRepo) ListWithFilters(ctx context.Context, params pagination.PaginationParams, platform, status, search string, isExclusive *bool) ([]service.Group, *pagination.PaginationResult, error) {
+func (stubGroupRepo) ListWithFilters(ctx context.Context, params pagination.PaginationParams, platform, status, search string, isExclusive *bool, isPurchasable *bool) ([]service.Group, *pagination.PaginationResult, error) {
 	return nil, nil, errors.New("not implemented")
 }
 
@@ -1658,6 +1691,7 @@ func (stubProxyRepo) ListAccountSummariesByProxyID(ctx context.Context, proxyID 
 }
 
 type stubRedeemCodeRepo struct {
+	service.RedeemCodeRepository
 	byUser map[int64][]service.RedeemCode
 }
 
@@ -1724,6 +1758,7 @@ func (stubRedeemCodeRepo) SumPositiveBalanceByUser(ctx context.Context, userID i
 }
 
 type stubUserSubscriptionRepo struct {
+	service.UserSubscriptionRepository
 	byUser       map[int64][]service.UserSubscription
 	activeByUser map[int64][]service.UserSubscription
 }
@@ -1810,6 +1845,7 @@ func (stubUserSubscriptionRepo) BatchUpdateExpiredStatus(ctx context.Context) (i
 }
 
 type stubApiKeyRepo struct {
+	service.APIKeyRepository
 	now time.Time
 
 	nextID int64
@@ -2052,6 +2088,7 @@ func (r *stubApiKeyRepo) GetRateLimitData(ctx context.Context, id int64) (*servi
 }
 
 type stubUsageLogRepo struct {
+	service.UsageLogRepository
 	userLogs map[int64][]service.UsageLog
 }
 

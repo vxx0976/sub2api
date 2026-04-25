@@ -24,6 +24,7 @@ type replaceEmailCall struct {
 }
 
 type emailSyncRepoStub struct {
+	UserRepository
 	user         *User
 	nextID       int64
 	updateCalls  int

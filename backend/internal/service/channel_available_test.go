@@ -16,6 +16,7 @@ import (
 // listActiveErr 非 nil 时，ListActive 返回该错误用于错误传播测试。
 // listActiveCalls 记录调用次数，用于断言「失败短路时不再访问 groupRepo」等行为。
 type stubGroupRepoForAvailable struct {
+	GroupRepository
 	activeGroups    []Group
 	listActiveErr   error
 	listActiveCalls int
@@ -38,13 +39,13 @@ func (s *stubGroupRepoForAvailable) GetByIDLite(ctx context.Context, id int64) (
 }
 func (s *stubGroupRepoForAvailable) Update(ctx context.Context, group *Group) error { return nil }
 func (s *stubGroupRepoForAvailable) Delete(ctx context.Context, id int64) error     { return nil }
-func (s *stubGroupRepoForAvailable) DeleteCascade(ctx context.Context, id int64) ([]int64, error) {
+func (s *stubGroupRepoForAvailable) DeleteCascade(ctx context.Context, id int64, migrateToGroupID *int64) ([]int64, error) {
 	return nil, nil
 }
 func (s *stubGroupRepoForAvailable) List(ctx context.Context, params pagination.PaginationParams) ([]Group, *pagination.PaginationResult, error) {
 	return nil, nil, nil
 }
-func (s *stubGroupRepoForAvailable) ListWithFilters(ctx context.Context, params pagination.PaginationParams, platform, status, search string, isExclusive *bool) ([]Group, *pagination.PaginationResult, error) {
+func (s *stubGroupRepoForAvailable) ListWithFilters(ctx context.Context, params pagination.PaginationParams, platform, status, search string, isExclusive *bool, isPurchasable *bool) ([]Group, *pagination.PaginationResult, error) {
 	return nil, nil, nil
 }
 func (s *stubGroupRepoForAvailable) ListActiveByPlatform(ctx context.Context, platform string) ([]Group, error) {

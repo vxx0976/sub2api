@@ -133,3 +133,21 @@ func (c StubSessionLimitCache) SetWindowCost(_ context.Context, _ int64, _ float
 func (c StubSessionLimitCache) GetWindowCostBatch(_ context.Context, _ []int64) (map[int64]float64, error) {
 	return nil, nil
 }
+func (c StubSessionLimitCache) GetDailyCost(_ context.Context, _ int64) (float64, bool, error) {
+	return 0, false, nil
+}
+func (c StubSessionLimitCache) SetDailyCost(_ context.Context, _ int64, _ float64) error {
+	return nil
+}
+func (c StubSessionLimitCache) GetDailyCostBatch(_ context.Context, _ []int64) (map[int64]float64, error) {
+	return nil, nil
+}
+func (c StubSessionLimitCache) GetWeeklyCost(_ context.Context, _ int64) (float64, bool, error) {
+	return 0, false, nil
+}
+func (c StubSessionLimitCache) SetWeeklyCost(_ context.Context, _ int64, _ float64) error {
+	return nil
+}
+func (c StubSessionLimitCache) GetWeeklyCostBatch(_ context.Context, _ []int64) (map[int64]float64, error) {
+	return nil, nil
+}

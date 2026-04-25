@@ -14,6 +14,7 @@ import (
 )
 
 type redeemCodeRepoStub struct {
+	RedeemCodeRepository
 	codesByCode map[string]*RedeemCode
 	useCalls    []struct {
 		id     int64
@@ -133,6 +134,7 @@ func newOAuthEmailFlowAuthService(
 		cfg,
 		settingService,
 		emailService,
+		nil,
 		nil,
 		nil,
 		nil,

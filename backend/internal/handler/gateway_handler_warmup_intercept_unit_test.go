@@ -57,6 +57,7 @@ func (f *fakeSchedulerCache) GetOutboxWatermark(_ context.Context) (int64, error
 func (f *fakeSchedulerCache) SetOutboxWatermark(_ context.Context, _ int64) error { return nil }
 
 type fakeGroupRepo struct {
+	service.GroupRepository
 	group *service.Group
 }
 
@@ -67,13 +68,15 @@ func (f *fakeGroupRepo) GetByID(context.Context, int64) (*service.Group, error) 
 func (f *fakeGroupRepo) GetByIDLite(context.Context, int64) (*service.Group, error) {
 	return f.group, nil
 }
-func (f *fakeGroupRepo) Update(context.Context, *service.Group) error          { return nil }
-func (f *fakeGroupRepo) Delete(context.Context, int64) error                   { return nil }
-func (f *fakeGroupRepo) DeleteCascade(context.Context, int64, *int64) ([]int64, error) { return nil, nil }
+func (f *fakeGroupRepo) Update(context.Context, *service.Group) error { return nil }
+func (f *fakeGroupRepo) Delete(context.Context, int64) error          { return nil }
+func (f *fakeGroupRepo) DeleteCascade(context.Context, int64, *int64) ([]int64, error) {
+	return nil, nil
+}
 func (f *fakeGroupRepo) List(context.Context, pagination.PaginationParams) ([]service.Group, *pagination.PaginationResult, error) {
 	return nil, nil, nil
 }
-func (f *fakeGroupRepo) ListWithFilters(context.Context, pagination.PaginationParams, string, string, string, *bool) ([]service.Group, *pagination.PaginationResult, error) {
+func (f *fakeGroupRepo) ListWithFilters(context.Context, pagination.PaginationParams, string, string, string, *bool, *bool) ([]service.Group, *pagination.PaginationResult, error) {
 	return nil, nil, nil
 }
 func (f *fakeGroupRepo) ListActive(context.Context) ([]service.Group, error) { return nil, nil }
@@ -164,6 +167,7 @@ func newTestGatewayHandler(t *testing.T, group *service.Group, accounts []*servi
 		nil, // sessionLimitCache
 		nil, // rpmCache
 		nil, // digestStore
+		nil, // resellerSettingRepo
 		nil, // settingService
 		nil, // tlsFPProfileService
 		nil, // channelService

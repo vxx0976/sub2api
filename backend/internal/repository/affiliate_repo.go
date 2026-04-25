@@ -173,7 +173,6 @@ FROM cleared`, userID)
 		affected, err := txClient.User.Update().
 			Where(user.IDEQ(userID)).
 			AddBalance(transferred).
-			AddTotalRecharged(transferred).
 			Save(txCtx)
 		if err != nil {
 			return fmt.Errorf("credit user balance by affiliate quota: %w", err)

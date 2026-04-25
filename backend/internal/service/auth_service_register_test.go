@@ -343,7 +343,7 @@ func TestAuthService_SendVerifyCode_EmailSuffixNotAllowed(t *testing.T) {
 		SettingKeyRegistrationEmailSuffixWhitelist: `["@example.com","@company.com"]`,
 	}, nil)
 
-	err := service.SendVerifyCode(context.Background(), "user@other.com")
+	err := service.SendVerifyCode(context.Background(), "user@other.com", EmailOptions{})
 	require.ErrorIs(t, err, ErrEmailSuffixNotAllowed)
 	appErr := infraerrors.FromError(err)
 	require.Contains(t, appErr.Message, "@example.com")

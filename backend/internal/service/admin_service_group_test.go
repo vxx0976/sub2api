@@ -18,6 +18,7 @@ func ptrString[T ~string](v T) *string {
 
 // groupRepoStubForAdmin 用于测试 AdminService 的 GroupRepository Stub
 type groupRepoStubForAdmin struct {
+	GroupRepository
 	created *Group // 记录 Create 调用的参数
 	updated *Group // 记录 Update 调用的参数
 	getByID *Group // GetByID 返回值
@@ -144,7 +145,7 @@ func TestAdminService_ListGroups_PassesSortParams(t *testing.T) {
 	}
 	svc := &adminServiceImpl{groupRepo: repo}
 
-	_, _, err := svc.ListGroups(context.Background(), 3, 25, PlatformOpenAI, StatusActive, "needle", nil, "account_count", "ASC")
+	_, _, err := svc.ListGroups(context.Background(), 3, 25, PlatformOpenAI, StatusActive, "needle", nil, nil, "account_count", "ASC")
 	require.NoError(t, err)
 	require.Equal(t, pagination.PaginationParams{
 		Page:      3,
@@ -427,7 +428,7 @@ func TestAdminService_ListGroups_WithSearch(t *testing.T) {
 		}
 		svc := &adminServiceImpl{groupRepo: repo}
 
-		groups, total, err := svc.ListGroups(context.Background(), 1, 20, "", "", "alpha", nil, "", "")
+		groups, total, err := svc.ListGroups(context.Background(), 1, 20, "", "", "alpha", nil, nil, "", "")
 		require.NoError(t, err)
 		require.Equal(t, int64(1), total)
 		require.Equal(t, []Group{{ID: 1, Name: "alpha"}}, groups)
@@ -445,7 +446,7 @@ func TestAdminService_ListGroups_WithSearch(t *testing.T) {
 		}
 		svc := &adminServiceImpl{groupRepo: repo}
 
-		groups, total, err := svc.ListGroups(context.Background(), 2, 10, "", "", "", nil, "", "")
+		groups, total, err := svc.ListGroups(context.Background(), 2, 10, "", "", "", nil, nil, "", "")
 		require.NoError(t, err)
 		require.Empty(t, groups)
 		require.Equal(t, int64(0), total)
@@ -464,7 +465,7 @@ func TestAdminService_ListGroups_WithSearch(t *testing.T) {
 		}
 		svc := &adminServiceImpl{groupRepo: repo}
 
-		groups, total, err := svc.ListGroups(context.Background(), 3, 50, PlatformAntigravity, StatusActive, "beta", &isExclusive, "", "")
+		groups, total, err := svc.ListGroups(context.Background(), 3, 50, PlatformAntigravity, StatusActive, "beta", &isExclusive, nil, "", "")
 		require.NoError(t, err)
 		require.Equal(t, int64(42), total)
 		require.Equal(t, []Group{{ID: 2, Name: "beta"}}, groups)
@@ -502,6 +503,7 @@ func TestAdminService_ValidateFallbackGroup_DetectsCycle(t *testing.T) {
 }
 
 type groupRepoStubForFallbackCycle struct {
+	GroupRepository
 	groups map[int64]*Group
 }
 
@@ -573,6 +575,7 @@ func (s *groupRepoStubForFallbackCycle) UpdateSortOrders(_ context.Context, _ []
 }
 
 type groupRepoStubForInvalidRequestFallback struct {
+	GroupRepository
 	groups  map[int64]*Group
 	created *Group
 	updated *Group
@@ -611,7 +614,7 @@ func (s *groupRepoStubForInvalidRequestFallback) List(_ context.Context, _ pagin
 	panic("unexpected List call")
 }
 
-func (s *groupRepoStubForInvalidRequestFallback) ListWithFilters(_ context.Context, _ pagination.PaginationParams, _, _, _ string, _ *bool) ([]Group, *pagination.PaginationResult, error) {
+func (s *groupRepoStubForInvalidRequestFallback) ListWithFilters(_ context.Context, _ pagination.PaginationParams, _, _, _ string, _ *bool, _ *bool) ([]Group, *pagination.PaginationResult, error) {
 	panic("unexpected ListWithFilters call")
 }
 

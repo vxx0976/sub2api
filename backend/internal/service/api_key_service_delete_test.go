@@ -24,6 +24,7 @@ import (
 //   - deleteErr: 模拟 Delete 返回的错误
 //   - deletedIDs: 记录被调用删除的 API Key ID，用于断言验证
 type apiKeyRepoStub struct {
+	APIKeyRepository
 	apiKey         *APIKey // GetKeyAndOwnerID 的返回值
 	getByIDErr     error   // GetKeyAndOwnerID 的错误返回值
 	deleteErr      error   // Delete 的错误返回值

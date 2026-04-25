@@ -17,6 +17,7 @@ import (
 )
 
 type authRepoStub struct {
+	APIKeyRepository
 	getByKeyForAuth   func(ctx context.Context, key string) (*APIKey, error)
 	listKeysByUserID  func(ctx context.Context, userID int64) ([]string, error)
 	listKeysByGroupID func(ctx context.Context, groupID int64) ([]string, error)

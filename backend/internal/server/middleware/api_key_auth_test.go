@@ -502,6 +502,7 @@ func newAuthTestRouter(apiKeyService *service.APIKeyService, subscriptionService
 }
 
 type stubApiKeyRepo struct {
+	service.APIKeyRepository
 	getByKey       func(ctx context.Context, key string) (*service.APIKey, error)
 	updateLastUsed func(ctx context.Context, id int64, usedAt time.Time) error
 }
@@ -603,6 +604,7 @@ func (r *stubApiKeyRepo) GetRateLimitData(ctx context.Context, id int64) (*servi
 }
 
 type stubUserSubscriptionRepo struct {
+	service.UserSubscriptionRepository
 	getActive      func(ctx context.Context, userID, groupID int64) (*service.UserSubscription, error)
 	updateStatus   func(ctx context.Context, subscriptionID int64, status string) error
 	activateWindow func(ctx context.Context, id int64, start time.Time) error

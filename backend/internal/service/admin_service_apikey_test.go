@@ -19,6 +19,7 @@ import (
 
 // userRepoStubForGroupUpdate implements UserRepository for AdminUpdateAPIKeyGroupID tests.
 type userRepoStubForGroupUpdate struct {
+	UserRepository
 	addGroupErr    error
 	addGroupCalled bool
 	addedUserID    int64
@@ -102,6 +103,7 @@ func (s *userRepoStubForGroupUpdate) RemoveGroupFromUserAllowedGroups(context.Co
 
 // apiKeyRepoStubForGroupUpdate implements APIKeyRepository for AdminUpdateAPIKeyGroupID tests.
 type apiKeyRepoStubForGroupUpdate struct {
+	APIKeyRepository
 	key       *APIKey
 	getErr    error
 	updateErr error
@@ -187,6 +189,7 @@ func (s *apiKeyRepoStubForGroupUpdate) UpdateGroupIDByUserAndGroup(context.Conte
 
 // groupRepoStubForGroupUpdate implements GroupRepository for AdminUpdateAPIKeyGroupID tests.
 type groupRepoStubForGroupUpdate struct {
+	GroupRepository
 	group          *Group
 	getErr         error
 	lastGetByIDArg int64

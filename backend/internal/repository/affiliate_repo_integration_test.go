@@ -75,6 +75,10 @@ VALUES ($1, $2, $3, $3, NOW(), NOW())`, u.ID, affCode, 12.34)
 		"SELECT balance::double precision FROM users WHERE id = $1", u.ID)
 	require.InDelta(t, 17.84, persistedBalance, 1e-9)
 
+	totalRecharged := querySingleFloat(t, txCtx, client,
+		"SELECT total_recharged::double precision FROM users WHERE id = $1", u.ID)
+	require.InDelta(t, 0.0, totalRecharged, 1e-9)
+
 	ledgerCount := querySingleInt(t, txCtx, client,
 		"SELECT COUNT(*) FROM user_affiliate_ledger WHERE user_id = $1 AND action = 'transfer'", u.ID)
 	require.Equal(t, 1, ledgerCount)

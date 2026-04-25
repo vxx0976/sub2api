@@ -236,6 +236,7 @@ func (m *mockGatewayCacheForPlatform) DeleteSessionAccountID(ctx context.Context
 }
 
 type mockGroupRepoForGateway struct {
+	GroupRepository
 	groups           map[int64]*Group
 	getByIDCalls     int
 	getByIDLiteCalls int

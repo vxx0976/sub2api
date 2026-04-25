@@ -3,6 +3,7 @@
 package admin
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -13,6 +14,14 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 )
+
+type stubActivityDomainRepo struct {
+	service.ResellerDomainRepository
+}
+
+func (stubActivityDomainRepo) GetDomainsByResellerIDs(context.Context, []int64) (map[int64]string, error) {
+	return map[int64]string{}, nil
+}
 
 func TestUserHandlerListIncludesActivityFieldsAndSortParams(t *testing.T) {
 	gin.SetMode(gin.TestMode)
@@ -35,7 +44,7 @@ func TestUserHandlerListIncludesActivityFieldsAndSortParams(t *testing.T) {
 			UpdatedAt:    lastLoginAt,
 		},
 	}
-	handler := NewUserHandler(adminSvc, nil)
+	handler := NewUserHandler(adminSvc, nil, stubActivityDomainRepo{})
 
 	recorder := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(recorder)
@@ -89,7 +98,7 @@ func TestUserHandlerGetByIDIncludesActivityFields(t *testing.T) {
 			UpdatedAt:    lastLoginAt,
 		},
 	}
-	handler := NewUserHandler(adminSvc, nil)
+	handler := NewUserHandler(adminSvc, nil, stubActivityDomainRepo{})
 
 	recorder := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(recorder)
