@@ -38,6 +38,7 @@ type AdminHandlers struct {
 	Merchant               *admin.MerchantHandler
 	AdminWithdrawal        *admin.AdminWithdrawalHandler
 	Payment                *admin.PaymentHandler
+	Affiliate              *admin.AffiliateHandler
 }
 
 // ResellerHandlers contains all reseller-related HTTP handlers

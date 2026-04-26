@@ -41,6 +41,7 @@ func ProvideAdminHandlers(
 	merchantHandler *admin.MerchantHandler,
 	adminWithdrawalHandler *admin.AdminWithdrawalHandler,
 	paymentHandler *admin.PaymentHandler,
+	affiliateHandler *admin.AffiliateHandler,
 ) *AdminHandlers {
 	return &AdminHandlers{
 		Dashboard:              dashboardHandler,
@@ -74,6 +75,7 @@ func ProvideAdminHandlers(
 		Merchant:               merchantHandler,
 		AdminWithdrawal:        adminWithdrawalHandler,
 		Payment:                paymentHandler,
+		Affiliate:              affiliateHandler,
 	}
 }
 
@@ -218,6 +220,7 @@ var ProviderSet = wire.NewSet(
 	admin.NewMerchantHandler,
 	admin.NewAdminWithdrawalHandler,
 	admin.NewPaymentHandler,
+	admin.NewAffiliateHandler,
 
 	// Reseller handlers
 	reseller.NewDashboardHandler,

@@ -108,11 +108,15 @@ type SystemSettings struct {
 	ContactTelegram string
 	ContactQQ       string
 
-	DefaultConcurrency   int
-	DefaultBalance       float64
-	AffiliateRebateRate  float64
-	DefaultUserRPMLimit  int
-	DefaultSubscriptions []DefaultSubscriptionSetting
+	DefaultConcurrency           int
+	DefaultBalance               float64
+	AffiliateEnabled             bool
+	AffiliateRebateRate          float64
+	AffiliateRebateFreezeHours   int
+	AffiliateRebateDurationDays  int
+	AffiliateRebatePerInviteeCap float64
+	DefaultUserRPMLimit          int
+	DefaultSubscriptions         []DefaultSubscriptionSetting
 
 	// Model fallback configuration
 	EnableModelFallback      bool   `json:"enable_model_fallback"`
@@ -257,6 +261,9 @@ type PublicSettings struct {
 
 	// Available Channels feature (user-facing aggregate view)
 	AvailableChannelsEnabled bool `json:"available_channels_enabled"`
+
+	// Affiliate (邀请返利) feature toggle
+	AffiliateEnabled bool `json:"affiliate_enabled"`
 }
 
 type WeChatConnectOAuthConfig struct {
