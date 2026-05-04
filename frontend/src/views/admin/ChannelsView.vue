@@ -32,12 +32,12 @@
           <!-- Right: Actions -->
           <div class="flex w-full flex-shrink-0 flex-wrap items-center justify-end gap-3 lg:w-auto">
             <button
-              @click="loadChannels"
-              :disabled="loading"
+              @click="handleRefreshAllBalances"
+              :disabled="loading || refreshingAllBalances"
               class="btn btn-secondary"
-              :title="t('common.refresh', 'Refresh')"
+              :title="t('admin.channels.refreshAllBalances', 'Refresh all channel balances')"
             >
-              <Icon name="refresh" size="md" :class="loading ? 'animate-spin' : ''" />
+              <Icon name="refresh" size="md" :class="(loading || refreshingAllBalances) ? 'animate-spin' : ''" />
             </button>
             <button @click="openCreateDialog" class="btn btn-primary">
               <Icon name="plus" size="md" class="mr-2" />
@@ -85,11 +85,11 @@
               <button
                 v-if="row.balance_url"
                 @click="handleRefreshBalance(row)"
-                :disabled="refreshingBalanceId === row.id"
+                :disabled="refreshingBalanceIds.has(row.id)"
                 class="p-1 text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
                 :title="t('admin.channels.refreshBalance', 'Refresh Balance')"
               >
-                <Icon name="refresh" size="xs" :class="{ 'animate-spin': refreshingBalanceId === row.id }" />
+                <Icon name="refresh" size="xs" :class="{ 'animate-spin': refreshingBalanceIds.has(row.id) }" />
               </button>
             </div>
           </template>
@@ -787,7 +787,8 @@ const billingModelSourceOptions = computed(() => [
 ])
 
 // ── Balance refresh ──
-const refreshingBalanceId = ref<number | null>(null)
+const refreshingBalanceIds = ref<Set<number>>(new Set())
+const refreshingAllBalances = ref(false)
 
 function formatBalance(value: number): string {
   return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -807,7 +808,10 @@ function formatRelativeTime(dateStr: string): string {
 }
 
 async function handleRefreshBalance(channel: Channel) {
-  refreshingBalanceId.value = channel.id
+  if (refreshingBalanceIds.value.has(channel.id)) return
+  const next = new Set(refreshingBalanceIds.value)
+  next.add(channel.id)
+  refreshingBalanceIds.value = next
   try {
     const updated = await adminAPI.channels.refreshBalance(channel.id)
     const idx = channels.value.findIndex(c => c.id === channel.id)
@@ -817,7 +821,24 @@ async function handleRefreshBalance(channel: Channel) {
   } catch (error: any) {
     appStore.showError(error?.message || t('admin.channels.refreshBalanceFailed', 'Failed to refresh balance'))
   } finally {
-    refreshingBalanceId.value = null
+    const after = new Set(refreshingBalanceIds.value)
+    after.delete(channel.id)
+    refreshingBalanceIds.value = after
+  }
+}
+
+async function handleRefreshAllBalances() {
+  if (refreshingAllBalances.value) return
+  const targets = channels.value.filter(c => !!c.balance_url)
+  if (targets.length === 0) {
+    appStore.showInfo(t('admin.channels.noBalanceUrls', 'No channels have a balance URL configured'))
+    return
+  }
+  refreshingAllBalances.value = true
+  try {
+    await Promise.all(targets.map(c => handleRefreshBalance(c)))
+  } finally {
+    refreshingAllBalances.value = false
   }
 }
 
