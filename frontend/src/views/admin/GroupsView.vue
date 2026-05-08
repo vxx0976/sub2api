@@ -1794,7 +1794,7 @@
                 :title="t('admin.groups.form.translateAllHint')"
                 @click="translateEditForm"
               >
-                <Icon :name="editI18nTranslating ? 'spinner' : 'translate'" size="sm" />
+                <Icon name="sparkles" size="sm" :class="{ 'animate-pulse': createI18nTranslating || editI18nTranslating }" />
                 {{ editI18nTranslating
                   ? t('admin.groups.form.translating')
                   : t('admin.groups.form.translateAll') }}
