@@ -40,6 +40,7 @@ func ProvideAdminHandlers(
 	scheduledTestHandler *admin.ScheduledTestHandler,
 	merchantHandler *admin.MerchantHandler,
 	adminWithdrawalHandler *admin.AdminWithdrawalHandler,
+	contentModerationHandler *admin.ContentModerationHandler,
 	paymentHandler *admin.PaymentHandler,
 	affiliateHandler *admin.AffiliateHandler,
 ) *AdminHandlers {
@@ -74,6 +75,7 @@ func ProvideAdminHandlers(
 		ScheduledTest:          scheduledTestHandler,
 		Merchant:               merchantHandler,
 		AdminWithdrawal:        adminWithdrawalHandler,
+		ContentModeration:      contentModerationHandler,
 		Payment:                paymentHandler,
 		Affiliate:              affiliateHandler,
 	}
@@ -219,6 +221,7 @@ var ProviderSet = wire.NewSet(
 	admin.NewScheduledTestHandler,
 	admin.NewMerchantHandler,
 	admin.NewAdminWithdrawalHandler,
+	admin.NewContentModerationHandler,
 	admin.NewPaymentHandler,
 	admin.NewAffiliateHandler,
 

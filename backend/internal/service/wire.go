@@ -565,6 +565,7 @@ var ProviderSet = wire.NewSet(
 	wire.Bind(new(pkgpayment.OrderMatcher), new(*OrderService)),
 	ProvidePaymentSettingGetter,
 	NewModelPricingResolver,
+	NewContentModerationService,
 	NewAffiliateService,
 	ProvidePaymentConfigService,
 	NewPaymentService,

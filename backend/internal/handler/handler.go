@@ -37,6 +37,7 @@ type AdminHandlers struct {
 	ScheduledTest          *admin.ScheduledTestHandler
 	Merchant               *admin.MerchantHandler
 	AdminWithdrawal        *admin.AdminWithdrawalHandler
+	ContentModeration      *admin.ContentModerationHandler
 	Payment                *admin.PaymentHandler
 	Affiliate              *admin.AffiliateHandler
 }

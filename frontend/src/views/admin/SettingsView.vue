@@ -4610,6 +4610,8 @@ type SettingsForm = SystemSettings & {
   wechat_connect_mobile_enabled: boolean
   epay_key: string
   oidc_connect_client_secret: string
+  github_oauth_client_secret: string
+  google_oauth_client_secret: string
   force_email_on_third_party_signup: boolean
   openai_advanced_scheduler_enabled: boolean
 }
@@ -4804,6 +4806,26 @@ const form = reactive<SettingsForm>({
   channel_monitor_default_interval_seconds: 60,
   // Available Channels feature switch
   available_channels_enabled: false,
+  // Login agreement (from main)
+  login_agreement_enabled: false,
+  login_agreement_mode: 'modal',
+  login_agreement_updated_at: '',
+  login_agreement_documents: [],
+  // GitHub / Google OAuth (from main)
+  github_oauth_enabled: false,
+  github_oauth_client_id: '',
+  github_oauth_client_secret_configured: false,
+  github_oauth_redirect_url: '',
+  github_oauth_frontend_redirect_url: '',
+  github_oauth_client_secret: '',
+  google_oauth_enabled: false,
+  google_oauth_client_id: '',
+  google_oauth_client_secret_configured: false,
+  google_oauth_redirect_url: '',
+  google_oauth_frontend_redirect_url: '',
+  google_oauth_client_secret: '',
+  // Risk control (from main)
+  risk_control_enabled: false,
 })
 
 const authSourceDefaults = reactive<AuthSourceDefaultsState>(
