@@ -420,6 +420,20 @@
             {{ t('admin.groups.form.i18n') }}
           </summary>
           <div class="space-y-3 px-3 pb-3 pt-1">
+            <div class="flex items-center justify-end">
+              <button
+                type="button"
+                class="inline-flex items-center gap-1 rounded-md border border-primary-200 bg-primary-50 px-2.5 py-1 text-xs font-medium text-primary-700 hover:bg-primary-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-primary-800 dark:bg-primary-900/20 dark:text-primary-300 dark:hover:bg-primary-900/30"
+                :disabled="createI18nTranslating"
+                :title="t('admin.groups.form.translateAllHint')"
+                @click="translateCreateForm"
+              >
+                <Icon name="sparkles" size="sm" :class="{ 'animate-pulse': createI18nTranslating || editI18nTranslating }" />
+                {{ createI18nTranslating
+                  ? t('admin.groups.form.translating')
+                  : t('admin.groups.form.translateAll') }}
+              </button>
+            </div>
             <div v-for="lang in i18nLangs" :key="lang.code">
               <label class="input-label">{{ lang.label }} - {{ t('admin.groups.form.name') }}</label>
               <input v-model="createForm.name_i18n[lang.code]" type="text" class="input" />
@@ -1772,6 +1786,20 @@
             {{ t('admin.groups.form.i18n') }}
           </summary>
           <div class="space-y-3 px-3 pb-3 pt-1">
+            <div class="flex items-center justify-end">
+              <button
+                type="button"
+                class="inline-flex items-center gap-1 rounded-md border border-primary-200 bg-primary-50 px-2.5 py-1 text-xs font-medium text-primary-700 hover:bg-primary-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-primary-800 dark:bg-primary-900/20 dark:text-primary-300 dark:hover:bg-primary-900/30"
+                :disabled="editI18nTranslating"
+                :title="t('admin.groups.form.translateAllHint')"
+                @click="translateEditForm"
+              >
+                <Icon :name="editI18nTranslating ? 'spinner' : 'translate'" size="sm" />
+                {{ editI18nTranslating
+                  ? t('admin.groups.form.translating')
+                  : t('admin.groups.form.translateAll') }}
+              </button>
+            </div>
             <div v-for="lang in i18nLangs" :key="lang.code">
               <label class="input-label">{{ lang.label }} - {{ t('admin.groups.form.name') }}</label>
               <input v-model="editForm.name_i18n[lang.code]" type="text" class="input" />
@@ -3226,6 +3254,7 @@ import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
 import { useOnboardingStore } from '@/stores/onboarding'
 import { adminAPI } from '@/api/admin'
+import * as translationAPI from '@/api/admin/translation'
 import type { AdminGroup, GroupPlatform, SubscriptionType } from '@/types'
 import type { Column } from '@/components/common/types'
 import AppLayout from '@/components/layout/AppLayout.vue'
@@ -3298,6 +3327,68 @@ const i18nLangs = [
   { code: 'en', label: 'English' },
   { code: 'ru', label: 'Русский' }
 ]
+
+// 一键翻译：把 createForm / editForm 的中文 name+description 翻译到所有 i18nLangs
+const createI18nTranslating = ref(false)
+const editI18nTranslating = ref(false)
+
+async function translateGroupForm(form: { name: string; description: string; name_i18n: Record<string, string>; description_i18n: Record<string, string> }, busy: { value: boolean }) {
+  const name = (form.name || '').trim()
+  const description = (form.description || '').trim()
+  if (!name && !description) {
+    appStore.showError(t('admin.groups.form.translateNoSource'))
+    return
+  }
+  // 收集要翻译的源文本（保留索引以便回填）
+  const slots: Array<'name' | 'description'> = []
+  const texts: string[] = []
+  if (name) {
+    slots.push('name')
+    texts.push(name)
+  }
+  if (description) {
+    slots.push('description')
+    texts.push(description)
+  }
+  const targetLangs = i18nLangs.map(l => l.code)
+  busy.value = true
+  try {
+    const res = await translationAPI.translate({
+      texts,
+      target_langs: targetLangs,
+      source_lang: 'zh',
+    })
+    if (!res.translations || res.translations.length !== texts.length) {
+      throw new Error('translation length mismatch')
+    }
+    // 回填到 form 对应字段；若已有手动填写的内容则不覆盖
+    res.translations.forEach((row, idx) => {
+      const slot = slots[idx]
+      const target = slot === 'name' ? form.name_i18n : form.description_i18n
+      for (const lang of targetLangs) {
+        const value = (row[lang] || '').trim()
+        if (!value) continue
+        if (!target[lang] || !target[lang].trim()) {
+          target[lang] = value
+        }
+      }
+    })
+    appStore.showSuccess(t('admin.groups.form.translateSuccess'))
+  } catch (err: any) {
+    const msg = err?.response?.data?.message || err?.message || t('common.error')
+    appStore.showError(msg)
+  } finally {
+    busy.value = false
+  }
+}
+
+function translateCreateForm() {
+  return translateGroupForm(createForm, createI18nTranslating)
+}
+
+function translateEditForm() {
+  return translateGroupForm(editForm, editI18nTranslating)
+}
 
 const platformOptions = computed(() => [
   { value: 'anthropic', label: 'Anthropic' },

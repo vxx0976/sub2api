@@ -110,6 +110,9 @@ func RegisterAdminRoutes(
 		// 风控中心
 		registerContentModerationRoutes(admin, h)
 
+		// 一键翻译
+		registerTranslationRoutes(admin, h)
+
 		// 邀请返利（专属用户管理）
 		registerAffiliateRoutes(admin, h)
 	}
@@ -142,6 +145,15 @@ func registerContentModerationRoutes(admin *gin.RouterGroup, h *handler.Handlers
 		risk.POST("/users/:user_id/unban", h.Admin.ContentModeration.UnbanUser)
 		risk.DELETE("/hashes", h.Admin.ContentModeration.DeleteFlaggedHash)
 		risk.DELETE("/hashes/all", h.Admin.ContentModeration.ClearFlaggedHashes)
+	}
+}
+
+func registerTranslationRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
+	translation := admin.Group("/translation")
+	{
+		translation.GET("/config", h.Admin.Translation.GetConfig)
+		translation.PUT("/config", h.Admin.Translation.UpdateConfig)
+		translation.POST("/translate", h.Admin.Translation.Translate)
 	}
 }
 
