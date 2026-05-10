@@ -3361,19 +3361,36 @@ async function translateGroupForm(form: { name: string; description: string; nam
     if (!res.translations || res.translations.length !== texts.length) {
       throw new Error('translation length mismatch')
     }
-    // 回填到 form 对应字段；若已有手动填写的内容则不覆盖
+    // 回填：始终覆盖（用户点了一键翻译就是想要 LLM 的结果）；用大小写无关的查找
+    // 防止上游模型大小写不一致（"En" / "EN"）。
+    let filledCount = 0
     res.translations.forEach((row, idx) => {
       const slot = slots[idx]
-      const target = slot === 'name' ? form.name_i18n : form.description_i18n
+      const lookup: Record<string, string> = {}
+      for (const key of Object.keys(row)) {
+        if (key === 'index') continue
+        lookup[key.toLowerCase()] = String(row[key] ?? '')
+      }
       for (const lang of targetLangs) {
-        const value = (row[lang] || '').trim()
+        const value = (lookup[lang.toLowerCase()] || '').trim()
         if (!value) continue
-        if (!target[lang] || !target[lang].trim()) {
-          target[lang] = value
+        if (slot === 'name') {
+          form.name_i18n[lang] = value
+        } else {
+          form.description_i18n[lang] = value
         }
+        filledCount += 1
       }
     })
-    appStore.showSuccess(t('admin.groups.form.translateSuccess'))
+    // 触发响应式更新（替换引用，确保 v-model 能识别新增 key）
+    form.name_i18n = { ...form.name_i18n }
+    form.description_i18n = { ...form.description_i18n }
+
+    if (filledCount === 0) {
+      appStore.showError(t('admin.groups.form.translateEmpty'))
+    } else {
+      appStore.showSuccess(t('admin.groups.form.translateSuccess'))
+    }
   } catch (err: any) {
     const msg = err?.response?.data?.message || err?.message || t('common.error')
     appStore.showError(msg)
