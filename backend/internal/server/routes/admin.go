@@ -261,6 +261,7 @@ func registerDashboardRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 		dashboard.GET("/stats", h.Admin.Dashboard.GetStats)
 		dashboard.GET("/realtime", h.Admin.Dashboard.GetRealtimeMetrics)
 		dashboard.GET("/trend", h.Admin.Dashboard.GetUsageTrend)
+		dashboard.GET("/finance-trend", h.Admin.Dashboard.GetFinanceTrend)
 		dashboard.GET("/models", h.Admin.Dashboard.GetModelStats)
 		dashboard.GET("/groups", h.Admin.Dashboard.GetGroupStats)
 		dashboard.GET("/api-keys-trend", h.Admin.Dashboard.GetAPIKeyUsageTrend)

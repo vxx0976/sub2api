@@ -731,6 +731,22 @@ func (r *userRepository) filterUsersByAttributes(ctx context.Context, attrs map[
 	return result, nil
 }
 
+// SumTotalBalance 汇总所有用户当前余额之和（USD）
+func (r *userRepository) SumTotalBalance(ctx context.Context) (float64, error) {
+	var result []struct {
+		Sum float64 `json:"sum"`
+	}
+	if err := r.client.User.Query().
+		Aggregate(dbent.As(dbent.Sum(dbuser.FieldBalance), "sum")).
+		Scan(ctx, &result); err != nil {
+		return 0, err
+	}
+	if len(result) == 0 {
+		return 0, nil
+	}
+	return result[0].Sum, nil
+}
+
 func (r *userRepository) UpdateBalance(ctx context.Context, id int64, amount float64) error {
 	client := clientFromContext(ctx, r.client)
 	update := client.User.Update().Where(dbuser.IDEQ(id)).AddBalance(amount)

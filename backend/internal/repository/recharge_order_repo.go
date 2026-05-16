@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/ent"
@@ -11,10 +12,11 @@ import (
 
 type rechargeOrderRepo struct {
 	client *ent.Client
+	sql    *sql.DB
 }
 
-func NewRechargeOrderRepo(client *ent.Client) service.RechargeOrderRepository {
-	return &rechargeOrderRepo{client: client}
+func NewRechargeOrderRepo(client *ent.Client, sqlDB *sql.DB) service.RechargeOrderRepository {
+	return &rechargeOrderRepo{client: client, sql: sqlDB}
 }
 
 func (r *rechargeOrderRepo) Create(ctx context.Context, order *service.RechargeOrder) error {
@@ -190,6 +192,47 @@ func (r *rechargeOrderRepo) ListPaidByUserIDs(ctx context.Context, userIDs []int
 		orders[i] = toServiceRechargeOrder(row)
 	}
 	return orders, total, nil
+}
+
+// SumPaidCreditByDay 按时区分桶汇总指定时间区间内 status='paid' 订单的 credit_amount。
+// 返回的 map key 为 "YYYY-MM-DD"（按 tzName 解释 paid_at），value 为当天到账余额合计（USD）。
+func (r *rechargeOrderRepo) SumPaidCreditByDay(ctx context.Context, startTime, endTime time.Time, tzName string) (map[string]float64, error) {
+	if r.sql == nil {
+		return map[string]float64{}, nil
+	}
+	if tzName == "" {
+		tzName = "UTC"
+	}
+	query := `
+		SELECT
+			TO_CHAR(paid_at AT TIME ZONE $3, 'YYYY-MM-DD') AS day,
+			COALESCE(SUM(credit_amount), 0) AS total
+		FROM recharge_orders
+		WHERE status = 'paid'
+		  AND paid_at IS NOT NULL
+		  AND paid_at >= $1
+		  AND paid_at < $2
+		GROUP BY 1
+		ORDER BY 1
+	`
+	rows, err := r.sql.QueryContext(ctx, query, startTime, endTime, tzName)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	result := make(map[string]float64)
+	for rows.Next() {
+		var day string
+		var total float64
+		if err := rows.Scan(&day, &total); err != nil {
+			return nil, err
+		}
+		result[day] = total
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 func toServiceRechargeOrder(row *ent.RechargeOrder) *service.RechargeOrder {

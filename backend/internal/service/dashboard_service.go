@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
 	"sync/atomic"
 	"time"
 
@@ -43,6 +44,8 @@ type dashboardStatsCacheEntry struct {
 type DashboardService struct {
 	usageRepo      UsageLogRepository
 	aggRepo        DashboardAggregationRepository
+	userRepo       UserRepository
+	rechargeRepo   RechargeOrderRepository
 	cache          DashboardStatsCache
 	cacheFreshTTL  time.Duration
 	cacheTTL       time.Duration
@@ -54,7 +57,7 @@ type DashboardService struct {
 	aggUsageDays   int
 }
 
-func NewDashboardService(usageRepo UsageLogRepository, aggRepo DashboardAggregationRepository, cache DashboardStatsCache, cfg *config.Config) *DashboardService {
+func NewDashboardService(usageRepo UsageLogRepository, aggRepo DashboardAggregationRepository, userRepo UserRepository, rechargeRepo RechargeOrderRepository, cache DashboardStatsCache, cfg *config.Config) *DashboardService {
 	freshTTL := defaultDashboardStatsFreshTTL
 	cacheTTL := defaultDashboardStatsCacheTTL
 	refreshTimeout := defaultDashboardStatsRefreshTimeout
@@ -92,6 +95,8 @@ func NewDashboardService(usageRepo UsageLogRepository, aggRepo DashboardAggregat
 	svc := &DashboardService{
 		usageRepo:      usageRepo,
 		aggRepo:        aggRepo,
+		userRepo:       userRepo,
+		rechargeRepo:   rechargeRepo,
 		cache:          cache,
 		cacheFreshTTL:  freshTTL,
 		cacheTTL:       cacheTTL,
@@ -149,6 +154,78 @@ func (s *DashboardService) GetDashboardStats(ctx context.Context) (*usagestats.D
 		return nil, fmt.Errorf("get dashboard stats: %w", err)
 	}
 	return stats, nil
+}
+
+// FinanceTrendPoint 表示某一天的资金流入/流出。
+type FinanceTrendPoint struct {
+	Date        string  `json:"date"`
+	Recharge    float64 `json:"recharge"`    // 当日到账余额合计（USD）
+	Consumption float64 `json:"consumption"` // 当日实际消耗合计（USD），来自 actual_cost
+}
+
+// FinanceTrendResult 平台资金趋势聚合结果。
+type FinanceTrendResult struct {
+	CurrentTotalBalance float64             `json:"current_total_balance"`
+	Trend               []FinanceTrendPoint `json:"trend"`
+}
+
+// GetFinanceTrend 返回平台每日充值/消耗趋势以及当前总余额。
+// 时区参数用于 SQL 端按天分桶；与 parseTimeRange 保持一致。
+func (s *DashboardService) GetFinanceTrend(ctx context.Context, startTime, endTime time.Time, tzName string) (*FinanceTrendResult, error) {
+	// 消耗：直接复用按天的 usage trend（actual_cost）。
+	trend, err := s.usageRepo.GetUsageTrendWithFilters(ctx, startTime, endTime, "day", 0, 0, 0, 0, "", nil, nil, nil)
+	if err != nil {
+		return nil, fmt.Errorf("get usage trend for finance: %w", err)
+	}
+
+	// 充值：按天聚合 status='paid' 的 credit_amount。
+	rechargeByDay := map[string]float64{}
+	if s.rechargeRepo != nil {
+		rechargeByDay, err = s.rechargeRepo.SumPaidCreditByDay(ctx, startTime, endTime, tzName)
+		if err != nil {
+			return nil, fmt.Errorf("sum paid recharge by day: %w", err)
+		}
+	}
+
+	// 合并两份数据：以充值日期 ∪ 消耗日期为全集。
+	dateSet := make(map[string]struct{}, len(trend)+len(rechargeByDay))
+	consumptionByDay := make(map[string]float64, len(trend))
+	for _, p := range trend {
+		dateSet[p.Date] = struct{}{}
+		consumptionByDay[p.Date] = p.ActualCost
+	}
+	for d := range rechargeByDay {
+		dateSet[d] = struct{}{}
+	}
+
+	dates := make([]string, 0, len(dateSet))
+	for d := range dateSet {
+		dates = append(dates, d)
+	}
+	sort.Strings(dates)
+
+	points := make([]FinanceTrendPoint, 0, len(dates))
+	for _, d := range dates {
+		points = append(points, FinanceTrendPoint{
+			Date:        d,
+			Recharge:    rechargeByDay[d],
+			Consumption: consumptionByDay[d],
+		})
+	}
+
+	// 当前总余额：所有用户余额之和。
+	var totalBalance float64
+	if s.userRepo != nil {
+		totalBalance, err = s.userRepo.SumTotalBalance(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("sum total balance: %w", err)
+		}
+	}
+
+	return &FinanceTrendResult{
+		CurrentTotalBalance: totalBalance,
+		Trend:               points,
+	}, nil
 }
 
 func (s *DashboardService) GetUsageTrendWithFilters(ctx context.Context, startTime, endTime time.Time, granularity string, userID, apiKeyID, accountID, groupID int64, model string, requestType *int16, stream *bool, billingType *int8) ([]usagestats.TrendDataPoint, error) {

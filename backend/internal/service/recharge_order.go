@@ -42,6 +42,9 @@ type RechargeOrderRepository interface {
 	ListAll(ctx context.Context, status string, userID *int64, limit, offset int) ([]*RechargeOrder, int, error)
 	SumPaidCreditByUserIDs(ctx context.Context, userIDs []int64) (float64, error)
 	ListPaidByUserIDs(ctx context.Context, userIDs []int64, limit, offset int) ([]*RechargeOrder, int, error)
+	// SumPaidCreditByDay 汇总指定时区下每日 status='paid' 订单的 credit_amount。
+	// 返回 map key 为 "YYYY-MM-DD"，value 为当日到账余额合计（USD）。
+	SumPaidCreditByDay(ctx context.Context, startTime, endTime time.Time, tzName string) (map[string]float64, error)
 }
 
 var ErrRechargeOrderStatusConflict = errors.New("recharge order status conflict")

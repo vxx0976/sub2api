@@ -102,7 +102,8 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	channelMonitorUserHandler := handler.NewChannelMonitorUserHandler(channelMonitorService, settingService)
 	dashboardAggregationRepository := repository.NewDashboardAggregationRepository(db)
 	dashboardStatsCache := repository.NewDashboardCache(redisClient, configConfig)
-	dashboardService := service.NewDashboardService(usageLogRepository, dashboardAggregationRepository, dashboardStatsCache, configConfig)
+	rechargeOrderRepository := repository.NewRechargeOrderRepo(client, db)
+	dashboardService := service.NewDashboardService(usageLogRepository, dashboardAggregationRepository, userRepository, rechargeOrderRepository, dashboardStatsCache, configConfig)
 	timingWheelService, err := service.ProvideTimingWheelService()
 	if err != nil {
 		return nil, err
@@ -240,7 +241,6 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	scheduledTestService := service.ProvideScheduledTestService(scheduledTestPlanRepository, scheduledTestResultRepository)
 	scheduledTestHandler := admin.NewScheduledTestHandler(scheduledTestService)
 	resellerWithdrawalRepo := repository.NewResellerWithdrawalRepo(client)
-	rechargeOrderRepository := repository.NewRechargeOrderRepo(client)
 	orderRepository := repository.NewOrderRepo(client)
 	commissionService := service.NewCommissionService(resellerWithdrawalRepo, usageLogRepository, userRepository, resellerSettingRepository, resellerDomainRepository, rechargeOrderRepository, orderRepository)
 	merchantHandler := admin.NewMerchantHandler(commissionService, adminService)

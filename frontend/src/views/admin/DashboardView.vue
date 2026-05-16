@@ -216,6 +216,33 @@
           </div>
         </div>
 
+        <!-- Row 3: Platform Balance -->
+        <div class="grid grid-cols-1 gap-4 lg:grid-cols-4">
+          <div class="card p-4">
+            <div class="flex items-center gap-3">
+              <div class="rounded-lg bg-teal-100 p-2 dark:bg-teal-900/30">
+                <Icon
+                  name="dollar"
+                  size="md"
+                  class="text-teal-600 dark:text-teal-400"
+                  :stroke-width="2"
+                />
+              </div>
+              <div>
+                <p class="text-xs font-medium text-gray-500 dark:text-gray-400">
+                  {{ t('admin.dashboard.platformBalance') }}
+                </p>
+                <p class="text-xl font-bold text-teal-600 dark:text-teal-400">
+                  ${{ formatCost(financeTrend?.current_total_balance ?? 0) }}
+                </p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">
+                  {{ t('admin.dashboard.platformBalanceHint') }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Charts Section -->
         <div class="space-y-6">
           <!-- Date Range Filter -->
@@ -268,6 +295,12 @@
             <TokenUsageTrend :trend-data="trendData" :loading="chartsLoading" />
           </div>
 
+          <!-- Finance Trend (Full Width): daily recharge vs consumption -->
+          <FinanceTrendChart
+            :trend-data="financeTrendData"
+            :loading="financeTrendLoading"
+          />
+
           <!-- User Usage Trend (Full Width) -->
           <div class="card p-4">
             <h3 class="mb-4 text-sm font-semibold text-gray-900 dark:text-white">
@@ -316,6 +349,8 @@ import DateRangePicker from '@/components/common/DateRangePicker.vue'
 import Select from '@/components/common/Select.vue'
 import ModelDistributionChart from '@/components/charts/ModelDistributionChart.vue'
 import TokenUsageTrend from '@/components/charts/TokenUsageTrend.vue'
+import FinanceTrendChart from '@/components/charts/FinanceTrendChart.vue'
+import type { FinanceTrendResponse, FinanceTrendPoint } from '@/api/admin/dashboard'
 
 
 import {
@@ -358,9 +393,13 @@ const rankingItems = ref<UserSpendingRankingItem[]>([])
 const rankingTotalActualCost = ref(0)
 const rankingTotalRequests = ref(0)
 const rankingTotalTokens = ref(0)
+const financeTrend = ref<FinanceTrendResponse | null>(null)
+const financeTrendData = computed<FinanceTrendPoint[]>(() => financeTrend.value?.trend ?? [])
+const financeTrendLoading = ref(false)
 let chartLoadSeq = 0
 let usersTrendLoadSeq = 0
 let rankingLoadSeq = 0
+let financeTrendLoadSeq = 0
 const rankingLimit = 12
 
 // Helper function to format date in local timezone
@@ -675,11 +714,33 @@ const loadUserSpendingRanking = async () => {
   }
 }
 
+const loadFinanceTrend = async () => {
+  const currentSeq = ++financeTrendLoadSeq
+  financeTrendLoading.value = true
+  try {
+    const response = await adminAPI.dashboard.getFinanceTrend({
+      start_date: startDate.value,
+      end_date: endDate.value
+    })
+    if (currentSeq !== financeTrendLoadSeq) return
+    financeTrend.value = response
+  } catch (error) {
+    if (currentSeq !== financeTrendLoadSeq) return
+    console.error('Error loading finance trend:', error)
+    financeTrend.value = null
+  } finally {
+    if (currentSeq === financeTrendLoadSeq) {
+      financeTrendLoading.value = false
+    }
+  }
+}
+
 const loadDashboardStats = async () => {
   await Promise.all([
     loadDashboardSnapshot(true),
     loadUsersTrend(),
-    loadUserSpendingRanking()
+    loadUserSpendingRanking(),
+    loadFinanceTrend()
   ])
 }
 
@@ -687,7 +748,8 @@ const loadChartData = async () => {
   await Promise.all([
     loadDashboardSnapshot(false),
     loadUsersTrend(),
-    loadUserSpendingRanking()
+    loadUserSpendingRanking(),
+    loadFinanceTrend()
   ])
 }
 

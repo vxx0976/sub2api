@@ -265,6 +265,35 @@ func (h *DashboardHandler) GetUsageTrend(c *gin.Context) {
 	})
 }
 
+// GetFinanceTrend returns daily recharge / consumption trend and the current
+// total platform balance (sum of all user balances).
+// GET /api/v1/admin/dashboard/finance-trend
+// Query params: start_date, end_date (YYYY-MM-DD), timezone
+func (h *DashboardHandler) GetFinanceTrend(c *gin.Context) {
+	startTime, endTime := parseTimeRange(c)
+	tzName := c.Query("timezone")
+	if tzName == "" {
+		tzName = timezone.Name()
+	}
+	if tzName == "" || tzName == "Local" {
+		tzName = "UTC"
+	}
+
+	result, err := h.dashboardService.GetFinanceTrend(c.Request.Context(), startTime, endTime, tzName)
+	if err != nil {
+		response.Error(c, 500, "Failed to get finance trend")
+		return
+	}
+
+	response.Success(c, gin.H{
+		"current_total_balance": result.CurrentTotalBalance,
+		"trend":                 result.Trend,
+		"start_date":            startTime.Format("2006-01-02"),
+		"end_date":              endTime.Add(-24 * time.Hour).Format("2006-01-02"),
+		"granularity":           "day",
+	})
+}
+
 // GetModelStats handles getting model usage statistics
 // GET /api/v1/admin/dashboard/models
 // Query params: start_date, end_date (YYYY-MM-DD), user_id, api_key_id, account_id, group_id, request_type, stream, billing_type

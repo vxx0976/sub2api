@@ -95,6 +95,8 @@ type UserRepository interface {
 	UpdateUserLastActiveAt(ctx context.Context, userID int64, activeAt time.Time) error
 
 	UpdateBalance(ctx context.Context, id int64, amount float64) error
+	// SumTotalBalance 汇总所有用户当前余额之和（USD）
+	SumTotalBalance(ctx context.Context) (float64, error)
 	DeductBalance(ctx context.Context, id int64, amount float64) error
 	DeductBalanceIfSufficient(ctx context.Context, id int64, amount float64) error
 	UpdateConcurrency(ctx context.Context, id int64, amount int) error

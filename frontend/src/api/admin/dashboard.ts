@@ -266,6 +266,39 @@ export async function getUserSpendingRanking(
   return data
 }
 
+export interface FinanceTrendPoint {
+  date: string
+  recharge: number
+  consumption: number
+}
+
+export interface FinanceTrendResponse {
+  current_total_balance: number
+  trend: FinanceTrendPoint[]
+  start_date: string
+  end_date: string
+  granularity: string
+}
+
+export interface FinanceTrendParams {
+  start_date?: string
+  end_date?: string
+  timezone?: string
+}
+
+/**
+ * Get platform finance trend (daily recharge / consumption + current total balance)
+ */
+export async function getFinanceTrend(
+  params?: FinanceTrendParams
+): Promise<FinanceTrendResponse> {
+  const { data } = await apiClient.get<FinanceTrendResponse>(
+    '/admin/dashboard/finance-trend',
+    { params }
+  )
+  return data
+}
+
 export interface BatchUserUsageStats {
   user_id: number
   today_actual_cost: number
@@ -325,6 +358,7 @@ export const dashboardAPI = {
   getApiKeyUsageTrend,
   getUserUsageTrend,
   getUserSpendingRanking,
+  getFinanceTrend,
   getBatchUsersUsage,
   getBatchApiKeysUsage
 }

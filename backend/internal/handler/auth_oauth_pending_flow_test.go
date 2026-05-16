@@ -2833,6 +2833,10 @@ func (r *oauthPendingFlowUserRepo) UpdateBalance(context.Context, int64, float64
 	panic("unexpected UpdateBalance call")
 }
 
+func (r *oauthPendingFlowUserRepo) SumTotalBalance(context.Context) (float64, error) {
+	return 0, nil
+}
+
 func (r *oauthPendingFlowUserRepo) DeductBalance(context.Context, int64, float64) error {
 	panic("unexpected DeductBalance call")
 }
