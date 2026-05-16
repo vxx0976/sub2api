@@ -987,6 +987,116 @@ func (r *groupRepository) UpdateHealthStatus(ctx context.Context, groupID int64,
 	return err
 }
 
+func (r *groupRepository) InsertHealthCheckLog(ctx context.Context, groupID int64, status string, checkedAt time.Time) error {
+	_, err := r.sql.ExecContext(ctx,
+		`INSERT INTO group_health_check_logs (group_id, status, checked_at) VALUES ($1, $2, $3)`,
+		groupID, status, checkedAt,
+	)
+	return err
+}
+
+// groupHealthCheckPruneBatchSize 单批删除上限。与 channel_monitor 系列保持一致，避免长事务。
+const groupHealthCheckPruneBatchSize = 5000
+
+// groupHealthCheckPruneSQL 借助 (checked_at) 索引按小批 id 删，绕开大事务和 WAL 堆积。
+const groupHealthCheckPruneSQL = `
+WITH batch AS (
+    SELECT id FROM group_health_check_logs
+    WHERE checked_at < $1
+    ORDER BY id
+    LIMIT $2
+)
+DELETE FROM group_health_check_logs
+WHERE id IN (SELECT id FROM batch)
+`
+
+func (r *groupRepository) DeleteHealthCheckLogsBefore(ctx context.Context, before time.Time) (int64, error) {
+	var total int64
+	for {
+		res, err := r.sql.ExecContext(ctx, groupHealthCheckPruneSQL, before, groupHealthCheckPruneBatchSize)
+		if err != nil {
+			return total, fmt.Errorf("group_health_check_logs prune batch: %w", err)
+		}
+		affected, err := res.RowsAffected()
+		if err != nil {
+			return total, fmt.Errorf("group_health_check_logs prune rows affected: %w", err)
+		}
+		total += affected
+		if affected == 0 {
+			break
+		}
+	}
+	return total, nil
+}
+
+// ListGroupHealthDailyHistory 按 UTC 自然日聚合最近 days 天的探测结果。
+// SQL 聚合在数据库侧完成，Go 端只负责按完整日期序列补齐零值占位。
+func (r *groupRepository) ListGroupHealthDailyHistory(ctx context.Context, groupIDs []int64, days int) (map[int64][]service.GroupHealthDailyBucket, error) {
+	if len(groupIDs) == 0 || days <= 0 {
+		return map[int64][]service.GroupHealthDailyBucket{}, nil
+	}
+
+	// 完整 UTC 日期序列（从 days-1 天前到今天），保证返回数据对每一天都有占位。
+	today := time.Now().UTC()
+	dates := make([]string, days)
+	for i := 0; i < days; i++ {
+		d := today.AddDate(0, 0, -(days - 1 - i))
+		dates[i] = d.Format("20060102")
+	}
+	since := today.AddDate(0, 0, -(days - 1)).Truncate(24 * time.Hour)
+
+	const q = `
+SELECT group_id,
+       to_char(checked_at AT TIME ZONE 'UTC', 'YYYYMMDD') AS bucket,
+       COUNT(*)::bigint AS total,
+       SUM(CASE WHEN status = $3 THEN 1 ELSE 0 END)::bigint AS success
+FROM group_health_check_logs
+WHERE group_id = ANY($1) AND checked_at >= $2
+GROUP BY group_id, bucket
+`
+	rows, err := r.sql.QueryContext(ctx, q, pq.Array(groupIDs), since, service.HealthStatusAvailable)
+	if err != nil {
+		return nil, fmt.Errorf("list group health daily history: %w", err)
+	}
+	defer rows.Close()
+
+	type bucketKey struct {
+		groupID int64
+		date    string
+	}
+	rawBuckets := make(map[bucketKey]service.GroupHealthDailyBucket)
+	for rows.Next() {
+		var gid int64
+		var bucket string
+		var total, success int64
+		if err := rows.Scan(&gid, &bucket, &total, &success); err != nil {
+			return nil, fmt.Errorf("scan health daily history: %w", err)
+		}
+		rawBuckets[bucketKey{gid, bucket}] = service.GroupHealthDailyBucket{
+			Date:    bucket,
+			Total:   total,
+			Success: success,
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate health daily history: %w", err)
+	}
+
+	result := make(map[int64][]service.GroupHealthDailyBucket, len(groupIDs))
+	for _, gid := range groupIDs {
+		series := make([]service.GroupHealthDailyBucket, days)
+		for i, date := range dates {
+			if b, ok := rawBuckets[bucketKey{gid, date}]; ok {
+				series[i] = b
+			} else {
+				series[i] = service.GroupHealthDailyBucket{Date: date}
+			}
+		}
+		result[gid] = series
+	}
+	return result, nil
+}
+
 func (r *groupRepository) CountByOwnerID(ctx context.Context, ownerID int64) (int64, error) {
 	count, err := r.client.Group.Query().
 		Where(

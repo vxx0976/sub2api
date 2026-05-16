@@ -89,8 +89,12 @@ func RegisterCommonRoutes(r *gin.Engine, deps *StatusDependencies) {
 		})
 	})
 
-	// 分组实时状态接口（公开，无需认证，30 秒内存缓存）
-	respCache := &groupStatusRespCache{ttl: 30 * time.Second}
+	// 分组实时状态接口（公开，无需认证）。
+	// 数据源已从“真实调用流量计数器”切换为“定时健康探测历史”：
+	//   - 当前状态读 groups.health_status（available → operational，否则 down）；
+	//   - 30 天柱状图按 UTC 日聚合 group_health_check_logs。
+	// 探测频率较低（默认 30 分钟/组），缓存 TTL 同步放宽到 120s。
+	respCache := &groupStatusRespCache{ttl: 120 * time.Second}
 	r.GET("/api/v1/group-status", func(c *gin.Context) {
 		// 命中缓存直接返回
 		if cached, ok := respCache.get(); ok {
@@ -98,7 +102,7 @@ func RegisterCommonRoutes(r *gin.Engine, deps *StatusDependencies) {
 			return
 		}
 
-		if deps.GroupService == nil || deps.GroupStatusCache == nil {
+		if deps.GroupService == nil {
 			c.JSON(http.StatusServiceUnavailable, gin.H{
 				"code":    1,
 				"message": "group status not available",
@@ -123,27 +127,18 @@ func RegisterCommonRoutes(r *gin.Engine, deps *StatusDependencies) {
 			groupIDs[i] = g.ID
 		}
 
-		statuses, err := deps.GroupStatusCache.GetGroupStatuses(ctx, groupIDs)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"code":    1,
-				"message": "failed to get group statuses",
-			})
-			return
-		}
-
 		const historyDays = 30
-		dailyHistory, err := deps.GroupStatusCache.GetDailyHistory(ctx, groupIDs, historyDays)
+		dailyHistory, err := deps.GroupService.ListHealthDailyHistory(ctx, groupIDs, historyDays)
 		if err != nil {
-			// 日维度数据获取失败不影响实时状态
+			// 历史聚合失败不影响当前状态徽章渲染。
 			dailyHistory = nil
 		}
 
 		type dailyItem struct {
-			Date    string  `json:"date"`
-			Status  string  `json:"status"`
-			Rate    float64 `json:"rate"`
-			Total   int64   `json:"total"`
+			Date   string  `json:"date"`
+			Status string  `json:"status"`
+			Rate   float64 `json:"rate"`
+			Total  int64   `json:"total"`
 		}
 
 		type groupStatusItem struct {
@@ -161,59 +156,47 @@ func RegisterCommonRoutes(r *gin.Engine, deps *StatusDependencies) {
 
 		items := make([]groupStatusItem, 0, len(groups))
 		for _, g := range groups {
-			data := statuses[g.ID]
 			item := groupStatusItem{
-				ID:            g.ID,
-				Name:          g.Name,
-				Platform:      g.Platform,
-				Description:   g.Description,
-				TotalRequests: data.Total,
-				AvgLatency:    data.AvgLatency,
+				ID:          g.ID,
+				Name:        g.Name,
+				Platform:    g.Platform,
+				Description: g.Description,
 			}
 
-			// 实时状态
-			if data.Total == 0 {
-				item.Status = "operational" // 无请求时默认正常
+			// 当前状态：直接看健康探测最新结果。空字符串视为“尚未探测”，按正常展示。
+			switch g.HealthStatus {
+			case service.HealthStatusUnavailable:
+				item.Status = "down"
+				item.SuccessRate = 0
+			default:
+				item.Status = "operational"
 				item.SuccessRate = 100
-			} else {
-				rate := float64(data.Success) / float64(data.Total) * 100
-				item.SuccessRate = rate
-				switch {
-				case rate >= 99:
-					item.Status = "operational"
-				case rate >= 95:
-					item.Status = "degraded"
-				default:
-					item.Status = "down"
-				}
 			}
 
-			// 30 天日维度历史
-			if history, ok := dailyHistory[g.ID]; ok {
-				var totalOK, totalAll int64
+			// 30 天柱状图：每天有任何成功探测即视为可用（用户口径：只要绿就好）。
+			if history, ok := dailyHistory[g.ID]; ok && len(history) > 0 {
+				var sumSuccess, sumTotal int64
 				item.DailyHistory = make([]dailyItem, len(history))
 				for i, d := range history {
 					di := dailyItem{Date: d.Date, Total: d.Total}
-					if d.Total == 0 {
-						di.Status = "operational" // 无数据的天默认正常
+					switch {
+					case d.Total == 0:
+						// 无探测数据的天默认正常占位。
+						di.Status = "operational"
 						di.Rate = 100
-					} else {
+					case d.Success > 0:
+						di.Status = "operational"
 						di.Rate = float64(d.Success) / float64(d.Total) * 100
-						switch {
-						case di.Rate >= 99:
-							di.Status = "operational"
-						case di.Rate >= 95:
-							di.Status = "degraded"
-						default:
-							di.Status = "down"
-						}
+					default:
+						di.Status = "down"
+						di.Rate = 0
 					}
-					totalOK += d.Success
-					totalAll += d.Total
+					sumSuccess += d.Success
+					sumTotal += d.Total
 					item.DailyHistory[i] = di
 				}
-				if totalAll > 0 {
-					item.Uptime30d = float64(totalOK) / float64(totalAll) * 100
+				if sumTotal > 0 {
+					item.Uptime30d = float64(sumSuccess) / float64(sumTotal) * 100
 				} else {
 					item.Uptime30d = 100
 				}

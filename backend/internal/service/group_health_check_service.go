@@ -16,6 +16,8 @@ const (
 	HealthStatusAvailable   = "available"
 	HealthStatusUnavailable = "unavailable"
 	groupHealthMaxWorkers   = 5 // max concurrent group checks
+	// 健康检查历史日志保留天数：状态页最长展示 30 天，多留 1 天兼容 UTC 边界。
+	groupHealthLogRetentionDays = 31
 )
 
 type GroupHealthCheckService struct {
@@ -79,6 +81,10 @@ func (s *GroupHealthCheckService) Start() {
 		if err != nil {
 			logger.LegacyPrintf("service.group_health_check", "[GroupHealthCheck] not started (invalid schedule): %v", err)
 			return
+		}
+		// 每天 03:17（按配置时区）清理过期历史日志，错峰避开整点流量高峰。
+		if _, err := c.AddFunc("17 3 * * *", func() { s.runLogRetention() }); err != nil {
+			logger.LegacyPrintf("service.group_health_check", "[GroupHealthCheck] log retention not scheduled: %v", err)
 		}
 		s.cron = c
 		s.cron.Start()
@@ -201,6 +207,9 @@ func (s *GroupHealthCheckService) checkOneGroup(ctx context.Context, group *Grou
 		// No accounts = unavailable
 		now := time.Now()
 		_ = s.groupRepo.UpdateHealthStatus(ctx, group.ID, HealthStatusUnavailable, 0, 0, now)
+		if err := s.groupRepo.InsertHealthCheckLog(ctx, group.ID, HealthStatusUnavailable, now); err != nil {
+			slog.Error("GroupHealthCheck: insert log", "group_id", group.ID, "error", err)
+		}
 		return
 	}
 
@@ -240,6 +249,33 @@ func (s *GroupHealthCheckService) checkOneGroup(ctx context.Context, group *Grou
 	now := time.Now()
 	if err := s.groupRepo.UpdateHealthStatus(ctx, group.ID, status, healthy, tested, now); err != nil {
 		slog.Error("GroupHealthCheck: update status", "group_id", group.ID, "error", err)
+	}
+	if err := s.groupRepo.InsertHealthCheckLog(ctx, group.ID, status, now); err != nil {
+		slog.Error("GroupHealthCheck: insert log", "group_id", group.ID, "error", err)
+	}
+}
+
+// runLogRetention 在 leader 节点删除 retention 之外的探测历史，避免明细无限增长。
+func (s *GroupHealthCheckService) runLogRetention() {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	defer cancel()
+
+	release, ok := s.locker.TryAcquire(ctx, "leader:group_health_check_retention", 15*time.Minute)
+	if !ok {
+		return
+	}
+	if release != nil {
+		defer release()
+	}
+
+	cutoff := time.Now().AddDate(0, 0, -groupHealthLogRetentionDays)
+	deleted, err := s.groupRepo.DeleteHealthCheckLogsBefore(ctx, cutoff)
+	if err != nil {
+		logger.LegacyPrintf("service.group_health_check", "[GroupHealthCheck] log retention failed: %v", err)
+		return
+	}
+	if deleted > 0 {
+		logger.LegacyPrintf("service.group_health_check", "[GroupHealthCheck] log retention pruned %d rows (cutoff=%s)", deleted, cutoff.Format(time.RFC3339))
 	}
 }
 

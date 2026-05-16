@@ -58,6 +58,15 @@ func (groupRepoNoop) UpdateSortOrders(context.Context, []GroupSortOrderUpdate) e
 func (groupRepoNoop) UpdateHealthStatus(context.Context, int64, string, int, int, time.Time) error {
 	panic("unexpected UpdateHealthStatus call")
 }
+func (groupRepoNoop) InsertHealthCheckLog(context.Context, int64, string, time.Time) error {
+	panic("unexpected InsertHealthCheckLog call")
+}
+func (groupRepoNoop) ListGroupHealthDailyHistory(context.Context, []int64, int) (map[int64][]GroupHealthDailyBucket, error) {
+	panic("unexpected ListGroupHealthDailyHistory call")
+}
+func (groupRepoNoop) DeleteHealthCheckLogsBefore(context.Context, time.Time) (int64, error) {
+	panic("unexpected DeleteHealthCheckLogsBefore call")
+}
 func (groupRepoNoop) CountByOwnerID(context.Context, int64) (int64, error) {
 	panic("unexpected CountByOwnerID call")
 }

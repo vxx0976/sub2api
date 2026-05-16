@@ -41,6 +41,13 @@ type GroupRepository interface {
 	UpdateSortOrders(ctx context.Context, updates []GroupSortOrderUpdate) error
 	// UpdateHealthStatus 更新分组健康检查状态
 	UpdateHealthStatus(ctx context.Context, groupID int64, status string, healthy int, total int, checkedAt time.Time) error
+	// InsertHealthCheckLog 写入一条健康检查历史记录，用于按天聚合可用性。
+	InsertHealthCheckLog(ctx context.Context, groupID int64, status string, checkedAt time.Time) error
+	// ListGroupHealthDailyHistory 按 UTC 自然日聚合最近 days 天的探测结果，
+	// 返回每个分组每天的总探测数与成功数（无数据的天为零值占位）。
+	ListGroupHealthDailyHistory(ctx context.Context, groupIDs []int64, days int) (map[int64][]GroupHealthDailyBucket, error)
+	// DeleteHealthCheckLogsBefore 物理删 checked_at < before 的明细，分批执行；返回累计删除行数。
+	DeleteHealthCheckLogsBefore(ctx context.Context, before time.Time) (int64, error)
 	// CountByOwnerID returns the number of groups owned by the given user.
 	CountByOwnerID(ctx context.Context, ownerID int64) (int64, error)
 
@@ -64,6 +71,13 @@ type GroupRepository interface {
 type GroupSortOrderUpdate struct {
 	ID        int64 `json:"id"`
 	SortOrder int   `json:"sort_order"`
+}
+
+// GroupHealthDailyBucket 单个分组在 UTC 自然日的探测结果聚合。
+type GroupHealthDailyBucket struct {
+	Date    string // YYYYMMDD（UTC）
+	Total   int64  // 当天总探测次数
+	Success int64  // status = available 的次数
 }
 
 // CreateGroupRequest 创建分组请求
@@ -167,6 +181,11 @@ func (s *GroupService) ListActive(ctx context.Context) ([]Group, error) {
 		return nil, fmt.Errorf("list active groups: %w", err)
 	}
 	return groups, nil
+}
+
+// ListHealthDailyHistory 暴露给公开状态页：返回多个分组最近 days 天的探测日聚合。
+func (s *GroupService) ListHealthDailyHistory(ctx context.Context, groupIDs []int64, days int) (map[int64][]GroupHealthDailyBucket, error) {
+	return s.groupRepo.ListGroupHealthDailyHistory(ctx, groupIDs, days)
 }
 
 // Update 更新分组
