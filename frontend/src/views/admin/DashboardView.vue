@@ -295,11 +295,21 @@
             <TokenUsageTrend :trend-data="trendData" :loading="chartsLoading" />
           </div>
 
-          <!-- Finance Trend (Full Width): daily recharge vs consumption -->
-          <FinanceTrendChart
-            :trend-data="financeTrendData"
-            :loading="financeTrendLoading"
-          />
+          <!-- Finance: recharge/consumption trend + source pie -->
+          <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            <div class="lg:col-span-2">
+              <FinanceTrendChart
+                :trend-data="financeTrendData"
+                :loading="financeTrendLoading"
+              />
+            </div>
+            <div>
+              <RechargeSourcePie
+                :breakdown="financeBreakdown"
+                :loading="financeTrendLoading"
+              />
+            </div>
+          </div>
 
           <!-- User Usage Trend (Full Width) -->
           <div class="card p-4">
@@ -350,7 +360,12 @@ import Select from '@/components/common/Select.vue'
 import ModelDistributionChart from '@/components/charts/ModelDistributionChart.vue'
 import TokenUsageTrend from '@/components/charts/TokenUsageTrend.vue'
 import FinanceTrendChart from '@/components/charts/FinanceTrendChart.vue'
-import type { FinanceTrendResponse, FinanceTrendPoint } from '@/api/admin/dashboard'
+import RechargeSourcePie from '@/components/charts/RechargeSourcePie.vue'
+import type {
+  FinanceTrendResponse,
+  FinanceTrendPoint,
+  RechargeBreakdown
+} from '@/api/admin/dashboard'
 
 
 import {
@@ -395,6 +410,9 @@ const rankingTotalRequests = ref(0)
 const rankingTotalTokens = ref(0)
 const financeTrend = ref<FinanceTrendResponse | null>(null)
 const financeTrendData = computed<FinanceTrendPoint[]>(() => financeTrend.value?.trend ?? [])
+const financeBreakdown = computed<RechargeBreakdown | null>(
+  () => financeTrend.value?.recharge_breakdown ?? null
+)
 const financeTrendLoading = ref(false)
 let chartLoadSeq = 0
 let usersTrendLoadSeq = 0

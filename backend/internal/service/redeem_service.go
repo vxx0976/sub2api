@@ -65,8 +65,11 @@ type RedeemCodeRepository interface {
 	// SumPositiveBalanceByUser returns the total recharged amount (sum of positive balance values) for a user.
 	SumPositiveBalanceByUser(ctx context.Context, userID int64) (float64, error)
 	// SumPositiveValueByDayForTypes 按时区分桶汇总指定 type 列表中 value > 0 的 used 兑换码 value。
-	// 用于把"兑换码加余额"并入资金流入趋势。
+	// 用于把"兑换码加余额"并入资金流入趋势（典型用法只传 'balance'，因为 admin_balance 含 audit shadow）。
 	SumPositiveValueByDayForTypes(ctx context.Context, startTime, endTime time.Time, tzName string, types []string) (map[string]float64, error)
+	// SumManualAdminBalanceByDay 区间内按时区分桶汇总管理员真实手工加余额（admin_balance 类型，
+	// 已通过 notes 前缀排除 'AliMPay order ' / 'Recharge order ' 这类 audit shadow）。
+	SumManualAdminBalanceByDay(ctx context.Context, startTime, endTime time.Time, tzName string) (map[string]float64, error)
 	// ListByOwnerID returns paginated balance redeem codes owned by the given reseller.
 	ListByOwnerID(ctx context.Context, ownerID int64, params pagination.PaginationParams) ([]RedeemCode, *pagination.PaginationResult, error)
 }

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"math"
 	"time"
@@ -13,10 +14,11 @@ import (
 
 type orderRepo struct {
 	client *ent.Client
+	sql    *sql.DB
 }
 
-func NewOrderRepo(client *ent.Client) service.OrderRepository {
-	return &orderRepo{client: client}
+func NewOrderRepo(client *ent.Client, sqlDB *sql.DB) service.OrderRepository {
+	return &orderRepo{client: client, sql: sqlDB}
 }
 
 func (r *orderRepo) Create(ctx context.Context, o *service.Order) error {
@@ -315,6 +317,48 @@ func (r *orderRepo) ListPaidByUserIDs(ctx context.Context, userIDs []int64, limi
 		out[i] = toServiceOrder(row)
 	}
 	return out, total, nil
+}
+
+// SumPaidCreditByDay 按时区分桶汇总指定区间内 status='paid' 的 AliMPay 订单 credit_amount。
+// 返回的 map key 为 "YYYY-MM-DD"（按 tzName 解释 paid_at），value 为当天到账余额合计（USD）。
+// 与 RechargeOrderRepository.SumPaidCreditByDay 共构成资金趋势中的"金钱充值"两条通道。
+func (r *orderRepo) SumPaidCreditByDay(ctx context.Context, startTime, endTime time.Time, tzName string) (map[string]float64, error) {
+	if r.sql == nil {
+		return map[string]float64{}, nil
+	}
+	if tzName == "" {
+		tzName = "UTC"
+	}
+	query := `
+		SELECT
+			TO_CHAR(paid_at AT TIME ZONE $3, 'YYYY-MM-DD') AS day,
+			COALESCE(SUM(credit_amount), 0) AS total
+		FROM orders
+		WHERE status = 'paid'
+		  AND paid_at IS NOT NULL
+		  AND paid_at >= $1
+		  AND paid_at < $2
+		GROUP BY 1
+		ORDER BY 1
+	`
+	rows, err := r.sql.QueryContext(ctx, query, startTime, endTime, tzName)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	result := make(map[string]float64)
+	for rows.Next() {
+		var day string
+		var total float64
+		if err := rows.Scan(&day, &total); err != nil {
+			return nil, err
+		}
+		result[day] = total
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 func toServiceOrder(row *ent.Order) *service.Order {

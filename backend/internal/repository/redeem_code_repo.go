@@ -370,6 +370,53 @@ func (r *redeemCodeRepository) SumPositiveValueByDayForTypes(ctx context.Context
 	return result, nil
 }
 
+// SumManualAdminBalanceByDay 按时区分桶汇总管理员"真实"手工加余额（type='admin_balance' / value>0）。
+// 由于 adminService.UpdateUserBalance 会在每笔充值订单成功时也写一条 type='admin_balance' 的审计
+// 影子记录（notes 固定以 'AliMPay order ' / 'Recharge order ' 开头），这里通过 notes 前缀
+// 过滤掉这些 audit shadow，仅保留管理员从后台直接调整的真实记录。
+func (r *redeemCodeRepository) SumManualAdminBalanceByDay(ctx context.Context, startTime, endTime time.Time, tzName string) (map[string]float64, error) {
+	if r.sql == nil {
+		return map[string]float64{}, nil
+	}
+	if tzName == "" {
+		tzName = "UTC"
+	}
+	query := `
+		SELECT
+			TO_CHAR(used_at AT TIME ZONE $3, 'YYYY-MM-DD') AS day,
+			COALESCE(SUM(value), 0) AS total
+		FROM redeem_codes
+		WHERE type = 'admin_balance'
+		  AND status = 'used'
+		  AND used_at IS NOT NULL
+		  AND used_at >= $1
+		  AND used_at < $2
+		  AND value > 0
+		  AND COALESCE(notes, '') NOT LIKE 'AliMPay order %'
+		  AND COALESCE(notes, '') NOT LIKE 'Recharge order %'
+		GROUP BY 1
+		ORDER BY 1
+	`
+	rows, err := r.sql.QueryContext(ctx, query, startTime, endTime, tzName)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	result := make(map[string]float64)
+	for rows.Next() {
+		var day string
+		var total float64
+		if err := rows.Scan(&day, &total); err != nil {
+			return nil, err
+		}
+		result[day] = total
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
 func redeemCodeEntityToService(m *dbent.RedeemCode) *service.RedeemCode {
 	if m == nil {
 		return nil

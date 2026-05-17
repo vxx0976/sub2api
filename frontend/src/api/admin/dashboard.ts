@@ -272,9 +272,24 @@ export interface FinanceTrendPoint {
   consumption: number
 }
 
+/**
+ * 区间内充值来源拆分（USD）。后端 4 个固定 key:
+ *   - alipay        : orders 表 paid (AliMPay 支付宝通道)
+ *   - wxpay         : recharge_orders 表 paid (EPay 微信通道)
+ *   - redeem_code   : redeem_codes type=balance value>0 已使用
+ *   - admin_manual  : redeem_codes type=admin_balance（已排除充值订单 audit shadow）
+ */
+export interface RechargeBreakdown {
+  alipay: number
+  wxpay: number
+  redeem_code: number
+  admin_manual: number
+}
+
 export interface FinanceTrendResponse {
   current_total_balance: number
   trend: FinanceTrendPoint[]
+  recharge_breakdown: RechargeBreakdown
   start_date: string
   end_date: string
   granularity: string

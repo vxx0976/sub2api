@@ -46,6 +46,7 @@ type DashboardService struct {
 	aggRepo        DashboardAggregationRepository
 	userRepo       UserRepository
 	rechargeRepo   RechargeOrderRepository
+	orderRepo      OrderRepository
 	redeemRepo     RedeemCodeRepository
 	cache          DashboardStatsCache
 	cacheFreshTTL  time.Duration
@@ -58,7 +59,7 @@ type DashboardService struct {
 	aggUsageDays   int
 }
 
-func NewDashboardService(usageRepo UsageLogRepository, aggRepo DashboardAggregationRepository, userRepo UserRepository, rechargeRepo RechargeOrderRepository, redeemRepo RedeemCodeRepository, cache DashboardStatsCache, cfg *config.Config) *DashboardService {
+func NewDashboardService(usageRepo UsageLogRepository, aggRepo DashboardAggregationRepository, userRepo UserRepository, rechargeRepo RechargeOrderRepository, orderRepo OrderRepository, redeemRepo RedeemCodeRepository, cache DashboardStatsCache, cfg *config.Config) *DashboardService {
 	freshTTL := defaultDashboardStatsFreshTTL
 	cacheTTL := defaultDashboardStatsCacheTTL
 	refreshTimeout := defaultDashboardStatsRefreshTimeout
@@ -98,6 +99,7 @@ func NewDashboardService(usageRepo UsageLogRepository, aggRepo DashboardAggregat
 		aggRepo:        aggRepo,
 		userRepo:       userRepo,
 		rechargeRepo:   rechargeRepo,
+		orderRepo:      orderRepo,
 		redeemRepo:     redeemRepo,
 		cache:          cache,
 		cacheFreshTTL:  freshTTL,
@@ -169,6 +171,14 @@ type FinanceTrendPoint struct {
 type FinanceTrendResult struct {
 	CurrentTotalBalance float64             `json:"current_total_balance"`
 	Trend               []FinanceTrendPoint `json:"trend"`
+	// RechargeBreakdown 在 [startTime, endTime) 区间内,各类充值来源的总和（USD）。
+	// key 固定为以下 4 类，便于前端固定渲染：
+	//   - "alipay"        : orders 表 status=paid (AliMPay 通道)
+	//   - "wxpay"         : recharge_orders 表 status=paid (EPay 通道)
+	//   - "redeem_code"   : redeem_codes type='balance' 已使用且 value>0
+	//   - "admin_manual"  : redeem_codes type='admin_balance' 已使用且 value>0，
+	//                       排除 notes 以 'AliMPay order '/'Recharge order ' 开头的 audit shadow。
+	RechargeBreakdown map[string]float64 `json:"recharge_breakdown"`
 }
 
 // GetFinanceTrend 返回平台每日充值/消耗趋势以及当前总余额。
@@ -180,28 +190,72 @@ func (s *DashboardService) GetFinanceTrend(ctx context.Context, startTime, endTi
 		return nil, fmt.Errorf("get usage trend for finance: %w", err)
 	}
 
-	// 充值（金钱）：按天聚合 status='paid' 的 credit_amount。
+	// 充值合并：把 4 类来源按天累加到 rechargeByDay，便于趋势线绘制。
+	// 4 类来源对应 RechargeBreakdown 的 4 个 key。
 	rechargeByDay := map[string]float64{}
+
+	// (a) 微信通道：recharge_orders 表 status='paid' 的 credit_amount。
+	wxpayByDay := map[string]float64{}
 	if s.rechargeRepo != nil {
-		rechargeByDay, err = s.rechargeRepo.SumPaidCreditByDay(ctx, startTime, endTime, tzName)
+		wxpayByDay, err = s.rechargeRepo.SumPaidCreditByDay(ctx, startTime, endTime, tzName)
 		if err != nil {
-			return nil, fmt.Errorf("sum paid recharge by day: %w", err)
+			return nil, fmt.Errorf("sum recharge_orders by day: %w", err)
 		}
 	}
+	for d, v := range wxpayByDay {
+		rechargeByDay[d] += v
+	}
 
-	// 兑换码加余额：把 type IN (balance, admin_balance) 且 value>0 的已使用兑换码并入充值。
-	// 仅含真实增加平台总余额的来源；reseller_transfer / affiliate_balance 是内部流转，不计。
+	// (b) 支付宝通道：orders 表 status='paid' 的 credit_amount。
+	alipayByDay := map[string]float64{}
+	if s.orderRepo != nil {
+		alipayByDay, err = s.orderRepo.SumPaidCreditByDay(ctx, startTime, endTime, tzName)
+		if err != nil {
+			return nil, fmt.Errorf("sum orders by day: %w", err)
+		}
+	}
+	for d, v := range alipayByDay {
+		rechargeByDay[d] += v
+	}
+
+	// (c) 兑换码：redeem_codes type='balance' value>0 用过的，独立增量（不会重复写 audit）。
+	redeemBalanceByDay := map[string]float64{}
 	if s.redeemRepo != nil {
-		redeemByDay, err := s.redeemRepo.SumPositiveValueByDayForTypes(
-			ctx, startTime, endTime, tzName,
-			[]string{RedeemTypeBalance, AdjustmentTypeAdminBalance},
+		redeemBalanceByDay, err = s.redeemRepo.SumPositiveValueByDayForTypes(
+			ctx, startTime, endTime, tzName, []string{RedeemTypeBalance},
 		)
 		if err != nil {
-			return nil, fmt.Errorf("sum redeem value by day: %w", err)
+			return nil, fmt.Errorf("sum redeem balance by day: %w", err)
 		}
-		for d, v := range redeemByDay {
-			rechargeByDay[d] += v
+	}
+	for d, v := range redeemBalanceByDay {
+		rechargeByDay[d] += v
+	}
+
+	// (d) 管理员手工加余额：redeem_codes type='admin_balance' 排除 audit shadow 后的真实增量。
+	adminManualByDay := map[string]float64{}
+	if s.redeemRepo != nil {
+		adminManualByDay, err = s.redeemRepo.SumManualAdminBalanceByDay(ctx, startTime, endTime, tzName)
+		if err != nil {
+			return nil, fmt.Errorf("sum manual admin balance by day: %w", err)
 		}
+	}
+	for d, v := range adminManualByDay {
+		rechargeByDay[d] += v
+	}
+
+	sumMap := func(m map[string]float64) float64 {
+		var total float64
+		for _, v := range m {
+			total += v
+		}
+		return total
+	}
+	rechargeBreakdown := map[string]float64{
+		"alipay":       sumMap(alipayByDay),
+		"wxpay":        sumMap(wxpayByDay),
+		"redeem_code":  sumMap(redeemBalanceByDay),
+		"admin_manual": sumMap(adminManualByDay),
 	}
 
 	// 合并两份数据：以充值日期 ∪ 消耗日期为全集。
@@ -242,6 +296,7 @@ func (s *DashboardService) GetFinanceTrend(ctx context.Context, startTime, endTi
 	return &FinanceTrendResult{
 		CurrentTotalBalance: totalBalance,
 		Trend:               points,
+		RechargeBreakdown:   rechargeBreakdown,
 	}, nil
 }
 

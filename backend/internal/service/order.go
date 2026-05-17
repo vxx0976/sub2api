@@ -50,6 +50,9 @@ type OrderRepository interface {
 	ListPending(ctx context.Context) ([]*Order, error)
 	SumPaidCreditByUserIDs(ctx context.Context, userIDs []int64) (float64, error)
 	ListPaidByUserIDs(ctx context.Context, userIDs []int64, limit, offset int) ([]*Order, int, error)
+	// SumPaidCreditByDay 汇总指定时区下每日 status='paid' 订单的 credit_amount（USD）。
+	// 返回 map key 为 "YYYY-MM-DD"，value 为当日到账余额合计。
+	SumPaidCreditByDay(ctx context.Context, startTime, endTime time.Time, tzName string) (map[string]float64, error)
 }
 
 var ErrOrderStatusConflict = errors.New("order status conflict")

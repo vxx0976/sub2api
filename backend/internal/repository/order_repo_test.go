@@ -37,7 +37,7 @@ func newOrderEntRepo(t *testing.T) (service.OrderRepository, *dbent.Client, int6
 		SetPasswordHash("hash").
 		SaveX(context.Background())
 
-	return NewOrderRepo(client), client, user.ID
+	return NewOrderRepo(client, nil), client, user.ID
 }
 
 func TestOrderRepoCreateWithUniquePaymentAmountSkipsActiveAndRecentExpired(t *testing.T) {

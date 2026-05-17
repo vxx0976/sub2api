@@ -2541,6 +2541,10 @@ func (r *oauthPendingFlowRedeemCodeRepo) SumPositiveValueByDayForTypes(context.C
 	return map[string]float64{}, nil
 }
 
+func (r *oauthPendingFlowRedeemCodeRepo) SumManualAdminBalanceByDay(context.Context, time.Time, time.Time, string) (map[string]float64, error) {
+	return map[string]float64{}, nil
+}
+
 func decodeJSONResponseData(t *testing.T, recorder *httptest.ResponseRecorder) map[string]any {
 	t.Helper()
 
