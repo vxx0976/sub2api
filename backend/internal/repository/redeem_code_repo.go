@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"strings"
 	"time"
 
@@ -12,14 +13,16 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/service"
 
 	entsql "entgo.io/ent/dialect/sql"
+	"github.com/lib/pq"
 )
 
 type redeemCodeRepository struct {
 	client *dbent.Client
+	sql    *sql.DB
 }
 
-func NewRedeemCodeRepository(client *dbent.Client) service.RedeemCodeRepository {
-	return &redeemCodeRepository{client: client}
+func NewRedeemCodeRepository(client *dbent.Client, sqlDB *sql.DB) service.RedeemCodeRepository {
+	return &redeemCodeRepository{client: client, sql: sqlDB}
 }
 
 func (r *redeemCodeRepository) Create(ctx context.Context, code *service.RedeemCode) error {
@@ -320,6 +323,51 @@ func (r *redeemCodeRepository) SumPositiveBalanceByUser(ctx context.Context, use
 		return 0, nil
 	}
 	return result[0].Sum, nil
+}
+
+// SumPositiveValueByDayForTypes 按时区分桶汇总指定 type 列表中、value > 0、status='used'
+// 的兑换码 value 总和。常用于把"通过兑换码加余额"并入资金流入曲线。
+// 返回的 map key 为 "YYYY-MM-DD"（按 tzName 解释 used_at），value 为当日 value 合计（USD）。
+func (r *redeemCodeRepository) SumPositiveValueByDayForTypes(ctx context.Context, startTime, endTime time.Time, tzName string, types []string) (map[string]float64, error) {
+	if r.sql == nil || len(types) == 0 {
+		return map[string]float64{}, nil
+	}
+	if tzName == "" {
+		tzName = "UTC"
+	}
+	// 用 ANY($4) 安全地传入字符串数组，避免拼 SQL
+	query := `
+		SELECT
+			TO_CHAR(used_at AT TIME ZONE $3, 'YYYY-MM-DD') AS day,
+			COALESCE(SUM(value), 0) AS total
+		FROM redeem_codes
+		WHERE status = 'used'
+		  AND used_at IS NOT NULL
+		  AND used_at >= $1
+		  AND used_at < $2
+		  AND value > 0
+		  AND type = ANY($4)
+		GROUP BY 1
+		ORDER BY 1
+	`
+	rows, err := r.sql.QueryContext(ctx, query, startTime, endTime, tzName, pq.Array(types))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	result := make(map[string]float64)
+	for rows.Next() {
+		var day string
+		var total float64
+		if err := rows.Scan(&day, &total); err != nil {
+			return nil, err
+		}
+		result[day] = total
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 func redeemCodeEntityToService(m *dbent.RedeemCode) *service.RedeemCode {

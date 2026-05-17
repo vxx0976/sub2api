@@ -47,7 +47,7 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 		return nil, err
 	}
 	userRepository := repository.NewUserRepository(client, db)
-	redeemCodeRepository := repository.NewRedeemCodeRepository(client)
+	redeemCodeRepository := repository.NewRedeemCodeRepository(client, db)
 	redisClient := repository.ProvideRedis(configConfig)
 	refreshTokenCache := repository.NewRefreshTokenCache(redisClient)
 	settingRepository := repository.NewSettingRepository(client)
@@ -103,7 +103,7 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	dashboardAggregationRepository := repository.NewDashboardAggregationRepository(db)
 	dashboardStatsCache := repository.NewDashboardCache(redisClient, configConfig)
 	rechargeOrderRepository := repository.NewRechargeOrderRepo(client, db)
-	dashboardService := service.NewDashboardService(usageLogRepository, dashboardAggregationRepository, userRepository, rechargeOrderRepository, dashboardStatsCache, configConfig)
+	dashboardService := service.NewDashboardService(usageLogRepository, dashboardAggregationRepository, userRepository, rechargeOrderRepository, redeemCodeRepository, dashboardStatsCache, configConfig)
 	timingWheelService, err := service.ProvideTimingWheelService()
 	if err != nil {
 		return nil, err

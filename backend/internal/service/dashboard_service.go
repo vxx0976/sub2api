@@ -46,6 +46,7 @@ type DashboardService struct {
 	aggRepo        DashboardAggregationRepository
 	userRepo       UserRepository
 	rechargeRepo   RechargeOrderRepository
+	redeemRepo     RedeemCodeRepository
 	cache          DashboardStatsCache
 	cacheFreshTTL  time.Duration
 	cacheTTL       time.Duration
@@ -57,7 +58,7 @@ type DashboardService struct {
 	aggUsageDays   int
 }
 
-func NewDashboardService(usageRepo UsageLogRepository, aggRepo DashboardAggregationRepository, userRepo UserRepository, rechargeRepo RechargeOrderRepository, cache DashboardStatsCache, cfg *config.Config) *DashboardService {
+func NewDashboardService(usageRepo UsageLogRepository, aggRepo DashboardAggregationRepository, userRepo UserRepository, rechargeRepo RechargeOrderRepository, redeemRepo RedeemCodeRepository, cache DashboardStatsCache, cfg *config.Config) *DashboardService {
 	freshTTL := defaultDashboardStatsFreshTTL
 	cacheTTL := defaultDashboardStatsCacheTTL
 	refreshTimeout := defaultDashboardStatsRefreshTimeout
@@ -97,6 +98,7 @@ func NewDashboardService(usageRepo UsageLogRepository, aggRepo DashboardAggregat
 		aggRepo:        aggRepo,
 		userRepo:       userRepo,
 		rechargeRepo:   rechargeRepo,
+		redeemRepo:     redeemRepo,
 		cache:          cache,
 		cacheFreshTTL:  freshTTL,
 		cacheTTL:       cacheTTL,
@@ -178,12 +180,27 @@ func (s *DashboardService) GetFinanceTrend(ctx context.Context, startTime, endTi
 		return nil, fmt.Errorf("get usage trend for finance: %w", err)
 	}
 
-	// 充值：按天聚合 status='paid' 的 credit_amount。
+	// 充值（金钱）：按天聚合 status='paid' 的 credit_amount。
 	rechargeByDay := map[string]float64{}
 	if s.rechargeRepo != nil {
 		rechargeByDay, err = s.rechargeRepo.SumPaidCreditByDay(ctx, startTime, endTime, tzName)
 		if err != nil {
 			return nil, fmt.Errorf("sum paid recharge by day: %w", err)
+		}
+	}
+
+	// 兑换码加余额：把 type IN (balance, admin_balance) 且 value>0 的已使用兑换码并入充值。
+	// 仅含真实增加平台总余额的来源；reseller_transfer / affiliate_balance 是内部流转，不计。
+	if s.redeemRepo != nil {
+		redeemByDay, err := s.redeemRepo.SumPositiveValueByDayForTypes(
+			ctx, startTime, endTime, tzName,
+			[]string{RedeemTypeBalance, AdjustmentTypeAdminBalance},
+		)
+		if err != nil {
+			return nil, fmt.Errorf("sum redeem value by day: %w", err)
+		}
+		for d, v := range redeemByDay {
+			rechargeByDay[d] += v
 		}
 	}
 

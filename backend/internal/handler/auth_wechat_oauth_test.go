@@ -855,7 +855,7 @@ func TestCompleteWeChatOAuthRegistrationAfterInvitationPendingSessionReturnsPend
 	defer client.Close()
 
 	ctx := context.Background()
-	redeemRepo := repository.NewRedeemCodeRepository(client)
+	redeemRepo := repository.NewRedeemCodeRepository(client, nil)
 	require.NoError(t, redeemRepo.Create(ctx, &service.RedeemCode{
 		Code:   "invite-1",
 		Type:   service.RedeemTypeInvitation,
@@ -1362,7 +1362,7 @@ func newWeChatOAuthTestHandlerWithSettings(t *testing.T, invitationEnabled bool,
 	client := enttest.NewClient(t, enttest.WithOptions(dbent.Driver(drv)))
 
 	userRepo := &oauthPendingFlowUserRepo{client: client}
-	redeemRepo := repository.NewRedeemCodeRepository(client)
+	redeemRepo := repository.NewRedeemCodeRepository(client, nil)
 	cfg := &config.Config{
 		JWT: config.JWTConfig{
 			Secret:                   "test-secret",
