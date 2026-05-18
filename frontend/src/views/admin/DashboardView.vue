@@ -425,6 +425,11 @@ const formatLocalDate = (date: Date): string => {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
+const getTodayRangeDates = (): { start: string; end: string } => {
+  const today = formatLocalDate(new Date())
+  return { start: today, end: today }
+}
+
 const getLastNDaysRange = (days: number): { start: string; end: string } => {
   const end = new Date()
   const start = new Date()
@@ -432,12 +437,15 @@ const getLastNDaysRange = (days: number): { start: string; end: string } => {
   return { start: formatLocalDate(start), end: formatLocalDate(end) }
 }
 
-// Date range —— 仪表盘默认看最近 7 天（含今天）；
-// 上面 DateRangePicker 修改时所有图表（含资金趋势）会一起跟随。
-const granularity = ref<'day' | 'hour'>('day')
-const defaultRange = getLastNDaysRange(7)
+// 顶部 DateRangePicker：控制模型分布 / token 趋势 / 用户使用等图表，默认今日。
+const granularity = ref<'day' | 'hour'>('hour')
+const defaultRange = getTodayRangeDates()
 const startDate = ref(defaultRange.start)
 const endDate = ref(defaultRange.end)
+
+// 资金趋势图独立的日期范围：默认最近 7 天（含今天）。
+// 用户主动改顶部 picker 时通过 onDateRangeChange 同步过来；onMounted 不会被覆盖。
+const financeRange = ref<{ start: string; end: string }>(getLastNDaysRange(7))
 
 // Granularity options for Select component
 const granularityOptions = computed(() => [
@@ -643,6 +651,9 @@ const onDateRangeChange = (range: {
     granularity.value = 'day'
   }
 
+  // 用户主动改顶部 picker 时，资金趋势图也跟随过来（覆盖独立的 7 天默认）。
+  financeRange.value = { start: range.startDate, end: range.endDate }
+
   loadChartData()
 }
 
@@ -740,8 +751,8 @@ const loadFinanceTrend = async () => {
   financeTrendLoading.value = true
   try {
     const response = await adminAPI.dashboard.getFinanceTrend({
-      start_date: startDate.value,
-      end_date: endDate.value
+      start_date: financeRange.value.start,
+      end_date: financeRange.value.end
     })
     if (currentSeq !== financeTrendLoadSeq) return
     financeTrend.value = response
