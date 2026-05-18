@@ -270,6 +270,8 @@ export interface FinanceTrendPoint {
   date: string
   recharge: number
   consumption: number
+  /** 当日平台向上游 AI 服务真实支付的成本（USD），与 consumption 之差近似毛利 */
+  account_cost: number
 }
 
 /**

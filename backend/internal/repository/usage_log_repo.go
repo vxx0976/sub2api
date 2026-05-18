@@ -3056,6 +3056,42 @@ func shouldUsePreaggregatedTrend(granularity string, userID, apiKeyID, accountID
 		billingType == nil
 }
 
+// SumAccountCostByDay 按用户时区分桶汇总账号成本（平台向上游 AI 服务实际支付的金额）。
+// 计算口径与 GetDashboardStats 中 total_account_cost 一致。
+// 直接走 usage_logs 实时聚合（不依赖预聚合表，因为 usage_dashboard_daily 没有 account_cost 字段）。
+func (r *usageLogRepository) SumAccountCostByDay(ctx context.Context, startTime, endTime time.Time, tzName string) (map[string]float64, error) {
+	if tzName == "" {
+		tzName = "UTC"
+	}
+	query := `
+		SELECT
+			TO_CHAR(created_at AT TIME ZONE $3, 'YYYY-MM-DD') AS day,
+			COALESCE(SUM(COALESCE(account_stats_cost, total_cost) * COALESCE(account_rate_multiplier, 1)), 0) AS account_cost
+		FROM usage_logs
+		WHERE created_at >= $1 AND created_at < $2
+		GROUP BY 1
+		ORDER BY 1
+	`
+	rows, err := r.sql.QueryContext(ctx, query, startTime, endTime, tzName)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	result := make(map[string]float64)
+	for rows.Next() {
+		var day string
+		var v float64
+		if err := rows.Scan(&day, &v); err != nil {
+			return nil, err
+		}
+		result[day] = v
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
 func (r *usageLogRepository) getUsageTrendFromAggregates(ctx context.Context, startTime, endTime time.Time, granularity string) (results []TrendDataPoint, err error) {
 	dateFormat := safeDateFormat(granularity)
 	query := ""

@@ -163,8 +163,9 @@ func (s *DashboardService) GetDashboardStats(ctx context.Context) (*usagestats.D
 // FinanceTrendPoint 表示某一天的资金流入/流出。
 type FinanceTrendPoint struct {
 	Date        string  `json:"date"`
-	Recharge    float64 `json:"recharge"`    // 当日到账余额合计（USD）
-	Consumption float64 `json:"consumption"` // 当日实际消耗合计（USD），来自 actual_cost
+	Recharge    float64 `json:"recharge"`     // 当日到账余额合计（USD）
+	Consumption float64 `json:"consumption"`  // 当日实际从用户余额扣除合计（USD），来自 actual_cost
+	AccountCost float64 `json:"account_cost"` // 当日平台向上游 AI 服务支付的真实成本合计（USD）
 }
 
 // FinanceTrendResult 平台资金趋势聚合结果。
@@ -258,14 +259,26 @@ func (s *DashboardService) GetFinanceTrend(ctx context.Context, startTime, endTi
 		"admin_manual": sumMap(adminManualByDay),
 	}
 
-	// 合并两份数据：以充值日期 ∪ 消耗日期为全集。
-	dateSet := make(map[string]struct{}, len(trend)+len(rechargeByDay))
+	// 账号成本：平台向上游 AI 服务实际支付的金额（USD），按用户时区分桶。
+	accountCostByDay := map[string]float64{}
+	if s.usageRepo != nil {
+		accountCostByDay, err = s.usageRepo.SumAccountCostByDay(ctx, startTime, endTime, tzName)
+		if err != nil {
+			return nil, fmt.Errorf("sum account cost by day: %w", err)
+		}
+	}
+
+	// 合并三份数据：以充值日期 ∪ 消耗日期 ∪ 账号成本日期为全集。
+	dateSet := make(map[string]struct{}, len(trend)+len(rechargeByDay)+len(accountCostByDay))
 	consumptionByDay := make(map[string]float64, len(trend))
 	for _, p := range trend {
 		dateSet[p.Date] = struct{}{}
 		consumptionByDay[p.Date] = p.ActualCost
 	}
 	for d := range rechargeByDay {
+		dateSet[d] = struct{}{}
+	}
+	for d := range accountCostByDay {
 		dateSet[d] = struct{}{}
 	}
 
@@ -281,6 +294,7 @@ func (s *DashboardService) GetFinanceTrend(ctx context.Context, startTime, endTi
 			Date:        d,
 			Recharge:    rechargeByDay[d],
 			Consumption: consumptionByDay[d],
+			AccountCost: accountCostByDay[d],
 		})
 	}
 
