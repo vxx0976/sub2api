@@ -425,14 +425,17 @@ const formatLocalDate = (date: Date): string => {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
-const getTodayRangeDates = (): { start: string; end: string } => {
-  const today = formatLocalDate(new Date())
-  return { start: today, end: today }
+const getLastNDaysRange = (days: number): { start: string; end: string } => {
+  const end = new Date()
+  const start = new Date()
+  start.setDate(start.getDate() - (days - 1))
+  return { start: formatLocalDate(start), end: formatLocalDate(end) }
 }
 
-// Date range
-const granularity = ref<'day' | 'hour'>('hour')
-const defaultRange = getTodayRangeDates()
+// Date range —— 仪表盘默认看最近 7 天（含今天）；
+// 上面 DateRangePicker 修改时所有图表（含资金趋势）会一起跟随。
+const granularity = ref<'day' | 'hour'>('day')
+const defaultRange = getLastNDaysRange(7)
 const startDate = ref(defaultRange.start)
 const endDate = ref(defaultRange.end)
 
