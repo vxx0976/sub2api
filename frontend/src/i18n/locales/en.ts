@@ -1520,7 +1520,7 @@ export default {
       consumption: 'Consumption',
       net: 'Net',
       rangeNet: 'Range Net',
-      accountCostLine: 'Account Cost',
+      accountCostLine: 'Cost',
       margin: 'Margin',
       rangeMargin: 'Range Margin',
       rechargeSourceTitle: 'Recharge Sources (USD)',
