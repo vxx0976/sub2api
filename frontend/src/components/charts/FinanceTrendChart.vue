@@ -1,5 +1,5 @@
 <template>
-  <div class="card p-4">
+  <div class="card flex h-full flex-col p-4">
     <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
       <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
         {{ t('admin.dashboard.financeTrendTitle') }}
@@ -25,15 +25,15 @@
         </div>
       </div>
     </div>
-    <div v-if="loading" class="flex h-64 items-center justify-center">
+    <div v-if="loading" class="flex min-h-64 flex-1 items-center justify-center">
       <LoadingSpinner />
     </div>
-    <div v-else-if="trendData.length > 0 && chartData" class="h-64">
+    <div v-else-if="trendData.length > 0 && chartData" class="min-h-64 flex-1">
       <Line :data="chartData" :options="lineOptions" />
     </div>
     <div
       v-else
-      class="flex h-64 items-center justify-center text-sm text-gray-500 dark:text-gray-400"
+      class="flex min-h-64 flex-1 items-center justify-center text-sm text-gray-500 dark:text-gray-400"
     >
       {{ t('admin.dashboard.noDataAvailable') }}
     </div>

@@ -45,11 +45,10 @@ type UsageLogRepository interface {
 	// Admin dashboard stats
 	GetDashboardStats(ctx context.Context) (*usagestats.DashboardStats, error)
 	GetUsageTrendWithFilters(ctx context.Context, startTime, endTime time.Time, granularity string, userID, apiKeyID, accountID, groupID int64, model string, requestType *int16, stream *bool, billingType *int8) ([]usagestats.TrendDataPoint, error)
-	// SumAccountCostByDay 按用户时区分桶汇总账号成本（平台支付给上游 AI 服务的金额）。
-	// 计算口径与 GetDashboardStats 中 total_account_cost 一致：
-	// COALESCE(SUM(COALESCE(account_stats_cost, total_cost) * COALESCE(account_rate_multiplier, 1)), 0)。
-	// 返回 map key 为 "YYYY-MM-DD"，value 为当日账号成本（USD）。
-	SumAccountCostByDay(ctx context.Context, startTime, endTime time.Time, tzName string) (map[string]float64, error)
+	// SumUsageCostsByDay 按用户时区分桶同时汇总单日的 actual_cost 与 account_cost（USD）。
+	// 用户时区分桶避开预聚合表 bucket_date 在 UTC session 下截取导致的跨日偏差。
+	// 返回 map key 为 "YYYY-MM-DD"。
+	SumUsageCostsByDay(ctx context.Context, startTime, endTime time.Time, tzName string) (map[string]usagestats.DailyUsageCost, error)
 	GetModelStatsWithFilters(ctx context.Context, startTime, endTime time.Time, userID, apiKeyID, accountID, groupID int64, requestType *int16, stream *bool, billingType *int8) ([]usagestats.ModelStat, error)
 	GetEndpointStatsWithFilters(ctx context.Context, startTime, endTime time.Time, userID, apiKeyID, accountID, groupID int64, model string, requestType *int16, stream *bool, billingType *int8) ([]usagestats.EndpointStat, error)
 	GetUpstreamEndpointStatsWithFilters(ctx context.Context, startTime, endTime time.Time, userID, apiKeyID, accountID, groupID int64, model string, requestType *int16, stream *bool, billingType *int8) ([]usagestats.EndpointStat, error)

@@ -185,10 +185,17 @@ type FinanceTrendResult struct {
 // GetFinanceTrend 返回平台每日充值/消耗趋势以及当前总余额。
 // 时区参数用于 SQL 端按天分桶；与 parseTimeRange 保持一致。
 func (s *DashboardService) GetFinanceTrend(ctx context.Context, startTime, endTime time.Time, tzName string) (*FinanceTrendResult, error) {
-	// 消耗：直接复用按天的 usage trend（actual_cost）。
-	trend, err := s.usageRepo.GetUsageTrendWithFilters(ctx, startTime, endTime, "day", 0, 0, 0, 0, "", nil, nil, nil)
-	if err != nil {
-		return nil, fmt.Errorf("get usage trend for finance: %w", err)
+	// 消耗 / 成本：按用户时区分桶查 usage_logs。
+	// **不能复用 GetUsageTrendWithFilters**，它走预聚合表 usage_dashboard_daily，
+	// 其 bucket_date 在 PG session(UTC)下被截取，跨日时会偏一天，导致前端图表
+	// 不响应顶部日期过滤、显示串日数据。
+	var err error
+	usageByDay := map[string]usagestats.DailyUsageCost{}
+	if s.usageRepo != nil {
+		usageByDay, err = s.usageRepo.SumUsageCostsByDay(ctx, startTime, endTime, tzName)
+		if err != nil {
+			return nil, fmt.Errorf("sum usage costs by day: %w", err)
+		}
 	}
 
 	// 充值合并：把 4 类来源按天累加到 rechargeByDay，便于趋势线绘制。
@@ -259,26 +266,12 @@ func (s *DashboardService) GetFinanceTrend(ctx context.Context, startTime, endTi
 		"admin_manual": sumMap(adminManualByDay),
 	}
 
-	// 账号成本：平台向上游 AI 服务实际支付的金额（USD），按用户时区分桶。
-	accountCostByDay := map[string]float64{}
-	if s.usageRepo != nil {
-		accountCostByDay, err = s.usageRepo.SumAccountCostByDay(ctx, startTime, endTime, tzName)
-		if err != nil {
-			return nil, fmt.Errorf("sum account cost by day: %w", err)
-		}
-	}
-
-	// 合并三份数据：以充值日期 ∪ 消耗日期 ∪ 账号成本日期为全集。
-	dateSet := make(map[string]struct{}, len(trend)+len(rechargeByDay)+len(accountCostByDay))
-	consumptionByDay := make(map[string]float64, len(trend))
-	for _, p := range trend {
-		dateSet[p.Date] = struct{}{}
-		consumptionByDay[p.Date] = p.ActualCost
-	}
-	for d := range rechargeByDay {
+	// 合并：以充值日期 ∪ usage 日期为全集。
+	dateSet := make(map[string]struct{}, len(usageByDay)+len(rechargeByDay))
+	for d := range usageByDay {
 		dateSet[d] = struct{}{}
 	}
-	for d := range accountCostByDay {
+	for d := range rechargeByDay {
 		dateSet[d] = struct{}{}
 	}
 
@@ -290,11 +283,12 @@ func (s *DashboardService) GetFinanceTrend(ctx context.Context, startTime, endTi
 
 	points := make([]FinanceTrendPoint, 0, len(dates))
 	for _, d := range dates {
+		uc := usageByDay[d]
 		points = append(points, FinanceTrendPoint{
 			Date:        d,
 			Recharge:    rechargeByDay[d],
-			Consumption: consumptionByDay[d],
-			AccountCost: accountCostByDay[d],
+			Consumption: uc.ActualCost,
+			AccountCost: uc.AccountCost,
 		})
 	}
 

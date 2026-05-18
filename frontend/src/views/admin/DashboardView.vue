@@ -296,7 +296,7 @@
           </div>
 
           <!-- Finance: recharge/consumption trend + source pie -->
-          <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <div class="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-3">
             <div class="lg:col-span-2">
               <FinanceTrendChart
                 :trend-data="financeTrendData"

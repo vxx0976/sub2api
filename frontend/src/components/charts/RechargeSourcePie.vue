@@ -1,5 +1,5 @@
 <template>
-  <div class="card p-4">
+  <div class="card flex h-full flex-col p-4">
     <div class="mb-4 flex items-center justify-between">
       <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
         {{ t('admin.dashboard.rechargeSourceTitle') }}
@@ -12,16 +12,19 @@
       </div>
     </div>
 
-    <div v-if="loading" class="flex h-64 items-center justify-center">
+    <div v-if="loading" class="flex min-h-64 flex-1 items-center justify-center">
       <LoadingSpinner />
     </div>
     <div
       v-else-if="total <= 0"
-      class="flex h-64 items-center justify-center text-sm text-gray-500 dark:text-gray-400"
+      class="flex min-h-64 flex-1 items-center justify-center text-sm text-gray-500 dark:text-gray-400"
     >
       {{ t('admin.dashboard.noDataAvailable') }}
     </div>
-    <div v-else class="flex flex-col items-center gap-4 lg:flex-row lg:gap-6">
+    <div
+      v-else
+      class="flex flex-1 flex-col items-center justify-center gap-4 lg:flex-row lg:gap-6"
+    >
       <div class="h-56 w-56 flex-shrink-0">
         <Doughnut :data="chartData" :options="chartOptions" />
       </div>

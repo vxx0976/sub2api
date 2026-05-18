@@ -79,6 +79,13 @@ type DashboardStats struct {
 	Tpm int64 `json:"tpm"` // 近5分钟平均每分钟Token数
 }
 
+// DailyUsageCost 单日使用产生的两类金额（USD）。
+// 由 UsageLogRepository.SumUsageCostsByDay 返回，用于资金趋势图。
+type DailyUsageCost struct {
+	ActualCost  float64 `json:"actual_cost"`  // 从用户余额扣除的金额
+	AccountCost float64 `json:"account_cost"` // 平台向上游 AI 服务实际支付的金额
+}
+
 // TrendDataPoint represents a single point in trend data
 type TrendDataPoint struct {
 	Date                string  `json:"date"`
