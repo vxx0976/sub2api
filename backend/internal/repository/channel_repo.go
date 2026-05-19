@@ -584,6 +584,18 @@ func (r *channelRepository) UpdateBalance(ctx context.Context, channelID int64, 
 	return nil
 }
 
+// SumCachedBalance 汇总所有渠道当前缓存余额（cached_balance），用于管理后台「所有渠道总余额」卡片。
+// 注意：各渠道 balance_unit 可能不一致（$/¥），这里只做原始求和。
+func (r *channelRepository) SumCachedBalance(ctx context.Context) (float64, error) {
+	var total sql.NullFloat64
+	if err := r.db.QueryRowContext(ctx,
+		`SELECT COALESCE(SUM(cached_balance), 0) FROM channels WHERE cached_balance IS NOT NULL`,
+	).Scan(&total); err != nil {
+		return 0, fmt.Errorf("sum cached_balance: %w", err)
+	}
+	return total.Float64, nil
+}
+
 // marshalBalanceHeaders 将 balance headers 序列化为 JSON 字节
 func marshalBalanceHeaders(m map[string]string) ([]byte, error) {
 	if len(m) == 0 {

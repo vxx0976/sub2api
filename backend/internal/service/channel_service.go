@@ -50,6 +50,7 @@ type ChannelRepository interface {
 
 	// 余额缓存
 	UpdateBalance(ctx context.Context, channelID int64, balance *float64, lastCheckAt *time.Time, lastError string) error
+	SumCachedBalance(ctx context.Context) (float64, error)
 
 	// 模型定价
 	ListModelPricing(ctx context.Context, channelID int64) ([]ChannelModelPricing, error)
