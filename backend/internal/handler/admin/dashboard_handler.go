@@ -287,6 +287,9 @@ func (h *DashboardHandler) GetFinanceTrend(c *gin.Context) {
 
 	response.Success(c, gin.H{
 		"current_total_balance": result.CurrentTotalBalance,
+		"total_channel_balance": result.TotalChannelBalance,
+		"today_recharge":        result.TodayRecharge,
+		"today_gross_profit":    result.TodayGrossProfit,
 		"trend":                 result.Trend,
 		"recharge_breakdown":    result.RechargeBreakdown,
 		"start_date":            startTime.Format("2006-01-02"),

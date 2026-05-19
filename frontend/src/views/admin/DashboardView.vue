@@ -216,8 +216,9 @@
           </div>
         </div>
 
-        <!-- Row 3: Platform Balance -->
-        <div class="grid grid-cols-1 gap-4 lg:grid-cols-4">
+        <!-- Row 3: Finance Snapshot -->
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <!-- 平台总余额（所有用户余额之和） -->
           <div class="card p-4">
             <div class="flex items-center gap-3">
               <div class="rounded-lg bg-teal-100 p-2 dark:bg-teal-900/30">
@@ -237,6 +238,99 @@
                 </p>
                 <p class="text-xs text-gray-500 dark:text-gray-400">
                   {{ t('admin.dashboard.platformBalanceHint') }}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 所有渠道总余额（cached_balance 求和） -->
+          <div class="card p-4">
+            <div class="flex items-center gap-3">
+              <div class="rounded-lg bg-sky-100 p-2 dark:bg-sky-900/30">
+                <Icon
+                  name="server"
+                  size="md"
+                  class="text-sky-600 dark:text-sky-400"
+                  :stroke-width="2"
+                />
+              </div>
+              <div>
+                <p class="text-xs font-medium text-gray-500 dark:text-gray-400">
+                  {{ t('admin.dashboard.channelBalance') }}
+                </p>
+                <p class="text-xl font-bold text-sky-600 dark:text-sky-400">
+                  {{ formatCost(financeTrend?.total_channel_balance ?? 0) }}
+                </p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">
+                  {{ t('admin.dashboard.channelBalanceHint') }}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 今日充值 -->
+          <div class="card p-4">
+            <div class="flex items-center gap-3">
+              <div class="rounded-lg bg-emerald-100 p-2 dark:bg-emerald-900/30">
+                <Icon
+                  name="creditCard"
+                  size="md"
+                  class="text-emerald-600 dark:text-emerald-400"
+                  :stroke-width="2"
+                />
+              </div>
+              <div>
+                <p class="text-xs font-medium text-gray-500 dark:text-gray-400">
+                  {{ t('admin.dashboard.todayRecharge') }}
+                </p>
+                <p class="text-xl font-bold text-emerald-600 dark:text-emerald-400">
+                  ${{ formatCost(financeTrend?.today_recharge ?? 0) }}
+                </p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">
+                  {{ t('admin.dashboard.todayRechargeHint') }}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 今日毛利 = 今日充值 - 今日上游成本 -->
+          <div class="card p-4">
+            <div class="flex items-center gap-3">
+              <div
+                class="rounded-lg p-2"
+                :class="
+                  (financeTrend?.today_gross_profit ?? 0) < 0
+                    ? 'bg-rose-100 dark:bg-rose-900/30'
+                    : 'bg-amber-100 dark:bg-amber-900/30'
+                "
+              >
+                <Icon
+                  name="bolt"
+                  size="md"
+                  :class="
+                    (financeTrend?.today_gross_profit ?? 0) < 0
+                      ? 'text-rose-600 dark:text-rose-400'
+                      : 'text-amber-600 dark:text-amber-400'
+                  "
+                  :stroke-width="2"
+                />
+              </div>
+              <div>
+                <p class="text-xs font-medium text-gray-500 dark:text-gray-400">
+                  {{ t('admin.dashboard.todayGrossProfit') }}
+                </p>
+                <p
+                  class="text-xl font-bold"
+                  :class="
+                    (financeTrend?.today_gross_profit ?? 0) < 0
+                      ? 'text-rose-600 dark:text-rose-400'
+                      : 'text-amber-600 dark:text-amber-400'
+                  "
+                >
+                  ${{ formatCost(financeTrend?.today_gross_profit ?? 0) }}
+                </p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">
+                  {{ t('admin.dashboard.todayGrossProfitHint') }}
                 </p>
               </div>
             </div>

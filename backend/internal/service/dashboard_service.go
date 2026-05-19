@@ -48,6 +48,7 @@ type DashboardService struct {
 	rechargeRepo   RechargeOrderRepository
 	orderRepo      OrderRepository
 	redeemRepo     RedeemCodeRepository
+	channelRepo    ChannelRepository
 	cache          DashboardStatsCache
 	cacheFreshTTL  time.Duration
 	cacheTTL       time.Duration
@@ -59,7 +60,7 @@ type DashboardService struct {
 	aggUsageDays   int
 }
 
-func NewDashboardService(usageRepo UsageLogRepository, aggRepo DashboardAggregationRepository, userRepo UserRepository, rechargeRepo RechargeOrderRepository, orderRepo OrderRepository, redeemRepo RedeemCodeRepository, cache DashboardStatsCache, cfg *config.Config) *DashboardService {
+func NewDashboardService(usageRepo UsageLogRepository, aggRepo DashboardAggregationRepository, userRepo UserRepository, rechargeRepo RechargeOrderRepository, orderRepo OrderRepository, redeemRepo RedeemCodeRepository, channelRepo ChannelRepository, cache DashboardStatsCache, cfg *config.Config) *DashboardService {
 	freshTTL := defaultDashboardStatsFreshTTL
 	cacheTTL := defaultDashboardStatsCacheTTL
 	refreshTimeout := defaultDashboardStatsRefreshTimeout
@@ -101,6 +102,7 @@ func NewDashboardService(usageRepo UsageLogRepository, aggRepo DashboardAggregat
 		rechargeRepo:   rechargeRepo,
 		orderRepo:      orderRepo,
 		redeemRepo:     redeemRepo,
+		channelRepo:    channelRepo,
 		cache:          cache,
 		cacheFreshTTL:  freshTTL,
 		cacheTTL:       cacheTTL,
@@ -171,6 +173,14 @@ type FinanceTrendPoint struct {
 // FinanceTrendResult 平台资金趋势聚合结果。
 type FinanceTrendResult struct {
 	CurrentTotalBalance float64             `json:"current_total_balance"`
+	// TotalChannelBalance 所有渠道当前缓存余额之和（cached_balance）。
+	// 单位以各渠道 balance_unit 为准，可能不一致，仅做原始求和。
+	TotalChannelBalance float64             `json:"total_channel_balance"`
+	// TodayRecharge 今日（按 tz）4 类充值来源合计（USD）。与 RechargeBreakdown 无关，
+	// 独立于 [startTime, endTime) 过滤范围。
+	TodayRecharge float64 `json:"today_recharge"`
+	// TodayGrossProfit 今日（按 tz）毛利 = TodayRecharge - 今日 account_cost。
+	TodayGrossProfit float64             `json:"today_gross_profit"`
 	Trend               []FinanceTrendPoint `json:"trend"`
 	// RechargeBreakdown 在 [startTime, endTime) 区间内,各类充值来源的总和（USD）。
 	// key 固定为以下 4 类，便于前端固定渲染：
@@ -301,8 +311,78 @@ func (s *DashboardService) GetFinanceTrend(ctx context.Context, startTime, endTi
 		}
 	}
 
+	// 所有渠道缓存余额之和（cached_balance），独立于日期过滤。
+	var totalChannelBalance float64
+	if s.channelRepo != nil {
+		totalChannelBalance, err = s.channelRepo.SumCachedBalance(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("sum channel balance: %w", err)
+		}
+	}
+
+	// 今日充值 / 毛利：独立于顶部 [startTime, endTime) 过滤范围，
+	// 按用户时区取今日 [00:00, 次日 00:00) 重新聚合 4 类来源 + usage account_cost。
+	loc, err := time.LoadLocation(tzName)
+	if err != nil || loc == nil {
+		loc = time.UTC
+	}
+	nowInTz := time.Now().In(loc)
+	todayStart := time.Date(nowInTz.Year(), nowInTz.Month(), nowInTz.Day(), 0, 0, 0, 0, loc)
+	todayEnd := todayStart.Add(24 * time.Hour)
+
+	sumMapValues := func(m map[string]float64) float64 {
+		var v float64
+		for _, x := range m {
+			v += x
+		}
+		return v
+	}
+
+	var todayRecharge float64
+	if s.rechargeRepo != nil {
+		m, err := s.rechargeRepo.SumPaidCreditByDay(ctx, todayStart, todayEnd, tzName)
+		if err != nil {
+			return nil, fmt.Errorf("sum today recharge_orders: %w", err)
+		}
+		todayRecharge += sumMapValues(m)
+	}
+	if s.orderRepo != nil {
+		m, err := s.orderRepo.SumPaidCreditByDay(ctx, todayStart, todayEnd, tzName)
+		if err != nil {
+			return nil, fmt.Errorf("sum today orders: %w", err)
+		}
+		todayRecharge += sumMapValues(m)
+	}
+	if s.redeemRepo != nil {
+		m, err := s.redeemRepo.SumPositiveValueByDayForTypes(ctx, todayStart, todayEnd, tzName, []string{RedeemTypeBalance})
+		if err != nil {
+			return nil, fmt.Errorf("sum today redeem balance: %w", err)
+		}
+		todayRecharge += sumMapValues(m)
+		m2, err := s.redeemRepo.SumManualAdminBalanceByDay(ctx, todayStart, todayEnd, tzName)
+		if err != nil {
+			return nil, fmt.Errorf("sum today manual admin balance: %w", err)
+		}
+		todayRecharge += sumMapValues(m2)
+	}
+
+	var todayAccountCost float64
+	if s.usageRepo != nil {
+		usageToday, err := s.usageRepo.SumUsageCostsByDay(ctx, todayStart, todayEnd, tzName)
+		if err != nil {
+			return nil, fmt.Errorf("sum today usage costs: %w", err)
+		}
+		for _, v := range usageToday {
+			todayAccountCost += v.AccountCost
+		}
+	}
+	todayGrossProfit := todayRecharge - todayAccountCost
+
 	return &FinanceTrendResult{
 		CurrentTotalBalance: totalBalance,
+		TotalChannelBalance: totalChannelBalance,
+		TodayRecharge:       todayRecharge,
+		TodayGrossProfit:    todayGrossProfit,
 		Trend:               points,
 		RechargeBreakdown:   rechargeBreakdown,
 	}, nil

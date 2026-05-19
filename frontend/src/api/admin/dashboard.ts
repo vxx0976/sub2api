@@ -290,6 +290,12 @@ export interface RechargeBreakdown {
 
 export interface FinanceTrendResponse {
   current_total_balance: number
+  /** 所有渠道当前缓存余额之和（cached_balance），可能多币种。 */
+  total_channel_balance: number
+  /** 今日（按 tz）4 类来源充值合计（USD），不随顶部日期过滤变化。 */
+  today_recharge: number
+  /** 今日（按 tz）毛利 = today_recharge - 今日 account_cost。 */
+  today_gross_profit: number
   trend: FinanceTrendPoint[]
   recharge_breakdown: RechargeBreakdown
   start_date: string

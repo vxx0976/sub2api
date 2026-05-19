@@ -104,7 +104,8 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	dashboardStatsCache := repository.NewDashboardCache(redisClient, configConfig)
 	rechargeOrderRepository := repository.NewRechargeOrderRepo(client, db)
 	orderRepository := repository.NewOrderRepo(client, db)
-	dashboardService := service.NewDashboardService(usageLogRepository, dashboardAggregationRepository, userRepository, rechargeOrderRepository, orderRepository, redeemCodeRepository, dashboardStatsCache, configConfig)
+	channelRepository := repository.NewChannelRepository(db)
+	dashboardService := service.NewDashboardService(usageLogRepository, dashboardAggregationRepository, userRepository, rechargeOrderRepository, orderRepository, redeemCodeRepository, channelRepository, dashboardStatsCache, configConfig)
 	timingWheelService, err := service.ProvideTimingWheelService()
 	if err != nil {
 		return nil, err
@@ -190,7 +191,6 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	deferredService := service.ProvideDeferredService(accountRepository, timingWheelService)
 	digestSessionStore := service.NewDigestSessionStore()
 	resellerSettingRepository := repository.NewResellerSettingRepository(client)
-	channelRepository := repository.NewChannelRepository(db)
 	channelService := service.NewChannelService(channelRepository, groupRepository, apiKeyAuthCacheInvalidator, pricingService)
 	modelPricingResolver := service.NewModelPricingResolver(channelService, billingService)
 	balanceNotifyService := service.ProvideBalanceNotifyService(emailService, settingRepository, accountRepository)
