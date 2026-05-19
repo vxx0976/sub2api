@@ -1529,7 +1529,7 @@ export default {
       todayRecharge: '今日充值',
       todayRechargeHint: '今日各来源充值合计',
       todayGrossProfit: '今日毛利',
-      todayGrossProfitHint: '今日充值 - 今日上游成本',
+      todayGrossProfitHint: '今日消耗 - 今日上游成本',
       recharge: '充值',
       consumption: '消耗',
       net: '净流入',

@@ -179,7 +179,8 @@ type FinanceTrendResult struct {
 	// TodayRecharge 今日（按 tz）4 类充值来源合计（USD）。与 RechargeBreakdown 无关，
 	// 独立于 [startTime, endTime) 过滤范围。
 	TodayRecharge float64 `json:"today_recharge"`
-	// TodayGrossProfit 今日（按 tz）毛利 = TodayRecharge - 今日 account_cost。
+	// TodayGrossProfit 今日（按 tz）毛利 = 今日消耗(actual_cost) - 今日上游成本(account_cost)。
+	// 与资金趋势图"区间毛利"保持同一口径：充值只是入金不算营收。
 	TodayGrossProfit float64             `json:"today_gross_profit"`
 	Trend               []FinanceTrendPoint `json:"trend"`
 	// RechargeBreakdown 在 [startTime, endTime) 区间内,各类充值来源的总和（USD）。
@@ -366,17 +367,18 @@ func (s *DashboardService) GetFinanceTrend(ctx context.Context, startTime, endTi
 		todayRecharge += sumMapValues(m2)
 	}
 
-	var todayAccountCost float64
+	var todayActualCost, todayAccountCost float64
 	if s.usageRepo != nil {
 		usageToday, err := s.usageRepo.SumUsageCostsByDay(ctx, todayStart, todayEnd, tzName)
 		if err != nil {
 			return nil, fmt.Errorf("sum today usage costs: %w", err)
 		}
 		for _, v := range usageToday {
+			todayActualCost += v.ActualCost
 			todayAccountCost += v.AccountCost
 		}
 	}
-	todayGrossProfit := todayRecharge - todayAccountCost
+	todayGrossProfit := todayActualCost - todayAccountCost
 
 	return &FinanceTrendResult{
 		CurrentTotalBalance: totalBalance,

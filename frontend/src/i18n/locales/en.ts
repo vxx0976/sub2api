@@ -1521,7 +1521,7 @@ export default {
       todayRecharge: "Today's Recharge",
       todayRechargeHint: "Today's total recharge from all sources",
       todayGrossProfit: "Today's Gross Profit",
-      todayGrossProfitHint: "Today's recharge − today's upstream cost",
+      todayGrossProfitHint: "Today's consumption − today's upstream cost",
       recharge: 'Recharge',
       consumption: 'Consumption',
       net: 'Net',
