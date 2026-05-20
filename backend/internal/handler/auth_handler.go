@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/Wei-Shaw/sub2api/internal/handler/dto"
@@ -28,6 +29,10 @@ type AuthHandler struct {
 	redeemService        *service.RedeemService
 	totpService          *service.TotpService
 	resellerSettingRepo  service.ResellerSettingRepository
+	userAttributeService *service.UserAttributeService
+
+	dingTalkClientInstance *DingTalkClient
+	dingTalkClientMu       sync.Mutex
 }
 
 // SetResellerSettingRepo injects reseller setting repository for price_multiplier lookup in auth/me.
@@ -36,16 +41,17 @@ func (h *AuthHandler) SetResellerSettingRepo(repo service.ResellerSettingReposit
 }
 
 // NewAuthHandler creates a new AuthHandler
-func NewAuthHandler(cfg *config.Config, authService *service.AuthService, userService *service.UserService, settingService *service.SettingService, promoService *service.PromoService, referralService *service.ReferralService, redeemService *service.RedeemService, totpService *service.TotpService) *AuthHandler {
+func NewAuthHandler(cfg *config.Config, authService *service.AuthService, userService *service.UserService, settingService *service.SettingService, promoService *service.PromoService, referralService *service.ReferralService, redeemService *service.RedeemService, totpService *service.TotpService, userAttributeService *service.UserAttributeService) *AuthHandler {
 	return &AuthHandler{
-		cfg:             cfg,
-		authService:     authService,
-		userService:     userService,
-		settingSvc:      settingService,
-		promoService:    promoService,
-		referralService: referralService,
-		redeemService:   redeemService,
-		totpService:     totpService,
+		cfg:                  cfg,
+		authService:          authService,
+		userService:          userService,
+		settingSvc:           settingService,
+		promoService:         promoService,
+		referralService:      referralService,
+		redeemService:        redeemService,
+		totpService:          totpService,
+		userAttributeService: userAttributeService,
 	}
 }
 

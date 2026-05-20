@@ -4463,6 +4463,38 @@
                       ></textarea>
                     </div>
                   </div>
+                  <div>
+                    <label class="input-label">{{
+                      t("admin.settings.payment.alipayForceQRCode")
+                    }}</label>
+                    <div class="flex items-center gap-2">
+                      <button
+                        type="button"
+                        :class="[
+                          'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
+                          form.payment_alipay_force_qrcode
+                            ? 'bg-primary-500'
+                            : 'bg-gray-300 dark:bg-dark-600',
+                        ]"
+                        @click="
+                          form.payment_alipay_force_qrcode =
+                            !form.payment_alipay_force_qrcode
+                        "
+                      >
+                        <span
+                          :class="[
+                            'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+                            form.payment_alipay_force_qrcode
+                              ? 'translate-x-5'
+                              : 'translate-x-0',
+                          ]"
+                        />
+                      </button>
+                      <span class="text-sm text-gray-500 dark:text-gray-400">{{
+                        t("admin.settings.payment.alipayForceQRCodeHint")
+                      }}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -5266,10 +5298,16 @@ interface DefaultSubscriptionGroupOption {
   [key: string]: unknown
 }
 
-type SettingsForm = SystemSettings & {
+type SettingsForm = Omit<
+  SystemSettings,
+  | 'wechat_connect_open_enabled'
+  | 'wechat_connect_mp_enabled'
+  | 'wechat_connect_mobile_enabled'
+> & {
   smtp_password: string
   turnstile_secret_key: string
   linuxdo_connect_client_secret: string
+  dingtalk_connect_client_secret: string
   wechat_connect_app_secret: string
   wechat_connect_open_app_secret: string
   wechat_connect_mp_app_secret: string
@@ -5390,6 +5428,7 @@ const form = reactive<SettingsForm>({
   payment_cancel_rate_limit_window: 1,
   payment_cancel_rate_limit_unit: 'day',
   payment_cancel_rate_limit_window_mode: 'rolling',
+  payment_alipay_force_qrcode: false,
   table_default_page_size: tablePageSizeDefault,
   table_page_size_options: [10, 20, 50, 100],
   custom_menu_items: [] as Array<{id: string; label: string; icon_svg: string; url: string; visibility: 'user' | 'admin'; sort_order: number}>,
@@ -5414,6 +5453,24 @@ const form = reactive<SettingsForm>({
   linuxdo_connect_client_secret: '',
   linuxdo_connect_client_secret_configured: false,
   linuxdo_connect_redirect_url: '',
+  // DingTalk Connect OAuth 登录
+  dingtalk_connect_enabled: false,
+  dingtalk_connect_client_id: '',
+  dingtalk_connect_client_secret: '',
+  dingtalk_connect_client_secret_configured: false,
+  dingtalk_connect_redirect_url: '',
+  dingtalk_connect_corp_restriction_policy: 'none',
+  dingtalk_connect_internal_corp_id: '',
+  dingtalk_connect_bypass_registration: false,
+  dingtalk_connect_sync_corp_email: false,
+  dingtalk_connect_sync_display_name: false,
+  dingtalk_connect_sync_dept: false,
+  dingtalk_connect_sync_corp_email_attr_key: 'dingtalk_email',
+  dingtalk_connect_sync_display_name_attr_key: 'dingtalk_name',
+  dingtalk_connect_sync_dept_attr_key: 'dingtalk_department',
+  dingtalk_connect_sync_corp_email_attr_name: '钉钉企业邮箱',
+  dingtalk_connect_sync_display_name_attr_name: '钉钉姓名',
+  dingtalk_connect_sync_dept_attr_name: '钉钉部门',
   // Generic OIDC OAuth 登录
   oidc_connect_enabled: false,
   oidc_connect_provider_name: 'OIDC',
@@ -5523,6 +5580,30 @@ const authSourceDefaultsMeta = computed(() => [
     source: 'wechat' as AuthSourceType,
     title: t('admin.settings.authSourceDefaults.sources.wechat.title'),
     description: t('admin.settings.authSourceDefaults.sources.wechat.description'),
+  },
+  {
+    source: 'github' as AuthSourceType,
+    title: 'GitHub',
+    description: localText(
+      '通过 GitHub 已验证邮箱首次注册或首次绑定时应用。',
+      'Applied on first signup or first bind through a verified GitHub email.'
+    ),
+  },
+  {
+    source: 'google' as AuthSourceType,
+    title: 'Google',
+    description: localText(
+      '通过 Google 已验证邮箱首次注册或首次绑定时应用。',
+      'Applied on first signup or first bind through a verified Google email.'
+    ),
+  },
+  {
+    source: 'dingtalk' as AuthSourceType,
+    title: '钉钉',
+    description: localText(
+      '通过钉钉首次注册或首次绑定时应用。',
+      'Applied on first signup or first bind through DingTalk.'
+    ),
   },
 ])
 
@@ -5970,6 +6051,9 @@ async function loadSettings() {
     smtpPasswordManuallyEdited.value = false
     form.turnstile_secret_key = ''
     form.linuxdo_connect_client_secret = ''
+    form.dingtalk_connect_client_secret = ''
+    form.github_oauth_client_secret = ''
+    form.google_oauth_client_secret = ''
     form.wechat_connect_app_secret = ''
     form.wechat_connect_open_app_secret = ''
     form.wechat_connect_mp_app_secret = ''
@@ -6254,6 +6338,24 @@ async function saveSettings() {
       linuxdo_connect_client_id: form.linuxdo_connect_client_id,
       linuxdo_connect_client_secret: form.linuxdo_connect_client_secret || undefined,
       linuxdo_connect_redirect_url: form.linuxdo_connect_redirect_url,
+      dingtalk_connect_enabled: form.dingtalk_connect_enabled,
+      dingtalk_connect_client_id: form.dingtalk_connect_client_id,
+      dingtalk_connect_client_secret:
+        form.dingtalk_connect_client_secret || undefined,
+      dingtalk_connect_redirect_url: form.dingtalk_connect_redirect_url,
+      dingtalk_connect_corp_restriction_policy:
+        form.dingtalk_connect_corp_restriction_policy,
+      dingtalk_connect_internal_corp_id: form.dingtalk_connect_internal_corp_id,
+      dingtalk_connect_bypass_registration: form.dingtalk_connect_bypass_registration,
+      dingtalk_connect_sync_corp_email: form.dingtalk_connect_sync_corp_email,
+      dingtalk_connect_sync_display_name: form.dingtalk_connect_sync_display_name,
+      dingtalk_connect_sync_dept: form.dingtalk_connect_sync_dept,
+      dingtalk_connect_sync_corp_email_attr_key: form.dingtalk_connect_sync_corp_email_attr_key,
+      dingtalk_connect_sync_display_name_attr_key: form.dingtalk_connect_sync_display_name_attr_key,
+      dingtalk_connect_sync_dept_attr_key: form.dingtalk_connect_sync_dept_attr_key,
+      dingtalk_connect_sync_corp_email_attr_name: form.dingtalk_connect_sync_corp_email_attr_name,
+      dingtalk_connect_sync_display_name_attr_name: form.dingtalk_connect_sync_display_name_attr_name,
+      dingtalk_connect_sync_dept_attr_name: form.dingtalk_connect_sync_dept_attr_name,
       wechat_connect_enabled: form.wechat_connect_enabled,
       wechat_connect_app_id:
         form.wechat_connect_open_app_id ||
@@ -6343,6 +6445,7 @@ async function saveSettings() {
       payment_cancel_rate_limit_window: Number(form.payment_cancel_rate_limit_window) || 1,
       payment_cancel_rate_limit_unit: form.payment_cancel_rate_limit_unit,
       payment_cancel_rate_limit_window_mode: form.payment_cancel_rate_limit_window_mode,
+      payment_alipay_force_qrcode: form.payment_alipay_force_qrcode,
       // Balance & quota notification
       balance_low_notify_enabled: form.balance_low_notify_enabled,
       balance_low_notify_threshold: Number(form.balance_low_notify_threshold) || 0,
@@ -6421,6 +6524,9 @@ async function saveSettings() {
     smtpPasswordManuallyEdited.value = false
     form.turnstile_secret_key = ''
     form.linuxdo_connect_client_secret = ''
+    form.dingtalk_connect_client_secret = ''
+    form.github_oauth_client_secret = ''
+    form.google_oauth_client_secret = ''
     form.wechat_connect_app_secret = ''
     form.wechat_connect_open_app_secret = ''
     form.wechat_connect_mp_app_secret = ''
@@ -7526,6 +7632,21 @@ watch(
     }
   },
 );
+
+// bypass_registration 与身份同步三开关仅在 internal_only 模式下生效。切换 policy 到其它值时，
+// 立即把相关字段重置为 false，避免保存请求里残留旧值。后端 admin handler 与
+// 配置加载层都有 coerce 兜底，这里是 UX 层的同步而非安全防线。
+watch(
+  () => form.dingtalk_connect_corp_restriction_policy,
+  (policy) => {
+    if (policy !== "internal_only") {
+      if (form.dingtalk_connect_bypass_registration) form.dingtalk_connect_bypass_registration = false;
+      if (form.dingtalk_connect_sync_corp_email) form.dingtalk_connect_sync_corp_email = false;
+      if (form.dingtalk_connect_sync_display_name) form.dingtalk_connect_sync_display_name = false;
+      if (form.dingtalk_connect_sync_dept) form.dingtalk_connect_sync_dept = false;
+    }
+  },
+);
 </script>
 
 <style scoped>
@@ -7544,14 +7665,6 @@ watch(
   box-shadow:
     0 12px 28px rgb(15 23 42 / 0.07),
     0 1px 0 rgb(255 255 255 / 0.9) inset;
-}
-
-:global(.dark) .settings-tabs-shell {
-  border-color: rgb(51 65 85 / 0.65);
-  background: rgb(15 23 42 / 0.86);
-  box-shadow:
-    0 16px 36px rgb(0 0 0 / 0.28),
-    0 1px 0 rgb(255 255 255 / 0.06) inset;
 }
 
 .settings-tabs-scroll {
@@ -7597,10 +7710,6 @@ watch(
   opacity: 1;
 }
 
-:global(.dark) .settings-tab::before {
-  background: linear-gradient(135deg, rgb(30 41 59 / 0.9), rgb(51 65 85 / 0.62));
-}
-
 .settings-tab:focus-visible {
   @apply ring-2 ring-primary-500/40 ring-offset-2 ring-offset-white dark:ring-offset-dark-900;
 }
@@ -7610,12 +7719,6 @@ watch(
   box-shadow:
     0 8px 18px rgb(15 23 42 / 0.08),
     0 1px 0 rgb(255 255 255 / 0.92) inset;
-}
-
-:global(.dark) .settings-tab-active {
-  box-shadow:
-    0 12px 26px rgb(0 0 0 / 0.22),
-    0 1px 0 rgb(255 255 255 / 0.08) inset;
 }
 
 .settings-tab-active::before {
@@ -7648,5 +7751,28 @@ watch(
 
 .settings-tab-label {
   @apply min-w-0 overflow-hidden text-ellipsis whitespace-nowrap leading-none;
+}
+</style>
+
+<style>
+/* Dark-mode overrides for the settings tabs shell. Kept in an UNSCOPED block
+   because Vue's scoped-CSS compiler was dropping the `:global(.dark) ...`
+   rules in the production build, leaving inactive tabs unreadable on dark. */
+.dark .settings-tabs-shell {
+  border-color: rgb(51 65 85 / 0.65);
+  background: rgb(15 23 42 / 0.86);
+  box-shadow:
+    0 16px 36px rgb(0 0 0 / 0.28),
+    0 1px 0 rgb(255 255 255 / 0.06) inset;
+}
+
+.dark .settings-tab::before {
+  background: linear-gradient(135deg, rgb(30 41 59 / 0.9), rgb(51 65 85 / 0.62));
+}
+
+.dark .settings-tab-active {
+  box-shadow:
+    0 12px 26px rgb(0 0 0 / 0.22),
+    0 1px 0 rgb(255 255 255 / 0.08) inset;
 }
 </style>

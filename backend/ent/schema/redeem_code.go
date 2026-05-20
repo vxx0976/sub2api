@@ -72,6 +72,11 @@ func (RedeemCode) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			Comment("分销商用户 ID（NULL=管理员兑换码）"),
+		field.Time("expires_at").
+			Optional().
+			Nillable().
+			SchemaType(map[string]string{dialect.Postgres: "timestamptz"}).
+			Comment("兑换码自身过期时间，超过后无法兑换（NULL=永久有效）"),
 	}
 }
 
@@ -95,5 +100,6 @@ func (RedeemCode) Indexes() []ent.Index {
 		index.Fields("used_by"),
 		index.Fields("group_id"),
 		index.Fields("owner_id"),
+		index.Fields("expires_at"),
 	}
 }

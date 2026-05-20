@@ -95,6 +95,9 @@ const OIDCConnectSyntheticEmailDomain = "@oidc-connect.invalid"
 // WeChatConnectSyntheticEmailDomain 是 WeChat Connect 用户的合成邮箱后缀（RFC 保留域名）。
 const WeChatConnectSyntheticEmailDomain = "@wechat-connect.invalid"
 
+// DingTalkConnectSyntheticEmailDomain 是 DingTalk Connect 用户的合成邮箱后缀（RFC 保留域名）。
+const DingTalkConnectSyntheticEmailDomain = "@dingtalk-connect.invalid"
+
 // Setting keys
 const (
 	// 注册设置
@@ -110,6 +113,8 @@ const (
 	SettingKeyAffiliateRebateFreezeHours       = "affiliate_rebate_freeze_hours"       // 返利冻结期（小时，0=不冻结）
 	SettingKeyAffiliateRebateDurationDays      = "affiliate_rebate_duration_days"      // 返利有效期（天，0=永久）
 	SettingKeyAffiliateRebatePerInviteeCap     = "affiliate_rebate_per_invitee_cap"    // 单人返利上限（0=无上限）
+	SettingKeyPurchaseSubscriptionEnabled      = "purchase_subscription_enabled"       // 是否展示"购买订阅"页面入口
+	SettingKeyPurchaseSubscriptionURL          = "purchase_subscription_url"           // "购买订阅"页面 URL（作为 iframe src）
 	SettingKeyRiskControlEnabled               = "risk_control_enabled"                // 是否启用风控中心入口与审计链路
 	SettingKeyContentModerationConfig          = "content_moderation_config"           // 内容审计配置（JSON）
 	SettingKeyTranslationConfig                = "translation_config"                  // 一键翻译配置（OpenAI 兼容，JSON）
@@ -140,6 +145,24 @@ const (
 	SettingKeyLinuxDoConnectClientID     = "linuxdo_connect_client_id"
 	SettingKeyLinuxDoConnectClientSecret = "linuxdo_connect_client_secret"
 	SettingKeyLinuxDoConnectRedirectURL  = "linuxdo_connect_redirect_url"
+
+	// DingTalk Connect OAuth 登录设置
+	SettingKeyDingTalkConnectEnabled                 = "dingtalk_connect_enabled"
+	SettingKeyDingTalkConnectClientID                = "dingtalk_connect_client_id"
+	SettingKeyDingTalkConnectClientSecret            = "dingtalk_connect_client_secret"
+	SettingKeyDingTalkConnectRedirectURL             = "dingtalk_connect_redirect_url"
+	SettingKeyDingTalkConnectCorpRestrictionPolicy   = "dingtalk_connect_corp_restriction_policy"
+	SettingKeyDingTalkConnectInternalCorpID          = "dingtalk_connect_internal_corp_id"
+	SettingKeyDingTalkConnectBypassRegistration      = "dingtalk_connect_bypass_registration"
+	SettingKeyDingTalkConnectSyncCorpEmail           = "dingtalk_connect_sync_corp_email"
+	SettingKeyDingTalkConnectSyncDisplayName         = "dingtalk_connect_sync_display_name"
+	SettingKeyDingTalkConnectSyncDept                = "dingtalk_connect_sync_dept"
+	SettingKeyDingTalkConnectSyncCorpEmailAttrKey    = "dingtalk_connect_sync_corp_email_attr_key"
+	SettingKeyDingTalkConnectSyncDisplayNameAttrKey  = "dingtalk_connect_sync_display_name_attr_key"
+	SettingKeyDingTalkConnectSyncDeptAttrKey         = "dingtalk_connect_sync_dept_attr_key"
+	SettingKeyDingTalkConnectSyncCorpEmailAttrName   = "dingtalk_connect_sync_corp_email_attr_name"
+	SettingKeyDingTalkConnectSyncDisplayNameAttrName = "dingtalk_connect_sync_display_name_attr_name"
+	SettingKeyDingTalkConnectSyncDeptAttrName        = "dingtalk_connect_sync_dept_attr_name"
 
 	// WeChat Connect OAuth 登录设置
 	SettingKeyWeChatConnectEnabled             = "wechat_connect_enabled"
@@ -218,37 +241,42 @@ const (
 	SettingKeyDefaultUserRPMLimit  = "default_user_rpm_limit" // 新用户默认 RPM 限制（0 = 不限制）
 
 	// 第三方认证来源默认授予配置
-	SettingKeyAuthSourceDefaultEmailBalance            = "auth_source_default_email_balance"
-	SettingKeyAuthSourceDefaultEmailConcurrency        = "auth_source_default_email_concurrency"
-	SettingKeyAuthSourceDefaultEmailSubscriptions      = "auth_source_default_email_subscriptions"
-	SettingKeyAuthSourceDefaultEmailGrantOnSignup      = "auth_source_default_email_grant_on_signup"
-	SettingKeyAuthSourceDefaultEmailGrantOnFirstBind   = "auth_source_default_email_grant_on_first_bind"
-	SettingKeyAuthSourceDefaultLinuxDoBalance          = "auth_source_default_linuxdo_balance"
-	SettingKeyAuthSourceDefaultLinuxDoConcurrency      = "auth_source_default_linuxdo_concurrency"
-	SettingKeyAuthSourceDefaultLinuxDoSubscriptions    = "auth_source_default_linuxdo_subscriptions"
-	SettingKeyAuthSourceDefaultLinuxDoGrantOnSignup    = "auth_source_default_linuxdo_grant_on_signup"
-	SettingKeyAuthSourceDefaultLinuxDoGrantOnFirstBind = "auth_source_default_linuxdo_grant_on_first_bind"
-	SettingKeyAuthSourceDefaultOIDCBalance             = "auth_source_default_oidc_balance"
-	SettingKeyAuthSourceDefaultOIDCConcurrency         = "auth_source_default_oidc_concurrency"
-	SettingKeyAuthSourceDefaultOIDCSubscriptions       = "auth_source_default_oidc_subscriptions"
-	SettingKeyAuthSourceDefaultOIDCGrantOnSignup       = "auth_source_default_oidc_grant_on_signup"
-	SettingKeyAuthSourceDefaultOIDCGrantOnFirstBind    = "auth_source_default_oidc_grant_on_first_bind"
-	SettingKeyAuthSourceDefaultWeChatBalance           = "auth_source_default_wechat_balance"
-	SettingKeyAuthSourceDefaultWeChatConcurrency       = "auth_source_default_wechat_concurrency"
-	SettingKeyAuthSourceDefaultWeChatSubscriptions     = "auth_source_default_wechat_subscriptions"
-	SettingKeyAuthSourceDefaultWeChatGrantOnSignup     = "auth_source_default_wechat_grant_on_signup"
-	SettingKeyAuthSourceDefaultWeChatGrantOnFirstBind  = "auth_source_default_wechat_grant_on_first_bind"
-	SettingKeyAuthSourceDefaultGitHubBalance           = "auth_source_default_github_balance"
-	SettingKeyAuthSourceDefaultGitHubConcurrency       = "auth_source_default_github_concurrency"
-	SettingKeyAuthSourceDefaultGitHubSubscriptions     = "auth_source_default_github_subscriptions"
-	SettingKeyAuthSourceDefaultGitHubGrantOnSignup     = "auth_source_default_github_grant_on_signup"
-	SettingKeyAuthSourceDefaultGitHubGrantOnFirstBind  = "auth_source_default_github_grant_on_first_bind"
-	SettingKeyAuthSourceDefaultGoogleBalance           = "auth_source_default_google_balance"
-	SettingKeyAuthSourceDefaultGoogleConcurrency       = "auth_source_default_google_concurrency"
-	SettingKeyAuthSourceDefaultGoogleSubscriptions     = "auth_source_default_google_subscriptions"
-	SettingKeyAuthSourceDefaultGoogleGrantOnSignup     = "auth_source_default_google_grant_on_signup"
-	SettingKeyAuthSourceDefaultGoogleGrantOnFirstBind  = "auth_source_default_google_grant_on_first_bind"
-	SettingKeyForceEmailOnThirdPartySignup             = "force_email_on_third_party_signup"
+	SettingKeyAuthSourceDefaultEmailBalance             = "auth_source_default_email_balance"
+	SettingKeyAuthSourceDefaultEmailConcurrency         = "auth_source_default_email_concurrency"
+	SettingKeyAuthSourceDefaultEmailSubscriptions       = "auth_source_default_email_subscriptions"
+	SettingKeyAuthSourceDefaultEmailGrantOnSignup       = "auth_source_default_email_grant_on_signup"
+	SettingKeyAuthSourceDefaultEmailGrantOnFirstBind    = "auth_source_default_email_grant_on_first_bind"
+	SettingKeyAuthSourceDefaultLinuxDoBalance           = "auth_source_default_linuxdo_balance"
+	SettingKeyAuthSourceDefaultLinuxDoConcurrency       = "auth_source_default_linuxdo_concurrency"
+	SettingKeyAuthSourceDefaultLinuxDoSubscriptions     = "auth_source_default_linuxdo_subscriptions"
+	SettingKeyAuthSourceDefaultLinuxDoGrantOnSignup     = "auth_source_default_linuxdo_grant_on_signup"
+	SettingKeyAuthSourceDefaultLinuxDoGrantOnFirstBind  = "auth_source_default_linuxdo_grant_on_first_bind"
+	SettingKeyAuthSourceDefaultOIDCBalance              = "auth_source_default_oidc_balance"
+	SettingKeyAuthSourceDefaultOIDCConcurrency          = "auth_source_default_oidc_concurrency"
+	SettingKeyAuthSourceDefaultOIDCSubscriptions        = "auth_source_default_oidc_subscriptions"
+	SettingKeyAuthSourceDefaultOIDCGrantOnSignup        = "auth_source_default_oidc_grant_on_signup"
+	SettingKeyAuthSourceDefaultOIDCGrantOnFirstBind     = "auth_source_default_oidc_grant_on_first_bind"
+	SettingKeyAuthSourceDefaultWeChatBalance            = "auth_source_default_wechat_balance"
+	SettingKeyAuthSourceDefaultWeChatConcurrency        = "auth_source_default_wechat_concurrency"
+	SettingKeyAuthSourceDefaultWeChatSubscriptions      = "auth_source_default_wechat_subscriptions"
+	SettingKeyAuthSourceDefaultWeChatGrantOnSignup      = "auth_source_default_wechat_grant_on_signup"
+	SettingKeyAuthSourceDefaultWeChatGrantOnFirstBind   = "auth_source_default_wechat_grant_on_first_bind"
+	SettingKeyAuthSourceDefaultGitHubBalance            = "auth_source_default_github_balance"
+	SettingKeyAuthSourceDefaultGitHubConcurrency        = "auth_source_default_github_concurrency"
+	SettingKeyAuthSourceDefaultGitHubSubscriptions      = "auth_source_default_github_subscriptions"
+	SettingKeyAuthSourceDefaultGitHubGrantOnSignup      = "auth_source_default_github_grant_on_signup"
+	SettingKeyAuthSourceDefaultGitHubGrantOnFirstBind   = "auth_source_default_github_grant_on_first_bind"
+	SettingKeyAuthSourceDefaultGoogleBalance            = "auth_source_default_google_balance"
+	SettingKeyAuthSourceDefaultGoogleConcurrency        = "auth_source_default_google_concurrency"
+	SettingKeyAuthSourceDefaultGoogleSubscriptions      = "auth_source_default_google_subscriptions"
+	SettingKeyAuthSourceDefaultGoogleGrantOnSignup      = "auth_source_default_google_grant_on_signup"
+	SettingKeyAuthSourceDefaultGoogleGrantOnFirstBind   = "auth_source_default_google_grant_on_first_bind"
+	SettingKeyAuthSourceDefaultDingTalkBalance          = "auth_source_default_dingtalk_balance"
+	SettingKeyAuthSourceDefaultDingTalkConcurrency      = "auth_source_default_dingtalk_concurrency"
+	SettingKeyAuthSourceDefaultDingTalkSubscriptions    = "auth_source_default_dingtalk_subscriptions"
+	SettingKeyAuthSourceDefaultDingTalkGrantOnSignup    = "auth_source_default_dingtalk_grant_on_signup"
+	SettingKeyAuthSourceDefaultDingTalkGrantOnFirstBind = "auth_source_default_dingtalk_grant_on_first_bind"
+	SettingKeyForceEmailOnThirdPartySignup              = "force_email_on_third_party_signup"
 
 	// 管理员 API Key
 	SettingKeyAdminAPIKey = "admin_api_key" // 全局管理员 API Key（用于外部系统集成）

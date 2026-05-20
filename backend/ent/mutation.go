@@ -10694,6 +10694,7 @@ type ChannelMonitorMutation struct {
 	updated_at              *time.Time
 	name                    *string
 	provider                *channelmonitor.Provider
+	api_mode                *string
 	endpoint                *string
 	api_key_encrypted       *string
 	primary_model           *string
@@ -10963,6 +10964,42 @@ func (m *ChannelMonitorMutation) OldProvider(ctx context.Context) (v channelmoni
 // ResetProvider resets all changes to the "provider" field.
 func (m *ChannelMonitorMutation) ResetProvider() {
 	m.provider = nil
+}
+
+// SetAPIMode sets the "api_mode" field.
+func (m *ChannelMonitorMutation) SetAPIMode(s string) {
+	m.api_mode = &s
+}
+
+// APIMode returns the value of the "api_mode" field in the mutation.
+func (m *ChannelMonitorMutation) APIMode() (r string, exists bool) {
+	v := m.api_mode
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAPIMode returns the old "api_mode" field's value of the ChannelMonitor entity.
+// If the ChannelMonitor object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ChannelMonitorMutation) OldAPIMode(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAPIMode is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAPIMode requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAPIMode: %w", err)
+	}
+	return oldValue.APIMode, nil
+}
+
+// ResetAPIMode resets all changes to the "api_mode" field.
+func (m *ChannelMonitorMutation) ResetAPIMode() {
+	m.api_mode = nil
 }
 
 // SetEndpoint sets the "endpoint" field.
@@ -11722,7 +11759,7 @@ func (m *ChannelMonitorMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ChannelMonitorMutation) Fields() []string {
-	fields := make([]string, 0, 17)
+	fields := make([]string, 0, 18)
 	if m.created_at != nil {
 		fields = append(fields, channelmonitor.FieldCreatedAt)
 	}
@@ -11734,6 +11771,9 @@ func (m *ChannelMonitorMutation) Fields() []string {
 	}
 	if m.provider != nil {
 		fields = append(fields, channelmonitor.FieldProvider)
+	}
+	if m.api_mode != nil {
+		fields = append(fields, channelmonitor.FieldAPIMode)
 	}
 	if m.endpoint != nil {
 		fields = append(fields, channelmonitor.FieldEndpoint)
@@ -11790,6 +11830,8 @@ func (m *ChannelMonitorMutation) Field(name string) (ent.Value, bool) {
 		return m.Name()
 	case channelmonitor.FieldProvider:
 		return m.Provider()
+	case channelmonitor.FieldAPIMode:
+		return m.APIMode()
 	case channelmonitor.FieldEndpoint:
 		return m.Endpoint()
 	case channelmonitor.FieldAPIKeyEncrypted:
@@ -11833,6 +11875,8 @@ func (m *ChannelMonitorMutation) OldField(ctx context.Context, name string) (ent
 		return m.OldName(ctx)
 	case channelmonitor.FieldProvider:
 		return m.OldProvider(ctx)
+	case channelmonitor.FieldAPIMode:
+		return m.OldAPIMode(ctx)
 	case channelmonitor.FieldEndpoint:
 		return m.OldEndpoint(ctx)
 	case channelmonitor.FieldAPIKeyEncrypted:
@@ -11895,6 +11939,13 @@ func (m *ChannelMonitorMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetProvider(v)
+		return nil
+	case channelmonitor.FieldAPIMode:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAPIMode(v)
 		return nil
 	case channelmonitor.FieldEndpoint:
 		v, ok := value.(string)
@@ -12101,6 +12152,9 @@ func (m *ChannelMonitorMutation) ResetField(name string) error {
 		return nil
 	case channelmonitor.FieldProvider:
 		m.ResetProvider()
+		return nil
+	case channelmonitor.FieldAPIMode:
+		m.ResetAPIMode()
 		return nil
 	case channelmonitor.FieldEndpoint:
 		m.ResetEndpoint()
@@ -14533,6 +14587,7 @@ type ChannelMonitorRequestTemplateMutation struct {
 	updated_at         *time.Time
 	name               *string
 	provider           *channelmonitorrequesttemplate.Provider
+	api_mode           *string
 	description        *string
 	extra_headers      *map[string]string
 	body_override_mode *string
@@ -14786,6 +14841,42 @@ func (m *ChannelMonitorRequestTemplateMutation) OldProvider(ctx context.Context)
 // ResetProvider resets all changes to the "provider" field.
 func (m *ChannelMonitorRequestTemplateMutation) ResetProvider() {
 	m.provider = nil
+}
+
+// SetAPIMode sets the "api_mode" field.
+func (m *ChannelMonitorRequestTemplateMutation) SetAPIMode(s string) {
+	m.api_mode = &s
+}
+
+// APIMode returns the value of the "api_mode" field in the mutation.
+func (m *ChannelMonitorRequestTemplateMutation) APIMode() (r string, exists bool) {
+	v := m.api_mode
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAPIMode returns the old "api_mode" field's value of the ChannelMonitorRequestTemplate entity.
+// If the ChannelMonitorRequestTemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ChannelMonitorRequestTemplateMutation) OldAPIMode(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAPIMode is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAPIMode requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAPIMode: %w", err)
+	}
+	return oldValue.APIMode, nil
+}
+
+// ResetAPIMode resets all changes to the "api_mode" field.
+func (m *ChannelMonitorRequestTemplateMutation) ResetAPIMode() {
+	m.api_mode = nil
 }
 
 // SetDescription sets the "description" field.
@@ -15046,7 +15137,7 @@ func (m *ChannelMonitorRequestTemplateMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ChannelMonitorRequestTemplateMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 9)
 	if m.created_at != nil {
 		fields = append(fields, channelmonitorrequesttemplate.FieldCreatedAt)
 	}
@@ -15058,6 +15149,9 @@ func (m *ChannelMonitorRequestTemplateMutation) Fields() []string {
 	}
 	if m.provider != nil {
 		fields = append(fields, channelmonitorrequesttemplate.FieldProvider)
+	}
+	if m.api_mode != nil {
+		fields = append(fields, channelmonitorrequesttemplate.FieldAPIMode)
 	}
 	if m.description != nil {
 		fields = append(fields, channelmonitorrequesttemplate.FieldDescription)
@@ -15087,6 +15181,8 @@ func (m *ChannelMonitorRequestTemplateMutation) Field(name string) (ent.Value, b
 		return m.Name()
 	case channelmonitorrequesttemplate.FieldProvider:
 		return m.Provider()
+	case channelmonitorrequesttemplate.FieldAPIMode:
+		return m.APIMode()
 	case channelmonitorrequesttemplate.FieldDescription:
 		return m.Description()
 	case channelmonitorrequesttemplate.FieldExtraHeaders:
@@ -15112,6 +15208,8 @@ func (m *ChannelMonitorRequestTemplateMutation) OldField(ctx context.Context, na
 		return m.OldName(ctx)
 	case channelmonitorrequesttemplate.FieldProvider:
 		return m.OldProvider(ctx)
+	case channelmonitorrequesttemplate.FieldAPIMode:
+		return m.OldAPIMode(ctx)
 	case channelmonitorrequesttemplate.FieldDescription:
 		return m.OldDescription(ctx)
 	case channelmonitorrequesttemplate.FieldExtraHeaders:
@@ -15156,6 +15254,13 @@ func (m *ChannelMonitorRequestTemplateMutation) SetField(name string, value ent.
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetProvider(v)
+		return nil
+	case channelmonitorrequesttemplate.FieldAPIMode:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAPIMode(v)
 		return nil
 	case channelmonitorrequesttemplate.FieldDescription:
 		v, ok := value.(string)
@@ -15260,6 +15365,9 @@ func (m *ChannelMonitorRequestTemplateMutation) ResetField(name string) error {
 		return nil
 	case channelmonitorrequesttemplate.FieldProvider:
 		m.ResetProvider()
+		return nil
+	case channelmonitorrequesttemplate.FieldAPIMode:
+		m.ResetAPIMode()
 		return nil
 	case channelmonitorrequesttemplate.FieldDescription:
 		m.ResetDescription()
@@ -35828,6 +35936,7 @@ type RedeemCodeMutation struct {
 	addvalidity_days *int
 	owner_id         *int64
 	addowner_id      *int64
+	expires_at       *time.Time
 	clearedFields    map[string]struct{}
 	user             *int64
 	cleareduser      bool
@@ -36458,6 +36567,55 @@ func (m *RedeemCodeMutation) ResetOwnerID() {
 	delete(m.clearedFields, redeemcode.FieldOwnerID)
 }
 
+// SetExpiresAt sets the "expires_at" field.
+func (m *RedeemCodeMutation) SetExpiresAt(t time.Time) {
+	m.expires_at = &t
+}
+
+// ExpiresAt returns the value of the "expires_at" field in the mutation.
+func (m *RedeemCodeMutation) ExpiresAt() (r time.Time, exists bool) {
+	v := m.expires_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExpiresAt returns the old "expires_at" field's value of the RedeemCode entity.
+// If the RedeemCode object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RedeemCodeMutation) OldExpiresAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExpiresAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExpiresAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExpiresAt: %w", err)
+	}
+	return oldValue.ExpiresAt, nil
+}
+
+// ClearExpiresAt clears the value of the "expires_at" field.
+func (m *RedeemCodeMutation) ClearExpiresAt() {
+	m.expires_at = nil
+	m.clearedFields[redeemcode.FieldExpiresAt] = struct{}{}
+}
+
+// ExpiresAtCleared returns if the "expires_at" field was cleared in this mutation.
+func (m *RedeemCodeMutation) ExpiresAtCleared() bool {
+	_, ok := m.clearedFields[redeemcode.FieldExpiresAt]
+	return ok
+}
+
+// ResetExpiresAt resets all changes to the "expires_at" field.
+func (m *RedeemCodeMutation) ResetExpiresAt() {
+	m.expires_at = nil
+	delete(m.clearedFields, redeemcode.FieldExpiresAt)
+}
+
 // SetUserID sets the "user" edge to the User entity by id.
 func (m *RedeemCodeMutation) SetUserID(id int64) {
 	m.user = &id
@@ -36559,7 +36717,7 @@ func (m *RedeemCodeMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *RedeemCodeMutation) Fields() []string {
-	fields := make([]string, 0, 11)
+	fields := make([]string, 0, 12)
 	if m.code != nil {
 		fields = append(fields, redeemcode.FieldCode)
 	}
@@ -36593,6 +36751,9 @@ func (m *RedeemCodeMutation) Fields() []string {
 	if m.owner_id != nil {
 		fields = append(fields, redeemcode.FieldOwnerID)
 	}
+	if m.expires_at != nil {
+		fields = append(fields, redeemcode.FieldExpiresAt)
+	}
 	return fields
 }
 
@@ -36623,6 +36784,8 @@ func (m *RedeemCodeMutation) Field(name string) (ent.Value, bool) {
 		return m.ValidityDays()
 	case redeemcode.FieldOwnerID:
 		return m.OwnerID()
+	case redeemcode.FieldExpiresAt:
+		return m.ExpiresAt()
 	}
 	return nil, false
 }
@@ -36654,6 +36817,8 @@ func (m *RedeemCodeMutation) OldField(ctx context.Context, name string) (ent.Val
 		return m.OldValidityDays(ctx)
 	case redeemcode.FieldOwnerID:
 		return m.OldOwnerID(ctx)
+	case redeemcode.FieldExpiresAt:
+		return m.OldExpiresAt(ctx)
 	}
 	return nil, fmt.Errorf("unknown RedeemCode field %s", name)
 }
@@ -36740,6 +36905,13 @@ func (m *RedeemCodeMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetOwnerID(v)
 		return nil
+	case redeemcode.FieldExpiresAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExpiresAt(v)
+		return nil
 	}
 	return fmt.Errorf("unknown RedeemCode field %s", name)
 }
@@ -36824,6 +36996,9 @@ func (m *RedeemCodeMutation) ClearedFields() []string {
 	if m.FieldCleared(redeemcode.FieldOwnerID) {
 		fields = append(fields, redeemcode.FieldOwnerID)
 	}
+	if m.FieldCleared(redeemcode.FieldExpiresAt) {
+		fields = append(fields, redeemcode.FieldExpiresAt)
+	}
 	return fields
 }
 
@@ -36852,6 +37027,9 @@ func (m *RedeemCodeMutation) ClearField(name string) error {
 		return nil
 	case redeemcode.FieldOwnerID:
 		m.ClearOwnerID()
+		return nil
+	case redeemcode.FieldExpiresAt:
+		m.ClearExpiresAt()
 		return nil
 	}
 	return fmt.Errorf("unknown RedeemCode nullable field %s", name)
@@ -36893,6 +37071,9 @@ func (m *RedeemCodeMutation) ResetField(name string) error {
 		return nil
 	case redeemcode.FieldOwnerID:
 		m.ResetOwnerID()
+		return nil
+	case redeemcode.FieldExpiresAt:
+		m.ResetExpiresAt()
 		return nil
 	}
 	return fmt.Errorf("unknown RedeemCode field %s", name)

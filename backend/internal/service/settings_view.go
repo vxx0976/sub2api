@@ -46,6 +46,25 @@ type SystemSettings struct {
 	LinuxDoConnectClientSecretConfigured bool
 	LinuxDoConnectRedirectURL            string
 
+	// DingTalk Connect OAuth 登录
+	DingTalkConnectEnabled                 bool
+	DingTalkConnectClientID                string
+	DingTalkConnectClientSecret            string
+	DingTalkConnectClientSecretConfigured  bool
+	DingTalkConnectRedirectURL             string
+	DingTalkConnectCorpRestrictionPolicy   string
+	DingTalkConnectInternalCorpID          string
+	DingTalkConnectBypassRegistration      bool
+	DingTalkConnectSyncCorpEmail           bool
+	DingTalkConnectSyncDisplayName         bool
+	DingTalkConnectSyncDept                bool
+	DingTalkConnectSyncCorpEmailAttrKey    string
+	DingTalkConnectSyncDisplayNameAttrKey  string
+	DingTalkConnectSyncDeptAttrKey         string
+	DingTalkConnectSyncCorpEmailAttrName   string
+	DingTalkConnectSyncDisplayNameAttrName string
+	DingTalkConnectSyncDeptAttrName        string
+
 	// WeChat Connect OAuth 登录
 	WeChatConnectEnabled                   bool
 	WeChatConnectAppID                     string
@@ -174,6 +193,10 @@ type SystemSettings struct {
 	// Backend 模式：禁用用户注册和自助服务，仅管理员可登录
 	BackendModeEnabled bool
 
+	// "购买订阅"页面入口（从 main 合入）
+	PurchaseSubscriptionEnabled bool
+	PurchaseSubscriptionURL     string
+
 	// 充值配置
 	RechargeEnabled   bool
 	RechargeMinAmount float64
@@ -262,6 +285,7 @@ type PublicSettings struct {
 	RechargeEnabled          bool
 	AliMPayEnabled           bool
 	LinuxDoOAuthEnabled      bool
+	DingTalkOAuthEnabled     bool
 	WeChatOAuthEnabled       bool
 	WeChatOAuthOpenEnabled   bool
 	WeChatOAuthMPEnabled     bool
@@ -523,25 +547,10 @@ type OpenAIFastPolicySettings struct {
 }
 
 // DefaultOpenAIFastPolicySettings 返回默认的 OpenAI fast 策略配置。
-// 默认对所有模型的 priority（fast）请求执行 filter，即剔除 service_tier 字段，
-// 让上游按 normal 优先级处理。
-//
-// 为什么 ModelWhitelist 为空（=对所有模型生效）：
-// codex 客户端的 service_tier=fast 是用户级开关，与 model 字段正交。即使
-// 用户使用 gpt-4 + fast，priority 配额仍会被消耗。如果默认规则只锁
-// gpt-5.5*，"用 gpt-4 + fast 透传 priority 上游" 这条路径就会绕过策略。
-// 与 codex 真实语义对齐，默认对所有模型生效；管理员若需要只针对特定
-// 模型，可在 admin UI 中显式配置 model_whitelist。
+// 默认不配置任何规则，保留 OpenAI 上游 service_tier 语义；管理员如需
+// 限制 priority/flex，可以在 admin UI 中显式配置 filter 或 block 规则。
 func DefaultOpenAIFastPolicySettings() *OpenAIFastPolicySettings {
 	return &OpenAIFastPolicySettings{
-		Rules: []OpenAIFastPolicyRule{
-			{
-				ServiceTier:    OpenAIFastTierPriority,
-				Action:         BetaPolicyActionFilter,
-				Scope:          BetaPolicyScopeAll,
-				ModelWhitelist: []string{},
-				FallbackAction: BetaPolicyActionPass,
-			},
-		},
+		Rules: []OpenAIFastPolicyRule{},
 	}
 }
