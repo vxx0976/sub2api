@@ -267,11 +267,12 @@ func TestPrepareUsageLogInsert_PersistsImageSizeMetadata(t *testing.T) {
 		CreatedAt:          time.Date(2025, 1, 6, 12, 0, 0, 0, time.UTC),
 	})
 
-	require.Equal(t, sql.NullString{String: imageSize, Valid: true}, prepared.args[34])
-	require.Equal(t, sql.NullString{String: inputSize, Valid: true}, prepared.args[35])
-	require.Equal(t, sql.NullString{String: outputSize, Valid: true}, prepared.args[36])
-	require.Equal(t, sql.NullString{String: source, Valid: true}, prepared.args[37])
-	breakdownJSON, ok := prepared.args[38].(string)
+	// dev 在 ipAddress 与 ImageCount 之间多了 country_code，索引整体 +1
+	require.Equal(t, sql.NullString{String: imageSize, Valid: true}, prepared.args[35])
+	require.Equal(t, sql.NullString{String: inputSize, Valid: true}, prepared.args[36])
+	require.Equal(t, sql.NullString{String: outputSize, Valid: true}, prepared.args[37])
+	require.Equal(t, sql.NullString{String: source, Valid: true}, prepared.args[38])
+	breakdownJSON, ok := prepared.args[39].(string)
 	require.True(t, ok)
 	require.JSONEq(t, `{"1K":1,"4K":1}`, breakdownJSON)
 }
@@ -636,6 +637,7 @@ func TestScanUsageLogRequestTypeAndLegacyFallback(t *testing.T) {
 			sql.NullInt64{},
 			sql.NullString{},
 			sql.NullString{},
+			sql.NullString{}, // country_code (dev)
 			2,
 			sql.NullString{Valid: true, String: "4K"},
 			sql.NullString{Valid: true, String: "1024x1024"},
@@ -647,12 +649,15 @@ func TestScanUsageLogRequestTypeAndLegacyFallback(t *testing.T) {
 			sql.NullString{},
 			sql.NullString{},
 			false,
+			sql.NullFloat64{}, // merchant_rate_snapshot (dev)
+			sql.NullFloat64{}, // platform_cost_snapshot (dev)
 			sql.NullInt64{},
 			sql.NullString{},
 			sql.NullString{},
 			sql.NullString{},
 			sql.NullFloat64{},
 			now,
+			sql.NullInt64{}, // requested_group_id (dev)
 		}})
 		require.NoError(t, err)
 		require.Equal(t, 2, log.ImageCount)

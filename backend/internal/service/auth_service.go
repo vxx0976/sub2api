@@ -1300,7 +1300,7 @@ func (s *AuthService) preparePasswordReset(ctx context.Context, email, frontendB
 
 // RequestPasswordReset 请求密码重置（同步发送）
 // Security: Returns the same response regardless of whether the email exists (prevent user enumeration)
-func (s *AuthService) RequestPasswordReset(ctx context.Context, email, frontendBaseURL string) error {
+func (s *AuthService) RequestPasswordReset(ctx context.Context, email, frontendBaseURL string, locale ...string) error {
 	if !s.IsPasswordResetEnabled(ctx) {
 		return infraerrors.Forbidden("PASSWORD_RESET_DISABLED", "password reset is not enabled")
 	}

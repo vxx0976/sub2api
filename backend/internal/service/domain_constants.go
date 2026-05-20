@@ -414,6 +414,10 @@ const (
 	SettingKeyRewriteMessageCacheControl = "rewrite_message_cache_control"
 	// SettingKeyAntigravityUserAgentVersion Antigravity 上游 User-Agent 版本号（空值使用环境变量/默认值）
 	SettingKeyAntigravityUserAgentVersion = "antigravity_user_agent_version"
+	// SettingKeyOpenAICodexUserAgent OpenAI Codex 完整 User-Agent（空值使用内置默认）
+	// 当客户端 UA 被识别为浏览器（Chrome/Firefox/Safari/Edge 等）时，转发给 OpenAI 上游前会替换为此值，
+	// 用于避免 Cloudflare 对浏览器型 UA 的质询拦截。
+	SettingKeyOpenAICodexUserAgent = "openai_codex_user_agent"
 
 	// 商户级开关（存储在 reseller_settings 表，按商户独立配置）
 	// SettingKeyResellerRegistrationDisabled 关闭该商户站点的注册入口（"true"=关闭）

@@ -489,7 +489,7 @@ func (s *TotpService) GetVerificationMethod(ctx context.Context) *VerificationMe
 }
 
 // SendVerifyCode sends an email verification code for TOTP operations
-func (s *TotpService) SendVerifyCode(ctx context.Context, userID int64) error {
+func (s *TotpService) SendVerifyCode(ctx context.Context, userID int64, locale ...string) error {
 	// Check if email verification is enabled
 	if !s.settingService.IsEmailVerifyEnabled(ctx) {
 		return infraerrors.BadRequest("EMAIL_VERIFY_NOT_ENABLED", "email verification is not enabled")

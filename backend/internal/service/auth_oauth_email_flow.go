@@ -28,7 +28,7 @@ func normalizeOAuthSignupSource(signupSource string) string {
 
 // SendPendingOAuthVerifyCode sends a local verification code for pending OAuth
 // account-creation flows without relying on the public registration gate.
-func (s *AuthService) SendPendingOAuthVerifyCode(ctx context.Context, email string) (*SendVerifyCodeResult, error) {
+func (s *AuthService) SendPendingOAuthVerifyCode(ctx context.Context, email string, locale ...string) (*SendVerifyCodeResult, error) {
 	email = strings.TrimSpace(strings.ToLower(email))
 	if email == "" {
 		return nil, ErrEmailVerifyRequired

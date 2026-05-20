@@ -5523,6 +5523,7 @@ const form = reactive<SettingsForm>({
   enable_anthropic_cache_ttl_1h_injection: false,
   rewrite_message_cache_control: false,
   antigravity_user_agent_version: "",
+  openai_codex_user_agent: "",
   // Balance & quota notification
   balance_low_notify_enabled: false,
   balance_low_notify_threshold: 0,
@@ -6424,6 +6425,8 @@ async function saveSettings() {
       rewrite_message_cache_control: form.rewrite_message_cache_control,
       antigravity_user_agent_version:
         form.antigravity_user_agent_version?.trim() || "",
+      openai_codex_user_agent:
+        form.openai_codex_user_agent?.trim() || "",
       // Payment configuration
       payment_enabled: form.payment_enabled,
       payment_min_amount: Number(form.payment_min_amount) || 0,
