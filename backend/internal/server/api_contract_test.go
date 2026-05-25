@@ -768,6 +768,7 @@ func TestAPIContracts(t *testing.T) {
 						"site_logo": "",
 						"site_subtitle": "Subtitle",
 						"api_base_url": "https://api.example.com",
+						"api_key_acl_trust_forwarded_ip": false,
 					"contact_info": "support",
 					"contact_qq": "",
 					"contact_telegram": "",
@@ -882,6 +883,7 @@ func TestAPIContracts(t *testing.T) {
 					"payment_alipay_force_qrcode": false,
 					"balance_low_notify_enabled": false,
 					"account_quota_notify_enabled": false,
+					"subscription_expiry_notify_enabled": true,
 					"balance_low_notify_threshold": 0,
 					"balance_low_notify_recharge_url": "",
 					"account_quota_notify_emails": [],
@@ -1035,6 +1037,7 @@ func TestAPIContracts(t *testing.T) {
 					"site_logo": "",
 					"site_subtitle": "Subscription to API Conversion Platform",
 					"api_base_url": "",
+					"api_key_acl_trust_forwarded_ip": false,
 					"contact_info": "",
 					"contact_qq": "",
 					"contact_telegram": "",
@@ -1116,6 +1119,7 @@ func TestAPIContracts(t *testing.T) {
 					"payment_alipay_force_qrcode": false,
 					"balance_low_notify_enabled": false,
 					"account_quota_notify_enabled": false,
+					"subscription_expiry_notify_enabled": true,
 					"balance_low_notify_threshold": 0,
 					"balance_low_notify_recharge_url": "",
 					"account_quota_notify_emails": [],
@@ -1285,7 +1289,7 @@ func newContractDeps(t *testing.T) *contractDeps {
 	settingRepo := newStubSettingRepo()
 	settingService := service.NewSettingService(settingRepo, cfg)
 
-	adminService := service.NewAdminService(userRepo, groupRepo, &accountRepo, proxyRepo, apiKeyRepo, redeemRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	adminService := service.NewAdminService(userRepo, groupRepo, &accountRepo, proxyRepo, apiKeyRepo, redeemRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	authHandler := handler.NewAuthHandler(cfg, nil, userService, settingService, nil, nil, redeemService, nil, nil)
 	apiKeyHandler := handler.NewAPIKeyHandler(apiKeyService)
 	usageHandler := handler.NewUsageHandler(usageService, apiKeyService)
@@ -1881,6 +1885,10 @@ func (stubRedeemCodeRepo) GetByCode(ctx context.Context, code string) (*service.
 
 func (stubRedeemCodeRepo) Update(ctx context.Context, code *service.RedeemCode) error {
 	return errors.New("not implemented")
+}
+
+func (stubRedeemCodeRepo) BatchUpdate(ctx context.Context, ids []int64, fields service.RedeemCodeBatchUpdateFields) (int64, error) {
+	return int64(len(ids)), nil
 }
 
 func (stubRedeemCodeRepo) Delete(ctx context.Context, id int64) error {
