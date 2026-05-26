@@ -2234,6 +2234,7 @@ CREATE TABLE IF NOT EXISTS user_affiliates (
 		nil, // referralService (来自 dev)
 		options.defaultSubAssigner,
 		affiliateService,
+		nil,
 	)
 	userSvc := service.NewUserService(userRepo, nil, nil, nil)
 	var totpSvc *service.TotpService
