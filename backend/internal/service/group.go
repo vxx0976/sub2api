@@ -8,6 +8,7 @@ import (
 )
 
 type OpenAIMessagesDispatchModelConfig = domain.OpenAIMessagesDispatchModelConfig
+type GroupModelsListConfig = domain.GroupModelsListConfig
 
 type Group struct {
 	ID             int64   `json:"id"`
@@ -73,6 +74,7 @@ type Group struct {
 	RequirePrivacySet           bool                              `json:"require_privacy_set"` // 调度时仅允许 privacy 已成功设置的账号（OpenAI/Antigravity/Anthropic/Gemini）
 	DefaultMappedModel          string                            `json:"default_mapped_model"`
 	MessagesDispatchModelConfig OpenAIMessagesDispatchModelConfig `json:"messages_dispatch_model_config"`
+	ModelsListConfig            GroupModelsListConfig             `json:"models_list_config"`
 
 	// RPMLimit 分组级每分钟请求数上限（0 = 不限制）。
 	// 一旦设置即接管该分组用户的限流（覆盖用户级 rpm_limit），可被 user-group rpm_override 进一步覆盖。

@@ -69,7 +69,7 @@
               {{ t("admin.groups.sortOrder") }}
             </button>
             <button
-              @click="showCreateModal = true"
+              @click="openCreateModal"
               class="btn btn-primary"
               data-tour="groups-create-btn"
             >
@@ -359,7 +359,7 @@
               :title="t('admin.groups.noGroupsYet')"
               :description="t('admin.groups.createFirstGroup')"
               :action-text="t('admin.groups.createGroup')"
-              @action="showCreateModal = true"
+              @action="openCreateModal"
             />
           </template>
         </DataTable>
@@ -3278,6 +3278,11 @@ import {
   resetMessagesDispatchFormState,
   type MessagesDispatchMappingRow,
 } from './groupsMessagesDispatch'
+import {
+  createModelsListState as createInitialModelsListState,
+  setModelsListCandidates,
+} from './groupsModelsList'
+import { createModelsListCandidatesTracker } from './groupsModelsListCandidates'
 import { normalizeSupportedModelScopesForPlatform } from './groupsSupportedModelScopes'
 
 const { t } = useI18n();
@@ -3590,6 +3595,12 @@ const sortableGroups = ref<AdminGroup[]>([])
 const createMessagesDispatchDefaults = createDefaultMessagesDispatchFormState()
 const editMessagesDispatchDefaults = createDefaultMessagesDispatchFormState()
 
+const createModelsListState = reactive(createInitialModelsListState())
+const editModelsListState = reactive(createInitialModelsListState())
+const createModelsListLoading = ref(false)
+const editModelsListLoading = ref(false)
+const modelsListCandidatesTracker = createModelsListCandidatesTracker()
+
 const createForm = reactive({
   name: '',
   description: '',
@@ -3842,6 +3853,44 @@ const removeEditRoutingRule = (rule: ModelRoutingRule) => {
   accountSearchRunner.clearKey(key);
   clearAccountSearchStateByKey(key);
   editModelRoutingRules.value.splice(index, 1);
+};
+
+const resetModelsListState = (
+  state: typeof createModelsListState,
+  config?: Parameters<typeof createInitialModelsListState>[0],
+) => {
+  const fresh = createInitialModelsListState(config);
+  state.enabled = fresh.enabled;
+  state.savedModels = fresh.savedModels;
+  state.items = fresh.items;
+};
+
+const loadModelsListCandidates = async (
+  mode: "create" | "edit",
+  groupID: number,
+  platform: GroupPlatform,
+) => {
+  const request = { mode, groupID, platform };
+  const requestID = modelsListCandidatesTracker.next(request);
+  const state = mode === "create" ? createModelsListState : editModelsListState;
+  const loadingRef = mode === "create" ? createModelsListLoading : editModelsListLoading;
+  loadingRef.value = true;
+  try {
+    const models = await adminAPI.groups.getModelsListCandidates(groupID, platform);
+    if (!modelsListCandidatesTracker.isCurrent(requestID, request)) {
+      return;
+    }
+    setModelsListCandidates(state, models);
+  } catch (error) {
+    if (!modelsListCandidatesTracker.isCurrent(requestID, request)) {
+      return;
+    }
+    console.error("Error loading group models list candidates:", error);
+  } finally {
+    if (modelsListCandidatesTracker.isCurrent(requestID, request)) {
+      loadingRef.value = false;
+    }
+  }
 };
 
 // 将 UI 格式的路由规则转换为 API 格式
@@ -4172,6 +4221,11 @@ const handleSort = (key: string, order: 'asc' | 'desc') => {
   loadGroups();
 };
 
+const openCreateModal = () => {
+  showCreateModal.value = true;
+  loadModelsListCandidates("create", 0, createForm.platform);
+};
+
 const closeCreateModal = () => {
   showCreateModal.value = false;
   createModelRoutingRules.value.forEach((rule) => {
@@ -4362,10 +4416,12 @@ const handleEdit = async (group: AdminGroup) => {
   editForm.is_failover_group = group.is_failover_group || false;
   editForm.failover_member_ids = [...(group.failover_member_ids || [])];
   editForm.rpm_limit = group.rpm_limit ?? 0;
+  resetModelsListState(editModelsListState, group.models_list_config);
   // 加载模型路由规则（异步加载账号名称）
   editModelRoutingRules.value = await convertApiFormatToRoutingRules(
     group.model_routing,
   );
+  loadModelsListCandidates("edit", group.id, group.platform);
   showEditModal.value = true;
 };
 
@@ -4379,6 +4435,7 @@ const closeEditModal = () => {
   editModelRoutingRules.value = [];
   editForm.copy_accounts_from_group_ids = [];
   resetMessagesDispatchFormState(editForm);
+  resetModelsListState(editModelsListState);
 };
 
 const handleUpdateGroup = async () => {
@@ -4537,6 +4594,8 @@ watch(
       createForm.require_oauth_only = false;
       createForm.require_privacy_set = false;
     }
+    resetModelsListState(createModelsListState);
+    loadModelsListCandidates("create", 0, newVal);
   },
 );
 
@@ -4552,6 +4611,10 @@ watch(
     if (!["openai", "antigravity", "anthropic", "gemini"].includes(newVal)) {
       editForm.require_oauth_only = false;
       editForm.require_privacy_set = false;
+    }
+    if (editingGroup.value) {
+      resetModelsListState(editModelsListState, editForm.platform === editingGroup.value.platform ? editingGroup.value.models_list_config : undefined);
+      loadModelsListCandidates("edit", editingGroup.value.id, newVal);
     }
   },
 );
@@ -4624,6 +4687,7 @@ const saveSortOrder = async () => {
 
 onMounted(() => {
   loadGroups();
+  loadModelsListCandidates("create", 0, createForm.platform);
   document.addEventListener("click", handleClickOutside);
 });
 

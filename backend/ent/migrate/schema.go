@@ -784,6 +784,7 @@ var (
 		{Name: "failover_pin_member_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "failover_pin_expires_at", Type: field.TypeTime, Nullable: true},
 		{Name: "messages_dispatch_model_config", Type: field.TypeJSON, SchemaType: map[string]string{"postgres": "jsonb"}},
+		{Name: "models_list_config", Type: field.TypeJSON, SchemaType: map[string]string{"postgres": "jsonb"}},
 		{Name: "rpm_limit", Type: field.TypeInt, Default: 0},
 	}
 	// GroupsTable holds the schema information for the "groups" table.
