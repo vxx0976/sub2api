@@ -37,8 +37,8 @@ HAProxy:     :5433 → 当前 PG 主      :6380 → 当前 Redis 主   (查 patr
 |---|---|---|---|---|---|---|---|---|---|
 | dmit-main | 2C/2G·CN2 | mayi.one源站 | — | — | — | — | ✅ | ✅ | 监控脚本 |
 | dmit-merchant | 2C/2G·CN2 | dsrrr/商户 | — | — | — | — | ✅ | ✅ | — |
-| dmit-admin | 4C/8G·T1 | api.dsrrr(**测试/预发**) | backup(3G,兜底)+canary(1G,dev测试) | 备 | **主★** | **主★** | ✅ | ✅ | HAProxy |
-| hostdzire | 6C/16G·别家 | mayi备/inkmir | **主★** | **主★** | 从 | 从 | ✅ | ✅ | HAProxy |
+| dmit-admin | 4C/8G·T1 | api.dsrrr(反代hostdzire) | **backup兜底**(3G) | 备 | **主★** | **主★** | ✅ | ✅ | HAProxy |
+| hostdzire | 6C/16G·别家 | mayi备/inkmir | **生产主★** + canary(dev) | **主★** | 从 | 从 | ✅ | ✅ | HAProxy、Prometheus、**测试栈(canary+独立test库,/opt/sub2api-test)** |
 | solid | 8C/16G·异地 | — | — | — | 从(灾备) | 从(灾备) | ❌退出 | ❌退出 | 每日备份(2026-05仅数据从,待释放) |
 | **bwh2** | 1C/0.5G·搬瓦工 | — | — | — | — | — | ✅ | ✅ | **第5票** + main独立哨兵 + node_exporter |
 
@@ -195,10 +195,13 @@ ssh hostdzire "cd /opt/sub2api && sed -i 's/DATABASE_HOST=10.88.0.4/DATABASE_HOS
 3. ~~admin standby mem_limit 1.5G→3G~~ ✅ 已完成 (2026-05-28)
 4. **api.dsrrr.com / sub2api.dsrrr.com**: 确认用途,前者打 admin standby(1.5G),后者打老容器:9000
 5. **关 admin 公网 5432/6379** (阶段7): `iptables` DB-ACCESS chain 链尾 RETURN 改 DROP
-6. **下线老容器** sub-sub2api-1(:9000) (阶段7,确认 sub2api.dsrrr.com 无依赖后)
+6. **老容器 sub-sub2api-1(:9000)**: 站长确认是"另一套 sub2api 临时栈"(自带 sub-postgres-1/sub-redis-1,不碰生产库),~104MB 仍有外部流量。**可随时停,销毁等站长通知**。
 7. ~~异地备份(解决"备份无异地")~~ ✅ 已完成 (2026-05-29,solid 每日 dump 异地推 jp1/sg1/alice,见 §14)。**剩 WAL 归档→R2 PITR**:把 RPO 从 24h 降到任意时间点,非紧急
 8. **监控告警** (阶段6): inkmirage Grafana 加 PG lag/Redis/Caddy upstream 面板
 9. ~~etcd/sentinel 第5票迁出 solid~~ ✅ 已完成 (2026-05-29,迁到 bwh2;见 BWH2-ONBOARD.md)。**solid 退费时只剩**: WAL→R2(#7)+ 摘 solid 的 PG/Redis 数据从 + 删 mesh peer(.5)+ check.sh/Prometheus 去掉 solid(见 BWH2-ONBOARD.md §8)
+10. ~~解 admin 测试/兜底耦合~~ ✅ 已完成 (2026-05-29,测试环境整体迁到 hostdzire `/opt/sub2api-test`,canary 连独立 test 库;admin 只剩生产兜底,见 §12)
+11. **config.yaml 残留公网IP**: hostdzire/admin 的 `/opt/sub2api/config.yaml` 里 database/redis host 写的是 `45.59.186.84`(admin 公网,绕 HAProxy),现被 `.env`(10.88.0.4:5433 本机HAProxy)覆盖无害,但属潜在雷 —— 改成与 .env 一致或删掉 config.yaml 的 DB/Redis 段
+12. **ops_system_logs 表膨胀**: 单表 4.3GB = sub2api 库 76%,撑大 dump(463M)与库(5.7G)。给它(及 usage_logs)定保留期可大幅瘦身,加快备份/省异地盘
 
 ---
 
@@ -331,18 +334,17 @@ ssh hostdzire "cd /opt/sub2api && sed -i 's/DATABASE_HOST=10.88.0.4/DATABASE_HOS
 - 对存量商户(A记录指merchant)也生效(只要访问的是商户域名)
 - 前端无需改(它本就读 `__APP_CONFIG__.api_base_url`)
 
-### 发布流程 (站长工作流, 2026-05-29 拆双容器后)
-> admin 的 sub2api 已拆成两个容器:`sub2api-canary`(dev 镜像,绑 127.0.0.1:8080,api.dsrrr 测试)+ `sub2api-backup`(绑 mesh 10.88.0.3:8080,给 main/merchant/hostdzire 做生产兜底)。
-> ⚠️ **务必按 service 名单独操作**,**不要在 admin 裸跑 `docker compose up -d`**(那会把 backup 也一起升到未验证镜像,前功尽弃)。
+### 发布流程 (站长工作流, 2026-05-29 测试环境隔离到 hostdzire 后)
+> **三处 sub2api**:① 测试栈 = hostdzire `/opt/sub2api-test/`(canary dev + **独立 test 库** sub2api-testdb + testredis,绑 `10.88.0.4:8081`,服务 api.dsrrr.com)② 生产主 = hostdzire `/opt/sub2api/`(:8080)③ 生产兜底 = admin `/opt/sub2api/` 的 `sub2api-backup`(`10.88.0.3:8080`)。
+> ✅ **canary 连的是隔离 test 库,migration 只动 test、绝不碰生产**(已验证 0 连接到生产)。admin 不再跑测试码。
 
 1. `push dev` → CI(dev-build.yml) build `vxx0976/sub2api:dev`
-2. **拉新镜像 + 只更金丝雀**: `ssh dmit-admin "cd /opt/sub2api && docker compose pull && docker compose up -d sub2api-canary"` → 在 **api.dsrrr.com** 验证
-3. 验证 OK → **升级 admin 兜底**: `ssh dmit-admin "cd /opt/sub2api && docker compose up -d sub2api-backup"`
-4. **再部署生产主 hostdzire**: `ssh hostdzire "cd /opt/sub2api && docker compose pull && docker compose up -d"`
+2. **测试**: `ssh hostdzire "cd /opt/sub2api-test && docker compose pull && docker compose up -d sub2api-canary"` → 在 **api.dsrrr.com** 验证(对着 test 库,migration 安全)
+3. 验证 OK → **部署生产主**: `ssh hostdzire "cd /opt/sub2api && docker compose pull && docker compose up -d"`(此时才在生产库跑 migration)
+4. **部署生产兜底**: `ssh dmit-admin "cd /opt/sub2api && docker compose pull && docker compose up -d"`(admin 现单 service,直接 up 即可)
 
-✅ 全程 `sub2api-backup`(生产兜底)只跑你验证过的镜像 —— **旧的"测试码当生产兜底"雷已拆除,测试期 HA 不丢**。
-⚠️ 仍存(待独立测试库): canary 连的是**生产库**,dev 若带 schema migration 会在启动时动生产库。彻底隔离需给测试环境配独立库(将来上独立 x86 测试机时一起做;现有 jp1/sg1 是 arm,跑不了该镜像)。
-🔧 回滚: `ssh dmit-admin "cd /opt/sub2api && cp docker-compose.yml.bak.split docker-compose.yml && docker rm -f sub2api-backup sub2api-canary && docker compose up -d"`(退回单容器)。
+🔄 **重置 test 库数据**(可选,想用更新的真实数据测时): 重跑 §14 恢复演练(solid 最新 dump → restore 进 sub2api-testdb)。test 库是某次快照,会随时间与生产漂移。
+🔧 回滚 admin 兜底拆分: `ssh dmit-admin "cd /opt/sub2api && cp docker-compose.yml.bak.split docker-compose.yml && docker rm -f sub2api-backup && docker compose up -d"`(退回单容器)。
 
 ---
 
