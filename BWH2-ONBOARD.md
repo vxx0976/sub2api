@@ -1,7 +1,7 @@
 # bwh2 接入步骤 — 第5票 etcd/sentinel 投票器 + main 独立哨兵
 
 > ✅ **已执行完成 2026-05-29**(步骤1-7 全部完成并验证)。bwh2=10.88.0.6 公网45.62.114.56;etcd 5成员 {.1,.2,.3,.4,.6} RAFT 一致、leader=main;sentinel num-other-sentinels=4/quorum=3/master=.3;check.sh 哨兵 cron 每分钟、TG+邮件双通道实测通;node_exporter 1.11.1 已纳入 Prometheus(health=up);main check.sh 已含 bwh2。solid 已退出 etcd/sentinel 仲裁,仍作 PG/Redis 数据从(.5)。
-> **剩步骤8**(约 2026-11 solid 整机释放时执行)。
+> 步骤8(solid 释放)✅ 已于 2026-05-29 执行(集群侧 decommission 完成,见 §8)。
 
 > 目的: 现在就把 solid 的 **etcd + sentinel 仲裁** 角色迁到 bwh2(搬瓦工,独立服务商),保住"任意挂2台仍有 quorum";顺带在 bwh2 跑一份 check.sh 哨兵,补 §10「main 挂则主监控随之失效」的盲区。
 > 方案(站长定): bwh2 取 **10.88.0.6** 作第5票;**solid 不动 IP、不动数据角色**(继续在 .5 跑 PG/Redis 从 + 每日备份),只摘掉它的 etcd/sentinel 投票。半年后(约 2026-11)solid 整机释放时再处理它的数据从(步骤8)。
@@ -289,19 +289,20 @@ for n in 1 2 3 4 6; do redis-cli -h 10.88.0.$n -p 26379 sentinel reset mymaster;
 
 ---
 
-## 8. solid 整机释放时(约 2026-11,务必在释放前做)
+## 8. solid 整机释放 —— ✅ 已执行 (2026-05-29)
 
-> 先确认 §7「WAL 归档→R2」已落地(否则丢每日备份)。此时数据从将由 3 副本降为 2(admin+hostdzire,跨服务商,已接受)。
+> 提前到 2026-05-29 释放(原计划 11月)。备份不再依赖 solid(app→R2 主备份;站长定弃 solid→alice 第二副本)。数据从 3→2(admin+hostdzire patroni 对,已接受)。
+> 集群侧 decommission 已全部完成并验证(下面均 ✅),站长可随时在服务商后台终止该 VPS。
 
-```bash
-# 1) patroni:摘除 solid 这个 PG 从
-patronictl -c /etc/patroni/config.yml remove 17-main          # 选 pg-solid 确认
-# 2) 停 solid 的 Redis 从(随机器一起释放)
-ssh solid 'systemctl disable --now redis-server'
-# 3) WireGuard:各节点删 solid [Peer](10.88.0.5)段 + wg set wg0 peer <solid pub> remove
-# 4) main check.sh:从两处节点列表删 solid:10.88.0.5
-# 5) Prometheus:删 solid 的 9100 target
-```
+实际执行(集群侧):
+- ✅ solid: 停 redis-server + postgresql@17-main + 备份 cron(backup_and_mail/offsite_push/solid-check)
+- ✅ admin: **drop 复制槽 `solid_standby`**(关键!否则 inactive 槽囤 WAL 爆盘)→ 现只剩 `pg_hostdzire` 槽
+- ✅ main check.sh: 两处节点列表删 solid + 清 state(node_solid/disk_solid)
+- ✅ 5 节点 sentinel reset(num-slaves 1=hostdzire)
+- ✅ 5 节点 WireGuard 删 solid peer(.5)live + wg0.conf(各剩 4 peer)
+- ✅ alice: 删第二副本目录 + 撤 solid 密钥;jp1/sg1 早先已退役
+- 注: solid 的 etcd/sentinel 投票早在接入 bwh2 时已摘(步骤7),无需再动
+- 验证: etcd 5成员 / sentinel quorum3 num-slaves1 / patroni admin-Leader+hostdzire-Replica lag0 / mayi.one 200
 
 ---
 
