@@ -393,25 +393,19 @@ ssh hostdzire "cd /opt/sub2api && sed -i 's/DATABASE_HOST=10.88.0.4/DATABASE_HOS
 - 后台「系统设置 → 数据备份」: S3/R2(`…r2.cloudflarestorage.com`, bucket `sub2api-backups`, 前缀 `backups/`),**定时 `0 2 * * *`**,保留 **14天 / 3份**。产物 `.sql.gz`(~440MB/天),UI 可**下载 + 一键恢复**(应用 BackupService)。R2 durable —— **这是数据持久性的正主**。RPO=24h。
 - **不另上 WAL/PITR**: 坏迁移风险已由「canary 对隔离 test 库测 migration」前置拦截(§12),再加 PITR 属过度工程、与"降复杂度"冲突,站长决定跳过。
 
-### ⚠️ solid→jp1/sg1/alice 异地管道 —— 与 app→R2 重复,**待退役**
-> 此管道是 2026-05-29 在不知 app 自带 R2 备份时搭的,**纯冗余**。确认 app→R2 可下载/恢复后拆除: 退 solid `backup_and_mail.sh`(`0 3`)+ `offsite_push.sh`(`20 3`)+ 释放 jp1/sg1/alice + 删 `offsite_bkup` key。原配置备查:
-- `20 3 * * * /opt/sub2api/offsite_push.sh` (solid):dump 后 rsync 推到 3 台异地、不同地理:
+### 第二份独立副本: solid pg_dump → alice (2026-05-29 收窄定型)
+> 主备份 app→R2 在一个 CF 账号里;为防 **R2/CF 账号级意外**,保留一份**完全独立**的副本(不同机制=pg_dump,不同位置=香港异厂 alice)。
+- `0 3` solid `backup_and_mail.sh`:pg_dump sub2api(经 mesh 从 admin 拉)→ 本地 `/root/backups/sub2api`(留30天)。
+- `20 3` solid `offsite_push.sh`:rsync 推到 **alice(5.102.125.51,留10天)**。专用密钥 `/root/.ssh/offsite_bkup`(alice authorized_keys 限 from solid)。失败发 TG。
+- ~~jp1/sg1~~ 已退役(2026-05-29,与 R2 重复;删备份目录+撤密钥,VPS 释放)。
+- ⚠️ 此副本依赖 solid;**solid 释放时**:要么改成 alice rclone 拉 R2(需 R2 读密钥),要么直接弃(届时只剩 app→R2 一条,也可接受)。
 
-| 目标 | 位置/服务商 | IP | 保留 | 盘 |
-|---|---|---|---|---|
-| jp1 | 日本千叶 / Oracle | 155.248.176.74 | 30天 | 35G |
-| sg1 | 新加坡 / Oracle | 168.138.172.122 | 30天 | 34G |
-| alice | 香港 / Alice(异厂) | 5.102.125.51 | 10天 | 6.7G(盘小) |
-
-- 路径 `/opt/offsite-backup/sub2api/`;solid 用专用密钥 `/root/.ssh/offsite_bkup`(目标 authorized_keys 限 `from=154.3.224.215`)。
-- 推送任一失败 → TG 告警;日志 `/var/log/offsite_push.log`。
-- **服务商多样性**: jp1+sg1 同属 Oracle(免费实例有被回收风险,会一起没),alice 是唯一非 Oracle,专门破这个相关性。
-
-### 手动操作
+### 手动操作 / 恢复
 ```bash
-ssh solid /opt/sub2api/offsite_push.sh          # 手动补推一次
-ssh solid 'tail /var/log/offsite_push.log'      # 看推送结果
-for h in jp1 sg1 alice; do echo "== $h =="; ssh $h 'ls -lh /opt/offsite-backup/sub2api/ | tail -3'; done
+# 主恢复路径: 后台「系统设置→数据备份」选一条 → 一键「恢复」(从 R2)
+ssh solid /opt/sub2api/offsite_push.sh                 # 手动补推 alice 一次
+ssh alice 'ls -lh /opt/offsite-backup/sub2api/ | tail' # 看 alice 副本
+# 用 alice 副本应急恢复: scp 回来 pg_restore(同 §14 演练流程)
 ```
 
 ### 恢复演练 ✅ 已做 (2026-05-29)
