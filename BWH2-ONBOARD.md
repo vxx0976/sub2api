@@ -296,7 +296,7 @@ for n in 1 2 3 4 6; do redis-cli -h 10.88.0.$n -p 26379 sentinel reset mymaster;
 
 实际执行(集群侧):
 - ✅ solid: 停 redis-server + postgresql@17-main + 备份 cron(backup_and_mail/offsite_push/solid-check)
-- ✅ admin: **drop 复制槽 `solid_standby`**(关键!否则 inactive 槽囤 WAL 爆盘)→ 现只剩 `pg_hostdzire` 槽
+- ✅ **复制槽 `solid_standby` 清理(隐蔽坑)**: 它是 patroni 的**永久槽**(DCS config `slots: solid_standby:`),且因历史 failover **admin 和 hostdzire 上都有**。光 drop 会被 patroni 重建。正确做法: ①`curl -XPATCH http://10.88.0.3:8008/config -d '{"slots":{"solid_standby":null}}'` 从配置移除 → ②两节点各 `pg_drop_replication_slot('solid_standby')`。否则 inactive 槽囤 WAL(有 `max_slot_wal_keep_size:50GB` 兜底但仍浪费)。现 admin 只剩 `pg_hostdzire`、hostdzire 只剩 `pg_admin`
 - ✅ main check.sh: 两处节点列表删 solid + 清 state(node_solid/disk_solid)
 - ✅ 5 节点 sentinel reset(num-slaves 1=hostdzire)
 - ✅ 5 节点 WireGuard 删 solid peer(.5)live + wg0.conf(各剩 4 peer)
