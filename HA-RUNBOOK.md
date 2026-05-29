@@ -194,7 +194,7 @@ ssh hostdzire "cd /opt/sub2api && sed -i 's/DATABASE_HOST=10.88.0.4/DATABASE_HOS
 2. ~~PG max_connections 200→500~~ ✅ 已完成 + 全面 PG/Redis 调优 (2026-05-28,见 §9)
 3. ~~admin standby mem_limit 1.5G→3G~~ ✅ 已完成 (2026-05-28)
 4. **api.dsrrr.com / sub2api.dsrrr.com**: 确认用途,前者打 admin standby(1.5G),后者打老容器:9000
-5. **关 admin 公网 5432/6379** (阶段7): `iptables` DB-ACCESS chain 链尾 RETURN 改 DROP
+5. ~~关 admin 公网 5432/6379~~ ✅ 已完成 (2026-05-29): 先在 DB-ACCESS 链顶加 `-i lo ACCEPT`(保回环),再把链尾 RETURN 改 DROP;`netfilter-persistent save` 持久化。放行=回环+mesh(10.88.0.0/24@wg0)+main/merchant公网(legacy,可后续删)。前置: 已先把 solid redis 从公网改走 mesh(见 #13)
 6. **老容器 sub-sub2api-1(:9000)**: 站长确认是"另一套 sub2api 临时栈"(自带 sub-postgres-1/sub-redis-1,不碰生产库),~104MB 仍有外部流量。**可随时停,销毁等站长通知**。
 7. ~~异地备份(解决"备份无异地")~~ ✅ 已完成 (2026-05-29,solid 每日 dump 异地推 jp1/sg1/alice,见 §14)。**剩 WAL 归档→R2 PITR**:把 RPO 从 24h 降到任意时间点,非紧急
 8. **监控告警** (阶段6): inkmirage Grafana 加 PG lag/Redis/Caddy upstream 面板
@@ -202,7 +202,7 @@ ssh hostdzire "cd /opt/sub2api && sed -i 's/DATABASE_HOST=10.88.0.4/DATABASE_HOS
 10. ~~解 admin 测试/兜底耦合~~ ✅ 已完成 (2026-05-29,测试环境整体迁到 hostdzire `/opt/sub2api-test`,canary 连独立 test 库;admin 只剩生产兜底,见 §12)
 11. ~~config.yaml 残留公网IP~~ ✅ 已修 (2026-05-29,admin/hostdzire 的 config.yaml db/redis host 改为本机 HAProxy 与 .env 一致)
 12. **ops_system_logs 表膨胀**: 单表 4.3GB = sub2api 库 76%(551万行/50天)。根因: 应用自带的 ops 清理 **CleanupEnabled 默认 false**(从没跑过)。修法: **后台「系统监控→高级设置→数据保留」开启清理 + 设 ErrorLogRetentionDays**(该项同时管 ops_error_logs + ops_system_logs;app 批量删 5000/批,cron `0 2`)。开启后首跑会删积压(约 2am),之后每日维护;下次 dump 即大幅瘦身。retention 建议 14–30 天(站长定)。
-13. ~~一轮残留清理~~ ✅ (2026-05-29): 5节点清悬空镜像共 ~10.7GB;admin 删孤儿卷+停用空闲 Caddy(api.dsrrr 已迁 hostdzire);各节点 .bak 收敛。**待办**: main/merchant 仍有孤儿卷 `sub2api_sub2api_data`(旧 sub2api 部署遗留,可删)+ 旧 Caddy .bak;§7#5「关 admin 公网 5432/6379」现更安全(config.yaml 已不依赖公网IP,确认无外部 DB 连接后可 DROP)
+13. ~~一轮残留清理~~ ✅ (2026-05-29): 5节点清悬空镜像共 ~10.7GB;admin 删孤儿卷+停用空闲 Caddy;main/merchant 删孤儿卷 `sub2api_sub2api_data`+收敛 .bak;solid 清 etcd 残留(unit/datadir/bin)。**solid redis 从公网(45.59.186.84)改走 mesh(10.88.0.3)** —— 消除公网复制通道,也是关 #5 公网DB端口的前置。残留待办仅剩 main/merchant 的 legacy DB-ACCESS 白名单(可删,无害)
 
 ---
 
