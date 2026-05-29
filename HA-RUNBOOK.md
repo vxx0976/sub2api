@@ -408,14 +408,16 @@ ssh solid 'tail /var/log/offsite_push.log'      # 看推送结果
 for h in jp1 sg1 alice; do echo "== $h =="; ssh $h 'ls -lh /opt/offsite-backup/sub2api/ | tail -3'; done
 ```
 
-### 恢复 (drill 待凌晨做)
+### 恢复演练 ✅ 已做 (2026-05-29)
+- **结果 PASS**: 最新 dump(pg_sub2api_20260529_030001,463M)→ hostdzire 上隔离 test PG(`sub2api-testdb` 容器,postgres:17,127.0.0.1:5434)`pg_restore` 成功:exit 0、1m45s、**81 表 / 5.7GB**、usage_logs 102万行、最新记录 `2026-05-28 21:30 UTC`=备份时刻(完整无截断)。恢复期间 hostdzire 生产 sub2api + PG 复制 lag 0,无影响。
+- 复跑演练:
 ```bash
-# 从任一异地副本取最新 sub2api dump 恢复到一个临时库验证:
-scp jp1:/opt/offsite-backup/sub2api/pg_sub2api_<最新>.dump /tmp/
-pg_restore -h <临时PG> -U sub2api -d <临时空库> -Fc /tmp/pg_sub2api_<最新>.dump
-# 校验关键表行数/最新记录时间, 确认可恢复
+# solid 推最新 dump 到 hostdzire(mesh, 用 offsite_bkup key)→ 容器内 pg_restore
+ssh solid 'rsync -az -e "ssh -i /root/.ssh/offsite_bkup" /root/backups/sub2api/$(ls -t /root/backups/sub2api/pg_sub2api_*.dump|head -1|xargs basename) root@10.88.0.4:/tmp/'
+ssh hostdzire 'docker cp /tmp/<dump> sub2api-testdb:/tmp/d.dump && docker exec sub2api-testdb pg_restore -U sub2api -d sub2api --no-owner --no-privileges -j2 /tmp/d.dump'
 ```
-⚠️ **没演练过的备份不算备份** —— 恢复演练待安排(站长定凌晨低峰)。
+- ⚠️ **`ops_system_logs` 单表 4.3GB = 整库 76%**:撑大了 dump(463M)和库(5.7GB)。加保留期可大幅瘦身(备份更快、异地机更省)。**待办**: 给 ops_system_logs(及 usage_logs)定保留策略。
+- 这个 `sub2api-testdb`(hostdzire,带真实数据)同时作为 §1 测试环境的隔离库(见下,待接入 canary)。
 
 ### 仍待优化 (RPO)
 - 当前 RPO = **最长 24h**(每日快照)。要更小需 **WAL 归档→R2 PITR**(§7 #7),可恢复到任意时间点。daily 异地快照已大幅改善,但 PITR 仍是下一步。
