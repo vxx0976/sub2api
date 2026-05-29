@@ -8,29 +8,36 @@
 
 ## §1 架构速览
 
+> 本图聚焦 sub2api。inkmirage 共用同一批节点(及 etcd/sentinel/HAProxy/CF),另行讨论。
+
 ```
-入口(DNS):  mayi.one ─CF LB(DNS-only)→ main(主CN2)/hostdzire(备T1)
-            dsrrr.com+商户 ─→ merchant(单点)    inkmirage.com ─→ hostdzire
+入口(DNS):  mayi.one ── CF LB(DNS-only灰云)──┬─► main 主源站(CN2)
+                                              └─► hostdzire 备源站(别家)
+            dsrrr.com + 商户域名 ──(无CF LB,单点)─► merchant   [on-demand TLS: merchant+main+hostdzire]
               │
-应用入口Caddy: main / merchant / hostdzire / admin  各自 reverse_proxy
-              │  (lb first + health /health)
-              ▼  primary=hostdzire:8080  backup=admin:8080
-sub2api:    hostdzire主(16G无限) ⇄ admin备(mem 3G)
-              │ 连本地 HAProxy
-HAProxy:    :5433 PG / :6380 Redis (查 patroni/role, 永远指当前主)
+应用入口Caddy: 各节点 reverse_proxy  →  primary=hostdzire:8080  backup=admin:8080  (health /health, 切 5-10s)
               ▼
-数据:       admin(PG主+Redis主) ⇄ hostdzire(从,lag0) ⇄ solid(异地从灾备)
-              │  patroni自动选主 + sentinel自动切 + HAProxy透明跟随
-协调:       etcd + sentinel 各5节点(main/merchant/admin/hostdzire/bwh2) quorum=3 容忍挂2
-              │  ⚠️ 2026-05-29: 第5票从 solid 迁到 bwh2(搬瓦工独立服务商); solid 已退出仲裁,仅作数据从
-监控:       exporter→Prometheus(hostdzire) + 告警 main check.sh + bwh2哨兵(独立监 main) → TG+邮件
+sub2api 应用: hostdzire 生产主(16G)  ⇄ 兜底 ⇄  admin 备(3G, 兼测试/预发)
+              │ 各连本机 HAProxy
+HAProxy:     :5433 → 当前 PG 主      :6380 → 当前 Redis 主   (查 patroni role, 永远指当前主)
+              ▼
+数据(流复制): admin(PG主★+Redis主★) ──┬─► hostdzire 从(patroni托管, 同机房, lag0, 会被提主)
+                                       └─► solid 从(standalone, 异地灾备 + 每日备份机, 不参与选主)
+              │  patroni 选主(admin⇄hostdzire) + sentinel 切 Redis + HAProxy 透明跟随 (~30s)
+协调(投票):  etcd ×5 + sentinel ×5 = {main, merchant, admin, hostdzire, bwh2}  quorum=3 容忍挂2
+              │  ⚠️ 2026-05-29 第5票从 solid 迁到 bwh2(搬瓦工,独立服务商); solid 退出仲裁仅作数据从
+监控:        node_exporter(main/merchant/admin/hostdzire/bwh2) → Prometheus
+              告警: main check.sh(主) + bwh2哨兵(独立监 main) + solid 复制自检 → TG+邮件
+
+故障域: {main,merchant,admin}=DMIT(main+merchant 同机房) | hostdzire=别家 | solid=异地 | bwh2=搬瓦工
+节点纯度: bwh2 只投票+监控(无 sub2api/PG/Redis) ; solid 只数据从+备份(已无投票)
 ```
 
 | 节点 | 配置/线路 | 入口Caddy | sub2api | inkmirage | PG | Redis | etcd | sentinel | 其他 |
 |---|---|---|---|---|---|---|---|---|---|
 | dmit-main | 2C/2G·CN2 | mayi.one源站 | — | — | — | — | ✅ | ✅ | 监控脚本 |
 | dmit-merchant | 2C/2G·CN2 | dsrrr/商户 | — | — | — | — | ✅ | ✅ | — |
-| dmit-admin | 4C/8G·T1 | api.dsrrr(**测试/预发**) | 备(3G,测试用) | 备 | **主★** | **主★** | ✅ | ✅ | HAProxy |
+| dmit-admin | 4C/8G·T1 | api.dsrrr(**测试/预发**) | backup(3G,兜底)+canary(1G,dev测试) | 备 | **主★** | **主★** | ✅ | ✅ | HAProxy |
 | hostdzire | 6C/16G·别家 | mayi备/inkmir | **主★** | **主★** | 从 | 从 | ✅ | ✅ | HAProxy |
 | solid | 8C/16G·异地 | — | — | — | 从(灾备) | 从(灾备) | ❌退出 | ❌退出 | 每日备份(2026-05仅数据从,待释放) |
 | **bwh2** | 1C/0.5G·搬瓦工 | — | — | — | — | — | ✅ | ✅ | **第5票** + main独立哨兵 + node_exporter |
@@ -98,11 +105,11 @@ ssh dmit-admin "docker ps --filter name=^sub2api$ --format '{{.Status}}'"
 ### 4.1 hostdzire 挂 (生产 sub2api 宕)
 **现象**: mayi.one/dsrrr.com 短暂抖动后恢复 (Caddy 5-10s 切 admin standby)
 **自愈**: ✅ 自动。Caddy 健康检查切 backup=admin:8080
-**人工**: 修 hostdzire。admin standby 已限 3G(2026-05-28 从 1.5G 调高)。hostdzire 挂且撞 4G+ 峰值时可再临时调大(牺牲 inkmirage standby):
+**人工**: 修 hostdzire。生产兜底现是 admin 的 **sub2api-backup**(限 3G;2026-05-29 拆双容器后,见 §12 发布流程)。hostdzire 挂且撞 4G+ 峰值时可临时给 backup 调大(牺牲 inkmirage standby):
 ```bash
-ssh dmit-admin "cd /opt/sub2api && sed -i 's/mem_limit: 3g/mem_limit: 5g/;s/memswap_limit: 3g/memswap_limit: 5g/' docker-compose.yml && docker compose up -d"
+ssh dmit-admin "cd /opt/sub2api && sed -i 's/mem_limit: 3g/mem_limit: 5g/;s/memswap_limit: 3g/memswap_limit: 5g/' docker-compose.yml && docker compose up -d sub2api-backup"
 ```
-> 注: sub2api 后台「系统监控」的内存数字来自 ops_system_metrics 表,多实例(hostdzire 16G + admin standby 3G)混写且不记 hostname,所以可能显示任一实例的值。判断生产真实状态看 memory_total_mb=15988 那条(hostdzire)。
+> 注: sub2api 后台「系统监控」的内存数字来自 ops_system_metrics 表,多实例(hostdzire 16G + admin 的 backup/canary 各报 admin 的 8G)混写且不记 hostname,所以可能显示任一实例的值。判断生产真实状态看 memory_total_mb=15988 那条(hostdzire)。(canary 连生产库,也会写这表,属正常噪声)
 hostdzire 修好后 PG/Redis 会自动 rejoin (patroni/sentinel)。
 
 ### 4.2 admin 挂 (PG主+Redis主 宕)
@@ -189,7 +196,7 @@ ssh hostdzire "cd /opt/sub2api && sed -i 's/DATABASE_HOST=10.88.0.4/DATABASE_HOS
 4. **api.dsrrr.com / sub2api.dsrrr.com**: 确认用途,前者打 admin standby(1.5G),后者打老容器:9000
 5. **关 admin 公网 5432/6379** (阶段7): `iptables` DB-ACCESS chain 链尾 RETURN 改 DROP
 6. **下线老容器** sub-sub2api-1(:9000) (阶段7,确认 sub2api.dsrrr.com 无依赖后)
-7. **WAL 归档→R2** (阶段5,**solid 退费前必做**,否则丢每日备份)
+7. ~~异地备份(解决"备份无异地")~~ ✅ 已完成 (2026-05-29,solid 每日 dump 异地推 jp1/sg1/alice,见 §14)。**剩 WAL 归档→R2 PITR**:把 RPO 从 24h 降到任意时间点,非紧急
 8. **监控告警** (阶段6): inkmirage Grafana 加 PG lag/Redis/Caddy upstream 面板
 9. ~~etcd/sentinel 第5票迁出 solid~~ ✅ 已完成 (2026-05-29,迁到 bwh2;见 BWH2-ONBOARD.md)。**solid 退费时只剩**: WAL→R2(#7)+ 摘 solid 的 PG/Redis 数据从 + 删 mesh peer(.5)+ check.sh/Prometheus 去掉 solid(见 BWH2-ONBOARD.md §8)
 
@@ -324,11 +331,18 @@ ssh hostdzire "cd /opt/sub2api && sed -i 's/DATABASE_HOST=10.88.0.4/DATABASE_HOS
 - 对存量商户(A记录指merchant)也生效(只要访问的是商户域名)
 - 前端无需改(它本就读 `__APP_CONFIG__.api_base_url`)
 
-### 发布流程 (站长工作流)
+### 发布流程 (站长工作流, 2026-05-29 拆双容器后)
+> admin 的 sub2api 已拆成两个容器:`sub2api-canary`(dev 镜像,绑 127.0.0.1:8080,api.dsrrr 测试)+ `sub2api-backup`(绑 mesh 10.88.0.3:8080,给 main/merchant/hostdzire 做生产兜底)。
+> ⚠️ **务必按 service 名单独操作**,**不要在 admin 裸跑 `docker compose up -d`**(那会把 backup 也一起升到未验证镜像,前功尽弃)。
+
 1. `push dev` → CI(dev-build.yml) build `vxx0976/sub2api:dev`
-2. **先部署 admin (api.dsrrr.com = 测试/预发环境)** 验证: `ssh dmit-admin "cd /opt/sub2api && docker compose pull && docker compose up -d"`
-3. 验证 OK → **再部署 hostdzire (生产主)**: 同样命令
-4. ⚠️ **风险知悉**: admin 既是测试环境又是生产 Caddy backup。测试期间(admin 跑未完全验证代码)若 hostdzire 恰好挂,Caddy 会把生产流量切到 admin。低概率,但发布测试窗口期注意; 真正大改动可临时把 main/merchant Caddy 的 backup 从 admin 摘掉再测
+2. **拉新镜像 + 只更金丝雀**: `ssh dmit-admin "cd /opt/sub2api && docker compose pull && docker compose up -d sub2api-canary"` → 在 **api.dsrrr.com** 验证
+3. 验证 OK → **升级 admin 兜底**: `ssh dmit-admin "cd /opt/sub2api && docker compose up -d sub2api-backup"`
+4. **再部署生产主 hostdzire**: `ssh hostdzire "cd /opt/sub2api && docker compose pull && docker compose up -d"`
+
+✅ 全程 `sub2api-backup`(生产兜底)只跑你验证过的镜像 —— **旧的"测试码当生产兜底"雷已拆除,测试期 HA 不丢**。
+⚠️ 仍存(待独立测试库): canary 连的是**生产库**,dev 若带 schema migration 会在启动时动生产库。彻底隔离需给测试环境配独立库(将来上独立 x86 测试机时一起做;现有 jp1/sg1 是 arm,跑不了该镜像)。
+🔧 回滚: `ssh dmit-admin "cd /opt/sub2api && cp docker-compose.yml.bak.split docker-compose.yml && docker rm -f sub2api-backup sub2api-canary && docker compose up -d"`(退回单容器)。
 
 ---
 
@@ -364,3 +378,45 @@ ssh hostdzire "cd /opt/sub2api && sed -i 's/DATABASE_HOST=10.88.0.4/DATABASE_HOS
 
 ### 一句话结论 (按站长决定收敛后,最终)
 **应用层 + 数据层: 所有现实的一/两节点故障都在 ~30s 内自愈** —— 单台 admin/hostdzire/solid,及 DMIT 内部双挂(main+merchant / main+admin / merchant+admin),app 始终有 hostdzire 主或 admin standby 兜底、DB 始终能 patroni 提 hostdzire 主。**唯二不在 1 分钟内自愈的就是两条已接受的入口取舍**(merchant 入口单点 + mayi CN2 尽力而为)。**无其余开放缺口或待办。**
+
+---
+
+## §14 备份与异地容灾 (2026-05-29)
+
+> HA(节点挂)≠ 备份(数据坏)。流复制会把误删/逻辑损坏复制到所有从库,只有备份能回滚。本节是数据持久性的底线。
+
+### 备份生成 (solid)
+- `0 3 * * * /opt/sub2api/backup_and_mail.sh` (solid):pg_dump -Fc **sub2api(~463MB/天)** + inkmirage(~0.3MB) + Redis RDB(~4MB) → `/root/backups/sub2api/`,本地留 **30 天**,完成发报告邮件。dump 从 admin(10.88.0.3)经 mesh 拉,不依赖 solid 是从库 → 可搬。
+
+### 异地多副本 (2026-05-29 新增,补"备份无异地"缺口)
+- `20 3 * * * /opt/sub2api/offsite_push.sh` (solid):dump 后 rsync 推到 3 台异地、不同地理:
+
+| 目标 | 位置/服务商 | IP | 保留 | 盘 |
+|---|---|---|---|---|
+| jp1 | 日本千叶 / Oracle | 155.248.176.74 | 30天 | 35G |
+| sg1 | 新加坡 / Oracle | 168.138.172.122 | 30天 | 34G |
+| alice | 香港 / Alice(异厂) | 5.102.125.51 | 10天 | 6.7G(盘小) |
+
+- 路径 `/opt/offsite-backup/sub2api/`;solid 用专用密钥 `/root/.ssh/offsite_bkup`(目标 authorized_keys 限 `from=154.3.224.215`)。
+- 推送任一失败 → TG 告警;日志 `/var/log/offsite_push.log`。
+- **服务商多样性**: jp1+sg1 同属 Oracle(免费实例有被回收风险,会一起没),alice 是唯一非 Oracle,专门破这个相关性。
+
+### 手动操作
+```bash
+ssh solid /opt/sub2api/offsite_push.sh          # 手动补推一次
+ssh solid 'tail /var/log/offsite_push.log'      # 看推送结果
+for h in jp1 sg1 alice; do echo "== $h =="; ssh $h 'ls -lh /opt/offsite-backup/sub2api/ | tail -3'; done
+```
+
+### 恢复 (drill 待凌晨做)
+```bash
+# 从任一异地副本取最新 sub2api dump 恢复到一个临时库验证:
+scp jp1:/opt/offsite-backup/sub2api/pg_sub2api_<最新>.dump /tmp/
+pg_restore -h <临时PG> -U sub2api -d <临时空库> -Fc /tmp/pg_sub2api_<最新>.dump
+# 校验关键表行数/最新记录时间, 确认可恢复
+```
+⚠️ **没演练过的备份不算备份** —— 恢复演练待安排(站长定凌晨低峰)。
+
+### 仍待优化 (RPO)
+- 当前 RPO = **最长 24h**(每日快照)。要更小需 **WAL 归档→R2 PITR**(§7 #7),可恢复到任意时间点。daily 异地快照已大幅改善,但 PITR 仍是下一步。
+- solid 仍是异地**流复制从**(RPO≈0 的实时副本),直到将来整机释放;释放前需把 dump+push 任务迁到 hostdzire(见 BWH2-ONBOARD §8 思路)。
