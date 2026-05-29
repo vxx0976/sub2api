@@ -1,6 +1,6 @@
 # sub2api 高可用运维手册 (HA-RUNBOOK)
 
-> 最后更新: 2026-05-29 (阶段0-4 + 监控 + CF LB + etcd/sentinel 5节点 + solid三副本 + 商户域名on-demand/API端点展现 + 服务商故障域 + §13失效矩阵)
+> 最后更新: 2026-05-29 (阶段0-4 + 监控 + CF LB + etcd/sentinel 5节点 + 商户域名on-demand + §13失效矩阵 + bwh2接入第5票 + 备份app→R2/alice + 测试环境隔离hostdzire + admin公网DB收口 + 残留清理)
 > 适用: 半夜出状况时照着操作。先看「§2 一键体检」定位故障,再到「§4 故障 SOP」处理。
 > 失效自愈能力速查见「§13 一/两节点失效矩阵」。
 
@@ -22,14 +22,14 @@ sub2api 应用: hostdzire 生产主(16G)  ⇄ 兜底 ⇄  admin 备(3G, 兼测�
 HAProxy:     :5433 → 当前 PG 主      :6380 → 当前 Redis 主   (查 patroni role, 永远指当前主)
               ▼
 数据(流复制): admin(PG主★+Redis主★) ──┬─► hostdzire 从(patroni托管, 同机房, lag0, 会被提主)
-                                       └─► solid 从(standalone, 异地灾备 + 每日备份机, 不参与选主)
+                                       └─► solid 从(standalone, 异地灾备 + 第二备份源→alice, 不参与选主)
               │  patroni 选主(admin⇄hostdzire) + sentinel 切 Redis + HAProxy 透明跟随 (~30s)
 协调(投票):  etcd ×5 + sentinel ×5 = {main, merchant, admin, hostdzire, bwh2}  quorum=3 容忍挂2
               │  ⚠️ 2026-05-29 第5票从 solid 迁到 bwh2(搬瓦工,独立服务商); solid 退出仲裁仅作数据从
 监控:        node_exporter(main/merchant/admin/hostdzire/bwh2) → Prometheus
               告警: main check.sh(主) + bwh2哨兵(独立监 main) + solid 复制自检 → TG+邮件
 
-故障域: {main,merchant,admin}=DMIT(main+merchant 同机房) | hostdzire=别家 | solid=异地 | bwh2=搬瓦工
+故障域: {main,merchant,admin}=DMIT但不同机房(main/merchant=三网优化, admin=T1) | hostdzire=别家 | solid=异地 | bwh2=搬瓦工
 节点纯度: bwh2 只投票+监控(无 sub2api/PG/Redis) ; solid 只数据从+备份(已无投票)
 ```
 
@@ -49,7 +49,8 @@ HAProxy:     :5433 → 当前 PG 主      :6380 → 当前 Redis 主   (查 patr
 **集群名**: PG patroni scope=`17-main` namespace=`/postgresql-common/` ; Redis sentinel master=`mymaster`
 
 **三层自动切换**: 入口(CF LB ~60s) / 应用(Caddy 5-10s) / 数据(patroni+sentinel ~30s)
-**数据三副本**: admin主 →流复制→ hostdzire(同机房) + solid(异地) ; +solid每日pg_dump(30天)
+**数据三副本**(流复制): admin主 → hostdzire(别家) + solid(异地)
+**备份**: sub2api 自带 →**Cloudflare R2**(主,每日,UI恢复) + solid→**alice**(第二独立副本,防R2/CF账号级意外);详见 §14
 
 **服务商/机房故障域**: main / merchant / admin 同属 **DMIT 但不同机房**(main/merchant = **三网优化(CN2)**机房 ; admin = **T1** 机房) ; hostdzire = **别家** ; solid = **异地另一家**。
 → 因为不同机房,**单个 DMIT 机房挂只带走其中的票,剩余仍 ≥ quorum 3**(如 三网优化机房挂带走 main+merchant 2票 → admin+hostdzire+bwh2 = 3 ✓)。跨服务商「同时」宕几率极低,忽略。§13 认真对待: ①单台任意挂 ②机房内/跨机房双挂。
@@ -194,7 +195,7 @@ ssh hostdzire "cd /opt/sub2api && sed -i 's/DATABASE_HOST=10.88.0.4/DATABASE_HOS
 2. ~~PG max_connections 200→500~~ ✅ 已完成 + 全面 PG/Redis 调优 (2026-05-28,见 §9)
 3. ~~admin standby mem_limit 1.5G→3G~~ ✅ 已完成 (2026-05-28)
 4. **api.dsrrr.com / sub2api.dsrrr.com**: 确认用途,前者打 admin standby(1.5G),后者打老容器:9000
-5. ~~关 admin 公网 5432/6379~~ ✅ 已完成 (2026-05-29): 先在 DB-ACCESS 链顶加 `-i lo ACCEPT`(保回环),再把链尾 RETURN 改 DROP;`netfilter-persistent save` 持久化。放行=回环+mesh(10.88.0.0/24@wg0)+main/merchant公网(legacy,可后续删)。前置: 已先把 solid redis 从公网改走 mesh(见 #13)
+5. ~~关 admin 公网 5432/6379~~ ✅ 已完成 (2026-05-29): 先在 DB-ACCESS 链顶加 `-i lo ACCEPT`(保回环),再把链尾 RETURN 改 DROP;`netfilter-persistent save` 持久化。放行=回环+mesh(10.88.0.0/24@wg0)。legacy main/merchant 公网白名单已删(2026-05-29,确认无公网连接)。前置: 已先把 solid redis 从公网改走 mesh(见 #13)
 6. **老容器 sub-sub2api-1(:9000)**: 站长确认是"另一套 sub2api 临时栈"(自带 sub-postgres-1/sub-redis-1,不碰生产库),~104MB 仍有外部流量。**可随时停,销毁等站长通知**。
 7. ~~异地备份 / WAL→R2 PITR~~ ✅ 已解决,且发现**重复**: sub2api **自带 S3/R2 备份**(后台数据备份页,每日 `0 2`→R2,留14天/3份,UI可下载恢复)早已配好。本次手搭的 solid→jp1/sg1/alice 管道是冗余,**待退役**(见 §14)。PITR 决定**跳过**(每日 R2 + canary 测 migration 已足够,不为分钟级 RPO 加复杂度)
 8. **监控告警** (阶段6): inkmirage Grafana 加 PG lag/Redis/Caddy upstream 面板
