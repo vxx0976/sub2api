@@ -196,9 +196,9 @@ ssh hostdzire "cd /opt/sub2api && sed -i 's/DATABASE_HOST=10.88.0.4/DATABASE_HOS
 4. **api.dsrrr.com / sub2api.dsrrr.com**: 确认用途,前者打 admin standby(1.5G),后者打老容器:9000
 5. ~~关 admin 公网 5432/6379~~ ✅ 已完成 (2026-05-29): 先在 DB-ACCESS 链顶加 `-i lo ACCEPT`(保回环),再把链尾 RETURN 改 DROP;`netfilter-persistent save` 持久化。放行=回环+mesh(10.88.0.0/24@wg0)+main/merchant公网(legacy,可后续删)。前置: 已先把 solid redis 从公网改走 mesh(见 #13)
 6. **老容器 sub-sub2api-1(:9000)**: 站长确认是"另一套 sub2api 临时栈"(自带 sub-postgres-1/sub-redis-1,不碰生产库),~104MB 仍有外部流量。**可随时停,销毁等站长通知**。
-7. ~~异地备份(解决"备份无异地")~~ ✅ 已完成 (2026-05-29,solid 每日 dump 异地推 jp1/sg1/alice,见 §14)。**剩 WAL 归档→R2 PITR**:把 RPO 从 24h 降到任意时间点,非紧急
+7. ~~异地备份 / WAL→R2 PITR~~ ✅ 已解决,且发现**重复**: sub2api **自带 S3/R2 备份**(后台数据备份页,每日 `0 2`→R2,留14天/3份,UI可下载恢复)早已配好。本次手搭的 solid→jp1/sg1/alice 管道是冗余,**待退役**(见 §14)。PITR 决定**跳过**(每日 R2 + canary 测 migration 已足够,不为分钟级 RPO 加复杂度)
 8. **监控告警** (阶段6): inkmirage Grafana 加 PG lag/Redis/Caddy upstream 面板
-9. ~~etcd/sentinel 第5票迁出 solid~~ ✅ 已完成 (2026-05-29,迁到 bwh2;见 BWH2-ONBOARD.md)。**solid 退费时只剩**: WAL→R2(#7)+ 摘 solid 的 PG/Redis 数据从 + 删 mesh peer(.5)+ check.sh/Prometheus 去掉 solid(见 BWH2-ONBOARD.md §8)
+9. ~~etcd/sentinel 第5票迁出 solid~~ ✅ 已完成 (2026-05-29,迁到 bwh2)。**solid 退费时只剩**(备份已不依赖 solid,app→R2 接管): 摘 solid PG/Redis 数据从 + 删 mesh peer(.5)+ check.sh/Prometheus 去掉 solid + 退役 offsite 管道(见 §14)
 10. ~~解 admin 测试/兜底耦合~~ ✅ 已完成 (2026-05-29,测试环境整体迁到 hostdzire `/opt/sub2api-test`,canary 连独立 test 库;admin 只剩生产兜底,见 §12)
 11. ~~config.yaml 残留公网IP~~ ✅ 已修 (2026-05-29,admin/hostdzire 的 config.yaml db/redis host 改为本机 HAProxy 与 .env 一致)
 12. **ops_system_logs 表膨胀**: 单表 4.3GB = sub2api 库 76%(551万行/50天)。根因: 应用自带的 ops 清理 **CleanupEnabled 默认 false**(从没跑过)。修法: **后台「系统监控→高级设置→数据保留」开启清理 + 设 ErrorLogRetentionDays**(该项同时管 ops_error_logs + ops_system_logs;app 批量删 5000/批,cron `0 2`)。开启后首跑会删积压(约 2am),之后每日维护;下次 dump 即大幅瘦身。retention 建议 14–30 天(站长定)。
@@ -389,10 +389,12 @@ ssh hostdzire "cd /opt/sub2api && sed -i 's/DATABASE_HOST=10.88.0.4/DATABASE_HOS
 
 > HA(节点挂)≠ 备份(数据坏)。流复制会把误删/逻辑损坏复制到所有从库,只有备份能回滚。本节是数据持久性的底线。
 
-### 备份生成 (solid)
-- `0 3 * * * /opt/sub2api/backup_and_mail.sh` (solid):pg_dump -Fc **sub2api(~463MB/天)** + inkmirage(~0.3MB) + Redis RDB(~4MB) → `/root/backups/sub2api/`,本地留 **30 天**,完成发报告邮件。dump 从 admin(10.88.0.3)经 mesh 拉,不依赖 solid 是从库 → 可搬。
+### 主备份: sub2api 自带 → Cloudflare R2 (✅ 站长早已配好;2026-05-29 确认)
+- 后台「系统设置 → 数据备份」: S3/R2(`…r2.cloudflarestorage.com`, bucket `sub2api-backups`, 前缀 `backups/`),**定时 `0 2 * * *`**,保留 **14天 / 3份**。产物 `.sql.gz`(~440MB/天),UI 可**下载 + 一键恢复**(应用 BackupService)。R2 durable —— **这是数据持久性的正主**。RPO=24h。
+- **不另上 WAL/PITR**: 坏迁移风险已由「canary 对隔离 test 库测 migration」前置拦截(§12),再加 PITR 属过度工程、与"降复杂度"冲突,站长决定跳过。
 
-### 异地多副本 (2026-05-29 新增,补"备份无异地"缺口)
+### ⚠️ solid→jp1/sg1/alice 异地管道 —— 与 app→R2 重复,**待退役**
+> 此管道是 2026-05-29 在不知 app 自带 R2 备份时搭的,**纯冗余**。确认 app→R2 可下载/恢复后拆除: 退 solid `backup_and_mail.sh`(`0 3`)+ `offsite_push.sh`(`20 3`)+ 释放 jp1/sg1/alice + 删 `offsite_bkup` key。原配置备查:
 - `20 3 * * * /opt/sub2api/offsite_push.sh` (solid):dump 后 rsync 推到 3 台异地、不同地理:
 
 | 目标 | 位置/服务商 | IP | 保留 | 盘 |
@@ -423,6 +425,7 @@ ssh hostdzire 'docker cp /tmp/<dump> sub2api-testdb:/tmp/d.dump && docker exec s
 - ⚠️ **`ops_system_logs` 单表 4.3GB = 整库 76%**:撑大了 dump(463M)和库(5.7GB)。加保留期可大幅瘦身(备份更快、异地机更省)。**待办**: 给 ops_system_logs(及 usage_logs)定保留策略。
 - 这个 `sub2api-testdb`(hostdzire,带真实数据)同时作为 §1 测试环境的隔离库(见下,待接入 canary)。
 
-### 仍待优化 (RPO)
-- 当前 RPO = **最长 24h**(每日快照)。要更小需 **WAL 归档→R2 PITR**(§7 #7),可恢复到任意时间点。daily 异地快照已大幅改善,但 PITR 仍是下一步。
+### RPO 现状(已定,不再追)
+- RPO = **24h**(app→R2 每日快照)。PITR **决定跳过**(见上)。坏迁移由 canary 前置拦截;节点/机房挂由 HA ~30s 自愈;异地不追(站长定)。
+- solid 仍是异地流复制从,但其备份角色被 app→R2 取代 → **释放 solid 时直接退,无需迁移 dump 任务**(原 BWH2-ONBOARD §8 的"迁 dump 到 hostdzire"已作废)。
 - solid 仍是异地**流复制从**(RPO≈0 的实时副本),直到将来整机释放;释放前需把 dump+push 任务迁到 hostdzire(见 BWH2-ONBOARD §8 思路)。
