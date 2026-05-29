@@ -239,6 +239,14 @@ func mergeResellerBranding(baseJSON []byte, info *middleware.ResellerDomainConte
 	m["reseller_id"] = info.ResellerID
 	m["reseller_domain"] = info.Domain
 
+	// 商户自定义域名作为 API 端点 base URL：让该商户的子用户在 API Key / 密钥查询 /
+	// 接入文档页看到的端点是商户自己的域名（而非主站 mayi.one）。
+	// 隔离天然成立：本函数仅在 DomainDetect 按 Host 识别到「已验证」的 reseller 域名时调用，
+	// 主站访问不经过这里（主站端点不受影响），不同商户各自按自己的 Host 注入（互不可见）。
+	if info.Domain != "" {
+		m["api_base_url"] = "https://" + info.Domain
+	}
+
 	// Override branding from domain-level settings (per-domain)
 	if info.SiteName != "" {
 		m["site_name"] = info.SiteName
