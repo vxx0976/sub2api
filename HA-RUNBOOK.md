@@ -200,8 +200,9 @@ ssh hostdzire "cd /opt/sub2api && sed -i 's/DATABASE_HOST=10.88.0.4/DATABASE_HOS
 8. **监控告警** (阶段6): inkmirage Grafana 加 PG lag/Redis/Caddy upstream 面板
 9. ~~etcd/sentinel 第5票迁出 solid~~ ✅ 已完成 (2026-05-29,迁到 bwh2;见 BWH2-ONBOARD.md)。**solid 退费时只剩**: WAL→R2(#7)+ 摘 solid 的 PG/Redis 数据从 + 删 mesh peer(.5)+ check.sh/Prometheus 去掉 solid(见 BWH2-ONBOARD.md §8)
 10. ~~解 admin 测试/兜底耦合~~ ✅ 已完成 (2026-05-29,测试环境整体迁到 hostdzire `/opt/sub2api-test`,canary 连独立 test 库;admin 只剩生产兜底,见 §12)
-11. **config.yaml 残留公网IP**: hostdzire/admin 的 `/opt/sub2api/config.yaml` 里 database/redis host 写的是 `45.59.186.84`(admin 公网,绕 HAProxy),现被 `.env`(10.88.0.4:5433 本机HAProxy)覆盖无害,但属潜在雷 —— 改成与 .env 一致或删掉 config.yaml 的 DB/Redis 段
-12. **ops_system_logs 表膨胀**: 单表 4.3GB = sub2api 库 76%,撑大 dump(463M)与库(5.7G)。给它(及 usage_logs)定保留期可大幅瘦身,加快备份/省异地盘
+11. ~~config.yaml 残留公网IP~~ ✅ 已修 (2026-05-29,admin/hostdzire 的 config.yaml db/redis host 改为本机 HAProxy 与 .env 一致)
+12. **ops_system_logs 表膨胀**: 单表 4.3GB = sub2api 库 76%(551万行/50天)。根因: 应用自带的 ops 清理 **CleanupEnabled 默认 false**(从没跑过)。修法: **后台「系统监控→高级设置→数据保留」开启清理 + 设 ErrorLogRetentionDays**(该项同时管 ops_error_logs + ops_system_logs;app 批量删 5000/批,cron `0 2`)。开启后首跑会删积压(约 2am),之后每日维护;下次 dump 即大幅瘦身。retention 建议 14–30 天(站长定)。
+13. ~~一轮残留清理~~ ✅ (2026-05-29): 5节点清悬空镜像共 ~10.7GB;admin 删孤儿卷+停用空闲 Caddy(api.dsrrr 已迁 hostdzire);各节点 .bak 收敛。**待办**: main/merchant 仍有孤儿卷 `sub2api_sub2api_data`(旧 sub2api 部署遗留,可删)+ 旧 Caddy .bak;§7#5「关 admin 公网 5432/6379」现更安全(config.yaml 已不依赖公网IP,确认无外部 DB 连接后可 DROP)
 
 ---
 
