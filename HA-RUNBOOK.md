@@ -51,9 +51,9 @@ HAProxy:     :5433 → 当前 PG 主      :6380 → 当前 Redis 主   (查 patr
 **三层自动切换**: 入口(CF LB ~60s) / 应用(Caddy 5-10s) / 数据(patroni+sentinel ~30s)
 **数据三副本**: admin主 →流复制→ hostdzire(同机房) + solid(异地) ; +solid每日pg_dump(30天)
 
-**服务商故障域**: main / merchant / admin 同属 **DMIT**(其中 main+merchant 还同机房 CN2) ; hostdzire = **别家** ; solid = **异地另一家**。
-→ 跨服务商「同时」宕(任一 DMIT 节点 + hostdzire/solid)几率极低,**忽略不计**。故 §13 只认真对待: ①单台任意挂 ②DMIT 内部双挂(main+merchant / main+admin / merchant+admin)。
-⚠️ 反过来的相关性尾部风险: DMIT 三台(main+merchant+admin)同时挂 = etcd 仅剩 2 < quorum 3,patroni 无法选主、写入中断需人工(超出"一两台"范围,但同服务商需留意)。
+**服务商/机房故障域**: main / merchant / admin 同属 **DMIT 但不同机房**(main/merchant = **三网优化(CN2)**机房 ; admin = **T1** 机房) ; hostdzire = **别家** ; solid = **异地另一家**。
+→ 因为不同机房,**单个 DMIT 机房挂只带走其中的票,剩余仍 ≥ quorum 3**(如 三网优化机房挂带走 main+merchant 2票 → admin+hostdzire+bwh2 = 3 ✓)。跨服务商「同时」宕几率极低,忽略。§13 认真对待: ①单台任意挂 ②机房内/跨机房双挂。
+⚠️ 仅剩的相关性尾部风险: **DMIT 账号级 / 全局网络级**事件(同时打掉三网优化+T1 两机房三票)= etcd 仅剩 hostdzire+bwh2=2 < quorum 3 → 写入中断需人工。比"单机房挂"罕见得多;要彻底免疫需 ≥3 票在非 DMIT(即再加独立服务商投票),复杂度不值,留意即可。
 
 **已接受的取舍**(站长拍板,非缺口,详见 §13): ①merchant/dsrrr.com/apex 商户域名入口单点 —— on-demand 多端点已尽力,不再加成本 ; ②mayi.one/CN2 GIA 入口 ~60s 切换 + 国内线路抖动 —— 为合规走 CN2,尽力而为、不追 1 分钟。
 ~~main+hostdzire / admin+hostdzire~~ 属跨服务商双挂,按上忽略。
