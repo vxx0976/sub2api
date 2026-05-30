@@ -150,11 +150,11 @@ ssh dmit-main "redis-cli -p 26379 sentinel failover mymaster"   # 手动触发 f
 ```
 
 ### 4.7 sub2api 滚动重启/升级 (零中断)
+> **发新版本**走完整发布流程(§12:canary 测 → 生产主 → 兜底)。下面仅用于**已验证镜像的纯滚动重启**。
 ```bash
-# 先 admin standby (backup,无流量)
-ssh dmit-admin "cd /opt/sub2api && docker compose pull && docker compose up -d"
-# 再 hostdzire 生产 (重启时 Caddy 切 admin standby 兜底)
-ssh hostdzire "cd /opt/sub2api && docker compose pull && docker compose up -d"
+# 先 admin 兜底(backup,无流量),再 hostdzire 生产(重启秒级窗口 Caddy 切 admin 兜底)
+ssh dmit-admin "cd /opt/sub2api && ./update.sh"
+ssh hostdzire "cd /opt/sub2api && ./update.sh"
 ```
 
 ---
@@ -342,9 +342,10 @@ ssh hostdzire "cd /opt/sub2api && sed -i 's/DATABASE_HOST=10.88.0.4/DATABASE_HOS
 > ✅ **canary 连的是隔离 test 库,migration 只动 test、绝不碰生产**(已验证 0 连接到生产)。admin 不再跑测试码。
 
 1. `push dev` → CI(dev-build.yml) build `vxx0976/sub2api:dev`
-2. **测试**: `ssh hostdzire "cd /opt/sub2api-test && docker compose pull && docker compose up -d sub2api-canary"` → 在 **api.dsrrr.com** 验证(对着 test 库,migration 安全)
-3. 验证 OK → **部署生产主**: `ssh hostdzire "cd /opt/sub2api && docker compose pull && docker compose up -d"`(此时才在生产库跑 migration)
-4. **部署生产兜底**: `ssh dmit-admin "cd /opt/sub2api && docker compose pull && docker compose up -d"`(admin 现单 service,直接 up 即可)
+> 每个环境都有 `update.sh`(拉镜像+重启+等健康检查),每步即 `cd <目录> && ./update.sh`:
+2. **测试**: `ssh hostdzire "cd /opt/sub2api-test && ./update.sh"` → 在 **api.dsrrr.com** 验证(对着 test 库,migration 安全)
+3. 验证 OK → **部署生产主**: `ssh hostdzire "cd /opt/sub2api && ./update.sh"`(此时才在生产库跑 migration)
+4. **部署生产兜底**: `ssh dmit-admin "cd /opt/sub2api && ./update.sh"`(admin 单 service)
 
 🔄 **重置 test 库数据**(可选,想用更新的真实数据测时): 重跑 §14 恢复演练(solid 最新 dump → restore 进 sub2api-testdb)。test 库是某次快照,会随时间与生产漂移。
 🔧 回滚 admin 兜底拆分: `ssh dmit-admin "cd /opt/sub2api && cp docker-compose.yml.bak.split docker-compose.yml && docker rm -f sub2api-backup && docker compose up -d"`(退回单容器)。
