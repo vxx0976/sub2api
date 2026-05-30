@@ -15,6 +15,8 @@
 入口(DNS):  mayi.one ── CF LB(DNS-only灰云)──┬─► main 主源站(CN2)
                                               └─► hostdzire 备源站(别家)
             dsrrr.com + 商户域名 ──(无CF LB,单点)─► merchant   [on-demand TLS: merchant+main+hostdzire]
+            api.dsrrr.com ───────────────────────► admin Caddy → 兜底(**生产库**,真实管理/预发)
+            canary.dsrrr.com ────────────────────► hostdzire Caddy → canary(**隔离 test 库**,测新版本)
               │
 应用入口Caddy: 各节点 reverse_proxy  →  primary=hostdzire:8080  backup=admin:8080  (health /health, 切 5-10s)
               ▼
@@ -37,8 +39,8 @@ HAProxy:     :5433 → 当前 PG 主      :6380 → 当前 Redis 主   (查 patr
 |---|---|---|---|---|---|---|---|---|---|
 | dmit-main | 2C/2G·CN2 | mayi.one源站 | — | — | — | — | ✅ | ✅ | 监控脚本 |
 | dmit-merchant | 2C/2G·CN2 | dsrrr/商户 | — | — | — | — | ✅ | ✅ | — |
-| dmit-admin | 4C/8G·T1 | —(Caddy 空闲) | **backup兜底**(3G) | 备 | **主★** | **主★** | ✅ | ✅ | HAProxy |
-| hostdzire | 6C/16G·别家 | mayi备/inkmir/**api.dsrrr** | **生产主★** + canary(dev) | **主★** | 从 | 从 | ✅ | ✅ | HAProxy、Prometheus、**测试栈(canary+独立test库,/opt/sub2api-test)** |
+| dmit-admin | 4C/8G·T1 | **api.dsrrr**(→兜底/生产库) | **backup兜底**(3G) | 备 | **主★** | **主★** | ✅ | ✅ | HAProxy |
+| hostdzire | 6C/16G·别家 | mayi备/inkmir/**canary.dsrrr** | **生产主★** + canary(dev) | **主★** | 从 | 从 | ✅ | ✅ | HAProxy、Prometheus、**测试栈(canary+独立test库,/opt/sub2api-test)** |
 | ~~solid~~ | 8C/16G·异地 | — | — | — | — | — | — | — | **已释放 2026-05-29**(退集群,数据从+第二备份均停) |
 | **bwh2** | 1C/0.5G·搬瓦工 | — | — | — | — | — | ✅ | ✅ | **第5票** + main独立哨兵 + node_exporter |
 
@@ -338,13 +340,13 @@ ssh hostdzire "cd /opt/sub2api && sed -i 's/DATABASE_HOST=10.88.0.4/DATABASE_HOS
 
 ### 发布流程 (站长工作流, 2026-05-29 测试环境隔离到 hostdzire 后)
 > **三处 sub2api**:① 测试栈 = hostdzire `/opt/sub2api-test/`(canary dev + **独立 test 库** sub2api-testdb + testredis,绑 `10.88.0.4:8081`)② 生产主 = hostdzire `/opt/sub2api/`(:8080)③ 生产兜底 = admin `/opt/sub2api/` 的 `sub2api-backup`(`10.88.0.3:8080`)。
-> **api.dsrrr.com DNS 直接指 hostdzire(23.80.82.115)**,hostdzire Caddy 静态 vhost(Let's Encrypt 证书)反代本机 canary 8081;admin Caddy 已无站点(空闲,可停)。
+> **域名分工(2026-05-30)**:`api.dsrrr.com` DNS→**admin(45.59.186.84)**,admin Caddy 反代本机兜底 `10.88.0.3:8080`→**生产库**(真实管理/预发,改东西生效);`canary.dsrrr.com` DNS→**hostdzire(23.80.82.115)**,hostdzire Caddy 反代 canary `10.88.0.4:8081`→**隔离 test 库**(测新版本,migration 安全)。两者都 Let's Encrypt 自动签。
 > ✅ **canary 连的是隔离 test 库,migration 只动 test、绝不碰生产**(已验证 0 连接到生产)。admin 不再跑测试码。
 
 > **锁定不可变 tag 发布**(根治浮动 `:dev` 顺序部署的版本错位)。CI 每次构建同时推 `:dev` + `:dev-<12位sha>`(dev-build.yml);compose 用 `image: ...:${SUB2API_TAG:-dev}`,`update.sh <tag>` 会把 tag 写进 `.env` 锁定。三处发**同一个 tag** → 镜像必然一致(已验证)。
 1. `git push origin dev` → CI build `:dev` + `:dev-<sha12>`。**等 CI 完成**。
 2. 取本次构建 tag:`TAG=dev-$(git rev-parse origin/dev | cut -c1-12)`(与 CI 同算法,可复现)
-3. **测试**:`ssh hostdzire "cd /opt/sub2api-test && ./update.sh $TAG"` → 在 **api.dsrrr.com** 验证(对着 test 库)
+3. **测试**:`ssh hostdzire "cd /opt/sub2api-test && ./update.sh $TAG"` → 在 **canary.dsrrr.com** 验证(对着隔离 test 库)
 4. **生产主**:`ssh hostdzire "cd /opt/sub2api && ./update.sh $TAG"`(此时才在生产库跑 migration)
 5. **生产兜底**:`ssh dmit-admin "cd /opt/sub2api && ./update.sh $TAG"`
 > 🔙 **回滚** = 三处再发旧 tag:`./update.sh dev-<旧sha12>`(registry 里历史 tag 都在;2026-05-29 前的老 tag 是 7 位)。
