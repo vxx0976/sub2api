@@ -31,7 +31,8 @@ jobs:
       - name: Get build metadata
         id: meta
         run: |
-          echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          # 固定 12 位(不用 --short:浅克隆位数不定,本地无法复现对应 tag)
+          echo "sha_short=$(git rev-parse HEAD | cut -c1-12)" >> $GITHUB_OUTPUT
           echo "version=$(cat backend/cmd/server/VERSION)" >> $GITHUB_OUTPUT
 
       - name: Build and push Docker image

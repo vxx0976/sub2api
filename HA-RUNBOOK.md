@@ -341,11 +341,14 @@ ssh hostdzire "cd /opt/sub2api && sed -i 's/DATABASE_HOST=10.88.0.4/DATABASE_HOS
 > **api.dsrrr.com DNS 直接指 hostdzire(23.80.82.115)**,hostdzire Caddy 静态 vhost(Let's Encrypt 证书)反代本机 canary 8081;admin Caddy 已无站点(空闲,可停)。
 > ✅ **canary 连的是隔离 test 库,migration 只动 test、绝不碰生产**(已验证 0 连接到生产)。admin 不再跑测试码。
 
-1. `push dev` → CI(dev-build.yml) build `vxx0976/sub2api:dev`
-> 每个环境都有 `update.sh`(拉镜像+重启+等健康检查),每步即 `cd <目录> && ./update.sh`:
-2. **测试**: `ssh hostdzire "cd /opt/sub2api-test && ./update.sh"` → 在 **api.dsrrr.com** 验证(对着 test 库,migration 安全)
-3. 验证 OK → **部署生产主**: `ssh hostdzire "cd /opt/sub2api && ./update.sh"`(此时才在生产库跑 migration)
-4. **部署生产兜底**: `ssh dmit-admin "cd /opt/sub2api && ./update.sh"`(admin 单 service)
+> **锁定不可变 tag 发布**(根治浮动 `:dev` 顺序部署的版本错位)。CI 每次构建同时推 `:dev` + `:dev-<12位sha>`(dev-build.yml);compose 用 `image: ...:${SUB2API_TAG:-dev}`,`update.sh <tag>` 会把 tag 写进 `.env` 锁定。三处发**同一个 tag** → 镜像必然一致(已验证)。
+1. `git push origin dev` → CI build `:dev` + `:dev-<sha12>`。**等 CI 完成**。
+2. 取本次构建 tag:`TAG=dev-$(git rev-parse origin/dev | cut -c1-12)`(与 CI 同算法,可复现)
+3. **测试**:`ssh hostdzire "cd /opt/sub2api-test && ./update.sh $TAG"` → 在 **api.dsrrr.com** 验证(对着 test 库)
+4. **生产主**:`ssh hostdzire "cd /opt/sub2api && ./update.sh $TAG"`(此时才在生产库跑 migration)
+5. **生产兜底**:`ssh dmit-admin "cd /opt/sub2api && ./update.sh $TAG"`
+> 🔙 **回滚** = 三处再发旧 tag:`./update.sh dev-<旧sha12>`(registry 里历史 tag 都在;2026-05-29 前的老 tag 是 7 位)。
+> 不传 tag 的 `./update.sh` 仍可用(用 `.env` 现值,默认浮动 `:dev`),但**正式发布务必带 tag**避免错位。
 
 🔄 **重置 test 库数据**(可选,想用更新的真实数据测时): 重跑 §14 恢复演练(solid 最新 dump → restore 进 sub2api-testdb)。test 库是某次快照,会随时间与生产漂移。
 🔧 回滚 admin 兜底拆分: `ssh dmit-admin "cd /opt/sub2api && cp docker-compose.yml.bak.split docker-compose.yml && docker rm -f sub2api-backup && docker compose up -d"`(退回单容器)。
