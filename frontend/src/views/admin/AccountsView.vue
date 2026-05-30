@@ -274,7 +274,7 @@
             />
           </template>
           <template #cell-groups="{ row }">
-            <AccountGroupsCell :groups="row.groups" :max-display="4" />
+            <AccountGroupsCell :groups="row.groups" />
           </template>
           <template #cell-usage="{ row }">
             <AccountUsageCell
