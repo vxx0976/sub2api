@@ -128,6 +128,7 @@ ssh dmit-main "redis-cli -p 26379 sentinel get-master-addr-by-name mymaster"  # 
 ```bash
 ssh hostdzire "patronictl -c /etc/patroni/config.yml switchover --leader pg-hostdzire --candidate pg-admin --force"
 ```
+> ⚠️ **glibc 异构提醒**: hostdzire=glibc **2.35**、admin=**2.36**,库为 `en_US.UTF-8`。短时切换无碍(2.35↔2.36 排序实际未变)。**若 hostdzire 长期当主、期间有大量文本写入**,切回 admin 后在**主库**跑一次:`REINDEX DATABASE sub2api;` 然后 `ALTER DATABASE sub2api REFRESH COLLATION VERSION;`,消除潜在排序偏差。背景见 §7.14。
 
 ### 4.3 dmit-main 挂 (mayi.one 入口宕)
 **现象**: mayi.one 不可访问; dsrrr.com 正常
@@ -206,6 +207,7 @@ ssh hostdzire "cd /opt/sub2api && sed -i 's/DATABASE_HOST=10.88.0.4/DATABASE_HOS
 11. ~~config.yaml 残留公网IP~~ ✅ 已修 (2026-05-29,admin/hostdzire 的 config.yaml db/redis host 改为本机 HAProxy 与 .env 一致)
 12. **ops_system_logs 表膨胀**: 单表 4.3GB = sub2api 库 76%(551万行/50天)。根因: 应用自带的 ops 清理 **CleanupEnabled 默认 false**(从没跑过)。修法: **后台「系统监控→高级设置→数据保留」开启清理 + 设 ErrorLogRetentionDays**(该项同时管 ops_error_logs + ops_system_logs;app 批量删 5000/批,cron `0 2`)。开启后首跑会删积压(约 2am),之后每日维护;下次 dump 即大幅瘦身。retention 建议 14–30 天(站长定)。
 13. ~~一轮残留清理~~ ✅ (2026-05-29): 5节点清悬空镜像共 ~10.7GB;admin 删孤儿卷+停用空闲 Caddy;main/merchant 删孤儿卷 `sub2api_sub2api_data`+收敛 .bak;solid 清 etcd 残留(unit/datadir/bin)。**solid redis 从公网(45.59.186.84)改走 mesh(10.88.0.3)** —— 消除公网复制通道,也是关 #5 公网DB端口的前置。残留待办仅剩 main/merchant 的 legacy DB-ACCESS 白名单(可删,无害)
+14. **HA 对 glibc 异构 (2026-05-31 审计发现)**: admin=Debian glibc **2.36**、hostdzire=Ubuntu glibc **2.35**,所有库 `en_US.UTF-8`(locale 感知排序)。日常 App 经 HAProxy 只连主库 admin(2.36,stored=actual 匹配)→ **零影响**;隐患仅在**故障切换到 hostdzire 后**(用 2.35 排序导航 2.36 建的索引)。但 2.35→2.36 之间 en_US.UTF-8 排序数据实际未变(真正大改在 2.27→2.28),PG 仅按版本号字符串保守报警 → **实际风险低,建议接受 + 记录**。切换补救已写入 §4.2。长期最干净是两机 glibc 对齐(重装 hostdzire OS,代价大,暂不做)。复制层无碍:物理流复制按字节拷页,与排序无关。
 
 ---
 
@@ -215,11 +217,11 @@ ssh hostdzire "cd /opt/sub2api && sed -i 's/DATABASE_HOST=10.88.0.4/DATABASE_HOS
 |---|---|---|
 | hostdzire 挂 | ✅ Caddy 切 standby | 5-10s |
 | admin 挂 | ✅ patroni+sentinel+HAProxy | ~30s |
-| solid 挂 | ✅ 无感 | 0 |
+| bwh2 (仲裁) 挂 | ✅ 无感 (etcd/sentinel 仍 4/5 过半) | 0 |
 | main 挂 | ❌ mayi.one 入口失效 (待阶段4) | 人工 |
 | merchant 挂 | ❌ dsrrr.com 入口失效 (待阶段4) | 人工 |
 | main+merchant 同挂 | ❌ 两入口全失 (CN2同机房,待阶段4) | 人工 |
-| admin+hostdzire 同挂 | ❌ 需 solid PITR | 小时级 |
+| admin+hostdzire 同挂 | ❌ 需 app→R2 恢复 | 小时级 |
 
 ---
 
