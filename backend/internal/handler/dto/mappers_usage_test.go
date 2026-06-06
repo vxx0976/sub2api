@@ -107,7 +107,7 @@ func TestUsageLogFromService_IncludesServiceTierForUserAndAdmin(t *testing.T) {
 	require.InDelta(t, 1.5, *adminDTO.AccountRateMultiplier, 1e-12)
 }
 
-func TestUsageLogFromService_UsesRequestedModelAndKeepsUpstreamAdminOnly(t *testing.T) {
+func TestUsageLogFromService_ShowsUpstreamModelToUserKeepsRequestedForAdmin(t *testing.T) {
 	t.Parallel()
 
 	upstreamModel := "claude-sonnet-4-20250514"
@@ -121,7 +121,8 @@ func TestUsageLogFromService_UsesRequestedModelAndKeepsUpstreamAdminOnly(t *test
 	userDTO := UsageLogFromService(log)
 	adminDTO := UsageLogFromServiceAdmin(log)
 
-	require.Equal(t, "claude-sonnet-4", userDTO.Model)
+	// 用户端显示实际上游模型；管理端仍以请求名为主，并另列 upstream_model（映射链）。
+	require.Equal(t, "claude-sonnet-4-20250514", userDTO.Model)
 	require.Equal(t, "claude-sonnet-4", adminDTO.Model)
 
 	userJSON, err := json.Marshal(userDTO)
@@ -131,6 +132,40 @@ func TestUsageLogFromService_UsesRequestedModelAndKeepsUpstreamAdminOnly(t *test
 	adminJSON, err := json.Marshal(adminDTO)
 	require.NoError(t, err)
 	require.Contains(t, string(adminJSON), `"upstream_model":"claude-sonnet-4-20250514"`)
+}
+
+func TestUsageLogFromService_UserSeesMappedUpstreamModel(t *testing.T) {
+	t.Parallel()
+
+	// claude-haiku → deepseek-v4-flash 映射场景：用户端应看到真实上游模型。
+	deepseek := "deepseek-v4-flash"
+	mapped := &service.UsageLog{
+		RequestID:      "req_map",
+		Model:          "claude-haiku-4-5-20251001",
+		RequestedModel: "claude-haiku-4-5-20251001",
+		UpstreamModel:  &deepseek,
+	}
+	require.Equal(t, "deepseek-v4-flash", UsageLogFromService(mapped).Model)
+	// 管理端仍以请求名为主（upstream 另列展示）。
+	require.Equal(t, "claude-haiku-4-5-20251001", UsageLogFromServiceAdmin(mapped).Model)
+
+	// 未发生映射（upstream_model 为 nil）：沿用请求名。
+	noMap := &service.UsageLog{
+		RequestID:      "req_nomap",
+		Model:          "claude-haiku-4-5-20251001",
+		RequestedModel: "claude-haiku-4-5-20251001",
+	}
+	require.Equal(t, "claude-haiku-4-5-20251001", UsageLogFromService(noMap).Model)
+
+	// upstream_model 为空字符串也视为未映射。
+	empty := ""
+	emptyUp := &service.UsageLog{
+		RequestID:      "req_empty",
+		Model:          "gpt-x",
+		RequestedModel: "gpt-x",
+		UpstreamModel:  &empty,
+	}
+	require.Equal(t, "gpt-x", UsageLogFromService(emptyUp).Model)
 }
 
 func TestUsageLogFromService_FallsBackToLegacyModelWhenRequestedModelMissing(t *testing.T) {

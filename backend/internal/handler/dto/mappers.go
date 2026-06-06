@@ -3,6 +3,7 @@ package dto
 
 import (
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/service"
@@ -660,6 +661,14 @@ func UsageLogFromService(l *service.UsageLog) *UsageLog {
 		return nil
 	}
 	u := usageLogFromServiceUser(l)
+	// 用户端展示「实际服务的上游模型」：发生模型映射时（如 claude-haiku-4-5 → deepseek-v4-flash），
+	// 让普通用户看到真正被调用的模型，而非请求名。upstream_model 即映射后实际发往上游的模型，
+	// 为空表示未发生映射，沿用请求名。管理端（UsageLogFromServiceAdmin）不受影响，仍展示映射链。
+	if l.UpstreamModel != nil {
+		if real := strings.TrimSpace(*l.UpstreamModel); real != "" {
+			u.Model = real
+		}
+	}
 	return &u
 }
 
