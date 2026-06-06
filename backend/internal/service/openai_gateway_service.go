@@ -2140,7 +2140,7 @@ func (s *OpenAIGatewayService) selectAccountWithLoadAwareness(ctx context.Contex
 }
 
 // openAICompatPlatforms lists platforms that share the OpenAI-compatible gateway.
-var openAICompatPlatforms = []string{PlatformOpenAI, PlatformDeepSeek, PlatformMoonshot}
+var openAICompatPlatforms = []string{PlatformOpenAI, PlatformDeepSeek, PlatformMoonshot, PlatformGLM, PlatformSeedance}
 
 func (s *OpenAIGatewayService) listSchedulableAccounts(ctx context.Context, groupID *int64) ([]Account, error) {
 	if s.schedulerSnapshot != nil {

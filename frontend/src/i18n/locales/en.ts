@@ -4440,6 +4440,16 @@ export default {
         baseUrlHint: 'Leave default for official Moonshot API (api.moonshot.cn)',
         apiKeyHint: 'Your Moonshot API Key'
       },
+      // GLM (Zhipu AI) specific
+      glm: {
+        baseUrlHint: 'Leave default for official Zhipu GLM API (open.bigmodel.cn)',
+        apiKeyHint: 'Your Zhipu GLM API Key'
+      },
+      // Seedance (ByteDance) specific
+      seedance: {
+        baseUrlHint: 'Leave default for Volcano Ark API (ark.cn-beijing.volces.com)',
+        apiKeyHint: 'Your Volcano Ark API Key'
+      },
       // Re-Auth Modal
       reAuthorizeAccount: 'Re-Authorize Account',
       claudeCodeAccount: 'Claude Code Account',

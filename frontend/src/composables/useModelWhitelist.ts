@@ -159,6 +159,18 @@ const moonshotModels = [
   'kimi-latest'
 ]
 
+// GLM (Zhipu AI)
+const glmModels = [
+  'glm-4', 'glm-4-flash', 'glm-4-plus', 'glm-4-long',
+  'glm-4v', 'glm-4v-flash', 'glm-4v-plus',
+  'glm-zero-preview'
+]
+
+// Seedance (ByteDance)
+const seedanceModels = [
+  'seedance-2.0-lite'
+]
+
 // 字节跳动 豆包
 const doubaoModels = [
   'doubao-pro-256k', 'doubao-pro-128k', 'doubao-pro-32k', 'doubao-pro-4k',
@@ -219,6 +231,8 @@ const allModelsList: string[] = [
   ...cohereModels,
   ...yiModels,
   ...moonshotModels,
+  ...glmModels,
+  ...seedanceModels,
   ...doubaoModels,
   ...minimaxModels,
   ...baiduModels,
@@ -285,6 +299,18 @@ const moonshotPresetMappings = [
   { label: 'Kimi K2.6', from: 'kimi-k2.6', to: 'kimi-k2.6', color: 'bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-900/30 dark:text-purple-400' },
   { label: 'Moonshot 128K', from: 'moonshot-v1-128k', to: 'moonshot-v1-128k', color: 'bg-fuchsia-100 text-fuchsia-700 hover:bg-fuchsia-200 dark:bg-fuchsia-900/30 dark:text-fuchsia-400' },
   { label: 'Moonshot 32K', from: 'moonshot-v1-32k', to: 'moonshot-v1-32k', color: 'bg-pink-100 text-pink-700 hover:bg-pink-200 dark:bg-pink-900/30 dark:text-pink-400' }
+]
+
+// GLM (Zhipu AI) 预设映射
+const glmPresetMappings = [
+  { label: 'GLM-4', from: 'glm-4', to: 'glm-4', color: 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400' },
+  { label: 'GLM-4 Flash', from: 'glm-4-flash', to: 'glm-4-flash', color: 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400' },
+  { label: 'GLM-4V', from: 'glm-4v', to: 'glm-4v', color: 'bg-teal-100 text-teal-700 hover:bg-teal-200 dark:bg-teal-900/30 dark:text-teal-400' }
+]
+
+// Seedance (ByteDance) 预设映射
+const seedancePresetMappings = [
+  { label: 'Seedance 2.0 Lite', from: 'seedance-2.0-lite', to: 'seedance-2.0-lite', color: 'bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-400' }
 ]
 
 // Antigravity 预设映射（支持通配符）
@@ -387,6 +413,8 @@ export function getModelsByPlatform(platform: string): string[] {
     case 'cohere': return cohereModels
     case 'yi': return yiModels
     case 'moonshot': return moonshotModels
+    case 'glm': return glmModels
+    case 'seedance': return seedanceModels
     case 'doubao': return doubaoModels
     case 'minimax': return minimaxModels
     case 'baidu': return baiduModels
@@ -403,6 +431,8 @@ export function getPresetMappingsByPlatform(platform: string) {
   if (platform === 'gemini') return geminiPresetMappings
   if (platform === 'deepseek') return deepseekPresetMappings
   if (platform === 'moonshot') return moonshotPresetMappings
+  if (platform === 'glm') return glmPresetMappings
+  if (platform === 'seedance') return seedancePresetMappings
   if (platform === 'antigravity') return antigravityPresetMappings
   if (platform === 'bedrock') return bedrockPresetMappings
   return anthropicPresetMappings

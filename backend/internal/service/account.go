@@ -1155,6 +1155,38 @@ func (a *Account) GetMoonshotBaseURL() string {
 	return "https://api.moonshot.cn"
 }
 
+func (a *Account) IsGLM() bool {
+	return a.Platform == PlatformGLM
+}
+
+func (a *Account) GetGLMBaseURL() string {
+	if !a.IsGLM() {
+		return ""
+	}
+	if a.Type == AccountTypeAPIKey {
+		if baseURL := a.GetCredential("base_url"); baseURL != "" {
+			return baseURL
+		}
+	}
+	return "https://open.bigmodel.cn"
+}
+
+func (a *Account) IsSeedance() bool {
+	return a.Platform == PlatformSeedance
+}
+
+func (a *Account) GetSeedanceBaseURL() string {
+	if !a.IsSeedance() {
+		return ""
+	}
+	if a.Type == AccountTypeAPIKey {
+		if baseURL := a.GetCredential("base_url"); baseURL != "" {
+			return baseURL
+		}
+	}
+	return "https://ark.cn-beijing.volces.com"
+}
+
 func (a *Account) IsOpenAIOAuth() bool {
 	return a.IsOpenAI() && a.Type == AccountTypeOAuth
 }

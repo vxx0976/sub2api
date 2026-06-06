@@ -25,6 +25,8 @@ const (
 	PlatformAntigravity = "antigravity"
 	PlatformDeepSeek    = "deepseek"
 	PlatformMoonshot    = "moonshot"
+	PlatformGLM         = "glm"
+	PlatformSeedance    = "seedance"
 )
 
 // Account type constants

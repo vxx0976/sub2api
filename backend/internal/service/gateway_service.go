@@ -4340,8 +4340,9 @@ func (s *GatewayService) isModelSupportedByAccount(account *Account, requestedMo
 	if account.Platform == PlatformOpenAI && account.IsOpenAIPassthroughEnabled() {
 		return true
 	}
-	// DeepSeek / Moonshot：API Key 模式，允许所有模型（由 GetMappedModel 处理）
-	if (account.Platform == PlatformDeepSeek || account.Platform == PlatformMoonshot) && account.Type == AccountTypeAPIKey {
+	// DeepSeek / Moonshot / GLM / Seedance：API Key 模式，允许所有模型（由 GetMappedModel 处理）
+	if (account.Platform == PlatformDeepSeek || account.Platform == PlatformMoonshot ||
+		account.Platform == PlatformGLM || account.Platform == PlatformSeedance) && account.Type == AccountTypeAPIKey {
 		return true
 	}
 	// OAuth/SetupToken 账号使用 Anthropic 标准映射（短ID → 长ID）

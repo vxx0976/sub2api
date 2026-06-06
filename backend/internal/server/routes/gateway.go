@@ -103,7 +103,7 @@ func RegisterGatewayRoutes(
 			h.OpenAIGateway.Embeddings(c)
 		})
 		gateway.POST("/images/generations", func(c *gin.Context) {
-			if !isOpenAICompatPlatform(getGroupPlatform(c)) {
+			if !supportsImageGenEndpoint(getGroupPlatform(c)) {
 				service.MarkOpsClientBusinessLimited(c, service.OpsClientBusinessLimitedReasonLocalFeatureGate)
 				c.JSON(http.StatusNotFound, gin.H{
 					"error": gin.H{
@@ -116,7 +116,7 @@ func RegisterGatewayRoutes(
 			h.OpenAIGateway.Images(c)
 		})
 		gateway.POST("/images/edits", func(c *gin.Context) {
-			if !isOpenAICompatPlatform(getGroupPlatform(c)) {
+			if !supportsImageGenEndpoint(getGroupPlatform(c)) {
 				service.MarkOpsClientBusinessLimited(c, service.OpsClientBusinessLimitedReasonLocalFeatureGate)
 				c.JSON(http.StatusNotFound, gin.H{
 					"error": gin.H{
@@ -185,7 +185,7 @@ func RegisterGatewayRoutes(
 		h.OpenAIGateway.Embeddings(c)
 	})
 	r.POST("/images/generations", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), requireGroupAnthropic, func(c *gin.Context) {
-		if !isOpenAICompatPlatform(getGroupPlatform(c)) {
+		if !supportsImageGenEndpoint(getGroupPlatform(c)) {
 			service.MarkOpsClientBusinessLimited(c, service.OpsClientBusinessLimitedReasonLocalFeatureGate)
 			c.JSON(http.StatusNotFound, gin.H{
 				"error": gin.H{
@@ -198,7 +198,7 @@ func RegisterGatewayRoutes(
 		h.OpenAIGateway.Images(c)
 	})
 	r.POST("/images/edits", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), requireGroupAnthropic, func(c *gin.Context) {
-		if !isOpenAICompatPlatform(getGroupPlatform(c)) {
+		if !supportsImageGenEndpoint(getGroupPlatform(c)) {
 			service.MarkOpsClientBusinessLimited(c, service.OpsClientBusinessLimitedReasonLocalFeatureGate)
 			c.JSON(http.StatusNotFound, gin.H{
 				"error": gin.H{
@@ -256,10 +256,23 @@ func getGroupPlatform(c *gin.Context) string {
 }
 
 // isOpenAICompatPlatform returns true for platforms that use the OpenAI-compatible
-// gateway (OpenAI, DeepSeek, Moonshot). These platforms share the same /v1/chat/completions
-// and /v1/responses handler.
+// gateway (OpenAI, DeepSeek, Moonshot, GLM, Seedance). These platforms share the
+// same /v1/chat/completions and /v1/responses handler.
 func isOpenAICompatPlatform(platform string) bool {
-	return platform == service.PlatformOpenAI ||
-		platform == service.PlatformDeepSeek ||
-		platform == service.PlatformMoonshot
+	switch platform {
+	case service.PlatformOpenAI,
+		service.PlatformDeepSeek,
+		service.PlatformMoonshot,
+		service.PlatformGLM,
+		service.PlatformSeedance:
+		return true
+	}
+	return false
+}
+
+// supportsImageGenEndpoint returns true for platforms that may use the
+// /v1/images/generations and /v1/images/edits endpoints.
+// Includes all OpenAI-compat platforms plus Gemini (Imagen).
+func supportsImageGenEndpoint(platform string) bool {
+	return isOpenAICompatPlatform(platform) || platform == service.PlatformGemini
 }

@@ -4448,6 +4448,16 @@ export default {
         baseUrlHint: '留空使用官方 Moonshot API（api.moonshot.cn）',
         apiKeyHint: '您的 Moonshot API Key'
       },
+      // GLM (Zhipu AI) specific
+      glm: {
+        baseUrlHint: '留空使用官方智谱 API（open.bigmodel.cn）',
+        apiKeyHint: '您的智谱 GLM API Key'
+      },
+      // Seedance (ByteDance) specific
+      seedance: {
+        baseUrlHint: '留空使用火山方舟 API（ark.cn-beijing.volces.com）',
+        apiKeyHint: '您的火山方舟 API Key'
+      },
       // Re-Auth Modal
       reAuthorizeAccount: '重新授权账号',
       claudeCodeAccount: 'Claude Code 账号',

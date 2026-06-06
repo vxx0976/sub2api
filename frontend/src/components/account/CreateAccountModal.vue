@@ -197,6 +197,32 @@
             </svg>
             Kimi
           </button>
+          <button
+            type="button"
+            @click="form.platform = 'glm'"
+            :class="[
+              'flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all',
+              form.platform === 'glm'
+                ? 'bg-white text-emerald-600 shadow-sm dark:bg-dark-600 dark:text-emerald-400'
+                : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'
+            ]"
+          >
+            <span class="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 text-[10px] font-bold text-white">G</span>
+            GLM
+          </button>
+          <button
+            type="button"
+            @click="form.platform = 'seedance'"
+            :class="[
+              'flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all',
+              form.platform === 'seedance'
+                ? 'bg-white text-amber-600 shadow-sm dark:bg-dark-600 dark:text-amber-400'
+                : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'
+            ]"
+          >
+            <span class="flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white">S</span>
+            Seedance
+          </button>
         </div>
       </div>
 
@@ -1075,7 +1101,11 @@
                     ? 'https://api.deepseek.com'
                     : form.platform === 'moonshot'
                       ? 'https://api.moonshot.cn'
-                      : 'https://api.anthropic.com'
+                      : form.platform === 'glm'
+                        ? 'https://open.bigmodel.cn'
+                        : form.platform === 'seedance'
+                          ? 'https://ark.cn-beijing.volces.com'
+                          : 'https://api.anthropic.com'
             "
           />
           <p class="input-hint">{{ baseUrlHint }}</p>
@@ -1096,7 +1126,11 @@
                     ? 'sk-...'
                     : form.platform === 'moonshot'
                       ? 'sk-...'
-                      : 'sk-ant-...'
+                      : form.platform === 'glm'
+                        ? 'sk-...'
+                        : form.platform === 'seedance'
+                          ? 'sk-...'
+                          : 'sk-ant-...'
             "
           />
           <p class="input-hint">{{ apiKeyHint }}</p>
@@ -3373,6 +3407,8 @@ const baseUrlHint = computed(() => {
   if (form.platform === 'gemini') return t('admin.accounts.gemini.baseUrlHint')
   if (form.platform === 'deepseek') return t('admin.accounts.deepseek.baseUrlHint')
   if (form.platform === 'moonshot') return t('admin.accounts.moonshot.baseUrlHint')
+  if (form.platform === 'glm') return t('admin.accounts.glm.baseUrlHint')
+  if (form.platform === 'seedance') return t('admin.accounts.seedance.baseUrlHint')
   return t('admin.accounts.baseUrlHint')
 })
 
@@ -3381,6 +3417,8 @@ const apiKeyHint = computed(() => {
   if (form.platform === 'gemini') return t('admin.accounts.gemini.apiKeyHint')
   if (form.platform === 'deepseek') return t('admin.accounts.deepseek.apiKeyHint')
   if (form.platform === 'moonshot') return t('admin.accounts.moonshot.apiKeyHint')
+  if (form.platform === 'glm') return t('admin.accounts.glm.apiKeyHint')
+  if (form.platform === 'seedance') return t('admin.accounts.seedance.apiKeyHint')
   return t('admin.accounts.apiKeyHint')
 })
 
@@ -3804,8 +3842,8 @@ const isOAuthFlow = computed(() => {
   if (form.platform === 'anthropic' && accountCategory.value === 'bedrock') {
     return false
   }
-  // DeepSeek / Moonshot 仅支持 API Key，不需要 OAuth 流程
-  if (form.platform === 'deepseek' || form.platform === 'moonshot') {
+  // DeepSeek / Moonshot / GLM / Seedance 仅支持 API Key，不需要 OAuth 流程
+  if (form.platform === 'deepseek' || form.platform === 'moonshot' || form.platform === 'glm' || form.platform === 'seedance') {
     return false
   }
   return accountCategory.value === 'oauth-based'
@@ -3879,8 +3917,8 @@ watch(
       form.type = 'bedrock' as AccountType
       return
     }
-    // DeepSeek / Moonshot 仅支持 API Key
-    if (form.platform === 'deepseek' || form.platform === 'moonshot') {
+    // DeepSeek / Moonshot / GLM / Seedance 仅支持 API Key
+    if (form.platform === 'deepseek' || form.platform === 'moonshot' || form.platform === 'glm' || form.platform === 'seedance') {
       form.type = 'apikey'
       return
     }
@@ -3909,7 +3947,11 @@ watch(
             ? 'https://api.deepseek.com'
             : newPlatform === 'moonshot'
               ? 'https://api.moonshot.cn'
-              : 'https://api.anthropic.com'
+              : newPlatform === 'glm'
+                ? 'https://open.bigmodel.cn'
+                : newPlatform === 'seedance'
+                  ? 'https://ark.cn-beijing.volces.com'
+                  : 'https://api.anthropic.com'
     // Clear model-related settings
     allowedModels.value = []
     modelMappings.value = []
@@ -3928,8 +3970,8 @@ watch(
       antigravityModelMappings.value = []
       antigravityModelRestrictionMode.value = 'mapping'
     }
-    // DeepSeek / Moonshot 仅支持 API Key
-    if (newPlatform === 'deepseek' || newPlatform === 'moonshot') {
+    // DeepSeek / Moonshot / GLM / Seedance 仅支持 API Key
+    if (newPlatform === 'deepseek' || newPlatform === 'moonshot' || newPlatform === 'glm' || newPlatform === 'seedance') {
       accountCategory.value = 'apikey'
     }
     if (newPlatform !== 'gemini' && newPlatform !== 'anthropic' && accountCategory.value === 'service_account') {
@@ -4739,7 +4781,11 @@ const handleSubmit = async () => {
           ? 'https://api.deepseek.com'
           : form.platform === 'moonshot'
             ? 'https://api.moonshot.cn'
-            : 'https://api.anthropic.com'
+            : form.platform === 'glm'
+              ? 'https://open.bigmodel.cn'
+              : form.platform === 'seedance'
+                ? 'https://ark.cn-beijing.volces.com'
+                : 'https://api.anthropic.com'
 
   // Build credentials with optional model mapping
   const credentials: Record<string, unknown> = {
