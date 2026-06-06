@@ -1101,6 +1101,60 @@ func (a *Account) IsAnthropic() bool {
 	return a.Platform == PlatformAnthropic
 }
 
+func (a *Account) IsDeepSeek() bool {
+	return a.Platform == PlatformDeepSeek
+}
+
+func (a *Account) IsDeepSeekAPIKey() bool {
+	return a.IsDeepSeek() && a.Type == AccountTypeAPIKey
+}
+
+func (a *Account) GetDeepSeekAPIKey() string {
+	if !a.IsDeepSeekAPIKey() {
+		return ""
+	}
+	return a.GetCredential("api_key")
+}
+
+func (a *Account) GetDeepSeekBaseURL() string {
+	if !a.IsDeepSeek() {
+		return ""
+	}
+	if a.Type == AccountTypeAPIKey {
+		if baseURL := a.GetCredential("base_url"); baseURL != "" {
+			return baseURL
+		}
+	}
+	return "https://api.deepseek.com"
+}
+
+func (a *Account) IsMoonshot() bool {
+	return a.Platform == PlatformMoonshot
+}
+
+func (a *Account) IsMoonshotAPIKey() bool {
+	return a.IsMoonshot() && a.Type == AccountTypeAPIKey
+}
+
+func (a *Account) GetMoonshotAPIKey() string {
+	if !a.IsMoonshotAPIKey() {
+		return ""
+	}
+	return a.GetCredential("api_key")
+}
+
+func (a *Account) GetMoonshotBaseURL() string {
+	if !a.IsMoonshot() {
+		return ""
+	}
+	if a.Type == AccountTypeAPIKey {
+		if baseURL := a.GetCredential("base_url"); baseURL != "" {
+			return baseURL
+		}
+	}
+	return "https://api.moonshot.cn"
+}
+
 func (a *Account) IsOpenAIOAuth() bool {
 	return a.IsOpenAI() && a.Type == AccountTypeOAuth
 }

@@ -4430,6 +4430,16 @@ export default {
           now: 'now'
         }
       },
+      // DeepSeek specific
+      deepseek: {
+        baseUrlHint: 'Leave default for official DeepSeek API (api.deepseek.com)',
+        apiKeyHint: 'Your DeepSeek API Key'
+      },
+      // Moonshot (Kimi) specific
+      moonshot: {
+        baseUrlHint: 'Leave default for official Moonshot API (api.moonshot.cn)',
+        apiKeyHint: 'Your Moonshot API Key'
+      },
       // Re-Auth Modal
       reAuthorizeAccount: 'Re-Authorize Account',
       claudeCodeAccount: 'Claude Code Account',

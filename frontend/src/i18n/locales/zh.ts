@@ -4438,6 +4438,16 @@ export default {
           now: '现在'
         }
       },
+      // DeepSeek specific
+      deepseek: {
+        baseUrlHint: '留空使用官方 DeepSeek API（api.deepseek.com）',
+        apiKeyHint: '您的 DeepSeek API Key'
+      },
+      // Moonshot (Kimi) specific
+      moonshot: {
+        baseUrlHint: '留空使用官方 Moonshot API（api.moonshot.cn）',
+        apiKeyHint: '您的 Moonshot API Key'
+      },
       // Re-Auth Modal
       reAuthorizeAccount: '重新授权账号',
       claudeCodeAccount: 'Claude Code 账号',

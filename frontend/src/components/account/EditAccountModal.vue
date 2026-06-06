@@ -41,7 +41,11 @@
                   ? 'https://generativelanguage.googleapis.com'
                   : account.platform === 'antigravity'
                     ? 'https://cloudcode-pa.googleapis.com'
-                    : 'https://api.anthropic.com'
+                    : account.platform === 'deepseek'
+                      ? 'https://api.deepseek.com'
+                      : account.platform === 'moonshot'
+                        ? 'https://api.moonshot.cn'
+                        : 'https://api.anthropic.com'
             "
           />
           <p class="input-hint">{{ baseUrlHint }}</p>
@@ -63,7 +67,11 @@
                   ? 'AIza...'
                   : account.platform === 'antigravity'
                     ? 'sk-...'
-                    : 'sk-ant-...'
+                    : account.platform === 'deepseek'
+                      ? 'sk-...'
+                      : account.platform === 'moonshot'
+                        ? 'sk-...'
+                        : 'sk-ant-...'
             "
           />
           <p class="input-hint">{{ t('admin.accounts.leaveEmptyToKeep') }}</p>
@@ -2484,6 +2492,8 @@ const baseUrlHint = computed(() => {
   if (!props.account) return t('admin.accounts.baseUrlHint')
   if (props.account.platform === 'openai') return t('admin.accounts.openai.baseUrlHint')
   if (props.account.platform === 'gemini') return t('admin.accounts.gemini.baseUrlHint')
+  if (props.account.platform === 'deepseek') return t('admin.accounts.deepseek.baseUrlHint')
+  if (props.account.platform === 'moonshot') return t('admin.accounts.moonshot.baseUrlHint')
   return t('admin.accounts.baseUrlHint')
 })
 
@@ -2892,6 +2902,8 @@ const tempUnschedPresets = computed(() => [
 const defaultBaseUrl = computed(() => {
   if (props.account?.platform === 'openai') return 'https://api.openai.com'
   if (props.account?.platform === 'gemini') return 'https://generativelanguage.googleapis.com'
+  if (props.account?.platform === 'deepseek') return 'https://api.deepseek.com'
+  if (props.account?.platform === 'moonshot') return 'https://api.moonshot.cn'
   return 'https://api.anthropic.com'
 })
 
@@ -3159,7 +3171,11 @@ const syncFormFromAccount = (newAccount: Account | null) => {
         ? 'https://api.openai.com'
         : newAccount.platform === 'gemini'
           ? 'https://generativelanguage.googleapis.com'
-          : 'https://api.anthropic.com'
+          : newAccount.platform === 'deepseek'
+            ? 'https://api.deepseek.com'
+            : newAccount.platform === 'moonshot'
+              ? 'https://api.moonshot.cn'
+              : 'https://api.anthropic.com'
     editBaseUrl.value = (credentials.base_url as string) || platformDefaultUrl
 
     // Load model mappings and detect mode
@@ -3232,7 +3248,11 @@ const syncFormFromAccount = (newAccount: Account | null) => {
         ? 'https://api.openai.com'
         : newAccount.platform === 'gemini'
           ? 'https://generativelanguage.googleapis.com'
-          : 'https://api.anthropic.com'
+          : newAccount.platform === 'deepseek'
+            ? 'https://api.deepseek.com'
+            : newAccount.platform === 'moonshot'
+              ? 'https://api.moonshot.cn'
+              : 'https://api.anthropic.com'
     editBaseUrl.value = platformDefaultUrl
 
     // Load model mappings for OpenAI OAuth accounts
