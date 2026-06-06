@@ -1097,6 +1097,17 @@ func (a *Account) IsOpenAI() bool {
 	return a.Platform == PlatformOpenAI
 }
 
+// IsOpenAICompatible returns true if this account uses an OpenAI-compatible API
+// (OpenAI, DeepSeek, Moonshot, GLM, Seedance). Used by the OpenAI gateway scheduler
+// to determine whether an account can serve /v1/chat/completions requests.
+func (a *Account) IsOpenAICompatible() bool {
+	switch a.Platform {
+	case PlatformOpenAI, PlatformDeepSeek, PlatformMoonshot, PlatformGLM, PlatformSeedance:
+		return true
+	}
+	return false
+}
+
 func (a *Account) IsAnthropic() bool {
 	return a.Platform == PlatformAnthropic
 }
@@ -1196,16 +1207,28 @@ func (a *Account) IsOpenAIApiKey() bool {
 }
 
 func (a *Account) GetOpenAIBaseURL() string {
-	if !a.IsOpenAI() {
+	if !a.IsOpenAICompatible() {
 		return ""
 	}
+	// 优先使用账号自定义 base_url
 	if a.Type == AccountTypeAPIKey {
-		baseURL := a.GetCredential("base_url")
-		if baseURL != "" {
+		if baseURL := a.GetCredential("base_url"); baseURL != "" {
 			return baseURL
 		}
 	}
-	return "https://api.openai.com"
+	// 各平台默认 base URL
+	switch a.Platform {
+	case PlatformDeepSeek:
+		return "https://api.deepseek.com"
+	case PlatformMoonshot:
+		return "https://api.moonshot.cn"
+	case PlatformGLM:
+		return "https://open.bigmodel.cn"
+	case PlatformSeedance:
+		return "https://ark.cn-beijing.volces.com"
+	default:
+		return "https://api.openai.com"
+	}
 }
 
 func (a *Account) GetOpenAIAccessToken() string {
@@ -1230,10 +1253,10 @@ func (a *Account) GetOpenAIIDToken() string {
 }
 
 func (a *Account) GetOpenAIApiKey() string {
-	if !a.IsOpenAIApiKey() {
-		return ""
+	if a.IsOpenAICompatible() && a.Type == AccountTypeAPIKey {
+		return a.GetCredential("api_key")
 	}
-	return a.GetCredential("api_key")
+	return ""
 }
 
 func (a *Account) GetOpenAIUserAgent() string {
@@ -1271,7 +1294,7 @@ func (a *Account) SupportsOpenAIEndpointCapability(capability OpenAIEndpointCapa
 	if capability == "" {
 		return true
 	}
-	if !a.IsOpenAI() {
+	if !a.IsOpenAICompatible() {
 		return false
 	}
 	switch capability {
@@ -1339,13 +1362,15 @@ func (a *Account) openAIEndpointCapabilitySet() (map[string]bool, bool) {
 }
 
 func (a *Account) SupportsOpenAIImageCapability(capability OpenAIImagesCapability) bool {
-	if !a.IsOpenAI() {
-		return false
-	}
 	switch capability {
 	case OpenAIImagesCapabilityBasic, OpenAIImagesCapabilityNative:
+		// 仅 OpenAI 平台支持 image 功能
+		if !a.IsOpenAI() {
+			return false
+		}
 		return a.Type == AccountTypeOAuth || a.Type == AccountTypeAPIKey
 	default:
+		// 空 capability（非 image 请求）对所有平台开放
 		return true
 	}
 }

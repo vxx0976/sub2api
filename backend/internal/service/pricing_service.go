@@ -622,6 +622,11 @@ func (s *PricingService) GetModelPricing(modelName string) *LiteLLMModelPricing 
 		return s.matchOpenAIModel(lookupCandidates[0])
 	}
 
+	// 6. 平台级回退（DeepSeek / Moonshot / GLM）
+	if pricing := s.matchByPlatformFallback(lookupCandidates[0]); pricing != nil {
+		return pricing
+	}
+
 	return nil
 }
 
@@ -889,6 +894,91 @@ func (s *PricingService) matchOpenAIModel(model string) *LiteLLMModelPricing {
 	}
 
 	return nil
+}
+
+// ----- DeepSeek 静态定价（远程 model_pricing.json 可能缺失/滞后） -----
+// 来源: https://api-docs.deepseek.com/quick_start/pricing/
+var (
+	deepSeekV4FlashPricing = &LiteLLMModelPricing{
+		InputCostPerToken:           0.14e-6,  // $0.14 / 1M tokens
+		OutputCostPerToken:          0.28e-6,  // $0.28 / 1M tokens
+		CacheReadInputTokenCost:     0.0028e-6, // $0.0028 / 1M tokens
+		CacheCreationInputTokenCost: 0.14e-6,
+		LiteLLMProvider:             "deepseek",
+		Mode:                        "chat",
+		SupportsPromptCaching:       true,
+	}
+	deepSeekV4ProPricing = &LiteLLMModelPricing{
+		InputCostPerToken:           0.435e-6, // $0.435 / 1M tokens
+		OutputCostPerToken:          0.87e-6,  // $0.87 / 1M tokens
+		CacheReadInputTokenCost:     0.003625e-6, // $0.003625 / 1M tokens
+		CacheCreationInputTokenCost: 0.435e-6,
+		LiteLLMProvider:             "deepseek",
+		Mode:                        "chat",
+		SupportsPromptCaching:       true,
+	}
+)
+
+// matchByPlatformFallback 为 DeepSeek / Moonshot (Kimi) / GLM 等独立平台模型提供
+// 回退定价：当精确匹配和模糊匹配都找不到时，根据模型名前缀回退到该平台已知的
+// 基础模型定价。这样新模型上线后即使定价 JSON 尚未更新，也能按同平台最接近的
+// 价格计费，而非返回 $0。
+func (s *PricingService) matchByPlatformFallback(model string) *LiteLLMModelPricing {
+	// ---- DeepSeek 静态精确匹配（不受远程 JSON 影响）----
+	if strings.HasPrefix(model, "deepseek") {
+		if p := matchDeepSeekStaticPricing(model); p != nil {
+			logger.LegacyPrintf("service.pricing",
+				"[Pricing] DeepSeek static pricing matched %s", model)
+			return p
+		}
+	}
+
+	// ---- 通用平台回退：按前缀匹配远程定价数据中的已知模型 ----
+	type platformRule struct {
+		prefixes  []string // 用于判断模型是否属于该平台
+		fallbacks []string // 按优先级尝试的回退模型名
+	}
+
+	rules := []platformRule{
+		{prefixes: []string{"deepseek"}, fallbacks: []string{"deepseek-chat", "deepseek-reasoner"}},
+		{prefixes: []string{"kimi", "moonshot"}, fallbacks: []string{"kimi-k2.6", "kimi-k2.5"}},
+		{prefixes: []string{"glm"}, fallbacks: []string{"glm-5.1"}},
+	}
+
+	for _, rule := range rules {
+		matched := false
+		for _, prefix := range rule.prefixes {
+			if strings.HasPrefix(model, prefix) {
+				matched = true
+				break
+			}
+		}
+		if !matched {
+			continue
+		}
+		for _, fb := range rule.fallbacks {
+			if pricing, ok := s.pricingData[fb]; ok {
+				logger.LegacyPrintf("service.pricing",
+					"[Pricing] Platform fallback matched %s -> %s", model, fb)
+				return pricing
+			}
+		}
+	}
+	return nil
+}
+
+// matchDeepSeekStaticPricing 返回 DeepSeek 模型的硬编码定价。
+// 优先用静态价格确保正确性；远程 JSON 有精确条目时不会走到这里。
+func matchDeepSeekStaticPricing(model string) *LiteLLMModelPricing {
+	switch {
+	case strings.Contains(model, "v4-pro"):
+		return deepSeekV4ProPricing
+	case strings.Contains(model, "v4"):
+		// v4-flash 及其他 v4 变体均按 flash 计费
+		return deepSeekV4FlashPricing
+	default:
+		return nil
+	}
 }
 
 // generateOpenAIModelVariants 生成 OpenAI 模型的回退变体列表

@@ -2462,6 +2462,10 @@ export default {
         openai: 'OpenAI',
         gemini: 'Gemini',
         antigravity: 'Antigravity',
+        deepseek: 'DeepSeek',
+        moonshot: 'Kimi',
+        glm: 'GLM',
+        seedance: 'Seedance',
       },
       deleteConfirm:
         "Are you sure you want to delete '{name}'? All associated API keys will no longer belong to any group.",
@@ -3440,6 +3444,10 @@ export default {
         openai: 'OpenAI',
         gemini: 'Gemini',
         antigravity: 'Antigravity',
+        deepseek: 'DeepSeek',
+        moonshot: 'Kimi',
+        glm: 'GLM',
+        seedance: 'Seedance',
       },
       types: {
         oauth: 'OAuth',

@@ -1320,7 +1320,7 @@ func noAvailableOpenAISelectionError(requestedModel string, compactBlocked bool)
 // openAICompactSupportTier classifies an OpenAI account by compact capability.
 // 0 = explicitly unsupported, 1 = unknown / not yet probed, 2 = explicitly supported.
 func openAICompactSupportTier(account *Account) int {
-	if account == nil || !account.IsOpenAI() {
+	if account == nil || !account.IsOpenAICompatible() {
 		return 0
 	}
 	supported, known := account.OpenAICompactSupportKnown()
@@ -1336,12 +1336,10 @@ func openAICompactSupportTier(account *Account) int {
 // isOpenAIAccountEligibleForRequest centralises the schedulable / OpenAI / model /
 // compact-support checks used during account selection.
 func isOpenAIAccountEligibleForRequest(ctx context.Context, account *Account, requestedModel string, requireCompact bool, requiredCapability OpenAIEndpointCapability) bool {
-	if account == nil || !account.IsOpenAI() || !account.IsSchedulableForModelWithContext(ctx, requestedModel) {
+	if account == nil || !account.IsOpenAICompatible() || !account.IsSchedulableForModelWithContext(ctx, requestedModel) {
 		return false
 	}
 	if paused, reason := shouldAutoPauseOpenAIAccountByQuota(ctx, account); paused {
-		// Debug level: this fires per-candidate on the scheduling hot path, so Info
-		// would amplify into log spam once several accounts cross the threshold.
 		slog.Debug("account_auto_paused_by_quota",
 			"account_id", account.ID,
 			"window", reason.window,
@@ -1369,7 +1367,7 @@ type openAIQuotaAutoPauseDecision struct {
 }
 
 func shouldAutoPauseOpenAIAccountByQuota(ctx context.Context, account *Account) (bool, openAIQuotaAutoPauseDecision) {
-	if account == nil || !account.IsOpenAI() {
+	if account == nil || !account.IsOpenAICompatible() {
 		return false, openAIQuotaAutoPauseDecision{}
 	}
 	// Per-account explicit-disable flags must take precedence over the global default.
@@ -2288,8 +2286,28 @@ func (s *OpenAIGatewayService) schedulingConfig() config.GatewaySchedulingConfig
 	}
 }
 
-// GetAccessToken gets the access token for an OpenAI account
+// GetAccessToken gets the access token for an OpenAI-compatible account.
+// For non-OpenAI platforms (DeepSeek, Moonshot, GLM, Seedance), it delegates to
+// the platform-specific token provider via the generic API Key credential.
 func (s *OpenAIGatewayService) GetAccessToken(ctx context.Context, account *Account) (string, string, error) {
+	// OpenAI-compatible platforms (DeepSeek, Moonshot, GLM, Seedance) use API Key only
+	if account.IsOpenAICompatible() && !account.IsOpenAI() {
+		tp := s.resolveTokenProviderForPlatform(account.Platform)
+		if tp != nil {
+			token, err := tp.GetAccessToken(ctx, account)
+			if err != nil {
+				return "", "", err
+			}
+			return token, "apikey", nil
+		}
+		// fallback: read api_key directly from credentials
+		apiKey := account.GetCredential("api_key")
+		if apiKey == "" {
+			return "", "", fmt.Errorf("api_key not found in credentials for platform %s", account.Platform)
+		}
+		return apiKey, "apikey", nil
+	}
+
 	switch account.Type {
 	case AccountTypeOAuth:
 		// 使用 TokenProvider 获取缓存的 token
@@ -2314,6 +2332,28 @@ func (s *OpenAIGatewayService) GetAccessToken(ctx context.Context, account *Acco
 		return apiKey, "apikey", nil
 	default:
 		return "", "", fmt.Errorf("unsupported account type: %s", account.Type)
+	}
+}
+
+// platformTokenProvider is a common interface for platform-specific token providers.
+type platformTokenProvider interface {
+	GetAccessToken(ctx context.Context, account *Account) (string, error)
+}
+
+// resolveTokenProviderForPlatform returns the stateless token provider for the
+// given OpenAI-compatible platform.  Returns nil for unknown platforms.
+func (s *OpenAIGatewayService) resolveTokenProviderForPlatform(platform string) platformTokenProvider {
+	switch platform {
+	case PlatformDeepSeek:
+		return NewDeepSeekTokenProvider()
+	case PlatformMoonshot:
+		return NewMoonshotTokenProvider()
+	case PlatformGLM:
+		return NewGLMTokenProvider()
+	case PlatformSeedance:
+		return NewSeedanceTokenProvider()
+	default:
+		return nil
 	}
 }
 

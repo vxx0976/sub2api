@@ -1016,7 +1016,11 @@ const platformFilterOptions = computed(() => [
   { value: 'anthropic', label: 'Anthropic' },
   { value: 'openai', label: 'OpenAI' },
   { value: 'gemini', label: 'Gemini' },
-  { value: 'antigravity', label: 'Antigravity' }
+  { value: 'antigravity', label: 'Antigravity' },
+  { value: 'deepseek', label: 'DeepSeek' },
+  { value: 'moonshot', label: 'Kimi' },
+  { value: 'glm', label: 'GLM' },
+  { value: 'seedance', label: 'Seedance' }
 ])
 
 // Group options for assign (only subscription type groups)
