@@ -6,8 +6,50 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/stretchr/testify/require"
 )
+
+func newKimiPricingService(rate float64) *PricingService {
+	return &PricingService{
+		cfg:         &config.Config{Pricing: config.PricingConfig{CNYToUSDRate: rate}},
+		pricingData: map[string]*LiteLLMModelPricing{},
+	}
+}
+
+func TestGetModelPricing_KimiK26OfficialPriceConvertedToUSD(t *testing.T) {
+	const rate = 6.77
+	got := newKimiPricingService(rate).GetModelPricing("kimi-k2.6")
+	require.NotNil(t, got)
+	// 官方人民币价（每 100 万 token）÷ 汇率 ÷ 1e6 = 每 token 美元价。
+	require.InDelta(t, 6.5/rate/1e6, got.InputCostPerToken, 1e-15)
+	require.InDelta(t, 27.0/rate/1e6, got.OutputCostPerToken, 1e-15)
+	require.InDelta(t, 1.1/rate/1e6, got.CacheReadInputTokenCost, 1e-15)
+	require.Equal(t, "moonshot", got.LiteLLMProvider)
+	require.True(t, got.SupportsPromptCaching)
+}
+
+func TestGetModelPricing_KimiK26NameVariants(t *testing.T) {
+	svc := newKimiPricingService(6.77)
+	for _, name := range []string{"kimi-k2.6", "kimi-k2-6", "Kimi-K2.6", "moonshotai/Kimi-K2.6", "moonshot/kimi-k2-6"} {
+		require.NotNilf(t, svc.GetModelPricing(name), "expected pricing for %q", name)
+	}
+}
+
+func TestGetModelPricing_KimiK26RateConfigurableAndFallback(t *testing.T) {
+	// 汇率可配置：改汇率即改美元价。
+	got1 := newKimiPricingService(7.0).GetModelPricing("kimi-k2.6")
+	require.NotNil(t, got1)
+	require.InDelta(t, 6.5/7.0/1e6, got1.InputCostPerToken, 1e-15)
+
+	// 配置缺失/非法（0 或负）时回退到兜底汇率 defaultCNYToUSDRate。
+	got2 := newKimiPricingService(0).GetModelPricing("kimi-k2.6")
+	require.NotNil(t, got2)
+	require.InDelta(t, 6.5/defaultCNYToUSDRate/1e6, got2.InputCostPerToken, 1e-15)
+
+	// 不误伤其它 kimi 型号：kimi-k2-thinking 不应被 k2.6 覆盖逻辑命中。
+	require.Nil(t, newKimiPricingService(6.77).GetModelPricing("kimi-k2-thinking"))
+}
 
 func TestParsePricingData_ParsesPriorityAndServiceTierFields(t *testing.T) {
 	svc := &PricingService{}

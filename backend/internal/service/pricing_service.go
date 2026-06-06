@@ -53,6 +53,17 @@ var (
 	}
 )
 
+// Kimi K2.6 官方定价（人民币，每 100 万 token），来源：
+// https://platform.kimi.com/docs/pricing/chat-k26
+// 官方仅公布人民币价，系统统一按美元计价，故在查找时用可配置汇率折算成美元。
+const (
+	kimiK26InputCNYPerMTok     = 6.5  // 输入（未命中缓存）
+	kimiK26CacheReadCNYPerMTok = 1.1  // 输入（命中缓存）
+	kimiK26OutputCNYPerMTok    = 27.0 // 输出
+	// defaultCNYToUSDRate 仅在配置缺失/非法时兜底；正常由 pricing.cny_to_usd_rate 提供。
+	defaultCNYToUSDRate = 6.77
+)
+
 // LiteLLMModelPricing LiteLLM价格数据结构
 // 只保留我们需要的字段，使用指针来处理可能缺失的值
 type LiteLLMModelPricing struct {
@@ -522,6 +533,36 @@ func (s *PricingService) validatePricingURL(raw string) (string, error) {
 	return normalized, nil
 }
 
+// cnyToUSDRate 返回当前生效的人民币→美元汇率；配置缺失或非法时回退到兜底值。
+func (s *PricingService) cnyToUSDRate() float64 {
+	if s.cfg != nil && s.cfg.Pricing.CNYToUSDRate > 0 {
+		return s.cfg.Pricing.CNYToUSDRate
+	}
+	return defaultCNYToUSDRate
+}
+
+// kimiK26Pricing 命中 Kimi K2.6 时返回按官方人民币价折算的美元定价，否则返回 nil。
+// 价格库（LiteLLM）目前没有 kimi-k2.6 条目，且官方仅公布人民币价，故在此用官方价 +
+// 可配置汇率折算，保证“按官方价计费”，同时把会浮动的汇率留作配置、不写死。
+func (s *PricingService) kimiK26Pricing(modelLower string) *LiteLLMModelPricing {
+	m := strings.ReplaceAll(modelLower, "_", "-")
+	m = strings.ReplaceAll(m, " ", "")
+	// 兼容各家对同一模型的不同写法：kimi-k2.6 / kimi-k2-6 / kimi-k26
+	if !strings.Contains(m, "kimi-k2.6") && !strings.Contains(m, "kimi-k2-6") && !strings.Contains(m, "kimi-k26") {
+		return nil
+	}
+	rate := s.cnyToUSDRate()
+	const perToken = 1.0 / 1_000_000.0 // 每 100 万 token 单价 → 每 token 单价
+	return &LiteLLMModelPricing{
+		InputCostPerToken:       kimiK26InputCNYPerMTok / rate * perToken,
+		OutputCostPerToken:      kimiK26OutputCNYPerMTok / rate * perToken,
+		CacheReadInputTokenCost: kimiK26CacheReadCNYPerMTok / rate * perToken,
+		LiteLLMProvider:         "moonshot",
+		Mode:                    "chat",
+		SupportsPromptCaching:   true,
+	}
+}
+
 // GetModelPricing 获取模型价格（带模糊匹配）
 func (s *PricingService) GetModelPricing(modelName string) *LiteLLMModelPricing {
 	s.mu.RLock()
@@ -533,6 +574,13 @@ func (s *PricingService) GetModelPricing(modelName string) *LiteLLMModelPricing 
 
 	// 标准化模型名称（同时兼容 "models/xxx"、VertexAI 资源名等前缀）
 	modelLower := strings.ToLower(strings.TrimSpace(modelName))
+
+	// Kimi K2.6：官方人民币计价、价格库无对应条目，用官方价折算成美元覆盖，
+	// 确保按官方价计费（汇率见 pricing.cny_to_usd_rate 配置）。
+	if pricing := s.kimiK26Pricing(modelLower); pricing != nil {
+		return pricing
+	}
+
 	lookupCandidates := s.buildModelLookupCandidates(modelLower)
 
 	// 1. 精确匹配
