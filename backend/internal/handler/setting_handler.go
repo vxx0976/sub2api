@@ -114,6 +114,8 @@ func (h *SettingHandler) GetPublicSettings(c *gin.Context) {
 		AffiliateEnabled: settings.AffiliateEnabled,
 
 		RiskControlEnabled: settings.RiskControlEnabled,
+
+		AllowUserViewErrorRequests: settings.AllowUserViewErrorRequests, // 来自 main
 	}
 
 	// If accessed via a reseller's custom domain, overlay reseller branding

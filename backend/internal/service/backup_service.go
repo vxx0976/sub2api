@@ -3,6 +3,7 @@ package service
 import (
 	"compress/gzip"
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -129,7 +130,10 @@ type BackupService struct {
 	shuttingDown atomic.Bool        // 阻止新备份启动
 	bgCtx        context.Context    // 所有后台操作的 parent context
 	bgCancel     context.CancelFunc // 取消所有活跃后台操作
-	locker       *LeaderLocker
+
+	lockCache  LeaderLockCache
+	db         *sql.DB
+	instanceID string
 }
 
 func NewBackupService(
@@ -138,7 +142,6 @@ func NewBackupService(
 	encryptor SecretEncryptor,
 	storeFactory BackupObjectStoreFactory,
 	dumper DBDumper,
-	locker *LeaderLocker,
 ) *BackupService {
 	bgCtx, bgCancel := context.WithCancel(context.Background())
 	return &BackupService{
@@ -149,8 +152,18 @@ func NewBackupService(
 		dumper:       dumper,
 		bgCtx:        bgCtx,
 		bgCancel:     bgCancel,
-		locker:       locker,
+		instanceID:   uuid.NewString(),
 	}
+}
+
+// SetLeaderLock injects the leader-lock cache and DB used to elect a single
+// instance for the periodic job. When both are nil the job runs ungated.
+func (s *BackupService) SetLeaderLock(lockCache LeaderLockCache, db *sql.DB) {
+	if s == nil {
+		return
+	}
+	s.lockCache = lockCache
+	s.db = db
 }
 
 // Start 启动定时备份调度器并清理孤立记录
@@ -394,7 +407,7 @@ func (s *BackupService) runScheduledBackup() {
 	ctx, cancel := context.WithTimeout(s.bgCtx, 30*time.Minute)
 	defer cancel()
 
-	release, ok := s.locker.TryAcquire(ctx, "leader:backup", 35*time.Minute)
+	release, ok := tryAcquireSingletonLeaderLock(ctx, s.lockCache, s.db, "leader:backup", s.instanceID, 35*time.Minute)
 	if !ok {
 		return
 	}

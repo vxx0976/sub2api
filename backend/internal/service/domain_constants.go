@@ -484,7 +484,7 @@ func SettingKeyAuthSourcePlatformQuotas(source string) string {
 // AdminAPIKeyPrefix is the prefix for admin API keys (distinct from user "sk-" keys).
 const AdminAPIKeyPrefix = "admin-"
 
-// Referral system constants
+// Referral system constants（来自 dev）
 const (
 	// ReferralCodePrefix is the prefix for referral codes
 	ReferralCodePrefix = "R"
@@ -496,3 +496,7 @@ const (
 	// Both referrer and invitee get this percentage of the order amount in USD (rounded)
 	ReferralRewardPercentage = 0.10
 )
+
+// SettingKeyAllowUserViewErrorRequests controls whether end users can view
+// their own failed requests on the usage page. Default false (opt-in).（来自 main）
+const SettingKeyAllowUserViewErrorRequests = "allow_user_view_error_requests"

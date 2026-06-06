@@ -49,7 +49,7 @@ func TestFailoverGroupServiceSoftReconcileDemotesOnly(t *testing.T) {
 			30: 1, // lower priority member C available
 		},
 	}
-	svc := NewFailoverGroupService(repo, nil, nil, nil, nil)
+	svc := NewFailoverGroupService(repo, nil, nil, nil)
 	active := int64(20)
 	group := &Group{
 		ID:                     99,

@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"crypto/rand"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -14,6 +15,7 @@ import (
 
 	"github.com/Wei-Shaw/sub2api/internal/pkg/epay"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
+	"github.com/google/uuid"
 )
 
 // Setting keys for recharge
@@ -32,12 +34,15 @@ type RechargeService struct {
 	orderRepo    RechargeOrderRepository
 	settingRepo  SettingRepository
 	adminService AdminService
-	locker       *LeaderLocker
 	syncInterval time.Duration
 	stopCh       chan struct{}
 	stopOnce     sync.Once
 	startOnce    sync.Once
 	wg           sync.WaitGroup
+
+	lockCache  LeaderLockCache
+	db         *sql.DB
+	instanceID string
 }
 
 // NewRechargeService creates a new RechargeService
@@ -45,15 +50,18 @@ func NewRechargeService(
 	orderRepo RechargeOrderRepository,
 	settingRepo SettingRepository,
 	adminService AdminService,
-	locker *LeaderLocker,
+	lockCache LeaderLockCache,
+	db *sql.DB,
 ) *RechargeService {
 	svc := &RechargeService{
 		orderRepo:    orderRepo,
 		settingRepo:  settingRepo,
 		adminService: adminService,
-		locker:       locker,
 		syncInterval: time.Minute,
 		stopCh:       make(chan struct{}),
+		lockCache:    lockCache,
+		db:           db,
+		instanceID:   uuid.NewString(),
 	}
 	svc.Start()
 	return svc
@@ -288,7 +296,7 @@ func (s *RechargeService) runPendingOrderSweep() {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	release, ok := s.locker.TryAcquire(ctx, "leader:recharge_expire", 2*time.Minute)
+	release, ok := tryAcquireSingletonLeaderLock(ctx, s.lockCache, s.db, "leader:recharge_expire", s.instanceID, 2*time.Minute)
 	if !ok {
 		return
 	}

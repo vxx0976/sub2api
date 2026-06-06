@@ -2,28 +2,44 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"log"
 	"sync"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 // AccountExpiryService periodically pauses expired accounts when auto-pause is enabled.
 type AccountExpiryService struct {
 	accountRepo AccountRepository
-	locker      *LeaderLocker
 	interval    time.Duration
 	stopCh      chan struct{}
 	stopOnce    sync.Once
 	wg          sync.WaitGroup
+
+	lockCache  LeaderLockCache
+	db         *sql.DB
+	instanceID string
 }
 
-func NewAccountExpiryService(accountRepo AccountRepository, interval time.Duration, locker *LeaderLocker) *AccountExpiryService {
+func NewAccountExpiryService(accountRepo AccountRepository, interval time.Duration) *AccountExpiryService {
 	return &AccountExpiryService{
 		accountRepo: accountRepo,
-		locker:      locker,
 		interval:    interval,
 		stopCh:      make(chan struct{}),
+		instanceID:  uuid.NewString(),
 	}
+}
+
+// SetLeaderLock injects the leader-lock cache and DB used to elect a single
+// instance for the periodic job. When both are nil the job runs ungated.
+func (s *AccountExpiryService) SetLeaderLock(lockCache LeaderLockCache, db *sql.DB) {
+	if s == nil {
+		return
+	}
+	s.lockCache = lockCache
+	s.db = db
 }
 
 func (s *AccountExpiryService) Start() {
@@ -62,7 +78,7 @@ func (s *AccountExpiryService) runOnce() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	release, ok := s.locker.TryAcquire(ctx, "leader:account_expiry", 2*time.Minute)
+	release, ok := tryAcquireSingletonLeaderLock(ctx, s.lockCache, s.db, "leader:account_expiry", s.instanceID, 2*time.Minute)
 	if !ok {
 		return
 	}

@@ -33,6 +33,7 @@ type User struct {
 	LastUsedAt           *time.Time `json:"last_used_at,omitempty"`
 	CreatedAt            time.Time  `json:"created_at"`
 	UpdatedAt            time.Time  `json:"updated_at"`
+	DeletedAt            *time.Time `json:"deleted_at,omitempty"` // 非 nil 表示用户已软删除（来自 main）
 
 	// Referral system fields（来自 dev：分销/推荐）
 	ReferralCode     *string `json:"referral_code,omitempty"`

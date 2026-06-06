@@ -41,6 +41,17 @@ func ProvideEmailQueueService(emailService *EmailService) *EmailQueueService {
 	return NewEmailQueueService(emailService, 3)
 }
 
+// ProvideOpenAIOAuthService creates OpenAIOAuthService with privacy/account enrichment support.
+func ProvideOpenAIOAuthService(
+	proxyRepo ProxyRepository,
+	oauthClient OpenAIOAuthClient,
+	privacyClientFactory PrivacyClientFactory,
+) *OpenAIOAuthService {
+	svc := NewOpenAIOAuthService(proxyRepo, oauthClient)
+	svc.SetPrivacyClientFactory(privacyClientFactory)
+	return svc
+}
+
 // ProvideTokenRefreshService creates and starts TokenRefreshService
 func ProvideTokenRefreshService(
 	accountRepo AccountRepository,
@@ -55,7 +66,8 @@ func ProvideTokenRefreshService(
 	privacyClientFactory PrivacyClientFactory,
 	proxyRepo ProxyRepository,
 	refreshAPI *OAuthRefreshAPI,
-	locker *LeaderLocker,
+	lockCache LeaderLockCache,
+	db *sql.DB,
 	runtimeBlocker AccountRuntimeBlocker,
 ) *TokenRefreshService {
 	svc := NewTokenRefreshService(accountRepo, oauthService, openaiOAuthService, geminiOAuthService, antigravityOAuthService, cacheInvalidator, schedulerCache, cfg, tempUnschedCache)
@@ -65,7 +77,7 @@ func ProvideTokenRefreshService(
 	svc.SetRefreshAPI(refreshAPI)
 	// 调用侧显式注入后台刷新策略，避免策略漂移
 	svc.SetRefreshPolicy(DefaultBackgroundRefreshPolicy())
-	svc.SetLocker(locker)
+	svc.SetLeaderLock(lockCache, db)
 	svc.SetAccountRuntimeBlocker(runtimeBlocker)
 	svc.Start()
 	return svc
@@ -130,8 +142,9 @@ func ProvideAntigravityTokenProvider(
 }
 
 // ProvideDashboardAggregationService 创建并启动仪表盘聚合服务
-func ProvideDashboardAggregationService(repo DashboardAggregationRepository, timingWheel *TimingWheelService, cfg *config.Config) *DashboardAggregationService {
+func ProvideDashboardAggregationService(repo DashboardAggregationRepository, timingWheel *TimingWheelService, lockCache LeaderLockCache, db *sql.DB, cfg *config.Config) *DashboardAggregationService {
 	svc := NewDashboardAggregationService(repo, timingWheel, cfg)
+	svc.SetLeaderLock(lockCache, db)
 	svc.Start()
 	return svc
 }
@@ -144,17 +157,19 @@ func ProvideUsageCleanupService(repo UsageCleanupRepository, timingWheel *Timing
 }
 
 // ProvideAccountExpiryService creates and starts AccountExpiryService.
-func ProvideAccountExpiryService(accountRepo AccountRepository, locker *LeaderLocker) *AccountExpiryService {
-	svc := NewAccountExpiryService(accountRepo, time.Minute, locker)
+func ProvideAccountExpiryService(accountRepo AccountRepository, lockCache LeaderLockCache, db *sql.DB) *AccountExpiryService {
+	svc := NewAccountExpiryService(accountRepo, time.Minute)
+	svc.SetLeaderLock(lockCache, db)
 	svc.Start()
 	return svc
 }
 
 // ProvideSubscriptionExpiryService creates and starts SubscriptionExpiryService.
-func ProvideSubscriptionExpiryService(userSubRepo UserSubscriptionRepository, settingRepo SettingRepository, locker *LeaderLocker, notificationEmailService *NotificationEmailService) *SubscriptionExpiryService {
-	svc := NewSubscriptionExpiryService(userSubRepo, time.Minute, locker)
+func ProvideSubscriptionExpiryService(userSubRepo UserSubscriptionRepository, settingRepo SettingRepository, notificationEmailService *NotificationEmailService, lockCache LeaderLockCache, db *sql.DB) *SubscriptionExpiryService {
+	svc := NewSubscriptionExpiryService(userSubRepo, time.Minute)
 	svc.SetSettingRepository(settingRepo)
 	svc.SetNotificationEmailService(notificationEmailService)
+	svc.SetLeaderLock(lockCache, db)
 	svc.Start()
 	return svc
 }
@@ -334,8 +349,9 @@ func ProvideSystemOperationLockService(repo IdempotencyRepository, cfg *config.C
 	return NewSystemOperationLockService(repo, buildIdempotencyConfig(cfg))
 }
 
-func ProvideIdempotencyCleanupService(repo IdempotencyRepository, cfg *config.Config, locker *LeaderLocker) *IdempotencyCleanupService {
-	svc := NewIdempotencyCleanupService(repo, cfg, locker)
+func ProvideIdempotencyCleanupService(repo IdempotencyRepository, cfg *config.Config, lockCache LeaderLockCache, db *sql.DB) *IdempotencyCleanupService {
+	svc := NewIdempotencyCleanupService(repo, cfg)
+	svc.SetLeaderLock(lockCache, db)
 	svc.Start()
 	return svc
 }
@@ -355,9 +371,11 @@ func ProvideGroupHealthCheckService(
 	accountTestSvc *AccountTestService,
 	rateLimitSvc *RateLimitService,
 	cfg *config.Config,
-	locker *LeaderLocker,
+	lockCache LeaderLockCache,
+	db *sql.DB,
 ) *GroupHealthCheckService {
-	svc := NewGroupHealthCheckService(groupRepo, accountRepo, accountTestSvc, rateLimitSvc, cfg, locker)
+	svc := NewGroupHealthCheckService(groupRepo, accountRepo, accountTestSvc, rateLimitSvc, cfg)
+	svc.SetLeaderLock(lockCache, db)
 	svc.Start()
 	return svc
 }
@@ -371,11 +389,13 @@ func ProvideFailoverGroupService(
 	eventRepo FailoverEventRepository,
 	usageLogRepo UsageLogRepository,
 	accountTestSvc *AccountTestService,
-	locker *LeaderLocker,
+	lockCache LeaderLockCache,
+	db *sql.DB,
 	healthCheckSvc *GroupHealthCheckService,
 	adminSvc AdminService,
 ) *FailoverGroupService {
-	svc := NewFailoverGroupService(groupRepo, accountRepo, eventRepo, accountTestSvc, locker)
+	svc := NewFailoverGroupService(groupRepo, accountRepo, eventRepo, accountTestSvc)
+	svc.SetLeaderLock(lockCache, db)
 	if healthCheckSvc != nil {
 		healthCheckSvc.SetFailoverGroupService(svc)
 	}
@@ -400,9 +420,11 @@ func ProvideScheduledTestRunnerService(
 	accountTestSvc *AccountTestService,
 	rateLimitSvc *RateLimitService,
 	cfg *config.Config,
-	locker *LeaderLocker,
+	lockCache LeaderLockCache,
+	db *sql.DB,
 ) *ScheduledTestRunnerService {
-	svc := NewScheduledTestRunnerService(planRepo, scheduledSvc, accountTestSvc, rateLimitSvc, cfg, locker)
+	svc := NewScheduledTestRunnerService(planRepo, scheduledSvc, accountTestSvc, rateLimitSvc, cfg)
+	svc.SetLeaderLock(lockCache, db)
 	svc.Start()
 	return svc
 }
@@ -434,9 +456,11 @@ func ProvideBackupService(
 	encryptor SecretEncryptor,
 	storeFactory BackupObjectStoreFactory,
 	dumper DBDumper,
-	locker *LeaderLocker,
+	lockCache LeaderLockCache,
+	db *sql.DB,
 ) *BackupService {
-	svc := NewBackupService(settingRepo, cfg, encryptor, storeFactory, dumper, locker)
+	svc := NewBackupService(settingRepo, cfg, encryptor, storeFactory, dumper)
+	svc.SetLeaderLock(lockCache, db)
 	svc.Start()
 	return svc
 }
@@ -546,7 +570,7 @@ var ProviderSet = wire.NewSet(
 	NewOpenAIGatewayService,
 	wire.Bind(new(AccountRuntimeBlocker), new(*OpenAIGatewayService)),
 	NewOAuthService,
-	NewOpenAIOAuthService,
+	ProvideOpenAIOAuthService,
 	NewGeminiOAuthService,
 	NewGeminiQuotaService,
 	NewCompositeTokenCacheInvalidator,
@@ -604,7 +628,6 @@ var ProviderSet = wire.NewSet(
 	NewTLSFingerprintProfileService,
 
 	NewDigestSessionStore,
-	NewLeaderLocker,
 	ProvideIdempotencyCoordinator,
 	ProvideSystemOperationLockService,
 	ProvideIdempotencyCleanupService,
@@ -665,8 +688,9 @@ func ProvidePaymentService(entClient *dbent.Client, registry *payment.Registry, 
 }
 
 // ProvidePaymentOrderExpiryService creates and starts PaymentOrderExpiryService.
-func ProvidePaymentOrderExpiryService(paymentSvc *PaymentService) *PaymentOrderExpiryService {
+func ProvidePaymentOrderExpiryService(paymentSvc *PaymentService, lockCache LeaderLockCache, db *sql.DB) *PaymentOrderExpiryService {
 	svc := NewPaymentOrderExpiryService(paymentSvc, 60*time.Second)
+	svc.SetLeaderLock(lockCache, db)
 	svc.Start()
 	return svc
 }

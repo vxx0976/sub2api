@@ -3,75 +3,66 @@ package service
 import (
 	"context"
 	"database/sql"
-	"sync"
 	"time"
-
-	"github.com/Wei-Shaw/sub2api/internal/config"
-	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
-	"github.com/google/uuid"
-	"github.com/redis/go-redis/v9"
 )
 
-// LeaderLocker provides distributed leader election for periodic background tasks.
-// It uses Redis SetNX as the primary lock mechanism and falls back to PostgreSQL
-// advisory locks when Redis is unavailable.
+// LeaderLockCache provides cross-instance mutual exclusion for periodic background
+// jobs. It is implemented in the repository layer (Redis-backed) so the service
+// layer never depends on Redis directly. Release is a compare-and-delete keyed by
+// owner so a stale holder can never delete a peer's lock.
+type LeaderLockCache interface {
+	// TryAcquireLeaderLock sets key=owner with the given TTL iff key is absent.
+	// It returns true when the caller becomes the owner.
+	TryAcquireLeaderLock(ctx context.Context, key, owner string, ttl time.Duration) (bool, error)
+	// ReleaseLeaderLock deletes key iff it is still owned by owner.
+	ReleaseLeaderLock(ctx context.Context, key, owner string) error
+}
+
+// tryAcquireSingletonLeaderLock provides best-effort single-flight execution of a
+// periodic background job across multiple instances. It prefers the Redis-backed
+// LeaderLockCache and falls back to a Postgres advisory lock when the cache is
+// unavailable or errors, mirroring the approach used by the Ops background
+// services.
 //
-// In "simple" run mode (single instance), locking is skipped entirely.
-type LeaderLocker struct {
-	db          *sql.DB
-	redisClient *redis.Client
-	cfg         *config.Config
-	instanceID  string
-
-	warnOnce sync.Once
-}
-
-// NewLeaderLocker creates a LeaderLocker. Both db and redisClient may be nil;
-// when both are nil, TryAcquire always succeeds (single-instance assumption).
-func NewLeaderLocker(db *sql.DB, redisClient *redis.Client, cfg *config.Config) *LeaderLocker {
-	return &LeaderLocker{
-		db:          db,
-		redisClient: redisClient,
-		cfg:         cfg,
-		instanceID:  uuid.NewString(),
-	}
-}
-
-var leaderLockReleaseScript = redis.NewScript(`
-if redis.call("GET", KEYS[1]) == ARGV[1] then
-  return redis.call("DEL", KEYS[1])
-end
-return 0
-`)
-
-// TryAcquire attempts to acquire a distributed lock for the given key.
-// Returns (release, true) on success, or (nil, false) if another instance holds the lock.
-// The caller MUST call release() (if non-nil) when done.
-func (l *LeaderLocker) TryAcquire(ctx context.Context, key string, ttl time.Duration) (release func(), ok bool) {
-	if l == nil {
-		return nil, true
-	}
-	if l.cfg != nil && l.cfg.RunMode == config.RunModeSimple {
-		return nil, true
+// Semantics:
+//   - acquired      -> returns a non-nil release func and true; callers should
+//     defer the release once the job finishes.
+//   - held by peer  -> returns (nil, false); callers should skip this cycle.
+//   - no backend    -> when neither the cache nor a DB is configured (e.g. unit
+//     tests, or a single-instance deployment without Redis) it runs without
+//     gating, returning a no-op release and true, so the job is never silently
+//     starved.
+//
+// The TTL is purely a crash-safety bound: callers release the lock as soon as the
+// job completes, so leadership is re-contested every cycle rather than pinned to
+// one instance. The TTL must therefore be larger than the job's worst-case
+// runtime so the lock does not expire mid-run.
+func tryAcquireSingletonLeaderLock(ctx context.Context, cache LeaderLockCache, db *sql.DB, key, owner string, ttl time.Duration) (func(), bool) {
+	if ctx == nil {
+		ctx = context.Background()
 	}
 
-	// Primary: Redis SetNX
-	if l.redisClient != nil {
-		acquired, err := l.redisClient.SetNX(ctx, key, l.instanceID, ttl).Result()
+	if cache != nil {
+		ok, err := cache.TryAcquireLeaderLock(ctx, key, owner, ttl)
 		if err == nil {
-			if !acquired {
+			if !ok {
 				return nil, false
 			}
-			return func() {
-				_, _ = leaderLockReleaseScript.Run(ctx, l.redisClient, []string{key}, l.instanceID).Result()
-			}, true
+			release := func() {
+				ctx2, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+				defer cancel()
+				_ = cache.ReleaseLeaderLock(ctx2, key, owner)
+			}
+			return release, true
 		}
-		// Redis error: fall through to DB advisory lock
-		l.warnOnce.Do(func() {
-			logger.LegacyPrintf("service.leader_lock", "[LeaderLocker] Redis SetNX failed; falling back to DB advisory lock: %v", err)
-		})
+		// Cache error: fall through to the DB advisory lock so a flaky Redis does
+		// not stampede the job across every instance.
 	}
 
-	// Fallback: PostgreSQL advisory lock
-	return tryAcquireDBAdvisoryLock(ctx, l.db, hashAdvisoryLockID(key))
+	if db != nil {
+		return tryAcquireDBAdvisoryLock(ctx, db, hashAdvisoryLockID(key))
+	}
+
+	// No coordination backend available: run without gating.
+	return func() {}, true
 }

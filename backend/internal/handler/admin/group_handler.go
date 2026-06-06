@@ -145,8 +145,8 @@ type CreateGroupRequest struct {
 // UpdateGroupRequest represents update group request
 type UpdateGroupRequest struct {
 	Name             string             `json:"name"`
-	Description      string             `json:"description"`
-	NameI18n         map[string]string  `json:"name_i18n"`
+	Description      *string            `json:"description"` // 来自 main：nil 不改，&"" 清空
+	NameI18n         map[string]string  `json:"name_i18n"`   // 来自 dev：多语言
 	DescriptionI18n  map[string]string  `json:"description_i18n"`
 	Platform         string             `json:"platform" binding:"omitempty,oneof=anthropic openai gemini antigravity"`
 	RateMultiplier   *float64           `json:"rate_multiplier"`

@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"crypto/rand"
+	"database/sql"
 	"fmt"
 	"math/big"
 	"strconv"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/payment"
+	"github.com/google/uuid"
 )
 
 // AdminAliMPayConfig AliMPay 后台配置 DTO
@@ -68,13 +70,16 @@ type OrderService struct {
 	adminService   AdminService
 	settingService *SettingService
 	alipay         *payment.AlipayPayment
-	locker         *LeaderLocker
 	expireInterval time.Duration
 
 	stopCh    chan struct{}
 	stopOnce  sync.Once
 	startOnce sync.Once
 	wg        sync.WaitGroup
+
+	lockCache  LeaderLockCache
+	db         *sql.DB
+	instanceID string
 }
 
 // NewOrderService 创建 OrderService
@@ -84,7 +89,8 @@ func NewOrderService(
 	adminService AdminService,
 	settingService *SettingService,
 	alipay *payment.AlipayPayment,
-	locker *LeaderLocker,
+	lockCache LeaderLockCache,
+	db *sql.DB,
 ) *OrderService {
 	svc := &OrderService{
 		orderRepo:      orderRepo,
@@ -92,9 +98,11 @@ func NewOrderService(
 		adminService:   adminService,
 		settingService: settingService,
 		alipay:         alipay,
-		locker:         locker,
 		expireInterval: time.Minute,
 		stopCh:         make(chan struct{}),
+		lockCache:      lockCache,
+		db:             db,
+		instanceID:     uuid.NewString(),
 	}
 	svc.Start()
 	return svc
@@ -288,14 +296,12 @@ func (s *OrderService) runExpireCycle() {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	if s.locker != nil {
-		release, ok := s.locker.TryAcquire(ctx, "leader:alimpay_expire", 2*time.Minute)
-		if !ok {
-			return
-		}
-		if release != nil {
-			defer release()
-		}
+	release, ok := tryAcquireSingletonLeaderLock(ctx, s.lockCache, s.db, "leader:alimpay_expire", s.instanceID, 2*time.Minute)
+	if !ok {
+		return
+	}
+	if release != nil {
+		defer release()
 	}
 
 	n, err := s.ExpirePendingOrders(ctx)

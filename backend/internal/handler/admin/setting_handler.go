@@ -307,6 +307,8 @@ func (h *SettingHandler) GetSettings(c *gin.Context) {
 		AvailableChannelsEnabled: settings.AvailableChannelsEnabled,
 
 		AffiliateEnabled: settings.AffiliateEnabled,
+
+		AllowUserViewErrorRequests: settings.AllowUserViewErrorRequests,
 	}
 
 	// OpenAI fast policy (stored under a dedicated setting key)
@@ -686,6 +688,8 @@ type UpdateSettingsRequest struct {
 	AuthSourceGitHubPlatformQuotas   map[string]*service.DefaultPlatformQuotaSetting `json:"auth_source_default_github_platform_quotas"`
 	AuthSourceGooglePlatformQuotas   map[string]*service.DefaultPlatformQuotaSetting `json:"auth_source_default_google_platform_quotas"`
 	AuthSourceDingTalkPlatformQuotas map[string]*service.DefaultPlatformQuotaSetting `json:"auth_source_default_dingtalk_platform_quotas"`
+
+	AllowUserViewErrorRequests *bool `json:"allow_user_view_error_requests"`
 }
 
 // UpdateSettings 更新系统设置
@@ -1648,6 +1652,12 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 			}
 			return previousSettings.EpayKey
 		}(),
+		AllowUserViewErrorRequests: func() bool {
+			if req.AllowUserViewErrorRequests != nil {
+				return *req.AllowUserViewErrorRequests
+			}
+			return previousSettings.AllowUserViewErrorRequests
+		}(),
 		OpsMonitoringEnabled: func() bool {
 			if req.OpsMonitoringEnabled != nil {
 				return *req.OpsMonitoringEnabled
@@ -2147,7 +2157,8 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 
 		AffiliateEnabled: updatedSettings.AffiliateEnabled,
 
-		RiskControlEnabled: updatedSettings.RiskControlEnabled,
+		RiskControlEnabled:         updatedSettings.RiskControlEnabled,
+		AllowUserViewErrorRequests: updatedSettings.AllowUserViewErrorRequests,
 	}
 	if fastPolicy, err := h.settingService.GetOpenAIFastPolicySettings(c.Request.Context()); err != nil {
 		slog.Error("openai_fast_policy_settings_get_failed", "error", err)
@@ -2548,6 +2559,12 @@ func diffSettings(before *service.SystemSettings, after *service.SystemSettings,
 	}
 	if before.BackendModeEnabled != after.BackendModeEnabled {
 		changed = append(changed, "backend_mode_enabled")
+	}
+	if before.PurchaseSubscriptionEnabled != after.PurchaseSubscriptionEnabled {
+		changed = append(changed, "purchase_subscription_enabled")
+	}
+	if before.PurchaseSubscriptionURL != after.PurchaseSubscriptionURL {
+		changed = append(changed, "purchase_subscription_url")
 	}
 	if before.TableDefaultPageSize != after.TableDefaultPageSize {
 		changed = append(changed, "table_default_page_size")

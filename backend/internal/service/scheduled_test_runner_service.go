@@ -2,11 +2,13 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"sync"
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
+	"github.com/google/uuid"
 	"github.com/robfig/cron/v3"
 )
 
@@ -19,11 +21,14 @@ type ScheduledTestRunnerService struct {
 	accountTestSvc *AccountTestService
 	rateLimitSvc   *RateLimitService
 	cfg            *config.Config
-	locker         *LeaderLocker
 
 	cron      *cron.Cron
 	startOnce sync.Once
 	stopOnce  sync.Once
+
+	lockCache  LeaderLockCache
+	db         *sql.DB
+	instanceID string
 }
 
 // NewScheduledTestRunnerService creates a new runner.
@@ -33,7 +38,6 @@ func NewScheduledTestRunnerService(
 	accountTestSvc *AccountTestService,
 	rateLimitSvc *RateLimitService,
 	cfg *config.Config,
-	locker *LeaderLocker,
 ) *ScheduledTestRunnerService {
 	return &ScheduledTestRunnerService{
 		planRepo:       planRepo,
@@ -41,8 +45,18 @@ func NewScheduledTestRunnerService(
 		accountTestSvc: accountTestSvc,
 		rateLimitSvc:   rateLimitSvc,
 		cfg:            cfg,
-		locker:         locker,
+		instanceID:     uuid.NewString(),
 	}
+}
+
+// SetLeaderLock injects the leader-lock cache and DB used to elect a single
+// instance for the periodic job. When both are nil the job runs ungated.
+func (s *ScheduledTestRunnerService) SetLeaderLock(lockCache LeaderLockCache, db *sql.DB) {
+	if s == nil {
+		return
+	}
+	s.lockCache = lockCache
+	s.db = db
 }
 
 // Start begins the cron ticker (every minute).
@@ -94,7 +108,7 @@ func (s *ScheduledTestRunnerService) runScheduled() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 
-	release, ok := s.locker.TryAcquire(ctx, "leader:scheduled_test_runner", 2*time.Minute)
+	release, ok := tryAcquireSingletonLeaderLock(ctx, s.lockCache, s.db, "leader:scheduled_test_runner", s.instanceID, 2*time.Minute)
 	if !ok {
 		return
 	}

@@ -2,26 +2,31 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"sync"
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
+	"github.com/google/uuid"
 )
 
 // IdempotencyCleanupService 定期清理已过期的幂等记录，避免表无限增长。
 type IdempotencyCleanupService struct {
 	repo     IdempotencyRepository
-	locker   *LeaderLocker
 	interval time.Duration
 	batch    int
 
 	startOnce sync.Once
 	stopOnce  sync.Once
 	stopCh    chan struct{}
+
+	lockCache  LeaderLockCache
+	db         *sql.DB
+	instanceID string
 }
 
-func NewIdempotencyCleanupService(repo IdempotencyRepository, cfg *config.Config, locker *LeaderLocker) *IdempotencyCleanupService {
+func NewIdempotencyCleanupService(repo IdempotencyRepository, cfg *config.Config) *IdempotencyCleanupService {
 	interval := 60 * time.Second
 	batch := 500
 	if cfg != nil {
@@ -33,12 +38,22 @@ func NewIdempotencyCleanupService(repo IdempotencyRepository, cfg *config.Config
 		}
 	}
 	return &IdempotencyCleanupService{
-		repo:     repo,
-		locker:   locker,
-		interval: interval,
-		batch:    batch,
-		stopCh:   make(chan struct{}),
+		repo:       repo,
+		interval:   interval,
+		batch:      batch,
+		stopCh:     make(chan struct{}),
+		instanceID: uuid.NewString(),
 	}
+}
+
+// SetLeaderLock injects the leader-lock cache and DB used to elect a single
+// instance for the periodic job. When both are nil the job runs ungated.
+func (s *IdempotencyCleanupService) SetLeaderLock(lockCache LeaderLockCache, db *sql.DB) {
+	if s == nil {
+		return
+	}
+	s.lockCache = lockCache
+	s.db = db
 }
 
 func (s *IdempotencyCleanupService) Start() {
@@ -82,7 +97,7 @@ func (s *IdempotencyCleanupService) cleanupOnce() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	release, ok := s.locker.TryAcquire(ctx, "leader:idempotency_cleanup", 2*time.Minute)
+	release, ok := tryAcquireSingletonLeaderLock(ctx, s.lockCache, s.db, "leader:idempotency_cleanup", s.instanceID, 2*time.Minute)
 	if !ok {
 		return
 	}

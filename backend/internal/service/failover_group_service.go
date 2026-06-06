@@ -2,11 +2,13 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"sync"
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
+	"github.com/google/uuid"
 )
 
 const (
@@ -41,13 +43,16 @@ type FailoverGroupService struct {
 	accountRepo    AccountRepository
 	eventRepo      FailoverEventRepository
 	accountTestSvc *AccountTestService
-	locker         *LeaderLocker
 
 	softStop    chan struct{}
 	probeStop   chan struct{}
 	cleanupStop chan struct{}
 	startOnce   sync.Once
 	stopOnce    sync.Once
+
+	lockCache  LeaderLockCache
+	db         *sql.DB
+	instanceID string
 }
 
 func NewFailoverGroupService(
@@ -55,21 +60,30 @@ func NewFailoverGroupService(
 	accountRepo AccountRepository,
 	eventRepo FailoverEventRepository,
 	accountTestSvc *AccountTestService,
-	locker *LeaderLocker,
 ) *FailoverGroupService {
 	return &FailoverGroupService{
 		groupRepo:      groupRepo,
 		accountRepo:    accountRepo,
 		eventRepo:      eventRepo,
 		accountTestSvc: accountTestSvc,
-		locker:         locker,
 		softStop:       make(chan struct{}),
 		probeStop:      make(chan struct{}),
 		cleanupStop:    make(chan struct{}),
+		instanceID:     uuid.NewString(),
 	}
 }
 
-// Start 启动两个 ticker，内部 goroutine 通过 LeaderLocker 做集群唯一。
+// SetLeaderLock injects the leader-lock cache and DB used to elect a single
+// instance for the periodic reconcilers. When both are nil they run ungated.
+func (s *FailoverGroupService) SetLeaderLock(lockCache LeaderLockCache, db *sql.DB) {
+	if s == nil {
+		return
+	}
+	s.lockCache = lockCache
+	s.db = db
+}
+
+// Start 启动两个 ticker，内部 goroutine 通过 leader-lock 做集群唯一。
 func (s *FailoverGroupService) Start() {
 	if s == nil {
 		return
@@ -132,7 +146,7 @@ func (s *FailoverGroupService) runEventCleanupLoop() {
 func (s *FailoverGroupService) runEventCleanupOnce() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
-	release, ok := s.locker.TryAcquire(ctx, failoverEventCleanupLockKey, 5*time.Minute)
+	release, ok := tryAcquireSingletonLeaderLock(ctx, s.lockCache, s.db, failoverEventCleanupLockKey, s.instanceID, 5*time.Minute)
 	if !ok {
 		return
 	}
@@ -166,7 +180,7 @@ func (s *FailoverGroupService) runRecoveryProbeLoop() {
 func (s *FailoverGroupService) runSoftReconcileOnce() {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
-	release, ok := s.locker.TryAcquire(ctx, failoverSoftReconcileLockKey, 2*time.Minute)
+	release, ok := tryAcquireSingletonLeaderLock(ctx, s.lockCache, s.db, failoverSoftReconcileLockKey, s.instanceID, 2*time.Minute)
 	if !ok {
 		return
 	}
@@ -188,7 +202,7 @@ func (s *FailoverGroupService) runSoftReconcileOnce() {
 func (s *FailoverGroupService) runRecoveryProbeOnce() {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 	defer cancel()
-	release, ok := s.locker.TryAcquire(ctx, failoverRecoveryProbeLockKey, 3*time.Minute)
+	release, ok := tryAcquireSingletonLeaderLock(ctx, s.lockCache, s.db, failoverRecoveryProbeLockKey, s.instanceID, 3*time.Minute)
 	if !ok {
 		return
 	}

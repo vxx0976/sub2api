@@ -148,7 +148,7 @@ func (r *subscriptionExpirySettingRepoStub) Delete(context.Context, string) erro
 }
 
 func TestSubscriptionExpiryService_ExpiryReminderEnabledDefaultsToTrue(t *testing.T) {
-	svc := NewSubscriptionExpiryService(nil, time.Minute, nil)
+	svc := NewSubscriptionExpiryService(nil, time.Minute)
 	svc.SetSettingRepository(&subscriptionExpirySettingRepoStub{values: map[string]string{}})
 
 	require.True(t, svc.expiryReminderEnabled(context.Background()))
@@ -159,7 +159,7 @@ func TestSubscriptionExpiryService_ExpiryReminderDisabledSkipsSubscriptionScan(t
 	settingRepo := &subscriptionExpirySettingRepoStub{
 		values: map[string]string{SettingKeySubscriptionExpiryNotifyEnabled: "false"},
 	}
-	svc := NewSubscriptionExpiryService(repo, time.Minute, nil)
+	svc := NewSubscriptionExpiryService(repo, time.Minute)
 	svc.SetSettingRepository(settingRepo)
 	svc.SetNotificationEmailService(NewNotificationEmailService(settingRepo, nil))
 
@@ -169,7 +169,7 @@ func TestSubscriptionExpiryService_ExpiryReminderDisabledSkipsSubscriptionScan(t
 }
 
 func TestSubscriptionExpiryService_ExpiryReminderSettingReadErrorFailsClosed(t *testing.T) {
-	svc := NewSubscriptionExpiryService(nil, time.Minute, nil)
+	svc := NewSubscriptionExpiryService(nil, time.Minute)
 	svc.SetSettingRepository(&subscriptionExpirySettingRepoStub{err: errors.New("db down")})
 
 	require.False(t, svc.expiryReminderEnabled(context.Background()))

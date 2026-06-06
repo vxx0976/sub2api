@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"log/slog"
 	"strings"
 	"sync"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
+	"github.com/google/uuid"
 	"github.com/robfig/cron/v3"
 )
 
@@ -26,12 +28,15 @@ type GroupHealthCheckService struct {
 	accountTestSvc   *AccountTestService
 	rateLimitSvc     *RateLimitService
 	cfg              *config.Config
-	locker           *LeaderLocker
 	failoverGroupSvc *FailoverGroupService
 
 	cron      *cron.Cron
 	startOnce sync.Once
 	stopOnce  sync.Once
+
+	lockCache  LeaderLockCache
+	db         *sql.DB
+	instanceID string
 }
 
 // SetFailoverGroupService 由 wiring 阶段注入，避免构造时的循环依赖。
@@ -49,7 +54,6 @@ func NewGroupHealthCheckService(
 	accountTestSvc *AccountTestService,
 	rateLimitSvc *RateLimitService,
 	cfg *config.Config,
-	locker *LeaderLocker,
 ) *GroupHealthCheckService {
 	return &GroupHealthCheckService{
 		groupRepo:      groupRepo,
@@ -57,8 +61,18 @@ func NewGroupHealthCheckService(
 		accountTestSvc: accountTestSvc,
 		rateLimitSvc:   rateLimitSvc,
 		cfg:            cfg,
-		locker:         locker,
+		instanceID:     uuid.NewString(),
 	}
+}
+
+// SetLeaderLock injects the leader-lock cache and DB used to elect a single
+// instance for the periodic health checks. When both are nil they run ungated.
+func (s *GroupHealthCheckService) SetLeaderLock(lockCache LeaderLockCache, db *sql.DB) {
+	if s == nil {
+		return
+	}
+	s.lockCache = lockCache
+	s.db = db
 }
 
 func (s *GroupHealthCheckService) Start() {
@@ -111,7 +125,7 @@ func (s *GroupHealthCheckService) runHealthCheck() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
 
-	release, ok := s.locker.TryAcquire(ctx, "leader:group_health_check", 15*time.Minute)
+	release, ok := tryAcquireSingletonLeaderLock(ctx, s.lockCache, s.db, "leader:group_health_check", s.instanceID, 15*time.Minute)
 	if !ok {
 		return
 	}
@@ -260,7 +274,7 @@ func (s *GroupHealthCheckService) runLogRetention() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
 
-	release, ok := s.locker.TryAcquire(ctx, "leader:group_health_check_retention", 15*time.Minute)
+	release, ok := tryAcquireSingletonLeaderLock(ctx, s.lockCache, s.db, "leader:group_health_check_retention", s.instanceID, 15*time.Minute)
 	if !ok {
 		return
 	}

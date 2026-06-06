@@ -51,15 +51,15 @@ func NewUserHandler(
 
 // CreateUserRequest represents admin create user request
 type CreateUserRequest struct {
-	Email         string  `json:"email" binding:"required,email"`
-	Password      string  `json:"password" binding:"required,min=6"`
-	Username      string  `json:"username"`
-	Notes         string  `json:"notes"`
-	Role          string  `json:"role" binding:"omitempty,oneof=user reseller"`
-	Balance       float64 `json:"balance"`
-	Concurrency   int     `json:"concurrency"`
-	RPMLimit      int     `json:"rpm_limit"`
-	AllowedGroups []int64 `json:"allowed_groups"`
+	Email         string   `json:"email" binding:"required,email"`
+	Password      string   `json:"password" binding:"required,min=6"`
+	Username      string   `json:"username"`
+	Notes         string   `json:"notes"`
+	Role          string   `json:"role" binding:"omitempty,oneof=user reseller"`
+	Balance       *float64 `json:"balance"`
+	Concurrency   int      `json:"concurrency"`
+	RPMLimit      int      `json:"rpm_limit"`
+	AllowedGroups []int64  `json:"allowed_groups"`
 }
 
 // UpdateUserRequest represents admin update user request
@@ -166,8 +166,11 @@ func (h *UserHandler) List(c *gin.Context) {
 		}
 	}
 
-	// Batch lookup parent domains
-	parentDomains, _ := h.domainRepo.GetDomainsByResellerIDs(c.Request.Context(), parentIDList)
+	// Batch lookup parent domains（domainRepo 在测试/无分销配置下可能为 nil，做防御）
+	var parentDomains map[int64]string
+	if h.domainRepo != nil {
+		parentDomains, _ = h.domainRepo.GetDomainsByResellerIDs(c.Request.Context(), parentIDList)
+	}
 
 	// Build response with concurrency info and parent domains
 	out := make([]UserWithConcurrency, len(users))
@@ -220,7 +223,12 @@ func (h *UserHandler) GetByID(c *gin.Context) {
 		return
 	}
 
-	user, err := h.adminService.GetUser(c.Request.Context(), userID)
+	var user *service.User
+	if c.Query("include_deleted") == "true" {
+		user, err = h.adminService.GetUserIncludeDeleted(c.Request.Context(), userID)
+	} else {
+		user, err = h.adminService.GetUser(c.Request.Context(), userID)
+	}
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return

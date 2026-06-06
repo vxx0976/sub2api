@@ -1402,6 +1402,35 @@
               </div>
             </div>
           </div>
+
+        <!-- Usage Records Settings -->
+        <div class="card">
+          <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+              {{ t('admin.settings.usageRecords.title') }}
+            </h2>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              {{ t('admin.settings.usageRecords.description') }}
+            </p>
+          </div>
+          <div class="space-y-4 p-6">
+            <!-- User error requests visibility -->
+            <div class="flex items-center justify-between">
+              <div>
+                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {{ t('admin.settings.user_error_view.label') }}
+                </label>
+                <p class="text-xs text-gray-500 dark:text-gray-400">
+                  {{ t('admin.settings.user_error_view.description') }}
+                </p>
+              </div>
+              <label class="toggle">
+                <input v-model="form.allow_user_view_error_requests" type="checkbox" />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
         </div>
 
         <!-- LinuxDo Connect OAuth 登录 -->
@@ -5558,6 +5587,8 @@ const form = reactive<SettingsForm>({
   google_oauth_client_secret: '',
   // Risk control (from main)
   risk_control_enabled: false,
+  // Allow user view error requests (from main)
+  allow_user_view_error_requests: false,
 })
 
 const authSourceDefaults = reactive<AuthSourceDefaultsState>(
@@ -6484,6 +6515,8 @@ async function saveSettings() {
       google_oauth_client_secret: form.google_oauth_client_secret || undefined,
       google_oauth_redirect_url: form.google_oauth_redirect_url,
       google_oauth_frontend_redirect_url: form.google_oauth_frontend_redirect_url,
+      // Allow user view error requests (from main)
+      allow_user_view_error_requests: form.allow_user_view_error_requests,
     }
 
     // 仅当 openai_fast_policy_settings 已成功从后端加载时才回写，

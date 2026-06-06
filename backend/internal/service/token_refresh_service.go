@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
+	"github.com/google/uuid"
 )
 
 // tokenRefreshTempUnschedDuration token 刷新重试耗尽后临时不可调度的持续时间
@@ -27,8 +29,11 @@ type TokenRefreshService struct {
 	schedulerCache   SchedulerCache   // 用于同步更新调度器缓存，解决 token 刷新后缓存不一致问题
 	tempUnschedCache TempUnschedCache // 用于清除 Redis 中的临时不可调度缓存
 	refreshAPI       *OAuthRefreshAPI // 统一刷新 API
-	locker           *LeaderLocker
 	runtimeBlocker   AccountRuntimeBlocker
+
+	lockCache  LeaderLockCache
+	db         *sql.DB
+	instanceID string
 
 	// OpenAI privacy: 刷新成功后检查并设置 training opt-out
 	privacyClientFactory PrivacyClientFactory
@@ -59,6 +64,7 @@ func NewTokenRefreshService(
 		schedulerCache:   schedulerCache,
 		tempUnschedCache: tempUnschedCache,
 		stopCh:           make(chan struct{}),
+		instanceID:       uuid.NewString(),
 	}
 
 	openAIRefresher := NewOpenAITokenRefresher(openaiOAuthService, accountRepo)
@@ -86,9 +92,14 @@ func NewTokenRefreshService(
 	return s
 }
 
-// SetLocker 注入分布式锁
-func (s *TokenRefreshService) SetLocker(locker *LeaderLocker) {
-	s.locker = locker
+// SetLeaderLock 注入分布式锁（leader-lock cache + DB），用于多实例下单实例执行。
+// 两者均为 nil 时不做集群互斥（单实例 / 测试行为）。
+func (s *TokenRefreshService) SetLeaderLock(lockCache LeaderLockCache, db *sql.DB) {
+	if s == nil {
+		return
+	}
+	s.lockCache = lockCache
+	s.db = db
 }
 
 // SetPrivacyDeps 注入 OpenAI privacy opt-out 所需依赖
@@ -180,7 +191,7 @@ func (s *TokenRefreshService) refreshLoop() {
 func (s *TokenRefreshService) processRefresh() {
 	ctx := context.Background()
 
-	release, ok := s.locker.TryAcquire(ctx, "leader:token_refresh", 10*time.Minute)
+	release, ok := tryAcquireSingletonLeaderLock(ctx, s.lockCache, s.db, "leader:token_refresh", s.instanceID, 10*time.Minute)
 	if !ok {
 		return
 	}
