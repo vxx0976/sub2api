@@ -577,6 +577,10 @@ func (s *PricingService) kimiMoonshotPricingOverride(modelLower string) *LiteLLM
 			base := strings.TrimSuffix(m, "-vision-preview")
 			cny, found = kimiMoonshotPricingTable[base]
 		}
+		// 兜底：所有 kimi-* 模型（含未来新模型）统一按 kimi-k2.6 计费
+		if !found && strings.HasPrefix(m, "kimi-") {
+			cny, found = kimiMoonshotPricingTable["kimi-k2.6"]
+		}
 	}
 
 	if !found {

@@ -80,8 +80,10 @@ func TestGetModelPricing_KimiK26RateConfigurableAndFallback(t *testing.T) {
 	require.NotNil(t, got2)
 	require.InDelta(t, 6.5/defaultCNYToUSDRate/1e6, got2.InputCostPerToken, 1e-15)
 
-	// 不误伤其它 kimi 型号：kimi-k2-thinking 不应被覆盖逻辑命中。
-	require.Nil(t, newKimiPricingService(1.0).GetModelPricing("kimi-k2-thinking"))
+	// 所有 kimi-* 模型兜底到 kimi-k2.6 计费（含未来新模型）。
+	got3 := newKimiPricingService(1.0).GetModelPricing("kimi-k2-thinking")
+	require.NotNil(t, got3)
+	require.InDelta(t, 6.5/1.0/1e6, got3.InputCostPerToken, 1e-15)
 }
 
 func newCNYPricingService(rate float64) *PricingService {
