@@ -192,7 +192,65 @@ func (s *AccountTestService) TestAccountConnection(c *gin.Context, accountID int
 		return s.routeAntigravityTest(c, account, modelID, prompt)
 	}
 
+	// OpenAI-compatible platforms: DeepSeek, Moonshot (Kimi), GLM, Seedance
+	if account.IsDeepSeek() || account.IsMoonshot() || account.IsGLM() || account.IsSeedance() {
+		return s.testOpenAICompatPlatformConnection(c, account, modelID, prompt)
+	}
+
 	return s.testClaudeAccountConnection(c, account, modelID)
+}
+
+// testOpenAICompatPlatformConnection tests connectivity for OpenAI-compatible
+// platforms (DeepSeek, Moonshot/Kimi, GLM, Seedance) via /v1/chat/completions.
+func (s *AccountTestService) testOpenAICompatPlatformConnection(c *gin.Context, account *Account, modelID string, prompt string) error {
+	// Determine default test model per platform
+	testModelID := modelID
+	if testModelID == "" {
+		switch account.Platform {
+		case PlatformDeepSeek:
+			testModelID = "deepseek-chat"
+		case PlatformMoonshot:
+			testModelID = "kimi-k2"
+		case PlatformGLM:
+			testModelID = "glm-4-flash"
+		case PlatformSeedance:
+			testModelID = "doubao-1-5-pro-32k"
+		default:
+			testModelID = "gpt-4o-mini"
+		}
+	}
+
+	// Apply model mapping
+	testModelID = account.GetMappedModel(testModelID)
+
+	// Get API key
+	authToken := account.GetCredential("api_key")
+	if authToken == "" {
+		return s.sendErrorAndEnd(c, "No API key available")
+	}
+
+	// Get base URL per platform
+	var baseURL string
+	switch account.Platform {
+	case PlatformDeepSeek:
+		baseURL = account.GetDeepSeekBaseURL()
+	case PlatformMoonshot:
+		baseURL = account.GetMoonshotBaseURL()
+	case PlatformGLM:
+		baseURL = account.GetGLMBaseURL()
+	case PlatformSeedance:
+		baseURL = account.GetSeedanceBaseURL()
+	}
+	if baseURL == "" {
+		return s.sendErrorAndEnd(c, "No base URL configured")
+	}
+
+	normalizedBaseURL, err := s.validateUpstreamBaseURL(baseURL)
+	if err != nil {
+		return s.sendErrorAndEnd(c, fmt.Sprintf("Invalid base URL: %s", err.Error()))
+	}
+
+	return s.testOpenAIChatCompletionsConnection(c, account, testModelID, prompt, normalizedBaseURL, authToken)
 }
 
 // testClaudeAccountConnection tests an Anthropic Claude account's connection
