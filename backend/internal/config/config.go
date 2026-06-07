@@ -570,9 +570,9 @@ type PricingConfig struct {
 	UpdateIntervalHours int `mapstructure:"update_interval_hours"`
 	// 哈希校验间隔（分钟）
 	HashCheckIntervalMinutes int `mapstructure:"hash_check_interval_minutes"`
-	// CNY→USD 汇率：用于把以人民币计价的模型（如 Kimi）折算成系统统一的美元单价。
-	// 汇率会随市场浮动，故不写死在代码里——可通过配置文件 pricing.cny_to_usd_rate
-	// 或环境变量覆盖。默认值取写入时的最新市场汇率。
+	// CNY→USD 汇率：用于把以人民币计价的模型（如 Kimi / Moonshot）折算成系统统一的美元单价。
+	// 系统采用 1:1 充值（¥1 = $1 余额），默认为 1.0 表示不换算。
+	// 如需按真实汇率折算，可通过配置文件 pricing.cny_to_usd_rate 或环境变量覆盖。
 	CNYToUSDRate float64 `mapstructure:"cny_to_usd_rate"`
 }
 
@@ -1787,9 +1787,9 @@ func setDefaults() {
 	viper.SetDefault("pricing.fallback_file", "./resources/model-pricing/model_prices_and_context_window.json")
 	viper.SetDefault("pricing.update_interval_hours", 24)
 	viper.SetDefault("pricing.hash_check_interval_minutes", 10)
-	// CNY→USD 汇率：人民币计价模型（如 Kimi）折算成美元单价用。可被配置/环境变量覆盖。
-	// 默认取 2026-06 最新市场汇率，约 6.77 CNY = 1 USD。
-	viper.SetDefault("pricing.cny_to_usd_rate", 6.77)
+	// CNY→USD 汇率：人民币计价模型（如 Kimi / Moonshot）折算成美元单价用。可被配置/环境变量覆盖。
+	// 系统采用 1 CNY = 1 USD 余额的充值模型，因此默认为 1.0（不换算）。
+	viper.SetDefault("pricing.cny_to_usd_rate", 1.0)
 
 	// Timezone (default to Asia/Shanghai for Chinese users)
 	viper.SetDefault("timezone", "Asia/Shanghai")

@@ -1004,9 +1004,10 @@ pricing:
   # CNY→USD exchange rate, used to convert CNY-quoted models (e.g. Kimi) into the
   # system's unified USD per-token price. Rates float with the market, so this is
   # configurable rather than hardcoded. Env var: PRICING_CNY_TO_USD_RATE
-  # 人民币→美元汇率：把以人民币计价的模型（如 Kimi）折算成系统统一的美元单价用。
-  # 汇率随市场浮动，故做成可配置而非写死。环境变量：PRICING_CNY_TO_USD_RATE
-  cny_to_usd_rate: 6.77
+  # 人民币→美元汇率：把以人民币计价的模型（如 Kimi / Moonshot）折算成系统统一的美元单价用。
+  # 系统采用 1:1 充值（¥1 = $1 余额），默认为 1.0 表示不换算。
+  # 如需按真实汇率折算，可在此修改。环境变量：PRICING_CNY_TO_USD_RATE
+  cny_to_usd_rate: 1.0
 
 # =============================================================================
 # Billing Configuration

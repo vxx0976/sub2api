@@ -18,7 +18,7 @@ func newKimiPricingService(rate float64) *PricingService {
 }
 
 func TestGetModelPricing_KimiK26OfficialPriceConvertedToUSD(t *testing.T) {
-	const rate = 6.77
+	const rate = 1.0
 	got := newKimiPricingService(rate).GetModelPricing("kimi-k2.6")
 	require.NotNil(t, got)
 	// 官方人民币价（每 100 万 token）÷ 汇率 ÷ 1e6 = 每 token 美元价。
@@ -30,9 +30,42 @@ func TestGetModelPricing_KimiK26OfficialPriceConvertedToUSD(t *testing.T) {
 }
 
 func TestGetModelPricing_KimiK26NameVariants(t *testing.T) {
-	svc := newKimiPricingService(6.77)
+	svc := newKimiPricingService(1.0)
 	for _, name := range []string{"kimi-k2.6", "kimi-k2-6", "Kimi-K2.6", "moonshotai/Kimi-K2.6", "moonshot/kimi-k2-6"} {
 		require.NotNilf(t, svc.GetModelPricing(name), "expected pricing for %q", name)
+	}
+}
+
+func TestGetModelPricing_KimiMoonshotAllModels(t *testing.T) {
+	const rate = 1.0
+	svc := newKimiPricingService(rate)
+
+	tests := []struct {
+		model    string
+		inputCNY float64
+		outputCNY float64
+		cacheCNY float64 // 0 = 无缓存
+	}{
+		{"kimi-k2.6", 6.5, 27.0, 1.1},
+		{"kimi-k2.5", 4.0, 21.0, 0.7},
+		{"kimi-for-coding", 6.5, 27.0, 1.1},
+		{"moonshot-v1-8k", 2.0, 10.0, 0},
+		{"moonshot-v1-32k", 5.0, 20.0, 0},
+		{"moonshot-v1-128k", 10.0, 30.0, 0},
+		{"moonshot-v1-8k-vision-preview", 2.0, 10.0, 0},
+		{"moonshot-v1-32k-vision-preview", 5.0, 20.0, 0},
+		{"moonshot-v1-128k-vision-preview", 10.0, 30.0, 0},
+	}
+	for _, tt := range tests {
+		got := svc.GetModelPricing(tt.model)
+		require.NotNilf(t, got, "expected pricing for %q", tt.model)
+		require.InDeltaf(t, tt.inputCNY/rate/1e6, got.InputCostPerToken, 1e-15, "%s input", tt.model)
+		require.InDeltaf(t, tt.outputCNY/rate/1e6, got.OutputCostPerToken, 1e-15, "%s output", tt.model)
+		if tt.cacheCNY > 0 {
+			require.InDeltaf(t, tt.cacheCNY/rate/1e6, got.CacheReadInputTokenCost, 1e-15, "%s cache", tt.model)
+			require.True(t, got.SupportsPromptCaching, "%s should support caching", tt.model)
+		}
+		require.Equal(t, "moonshot", got.LiteLLMProvider)
 	}
 }
 
@@ -47,8 +80,67 @@ func TestGetModelPricing_KimiK26RateConfigurableAndFallback(t *testing.T) {
 	require.NotNil(t, got2)
 	require.InDelta(t, 6.5/defaultCNYToUSDRate/1e6, got2.InputCostPerToken, 1e-15)
 
-	// 不误伤其它 kimi 型号：kimi-k2-thinking 不应被 k2.6 覆盖逻辑命中。
-	require.Nil(t, newKimiPricingService(6.77).GetModelPricing("kimi-k2-thinking"))
+	// 不误伤其它 kimi 型号：kimi-k2-thinking 不应被覆盖逻辑命中。
+	require.Nil(t, newKimiPricingService(1.0).GetModelPricing("kimi-k2-thinking"))
+}
+
+func newCNYPricingService(rate float64) *PricingService {
+	return &PricingService{
+		cfg:         &config.Config{Pricing: config.PricingConfig{CNYToUSDRate: rate}},
+		pricingData: map[string]*LiteLLMModelPricing{},
+	}
+}
+
+func TestGetModelPricing_DeepSeekV4AllModels(t *testing.T) {
+	const rate = 1.0
+	svc := newCNYPricingService(rate)
+
+	tests := []struct {
+		model    string
+		inputCNY float64
+		outputCNY float64
+		cacheCNY float64
+	}{
+		{"deepseek-v4-flash", 1.0, 2.0, 0.02},
+		{"deepseek-v4-pro", 3.0, 6.0, 0.025},
+	}
+	for _, tt := range tests {
+		got := svc.GetModelPricing(tt.model)
+		require.NotNilf(t, got, "expected pricing for %q", tt.model)
+		require.InDeltaf(t, tt.inputCNY/rate/1e6, got.InputCostPerToken, 1e-15, "%s input", tt.model)
+		require.InDeltaf(t, tt.outputCNY/rate/1e6, got.OutputCostPerToken, 1e-15, "%s output", tt.model)
+		require.InDeltaf(t, tt.cacheCNY/rate/1e6, got.CacheReadInputTokenCost, 1e-15, "%s cache", tt.model)
+		require.True(t, got.SupportsPromptCaching, "%s should support caching", tt.model)
+		require.Equal(t, "deepseek", got.LiteLLMProvider)
+	}
+}
+
+func TestGetModelPricing_DeepSeekV4NameVariants(t *testing.T) {
+	svc := newCNYPricingService(1.0)
+	// All V4 variants should resolve
+	for _, name := range []string{
+		"deepseek-v4-flash",
+		"deepseek-v4-pro",
+		"DeepSeek-V4-Flash",
+		"deepseek/deepseek-v4-flash",
+		"deepseek/deepseek-v4-pro",
+	} {
+		got := svc.GetModelPricing(name)
+		require.NotNilf(t, got, "expected pricing for %q", name)
+		require.Equal(t, "deepseek", got.LiteLLMProvider)
+	}
+}
+
+func TestGetModelPricing_DeepSeekV4RateConfigurable(t *testing.T) {
+	// 汇率可配置
+	got := newCNYPricingService(7.0).GetModelPricing("deepseek-v4-flash")
+	require.NotNil(t, got)
+	require.InDelta(t, 1.0/7.0/1e6, got.InputCostPerToken, 1e-15)
+
+	// 配置缺失（0）时回退到兜底汇率
+	got2 := newCNYPricingService(0).GetModelPricing("deepseek-v4-flash")
+	require.NotNil(t, got2)
+	require.InDelta(t, 1.0/defaultCNYToUSDRate/1e6, got2.InputCostPerToken, 1e-15)
 }
 
 func TestParsePricingData_ParsesPriorityAndServiceTierFields(t *testing.T) {

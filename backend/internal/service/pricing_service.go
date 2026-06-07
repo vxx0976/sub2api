@@ -53,16 +53,31 @@ var (
 	}
 )
 
-// Kimi K2.6 官方定价（人民币，每 100 万 token），来源：
-// https://platform.kimi.com/docs/pricing/chat-k26
+// Kimi / Moonshot 官方定价（人民币，每 100 万 token），来源：
+// https://platform.kimi.com/docs/pricing/chat
 // 官方仅公布人民币价，系统统一按美元计价，故在查找时用可配置汇率折算成美元。
-const (
-	kimiK26InputCNYPerMTok     = 6.5  // 输入（未命中缓存）
-	kimiK26CacheReadCNYPerMTok = 1.1  // 输入（命中缓存）
-	kimiK26OutputCNYPerMTok    = 27.0 // 输出
-	// defaultCNYToUSDRate 仅在配置缺失/非法时兜底；正常由 pricing.cny_to_usd_rate 提供。
-	defaultCNYToUSDRate = 6.77
-)
+// defaultCNYToUSDRate 仅在配置缺失/非法时兜底；正常由 pricing.cny_to_usd_rate 提供。
+// 系统采用 1 CNY = 1 USD 余额的充值模型，因此默认汇率为 1.0（不换算）。
+const defaultCNYToUSDRate = 1.0
+
+// cnyModelPricing 定义一个模型的人民币官方定价（Kimi/Moonshot、DeepSeek 等）。
+type cnyModelPricing struct {
+	inputCNY    float64 // 输入（未命中缓存），¥/1M tokens
+	cacheReadCNY float64 // 输入（命中缓存），¥/1M tokens；0 表示不支持缓存
+	outputCNY   float64 // 输出，¥/1M tokens
+	hasCache    bool    // 是否支持 prompt caching
+}
+
+// kimiMoonshotPricingTable 官方定价表（人民币/每百万 token）。
+// kimi-for-coding 自动跟随最新模型（目前等价 k2.6）。
+var kimiMoonshotPricingTable = map[string]cnyModelPricing{
+	"kimi-k2.6":       {inputCNY: 6.5, cacheReadCNY: 1.1, outputCNY: 27.0, hasCache: true},
+	"kimi-for-coding": {inputCNY: 6.5, cacheReadCNY: 1.1, outputCNY: 27.0, hasCache: true},
+	"kimi-k2.5":       {inputCNY: 4.0, cacheReadCNY: 0.7, outputCNY: 21.0, hasCache: true},
+	"moonshot-v1-8k":  {inputCNY: 2.0, outputCNY: 10.0},
+	"moonshot-v1-32k": {inputCNY: 5.0, outputCNY: 20.0},
+	"moonshot-v1-128k": {inputCNY: 10.0, outputCNY: 30.0},
+}
 
 // LiteLLMModelPricing LiteLLM价格数据结构
 // 只保留我们需要的字段，使用指针来处理可能缺失的值
@@ -541,26 +556,88 @@ func (s *PricingService) cnyToUSDRate() float64 {
 	return defaultCNYToUSDRate
 }
 
-// kimiK26Pricing 命中 Kimi K2.6 时返回按官方人民币价折算的美元定价，否则返回 nil。
-// 价格库（LiteLLM）目前没有 kimi-k2.6 条目，且官方仅公布人民币价，故在此用官方价 +
-// 可配置汇率折算，保证“按官方价计费”，同时把会浮动的汇率留作配置、不写死。
-func (s *PricingService) kimiK26Pricing(modelLower string) *LiteLLMModelPricing {
+// kimiMoonshotPricingOverride returns CNY-based pricing converted to USD for
+// all Kimi/Moonshot models, or nil if the model is not recognized.
+func (s *PricingService) kimiMoonshotPricingOverride(modelLower string) *LiteLLMModelPricing {
 	m := strings.ReplaceAll(modelLower, "_", "-")
 	m = strings.ReplaceAll(m, " ", "")
-	// 兼容各家对同一模型的不同写法：kimi-k2.6 / kimi-k2-6 / kimi-k26
-	if !strings.Contains(m, "kimi-k2.6") && !strings.Contains(m, "kimi-k2-6") && !strings.Contains(m, "kimi-k26") {
+	// Strip provider prefix: "moonshotai/kimi-k2.6" -> "kimi-k2.6"
+	m = lastSegment(m)
+
+	var cny cnyModelPricing
+	var found bool
+
+	if cny, found = kimiMoonshotPricingTable[m]; !found {
+		// kimi-k2.6 variants: kimi-k2-6 / kimi-k26
+		if strings.Contains(m, "kimi-k2-6") || strings.Contains(m, "kimi-k26") {
+			cny, found = kimiMoonshotPricingTable["kimi-k2.6"]
+		}
+		// vision-preview variants reuse the base model price
+		if !found && strings.HasSuffix(m, "-vision-preview") {
+			base := strings.TrimSuffix(m, "-vision-preview")
+			cny, found = kimiMoonshotPricingTable[base]
+		}
+	}
+
+	if !found {
 		return nil
 	}
+
 	rate := s.cnyToUSDRate()
-	const perToken = 1.0 / 1_000_000.0 // 每 100 万 token 单价 → 每 token 单价
-	return &LiteLLMModelPricing{
-		InputCostPerToken:       kimiK26InputCNYPerMTok / rate * perToken,
-		OutputCostPerToken:      kimiK26OutputCNYPerMTok / rate * perToken,
-		CacheReadInputTokenCost: kimiK26CacheReadCNYPerMTok / rate * perToken,
-		LiteLLMProvider:         "moonshot",
-		Mode:                    "chat",
-		SupportsPromptCaching:   true,
+	const perToken = 1.0 / 1_000_000.0
+	p := &LiteLLMModelPricing{
+		InputCostPerToken:  cny.inputCNY / rate * perToken,
+		OutputCostPerToken: cny.outputCNY / rate * perToken,
+		LiteLLMProvider:    "moonshot",
+		Mode:               "chat",
 	}
+	if cny.hasCache {
+		p.CacheReadInputTokenCost = cny.cacheReadCNY / rate * perToken
+		p.SupportsPromptCaching = true
+	}
+	return p
+}
+
+// deepSeekPricingOverride returns CNY-based pricing converted to USD for
+// DeepSeek V4 models, or nil if the model is not recognized.
+func (s *PricingService) deepSeekPricingOverride(modelLower string) *LiteLLMModelPricing {
+	m := lastSegment(modelLower) // Strip provider prefix: "deepseek/deepseek-v4-flash" -> "deepseek-v4-flash"
+
+	if !strings.HasPrefix(m, "deepseek") {
+		return nil
+	}
+
+	var cny cnyModelPricing
+	var found bool
+
+	// Exact match first
+	if cny, found = deepSeekPricingTable[m]; !found {
+		// Pattern match: v4-pro takes precedence over v4 (flash)
+		switch {
+		case strings.Contains(m, "v4-pro"):
+			cny, found = deepSeekPricingTable["deepseek-v4-pro"]
+		case strings.Contains(m, "v4"):
+			cny, found = deepSeekPricingTable["deepseek-v4-flash"]
+		}
+	}
+
+	if !found {
+		return nil
+	}
+
+	rate := s.cnyToUSDRate()
+	const perToken = 1.0 / 1_000_000.0
+	p := &LiteLLMModelPricing{
+		InputCostPerToken:  cny.inputCNY / rate * perToken,
+		OutputCostPerToken: cny.outputCNY / rate * perToken,
+		LiteLLMProvider:    "deepseek",
+		Mode:               "chat",
+	}
+	if cny.hasCache {
+		p.CacheReadInputTokenCost = cny.cacheReadCNY / rate * perToken
+		p.SupportsPromptCaching = true
+	}
+	return p
 }
 
 // GetModelPricing 获取模型价格（带模糊匹配）
@@ -575,9 +652,14 @@ func (s *PricingService) GetModelPricing(modelName string) *LiteLLMModelPricing 
 	// 标准化模型名称（同时兼容 "models/xxx"、VertexAI 资源名等前缀）
 	modelLower := strings.ToLower(strings.TrimSpace(modelName))
 
-	// Kimi K2.6：官方人民币计价、价格库无对应条目，用官方价折算成美元覆盖，
+	// Kimi / Moonshot：官方人民币计价，用官方价 + 可配置汇率折算成美元覆盖，
 	// 确保按官方价计费（汇率见 pricing.cny_to_usd_rate 配置）。
-	if pricing := s.kimiK26Pricing(modelLower); pricing != nil {
+	if pricing := s.kimiMoonshotPricingOverride(modelLower); pricing != nil {
+		return pricing
+	}
+
+	// DeepSeek V4：同上，人民币官方计价，运行时汇率折算。
+	if pricing := s.deepSeekPricingOverride(modelLower); pricing != nil {
 		return pricing
 	}
 
@@ -896,43 +978,19 @@ func (s *PricingService) matchOpenAIModel(model string) *LiteLLMModelPricing {
 	return nil
 }
 
-// ----- DeepSeek 静态定价（远程 model_pricing.json 可能缺失/滞后） -----
-// 来源: https://api-docs.deepseek.com/quick_start/pricing/
-var (
-	deepSeekV4FlashPricing = &LiteLLMModelPricing{
-		InputCostPerToken:           0.14e-6,  // $0.14 / 1M tokens
-		OutputCostPerToken:          0.28e-6,  // $0.28 / 1M tokens
-		CacheReadInputTokenCost:     0.0028e-6, // $0.0028 / 1M tokens
-		CacheCreationInputTokenCost: 0.14e-6,
-		LiteLLMProvider:             "deepseek",
-		Mode:                        "chat",
-		SupportsPromptCaching:       true,
-	}
-	deepSeekV4ProPricing = &LiteLLMModelPricing{
-		InputCostPerToken:           0.435e-6, // $0.435 / 1M tokens
-		OutputCostPerToken:          0.87e-6,  // $0.87 / 1M tokens
-		CacheReadInputTokenCost:     0.003625e-6, // $0.003625 / 1M tokens
-		CacheCreationInputTokenCost: 0.435e-6,
-		LiteLLMProvider:             "deepseek",
-		Mode:                        "chat",
-		SupportsPromptCaching:       true,
-	}
-)
+// DeepSeek V4 官方定价（人民币，每 100 万 token），来源：
+// https://api-docs.deepseek.com/quick_start/pricing/
+// 用法同 Kimi/Moonshot：CNY 价格通过可配置汇率折算（默认 1:1）。
+var deepSeekPricingTable = map[string]cnyModelPricing{
+	"deepseek-v4-flash": {inputCNY: 1.0, cacheReadCNY: 0.02, outputCNY: 2.0, hasCache: true},
+	"deepseek-v4-pro":   {inputCNY: 3.0, cacheReadCNY: 0.025, outputCNY: 6.0, hasCache: true},
+}
 
 // matchByPlatformFallback 为 DeepSeek / Moonshot (Kimi) / GLM 等独立平台模型提供
 // 回退定价：当精确匹配和模糊匹配都找不到时，根据模型名前缀回退到该平台已知的
 // 基础模型定价。这样新模型上线后即使定价 JSON 尚未更新，也能按同平台最接近的
 // 价格计费，而非返回 $0。
 func (s *PricingService) matchByPlatformFallback(model string) *LiteLLMModelPricing {
-	// ---- DeepSeek 静态精确匹配（不受远程 JSON 影响）----
-	if strings.HasPrefix(model, "deepseek") {
-		if p := matchDeepSeekStaticPricing(model); p != nil {
-			logger.LegacyPrintf("service.pricing",
-				"[Pricing] DeepSeek static pricing matched %s", model)
-			return p
-		}
-	}
-
 	// ---- 通用平台回退：按前缀匹配远程定价数据中的已知模型 ----
 	type platformRule struct {
 		prefixes  []string // 用于判断模型是否属于该平台
@@ -965,20 +1023,6 @@ func (s *PricingService) matchByPlatformFallback(model string) *LiteLLMModelPric
 		}
 	}
 	return nil
-}
-
-// matchDeepSeekStaticPricing 返回 DeepSeek 模型的硬编码定价。
-// 优先用静态价格确保正确性；远程 JSON 有精确条目时不会走到这里。
-func matchDeepSeekStaticPricing(model string) *LiteLLMModelPricing {
-	switch {
-	case strings.Contains(model, "v4-pro"):
-		return deepSeekV4ProPricing
-	case strings.Contains(model, "v4"):
-		// v4-flash 及其他 v4 变体均按 flash 计费
-		return deepSeekV4FlashPricing
-	default:
-		return nil
-	}
 }
 
 // generateOpenAIModelVariants 生成 OpenAI 模型的回退变体列表
