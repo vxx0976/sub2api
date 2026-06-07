@@ -723,6 +723,11 @@ func (s *AccountTestService) testOpenAIChatCompletionsConnection(
 	req.Header.Set("Accept", "text/event-stream")
 	req.Header.Set("Authorization", "Bearer "+authToken)
 
+	// Kimi Code API requires User-Agent containing "claude-code".
+	if account.IsMoonshot() {
+		req.Header.Set("User-Agent", "claude-code/1.0")
+	}
+
 	proxyURL := ""
 	if account.ProxyID != nil && account.Proxy != nil {
 		proxyURL = account.Proxy.URL()
