@@ -304,6 +304,14 @@ func getDefaultTestModel(platform string) string {
 		return "gemini-2.0-flash"
 	case "antigravity":
 		return "claude-haiku-4-5-20251001"
+	case "deepseek":
+		return "deepseek-chat"
+	case "moonshot":
+		return "kimi-k2"
+	case "glm":
+		return "glm-4-flash"
+	case "seedance":
+		return "doubao-1-5-pro-32k"
 	default:
 		return "claude-haiku-4-5-20251001"
 	}
