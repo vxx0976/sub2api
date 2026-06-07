@@ -4281,6 +4281,14 @@ func (s *OpenAIGatewayService) buildUpstreamRequest(ctx context.Context, c *gin.
 		req.Header.Set("user-agent", customUA)
 	}
 
+	// Kimi Code API 要求 User-Agent 包含 "claude-code"，否则拒绝访问。
+	// 当 Moonshot 平台账号使用 api.kimi.com 端点且未自定义 UA 时，自动设置。
+	if account.Platform == PlatformMoonshot && customUA == "" {
+		if baseURL := account.GetCredential("base_url"); strings.Contains(baseURL, "api.kimi.com") {
+			req.Header.Set("user-agent", "claude-code/1.0")
+		}
+	}
+
 	// 若开启 ForceCodexCLI，则强制将上游 User-Agent 伪装为 Codex CLI。
 	// 用于网关未透传/改写 User-Agent 时，仍能命中 Codex 侧识别逻辑。
 	if s.cfg != nil && s.cfg.Gateway.ForceCodexCLI {

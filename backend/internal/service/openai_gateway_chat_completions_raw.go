@@ -159,6 +159,14 @@ func (s *OpenAIGatewayService) forwardAsRawChatCompletions(
 		upstreamReq.Header.Set("user-agent", customUA)
 	}
 
+	// Kimi Code API 要求 User-Agent 包含 "claude-code"，否则拒绝访问。
+	// 当 Moonshot 平台账号使用 api.kimi.com 端点且未自定义 UA 时，自动设置。
+	if account.Platform == PlatformMoonshot && customUA == "" {
+		if kimiBase := account.GetCredential("base_url"); strings.Contains(kimiBase, "api.kimi.com") {
+			upstreamReq.Header.Set("user-agent", "claude-code/1.0")
+		}
+	}
+
 	// 6. Send request
 	proxyURL := ""
 	if account.Proxy != nil {
