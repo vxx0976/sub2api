@@ -4620,7 +4620,10 @@ watch(
     if (!["anthropic", "antigravity"].includes(newVal)) {
       editForm.fallback_group_id_on_invalid_request = null;
     }
-    resetMessagesDispatchFormState(editForm, newVal);
+    // 仅在平台实际切换时重置，编辑弹窗初始化时跳过（避免覆盖已保存的值）
+    if (!editingGroup.value || newVal !== editingGroup.value.platform) {
+      resetMessagesDispatchFormState(editForm, newVal);
+    }
     if (!["openai", "antigravity", "anthropic", "gemini"].includes(newVal)) {
       editForm.require_oauth_only = false;
       editForm.require_privacy_set = false;
@@ -4638,7 +4641,7 @@ watch(
     if (!['anthropic', 'antigravity'].includes(newVal)) {
       editForm.fallback_group_id_on_invalid_request = null
     }
-    if (newVal !== 'openai') {
+    if (!['openai', 'deepseek', 'moonshot'].includes(newVal)) {
       editForm.allow_messages_dispatch = false
       editForm.default_mapped_model = ''
     }

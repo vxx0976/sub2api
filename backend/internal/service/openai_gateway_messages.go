@@ -49,6 +49,13 @@ func (s *OpenAIGatewayService) ForwardAsAnthropic(
 	// 2. Model mapping
 	billingModel := resolveOpenAIForwardModel(account, normalizedModel, defaultMappedModel)
 	upstreamModel := normalizeOpenAIModelForUpstream(account, billingModel)
+
+	// 2b. Platforms with native Anthropic Messages endpoints (DeepSeek, Kimi):
+	// forward the request directly without converting to OpenAI Responses format.
+	if account.Type == AccountTypeAPIKey && (account.IsDeepSeek() || account.IsMoonshot()) {
+		return s.forwardAnthropicDirect(ctx, c, account, body, originalModel, billingModel, upstreamModel, clientStream, startTime)
+	}
+
 	promptCacheKey = strings.TrimSpace(promptCacheKey)
 	apiKeyID := getAPIKeyIDFromContext(c)
 	anthropicDigestChain := ""

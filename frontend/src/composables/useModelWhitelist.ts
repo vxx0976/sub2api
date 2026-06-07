@@ -150,7 +150,9 @@ const yiModels = [
 
 // Moonshot/Kimi
 const moonshotModels = [
-  'kimi-for-coding'
+  'kimi-k2.6', 'kimi-k2.5', 'kimi-for-coding',
+  'moonshot-v1-8k', 'moonshot-v1-32k', 'moonshot-v1-128k',
+  'moonshot-v1-8k-vision-preview', 'moonshot-v1-32k-vision-preview', 'moonshot-v1-128k-vision-preview'
 ]
 
 // GLM (Zhipu AI)
@@ -287,7 +289,12 @@ const deepseekPresetMappings = [
 
 // Moonshot (Kimi) 预设映射
 const moonshotPresetMappings = [
-  { label: 'Kimi for Coding', from: 'kimi-for-coding', to: 'kimi-for-coding', color: 'bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-900/30 dark:text-purple-400' }
+  { label: 'Kimi K2.6', from: 'kimi-k2.6', to: 'kimi-k2.6', color: 'bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-900/30 dark:text-purple-400' },
+  { label: 'Kimi K2.5', from: 'kimi-k2.5', to: 'kimi-k2.5', color: 'bg-violet-100 text-violet-700 hover:bg-violet-200 dark:bg-violet-900/30 dark:text-violet-400' },
+  { label: 'Kimi for Coding', from: 'kimi-for-coding', to: 'kimi-for-coding', color: 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-400' },
+  { label: 'Moonshot V1 8K', from: 'moonshot-v1-8k', to: 'moonshot-v1-8k', color: 'bg-sky-100 text-sky-700 hover:bg-sky-200 dark:bg-sky-900/30 dark:text-sky-400' },
+  { label: 'Moonshot V1 32K', from: 'moonshot-v1-32k', to: 'moonshot-v1-32k', color: 'bg-cyan-100 text-cyan-700 hover:bg-cyan-200 dark:bg-cyan-900/30 dark:text-cyan-400' },
+  { label: 'Moonshot V1 128K', from: 'moonshot-v1-128k', to: 'moonshot-v1-128k', color: 'bg-teal-100 text-teal-700 hover:bg-teal-200 dark:bg-teal-900/30 dark:text-teal-400' }
 ]
 
 // GLM (Zhipu AI) 预设映射

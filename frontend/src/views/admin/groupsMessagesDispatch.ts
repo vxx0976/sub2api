@@ -22,7 +22,7 @@ function getDefaultModelsForPlatform(platform?: GroupPlatform | null): {
     case "deepseek":
       return { opus: "deepseek-v4-pro", sonnet: "deepseek-v4-pro", haiku: "deepseek-v4-flash" };
     case "moonshot":
-      return { opus: "kimi-for-coding", sonnet: "kimi-for-coding", haiku: "kimi-for-coding" };
+      return { opus: "kimi-k2.6", sonnet: "kimi-k2.6", haiku: "kimi-k2.6" };
     default:
       return { opus: "gpt-5.4", sonnet: "gpt-5.3-codex", haiku: "gpt-5.4-mini" };
   }

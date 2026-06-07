@@ -60,7 +60,7 @@ func (g *Group) defaultMessagesDispatchModels() (opus, sonnet, haiku string) {
 	case PlatformDeepSeek:
 		return "deepseek-v4-pro", "deepseek-v4-pro", "deepseek-v4-flash"
 	case PlatformMoonshot:
-		return "kimi-for-coding", "kimi-for-coding", "kimi-for-coding"
+		return "kimi-k2.6", "kimi-k2.6", "kimi-k2.6"
 	default:
 		return defaultOpenAIMessagesDispatchOpusMappedModel,
 			defaultOpenAIMessagesDispatchSonnetMappedModel,
