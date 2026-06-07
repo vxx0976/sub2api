@@ -1163,7 +1163,7 @@ func (a *Account) GetMoonshotBaseURL() string {
 			return baseURL
 		}
 	}
-	return "https://api.moonshot.cn"
+	return "https://api.kimi.com/coding/v1"
 }
 
 func (a *Account) IsGLM() bool {
@@ -1221,7 +1221,7 @@ func (a *Account) GetOpenAIBaseURL() string {
 	case PlatformDeepSeek:
 		return "https://api.deepseek.com"
 	case PlatformMoonshot:
-		return "https://api.moonshot.cn"
+		return "https://api.kimi.com/coding/v1"
 	case PlatformGLM:
 		return "https://open.bigmodel.cn"
 	case PlatformSeedance:

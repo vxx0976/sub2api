@@ -102,11 +102,7 @@ const qwenModels = [
 
 // DeepSeek
 const deepseekModels = [
-  'deepseek-chat', 'deepseek-coder', 'deepseek-reasoner',
-  'deepseek-v3', 'deepseek-v3-0324',
-  'deepseek-r1', 'deepseek-r1-0528',
-  'deepseek-r1-distill-qwen-32b', 'deepseek-r1-distill-qwen-14b', 'deepseek-r1-distill-qwen-7b',
-  'deepseek-r1-distill-llama-70b', 'deepseek-r1-distill-llama-8b'
+  'deepseek-v4-flash', 'deepseek-v4-pro'
 ]
 
 // Mistral
@@ -154,9 +150,7 @@ const yiModels = [
 
 // Moonshot/Kimi
 const moonshotModels = [
-  'moonshot-v1-8k', 'moonshot-v1-32k', 'moonshot-v1-128k',
-  'kimi-k2.6', 'kimi-k2-6',
-  'kimi-latest'
+  'kimi-for-coding'
 ]
 
 // GLM (Zhipu AI)
@@ -287,18 +281,13 @@ const geminiPresetMappings = [
 
 // DeepSeek 预设映射
 const deepseekPresetMappings = [
-  { label: 'DeepSeek Chat', from: 'deepseek-chat', to: 'deepseek-chat', color: 'bg-cyan-100 text-cyan-700 hover:bg-cyan-200 dark:bg-cyan-900/30 dark:text-cyan-400' },
-  { label: 'DeepSeek Reasoner', from: 'deepseek-reasoner', to: 'deepseek-reasoner', color: 'bg-teal-100 text-teal-700 hover:bg-teal-200 dark:bg-teal-900/30 dark:text-teal-400' },
-  { label: 'V4 Pro', from: 'deepseek-v4-pro', to: 'deepseek-v4-pro', color: 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-400' },
   { label: 'V4 Flash', from: 'deepseek-v4-flash', to: 'deepseek-v4-flash', color: 'bg-violet-100 text-violet-700 hover:bg-violet-200 dark:bg-violet-900/30 dark:text-violet-400' },
-  { label: 'R1', from: 'deepseek-r1', to: 'deepseek-r1', color: 'bg-sky-100 text-sky-700 hover:bg-sky-200 dark:bg-sky-900/30 dark:text-sky-400' }
+  { label: 'V4 Pro', from: 'deepseek-v4-pro', to: 'deepseek-v4-pro', color: 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-400' }
 ]
 
 // Moonshot (Kimi) 预设映射
 const moonshotPresetMappings = [
-  { label: 'Kimi K2.6', from: 'kimi-k2.6', to: 'kimi-k2.6', color: 'bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-900/30 dark:text-purple-400' },
-  { label: 'Moonshot 128K', from: 'moonshot-v1-128k', to: 'moonshot-v1-128k', color: 'bg-fuchsia-100 text-fuchsia-700 hover:bg-fuchsia-200 dark:bg-fuchsia-900/30 dark:text-fuchsia-400' },
-  { label: 'Moonshot 32K', from: 'moonshot-v1-32k', to: 'moonshot-v1-32k', color: 'bg-pink-100 text-pink-700 hover:bg-pink-200 dark:bg-pink-900/30 dark:text-pink-400' }
+  { label: 'Kimi for Coding', from: 'kimi-for-coding', to: 'kimi-for-coding', color: 'bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-900/30 dark:text-purple-400' }
 ]
 
 // GLM (Zhipu AI) 预设映射

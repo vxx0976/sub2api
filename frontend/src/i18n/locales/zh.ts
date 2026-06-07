@@ -4453,8 +4453,8 @@ export default {
       },
       // Moonshot (Kimi) specific
       moonshot: {
-        baseUrlHint: '留空使用官方 Moonshot API（api.moonshot.cn）',
-        apiKeyHint: '您的 Moonshot API Key'
+        baseUrlHint: '留空使用官方 Kimi Code API（api.kimi.com/coding/v1）',
+        apiKeyHint: '您的 Kimi Code API Key'
       },
       // GLM (Zhipu AI) specific
       glm: {
