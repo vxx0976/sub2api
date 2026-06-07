@@ -907,6 +907,14 @@ export default {
       geminiCli: 'Gemini CLI',
       geminiCliDesc: '导入为 Gemini CLI 配置'
     },
+    ccsProtocolSelect: {
+      title: '选择协议',
+      description: '请选择导入到 CC-Switch 使用的 API 协议：',
+      openai: 'OpenAI 协议',
+      openaiDesc: '导入为 Codex 配置',
+      anthropic: 'Anthropic 协议',
+      anthropicDesc: '导入为 Claude Code 配置'
+    },
     // 配额和有效期
     quotaLimit: '额度限制',
     quotaAmount: '额度金额 (USD)',

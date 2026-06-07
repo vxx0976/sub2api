@@ -966,6 +966,53 @@
       </template>
     </BaseDialog>
 
+    <!-- CCS Protocol Selection Dialog for DeepSeek/Kimi -->
+    <BaseDialog
+      :show="showCcsProtocolSelect"
+      :title="t('keys.ccsProtocolSelect.title')"
+      width="narrow"
+      @close="closeCcsProtocolSelect"
+    >
+      <div class="space-y-4">
+        <p class="text-sm text-gray-600 dark:text-gray-400">
+          {{ t('keys.ccsProtocolSelect.description') }}
+        </p>
+        <div class="grid grid-cols-2 gap-3">
+          <button
+            @click="handleCcsProtocolSelect('codex')"
+            class="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-gray-200 dark:border-dark-600 hover:border-primary-500 dark:hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-all"
+          >
+            <Icon name="code" size="xl" class="text-gray-600 dark:text-gray-400" />
+            <span class="font-medium text-gray-900 dark:text-white">{{
+              t('keys.ccsProtocolSelect.openai')
+            }}</span>
+            <span class="text-xs text-gray-500 dark:text-gray-400">{{
+              t('keys.ccsProtocolSelect.openaiDesc')
+            }}</span>
+          </button>
+          <button
+            @click="handleCcsProtocolSelect('claude')"
+            class="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-gray-200 dark:border-dark-600 hover:border-primary-500 dark:hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-all"
+          >
+            <Icon name="terminal" size="xl" class="text-gray-600 dark:text-gray-400" />
+            <span class="font-medium text-gray-900 dark:text-white">{{
+              t('keys.ccsProtocolSelect.anthropic')
+            }}</span>
+            <span class="text-xs text-gray-500 dark:text-gray-400">{{
+              t('keys.ccsProtocolSelect.anthropicDesc')
+            }}</span>
+          </button>
+        </div>
+      </div>
+      <template #footer>
+        <div class="flex justify-end">
+          <button @click="closeCcsProtocolSelect" class="btn btn-secondary">
+            {{ t('common.cancel') }}
+          </button>
+        </div>
+      </template>
+    </BaseDialog>
+
     <!-- Group Selector Dropdown (Teleported to body to avoid overflow clipping) -->
     <Teleport to="body">
       <div
@@ -1153,6 +1200,7 @@ const dropdownPosition = ref<{ top?: number; bottom?: number; left: number } | n
 const groupButtonRefs = ref<Map<number, HTMLElement>>(new Map())
 const pendingCcsRow = ref<ApiKey | null>(null)
 const showCcsClientSelect = ref(false)
+const showCcsProtocolSelect = ref(false)
 let abortController: AbortController | null = null
 
 // Get the currently selected key for group change
@@ -1716,6 +1764,13 @@ const importToCcswitch = (row: ApiKey) => {
     return
   }
 
+  // For openai/deepseek/moonshot, show protocol selection dialog
+  if (platform === 'openai' || platform === 'deepseek' || platform === 'moonshot') {
+    pendingCcsRow.value = row
+    showCcsProtocolSelect.value = true
+    return
+  }
+
   // For other platforms, execute directly
   executeCcsImport(row, platform === 'gemini' ? 'gemini' : 'claude')
 }
@@ -1775,6 +1830,19 @@ const handleCcsClientSelect = (clientType: CcSwitchClientType) => {
 
 const closeCcsClientSelect = () => {
   showCcsClientSelect.value = false
+  pendingCcsRow.value = null
+}
+
+const handleCcsProtocolSelect = (clientType: CcSwitchClientType) => {
+  if (pendingCcsRow.value) {
+    executeCcsImport(pendingCcsRow.value, clientType)
+  }
+  showCcsProtocolSelect.value = false
+  pendingCcsRow.value = null
+}
+
+const closeCcsProtocolSelect = () => {
+  showCcsProtocolSelect.value = false
   pendingCcsRow.value = null
 }
 

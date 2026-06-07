@@ -904,6 +904,14 @@ export default {
       geminiCli: 'Gemini CLI',
       geminiCliDesc: 'Import as Gemini CLI configuration',
     },
+    ccsProtocolSelect: {
+      title: 'Select Protocol',
+      description: 'Please select the API protocol to import to CC-Switch:',
+      openai: 'OpenAI Protocol',
+      openaiDesc: 'Import as Codex configuration',
+      anthropic: 'Anthropic Protocol',
+      anthropicDesc: 'Import as Claude Code configuration',
+    },
     // Quota and expiration
     quotaLimit: 'Quota Limit',
     quotaAmount: 'Quota Amount (USD)',
