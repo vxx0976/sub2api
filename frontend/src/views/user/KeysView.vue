@@ -1764,10 +1764,15 @@ const importToCcswitch = (row: ApiKey) => {
     return
   }
 
-  // For openai/deepseek/moonshot, show protocol selection dialog
+  // For openai/deepseek/moonshot with messages dispatch enabled, show protocol selection dialog
   if (platform === 'openai' || platform === 'deepseek' || platform === 'moonshot') {
-    pendingCcsRow.value = row
-    showCcsProtocolSelect.value = true
+    if (row.group?.allow_messages_dispatch) {
+      pendingCcsRow.value = row
+      showCcsProtocolSelect.value = true
+      return
+    }
+    // Messages dispatch not enabled, import directly as Codex (OpenAI protocol)
+    executeCcsImport(row, 'codex')
     return
   }
 
@@ -1795,7 +1800,9 @@ const executeCcsImport = (row: ApiKey, clientType: CcSwitchClientType) => {
       };
     }
   })`
-  const providerName = (publicSettings.value?.site_name || window.location.hostname).trim() || window.location.hostname || 'sub2api'
+  const siteName = (publicSettings.value?.site_name || window.location.hostname).trim() || window.location.hostname || 'sub2api'
+  const groupName = row.group?.name
+  const providerName = groupName ? `${siteName} - ${groupName}` : siteName
   const deeplink = buildCcSwitchImportDeeplink({
     baseUrl,
     platform,
