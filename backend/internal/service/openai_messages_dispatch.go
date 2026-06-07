@@ -55,6 +55,19 @@ func claudeMessagesDispatchFamily(model string) string {
 	}
 }
 
+func (g *Group) defaultMessagesDispatchModels() (opus, sonnet, haiku string) {
+	switch g.Platform {
+	case PlatformDeepSeek:
+		return "deepseek-v4-pro", "deepseek-v4-pro", "deepseek-v4-flash"
+	case PlatformMoonshot:
+		return "kimi-for-coding", "kimi-for-coding", "kimi-for-coding"
+	default:
+		return defaultOpenAIMessagesDispatchOpusMappedModel,
+			defaultOpenAIMessagesDispatchSonnetMappedModel,
+			defaultOpenAIMessagesDispatchHaikuMappedModel
+	}
+}
+
 func (g *Group) ResolveMessagesDispatchModel(requestedModel string) string {
 	if g == nil {
 		return ""
@@ -69,32 +82,40 @@ func (g *Group) ResolveMessagesDispatchModel(requestedModel string) string {
 		return mappedModel
 	}
 
+	defaultOpus, defaultSonnet, defaultHaiku := g.defaultMessagesDispatchModels()
+
 	switch claudeMessagesDispatchFamily(requestedModel) {
 	case "opus":
 		if mappedModel := strings.TrimSpace(cfg.OpusMappedModel); mappedModel != "" {
 			return mappedModel
 		}
-		return defaultOpenAIMessagesDispatchOpusMappedModel
+		return defaultOpus
 	case "sonnet":
 		if mappedModel := strings.TrimSpace(cfg.SonnetMappedModel); mappedModel != "" {
 			return mappedModel
 		}
-		return defaultOpenAIMessagesDispatchSonnetMappedModel
+		return defaultSonnet
 	case "haiku":
 		if mappedModel := strings.TrimSpace(cfg.HaikuMappedModel); mappedModel != "" {
 			return mappedModel
 		}
-		return defaultOpenAIMessagesDispatchHaikuMappedModel
+		return defaultHaiku
 	default:
 		return ""
 	}
 }
 
 func sanitizeGroupMessagesDispatchFields(g *Group) {
-	if g == nil || g.Platform == PlatformOpenAI {
+	if g == nil {
 		return
 	}
-	g.AllowMessagesDispatch = false
-	g.DefaultMappedModel = ""
-	g.MessagesDispatchModelConfig = OpenAIMessagesDispatchModelConfig{}
+	switch g.Platform {
+	case PlatformOpenAI, PlatformDeepSeek, PlatformMoonshot:
+		// 这些平台支持 Messages API 调度，保留配置
+		return
+	default:
+		g.AllowMessagesDispatch = false
+		g.DefaultMappedModel = ""
+		g.MessagesDispatchModelConfig = OpenAIMessagesDispatchModelConfig{}
+	}
 }

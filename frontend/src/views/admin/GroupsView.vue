@@ -1165,9 +1165,9 @@
           </div>
         </div>
 
-        <!-- OpenAI Messages 调度配置（仅 openai 平台） -->
+        <!-- OpenAI Messages 调度配置（openai/deepseek/moonshot 平台） -->
         <div
-          v-if="createForm.platform === 'openai'"
+          v-if="createForm.platform === 'openai' || createForm.platform === 'deepseek' || createForm.platform === 'moonshot'"
           class="border-t border-gray-200 dark:border-dark-400 pt-4 mt-4"
         >
           <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
@@ -2529,9 +2529,9 @@
           </div>
         </div>
 
-        <!-- OpenAI Messages 调度配置（仅 openai 平台） -->
+        <!-- OpenAI Messages 调度配置（openai/deepseek/moonshot 平台） -->
         <div
-          v-if="editForm.platform === 'openai'"
+          v-if="editForm.platform === 'openai' || editForm.platform === 'deepseek' || editForm.platform === 'moonshot'"
           class="border-t border-gray-200 dark:border-dark-400 pt-4 mt-4"
         >
           <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
@@ -4279,7 +4279,7 @@ const closeCreateModal = () => {
   createForm.allow_messages_dispatch = false;
   createForm.require_oauth_only = false;
   createForm.require_privacy_set = false;
-  resetMessagesDispatchFormState(createForm);
+  resetMessagesDispatchFormState(createForm, createForm.platform);
   createForm.supported_model_scopes = ["claude", "gemini_text", "gemini_image"];
   createForm.mcp_xml_inject = true;
   createForm.copy_accounts_from_group_ids = [];
@@ -4338,7 +4338,7 @@ const handleCreateGroup = async () => {
         createForm.supported_model_scopes,
       ),
       messages_dispatch_model_config:
-        createForm.platform === 'openai'
+        createForm.platform === 'openai' || createForm.platform === 'deepseek' || createForm.platform === 'moonshot'
           ? messagesDispatchFormStateToConfig({
               allow_messages_dispatch: createForm.allow_messages_dispatch,
               opus_mapped_model: createForm.opus_mapped_model,
@@ -4401,6 +4401,7 @@ const handleEdit = async (group: AdminGroup) => {
     group.fallback_group_id_on_invalid_request;
   const messagesDispatchFormState = messagesDispatchConfigToFormState(
     group.messages_dispatch_model_config,
+    group.platform,
   );
   editForm.allow_messages_dispatch =
     group.allow_messages_dispatch ||
@@ -4450,7 +4451,7 @@ const closeEditModal = () => {
   editingGroup.value = null;
   editModelRoutingRules.value = [];
   editForm.copy_accounts_from_group_ids = [];
-  resetMessagesDispatchFormState(editForm);
+  resetMessagesDispatchFormState(editForm, editForm.platform);
   resetModelsListState(editModelsListState);
 };
 
@@ -4482,7 +4483,7 @@ const handleUpdateGroup = async () => {
         editForm.supported_model_scopes,
       ),
       messages_dispatch_model_config:
-        editForm.platform === 'openai'
+        editForm.platform === 'openai' || editForm.platform === 'deepseek' || editForm.platform === 'moonshot'
           ? messagesDispatchFormStateToConfig({
               allow_messages_dispatch: editForm.allow_messages_dispatch,
               opus_mapped_model: editForm.opus_mapped_model,
@@ -4603,9 +4604,7 @@ watch(
     if (!["anthropic", "antigravity"].includes(newVal)) {
       createForm.fallback_group_id_on_invalid_request = null;
     }
-    if (newVal !== "openai") {
-      resetMessagesDispatchFormState(createForm);
-    }
+    resetMessagesDispatchFormState(createForm, newVal);
     if (!["openai", "antigravity", "anthropic", "gemini"].includes(newVal)) {
       createForm.require_oauth_only = false;
       createForm.require_privacy_set = false;
@@ -4621,9 +4620,7 @@ watch(
     if (!["anthropic", "antigravity"].includes(newVal)) {
       editForm.fallback_group_id_on_invalid_request = null;
     }
-    if (newVal !== "openai") {
-      resetMessagesDispatchFormState(editForm);
-    }
+    resetMessagesDispatchFormState(editForm, newVal);
     if (!["openai", "antigravity", "anthropic", "gemini"].includes(newVal)) {
       editForm.require_oauth_only = false;
       editForm.require_privacy_set = false;

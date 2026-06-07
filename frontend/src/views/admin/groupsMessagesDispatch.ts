@@ -1,4 +1,4 @@
-import type { OpenAIMessagesDispatchModelConfig } from "@/types";
+import type { GroupPlatform, OpenAIMessagesDispatchModelConfig } from "@/types";
 
 export interface MessagesDispatchMappingRow {
   claude_model: string;
@@ -13,20 +13,39 @@ export interface MessagesDispatchFormState {
   exact_model_mappings: MessagesDispatchMappingRow[];
 }
 
-export function createDefaultMessagesDispatchFormState(): MessagesDispatchFormState {
+function getDefaultModelsForPlatform(platform?: GroupPlatform | null): {
+  opus: string;
+  sonnet: string;
+  haiku: string;
+} {
+  switch (platform) {
+    case "deepseek":
+      return { opus: "deepseek-v4-pro", sonnet: "deepseek-v4-pro", haiku: "deepseek-v4-flash" };
+    case "moonshot":
+      return { opus: "kimi-for-coding", sonnet: "kimi-for-coding", haiku: "kimi-for-coding" };
+    default:
+      return { opus: "gpt-5.4", sonnet: "gpt-5.3-codex", haiku: "gpt-5.4-mini" };
+  }
+}
+
+export function createDefaultMessagesDispatchFormState(
+  platform?: GroupPlatform | null,
+): MessagesDispatchFormState {
+  const models = getDefaultModelsForPlatform(platform);
   return {
     allow_messages_dispatch: false,
-    opus_mapped_model: "gpt-5.4",
-    sonnet_mapped_model: "gpt-5.3-codex",
-    haiku_mapped_model: "gpt-5.4-mini",
+    opus_mapped_model: models.opus,
+    sonnet_mapped_model: models.sonnet,
+    haiku_mapped_model: models.haiku,
     exact_model_mappings: [],
   };
 }
 
 export function messagesDispatchConfigToFormState(
   config?: OpenAIMessagesDispatchModelConfig | null,
+  platform?: GroupPlatform | null,
 ): MessagesDispatchFormState {
-  const defaults = createDefaultMessagesDispatchFormState();
+  const defaults = createDefaultMessagesDispatchFormState(platform);
   const exactMappings = Object.entries(config?.exact_model_mappings || {})
     .sort(([left], [right]) => left.localeCompare(right))
     .map(([claude_model, target_model]) => ({ claude_model, target_model }));
@@ -62,8 +81,9 @@ export function messagesDispatchFormStateToConfig(
 
 export function resetMessagesDispatchFormState(
   target: MessagesDispatchFormState,
+  platform?: GroupPlatform | null,
 ): void {
-  const defaults = createDefaultMessagesDispatchFormState();
+  const defaults = createDefaultMessagesDispatchFormState(platform);
   target.allow_messages_dispatch = defaults.allow_messages_dispatch;
   target.opus_mapped_model = defaults.opus_mapped_model;
   target.sonnet_mapped_model = defaults.sonnet_mapped_model;
