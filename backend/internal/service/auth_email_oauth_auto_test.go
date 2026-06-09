@@ -41,6 +41,7 @@ func newEmailOAuthAutoAuthService(
 		nil, // turnstileService
 		nil, // emailQueueService
 		nil, // promoService
+		nil, // referralService (来自 dev)
 		nil, // defaultSubAssigner — nil, assignSubscriptions early return
 		nil, // affiliateService — nil, bindOAuthAffiliate early return
 		quotaRepo,

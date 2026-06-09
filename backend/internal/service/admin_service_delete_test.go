@@ -620,7 +620,7 @@ func TestAdminService_DeleteGroup_InvalidatesAuthCacheForBoundKeys(t *testing.T)
 		authCacheInvalidator: invalidator,
 	}
 
-	err := svc.DeleteGroup(context.Background(), 5)
+	err := svc.DeleteGroup(context.Background(), 5, nil)
 	require.NoError(t, err)
 	require.Equal(t, []int64{5}, repo.deleteCalls)
 	require.Equal(t, []int64{5}, apiKeyRepo.listGroupIDs)

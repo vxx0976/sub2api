@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -1090,6 +1091,21 @@ func (s *openAIWSUsageHandlerAccountRepoStub) ListSchedulableByGroupIDAndPlatfor
 	return s.ListSchedulableByPlatform(ctx, platform)
 }
 
+func (s *openAIWSUsageHandlerAccountRepoStub) ListSchedulableByPlatforms(ctx context.Context, platforms []string) ([]service.Account, error) {
+	if !slices.Contains(platforms, s.account.Platform) {
+		return nil, nil
+	}
+	return []service.Account{s.account}, nil
+}
+
+func (s *openAIWSUsageHandlerAccountRepoStub) ListSchedulableByGroupIDAndPlatforms(ctx context.Context, groupID int64, platforms []string) ([]service.Account, error) {
+	return s.ListSchedulableByPlatforms(ctx, platforms)
+}
+
+func (s *openAIWSUsageHandlerAccountRepoStub) ListSchedulableUngroupedByPlatforms(ctx context.Context, platforms []string) ([]service.Account, error) {
+	return s.ListSchedulableByPlatforms(ctx, platforms)
+}
+
 func (s *openAIWSUsageHandlerAccountRepoStub) GetByID(ctx context.Context, id int64) (*service.Account, error) {
 	if s.account.ID != id {
 		return nil, nil
@@ -1120,6 +1136,24 @@ func (s *openAIWSFailoverHandlerAccountRepoStub) ListSchedulableByGroupIDAndPlat
 
 func (s *openAIWSFailoverHandlerAccountRepoStub) ListSchedulableUngroupedByPlatform(ctx context.Context, platform string) ([]service.Account, error) {
 	return s.ListSchedulableByPlatform(ctx, platform)
+}
+
+func (s *openAIWSFailoverHandlerAccountRepoStub) ListSchedulableByPlatforms(ctx context.Context, platforms []string) ([]service.Account, error) {
+	out := make([]service.Account, 0, len(s.accounts))
+	for _, account := range s.accounts {
+		if slices.Contains(platforms, account.Platform) && account.IsSchedulable() {
+			out = append(out, account)
+		}
+	}
+	return out, nil
+}
+
+func (s *openAIWSFailoverHandlerAccountRepoStub) ListSchedulableByGroupIDAndPlatforms(ctx context.Context, groupID int64, platforms []string) ([]service.Account, error) {
+	return s.ListSchedulableByPlatforms(ctx, platforms)
+}
+
+func (s *openAIWSFailoverHandlerAccountRepoStub) ListSchedulableUngroupedByPlatforms(ctx context.Context, platforms []string) ([]service.Account, error) {
+	return s.ListSchedulableByPlatforms(ctx, platforms)
 }
 
 func (s *openAIWSFailoverHandlerAccountRepoStub) GetByID(ctx context.Context, id int64) (*service.Account, error) {

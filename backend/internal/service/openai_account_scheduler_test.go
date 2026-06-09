@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"slices"
 	"sync"
 	"testing"
 	"time"
@@ -57,6 +58,24 @@ func (r schedulerTestOpenAIAccountRepo) ListSchedulableUngroupedByPlatform(ctx c
 	return r.ListSchedulableByPlatform(ctx, platform)
 }
 
+func (r schedulerTestOpenAIAccountRepo) ListSchedulableByPlatforms(ctx context.Context, platforms []string) ([]Account, error) {
+	var result []Account
+	for _, acc := range r.accounts {
+		if slices.Contains(platforms, acc.Platform) {
+			result = append(result, acc)
+		}
+	}
+	return result, nil
+}
+
+func (r schedulerTestOpenAIAccountRepo) ListSchedulableByGroupIDAndPlatforms(ctx context.Context, groupID int64, platforms []string) ([]Account, error) {
+	return r.ListSchedulableByPlatforms(ctx, platforms)
+}
+
+func (r schedulerTestOpenAIAccountRepo) ListSchedulableUngroupedByPlatforms(ctx context.Context, platforms []string) ([]Account, error) {
+	return r.ListSchedulableByPlatforms(ctx, platforms)
+}
+
 type schedulerGroupAwareOpenAIAccountRepo struct {
 	schedulerTestOpenAIAccountRepo
 }
@@ -75,6 +94,26 @@ func (r schedulerGroupAwareOpenAIAccountRepo) ListSchedulableUngroupedByPlatform
 	var result []Account
 	for _, acc := range r.accounts {
 		if acc.Platform == platform && openAIStickyAccountMatchesGroup(&acc, nil) {
+			result = append(result, acc)
+		}
+	}
+	return result, nil
+}
+
+func (r schedulerGroupAwareOpenAIAccountRepo) ListSchedulableByGroupIDAndPlatforms(ctx context.Context, groupID int64, platforms []string) ([]Account, error) {
+	var result []Account
+	for _, acc := range r.accounts {
+		if slices.Contains(platforms, acc.Platform) && openAIStickyAccountMatchesGroup(&acc, &groupID) {
+			result = append(result, acc)
+		}
+	}
+	return result, nil
+}
+
+func (r schedulerGroupAwareOpenAIAccountRepo) ListSchedulableUngroupedByPlatforms(ctx context.Context, platforms []string) ([]Account, error) {
+	var result []Account
+	for _, acc := range r.accounts {
+		if slices.Contains(platforms, acc.Platform) && openAIStickyAccountMatchesGroup(&acc, nil) {
 			result = append(result, acc)
 		}
 	}

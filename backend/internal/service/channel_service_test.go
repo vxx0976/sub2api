@@ -36,6 +36,14 @@ type mockChannelRepository struct {
 	updateModelPricingFn       func(ctx context.Context, pricing *ChannelModelPricing) error
 	deleteModelPricingFn       func(ctx context.Context, id int64) error
 	replaceModelPricingFn      func(ctx context.Context, channelID int64, pricingList []ChannelModelPricing) error
+	sumCachedBalanceFn         func(ctx context.Context) (float64, error)
+}
+
+func (m *mockChannelRepository) SumCachedBalance(ctx context.Context) (float64, error) {
+	if m.sumCachedBalanceFn != nil {
+		return m.sumCachedBalanceFn(ctx)
+	}
+	return 0, nil
 }
 
 func (m *mockChannelRepository) Create(ctx context.Context, channel *Channel) error {
