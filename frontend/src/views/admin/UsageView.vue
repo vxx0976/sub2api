@@ -447,6 +447,12 @@ const loadChartData = async () => {
 const applyFilters = () => {
   pagination.page = 1
   invalidateModelStatsCache()
+  // 选了分组/账号过滤时自动切到"上游"视图，清除时切回"请求"
+  if (filters.value.group_id || filters.value.account_id) {
+    modelDistributionSource.value = 'upstream'
+  } else if (modelDistributionSource.value === 'upstream') {
+    modelDistributionSource.value = 'requested'
+  }
   loadLogs()
   loadStats()
   loadModelStats(modelDistributionSource.value, true)

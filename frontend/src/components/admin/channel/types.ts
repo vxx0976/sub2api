@@ -198,7 +198,7 @@ export function getPlatformTagClass(platform: string): string {
     case 'antigravity': return 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
     case 'deepseek': return 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400'
     case 'moonshot': return 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400'
-    case 'glm': return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+    case 'glm': return 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400'
     case 'seedance': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
     default: return 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400'
   }
@@ -213,7 +213,7 @@ export function getPlatformTextClass(platform: string): string {
     case 'antigravity': return 'text-purple-700 dark:text-purple-400'
     case 'deepseek': return 'text-cyan-700 dark:text-cyan-400'
     case 'moonshot': return 'text-indigo-700 dark:text-indigo-400'
-    case 'glm': return 'text-emerald-700 dark:text-emerald-400'
+    case 'glm': return 'text-rose-700 dark:text-rose-400'
     case 'seedance': return 'text-amber-700 dark:text-amber-400'
     default: return ''
   }

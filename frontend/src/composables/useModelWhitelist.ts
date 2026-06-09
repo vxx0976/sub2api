@@ -79,14 +79,21 @@ const antigravityModels = [
   'tab_flash_lite_preview'
 ]
 
-// 智谱 GLM
+// 智谱 GLM（与官方在售列表同步，已移除下架模型）
 const zhipuModels = [
-  'glm-4', 'glm-4v', 'glm-4-plus', 'glm-4-0520',
-  'glm-4-air', 'glm-4-airx', 'glm-4-long', 'glm-4-flash',
-  'glm-4v-plus', 'glm-4.5', 'glm-4.6',
-  'glm-3-turbo', 'glm-4-alltools',
-  'chatglm_turbo', 'chatglm_pro', 'chatglm_std', 'chatglm_lite',
-  'cogview-3', 'cogvideo'
+  // GLM-5 系列
+  'GLM-5.1', 'glm-5.1', 'glm-5', 'glm-5-turbo',
+  // GLM-4.7 系列
+  'glm-4.7', 'glm-4.7-flashx', 'glm-4.7-flash',
+  // GLM-4.6 / 4.5 系列
+  'glm-4.6', 'glm-4.5-air', 'glm-4.5-airx', 'glm-4.5-flash',
+  // GLM-4 系列
+  'glm-4-long', 'glm-4-flashx-250414', 'glm-4-flash-250414',
+  // 视觉模型
+  'glm-5v-turbo', 'glm-4.6v', 'glm-4.6v-flash',
+  'glm-4.1v-thinking-flashx', 'glm-4.1v-thinking-flash', 'glm-4v-flash',
+  // 专用模型
+  'codegeex-4', 'charglm-4'
 ]
 
 // 阿里 通义千问
@@ -155,11 +162,21 @@ const moonshotModels = [
   'moonshot-v1-8k-vision-preview', 'moonshot-v1-32k-vision-preview', 'moonshot-v1-128k-vision-preview'
 ]
 
-// GLM (Zhipu AI)
+// GLM (Zhipu AI) — 与官方在售列表同步
 const glmModels = [
-  'glm-4', 'glm-4-flash', 'glm-4-plus', 'glm-4-long',
-  'glm-4v', 'glm-4v-flash', 'glm-4v-plus',
-  'glm-zero-preview'
+  // GLM-5 系列（krill-ai 中转用大写 GLM-5.1）
+  'GLM-5.1', 'glm-5.1', 'glm-5', 'glm-5-turbo',
+  // GLM-4.7 系列
+  'glm-4.7', 'glm-4.7-flashx', 'glm-4.7-flash',
+  // GLM-4.6 / 4.5 系列
+  'glm-4.6', 'glm-4.5-air', 'glm-4.5-airx', 'glm-4.5-flash',
+  // GLM-4 系列
+  'glm-4-long', 'glm-4-flashx-250414', 'glm-4-flash-250414',
+  // 视觉模型
+  'glm-5v-turbo', 'glm-4.6v', 'glm-4.6v-flash',
+  'glm-4.1v-thinking-flashx', 'glm-4.1v-thinking-flash', 'glm-4v-flash',
+  // 专用模型
+  'codegeex-4', 'charglm-4'
 ]
 
 // Seedance (ByteDance)
@@ -299,9 +316,9 @@ const moonshotPresetMappings = [
 
 // GLM (Zhipu AI) 预设映射
 const glmPresetMappings = [
-  { label: 'GLM-4', from: 'glm-4', to: 'glm-4', color: 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400' },
-  { label: 'GLM-4 Flash', from: 'glm-4-flash', to: 'glm-4-flash', color: 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400' },
-  { label: 'GLM-4V', from: 'glm-4v', to: 'glm-4v', color: 'bg-teal-100 text-teal-700 hover:bg-teal-200 dark:bg-teal-900/30 dark:text-teal-400' }
+  { label: 'GLM-5.1', from: 'GLM-5.1', to: 'GLM-5.1', color: 'bg-rose-100 text-rose-700 hover:bg-rose-200 dark:bg-rose-900/30 dark:text-rose-400' },
+  { label: 'GLM-5', from: 'glm-5', to: 'glm-5', color: 'bg-rose-100 text-rose-700 hover:bg-rose-200 dark:bg-rose-900/30 dark:text-rose-400' },
+  { label: 'GLM-4.7 Flash', from: 'glm-4.7-flash', to: 'glm-4.7-flash', color: 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400' }
 ]
 
 // Seedance (ByteDance) 预设映射

@@ -225,6 +225,15 @@ func (s *OpenAIGatewayService) handleAnthropicDirectStreamingResponse(
 			usage.CacheCreationInputTokens = int(msg.Get("usage.cache_creation_input_tokens").Int())
 			usage.CacheReadInputTokens = int(msg.Get("usage.cache_read_input_tokens").Int())
 
+			// DeepSeek/Kimi Anthropic compat bug: when cache hits exist,
+			// input_tokens reports only cache-miss count instead of the total.
+			// Standard Anthropic: input_tokens = total (including cached).
+			// Detect and normalize so downstream billing computes correct
+			// actualInput = input_tokens - cache_read = cache_miss.
+			if usage.CacheReadInputTokens > 0 && usage.InputTokens < usage.CacheReadInputTokens {
+				usage.InputTokens += usage.CacheReadInputTokens
+			}
+
 		case "content_block_start", "content_block_delta":
 			if firstTokenMs == nil {
 				ms := int(time.Since(startTime).Milliseconds())
@@ -297,6 +306,11 @@ func (s *OpenAIGatewayService) handleAnthropicDirectBufferedResponse(
 	usage.CacheCreationInputTokens = int(gjson.GetBytes(respBody, "usage.cache_creation_input_tokens").Int())
 	usage.CacheReadInputTokens = int(gjson.GetBytes(respBody, "usage.cache_read_input_tokens").Int())
 
+	// DeepSeek/Kimi Anthropic compat bug: see streaming handler comment.
+	if usage.CacheReadInputTokens > 0 && usage.InputTokens < usage.CacheReadInputTokens {
+		usage.InputTokens += usage.CacheReadInputTokens
+	}
+
 	responseID := gjson.GetBytes(respBody, "id").String()
 	requestID := resp.Header.Get("x-request-id")
 
@@ -355,6 +369,10 @@ func (s *OpenAIGatewayService) handleAnthropicDirectBufferedSSE(
 			usage.InputTokens = int(msg.Get("usage.input_tokens").Int())
 			usage.CacheCreationInputTokens = int(msg.Get("usage.cache_creation_input_tokens").Int())
 			usage.CacheReadInputTokens = int(msg.Get("usage.cache_read_input_tokens").Int())
+			// DeepSeek/Kimi Anthropic compat bug: see streaming handler comment.
+			if usage.CacheReadInputTokens > 0 && usage.InputTokens < usage.CacheReadInputTokens {
+				usage.InputTokens += usage.CacheReadInputTokens
+			}
 			// Store the initial message object as the base for the final response.
 			lastMessageData = []byte(msg.Raw)
 

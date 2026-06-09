@@ -122,7 +122,7 @@ const labelClass = computed(() => {
     antigravity: 'bg-purple-200/60 text-purple-800 dark:bg-purple-800/40 dark:text-purple-300',
     deepseek: 'bg-cyan-200/60 text-cyan-800 dark:bg-cyan-800/40 dark:text-cyan-300',
     moonshot: 'bg-indigo-200/60 text-indigo-800 dark:bg-indigo-800/40 dark:text-indigo-300',
-    glm: 'bg-emerald-200/60 text-emerald-800 dark:bg-emerald-800/40 dark:text-emerald-300',
+    glm: 'bg-rose-200/60 text-rose-800 dark:bg-rose-800/40 dark:text-rose-300',
     seedance: 'bg-amber-200/60 text-amber-800 dark:bg-amber-800/40 dark:text-amber-300',
   }
   return `${base} ${labelColors[props.platform || ''] || 'bg-violet-200/60 text-violet-800 dark:bg-violet-800/40 dark:text-violet-300'}`
@@ -136,7 +136,7 @@ const BADGE_COLORS: Record<string, { sub: string; std: string }> = {
   antigravity: { sub: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',    std: 'bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400' },
   deepseek:    { sub: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400',            std: 'bg-cyan-50 text-cyan-700 dark:bg-cyan-900/20 dark:text-cyan-400' },
   moonshot:    { sub: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400',     std: 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-400' },
-  glm:         { sub: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400', std: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400' },
+  glm:         { sub: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400', std: 'bg-rose-50 text-rose-700 dark:bg-rose-900/20 dark:text-rose-400' },
   seedance:    { sub: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',        std: 'bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400' },
 }
 const BADGE_DEFAULT = { sub: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400', std: 'bg-gray-100 text-gray-700 dark:bg-gray-900/20 dark:text-gray-400' }

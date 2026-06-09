@@ -212,7 +212,7 @@ func (s *AccountTestService) testOpenAICompatPlatformConnection(c *gin.Context, 
 		case PlatformMoonshot:
 			testModelID = "kimi-k2"
 		case PlatformGLM:
-			testModelID = "glm-4-flash"
+			testModelID = "GLM-5.1"
 		case PlatformSeedance:
 			testModelID = "doubao-1-5-pro-32k"
 		default:

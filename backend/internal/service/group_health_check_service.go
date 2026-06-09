@@ -309,7 +309,7 @@ func getDefaultTestModel(platform string) string {
 	case "moonshot":
 		return "kimi-k2"
 	case "glm":
-		return "glm-4-flash"
+		return "GLM-5.1"
 	case "seedance":
 		return "doubao-1-5-pro-32k"
 	default:
