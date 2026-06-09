@@ -64,6 +64,13 @@ type migrationChecksumCompatibilityRule struct {
 // 规则必须同时匹配「迁移名 + 数据库 checksum + 当前文件 checksum」且两者都落在该迁移的已知版本集合内才会放行，
 // 避免放宽全局校验，也允许将误改的历史 migration 回滚为已发布版本而不要求人工修 checksum。
 var migrationChecksumCompatibilityRules = map[string]migrationChecksumCompatibilityRule{
+	// 044/045/060/061：历史版本误带 sql-migrate 的 "-- +migrate Down" 段，本执行器不解析
+	// 该标记导致整个文件（含 Down 回滚语句）被一次执行，新库建表后立即被删。
+	// 现已移除 Down 段，此处放行已按旧版本应用过的存量库。
+	"044_add_payment.sql":                                     newMigrationChecksumCompatibilityRule("08a5c810cb5229a7e339a559a8626a1c3ea8b585a11d3b791a3b63b8ceafa620", "d7180d0fd4b755860ef432c7b2f04a068e79fe2b83f6467019472b7eccae15b5"),
+	"045_add_is_recommended.sql":                              newMigrationChecksumCompatibilityRule("a7e4987c1edf6e587b458855d52e7ffe74f69b602d408e0af1b2290d09c5ecd7", "32974769aa5ea7940bef7d7a6137546513e8ef92f0c5bdf86912ab66e1058cf2"),
+	"060_add_order_payment_amount.sql":                        newMigrationChecksumCompatibilityRule("fa0d619eb168b50a9fb74a2db0c072d9b736a3a26be6e781566893c52d0191b0", "23a07c2f6d7fbc2a5c8837003a981d3bad0cad8e8fa2d9865f2300394c359e1e"),
+	"061_add_user_register_domain.sql":                        newMigrationChecksumCompatibilityRule("b1518f588bef8a8b6b52198beb36f9158a75d43a70cfe8a90f9e7c0c0d386990", "f2ab93160eebad203d1fd0183ae00e43bd301d056882f76a9784b1a6a6a54e96"),
 	"054_drop_legacy_cache_columns.sql":                       newMigrationChecksumCompatibilityRule("82de761156e03876653e7a6a4eee883cd927847036f779b0b9f34c42a8af7a7d", "182c193f3359946cf094090cd9e57d5c3fd9abaffbc1e8fc378646b8a6fa12b4"),
 	"061_add_usage_log_request_type.sql":                      newMigrationChecksumCompatibilityRule("66207e7aa5dd0429c2e2c0fabdaf79783ff157fa0af2e81adff2ee03790ec65c", "08a248652cbab7cfde147fc6ef8cda464f2477674e20b718312faa252e0481c0", "222b4a09c797c22e5922b6b172327c824f5463aaa8760e4f621bc5c22e2be0f3"),
 	"109_auth_identity_compat_backfill.sql":                   newMigrationChecksumCompatibilityRule("0580b4602d85435edf9aca1633db580bb3932f26517f75134106f80275ec2ace", "551e498aa5616d2d91096e9d72cf9fb36e418ee22eacc557f8811cadbc9e20ee"),

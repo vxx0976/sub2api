@@ -421,7 +421,8 @@ func (r *usageLogRepository) createSingle(ctx context.Context, sqlq sqlExecutor,
 			$10, $11, $12, $13,
 			$14, $15, $16, $17,
 			$18, $19, $20, $21, $22, $23,
-			$24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50
+			$24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50,
+			$51, $52, $53, $54
 		)
 		ON CONFLICT (request_id, api_key_id) DO NOTHING
 		RETURNING id, created_at
@@ -2084,7 +2085,7 @@ func (r *usageLogRepository) GetGeoDistribution(ctx context.Context, startTime, 
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var items []service.GeoDistributionItem
 	for rows.Next() {
@@ -2111,7 +2112,7 @@ func (r *usageLogRepository) GetDistinctIPsWithoutCountry(ctx context.Context, l
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var ips []string
 	for rows.Next() {
@@ -3229,7 +3230,7 @@ func (r *usageLogRepository) SumUsageCostsByDay(ctx context.Context, startTime, 
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	result := make(map[string]usagestats.DailyUsageCost)
 	for rows.Next() {
 		var day string
@@ -4946,7 +4947,7 @@ func (r *usageLogRepository) GetFailoverMemberUsage(ctx context.Context, virtual
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	out := make([]service.FailoverMemberUsageRow, 0)
 	for rows.Next() {
 		var row service.FailoverMemberUsageRow
