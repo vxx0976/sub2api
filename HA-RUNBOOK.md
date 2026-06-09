@@ -275,6 +275,7 @@ ssh hostdzire "cd /opt/sub2api && sed -i 's/DATABASE_HOST=10.88.0.4/DATABASE_HOS
 - ~~solid 灾备自检~~ 已随 solid 释放下线(2026-05-29)
 - 凭据: `/opt/ha-monitor/secrets` (TG_TOKEN/TG_CHAT/ALERT_EMAIL/REDIS_PW,chmod 600;bwh2 同款 + `/etc/msmtprc`)
 - 状态文件: `/opt/ha-monitor/state/*` (每项一个,去重防刷屏)
+- **时区 (2026-06-09)**: 告警时间戳统一**北京时间**(两处 check.sh 第6行 `NOW` 用 `TZ='Asia/Shanghai' date`)。系统时区: main/admin/hostdzire = **UTC**(跑 PG/etcd + `0 2` 定时,刻意不动,避免平移备份/清理);bwh2 = **Asia/Shanghai**(纯投票+监控,已 `timedatectl set-timezone` 切,原为洛杉矶 PDT)。→ 排障看 `docker inspect`/`journalctl` 日志时记得 main/admin/hostdzire 是 **UTC(+8=北京)**
 
 ### 常用操作
 - 手动跑一次: `bash /opt/ha-monitor/check.sh`
