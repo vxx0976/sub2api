@@ -1572,6 +1572,7 @@
                     <template v-if="isZhLocale">
                       开通引导：GitHub Settings → Developer settings →
                       <a
+                        data-testid="github-oauth-apps-guide-link"
                         href="https://github.com/settings/developers"
                         target="_blank"
                         rel="noopener noreferrer"
@@ -1582,6 +1583,7 @@
                     <template v-else>
                       Setup guide: GitHub Settings → Developer settings →
                       <a
+                        data-testid="github-oauth-apps-guide-link"
                         href="https://github.com/settings/developers"
                         target="_blank"
                         rel="noopener noreferrer"
@@ -2514,6 +2516,71 @@
                 </div>
               </div>
             </div>
+
+            <!-- 系统全局默认平台限额矩阵（来自 main 6b39b344） -->
+            <div class="border-t border-gray-100 pt-4 dark:border-dark-700">
+              <div class="mb-3">
+                <label class="font-medium text-gray-900 dark:text-white">
+                  {{ t('admin.settings.defaults.defaultPlatformQuotas') }}
+                </label>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  {{ t('admin.settings.defaults.defaultPlatformQuotasHint') }}
+                </p>
+                <p class="mt-0.5 text-xs text-amber-600 dark:text-amber-400">
+                  {{ t('admin.settings.defaults.platformQuotaNotice') }}
+                </p>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="min-w-full text-sm">
+                  <thead>
+                    <tr class="text-left text-xs text-gray-500 dark:text-gray-400">
+                      <th class="pb-2 pr-4 font-medium">{{ t('admin.settings.platformQuota.platform') }}</th>
+                      <th class="pb-2 pr-4 font-medium">{{ t('admin.settings.platformQuota.daily') }}</th>
+                      <th class="pb-2 pr-4 font-medium">{{ t('admin.settings.platformQuota.weekly') }}</th>
+                      <th class="pb-2 font-medium">{{ t('admin.settings.platformQuota.monthly') }}</th>
+                    </tr>
+                  </thead>
+                  <tbody class="space-y-2">
+                    <tr v-for="p in (['anthropic', 'openai', 'gemini', 'antigravity'] as const)" :key="p" class="align-top">
+                      <td class="pr-4 py-1">
+                        <span class="font-mono text-xs text-gray-700 dark:text-gray-300">{{ p }}</span>
+                      </td>
+                      <td class="pr-4 py-1">
+                        <input
+                          v-model.number="form.default_platform_quotas[p]!.daily"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          class="input h-8 w-28 text-sm"
+                          :placeholder="t('admin.settings.platformQuota.placeholder')"
+                        />
+                      </td>
+                      <td class="pr-4 py-1">
+                        <input
+                          v-model.number="form.default_platform_quotas[p]!.weekly"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          class="input h-8 w-28 text-sm"
+                          :placeholder="t('admin.settings.platformQuota.placeholder')"
+                        />
+                      </td>
+                      <td class="py-1">
+                        <input
+                          v-model.number="form.default_platform_quotas[p]!.monthly"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          class="input h-8 w-28 text-sm"
+                          :placeholder="t('admin.settings.platformQuota.placeholder')"
+                        />
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <!-- /全局平台限额矩阵 -->
           </div>
         </div>
 
@@ -5030,6 +5097,8 @@ import { adminAPI } from '@/api'
 import {
   appendAuthSourceDefaultsToUpdateRequest,
   buildAuthSourceDefaultsState,
+  normalizePlatformQuotasMap,
+  sanitizePlatformQuotasMap,
   defaultWeChatConnectScopesForMode,
   deriveWeChatConnectStoredMode,
   normalizeDefaultSubscriptionSettings,
@@ -5041,6 +5110,7 @@ import type {
   SystemSettings,
   UpdateSettingsRequest,
   DefaultSubscriptionSetting,
+  DefaultPlatformQuotasMap,
   OpenAIFastPolicyRule,
   WeChatConnectMode,
   WebSearchEmulationConfig,
@@ -5350,6 +5420,7 @@ type SettingsForm = Omit<
   google_oauth_client_secret: string
   force_email_on_third_party_signup: boolean
   openai_advanced_scheduler_enabled: boolean
+  default_platform_quotas: DefaultPlatformQuotasMap
 }
 
 const form = reactive<SettingsForm>({
@@ -5371,6 +5442,7 @@ const form = reactive<SettingsForm>({
   default_concurrency: 1,
   default_user_rpm_limit: 0,
   default_subscriptions: [],
+  default_platform_quotas: normalizePlatformQuotasMap() as DefaultPlatformQuotasMap,
   auth_source_default_email_balance: 0,
   auth_source_default_email_concurrency: 5,
   auth_source_default_email_subscriptions: [],
@@ -6075,6 +6147,7 @@ async function loadSettings() {
     form.epay_key = ''
     form.backend_mode_enabled = settings.backend_mode_enabled
     form.default_subscriptions = normalizeDefaultSubscriptionSettings(settings.default_subscriptions)
+    form.default_platform_quotas = normalizePlatformQuotasMap(settings.default_platform_quotas)
     registrationEmailSuffixWhitelistTags.value = normalizeRegistrationEmailSuffixDomains(
       settings.registration_email_suffix_whitelist
     )
@@ -6339,6 +6412,7 @@ async function saveSettings() {
       affiliate_rebate_per_invitee_cap: Math.max(0, Number(form.affiliate_rebate_per_invitee_cap) || 0),
       default_concurrency: form.default_concurrency,
       default_subscriptions: normalizedDefaultSubscriptions,
+      default_platform_quotas: sanitizePlatformQuotasMap(form.default_platform_quotas),
       force_email_on_third_party_signup: form.force_email_on_third_party_signup,
       default_user_rpm_limit: form.default_user_rpm_limit,
       site_name: form.site_name,
@@ -6554,6 +6628,7 @@ async function saveSettings() {
       }
     }
     Object.assign(authSourceDefaults, buildAuthSourceDefaultsState(updated))
+    form.default_platform_quotas = normalizePlatformQuotasMap(updated.default_platform_quotas)
     registrationEmailSuffixWhitelistTags.value = normalizeRegistrationEmailSuffixDomains(
       updated.registration_email_suffix_whitelist
     )
