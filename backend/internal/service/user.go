@@ -7,22 +7,22 @@ import (
 )
 
 type User struct {
-	ID             int64     `json:"id"`
-	Email          string    `json:"email"`
-	Username       string    `json:"username"`
-	Notes          string    `json:"notes,omitempty"`
-	AvatarURL      string    `json:"avatar_url,omitempty"`
-	AvatarSource   string    `json:"avatar_source,omitempty"`
-	AvatarMIME     string    `json:"avatar_mime,omitempty"`
-	AvatarByteSize int       `json:"avatar_byte_size,omitempty"`
-	AvatarSHA256   string    `json:"avatar_sha256,omitempty"`
-	PasswordHash   string    `json:"-"` // Never expose password hash
-	Role           string    `json:"role"`
-	Balance        float64   `json:"balance"`
-	Concurrency    int       `json:"concurrency"`
-	Status         string    `json:"status"`
-	AllowedGroups  []int64   `json:"allowed_groups,omitempty"`
-	TokenVersion   int64     `json:"-"` // Incremented on password change to invalidate existing tokens
+	ID             int64   `json:"id"`
+	Email          string  `json:"email"`
+	Username       string  `json:"username"`
+	Notes          string  `json:"notes,omitempty"`
+	AvatarURL      string  `json:"avatar_url,omitempty"`
+	AvatarSource   string  `json:"avatar_source,omitempty"`
+	AvatarMIME     string  `json:"avatar_mime,omitempty"`
+	AvatarByteSize int     `json:"avatar_byte_size,omitempty"`
+	AvatarSHA256   string  `json:"avatar_sha256,omitempty"`
+	PasswordHash   string  `json:"-"` // Never expose password hash
+	Role           string  `json:"role"`
+	Balance        float64 `json:"balance"`
+	Concurrency    int     `json:"concurrency"`
+	Status         string  `json:"status"`
+	AllowedGroups  []int64 `json:"allowed_groups,omitempty"`
+	TokenVersion   int64   `json:"-"` // Incremented on password change to invalidate existing tokens
 	// TokenVersionResolved indicates TokenVersion already contains the fingerprint-derived
 	// value expected in JWT claims and refresh-token state.
 	TokenVersionResolved bool       `json:"-"`

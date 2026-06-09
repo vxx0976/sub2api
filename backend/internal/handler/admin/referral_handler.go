@@ -22,17 +22,17 @@ func NewReferralHandler(referralService *service.ReferralService) *ReferralHandl
 
 // AdminReferralRecord represents a referral record for admin view
 type AdminReferralRecord struct {
-	ID                 int64    `json:"id"`
-	ReferrerID         int64    `json:"referrer_id"`
-	ReferrerEmail      string   `json:"referrer_email"`
-	InviteeID          int64    `json:"invitee_id"`
-	InviteeEmail       string   `json:"invitee_email"`
-	TriggerOrderID     int64    `json:"trigger_order_id"`
-	ReferrerReward     float64  `json:"referrer_reward"`
-	InviteeReward      float64  `json:"invitee_reward"`
-	SkipReferrerReason *string  `json:"skip_referrer_reason,omitempty"`
-	Status             string   `json:"status"`
-	CreatedAt          string   `json:"created_at"`
+	ID                 int64   `json:"id"`
+	ReferrerID         int64   `json:"referrer_id"`
+	ReferrerEmail      string  `json:"referrer_email"`
+	InviteeID          int64   `json:"invitee_id"`
+	InviteeEmail       string  `json:"invitee_email"`
+	TriggerOrderID     int64   `json:"trigger_order_id"`
+	ReferrerReward     float64 `json:"referrer_reward"`
+	InviteeReward      float64 `json:"invitee_reward"`
+	SkipReferrerReason *string `json:"skip_referrer_reason,omitempty"`
+	Status             string  `json:"status"`
+	CreatedAt          string  `json:"created_at"`
 }
 
 // AdminReferralListResponse response for admin referral list

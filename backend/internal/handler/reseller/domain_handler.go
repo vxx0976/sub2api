@@ -197,7 +197,7 @@ func (h *DomainHandler) ServerInfo(c *gin.Context) {
 			if addr, ok := conn.LocalAddr().(*net.UDPAddr); ok {
 				serverIP = addr.IP.String()
 			}
-			conn.Close()
+			_ = conn.Close()
 		}
 	}
 

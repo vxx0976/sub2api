@@ -148,9 +148,10 @@ func (r *ResellerWithdrawalRepo) UpdateStatus(ctx context.Context, id int64, sta
 		SetAdminNotes(adminNotes).
 		SetAdminID(adminID)
 	now := time.Now()
-	if status == "paid" {
+	switch status {
+	case "paid":
 		upd = upd.SetPaidAt(now)
-	} else if status == "rejected" {
+	case "rejected":
 		upd = upd.SetRejectedAt(now)
 	}
 	_, err := upd.Save(ctx)

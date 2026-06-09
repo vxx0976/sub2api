@@ -111,10 +111,10 @@ func (c *GroupStatusCacheImpl) GetGroupStatuses(ctx context.Context, groupIDs []
 
 	pipe := c.rdb.Pipeline()
 	type bucketCmds struct {
-		okCur     *redis.StringCmd
-		totalCur  *redis.StringCmd
-		okPrev    *redis.StringCmd
-		totalPrev *redis.StringCmd
+		okCur       *redis.StringCmd
+		totalCur    *redis.StringCmd
+		okPrev      *redis.StringCmd
+		totalPrev   *redis.StringCmd
 		latencyCur  *redis.StringCmd
 		latencyPrev *redis.StringCmd
 	}

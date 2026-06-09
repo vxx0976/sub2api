@@ -1001,7 +1001,7 @@ func requestBalance(ctx context.Context, url, method string, headers map[string]
 	if err != nil {
 		return 0, nil, fmt.Errorf("http request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
 	if err != nil {

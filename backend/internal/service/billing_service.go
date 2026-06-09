@@ -889,8 +889,6 @@ func (s *BillingService) CalculateImageCost(model string, imageSize string, imag
 	}
 }
 
-
-
 // getImageUnitPrice 获取图片单价
 func (s *BillingService) getImageUnitPrice(model string, imageSize string, groupConfig *ImagePriceConfig) float64 {
 	// 优先使用分组配置的价格

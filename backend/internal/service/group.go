@@ -22,7 +22,7 @@ type Group struct {
 	// 多语言名称/描述（可选，前端根据当前语言自动选择）
 	NameI18n        map[string]string `json:"name_i18n,omitempty"`
 	DescriptionI18n map[string]string `json:"description_i18n,omitempty"`
-	Hydrated       bool    `json:"-"` // indicates the group was loaded from a trusted repository source
+	Hydrated        bool              `json:"-"` // indicates the group was loaded from a trusted repository source
 
 	SubscriptionType    string   `json:"subscription_type"`
 	DailyLimitUSD       *float64 `json:"daily_limit_usd"`
@@ -87,7 +87,7 @@ type Group struct {
 	HealthCheckIntervalMin int    `json:"health_check_interval_min"` // 健康检查间隔（分钟），0 表示使用默认值 30
 	HealthCheckTestModel   string `json:"health_check_test_model"`   // 健康检查测试模型（空表示按平台使用默认）
 	// 健康检查状态
-	HealthStatus         string     `json:"health_status"`           // available/unavailable/""
+	HealthStatus         string     `json:"health_status"` // available/unavailable/""
 	HealthyAccounts      int        `json:"healthy_accounts"`
 	TotalCheckedAccounts int        `json:"total_checked_accounts"`
 	LastHealthCheckAt    *time.Time `json:"last_health_check_at"`

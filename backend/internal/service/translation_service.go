@@ -301,25 +301,25 @@ func buildTranslationPrompt(texts []string, langs []string, source string) strin
 	body, _ := json.Marshal(items)
 
 	var b strings.Builder
-	b.WriteString("You are a professional translator. Translate each input text into the target languages.\n")
+	_, _ = b.WriteString("You are a professional translator. Translate each input text into the target languages.\n")
 	if source != "" && source != "auto" {
-		b.WriteString("The source language is: ")
-		b.WriteString(source)
-		b.WriteString(".\n")
+		_, _ = b.WriteString("The source language is: ")
+		_, _ = b.WriteString(source)
+		_, _ = b.WriteString(".\n")
 	} else {
-		b.WriteString("Detect the source language automatically.\n")
+		_, _ = b.WriteString("Detect the source language automatically.\n")
 	}
-	b.WriteString("Target languages (BCP-47 / ISO 639-1 codes): ")
-	b.WriteString(strings.Join(langs, ", "))
-	b.WriteString(".\n\n")
-	b.WriteString("Rules:\n")
-	b.WriteString("1. Preserve the original meaning, tone and any inline punctuation.\n")
-	b.WriteString("2. Do NOT add explanations, prefixes, suffixes, or quotes around the translation.\n")
-	b.WriteString("3. If the source already matches a target language, just return it as-is for that language.\n")
-	b.WriteString("4. Output ONLY a JSON array, no markdown fences, no commentary.\n\n")
-	b.WriteString("Input array (each item has an `index` and `text`):\n")
-	b.Write(body)
-	b.WriteString("\n\nOutput format: a JSON array of the same length, each element is an object with key `index` (matching input) and a key per target language code holding the translation.\nExample for target_langs=[\"en\",\"ru\"]:\n[{\"index\":0,\"en\":\"Hello\",\"ru\":\"Привет\"}]\n")
+	_, _ = b.WriteString("Target languages (BCP-47 / ISO 639-1 codes): ")
+	_, _ = b.WriteString(strings.Join(langs, ", "))
+	_, _ = b.WriteString(".\n\n")
+	_, _ = b.WriteString("Rules:\n")
+	_, _ = b.WriteString("1. Preserve the original meaning, tone and any inline punctuation.\n")
+	_, _ = b.WriteString("2. Do NOT add explanations, prefixes, suffixes, or quotes around the translation.\n")
+	_, _ = b.WriteString("3. If the source already matches a target language, just return it as-is for that language.\n")
+	_, _ = b.WriteString("4. Output ONLY a JSON array, no markdown fences, no commentary.\n\n")
+	_, _ = b.WriteString("Input array (each item has an `index` and `text`):\n")
+	_, _ = b.Write(body)
+	_, _ = b.WriteString("\n\nOutput format: a JSON array of the same length, each element is an object with key `index` (matching input) and a key per target language code holding the translation.\nExample for target_langs=[\"en\",\"ru\"]:\n[{\"index\":0,\"en\":\"Hello\",\"ru\":\"Привет\"}]\n")
 	return b.String()
 }
 

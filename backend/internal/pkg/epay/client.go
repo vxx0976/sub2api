@@ -92,7 +92,7 @@ func (c *Client) CreatePayment(req CreatePaymentRequest) (*CreatePaymentResponse
 	if err != nil {
 		return nil, fmt.Errorf("epay: request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -122,7 +122,7 @@ func (c *Client) QueryOrder(tradeNo string) (*QueryOrderResponse, error) {
 	if err != nil {
 		return nil, fmt.Errorf("epay: query request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {

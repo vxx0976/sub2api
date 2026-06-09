@@ -74,20 +74,20 @@ const defaultCNYToUSDRate = 1.0
 
 // cnyModelPricing 定义一个模型的人民币官方定价（Kimi/Moonshot、DeepSeek 等）。
 type cnyModelPricing struct {
-	inputCNY    float64 // 输入（未命中缓存），¥/1M tokens
+	inputCNY     float64 // 输入（未命中缓存），¥/1M tokens
 	cacheReadCNY float64 // 输入（命中缓存），¥/1M tokens；0 表示不支持缓存
-	outputCNY   float64 // 输出，¥/1M tokens
-	hasCache    bool    // 是否支持 prompt caching
+	outputCNY    float64 // 输出，¥/1M tokens
+	hasCache     bool    // 是否支持 prompt caching
 }
 
 // kimiMoonshotPricingTable 官方定价表（人民币/每百万 token）。
 // kimi-for-coding 自动跟随最新模型（目前等价 k2.6）。
 var kimiMoonshotPricingTable = map[string]cnyModelPricing{
-	"kimi-k2.6":       {inputCNY: 6.5, cacheReadCNY: 1.1, outputCNY: 27.0, hasCache: true},
-	"kimi-for-coding": {inputCNY: 6.5, cacheReadCNY: 1.1, outputCNY: 27.0, hasCache: true},
-	"kimi-k2.5":       {inputCNY: 4.0, cacheReadCNY: 0.7, outputCNY: 21.0, hasCache: true},
-	"moonshot-v1-8k":  {inputCNY: 2.0, outputCNY: 10.0},
-	"moonshot-v1-32k": {inputCNY: 5.0, outputCNY: 20.0},
+	"kimi-k2.6":        {inputCNY: 6.5, cacheReadCNY: 1.1, outputCNY: 27.0, hasCache: true},
+	"kimi-for-coding":  {inputCNY: 6.5, cacheReadCNY: 1.1, outputCNY: 27.0, hasCache: true},
+	"kimi-k2.5":        {inputCNY: 4.0, cacheReadCNY: 0.7, outputCNY: 21.0, hasCache: true},
+	"moonshot-v1-8k":   {inputCNY: 2.0, outputCNY: 10.0},
+	"moonshot-v1-32k":  {inputCNY: 5.0, outputCNY: 20.0},
 	"moonshot-v1-128k": {inputCNY: 10.0, outputCNY: 30.0},
 }
 

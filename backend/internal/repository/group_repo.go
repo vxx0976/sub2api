@@ -881,7 +881,7 @@ func (r *groupRepository) loadAccountsForGroups(ctx context.Context, groupIDs []
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	for rows.Next() {
 		var groupID, accountID int64
@@ -1122,7 +1122,7 @@ GROUP BY group_id, bucket
 	if err != nil {
 		return nil, fmt.Errorf("list group health daily history: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	type bucketKey struct {
 		groupID int64

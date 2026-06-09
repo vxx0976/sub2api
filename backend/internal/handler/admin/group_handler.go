@@ -133,10 +133,10 @@ type CreateGroupRequest struct {
 	HealthCheckTestModel   string   `json:"health_check_test_model"`
 	DefaultValidityDays    int      `json:"default_validity_days"`
 	Price                  *float64 `json:"price"`
-	IsPurchasable       bool     `json:"is_purchasable"`
-	SortOrder           int      `json:"sort_order"`
-	IsRecommended       bool     `json:"is_recommended"`
-	ExternalBuyURL      *string  `json:"external_buy_url"`
+	IsPurchasable          bool     `json:"is_purchasable"`
+	SortOrder              int      `json:"sort_order"`
+	IsRecommended          bool     `json:"is_recommended"`
+	ExternalBuyURL         *string  `json:"external_buy_url"`
 	// 智能路由（虚拟故障转移分组）
 	IsFailoverGroup   bool    `json:"is_failover_group"`
 	FailoverMemberIDs []int64 `json:"failover_member_ids"`
@@ -188,10 +188,10 @@ type UpdateGroupRequest struct {
 	HealthCheckTestModel   *string  `json:"health_check_test_model"`
 	DefaultValidityDays    *int     `json:"default_validity_days"`
 	Price                  *float64 `json:"price"`
-	IsPurchasable       *bool    `json:"is_purchasable"`
-	SortOrder           *int     `json:"sort_order"`
-	IsRecommended       *bool    `json:"is_recommended"`
-	ExternalBuyURL      *string  `json:"external_buy_url"`
+	IsPurchasable          *bool    `json:"is_purchasable"`
+	SortOrder              *int     `json:"sort_order"`
+	IsRecommended          *bool    `json:"is_recommended"`
+	ExternalBuyURL         *string  `json:"external_buy_url"`
 	// 智能路由成员列表（仅当已是智能路由分组时有效）
 	FailoverMemberIDs *[]int64 `json:"failover_member_ids"`
 	IsFailoverGroup   *bool    `json:"is_failover_group"`

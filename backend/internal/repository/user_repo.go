@@ -1143,7 +1143,7 @@ func (r *userRepository) ListIDsByParentID(ctx context.Context, parentID int64) 
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	var ids []int64
 	for rows.Next() {
 		var id int64
@@ -1200,7 +1200,7 @@ func (r *userRepository) ListResellerUsers(ctx context.Context, page, pageSize i
 	if err != nil {
 		return nil, 0, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var result []*service.MerchantInfo
 	for rows.Next() {

@@ -52,12 +52,12 @@ type CreatePaymentResponse struct {
 
 // QueryOrderResponse 订单查询响应
 type QueryOrderResponse struct {
-	Code    int    `json:"code"`     // 1=成功
-	Msg     string `json:"msg"`      // 失败原因
-	TradeNo string `json:"trade_no"` // 平台订单号
-	Money   string `json:"money"`    // 金额
-	Status  FlexInt `json:"status"`  // 1=已支付
-	Type    string `json:"type"`     // 支付方式
+	Code    int     `json:"code"`     // 1=成功
+	Msg     string  `json:"msg"`      // 失败原因
+	TradeNo string  `json:"trade_no"` // 平台订单号
+	Money   string  `json:"money"`    // 金额
+	Status  FlexInt `json:"status"`   // 1=已支付
+	Type    string  `json:"type"`     // 支付方式
 }
 
 // NotifyParams 异步回调参数

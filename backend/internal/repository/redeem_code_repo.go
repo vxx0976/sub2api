@@ -469,7 +469,7 @@ func (r *redeemCodeRepository) SumPositiveValueByDayForTypes(ctx context.Context
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	result := make(map[string]float64)
 	for rows.Next() {
 		var day string
@@ -516,7 +516,7 @@ func (r *redeemCodeRepository) SumManualAdminBalanceByDay(ctx context.Context, s
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	result := make(map[string]float64)
 	for rows.Next() {
 		var day string

@@ -20,10 +20,9 @@ var (
 	ErrDomainExists       = infraerrors.Conflict("DOMAIN_EXISTS", "domain already registered")
 	ErrDomainNotFound     = infraerrors.NotFound("DOMAIN_NOT_FOUND", "domain not found")
 	ErrDomainNotVerified  = infraerrors.BadRequest("DOMAIN_NOT_VERIFIED", "domain is not verified")
-	ErrVerifyFailed  = infraerrors.BadRequest("VERIFY_FAILED", "domain verification failed")
-	ErrGroupNotOwned = infraerrors.Forbidden("GROUP_NOT_OWNED", "group does not belong to this reseller")
+	ErrVerifyFailed       = infraerrors.BadRequest("VERIFY_FAILED", "domain verification failed")
+	ErrGroupNotOwned      = infraerrors.Forbidden("GROUP_NOT_OWNED", "group does not belong to this reseller")
 )
-
 
 // ResellerSettingRepository defines the interface for reseller settings data access
 type ResellerSettingRepository interface {
@@ -156,12 +155,12 @@ type UpdateResellerKeyInput struct {
 
 // ResellerService provides reseller-specific business logic
 type ResellerService struct {
-	userRepo          UserRepository
-	domainRepo        ResellerDomainRepository
-	groupRepo         GroupRepository
-	settingRepo       ResellerSettingRepository
-	apiKeyRepo        APIKeyRepository
-	apiKeyService     *APIKeyService
+	userRepo         UserRepository
+	domainRepo       ResellerDomainRepository
+	groupRepo        GroupRepository
+	settingRepo      ResellerSettingRepository
+	apiKeyRepo       APIKeyRepository
+	apiKeyService    *APIKeyService
 	redeemRepo       RedeemCodeRepository
 	announcementRepo AnnouncementRepository
 	entClient        *dbent.Client

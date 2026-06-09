@@ -162,7 +162,7 @@ type UpdateUserInput struct {
 	AllowedGroups *[]int64 // 使用指针区分"未提供"和"设置为空数组"
 	// GroupRates 用户专属分组倍率配置
 	// map[groupID]*rate，nil 表示删除该分组的专属倍率
-	GroupRates            map[int64]*float64
+	GroupRates map[int64]*float64
 }
 
 type AdminBindAuthIdentityInput struct {
@@ -229,7 +229,7 @@ type CreateGroupInput struct {
 	// 模型路由配置（仅 anthropic 平台使用）
 	ModelRouting        map[string][]int64
 	ModelRoutingEnabled bool // 是否启用模型路由
-	MCPXMLInject *bool
+	MCPXMLInject        *bool
 	// 支持的模型系列（仅 antigravity 平台使用）
 	SupportedModelScopes []string
 	// OpenAI Messages 调度配置（仅 openai 平台使用）
@@ -252,8 +252,8 @@ type CreateGroupInput struct {
 	Price               *float64
 	IsPurchasable       bool
 	SortOrder           int
-	IsRecommended  bool
-	ExternalBuyURL *string
+	IsRecommended       bool
+	ExternalBuyURL      *string
 
 	// 智能路由（虚拟故障转移分组）
 	IsFailoverGroup   bool
@@ -287,7 +287,7 @@ type UpdateGroupInput struct {
 	// 模型路由配置（仅 anthropic 平台使用）
 	ModelRouting        map[string][]int64
 	ModelRoutingEnabled *bool // 是否启用模型路由
-	MCPXMLInject *bool
+	MCPXMLInject        *bool
 	// 支持的模型系列（仅 antigravity 平台使用）
 	SupportedModelScopes *[]string
 	// OpenAI Messages 调度配置（仅 openai 平台使用）
@@ -310,8 +310,8 @@ type UpdateGroupInput struct {
 	Price               *float64
 	IsPurchasable       *bool
 	SortOrder           *int
-	IsRecommended  *bool
-	ExternalBuyURL *string
+	IsRecommended       *bool
+	ExternalBuyURL      *string
 
 	// 智能路由（虚拟故障转移分组）
 	IsFailoverGroup   *bool
@@ -2040,8 +2040,8 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 		Price:                           input.Price,
 		IsPurchasable:                   input.IsPurchasable,
 		SortOrder:                       input.SortOrder,
-		IsRecommended:  input.IsRecommended,
-		ExternalBuyURL: input.ExternalBuyURL,
+		IsRecommended:                   input.IsRecommended,
+		ExternalBuyURL:                  input.ExternalBuyURL,
 		AllowMessagesDispatch:           input.AllowMessagesDispatch,
 		RequireOAuthOnly:                input.RequireOAuthOnly,
 		RequirePrivacySet:               input.RequirePrivacySet,

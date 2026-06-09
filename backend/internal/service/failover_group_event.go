@@ -51,14 +51,14 @@ type FailoverMemberSnapshot struct {
 
 // FailoverStatus 智能路由详情响应。
 type FailoverStatus struct {
-	VirtualGroupID       int64                    `json:"virtual_group_id"`
-	Name                 string                   `json:"name"`
-	Platform             string                   `json:"platform"`
-	ActiveMemberID       *int64                   `json:"active_member_id,omitempty"`
-	PinMemberID          *int64                   `json:"pin_member_id,omitempty"`
-	PinExpiresAt         *time.Time               `json:"pin_expires_at,omitempty"`
-	Members              []FailoverMemberSnapshot `json:"members"`
-	RecentEvents         []*FailoverGroupEvent    `json:"recent_events"`
+	VirtualGroupID int64                    `json:"virtual_group_id"`
+	Name           string                   `json:"name"`
+	Platform       string                   `json:"platform"`
+	ActiveMemberID *int64                   `json:"active_member_id,omitempty"`
+	PinMemberID    *int64                   `json:"pin_member_id,omitempty"`
+	PinExpiresAt   *time.Time               `json:"pin_expires_at,omitempty"`
+	Members        []FailoverMemberSnapshot `json:"members"`
+	RecentEvents   []*FailoverGroupEvent    `json:"recent_events"`
 }
 
 // FailoverMemberUsage 展示单个成员在某时间窗内的实际承接用量。

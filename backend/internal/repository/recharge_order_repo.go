@@ -219,7 +219,7 @@ func (r *rechargeOrderRepo) SumPaidCreditByDay(ctx context.Context, startTime, e
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	result := make(map[string]float64)
 	for rows.Next() {
 		var day string

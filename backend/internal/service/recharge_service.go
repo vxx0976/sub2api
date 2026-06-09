@@ -24,9 +24,9 @@ const (
 	SettingKeyRechargeMinAmount = "recharge_min_amount"
 	SettingKeyRechargeMaxAmount = "recharge_max_amount"
 	SettingKeyRechargePayTypes  = "recharge_pay_types" // JSON array: ["alipay","wxpay"]
-	SettingKeyEpayAPIURL = "epay_api_url"
-	SettingKeyEpayPID    = "epay_pid"
-	SettingKeyEpayKey    = "epay_key"
+	SettingKeyEpayAPIURL        = "epay_api_url"
+	SettingKeyEpayPID           = "epay_pid"
+	SettingKeyEpayKey           = "epay_key"
 )
 
 // RechargeService 充值业务服务

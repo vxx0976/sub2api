@@ -127,19 +127,19 @@ type SystemSettings struct {
 	GoogleOAuthRedirectURL            string
 	GoogleOAuthFrontendRedirectURL    string
 
-	SiteName                    string
-	SiteLogo                    string
-	SiteSubtitle                string
-	APIBaseURL                  string
-	ResellerServerIP            string
-	ContactInfo                 string
-	DocURL                      string
-	HomeContent                 string
-	HideCcsImportButton         bool
-	TableDefaultPageSize        int
-	TablePageSizeOptions        []int
-	CustomMenuItems             string // JSON array of custom menu items
-	CustomEndpoints             string // JSON array of custom endpoints
+	SiteName             string
+	SiteLogo             string
+	SiteSubtitle         string
+	APIBaseURL           string
+	ResellerServerIP     string
+	ContactInfo          string
+	DocURL               string
+	HomeContent          string
+	HideCcsImportButton  bool
+	TableDefaultPageSize int
+	TablePageSizeOptions []int
+	CustomMenuItems      string // JSON array of custom menu items
+	CustomEndpoints      string // JSON array of custom endpoints
 
 	// 联系方式
 	ContactWechat   string
@@ -289,10 +289,10 @@ type PublicSettings struct {
 	HomeContent                      string
 	HideCcsImportButton              bool
 
-	TableDefaultPageSize        int
-	TablePageSizeOptions        []int
-	CustomMenuItems             string // JSON array of custom menu items
-	CustomEndpoints             string // JSON array of custom endpoints
+	TableDefaultPageSize int
+	TablePageSizeOptions []int
+	CustomMenuItems      string // JSON array of custom menu items
+	CustomEndpoints      string // JSON array of custom endpoints
 
 	RechargeEnabled          bool
 	AliMPayEnabled           bool

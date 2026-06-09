@@ -357,7 +357,6 @@ func (s *CommissionService) BackfillMerchantRateSnapshot(ctx context.Context) (i
 func (s *CommissionService) ListRechargeDetail(ctx context.Context, resellerID int64, limit, offset int) ([]*RechargeDetailRecord, int, error) {
 	// Collect all records from both sources, then sort and paginate
 	var allRecords []*RechargeDetailRecord
-	totalCount := 0
 
 	// Native recharges from recharge_orders table
 	if s.rechargeOrderRepo != nil {
@@ -370,7 +369,7 @@ func (s *CommissionService) ListRechargeDetail(ctx context.Context, resellerID i
 					emailMap[uid] = u.Email
 				}
 			}
-			if orders, nativeTotal, err := s.rechargeOrderRepo.ListPaidByUserIDs(ctx, userIDs, 10000, 0); err == nil {
+			if orders, _, err := s.rechargeOrderRepo.ListPaidByUserIDs(ctx, userIDs, 10000, 0); err == nil {
 				for _, o := range orders {
 					rec := &RechargeDetailRecord{
 						UserID:       o.UserID,
@@ -385,7 +384,6 @@ func (s *CommissionService) ListRechargeDetail(ctx context.Context, resellerID i
 					}
 					allRecords = append(allRecords, rec)
 				}
-				totalCount += nativeTotal
 			}
 		}
 	}
@@ -400,7 +398,7 @@ func (s *CommissionService) ListRechargeDetail(ctx context.Context, resellerID i
 					emailMap[uid] = u.Email
 				}
 			}
-			if orders, alimpayTotal, err := s.orderRepo.ListPaidByUserIDs(ctx, userIDs, 10000, 0); err == nil {
+			if orders, _, err := s.orderRepo.ListPaidByUserIDs(ctx, userIDs, 10000, 0); err == nil {
 				for _, o := range orders {
 					rec := &RechargeDetailRecord{
 						UserID:       o.UserID,
@@ -415,7 +413,6 @@ func (s *CommissionService) ListRechargeDetail(ctx context.Context, resellerID i
 					}
 					allRecords = append(allRecords, rec)
 				}
-				totalCount += alimpayTotal
 			}
 		}
 	}

@@ -55,10 +55,10 @@ const (
 
 // Admin adjustment type constants
 const (
-	AdjustmentTypeAdminBalance      = "admin_balance"      // 管理员调整余额
-	AdjustmentTypeAdminConcurrency  = "admin_concurrency"  // 管理员调整并发数
-	AdjustmentTypeResellerTransfer  = "reseller_transfer"  // 分销商余额转移
-	AdjustmentTypeRecharge          = "recharge"           // 用户主动充值
+	AdjustmentTypeAdminBalance     = "admin_balance"     // 管理员调整余额
+	AdjustmentTypeAdminConcurrency = "admin_concurrency" // 管理员调整并发数
+	AdjustmentTypeResellerTransfer = "reseller_transfer" // 分销商余额转移
+	AdjustmentTypeRecharge         = "recharge"          // 用户主动充值
 )
 
 // Group subscription type constants

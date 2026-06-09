@@ -502,23 +502,23 @@ type UpdateSettingsRequest struct {
 	GoogleOAuthFrontendRedirectURL string `json:"google_oauth_frontend_redirect_url"`
 
 	// OEM设置
-	SiteName                    string                `json:"site_name"`
-	SiteLogo                    string                `json:"site_logo"`
-	SiteSubtitle                string                `json:"site_subtitle"`
-	APIBaseURL                  string                `json:"api_base_url"`
-	ResellerServerIP            string                `json:"reseller_server_ip"`
-	ContactInfo                 string                `json:"contact_info"`
-	DocURL                      string                `json:"doc_url"`
-	HomeContent                 string                `json:"home_content"`
-	HideCcsImportButton         bool                  `json:"hide_ccs_import_button"`
-	ContactWechat               string                `json:"contact_wechat"`
-	ContactTelegram             string                `json:"contact_telegram"`
-	ContactQQ                   string                `json:"contact_qq"`
-	DefaultLocale               string                `json:"default_locale"`
-	TableDefaultPageSize        int                   `json:"table_default_page_size"`
-	TablePageSizeOptions        []int                 `json:"table_page_size_options"`
-	CustomMenuItems             *[]dto.CustomMenuItem `json:"custom_menu_items"`
-	CustomEndpoints             *[]dto.CustomEndpoint `json:"custom_endpoints"`
+	SiteName             string                `json:"site_name"`
+	SiteLogo             string                `json:"site_logo"`
+	SiteSubtitle         string                `json:"site_subtitle"`
+	APIBaseURL           string                `json:"api_base_url"`
+	ResellerServerIP     string                `json:"reseller_server_ip"`
+	ContactInfo          string                `json:"contact_info"`
+	DocURL               string                `json:"doc_url"`
+	HomeContent          string                `json:"home_content"`
+	HideCcsImportButton  bool                  `json:"hide_ccs_import_button"`
+	ContactWechat        string                `json:"contact_wechat"`
+	ContactTelegram      string                `json:"contact_telegram"`
+	ContactQQ            string                `json:"contact_qq"`
+	DefaultLocale        string                `json:"default_locale"`
+	TableDefaultPageSize int                   `json:"table_default_page_size"`
+	TablePageSizeOptions []int                 `json:"table_page_size_options"`
+	CustomMenuItems      *[]dto.CustomMenuItem `json:"custom_menu_items"`
+	CustomEndpoints      *[]dto.CustomEndpoint `json:"custom_endpoints"`
 
 	// 默认配置
 	DefaultConcurrency                        int                               `json:"default_concurrency"`

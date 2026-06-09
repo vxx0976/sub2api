@@ -2,19 +2,19 @@ package service
 
 // emailTexts holds translated strings for email templates.
 type emailTexts struct {
-	VerifySubject        string // "[{site}] Verification Code"
-	VerifyTitle          string // "Your verification code is:"
-	VerifyExpiry         string // "This code will expire in <strong>15 minutes</strong>."
-	VerifyIgnore         string // "If you did not request this code, please ignore this email."
-	AutoEmail            string // "This is an automated email, please do not reply."
+	VerifySubject string // "[{site}] Verification Code"
+	VerifyTitle   string // "Your verification code is:"
+	VerifyExpiry  string // "This code will expire in <strong>15 minutes</strong>."
+	VerifyIgnore  string // "If you did not request this code, please ignore this email."
+	AutoEmail     string // "This is an automated email, please do not reply."
 
-	ResetSubject         string // "[{site}] Password Reset"
-	ResetHeading         string // "Password Reset Request"
-	ResetDescription     string // "You have requested to reset your password. Click the button below to set a new password:"
-	ResetButton          string // "Reset Password"
-	ResetExpiry          string // "This link will expire in <strong>30 minutes</strong>."
-	ResetIgnore          string // "If you did not request a password reset, please ignore this email. Your password will remain unchanged."
-	ResetLinkFallback    string // "If the button does not work, copy and paste the following link into your browser:"
+	ResetSubject      string // "[{site}] Password Reset"
+	ResetHeading      string // "Password Reset Request"
+	ResetDescription  string // "You have requested to reset your password. Click the button below to set a new password:"
+	ResetButton       string // "Reset Password"
+	ResetExpiry       string // "This link will expire in <strong>30 minutes</strong>."
+	ResetIgnore       string // "If you did not request a password reset, please ignore this email. Your password will remain unchanged."
+	ResetLinkFallback string // "If the button does not work, copy and paste the following link into your browser:"
 }
 
 var emailI18n = map[string]emailTexts{

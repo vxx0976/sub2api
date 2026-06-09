@@ -2352,11 +2352,6 @@ func (s *GatewayService) routingAccountIDsForRequest(ctx context.Context, groupI
 	return ids
 }
 
-func (s *GatewayService) resolveGatewayGroup(ctx context.Context, groupID *int64) (*Group, *int64, error) {
-	group, resolvedID, _, err := s.resolveGatewayGroupWithVirtual(ctx, groupID)
-	return group, resolvedID, err
-}
-
 // withFailoverRouteContext 把虚拟分组 id 与实际承接的成员分组 id 注入 ctx。
 // 下游使用这两个 key 写入 usage_logs.requested_group_id / group_id，让成员维度的用量统计正确归因。
 func withFailoverRouteContext(ctx context.Context, virtualGroupID *int64, resolvedGroupID *int64) context.Context {
@@ -2373,7 +2368,7 @@ func withFailoverRouteContext(ctx context.Context, virtualGroupID *int64, resolv
 	return ctx
 }
 
-// resolveGatewayGroupWithVirtual 与 resolveGatewayGroup 相同，但额外返回请求最初命中的"虚拟分组"（智能路由）ID。
+// resolveGatewayGroupWithVirtual 解析网关分组，并额外返回请求最初命中的"虚拟分组"（智能路由）ID。
 // 当请求没有经过智能路由时返回 nil；非 nil 的 virtualGroupID 表示发生了透明重定向。
 func (s *GatewayService) resolveGatewayGroupWithVirtual(ctx context.Context, groupID *int64) (*Group, *int64, *int64, error) {
 	if groupID == nil {

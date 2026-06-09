@@ -186,7 +186,7 @@ func (h *UserHandler) List(c *gin.Context) {
 		}
 		if users[i].ParentID != nil {
 			if domain, ok := parentDomains[*users[i].ParentID]; ok {
-				out[i].AdminUser.ParentDomain = domain
+				out[i].ParentDomain = domain
 			}
 		}
 		if info := loadInfo[users[i].ID]; info != nil {

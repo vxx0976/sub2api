@@ -41,10 +41,10 @@ func TestGetModelPricing_KimiMoonshotAllModels(t *testing.T) {
 	svc := newKimiPricingService(rate)
 
 	tests := []struct {
-		model    string
-		inputCNY float64
+		model     string
+		inputCNY  float64
 		outputCNY float64
-		cacheCNY float64 // 0 = 无缓存
+		cacheCNY  float64 // 0 = 无缓存
 	}{
 		{"kimi-k2.6", 6.5, 27.0, 1.1},
 		{"kimi-k2.5", 4.0, 21.0, 0.7},
@@ -98,10 +98,10 @@ func TestGetModelPricing_DeepSeekV4AllModels(t *testing.T) {
 	svc := newCNYPricingService(rate)
 
 	tests := []struct {
-		model    string
-		inputCNY float64
+		model     string
+		inputCNY  float64
 		outputCNY float64
-		cacheCNY float64
+		cacheCNY  float64
 	}{
 		{"deepseek-v4-flash", 1.0, 2.0, 0.02},
 		{"deepseek-v4-pro", 3.0, 6.0, 0.025},

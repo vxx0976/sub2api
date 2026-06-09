@@ -99,10 +99,10 @@ const (
 
 // Admin adjustment type constants
 const (
-	AdjustmentTypeAdminBalance      = domain.AdjustmentTypeAdminBalance      // 管理员调整余额
-	AdjustmentTypeAdminConcurrency  = domain.AdjustmentTypeAdminConcurrency  // 管理员调整并发数
-	AdjustmentTypeResellerTransfer  = domain.AdjustmentTypeResellerTransfer  // 分销商余额转移
-	AdjustmentTypeRecharge          = domain.AdjustmentTypeRecharge          // 用户主动充值
+	AdjustmentTypeAdminBalance     = domain.AdjustmentTypeAdminBalance     // 管理员调整余额
+	AdjustmentTypeAdminConcurrency = domain.AdjustmentTypeAdminConcurrency // 管理员调整并发数
+	AdjustmentTypeResellerTransfer = domain.AdjustmentTypeResellerTransfer // 分销商余额转移
+	AdjustmentTypeRecharge         = domain.AdjustmentTypeRecharge         // 用户主动充值
 )
 
 // Group subscription type constants
@@ -254,20 +254,20 @@ const (
 	SettingKeyGoogleOAuthFrontendRedirectURL = "google_oauth_frontend_redirect_url"
 
 	// OEM设置
-	SettingKeySiteName                    = "site_name"                     // 网站名称
-	SettingKeySiteLogo                    = "site_logo"                     // 网站Logo (base64)
-	SettingKeySiteSubtitle                = "site_subtitle"                 // 网站副标题
-	SettingKeyAPIBaseURL                  = "api_base_url"                  // API端点地址（用于客户端配置和导入）
-	SettingKeyResellerServerIP            = "reseller_server_ip"            // 商户服务器IP（商户自定义域名A记录应指向的IP）
-	SettingKeyContactInfo                 = "contact_info"                  // 客服联系方式
-	SettingKeyDocURL                      = "doc_url"                       // 文档链接
-	SettingKeyHomeContent                 = "home_content"                  // 首页内容（支持 Markdown/HTML，或 URL 作为 iframe src）
-	SettingKeyHideCcsImportButton         = "hide_ccs_import_button"        // 是否隐藏 API Keys 页面的导入 CCS 按钮
-	SettingKeyAnnouncements               = "announcements"                 // 系统公告列表（JSON 数组）
-	SettingKeyTableDefaultPageSize        = "table_default_page_size"       // 表格默认每页条数
-	SettingKeyTablePageSizeOptions        = "table_page_size_options"       // 表格可选每页条数（JSON 数组）
-	SettingKeyCustomMenuItems             = "custom_menu_items"             // 自定义菜单项（JSON 数组）
-	SettingKeyCustomEndpoints             = "custom_endpoints"              // 自定义端点列表（JSON 数组）
+	SettingKeySiteName             = "site_name"               // 网站名称
+	SettingKeySiteLogo             = "site_logo"               // 网站Logo (base64)
+	SettingKeySiteSubtitle         = "site_subtitle"           // 网站副标题
+	SettingKeyAPIBaseURL           = "api_base_url"            // API端点地址（用于客户端配置和导入）
+	SettingKeyResellerServerIP     = "reseller_server_ip"      // 商户服务器IP（商户自定义域名A记录应指向的IP）
+	SettingKeyContactInfo          = "contact_info"            // 客服联系方式
+	SettingKeyDocURL               = "doc_url"                 // 文档链接
+	SettingKeyHomeContent          = "home_content"            // 首页内容（支持 Markdown/HTML，或 URL 作为 iframe src）
+	SettingKeyHideCcsImportButton  = "hide_ccs_import_button"  // 是否隐藏 API Keys 页面的导入 CCS 按钮
+	SettingKeyAnnouncements        = "announcements"           // 系统公告列表（JSON 数组）
+	SettingKeyTableDefaultPageSize = "table_default_page_size" // 表格默认每页条数
+	SettingKeyTablePageSizeOptions = "table_page_size_options" // 表格可选每页条数（JSON 数组）
+	SettingKeyCustomMenuItems      = "custom_menu_items"       // 自定义菜单项（JSON 数组）
+	SettingKeyCustomEndpoints      = "custom_endpoints"        // 自定义端点列表（JSON 数组）
 
 	// 默认配置
 	SettingKeyDefaultConcurrency   = "default_concurrency"    // 新用户默认并发量
@@ -321,7 +321,7 @@ const (
 
 	// 联系方式
 	SettingKeyContactWechat   = "contact_wechat"   // 微信联系方式
-	SettingKeyContactTelegram = "contact_telegram"  // Telegram 联系方式
+	SettingKeyContactTelegram = "contact_telegram" // Telegram 联系方式
 	SettingKeyContactQQ       = "contact_qq"       // QQ 联系方式
 
 	// Gemini 配额策略（JSON）

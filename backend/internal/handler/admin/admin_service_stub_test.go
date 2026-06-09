@@ -656,6 +656,5 @@ func (s *stubAdminService) RevertAccountProxyFallback(ctx context.Context, id in
 	return nil
 }
 
-
 // Ensure stub implements interface.
 var _ service.AdminService = (*stubAdminService)(nil)

@@ -308,6 +308,7 @@ func (ap *AlipayPayment) MonitorInterval() time.Duration {
 // = max(OrderTimeout, QueryMinutesBack)：
 //   - 至少等订单过期（付款窗口关闭）
 //   - 至少等 Monitor 账单查询窗口（避免 Monitor 扫到老账单误匹配到新订单）
+//
 // 默认两者都是 10 min，所以默认 reuseWindow=10 min。
 func (ap *AlipayPayment) AmountReuseWindow() time.Duration {
 	snap := ap.snapshot().cfg
@@ -397,7 +398,7 @@ func (ap *AlipayPayment) QueryAccountBills(ctx context.Context, startTime, endTi
 	if err != nil {
 		return nil, fmt.Errorf("send request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -458,7 +459,7 @@ func buildSignString(params map[string]string) string {
 
 func rsaSign(content string, privateKey *rsa.PrivateKey) (string, error) {
 	h := sha256.New()
-	h.Write([]byte(content))
+	_, _ = h.Write([]byte(content))
 	digest := h.Sum(nil)
 
 	signature, err := rsa.SignPKCS1v15(rand.Reader, privateKey, crypto.SHA256, digest)

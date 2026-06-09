@@ -48,7 +48,7 @@ type CreateAPIKeyRequest struct {
 // UpdateAPIKeyRequest represents the update API key request payload
 type UpdateAPIKeyRequest struct {
 	Name        string   `json:"name"`
-	Notes       *string  `json:"notes"`        // 备注
+	Notes       *string  `json:"notes"` // 备注
 	GroupID     *int64   `json:"group_id"`
 	Status      string   `json:"status" binding:"omitempty,oneof=active inactive"`
 	IPWhitelist []string `json:"ip_whitelist"` // IP 白名单

@@ -562,11 +562,11 @@ func (r *channelRepository) GetGroupsInOtherChannels(ctx context.Context, channe
 
 // UpdateBalance 更新渠道余额缓存字段
 func (r *channelRepository) UpdateBalance(ctx context.Context, channelID int64, balance *float64, lastCheckAt *time.Time, lastError string) error {
-	var balanceArg interface{}
+	var balanceArg any
 	if balance != nil {
 		balanceArg = *balance
 	}
-	var lastCheckAtArg interface{}
+	var lastCheckAtArg any
 	if lastCheckAt != nil {
 		lastCheckAtArg = *lastCheckAt
 	}

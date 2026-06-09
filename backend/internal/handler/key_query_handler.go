@@ -48,13 +48,13 @@ type keyQueryRequest struct {
 
 // keyQueryKeyInfo represents API key information in the response
 type keyQueryKeyInfo struct {
-	Name           string     `json:"name"`
-	Status         string     `json:"status"`
-	Quota          *float64   `json:"quota"`
-	QuotaUsed      *float64   `json:"quota_used"`
-	QuotaRemaining *float64   `json:"quota_remaining"`
-	ExpiresAt      *time.Time `json:"expires_at"`
-	DaysUntilExpiry *int      `json:"days_until_expiry"`
+	Name            string     `json:"name"`
+	Status          string     `json:"status"`
+	Quota           *float64   `json:"quota"`
+	QuotaUsed       *float64   `json:"quota_used"`
+	QuotaRemaining  *float64   `json:"quota_remaining"`
+	ExpiresAt       *time.Time `json:"expires_at"`
+	DaysUntilExpiry *int       `json:"days_until_expiry"`
 }
 
 // keyQuerySubscriptionInfo represents subscription information in the response
@@ -434,10 +434,10 @@ type keyQueryGroupInfo struct {
 	NameI18n         map[string]string `json:"name_i18n,omitempty"`
 	DescriptionI18n  map[string]string `json:"description_i18n,omitempty"`
 	Platform         string            `json:"platform"`
-	SubscriptionType string     `json:"subscription_type"`
-	RateMultiplier   float64    `json:"rate_multiplier"`
-	HealthStatus     string     `json:"health_status,omitempty"`
-	HasSub           bool       `json:"has_subscription"`
+	SubscriptionType string            `json:"subscription_type"`
+	RateMultiplier   float64           `json:"rate_multiplier"`
+	HealthStatus     string            `json:"health_status,omitempty"`
+	HasSub           bool              `json:"has_subscription"`
 	// Subscription fields (populated when has_subscription is true)
 	SubStatus       string     `json:"status,omitempty"`
 	ExpiresAt       *time.Time `json:"expires_at,omitempty"`

@@ -193,7 +193,7 @@ func (s *OpenAIGatewayService) handleAnthropicDirectStreamingResponse(
 				ClientDisconnect: true,
 			}, fmt.Errorf("client write error: %w", writeErr)
 		}
-		c.Writer.(http.Flusher).Flush()
+		c.Writer.Flush()
 
 		// Parse "data: {...}" or "data:{...}" lines to extract usage.
 		// Standard Anthropic uses "data: " (with space), Kimi uses "data:" (no space).

@@ -11,7 +11,7 @@ type GroupStatusData struct {
 
 // DailyStatusData 每日状态数据
 type DailyStatusData struct {
-	Date       string `json:"date"`    // YYYYMMDD
+	Date       string `json:"date"` // YYYYMMDD
 	Success    int64  `json:"success"`
 	Total      int64  `json:"total"`
 	AvgLatency int64  `json:"avg_latency"` // 平均延迟（毫秒）
