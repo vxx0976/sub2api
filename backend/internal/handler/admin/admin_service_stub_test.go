@@ -264,6 +264,10 @@ func (s *stubAdminService) GetAllGroupsByPlatform(ctx context.Context, platform 
 	return s.groups, nil
 }
 
+func (s *stubAdminService) GetAllGroupsIncludingInactive(ctx context.Context) ([]service.Group, error) {
+	return s.groups, nil
+}
+
 func (s *stubAdminService) GetGroup(ctx context.Context, id int64) (*service.Group, error) {
 	group := service.Group{ID: id, Name: "group", Status: service.StatusActive}
 	return &group, nil
@@ -647,6 +651,11 @@ func (s *stubAdminService) TriggerFailoverMemberProbe(context.Context, int64, in
 func (s *stubAdminService) GetFailoverUsage(context.Context, int64, int) ([]service.FailoverMemberUsage, error) {
 	return nil, nil
 }
+
+func (s *stubAdminService) RevertAccountProxyFallback(ctx context.Context, id int64) error {
+	return nil
+}
+
 
 // Ensure stub implements interface.
 var _ service.AdminService = (*stubAdminService)(nil)
