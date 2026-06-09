@@ -10,6 +10,7 @@
 ## §1 架构速览
 
 > 本图聚焦 sub2api。inkmirage 共用同一批节点(及 etcd/sentinel/HAProxy/CF),另行讨论。
+> 📊 可视化架构图: [docs/architecture-cn.png](docs/architecture-cn.png)(中文) · [docs/architecture-en.png](docs/architecture-en.png)(英文)。下方 ASCII 图为**权威源**,改架构时以文字为准、图后补。
 
 ```
 入口(DNS):  mayi.one ── CF LB(DNS-only灰云)──┬─► main 主源站(CN2)
