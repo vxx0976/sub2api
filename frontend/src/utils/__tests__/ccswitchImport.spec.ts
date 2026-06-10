@@ -19,11 +19,12 @@ describe('ccswitchImport utils', () => {
   }
 
   it('adds the Codex model parameter for OpenAI imports', () => {
+    // dev 8d53be42：openai 平台按 clientType 区分协议，codex 客户端才带 Codex 模型参数
     const params = paramsFromDeeplink(
       buildCcSwitchImportDeeplink({
         ...baseInput,
         platform: 'openai',
-        clientType: 'claude'
+        clientType: 'codex'
       })
     )
 

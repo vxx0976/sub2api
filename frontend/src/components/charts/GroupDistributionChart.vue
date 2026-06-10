@@ -241,7 +241,9 @@ const formatNumber = (value: number): string => {
   return value.toLocaleString()
 }
 
-const formatCost = (value: number): string => {
+const formatCost = (value?: number): string => {
+  // 旧聚合快照可能缺 account_cost 等字段，防御 undefined/NaN
+  if (value == null || !Number.isFinite(value)) return '0.0000'
   if (value >= 1000) {
     return (value / 1000).toFixed(2) + 'K'
   } else if (value >= 1) {

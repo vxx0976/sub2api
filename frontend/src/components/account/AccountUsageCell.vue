@@ -1238,6 +1238,8 @@ watch(openAIUsageRefreshKey, (nextKey, prevKey) => {
   if (!prevKey || nextKey === prevKey) return
   if (props.account.platform !== 'openai' || props.account.type !== 'oauth') return
 
+  // 行数据已变化说明快照过期，绕过 usage 缓存强制重拉
+  _usageCache.delete(props.account.id)
   requestAutoLoad()
 })
 

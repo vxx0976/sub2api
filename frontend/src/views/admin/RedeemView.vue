@@ -73,6 +73,7 @@
           <!-- Select All Header -->
           <template #header-select>
             <input
+              data-test="select-all-codes"
               type="checkbox"
               :checked="allUnusedSelected"
               :indeterminate.prop="someUnusedSelected && !allUnusedSelected"
@@ -84,6 +85,7 @@
           <template #cell-select="{ row }">
             <input
               v-if="row.status === 'unused'"
+              data-test="select-code"
               type="checkbox"
               :checked="selectedIds.has(row.id)"
               @change="toggleSelect(row.id)"
@@ -193,6 +195,7 @@
             </button>
             <button
               type="button"
+              data-test="batch-update-open"
               class="btn btn-primary btn-sm"
               @click="openBatchUpdateDialog"
             >
