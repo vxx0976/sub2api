@@ -46,5 +46,5 @@ export type { ResellerKey, CreateResellerKeyRequest, UpdateResellerKeyRequest } 
 export type { ResellerRedeemCode, ResellerRedeemCodeListResponse, GenerateRedeemCodesRequest } from './redeem'
 export type { ResellerAnnouncement, ResellerAnnouncementListResponse, CreateAnnouncementRequest, UpdateAnnouncementRequest } from './announcements'
 export type { ResellerUserListResponse, ResellerBalanceHistoryItem, ResellerBalanceHistoryResponse } from './users'
-export type { CommissionSummary, CommissionDetailItem, CommissionDetailResponse } from './commissions'
+export type { CommissionSummary } from './commissions'
 export type { WithdrawalItem, WithdrawalListResponse } from './withdrawals'

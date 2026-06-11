@@ -15,31 +15,12 @@ export interface CommissionSummary {
   available: string
 }
 
-export interface CommissionDetailItem {
-  id: number
-  user_id: number
-  model: string
-  total_cost: string
-  merchant_rate_snapshot: string
-  platform_cost_snapshot?: string
-  commission: string
-  created_at: string
-}
-
 export interface RechargeDetailItem {
   user_id: number
   user_email?: string
   order_no: string
   credit_amount: number
   paid_at: string
-}
-
-export interface CommissionDetailResponse {
-  items: CommissionDetailItem[]
-  total: number
-  page: number
-  page_size: number
-  pages: number
 }
 
 export interface RechargeDetailResponse {
@@ -55,17 +36,6 @@ export async function getCommissionSummary(): Promise<CommissionSummary> {
   return data
 }
 
-export async function getCommissionDetail(params: {
-  page?: number
-  page_size?: number
-  start_date?: string
-  end_date?: string
-  user_id?: number
-}): Promise<CommissionDetailResponse> {
-  const { data } = await apiClient.get<CommissionDetailResponse>('/reseller/commissions/detail', { params })
-  return data
-}
-
 export async function getRechargeDetail(params: {
   page?: number
   page_size?: number
@@ -74,5 +44,5 @@ export async function getRechargeDetail(params: {
   return data
 }
 
-export const commissionsAPI = { getCommissionSummary, getCommissionDetail, getRechargeDetail }
+export const commissionsAPI = { getCommissionSummary, getRechargeDetail }
 export default commissionsAPI

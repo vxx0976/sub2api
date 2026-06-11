@@ -66,7 +66,13 @@ export default {
     statusUnstable: 'Unstable',
     availability7d: 'Availability (7 days)',
     successCount: 'succeeded',
-    nextUpdate: 'Next update in {seconds}s'
+    nextUpdate: 'Next update in {seconds}s',
+    ping: 'Ping',
+    pingConnected: 'Connected',
+    pingDisconnected: 'Disconnected',
+    connection: 'Connection',
+    totalRequests: 'Total Requests',
+    uptime30d: '30-day Uptime'
   },
 
   // Docs
@@ -859,7 +865,10 @@ export default {
       typeAdminBalance: 'Balance (Admin)',
       balanceAddedRedeem: 'Balance Added (Redeem)',
       balanceAddedAdmin: 'Balance Added (Admin)',
+      balanceAddedRecharge: 'Balance Added (User Recharge)',
       balanceDeductedAdmin: 'Balance Deducted (Admin)',
+      balanceAddedTransfer: 'Balance Added (Reseller Transfer)',
+      balanceDeductedTransfer: 'Balance Deducted (Reseller Transfer)',
       adminAdjustment: 'Admin Adjustment',
       depositNotesPlaceholder: 'e.g., New user bonus, promotional credit',
       withdrawNotesPlaceholder: 'e.g., Service issue refund, incorrect charge'
@@ -875,6 +884,7 @@ export default {
       deleteSuccess: 'Redeem code deleted',
       deleteConfirm: 'Are you sure you want to delete this redeem code?',
       export: 'Export',
+      exportCurrentPageOnly: 'Exported {count} unused codes from the current page only',
       copy: 'Copy',
       copied: 'Copied',
       empty: 'No redeem codes yet'
@@ -1192,6 +1202,7 @@ export default {
       settings: 'Settings',
       settingsTitle: 'Merchant Settings',
       settingsUpdated: 'Merchant settings updated',
+      settingsLoadFailed: 'Failed to load merchant settings; please retry before saving',
       agentEnabled: 'Enable Agent Feature',
       agentEnabledHint: 'When enabled, merchant can view commission details and request withdrawals',
       commissionRate: 'Commission Rate',

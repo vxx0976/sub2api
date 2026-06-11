@@ -551,7 +551,7 @@ const handleBalanceSubmit = async () => {
     loadUsers()
   } catch (e: any) {
     console.error('Failed to update balance:', e)
-    appStore.showError(e.response?.data?.detail || t('common.error'))
+    appStore.showError(e.message || t('common.error'))
   } finally {
     balanceSubmitting.value = false
   }
@@ -621,13 +621,16 @@ const handleWithdrawFromHistory = () => {
 const isAdminType = (type: string) => type === 'admin_balance' || type === 'admin_concurrency'
 const isBalanceType = (type: string) => type === 'balance' || type === 'admin_balance'
 
+// 美元金额类记录(余额类 + 分销商转移)统一用 dollar 图标与绿/红语义配色
+const isMoneyType = (type: string) => isBalanceType(type) || type === 'reseller_transfer'
+
 const getHistoryIconName = (item: ResellerBalanceHistoryItem) => {
-  if (isBalanceType(item.type)) return 'dollar'
+  if (isMoneyType(item.type)) return 'dollar'
   return 'bolt'
 }
 
 const getHistoryIconBg = (item: ResellerBalanceHistoryItem) => {
-  if (isBalanceType(item.type)) {
+  if (isMoneyType(item.type)) {
     return item.value >= 0
       ? 'bg-emerald-100 dark:bg-emerald-900/30'
       : 'bg-red-100 dark:bg-red-900/30'
@@ -638,7 +641,7 @@ const getHistoryIconBg = (item: ResellerBalanceHistoryItem) => {
 }
 
 const getHistoryIconColor = (item: ResellerBalanceHistoryItem) => {
-  if (isBalanceType(item.type)) {
+  if (isMoneyType(item.type)) {
     return item.value >= 0
       ? 'text-emerald-600 dark:text-emerald-400'
       : 'text-red-600 dark:text-red-400'
@@ -649,7 +652,7 @@ const getHistoryIconColor = (item: ResellerBalanceHistoryItem) => {
 }
 
 const getHistoryValueColor = (item: ResellerBalanceHistoryItem) => {
-  if (isBalanceType(item.type)) {
+  if (isMoneyType(item.type)) {
     return item.value >= 0
       ? 'text-emerald-600 dark:text-emerald-400'
       : 'text-red-600 dark:text-red-400'
@@ -665,13 +668,16 @@ const getHistoryItemTitle = (item: ResellerBalanceHistoryItem) => {
       return t('reseller.users.balanceAddedRedeem')
     case 'admin_balance':
       return item.value >= 0 ? t('reseller.users.balanceAddedAdmin') : t('reseller.users.balanceDeductedAdmin')
+    case 'reseller_transfer':
+      return item.value >= 0 ? t('reseller.users.balanceAddedTransfer') : t('reseller.users.balanceDeductedTransfer')
     default:
       return item.type
   }
 }
 
 const formatHistoryValue = (item: ResellerBalanceHistoryItem) => {
-  if (isBalanceType(item.type)) {
+  // 余额类与分销商转移均为美元金额,按 +$x.xx 展示
+  if (isBalanceType(item.type) || item.type === 'reseller_transfer') {
     const sign = item.value >= 0 ? '+' : ''
     return `${sign}$${item.value.toFixed(2)}`
   }

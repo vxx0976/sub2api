@@ -124,7 +124,7 @@
                 </td>
                 <td class="px-4 py-3">
                   <button
-                    v-if="code.status !== 'used'"
+                    v-if="code.status === 'unused' || code.status === 'active'"
                     @click="handleDelete(code)"
                     class="rounded-lg p-1.5 text-red-600 transition-colors hover:bg-red-50 dark:hover:bg-red-900/20"
                     :title="t('common.delete')"
@@ -272,7 +272,9 @@ async function copyCode(code: string) {
 }
 
 function handleExport() {
-  const unusedCodes = codes.value.filter(c => c.status !== 'used')
+  // 仅导出真正未使用的码(unused/active),与提示文案"未使用"口径一致;
+  // 已使用/已过期/已禁用的码不可再兑换,不纳入导出。
+  const unusedCodes = codes.value.filter(c => c.status === 'unused' || c.status === 'active')
   if (unusedCodes.length === 0) return
   const text = unusedCodes.map(c => c.code).join('\n')
   const blob = new Blob([text], { type: 'text/plain' })
@@ -282,6 +284,8 @@ function handleExport() {
   a.download = `redeem-codes-${new Date().toISOString().slice(0, 10)}.txt`
   a.click()
   URL.revokeObjectURL(url)
+  // 仅导出当前页未使用的兑换码,提示用户避免误以为是全量导出
+  appStore.showInfo(t('reseller.redeem.exportCurrentPageOnly', { count: unusedCodes.length }))
 }
 
 function getStatusClass(status: string) {

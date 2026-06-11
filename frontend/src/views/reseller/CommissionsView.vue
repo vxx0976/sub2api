@@ -13,24 +13,24 @@
       <div v-if="summary" class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
         <div class="card p-4">
           <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('reseller.commissions.totalRecharge') }}</p>
-          <p class="mt-1 text-xl font-bold text-purple-600 dark:text-purple-400">¥{{ f2(summary.total_recharge) }}</p>
+          <p class="mt-1 text-xl font-bold text-purple-600 dark:text-purple-400">${{ f2(summary.total_recharge) }}</p>
         </div>
         <div class="card p-4">
           <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('reseller.commissions.totalCommission') }}</p>
-          <p class="mt-1 text-xl font-bold text-emerald-600 dark:text-emerald-400">¥{{ f2(summary.total_commission) }}</p>
+          <p class="mt-1 text-xl font-bold text-emerald-600 dark:text-emerald-400">${{ f2(summary.total_commission) }}</p>
           <p class="mt-0.5 text-xs text-gray-400 dark:text-gray-500">{{ t('reseller.commissions.commissionRate') }}: {{ f2p(summary.commission_rate) }}%</p>
         </div>
         <div class="card p-4">
           <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('reseller.commissions.withdrawn') }}</p>
-          <p class="mt-1 text-xl font-bold text-gray-900 dark:text-white">¥{{ f2(summary.withdrawn) }}</p>
+          <p class="mt-1 text-xl font-bold text-gray-900 dark:text-white">${{ f2(summary.withdrawn) }}</p>
         </div>
         <div class="card p-4">
           <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('reseller.commissions.pending') }}</p>
-          <p class="mt-1 text-xl font-bold text-yellow-600 dark:text-yellow-400">¥{{ f2(summary.pending) }}</p>
+          <p class="mt-1 text-xl font-bold text-yellow-600 dark:text-yellow-400">${{ f2(summary.pending) }}</p>
         </div>
         <div class="card p-4">
           <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('reseller.commissions.available') }}</p>
-          <p class="mt-1 text-xl font-bold text-blue-600 dark:text-blue-400">¥{{ f2(summary.available) }}</p>
+          <p class="mt-1 text-xl font-bold text-blue-600 dark:text-blue-400">${{ f2(summary.available) }}</p>
         </div>
       </div>
 
@@ -56,7 +56,7 @@
                 <td class="px-4 py-3"><span class="text-sm text-gray-900 dark:text-white">{{ item.user_id }}</span></td>
                 <td class="px-4 py-3"><span class="text-sm text-gray-600 dark:text-gray-300">{{ item.user_email || '-' }}</span></td>
                 <td class="px-4 py-3"><span class="text-sm font-mono text-gray-600 dark:text-gray-300">{{ item.order_no }}</span></td>
-                <td class="px-4 py-3"><span class="text-sm font-medium text-blue-600 dark:text-blue-400">¥{{ f2(item.credit_amount) }}</span></td>
+                <td class="px-4 py-3"><span class="text-sm font-medium text-blue-600 dark:text-blue-400">${{ f2(item.credit_amount) }}</span></td>
                 <td class="px-4 py-3"><span class="text-sm text-gray-500 dark:text-gray-400">{{ formatDateTime(item.paid_at) }}</span></td>
               </tr>
             </tbody>

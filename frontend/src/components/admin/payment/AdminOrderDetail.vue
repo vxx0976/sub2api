@@ -118,7 +118,12 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BaseDialog from '@/components/common/BaseDialog.vue'
 import type { PaymentOrder } from '@/types/payment'
-import { statusBadgeClass, canRefund as canRefundStatus, formatOrderDateTime } from '@/components/payment/orderUtils'
+import {
+  statusBadgeClass,
+  canRefund as canRefundStatus,
+  formatOrderDateTime,
+  deriveOrderBaseAmount,
+} from '@/components/payment/orderUtils'
 
 const { t } = useI18n()
 
@@ -127,21 +132,15 @@ const props = defineProps<{
   order: PaymentOrder | null
 }>()
 
-/** 充值金额 (base amount before fee) = pay_amount - fee = pay_amount / (1 + fee_rate/100) */
-const baseAmount = computed(() => {
-  if (!props.order) return 0
-  const feeRate = Number(props.order.fee_rate) || 0
-  if (feeRate <= 0) return props.order.pay_amount
-  return props.order.pay_amount / (1 + feeRate / 100)
+/** 充值金额/手续费: 从 pay_amount + fee_rate 精确反推(与后端手续费向上取整口径一致) */
+const derivedAmounts = computed(() => {
+  if (!props.order) return { base: 0, fee: 0 }
+  return deriveOrderBaseAmount(props.order.pay_amount ?? 0, Number(props.order.fee_rate) || 0)
 })
 
-/** 手续费 = pay_amount - baseAmount */
-const feeAmount = computed(() => {
-  if (!props.order) return 0
-  const feeRate = Number(props.order.fee_rate) || 0
-  if (feeRate <= 0) return 0
-  return props.order.pay_amount - baseAmount.value
-})
+const baseAmount = computed(() => derivedAmounts.value.base)
+
+const feeAmount = computed(() => derivedAmounts.value.fee)
 
 const emit = defineEmits<{
   (e: 'close'): void

@@ -868,6 +868,8 @@ export default {
       balanceAddedAdmin: '余额充值（管理员）',
       balanceAddedRecharge: '余额充值（用户充值）',
       balanceDeductedAdmin: '余额扣减（管理员）',
+      balanceAddedTransfer: '余额转入（分销商）',
+      balanceDeductedTransfer: '余额转出（分销商）',
       adminAdjustment: '管理员调整',
       depositNotesPlaceholder: '例如：新用户注册奖励、活动充值等',
       withdrawNotesPlaceholder: '例如：服务问题退款、错误充值退回等'
@@ -883,6 +885,7 @@ export default {
       deleteSuccess: '兑换码已删除',
       deleteConfirm: '确定要删除此兑换码吗？',
       export: '导出',
+      exportCurrentPageOnly: '已导出当前页 {count} 个未使用兑换码（仅当前页）',
       copy: '复制',
       copied: '已复制',
       empty: '暂无兑换码'
@@ -1143,6 +1146,7 @@ export default {
       settings: '设置',
       settingsTitle: '商户设置',
       settingsUpdated: '商户设置已更新',
+      settingsLoadFailed: '加载商户设置失败，请重试后再保存',
       agentEnabled: '启用商户代理功能',
       agentEnabledHint: '开启后商户可查看佣金明细并申请提现',
       commissionRate: '分成比例',

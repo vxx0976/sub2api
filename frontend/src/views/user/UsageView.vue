@@ -658,6 +658,8 @@ const authStore = useAuthStore()
 const isRegularUser = computed(() => !authStore.isAdmin && !authStore.isReseller)
 
 let abortController: AbortController | null = null
+// 统计请求序号守卫:快速切换筛选时丢弃旧响应,避免旧统计覆盖新统计
+let statsReqSeq = 0
 
 // Tooltip state
 const tooltipVisible = ref(false)
@@ -877,6 +879,7 @@ const loadApiKeys = async () => {
 }
 
 const loadUsageStats = async () => {
+  const seq = ++statsReqSeq
   try {
     const apiKeyId = filters.value.api_key_id ? Number(filters.value.api_key_id) : undefined
     const stats = await usageAPI.getStatsByDateRange(
@@ -884,8 +887,10 @@ const loadUsageStats = async () => {
       filters.value.end_date || endDate.value,
       apiKeyId
     )
+    if (seq !== statsReqSeq) return
     usageStats.value = stats
   } catch (error) {
+    if (seq !== statsReqSeq) return
     console.error('Failed to load usage stats:', error)
   }
 }

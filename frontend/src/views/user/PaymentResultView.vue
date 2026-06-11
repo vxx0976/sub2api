@@ -110,6 +110,7 @@ import { usePaymentStore } from '@/stores/payment'
 import { paymentAPI } from '@/api/payment'
 import type { PaymentOrder } from '@/types/payment'
 import { formatPaymentAmount, normalizePaymentCurrency } from '@/components/payment/currency'
+import { deriveOrderBaseAmount } from '@/components/payment/orderUtils'
 import { normalizePaymentMethodForDisplay, paymentMethodI18nKey } from './paymentUx'
 
 const i18n = useI18n()
@@ -138,21 +139,20 @@ const STATUS_REFRESH_MAX_ATTEMPTS = 15
 let statusRefreshTimer: ReturnType<typeof setTimeout> | null = null
 const refreshAttempts = ref(0)
 
-/** 充值金额 = pay_amount / (1 + fee_rate/100)，fee_rate=0 时等于 pay_amount */
-const baseAmount = computed(() => {
-  if (!order.value) return 0
-  const feeRate = Number(order.value.fee_rate) || 0
-  if (feeRate <= 0) return order.value.pay_amount ?? 0
-  return Math.round((order.value.pay_amount / (1 + feeRate / 100)) * 100) / 100
+/**
+ * 充值金额/手续费从 pay_amount + fee_rate 精确反推(deriveOrderBaseAmount 在分位上
+ * 搜索使 base + RoundUp(base×rate) == pay 成立的唯一解,与后端取整口径一致)。
+ * 不能用 order.amount: 它是到账额度(基础额 × 充值倍率),倍率 ≠ 1 时不是实付基础额。
+ */
+const derivedAmounts = computed(() => {
+  if (!order.value) return { base: 0, fee: 0 }
+  return deriveOrderBaseAmount(order.value.pay_amount ?? 0, Number(order.value.fee_rate) || 0)
 })
 
-/** 手续费 = pay_amount - baseAmount */
-const feeAmount = computed(() => {
-  if (!order.value) return 0
-  const feeRate = Number(order.value.fee_rate) || 0
-  if (feeRate <= 0) return 0
-  return Math.round((order.value.pay_amount - baseAmount.value) * 100) / 100
-})
+const baseAmount = computed(() => derivedAmounts.value.base)
+
+/** 手续费(后端实扣口径) */
+const feeAmount = computed(() => derivedAmounts.value.fee)
 
 const localeCode = computed(() => {
   const raw = i18n.locale as unknown

@@ -556,11 +556,19 @@ const methodOptions = computed<PaymentMethodOption[]>(() =>
 )
 
 const feeRate = computed(() => checkout.value?.recharge_fee_rate ?? 0)
-const feeAmount = computed(() =>
-  feeRate.value > 0 && validAmount.value > 0
-    ? Math.ceil(((validAmount.value * feeRate.value) / 100) * 100) / 100
-    : 0
-)
+
+/**
+ * 计算手续费,与后端 fee.go 口径一致:fee = RoundUp(amount * rate / 100, 2)。
+ * amount * rate 直接得到以「分」为单位的手续费(rate 是百分比数值,如 1 表示 1%),
+ * 先用 round 抹掉二进制浮点噪声,再 ceil 到整分,避免先乘后 ceil 把误差放大成整 1 分。
+ */
+function calcFee(amount: number, rate: number): number {
+  if (rate <= 0 || amount <= 0) return 0
+  const feeCents = Math.ceil(Math.round(amount * rate * 1e6) / 1e6)
+  return feeCents / 100
+}
+
+const feeAmount = computed(() => calcFee(validAmount.value, feeRate.value))
 const totalAmount = computed(() =>
   feeRate.value > 0 && validAmount.value > 0
     ? Math.round((validAmount.value + feeAmount.value) * 100) / 100
@@ -603,8 +611,7 @@ const subMethodOptions = computed<PaymentMethodOption[]>(() => {
 
 const subFeeAmount = computed(() => {
   const price = selectedPlan.value?.price ?? 0
-  if (feeRate.value <= 0 || price <= 0) return 0
-  return Math.ceil(((price * feeRate.value) / 100) * 100) / 100
+  return calcFee(price, feeRate.value)
 })
 
 const subTotalAmount = computed(() => {

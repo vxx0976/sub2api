@@ -191,7 +191,7 @@
           <button
             type="submit"
             form="merchant-settings-form"
-            :disabled="settingsSubmitting"
+            :disabled="settingsSubmitting || settingsLoadFailed"
             class="btn"
           >
             {{ settingsSubmitting ? t('common.saving') : t('common.save') }}
@@ -263,6 +263,7 @@ function merchantUpdateBalance(id: number, amount: number, operation: 'add' | 's
 // Settings Dialog
 const showSettingsDialog = ref(false)
 const settingsSubmitting = ref(false)
+const settingsLoadFailed = ref(false)
 const editingMerchant = ref<MerchantUser | null>(null)
 const settingsForm = reactive({
   merchant_mode: '',
@@ -275,6 +276,7 @@ async function openSettingsDialog(merchant: MerchantUser) {
   settingsForm.merchant_mode = ''
   settingsForm.commission_rate = ''
   settingsForm.min_withdrawal = ''
+  settingsLoadFailed.value = false
   showSettingsDialog.value = true
   try {
     const kv = await adminAPI.merchants.getMerchantSettings(merchant.id)
@@ -282,7 +284,10 @@ async function openSettingsDialog(merchant: MerchantUser) {
     settingsForm.commission_rate = kv.commission_rate || ''
     settingsForm.min_withdrawal = kv.min_withdrawal || ''
   } catch {
-    // ignore, form stays empty
+    // 加载失败时标记并禁止提交：否则空表单提交会把 merchant_mode 静默置为
+    // 'disabled' 并清空佣金率，造成已开通商户被误关闭。
+    settingsLoadFailed.value = true
+    appStore.showError(t('admin.merchants.settingsLoadFailed'))
   }
 }
 
@@ -295,10 +300,14 @@ async function handleSettingsSubmit() {
   if (!editingMerchant.value) return
   settingsSubmitting.value = true
   try {
-    const payload: Record<string, string> = {}
-    if (settingsForm.merchant_mode) payload.merchant_mode = settingsForm.merchant_mode
-    if (settingsForm.commission_rate) payload.commission_rate = settingsForm.commission_rate
-    if (settingsForm.min_withdrawal) payload.min_withdrawal = settingsForm.min_withdrawal
+    // merchant_mode 必须显式发 'enabled'/'disabled':后端 upsert 不删 key,
+    // 关闭时若省略该字段会保留旧的 'enabled',导致代理模式开了关不掉。
+    const payload: Record<string, string> = {
+      merchant_mode: settingsForm.merchant_mode === 'enabled' ? 'enabled' : 'disabled',
+      // 清空时发空串显式落库,而非省略,确保清空能真正生效
+      commission_rate: settingsForm.commission_rate || '',
+      min_withdrawal: settingsForm.min_withdrawal || '',
+    }
 
     await adminAPI.merchants.updateMerchantSettings(editingMerchant.value.id, payload)
     appStore.showSuccess(t('admin.merchants.settingsUpdated'))

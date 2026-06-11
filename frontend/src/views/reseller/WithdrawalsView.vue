@@ -10,7 +10,7 @@
         <div class="flex items-center gap-3">
           <div v-if="summary" class="rounded-lg bg-blue-50 px-4 py-2 dark:bg-blue-900/20">
             <p class="text-xs text-blue-600 dark:text-blue-400">{{ t('reseller.withdrawals.available') }}</p>
-            <p class="text-lg font-bold text-blue-700 dark:text-blue-300">¥{{ Number(summary.available).toFixed(2) }}</p>
+            <p class="text-lg font-bold text-blue-700 dark:text-blue-300">${{ Number(summary.available).toFixed(2) }}</p>
           </div>
           <button @click="openApplyDialog" class="btn btn-primary">
             {{ t('reseller.withdrawals.apply') }}
@@ -62,7 +62,7 @@
                   <span class="text-sm text-gray-900 dark:text-white">{{ item.id }}</span>
                 </td>
                 <td class="px-4 py-3">
-                  <span class="text-sm font-medium text-gray-900 dark:text-white">¥{{ item.amount }}</span>
+                  <span class="text-sm font-medium text-gray-900 dark:text-white">${{ item.amount }}</span>
                 </td>
                 <td class="px-4 py-3">
                   <span
@@ -127,7 +127,7 @@
         <div>
           <label class="input-label">{{ t('reseller.withdrawals.amount') }}</label>
           <div class="relative">
-            <div class="absolute left-3 top-1/2 -translate-y-1/2 font-medium text-gray-500">¥</div>
+            <div class="absolute left-3 top-1/2 -translate-y-1/2 font-medium text-gray-500">$</div>
             <input
               v-model.number="applyForm.amount"
               type="number"
@@ -138,7 +138,7 @@
             />
           </div>
           <p v-if="summary" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            {{ t('reseller.withdrawals.availableBalance') }}: ¥{{ Number(summary.available).toFixed(2) }}
+            {{ t('reseller.withdrawals.availableBalance') }}: ${{ Number(summary.available).toFixed(2) }}
           </p>
         </div>
         <div>
