@@ -1050,3 +1050,56 @@ func TestGeminiForwardAsChatCompletions_PartialStreamReturnsBillableUsage(t *tes
 	require.NotNil(t, result.FirstTokenMs, "已交付内容，FirstTokenMs 应被设置")
 	require.True(t, result.Stream)
 }
+
+// shouldBillPartialGeminiNativeStream 的纯逻辑：与 shouldBillPartialGeminiStream 同口径。
+func TestShouldBillPartialGeminiNativeStream(t *testing.T) {
+	ms := 12
+	require.True(t, shouldBillPartialGeminiNativeStream(&geminiNativeStreamResult{usage: &ClaudeUsage{InputTokens: 10}, firstTokenMs: &ms}),
+		"已交付内容且有 usage：应计费")
+	require.False(t, shouldBillPartialGeminiNativeStream(&geminiNativeStreamResult{usage: &ClaudeUsage{InputTokens: 10}}),
+		"firstTokenMs 为 nil（未交付内容）：不计费")
+	require.False(t, shouldBillPartialGeminiNativeStream(&geminiNativeStreamResult{firstTokenMs: &ms}),
+		"usage 为 nil：不计费")
+	require.False(t, shouldBillPartialGeminiNativeStream(nil), "nil streamRes：不计费")
+}
+
+// 漏计费修复的端到端验证（原生 /v1beta streamGenerateContent 路径）：流式上游交付了
+// 内容（带 usageMetadata）后中途断流。ForwardNative 必须返回带 PartialError 的
+// ForwardResult（携带已产出 usage）连同 error——而不是整段丢弃 usage 返回 (nil, err)。
+func TestGeminiForwardNative_PartialStreamReturnsBillableUsage(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1beta/models/gemini-2.5-pro:streamGenerateContent", nil)
+
+	upstreamSSE := `data: {"candidates":[{"content":{"parts":[{"text":"hello"}]}}],"usageMetadata":{"promptTokenCount":9,"candidatesTokenCount":5,"cachedContentTokenCount":3}}` + "\n\n"
+	httpStub := &geminiCompatHTTPUpstreamStub{
+		response: &http.Response{
+			StatusCode: http.StatusOK,
+			Header:     http.Header{"Content-Type": []string{"text/event-stream"}, "X-Request-Id": []string{"rid-native-partial"}},
+			Body:       &geminiErrTailReader{data: []byte(upstreamSSE), err: fmt.Errorf("upstream connection reset")},
+		},
+	}
+	svc := &GeminiMessagesCompatService{httpUpstream: httpStub, cfg: &config.Config{}}
+	account := &Account{
+		ID:   13,
+		Type: AccountTypeAPIKey,
+		Credentials: map[string]any{
+			"api_key": "test-key",
+		},
+	}
+	body := []byte(`{"contents":[{"role":"user","parts":[{"text":"hello"}]}]}`)
+
+	result, err := svc.ForwardNative(context.Background(), c, account, "gemini-2.5-pro", "streamGenerateContent", true, body)
+
+	require.Error(t, err, "读错误应返回 error")
+	require.Contains(t, err.Error(), "stream read error")
+	require.NotNil(t, result, "ForwardNative 不应丢弃已交付内容的 usage")
+	require.True(t, result.PartialError, "应标记为 PartialError 以便上层计费")
+	require.Equal(t, 6, result.Usage.InputTokens)
+	require.Equal(t, 5, result.Usage.OutputTokens)
+	require.Equal(t, 3, result.Usage.CacheReadInputTokens)
+	require.NotNil(t, result.FirstTokenMs, "已交付内容，FirstTokenMs 应被设置")
+	require.True(t, result.Stream)
+	require.Equal(t, "rid-native-partial", result.RequestID)
+}
