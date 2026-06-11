@@ -776,6 +776,24 @@ func (s *emailBindUserRepoStub) Update(_ context.Context, user *service.User) er
 	return nil
 }
 
+func (s *emailBindUserRepoStub) UpdateProfile(ctx context.Context, user *service.User) error {
+	return s.Update(ctx, user)
+}
+
+func (s *emailBindUserRepoStub) UpdateEmailAndPassword(ctx context.Context, userID int64, email, passwordHash string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	existing, ok := s.usersByID[userID]
+	if !ok {
+		return service.ErrUserNotFound
+	}
+	delete(s.usersByEmail, existing.Email)
+	existing.Email = email
+	existing.PasswordHash = passwordHash
+	s.usersByEmail[email] = existing
+	return nil
+}
+
 func (s *emailBindUserRepoStub) Delete(context.Context, int64) error { return nil }
 
 func (s *emailBindUserRepoStub) GetUserAvatar(context.Context, int64) (*service.UserAvatar, error) {

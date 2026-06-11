@@ -38,5 +38,24 @@ export async function getAdminRechargeOrders(params: {
   return data
 }
 
-export const rechargeOrdersAPI = { getAdminRechargeOrders }
+export interface RefundRechargeOrderResponse {
+  order_no: string
+  user_id: number
+  credit_amount: number
+  status: string
+}
+
+// 退款：把已支付订单标记为 refunded 并扣回到账余额（连带回冲商户佣金基数）。
+export async function refundAdminRechargeOrder(
+  orderNo: string,
+  reason?: string
+): Promise<RefundRechargeOrderResponse> {
+  const { data } = await apiClient.post<RefundRechargeOrderResponse>(
+    `/admin/recharge/orders/${encodeURIComponent(orderNo)}/refund`,
+    { reason: reason ?? '' }
+  )
+  return data
+}
+
+export const rechargeOrdersAPI = { getAdminRechargeOrders, refundAdminRechargeOrder }
 export default rechargeOrdersAPI

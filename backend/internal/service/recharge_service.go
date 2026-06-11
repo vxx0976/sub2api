@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 	"math/big"
@@ -342,6 +343,50 @@ func (s *RechargeService) ListAllOrders(ctx context.Context, status string, user
 // ExpirePendingOrders 清理过期订单
 func (s *RechargeService) ExpirePendingOrders(ctx context.Context) (int, error) {
 	return s.orderRepo.ExpirePendingOrders(ctx)
+}
+
+// RefundOrder 管理员退款：把已支付的 EPAY 充值订单 paid→refunded 并扣回到账余额。
+// 退款后该订单不再计入 status='paid' 的佣金基数（SumPaidCreditByUserIDs），
+// 商户佣金随之自动回冲（若已提现佣金 > 回冲后佣金，差额表现为可提现余额转负，由前端负值展示）。
+//
+// 入账(ConfirmOrderPaid)是"先 CAS paid 再加余额，失败回滚状态"的 saga；退款对称：
+// 先 CAS refunded 锁定状态(防并发重复退款)，再扣回余额，扣回失败则补偿回滚 refunded→paid。
+func (s *RechargeService) RefundOrder(ctx context.Context, orderNo, reason string) (*RechargeOrder, error) {
+	order, err := s.orderRepo.GetByOrderNo(ctx, orderNo)
+	if err != nil {
+		return nil, fmt.Errorf("query order: %w", err)
+	}
+	if order == nil {
+		return nil, ErrRechargeOrderNotFound
+	}
+	if order.Status != "paid" {
+		return nil, ErrRechargeOrderNotRefundable
+	}
+
+	// CAS paid→refunded：并发重复退款时只有一方成功，另一方拿到 status conflict。
+	if err := s.orderRepo.UpdateStatus(ctx, orderNo, "paid", "refunded", nil, nil); err != nil {
+		if errors.Is(err, ErrRechargeOrderStatusConflict) {
+			return nil, ErrRechargeOrderNotRefundable
+		}
+		return nil, fmt.Errorf("mark order refunded: %w", err)
+	}
+
+	notes := fmt.Sprintf("Refund recharge order %s (credited $%.2f)", orderNo, order.CreditAmount)
+	if reason != "" {
+		notes = notes + ": " + reason
+	}
+	if _, err := s.adminService.RefundUserBalance(ctx, order.UserID, order.CreditAmount, notes); err != nil {
+		logger.LegacyPrintf("service.recharge", "refund clawback failed, rolling back order status: order=%s user=%d amount=%.2f err=%v", orderNo, order.UserID, order.CreditAmount, err)
+		// 补偿：扣回失败则把订单状态还原为 paid，避免"订单已退款但余额未扣回"。
+		if rbErr := s.orderRepo.UpdateStatus(ctx, orderNo, "refunded", "paid", nil, nil); rbErr != nil {
+			logger.LegacyPrintf("service.recharge", "CRITICAL: rollback refunded->paid failed: order=%s err=%v", orderNo, rbErr)
+		}
+		return nil, fmt.Errorf("refund clawback failed: %w", err)
+	}
+
+	logger.LegacyPrintf("service.recharge", "refund success: order=%s user=%d credit=$%.2f", orderNo, order.UserID, order.CreditAmount)
+	order.Status = "refunded"
+	return order, nil
 }
 
 func (s *RechargeService) getEpayClient(ctx context.Context) (*epay.Client, error) {

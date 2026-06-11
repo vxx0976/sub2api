@@ -38,6 +38,9 @@ type AdminService interface {
 	UpdateUser(ctx context.Context, id int64, input *UpdateUserInput) (*User, error)
 	DeleteUser(ctx context.Context, id int64) error
 	UpdateUserBalance(ctx context.Context, userID int64, balance float64, operation string, notes string) (*User, error)
+	// RefundUserBalance 退款扣回已到账的充值余额（允许透支，因用户可能已消费），
+	// 写负值审计流水并失效缓存。与充值入账 add 对称，供订单退款回冲使用。
+	RefundUserBalance(ctx context.Context, userID int64, amount float64, notes string) (*User, error)
 	BatchUpdateConcurrency(ctx context.Context, userIDs []int64, value int, mode string) (int, error)
 	GetUserAPIKeys(ctx context.Context, userID int64, page, pageSize int, sortBy, sortOrder string) ([]APIKey, int64, error)
 	GetUserUsageStats(ctx context.Context, userID int64, period string) (any, error)
@@ -1177,6 +1180,61 @@ func (s *adminServiceImpl) UpdateUserBalance(ctx context.Context, userID int64, 
 		if err := s.redeemCodeRepo.Create(ctx, adjustmentRecord); err != nil {
 			logger.LegacyPrintf("service.admin", "failed to create balance adjustment redeem code: %v", err)
 		}
+	}
+
+	return user, nil
+}
+
+// RefundUserBalance 退款扣回已到账的充值余额。与 UpdateUserBalance 的 "subtract" 不同：
+// 退款必须扣回全额到账金额，即使用户已消费导致余额为负（外部已把 CNY 退还给用户），
+// 因此走 DeductBalance（允许透支）而非 DeductBalanceIfSufficient。审计记一条负值流水。
+func (s *adminServiceImpl) RefundUserBalance(ctx context.Context, userID int64, amount float64, notes string) (*User, error) {
+	if amount <= 0 {
+		return nil, fmt.Errorf("refund amount must be positive, got %.2f", amount)
+	}
+
+	// 原子自减，允许透支（与入账 AddBalanceOnly 对称）。
+	if err := s.userRepo.DeductBalance(ctx, userID, amount); err != nil {
+		return nil, err
+	}
+
+	// 回读真实余额用于返回值与缓存失效；失败不阻断主流程（扣款已成功落库）。
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		logger.LegacyPrintf("service.admin", "refund balance: reload user failed: user_id=%d err=%v", userID, err)
+	}
+
+	if s.authCacheInvalidator != nil {
+		s.authCacheInvalidator.InvalidateAuthCacheByUserID(ctx, userID)
+	}
+	if s.billingCacheService != nil {
+		go func() {
+			cacheCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			if err := s.billingCacheService.InvalidateUserBalance(cacheCtx, userID); err != nil {
+				logger.LegacyPrintf("service.admin", "invalidate user balance cache failed (refund): user_id=%d err=%v", userID, err)
+			}
+		}()
+	}
+
+	// 审计：记一条负值"管理员调整余额"流水（与手工扣减同型，负值不进资金流入统计）。
+	code, genErr := GenerateRedeemCode()
+	if genErr != nil {
+		logger.LegacyPrintf("service.admin", "failed to generate refund redeem code: %v", genErr)
+		return user, nil
+	}
+	now := time.Now()
+	adjustmentRecord := &RedeemCode{
+		Code:   code,
+		Type:   AdjustmentTypeAdminBalance,
+		Value:  -amount,
+		Status: StatusUsed,
+		UsedBy: &userID,
+		Notes:  notes,
+		UsedAt: &now,
+	}
+	if err := s.redeemCodeRepo.Create(ctx, adjustmentRecord); err != nil {
+		logger.LegacyPrintf("service.admin", "failed to create refund adjustment redeem code: %v", err)
 	}
 
 	return user, nil

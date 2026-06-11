@@ -977,11 +977,13 @@ func (s *SubscriptionService) doWindowMaintenance(sub *UserSubscription) {
 	// 加载订阅所属 group 并传入，使月窗口重置走"减去单周期额度"分支而非清零，
 	// 否则多周期订阅（有效月限额 = 单周期额度 × 剩余周期数）会因每月清零导致额度超发。
 	var group *Group
-	if g, err := s.groupRepo.GetByID(ctx, sub.GroupID); err != nil {
-		// 取不到 group 时退回 nil（清零逻辑），仅记录日志不阻断维护流程
-		log.Printf("Failed to load group %d for window maintenance: %v", sub.GroupID, err)
-	} else {
-		group = g
+	if s.groupRepo != nil {
+		if g, err := s.groupRepo.GetByID(ctx, sub.GroupID); err != nil {
+			// 取不到 group 时退回 nil（清零逻辑），仅记录日志不阻断维护流程
+			log.Printf("Failed to load group %d for window maintenance: %v", sub.GroupID, err)
+		} else {
+			group = g
+		}
 	}
 	if err := s.CheckAndResetWindows(ctx, sub, group); err != nil {
 		log.Printf("Failed to reset subscription windows: %v", err)

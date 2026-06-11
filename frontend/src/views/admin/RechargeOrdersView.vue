@@ -57,6 +57,7 @@
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('admin.rechargeOrders.payType') }}</th>
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('admin.rechargeOrders.createdAt') }}</th>
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('admin.rechargeOrders.paidAt') }}</th>
+                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('admin.rechargeOrders.actions') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -97,6 +98,17 @@
                 <td class="px-4 py-3">
                   <span class="text-sm text-gray-500 dark:text-gray-400">{{ item.paid_at ? formatDateTime(item.paid_at) : '—' }}</span>
                 </td>
+                <td class="px-4 py-3 text-right">
+                  <button
+                    v-if="item.status === 'paid'"
+                    type="button"
+                    class="text-sm font-medium text-red-600 hover:text-red-700 dark:text-red-400"
+                    @click="openRefund(item)"
+                  >
+                    {{ t('admin.rechargeOrders.refund') }}
+                  </button>
+                  <span v-else class="text-sm text-gray-300 dark:text-gray-600">—</span>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -118,6 +130,23 @@
         @update:pageSize="handlePageSizeChange"
       />
     </div>
+
+    <ConfirmDialog
+      :show="showRefundDialog"
+      :title="t('admin.rechargeOrders.refundTitle')"
+      :message="t('admin.rechargeOrders.refundConfirm', { orderNo: refundingOrder?.order_no, amount: refundingOrder?.credit_amount })"
+      :confirm-text="refundSubmitting ? t('common.processing') : t('admin.rechargeOrders.refund')"
+      :danger="true"
+      @confirm="confirmRefund"
+      @cancel="showRefundDialog = false"
+    >
+      <textarea
+        v-model="refundReason"
+        rows="2"
+        class="input w-full"
+        :placeholder="t('admin.rechargeOrders.refundReasonPlaceholder')"
+      />
+    </ConfirmDialog>
   </AppLayout>
 </template>
 
@@ -131,6 +160,7 @@ import { formatDateTime } from '@/utils/format'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import Pagination from '@/components/common/Pagination.vue'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
 const { t } = useI18n()
 const appStore = useAppStore()
@@ -214,6 +244,32 @@ async function loadOrders() {
     appStore.showError(error.message || t('common.loadFailed'))
   } finally {
     loading.value = false
+  }
+}
+
+const showRefundDialog = ref(false)
+const refundingOrder = ref<AdminRechargeOrderItem | null>(null)
+const refundReason = ref('')
+const refundSubmitting = ref(false)
+
+function openRefund(item: AdminRechargeOrderItem) {
+  refundingOrder.value = item
+  refundReason.value = ''
+  showRefundDialog.value = true
+}
+
+async function confirmRefund() {
+  if (!refundingOrder.value || refundSubmitting.value) return
+  refundSubmitting.value = true
+  try {
+    await adminAPI.rechargeOrders.refundAdminRechargeOrder(refundingOrder.value.order_no, refundReason.value)
+    appStore.showSuccess(t('admin.rechargeOrders.refundSuccess'))
+    showRefundDialog.value = false
+    loadOrders()
+  } catch (error: any) {
+    appStore.showError(error.message || t('common.error'))
+  } finally {
+    refundSubmitting.value = false
   }
 }
 

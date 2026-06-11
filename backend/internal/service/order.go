@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"time"
+
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 )
 
 // Order AliMPay 充值订单领域模型（个人免签支付）
@@ -57,3 +59,9 @@ type OrderRepository interface {
 
 var ErrOrderStatusConflict = errors.New("order status conflict")
 var ErrOrderPaymentAmountUnavailable = errors.New("no available payment amount")
+
+// ErrAliMPayOrderNotFound 退款时指定订单号不存在。
+var ErrAliMPayOrderNotFound = infraerrors.NotFound("ALIMPAY_ORDER_NOT_FOUND", "order not found")
+
+// ErrOrderNotRefundable 仅 status='paid' 的 AliMPay 订单可退款。
+var ErrOrderNotRefundable = infraerrors.BadRequest("ALIMPAY_ORDER_NOT_REFUNDABLE", "only paid orders can be refunded")

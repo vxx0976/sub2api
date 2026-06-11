@@ -44,6 +44,19 @@ func (s *userHandlerRepoStub) Update(_ context.Context, user *service.User) erro
 	s.user = &cloned
 	return nil
 }
+func (s *userHandlerRepoStub) BumpTokenVersion(_ context.Context, id int64) error {
+	if s.user != nil {
+		s.user.TokenVersion++
+	}
+	return nil
+}
+func (s *userHandlerRepoStub) UpdateEmailAndPassword(_ context.Context, _ int64, email, passwordHash string) error {
+	if s.user != nil {
+		s.user.Email = email
+		s.user.PasswordHash = passwordHash
+	}
+	return nil
+}
 func (s *userHandlerRepoStub) Delete(context.Context, int64) error { return nil }
 func (s *userHandlerRepoStub) GetUserAvatar(context.Context, int64) (*service.UserAvatar, error) {
 	if s.user == nil || s.user.AvatarURL == "" {

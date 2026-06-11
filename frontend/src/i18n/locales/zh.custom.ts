@@ -1271,6 +1271,12 @@ export default {
       createdAt: '创建时间',
       paidAt: '支付时间',
       empty: '暂无充值订单',
+      actions: '操作',
+      refund: '退款',
+      refundTitle: '确认退款',
+      refundConfirm: '确认对订单 {orderNo} 退款？将扣回到账余额 ${amount}（用户余额可能因此为负），并回冲对应商户佣金。',
+      refundReasonPlaceholder: '退款原因（可选）',
+      refundSuccess: '退款成功',
     },
     // AliMPay Orders
     alimpayOrders: {

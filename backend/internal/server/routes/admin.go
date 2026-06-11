@@ -122,6 +122,7 @@ func registerAdminRechargeRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 	recharge := admin.Group("/recharge")
 	{
 		recharge.GET("/orders", h.Recharge.AdminListOrders)
+		recharge.POST("/orders/:orderNo/refund", h.Recharge.AdminRefundOrder)
 	}
 }
 
@@ -129,6 +130,7 @@ func registerAdminAliMPayRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 	alimpay := admin.Group("/alimpay")
 	{
 		alimpay.GET("/orders", h.Order.AdminListOrders)
+		alimpay.POST("/orders/:orderNo/refund", h.Order.AdminRefundOrder)
 		alimpay.GET("/config", h.Order.AdminGetConfig)
 		alimpay.PUT("/config", h.Order.AdminUpdateConfig)
 	}

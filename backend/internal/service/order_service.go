@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"database/sql"
+	"errors"
 	"fmt"
 	"math/big"
 	"strconv"
@@ -290,6 +291,46 @@ func (s *OrderService) ListAllOrders(ctx context.Context, status string, userID 
 // ExpirePendingOrders 清理过期订单（被 runExpireCycle 和 admin 触发）
 func (s *OrderService) ExpirePendingOrders(ctx context.Context) (int, error) {
 	return s.orderRepo.ExpirePendingOrders(ctx)
+}
+
+// RefundOrder 管理员退款：把已支付的 AliMPay 订单 paid→refunded 并扣回到账余额。
+// 退款后该订单不再计入佣金基数（SumPaidCreditByUserIDs 只统计 status='paid'），
+// 商户佣金随之自动回冲。语义与 RechargeService.RefundOrder 完全一致（仅作用于不同的表）。
+func (s *OrderService) RefundOrder(ctx context.Context, orderNo, reason string) (*Order, error) {
+	o, err := s.orderRepo.GetByOrderNo(ctx, orderNo)
+	if err != nil {
+		return nil, fmt.Errorf("query order: %w", err)
+	}
+	if o == nil {
+		return nil, ErrAliMPayOrderNotFound
+	}
+	if o.Status != "paid" {
+		return nil, ErrOrderNotRefundable
+	}
+
+	// CAS paid→refunded：并发重复退款时只有一方成功。
+	if err := s.orderRepo.UpdateStatus(ctx, orderNo, "paid", "refunded", nil, nil); err != nil {
+		if errors.Is(err, ErrOrderStatusConflict) {
+			return nil, ErrOrderNotRefundable
+		}
+		return nil, fmt.Errorf("mark order refunded: %w", err)
+	}
+
+	notes := fmt.Sprintf("Refund AliMPay order %s (credited $%.2f)", orderNo, o.CreditAmount)
+	if reason != "" {
+		notes = notes + ": " + reason
+	}
+	if _, err := s.adminService.RefundUserBalance(ctx, o.UserID, o.CreditAmount, notes); err != nil {
+		logger.LegacyPrintf("service.order", "refund clawback failed, rolling back: order=%s user=%d amount=%.2f err=%v", orderNo, o.UserID, o.CreditAmount, err)
+		if rbErr := s.orderRepo.UpdateStatus(ctx, orderNo, "refunded", "paid", nil, nil); rbErr != nil {
+			logger.LegacyPrintf("service.order", "CRITICAL: rollback refunded->paid failed: order=%s err=%v", orderNo, rbErr)
+		}
+		return nil, fmt.Errorf("refund clawback failed: %w", err)
+	}
+
+	logger.LegacyPrintf("service.order", "refund success: order=%s user=%d credit=$%.2f", orderNo, o.UserID, o.CreditAmount)
+	o.Status = "refunded"
+	return o, nil
 }
 
 func (s *OrderService) runExpireCycle() {

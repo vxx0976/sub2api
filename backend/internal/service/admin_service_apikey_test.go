@@ -43,8 +43,9 @@ func (s *userRepoStubForGroupUpdate) GetByEmail(context.Context, string) (*User,
 func (s *userRepoStubForGroupUpdate) GetFirstAdmin(context.Context) (*User, error) {
 	panic("unexpected")
 }
-func (s *userRepoStubForGroupUpdate) Update(context.Context, *User) error { panic("unexpected") }
-func (s *userRepoStubForGroupUpdate) Delete(context.Context, int64) error { panic("unexpected") }
+func (s *userRepoStubForGroupUpdate) Update(context.Context, *User) error        { panic("unexpected") }
+func (s *userRepoStubForGroupUpdate) UpdateProfile(context.Context, *User) error { panic("unexpected") }
+func (s *userRepoStubForGroupUpdate) Delete(context.Context, int64) error        { panic("unexpected") }
 func (s *userRepoStubForGroupUpdate) GetUserAvatar(context.Context, int64) (*UserAvatar, error) {
 	panic("unexpected")
 }

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"net/http"
 	"strconv"
 
 	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
@@ -238,4 +239,28 @@ func (h *OrderHandler) AdminListOrders(c *gin.Context) {
 		}
 	}
 	response.Paginated(c, items, int64(total), page, pageSize)
+}
+
+// AdminRefundOrder POST /api/v1/admin/alimpay/orders/:orderNo/refund
+// 把已支付的 AliMPay 订单标记为 refunded 并扣回到账余额，连带回冲商户佣金基数。
+func (h *OrderHandler) AdminRefundOrder(c *gin.Context) {
+	orderNo := c.Param("orderNo")
+	if orderNo == "" {
+		response.Error(c, http.StatusBadRequest, "order_no is required")
+		return
+	}
+	var req AdminRefundOrderRequest
+	_ = c.ShouldBindJSON(&req)
+
+	order, err := h.orderService.RefundOrder(c.Request.Context(), orderNo, req.Reason)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, gin.H{
+		"order_no":      order.OrderNo,
+		"user_id":       order.UserID,
+		"credit_amount": order.CreditAmount,
+		"status":        order.Status,
+	})
 }

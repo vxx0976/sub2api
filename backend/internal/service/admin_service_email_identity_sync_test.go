@@ -68,6 +68,14 @@ func (s *emailSyncRepoStub) Update(_ context.Context, user *User) error {
 	return nil
 }
 
+// UpdateProfile 镜像 Update：UpdateUser 现走针对性字段更新而非全行 Update。
+func (s *emailSyncRepoStub) UpdateProfile(_ context.Context, user *User) error {
+	s.updateCalls++
+	s.updated = append(s.updated, user)
+	s.user = user
+	return nil
+}
+
 func (s *emailSyncRepoStub) Delete(context.Context, int64) error { return nil }
 
 func (s *emailSyncRepoStub) GetUserAvatar(context.Context, int64) (*UserAvatar, error) {

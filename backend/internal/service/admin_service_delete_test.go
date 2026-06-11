@@ -125,7 +125,36 @@ func (s *userRepoStub) UpdateBalance(ctx context.Context, id int64, amount float
 }
 
 func (s *userRepoStub) DeductBalance(ctx context.Context, id int64, amount float64) error {
-	panic("unexpected DeductBalance call")
+	if s.user != nil {
+		s.user.Balance -= amount
+	}
+	return nil
+}
+
+// 原子余额方法：UpdateUserBalance 现走这些方法而非全行 Update。
+func (s *userRepoStub) AddBalanceOnly(ctx context.Context, id int64, amount float64) error {
+	if s.user != nil {
+		s.user.Balance += amount
+	}
+	return nil
+}
+
+func (s *userRepoStub) SetBalanceAbsolute(ctx context.Context, id int64, balance float64) error {
+	if s.user != nil {
+		s.user.Balance = balance
+	}
+	return nil
+}
+
+func (s *userRepoStub) DeductBalanceIfSufficient(ctx context.Context, id int64, amount float64) error {
+	if s.user == nil {
+		return ErrUserNotFound
+	}
+	if s.user.Balance < amount {
+		return ErrInsufficientBalance
+	}
+	s.user.Balance -= amount
+	return nil
 }
 
 func (s *userRepoStub) UpdateConcurrency(ctx context.Context, id int64, amount int) error {

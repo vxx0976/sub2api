@@ -28,6 +28,18 @@ func (s *rpmUserRepoStub) Update(_ context.Context, user *User) error {
 	return nil
 }
 
+func (s *rpmUserRepoStub) UpdateProfile(_ context.Context, user *User) error {
+	if user == nil {
+		return nil
+	}
+	clone := *user
+	s.lastUpdated = &clone
+	if s.userRepoStub != nil {
+		s.userRepoStub.user = &clone
+	}
+	return nil
+}
+
 func TestAdminService_UpdateUser_InvalidatesAuthCacheOnRPMLimitChange(t *testing.T) {
 	base := &userRepoStub{user: &User{ID: 42, Email: "u@example.com", RPMLimit: 10}}
 	repo := &rpmUserRepoStub{userRepoStub: base}

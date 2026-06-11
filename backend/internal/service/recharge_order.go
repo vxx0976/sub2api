@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"time"
+
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 )
 
 // RechargeOrder 充值订单领域模型
@@ -48,3 +50,9 @@ type RechargeOrderRepository interface {
 }
 
 var ErrRechargeOrderStatusConflict = errors.New("recharge order status conflict")
+
+// ErrRechargeOrderNotFound 退款时指定订单号不存在。
+var ErrRechargeOrderNotFound = infraerrors.NotFound("RECHARGE_ORDER_NOT_FOUND", "recharge order not found")
+
+// ErrRechargeOrderNotRefundable 仅 status='paid' 的订单可退款（pending/expired/refunded 不可）。
+var ErrRechargeOrderNotRefundable = infraerrors.BadRequest("RECHARGE_ORDER_NOT_REFUNDABLE", "only paid recharge orders can be refunded")

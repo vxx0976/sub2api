@@ -1266,6 +1266,12 @@ export default {
       createdAt: 'Created',
       paidAt: 'Paid At',
       empty: 'No recharge orders',
+      actions: 'Actions',
+      refund: 'Refund',
+      refundTitle: 'Confirm Refund',
+      refundConfirm: 'Refund order {orderNo}? This claws back the credited ${amount} (the user balance may go negative) and reverses the corresponding merchant commission.',
+      refundReasonPlaceholder: 'Refund reason (optional)',
+      refundSuccess: 'Refund successful',
     },
     // AliMPay Orders
     alimpayOrders: {
