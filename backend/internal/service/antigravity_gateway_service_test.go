@@ -1656,7 +1656,7 @@ func TestHandleClaudeStreamingResponse_PartialDeliveryIsBillable(t *testing.T) {
 		// 先交付一段内容（带 usage），随后上游连接异常断开（非 EOF 读错误）
 		fmt.Fprintln(pw, `data: {"response":{"candidates":[{"content":{"parts":[{"text":"Hi there"}]}}],"usageMetadata":{"promptTokenCount":5,"candidatesTokenCount":3}}}`)
 		fmt.Fprintln(pw, "")
-		pw.CloseWithError(errors.New("upstream connection reset"))
+		_ = pw.CloseWithError(errors.New("upstream connection reset"))
 	}()
 
 	result, err := svc.handleClaudeStreamingResponse(c, resp, time.Now(), "claude-sonnet-4-5")
@@ -1690,7 +1690,7 @@ func TestHandleGeminiStreamingResponse_PartialDeliveryIsBillable(t *testing.T) {
 	go func() {
 		fmt.Fprintln(pw, `data: {"candidates":[{"content":{"parts":[{"text":"Hello"}]}}],"usageMetadata":{"promptTokenCount":10,"candidatesTokenCount":3}}`)
 		fmt.Fprintln(pw, "")
-		pw.CloseWithError(errors.New("upstream connection reset"))
+		_ = pw.CloseWithError(errors.New("upstream connection reset"))
 	}()
 
 	result, err := svc.handleGeminiStreamingResponse(c, resp, time.Now())
