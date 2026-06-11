@@ -85,6 +85,75 @@ func (r *streamReadCloser) Read(p []byte) (int, error) {
 
 func (r *streamReadCloser) Close() error { return nil }
 
+// #2 漏计费修复的端到端验证：非透传账号走主 Forward 流式路径，上游交付了
+// message_start/message_delta 后未发 [DONE] 直接断流。Forward 必须返回带 PartialError
+// 的 ForwardResult（携带已产出 usage）连同 error——而不是整段丢弃 usage 返回 (nil, err)。
+func TestGatewayService_Forward_PartialStreamReturnsBillableUsage(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/messages", nil)
+
+	body := []byte(`{"model":"claude-3-7-sonnet-20250219","stream":true,"messages":[{"role":"user","content":[{"type":"text","text":"hi"}]}]}`)
+	parsed := &ParsedRequest{
+		Body:   NewRequestBodyRef(body),
+		Model:  "claude-3-7-sonnet-20250219",
+		Stream: true,
+	}
+
+	// 交付内容但不发 [DONE]，随后 EOF。
+	// 每个事件以空行（\n\n）终止——模拟上游完整发送了这些事件、仅缺最后的 [DONE]。
+	upstreamSSE := strings.Join([]string{
+		`data: {"type":"message_start","message":{"usage":{"input_tokens":40,"cache_read_input_tokens":60}}}`,
+		"",
+		`data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"hello"}}`,
+		"",
+		`data: {"type":"message_delta","usage":{"output_tokens":7}}`,
+		"",
+		"",
+	}, "\n")
+
+	cfg := &config.Config{Gateway: config.GatewayConfig{MaxLineSize: defaultMaxLineSize}}
+	upstream := &anthropicHTTPUpstreamRecorder{
+		resp: &http.Response{
+			StatusCode: http.StatusOK,
+			Header:     http.Header{"Content-Type": []string{"text/event-stream"}, "x-request-id": []string{"rid-partial"}},
+			Body:       io.NopCloser(strings.NewReader(upstreamSSE)),
+		},
+	}
+	svc := &GatewayService{
+		cfg:                  cfg,
+		responseHeaderFilter: compileResponseHeaderFilter(cfg),
+		httpUpstream:         upstream,
+		rateLimitService:     &RateLimitService{},
+		deferredService:      &DeferredService{},
+	}
+
+	account := &Account{
+		ID:          501,
+		Name:        "anthropic-apikey-nonpassthrough",
+		Platform:    PlatformAnthropic,
+		Type:        AccountTypeAPIKey,
+		Concurrency: 1,
+		Credentials: map[string]any{
+			"api_key":  "upstream-anthropic-key",
+			"base_url": "https://api.anthropic.com",
+		},
+		Status:      StatusActive,
+		Schedulable: true,
+	}
+
+	result, err := svc.Forward(context.Background(), c, account, parsed)
+
+	require.Error(t, err, "缺终止事件应返回 error")
+	require.NotNil(t, result, "Forward 不应丢弃已交付内容的 usage")
+	require.True(t, result.PartialError, "应标记为 PartialError 以便上层计费")
+	require.Equal(t, 40, result.Usage.InputTokens)
+	require.Equal(t, 60, result.Usage.CacheReadInputTokens)
+	require.Equal(t, 7, result.Usage.OutputTokens)
+}
+
 type failWriteResponseWriter struct {
 	gin.ResponseWriter
 }
