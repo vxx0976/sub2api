@@ -89,7 +89,6 @@ type UsageLogRepository interface {
 
 	// Commission queries
 	SumCommissionByUserIDs(ctx context.Context, userIDs []int64) (totalCost float64, err error)
-	ListCommissionDetail(ctx context.Context, userIDs []int64, startDate, endDate *time.Time, userIDFilter *int64, limit, offset int) ([]*CommissionDetailItem, int, error)
 	// SumTodayCostByUserIDs returns today's total_cost for the given user IDs
 	SumTodayCostByUserIDs(ctx context.Context, userIDs []int64) (float64, error)
 	// BackfillMerchantRateSnapshot fills in NULL merchant_rate_snapshot values
@@ -809,10 +808,10 @@ func (s *AccountUsageService) getAntigravityUsage(ctx context.Context, account *
 		if cache, ok := cached.(*antigravityUsageCache); ok {
 			ttl := antigravityCacheTTL(cache.usageInfo)
 			if time.Since(cache.timestamp) < ttl {
-				usage := cache.usageInfo
-				if usage.FiveHour != nil && usage.FiveHour.ResetsAt != nil {
-					usage.FiveHour.RemainingSeconds = int(time.Until(*usage.FiveHour.ResetsAt).Seconds())
-				}
+				// 不能原地修改缓存里的共享对象（并发查询同一账号会触发 data race），
+				// 先做拷贝，再在副本上重算倒计时后返回。
+				usage := copyAntigravityUsageForResponse(cache.usageInfo)
+				recalcAntigravityRemainingSeconds(usage)
 				return usage, nil
 			}
 		}
@@ -826,8 +825,8 @@ func (s *AccountUsageService) getAntigravityUsage(ctx context.Context, account *
 			if cache, ok := cached.(*antigravityUsageCache); ok {
 				ttl := antigravityCacheTTL(cache.usageInfo)
 				if time.Since(cache.timestamp) < ttl {
-					usage := cache.usageInfo
-					// 重新计算 RemainingSeconds，避免返回过时的剩余秒数
+					// 同上：拷贝后再重算 RemainingSeconds，绝不修改缓存共享对象。
+					usage := copyAntigravityUsageForResponse(cache.usageInfo)
 					recalcAntigravityRemainingSeconds(usage)
 					return usage, nil
 				}
@@ -867,6 +866,21 @@ func (s *AccountUsageService) getAntigravityUsage(ctx context.Context, account *
 		return &UsageInfo{UpdatedAt: &now}, nil
 	}
 	return usage, nil
+}
+
+// copyAntigravityUsageForResponse 为响应制作 UsageInfo 的拷贝，避免直接返回/改写缓存中的共享对象。
+// recalcAntigravityRemainingSeconds 只会改写 FiveHour.RemainingSeconds，因此拷贝顶层结构并
+// 单独深拷贝 FiveHour 即可隔离写入；其余字段（map/slice/其它指针）只读，浅拷贝共享安全。
+func copyAntigravityUsageForResponse(info *UsageInfo) *UsageInfo {
+	if info == nil {
+		return nil
+	}
+	clone := *info
+	if info.FiveHour != nil {
+		fiveHour := *info.FiveHour
+		clone.FiveHour = &fiveHour
+	}
+	return &clone
 }
 
 // recalcAntigravityRemainingSeconds 重新计算 Antigravity UsageInfo 中各窗口的 RemainingSeconds

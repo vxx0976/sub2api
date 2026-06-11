@@ -85,7 +85,7 @@ type RegisterRequest struct {
 	TurnstileToken string `json:"turnstile_token"`
 	PromoCode      string `json:"promo_code"`      // 注册优惠码
 	InvitationCode string `json:"invitation_code"` // 邀请码
-	ParentID       *int64 `json:"parent_id"`       // 上级分销商用户 ID
+	ParentID       *int64 `json:"parent_id"`       // 已弃用：保留兼容旧客户端载荷；服务端忽略此字段，注册归属仅由已验证的商户域名上下文决定
 	AffCode        string `json:"aff_code"`        // 邀请返利码
 }
 
@@ -203,13 +203,13 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	// Determine parentID: explicit request field takes priority, then reseller domain context
-	parentID := req.ParentID
+	// 注册归属仅由"已验证的商户域名上下文"决定，绝不信任客户端传入的 parent_id，
+	// 防止客户端伪造 parent_id 把账号挂到任意商户名下。主站（无域名上下文）时 parentID=nil。
+	// req.ParentID 字段保留以兼容旧客户端载荷，但此处不再读取。
+	var parentID *int64
 	resellerCtx := middleware2.GetResellerDomainFromContext(c)
-	if parentID == nil {
-		if resellerCtx != nil {
-			parentID = &resellerCtx.ResellerID
-		}
+	if resellerCtx != nil {
+		parentID = &resellerCtx.ResellerID
 	}
 
 	// 商户级注册开关：若当前站点为商户域名且商户已关闭注册，则拒绝

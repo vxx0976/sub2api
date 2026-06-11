@@ -108,7 +108,8 @@ func registerResellerCommissionRoutes(reseller *gin.RouterGroup, h *handler.Hand
 	commissions := reseller.Group("/commissions")
 	{
 		commissions.GET("/summary", h.Reseller.Commission.GetSummary)
-		commissions.GET("/detail", h.Reseller.Commission.GetDetail)
+		// /commissions/detail 旧"消费 margin"佣金口径已废弃（与 summary 的"充值×rate"口径矛盾），
+		// 端点已下线；商户改用 /summary + /recharges。handler 侧 GetDetail 方法保留为死代码。
 		commissions.GET("/recharges", h.Reseller.Commission.GetRecharges)
 	}
 }

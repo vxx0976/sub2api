@@ -4,8 +4,10 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
@@ -251,14 +253,21 @@ func (s *ResellerService) ListAllDomainNames(ctx context.Context, resellerID int
 
 // CreateDomain creates a new domain for the reseller
 func (s *ResellerService) CreateDomain(ctx context.Context, resellerID int64, input *CreateDomainInput) (*ResellerDomain, error) {
+	// 归一化域名：去除首尾空白并转小写，与 serving 端小写精确匹配口径保持一致，
+	// 否则带大小写/空格的域名能通过查重却在 serving 端查不到。
+	normalizedDomain := strings.ToLower(strings.TrimSpace(input.Domain))
+	if normalizedDomain == "" {
+		return nil, infraerrors.BadRequest("INVALID_DOMAIN", "domain is required")
+	}
+
 	// Check if domain already exists (active, not soft-deleted)
-	existing, _ := s.domainRepo.GetByDomain(ctx, input.Domain)
+	existing, _ := s.domainRepo.GetByDomain(ctx, normalizedDomain)
 	if existing != nil {
 		return nil, ErrDomainExists
 	}
 
 	// Purge any soft-deleted record with the same domain to avoid unique constraint violation
-	s.domainRepo.PurgeSoftDeletedByDomain(ctx, input.Domain)
+	s.domainRepo.PurgeSoftDeletedByDomain(ctx, normalizedDomain)
 
 	// Generate verification token
 	token, err := generateVerifyToken()
@@ -268,7 +277,7 @@ func (s *ResellerService) CreateDomain(ctx context.Context, resellerID int64, in
 
 	domain := &ResellerDomain{
 		ResellerID:      resellerID,
-		Domain:          input.Domain,
+		Domain:          normalizedDomain,
 		SiteName:        input.SiteName,
 		SiteLogo:        input.SiteLogo,
 		BrandColor:      input.BrandColor,
@@ -588,7 +597,9 @@ func (s *ResellerService) ListRedeemCodes(ctx context.Context, resellerID int64,
 	return s.redeemRepo.ListByOwnerID(ctx, resellerID, pagination.PaginationParams{Page: page, PageSize: pageSize})
 }
 
-// DeleteRedeemCode deletes a redeem code owned by the reseller
+// DeleteRedeemCode deletes a redeem code owned by the reseller and refunds its value.
+// 退款与删除在同一事务内完成，且删除走"条件删除（WHERE status='unused'）"，
+// 保证并发删除 / 删除与用户兑换并发时不会双倍退款或净亏面值。
 func (s *ResellerService) DeleteRedeemCode(ctx context.Context, resellerID, codeID int64) error {
 	code, err := s.redeemRepo.GetByID(ctx, codeID)
 	if err != nil {
@@ -601,12 +612,33 @@ func (s *ResellerService) DeleteRedeemCode(ctx context.Context, resellerID, code
 		return infraerrors.BadRequest("REDEEM_CODE_USED", "cannot delete a used redeem code")
 	}
 
-	// Atomically refund balance (ADD operation)
-	if err := s.userRepo.UpdateBalance(ctx, resellerID, code.Value); err != nil {
+	// 事务：先做条件删除（原子抢占 unused 码），成功后再退款。
+	tx, err := s.entClient.Tx(ctx)
+	if err != nil {
+		return fmt.Errorf("begin transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	txCtx := dbent.NewTxContext(ctx, tx)
+
+	// 条件删除：若码已被兑换（status != unused）则 0 行受影响并返回 ErrRedeemCodeUsed，
+	// 事务回滚、不退款，避免双花。
+	if err := s.redeemRepo.DeleteIfUnused(txCtx, codeID); err != nil {
+		if errors.Is(err, ErrRedeemCodeUsed) {
+			return infraerrors.BadRequest("REDEEM_CODE_USED", "cannot delete a used redeem code")
+		}
+		return fmt.Errorf("delete redeem code: %w", err)
+	}
+
+	// 删除成功后退款（ADD 操作），与删除处于同一事务，保证原子。
+	if err := s.userRepo.UpdateBalance(txCtx, resellerID, code.Value); err != nil {
 		return fmt.Errorf("refund balance: %w", err)
 	}
 
-	return s.redeemRepo.Delete(ctx, codeID)
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("commit transaction: %w", err)
+	}
+	return nil
 }
 
 // --- Announcement management ---
@@ -618,14 +650,32 @@ func (s *ResellerService) ListAnnouncements(ctx context.Context, resellerID int6
 
 // CreateAnnouncement creates an announcement owned by the reseller
 func (s *ResellerService) CreateAnnouncement(ctx context.Context, resellerID int64, input *CreateAnnouncementInput) (*Announcement, error) {
-	a := &Announcement{
-		Title:   input.Title,
-		Content: input.Content,
-		Status:  input.Status,
-		OwnerID: &resellerID,
+	// 与 admin 路径（announcement_service）保持一致的校验：标题非空且 ≤200，
+	// status 走白名单，StartsAt < EndsAt。
+	title := strings.TrimSpace(input.Title)
+	if title == "" || len(title) > 200 {
+		return nil, ErrAnnouncementInvalidTitle
 	}
-	if a.Status == "" {
-		a.Status = AnnouncementStatusDraft
+
+	status := strings.TrimSpace(input.Status)
+	if status == "" {
+		status = AnnouncementStatusDraft
+	}
+	if !isValidAnnouncementStatus(status) {
+		return nil, ErrAnnouncementInvalidStatus
+	}
+
+	if input.StartsAt != nil && input.EndsAt != nil {
+		if !input.StartsAt.Before(*input.EndsAt) {
+			return nil, ErrAnnouncementInvalidSchedule
+		}
+	}
+
+	a := &Announcement{
+		Title:   title,
+		Content: input.Content,
+		Status:  status,
+		OwnerID: &resellerID,
 	}
 	if input.StartsAt != nil {
 		a.StartsAt = input.StartsAt
@@ -651,19 +701,34 @@ func (s *ResellerService) UpdateAnnouncement(ctx context.Context, resellerID, an
 	}
 
 	if input.Title != nil {
-		a.Title = *input.Title
+		title := strings.TrimSpace(*input.Title)
+		if title == "" || len(title) > 200 {
+			return nil, ErrAnnouncementInvalidTitle
+		}
+		a.Title = title
 	}
 	if input.Content != nil {
 		a.Content = *input.Content
 	}
 	if input.Status != nil {
-		a.Status = *input.Status
+		status := strings.TrimSpace(*input.Status)
+		if !isValidAnnouncementStatus(status) {
+			return nil, ErrAnnouncementInvalidStatus
+		}
+		a.Status = status
 	}
 	if input.StartsAt != nil {
 		a.StartsAt = *input.StartsAt
 	}
 	if input.EndsAt != nil {
 		a.EndsAt = *input.EndsAt
+	}
+
+	// StartsAt < EndsAt 校验（在 patch 合并后整体校验）。
+	if a.StartsAt != nil && a.EndsAt != nil {
+		if !a.StartsAt.Before(*a.EndsAt) {
+			return nil, ErrAnnouncementInvalidSchedule
+		}
 	}
 
 	if err := s.announcementRepo.Update(ctx, a); err != nil {

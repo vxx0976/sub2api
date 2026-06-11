@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"unicode/utf8"
 )
 
 var (
@@ -119,7 +120,7 @@ func TruncateBody(body []byte, max int) string {
 	if len(raw) <= max {
 		return raw
 	}
-	return raw[:max] + "...(truncated)"
+	return truncateAtRuneBoundary(raw, max) + "...(truncated)"
 }
 
 func truncateMessage(s string, max int) string {
@@ -129,7 +130,31 @@ func truncateMessage(s string, max int) string {
 	if len(s) <= max {
 		return s
 	}
-	return s[:max] + "...(truncated)"
+	return truncateAtRuneBoundary(s, max) + "...(truncated)"
+}
+
+// truncateAtRuneBoundary 按字节上限 max 截断，并回退到最近的合法 UTF-8 rune 边界，
+// 避免切断多字节字符（如中文）产生非法 UTF-8（json.Marshal 后变 U+FFFD 乱码）。
+func truncateAtRuneBoundary(s string, max int) string {
+	if max < 0 {
+		max = 0
+	}
+	if max >= len(s) {
+		return s
+	}
+	cut := s[:max]
+	// 回退到最近的合法 rune 起始边界，丢弃尾部不完整的多字节序列。
+	// DecodeLastRuneInString 对非法/不完整尾字节返回 (RuneError, 1)，
+	// 而真正编码的 U+FFFD 返回 size==3，可据此区分。
+	for len(cut) > 0 {
+		r, size := utf8.DecodeLastRuneInString(cut)
+		if r == utf8.RuneError && size <= 1 {
+			cut = cut[:len(cut)-1]
+			continue
+		}
+		break
+	}
+	return cut
 }
 
 func firstNonEmpty(values ...string) string {

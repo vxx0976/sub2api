@@ -1261,8 +1261,8 @@ func (s *ContentModerationService) UnbanUser(ctx context.Context, userID int64) 
 		return nil, fmt.Errorf("get content moderation unban user: %w", err)
 	}
 	if user.Status != StatusActive {
-		user.Status = StatusActive
-		if err := s.userRepo.Update(ctx, user); err != nil {
+		// 仅更新 status 列，避免用 GetByID 旧快照整行覆盖并发字段（balance/token_version 等）。
+		if err := s.userRepo.UpdateStatus(ctx, userID, StatusActive); err != nil {
 			return nil, fmt.Errorf("update content moderation unban user: %w", err)
 		}
 	}
@@ -1662,8 +1662,8 @@ func (s *ContentModerationService) applyFlaggedAccountSideEffects(ctx context.Co
 			return false
 		}
 		if user.Status != StatusDisabled {
-			user.Status = StatusDisabled
-			if err := s.userRepo.Update(ctx, user); err != nil {
+			// 仅更新 status 列，避免用 GetByID 旧快照整行覆盖并发字段（balance/token_version 等）。
+			if err := s.userRepo.UpdateStatus(ctx, *log.UserID, StatusDisabled); err != nil {
 				slog.Warn("content_moderation.ban_update_user_failed", "user_id", *log.UserID, "error", err)
 				return false
 			}

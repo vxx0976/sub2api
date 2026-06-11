@@ -74,14 +74,15 @@ func (s *AuthService) BindEmailIdentity(
 		return currentUser, nil
 	}
 
-	currentUser.Email = normalizedEmail
-	currentUser.PasswordHash = hashedPassword
-	if err := s.userRepo.Update(ctx, currentUser); err != nil {
+	// 仅更新 email + password_hash（含邮箱身份同步），避免用旧快照整行覆盖并发字段。
+	if err := s.userRepo.UpdateEmailAndPassword(ctx, currentUser.ID, normalizedEmail, hashedPassword); err != nil {
 		if errors.Is(err, ErrEmailExists) {
 			return nil, ErrEmailExists
 		}
 		return nil, ErrServiceUnavailable
 	}
+	currentUser.Email = normalizedEmail
+	currentUser.PasswordHash = hashedPassword
 
 	if firstRealEmailBind {
 		if err := s.ApplyProviderDefaultSettingsOnFirstBind(ctx, userID, "email"); err != nil {

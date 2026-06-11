@@ -2,6 +2,7 @@ package epay
 
 import (
 	"crypto/md5"
+	"crypto/subtle"
 	"fmt"
 	"sort"
 	"strings"
@@ -17,7 +18,10 @@ func md5Sign(params map[string]string, key string) string {
 // md5Verify 使用 MD5 验签
 func md5Verify(params map[string]string, key string, sign string) bool {
 	expected := md5Sign(params, key)
-	return strings.EqualFold(expected, sign)
+	// MD5 hex 字符串，统一转小写后用常数时间比较，避免时序侧信道
+	a := strings.ToLower(expected)
+	b := strings.ToLower(sign)
+	return subtle.ConstantTimeCompare([]byte(a), []byte(b)) == 1
 }
 
 // buildSignContent 构造待签名字符串：按 key 排序，跳过空值和 sign/sign_type

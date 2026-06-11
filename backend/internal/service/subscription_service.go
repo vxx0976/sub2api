@@ -892,32 +892,48 @@ func (s *SubscriptionService) ValidateAndCheckLimits(sub *UserSubscription, grou
 		return false, ErrSubscriptionExpired
 	}
 
-	// 2. 内存中修正过期窗口的用量，确保 CheckUsageLimits 不会误拒绝用户
-	//    实际的 DB 窗口重置由 DoWindowMaintenance 异步完成
-	if sub.NeedsDailyReset() {
-		sub.DailyUsageUSD = 0
+	// 2. 在**本地副本**上修正过期窗口的用量，确保 CheckUsageLimits 不会误拒绝用户。
+	//    实际的 DB 窗口重置由 DoWindowMaintenance 异步完成。
+	//    必须用副本而非原地修改：调用方（中间件）会把同一对象拷贝给
+	//    DoWindowMaintenance → CheckAndResetWindows → DeductAndResetMonthlyUsage，
+	//    若此处已把月用量减过一次单周期额度，维护路径会再减一次（双重减额，
+	//    多周期订阅每次窗口翻转凭空多出一个周期额度）；且 sub 可能来自共享缓存，
+	//    原地修改还会被并发请求重复叠加。
+	check := *sub
+	if check.NeedsDailyReset() {
+		check.DailyUsageUSD = 0
 		needsMaintenance = true
 	}
-	if sub.NeedsWeeklyReset() {
-		sub.WeeklyUsageUSD = 0
+	if check.NeedsWeeklyReset() {
+		check.WeeklyUsageUSD = 0
 		needsMaintenance = true
 	}
-	if sub.NeedsMonthlyReset() {
-		sub.MonthlyUsageUSD = 0
+	if check.NeedsMonthlyReset() {
+		// 月限额是动态有效额度（单周期额度 × 剩余周期数），用量跨周期累计。
+		// 这里必须"减去单周期额度"而非清零，否则窗口刚过期的瞬间内存校验会按
+		// 全新有效额度放行，造成多周期订阅额度超发（与 CheckAndResetWindows 一致）。
+		if group != nil && group.HasMonthlyLimit() {
+			check.MonthlyUsageUSD -= *group.MonthlyLimitUSD
+			if check.MonthlyUsageUSD < 0 {
+				check.MonthlyUsageUSD = 0
+			}
+		} else {
+			check.MonthlyUsageUSD = 0
+		}
 		needsMaintenance = true
 	}
-	if !sub.IsWindowActivated() {
+	if !check.IsWindowActivated() {
 		needsMaintenance = true
 	}
 
-	// 3. 检查用量限额
-	if !sub.CheckDailyLimit(group, 0) {
+	// 3. 检查用量限额（基于修正后的副本）
+	if !check.CheckDailyLimit(group, 0) {
 		return needsMaintenance, ErrDailyLimitExceeded
 	}
-	if !sub.CheckWeeklyLimit(group, 0) {
+	if !check.CheckWeeklyLimit(group, 0) {
 		return needsMaintenance, ErrWeeklyLimitExceeded
 	}
-	if !sub.CheckMonthlyLimit(group, 0) {
+	if !check.CheckMonthlyLimit(group, 0) {
 		return needsMaintenance, ErrMonthlyLimitExceeded
 	}
 
@@ -958,7 +974,16 @@ func (s *SubscriptionService) doWindowMaintenance(sub *UserSubscription) {
 	}
 
 	// 重置过期窗口
-	if err := s.CheckAndResetWindows(ctx, sub, nil); err != nil {
+	// 加载订阅所属 group 并传入，使月窗口重置走"减去单周期额度"分支而非清零，
+	// 否则多周期订阅（有效月限额 = 单周期额度 × 剩余周期数）会因每月清零导致额度超发。
+	var group *Group
+	if g, err := s.groupRepo.GetByID(ctx, sub.GroupID); err != nil {
+		// 取不到 group 时退回 nil（清零逻辑），仅记录日志不阻断维护流程
+		log.Printf("Failed to load group %d for window maintenance: %v", sub.GroupID, err)
+	} else {
+		group = g
+	}
+	if err := s.CheckAndResetWindows(ctx, sub, group); err != nil {
 		log.Printf("Failed to reset subscription windows: %v", err)
 	}
 

@@ -2506,6 +2506,10 @@ func (r *oauthPendingFlowRedeemCodeRepo) Delete(context.Context, int64) error {
 	panic("unexpected Delete call")
 }
 
+func (r *oauthPendingFlowRedeemCodeRepo) DeleteIfUnused(context.Context, int64) error {
+	panic("unexpected DeleteIfUnused call")
+}
+
 func (r *oauthPendingFlowRedeemCodeRepo) Use(ctx context.Context, id, userID int64) error {
 	affected, err := r.client.RedeemCode.Update().
 		Where(redeemcode.IDEQ(id), redeemcode.StatusEQ(service.StatusUnused)).
@@ -2949,6 +2953,46 @@ func (r *oauthPendingFlowUserRepo) DisableTotp(ctx context.Context, userID int64
 
 func (r *oauthPendingFlowUserRepo) GetByIDIncludeDeleted(ctx context.Context, id int64) (*service.User, error) {
 	return r.GetByID(ctx, id)
+}
+
+func (r *oauthPendingFlowUserRepo) SetBalanceAbsolute(ctx context.Context, id int64, balance float64) error {
+	return r.client.User.UpdateOneID(id).SetBalance(balance).Exec(ctx)
+}
+
+func (r *oauthPendingFlowUserRepo) AddBalanceOnly(ctx context.Context, id int64, amount float64) error {
+	return r.client.User.UpdateOneID(id).AddBalance(amount).Exec(ctx)
+}
+
+func (r *oauthPendingFlowUserRepo) UpdateProfile(ctx context.Context, user *service.User) error {
+	return r.client.User.UpdateOneID(user.ID).
+		SetEmail(user.Email).
+		SetUsername(user.Username).
+		SetNotes(user.Notes).
+		SetPasswordHash(user.PasswordHash).
+		SetRole(user.Role).
+		SetConcurrency(user.Concurrency).
+		SetStatus(user.Status).
+		Exec(ctx)
+}
+
+func (r *oauthPendingFlowUserRepo) UpdateEmailAndPassword(ctx context.Context, userID int64, email, passwordHash string) error {
+	return r.client.User.UpdateOneID(userID).SetEmail(email).SetPasswordHash(passwordHash).Exec(ctx)
+}
+
+func (r *oauthPendingFlowUserRepo) UpdateStatus(ctx context.Context, id int64, status string) error {
+	return r.client.User.UpdateOneID(id).SetStatus(status).Exec(ctx)
+}
+
+func (r *oauthPendingFlowUserRepo) UpdateUsername(ctx context.Context, id int64, username string) error {
+	return r.client.User.UpdateOneID(id).SetUsername(username).Exec(ctx)
+}
+
+func (r *oauthPendingFlowUserRepo) UpdatePasswordAndBumpTokenVersion(ctx context.Context, id int64, passwordHash string) error {
+	return r.client.User.UpdateOneID(id).SetPasswordHash(passwordHash).AddTokenVersion(1).Exec(ctx)
+}
+
+func (r *oauthPendingFlowUserRepo) BumpTokenVersion(ctx context.Context, id int64) error {
+	return r.client.User.UpdateOneID(id).AddTokenVersion(1).Exec(ctx)
 }
 
 func oauthPendingFlowServiceUser(entity *dbent.User) *service.User {

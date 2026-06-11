@@ -1151,17 +1151,26 @@ type DatabaseConfig struct {
 	UserPlatformQuotaFlushBatchSize int `mapstructure:"user_platform_quota_flush_batch_size"`
 }
 
+// quoteDSNValue 将 lib/pq keyword/value DSN 的单个值用单引号包裹并转义内部的
+// `\` 和 `'`，避免值中含空格导致连接失败，或含 `' sslmode=... host=evil`
+// 之类内容注入/覆盖其它 DSN 参数。
+func quoteDSNValue(v string) string {
+	v = strings.ReplaceAll(v, `\`, `\\`)
+	v = strings.ReplaceAll(v, `'`, `\'`)
+	return "'" + v + "'"
+}
+
 func (d *DatabaseConfig) DSN() string {
 	// 当密码为空时不包含 password 参数，避免 libpq 解析错误
 	if d.Password == "" {
 		return fmt.Sprintf(
 			"host=%s port=%d user=%s dbname=%s sslmode=%s",
-			d.Host, d.Port, d.User, d.DBName, d.SSLMode,
+			quoteDSNValue(d.Host), d.Port, quoteDSNValue(d.User), quoteDSNValue(d.DBName), quoteDSNValue(d.SSLMode),
 		)
 	}
 	return fmt.Sprintf(
 		"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
-		d.Host, d.Port, d.User, d.Password, d.DBName, d.SSLMode,
+		quoteDSNValue(d.Host), d.Port, quoteDSNValue(d.User), quoteDSNValue(d.Password), quoteDSNValue(d.DBName), quoteDSNValue(d.SSLMode),
 	)
 }
 
@@ -1174,12 +1183,12 @@ func (d *DatabaseConfig) DSNWithTimezone(tz string) string {
 	if d.Password == "" {
 		return fmt.Sprintf(
 			"host=%s port=%d user=%s dbname=%s sslmode=%s TimeZone=%s",
-			d.Host, d.Port, d.User, d.DBName, d.SSLMode, tz,
+			quoteDSNValue(d.Host), d.Port, quoteDSNValue(d.User), quoteDSNValue(d.DBName), quoteDSNValue(d.SSLMode), quoteDSNValue(tz),
 		)
 	}
 	return fmt.Sprintf(
 		"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s TimeZone=%s",
-		d.Host, d.Port, d.User, d.Password, d.DBName, d.SSLMode, tz,
+		quoteDSNValue(d.Host), d.Port, quoteDSNValue(d.User), quoteDSNValue(d.Password), quoteDSNValue(d.DBName), quoteDSNValue(d.SSLMode), quoteDSNValue(tz),
 	)
 }
 

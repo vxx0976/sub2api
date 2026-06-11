@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/payment"
+	"github.com/Wei-Shaw/sub2api/internal/util/httputil"
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 )
@@ -546,10 +547,8 @@ func summarizeAirwallexResponse(body []byte) string {
 	if summary == "" {
 		return "<empty>"
 	}
-	if len(summary) > airwallexMaxErrorSummary {
-		return summary[:airwallexMaxErrorSummary] + "..."
-	}
-	return summary
+	// 按 rune 边界安全截断，避免切断多字节字符产生非法 UTF-8。
+	return httputil.TruncateBody([]byte(summary), airwallexMaxErrorSummary)
 }
 
 type airwallexAuthResponse struct {

@@ -98,9 +98,27 @@ func (r *redeemCodeRepository) GetByCode(ctx context.Context, code string) (*ser
 	return redeemCodeEntityToService(m), nil
 }
 
+// Delete 无条件按 ID 删除（管理员路径：允许删除 expired/disabled 等任意状态的码；
+// 管理员删除不触发退款，无双花风险）。
 func (r *redeemCodeRepository) Delete(ctx context.Context, id int64) error {
-	_, err := r.client.RedeemCode.Delete().Where(redeemcode.IDEQ(id)).Exec(ctx)
-	return err
+	return clientFromContext(ctx, r.client).RedeemCode.DeleteOneID(id).Exec(ctx)
+}
+
+// DeleteIfUnused 条件删除：仅当兑换码仍处于 unused 状态时才删除，供商户"删除退款"
+// 路径使用，防止与用户兑换并发导致的双倍退款/净亏面值。tx-aware：若 ctx 中带有事务
+// 则在事务内执行。返回 0 行（已被兑换或不存在）时返回 ErrRedeemCodeUsed，由上层回滚事务。
+func (r *redeemCodeRepository) DeleteIfUnused(ctx context.Context, id int64) error {
+	client := clientFromContext(ctx, r.client)
+	affected, err := client.RedeemCode.Delete().
+		Where(redeemcode.IDEQ(id), redeemcode.StatusEQ(service.StatusUnused)).
+		Exec(ctx)
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return service.ErrRedeemCodeUsed
+	}
+	return nil
 }
 
 func (r *redeemCodeRepository) List(ctx context.Context, params pagination.PaginationParams) ([]service.RedeemCode, *pagination.PaginationResult, error) {
@@ -441,7 +459,8 @@ func (r *redeemCodeRepository) SumPositiveBalanceByUser(ctx context.Context, use
 }
 
 // SumPositiveValueByDayForTypes 按时区分桶汇总指定 type 列表中、value > 0、status='used'
-// 的兑换码 value 总和。常用于把"通过兑换码加余额"并入资金流入曲线。
+// 且 owner_id IS NULL（仅平台码）的兑换码 value 总和。常用于把"通过平台兑换码加余额"
+// 并入资金流入曲线；商户自费码已计入其它口径，此处排除以免双计。
 // 返回的 map key 为 "YYYY-MM-DD"（按 tzName 解释 used_at），value 为当日 value 合计（USD）。
 func (r *redeemCodeRepository) SumPositiveValueByDayForTypes(ctx context.Context, startTime, endTime time.Time, tzName string, types []string) (map[string]float64, error) {
 	if r.sql == nil || len(types) == 0 {
@@ -450,7 +469,9 @@ func (r *redeemCodeRepository) SumPositiveValueByDayForTypes(ctx context.Context
 	if tzName == "" {
 		tzName = "UTC"
 	}
-	// 用 ANY($4) 安全地传入字符串数组，避免拼 SQL
+	// 用 ANY($4) 安全地传入字符串数组，避免拼 SQL。
+	// owner_id IS NULL：只统计平台码作为"资金流入"。商户自费生成的码（owner_id 非空）
+	// 其资金已计入 admin_manual / 充值口径，再计入此处会被双计。
 	query := `
 		SELECT
 			TO_CHAR(used_at AT TIME ZONE $3, 'YYYY-MM-DD') AS day,
@@ -461,6 +482,7 @@ func (r *redeemCodeRepository) SumPositiveValueByDayForTypes(ctx context.Context
 		  AND used_at >= $1
 		  AND used_at < $2
 		  AND value > 0
+		  AND owner_id IS NULL
 		  AND type = ANY($4)
 		GROUP BY 1
 		ORDER BY 1

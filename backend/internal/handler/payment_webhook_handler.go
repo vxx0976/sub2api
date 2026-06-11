@@ -13,6 +13,7 @@ import (
 
 	"github.com/Wei-Shaw/sub2api/internal/payment"
 	"github.com/Wei-Shaw/sub2api/internal/service"
+	"github.com/Wei-Shaw/sub2api/internal/util/httputil"
 
 	"github.com/gin-gonic/gin"
 )
@@ -105,10 +106,8 @@ func (h *PaymentWebhookHandler) handleNotify(c *gin.Context, providerKey string)
 
 	resolvedProviderKey, notification, err := verifyNotificationWithProviders(c.Request.Context(), providers, rawBody, headers)
 	if err != nil {
-		truncatedBody := rawBody
-		if len(truncatedBody) > webhookLogTruncateLen {
-			truncatedBody = truncatedBody[:webhookLogTruncateLen] + "...(truncated)"
-		}
+		// 按 rune 边界安全截断，避免切断多字节字符产生非法 UTF-8。
+		truncatedBody := httputil.TruncateBody([]byte(rawBody), webhookLogTruncateLen)
 		slog.Error("[Payment Webhook] verify failed", "provider", providerKey, "error", err, "method", c.Request.Method, "bodyLen", len(rawBody))
 		slog.Debug("[Payment Webhook] verify failed body", "provider", providerKey, "rawBody", truncatedBody)
 		c.String(http.StatusBadRequest, "verify failed")

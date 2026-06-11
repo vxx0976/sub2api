@@ -312,6 +312,154 @@ func (r *userRepository) Update(ctx context.Context, userIn *service.User) error
 	return nil
 }
 
+// UpdateProfile 仅更新管理员可编辑的资料类字段（邮箱/用户名/备注/密码/角色/
+// 角色版本/并发/状态/RPM/允许分组），不触碰 balance、token_version、total_recharged
+// 等并发字段，避免用过期快照覆盖网关原子扣减结果。
+// 复用与 Update 相同的邮箱唯一性加锁与邮箱身份同步逻辑。
+func (r *userRepository) UpdateProfile(ctx context.Context, userIn *service.User) error {
+	if userIn == nil {
+		return nil
+	}
+
+	tx, err := r.client.Tx(ctx)
+	if err != nil && !errors.Is(err, dbent.ErrTxStarted) {
+		return err
+	}
+
+	var txClient *dbent.Client
+	txCtx := ctx
+	if err == nil {
+		defer func() { _ = tx.Rollback() }()
+		txClient = tx.Client()
+		txCtx = dbent.NewTxContext(ctx, tx)
+	} else {
+		if existingTx := dbent.TxFromContext(ctx); existingTx != nil {
+			txClient = existingTx.Client()
+		} else {
+			txClient = r.client
+		}
+	}
+
+	releaseEmailLock, err := lockRepositoryScopedKeys(
+		txCtx,
+		txClient,
+		txAwareSQLExecutor(txCtx, r.sql, r.client),
+		normalizedEmailUniquenessLockKey(userIn.Email),
+	)
+	if err != nil {
+		return err
+	}
+	defer releaseEmailLock()
+
+	if err := ensureNormalizedEmailAvailableWithClient(txCtx, txClient, userIn.ID, userIn.Email); err != nil {
+		return err
+	}
+
+	existing, err := clientFromContext(txCtx, txClient).User.Get(txCtx, userIn.ID)
+	if err != nil {
+		return translatePersistenceError(err, service.ErrUserNotFound, nil)
+	}
+	oldEmail := existing.Email
+
+	updated, err := txClient.User.UpdateOneID(userIn.ID).
+		SetEmail(userIn.Email).
+		SetUsername(userIn.Username).
+		SetNotes(userIn.Notes).
+		SetPasswordHash(userIn.PasswordHash).
+		SetRole(userIn.Role).
+		SetRoleVersion(userIn.RoleVersion).
+		SetConcurrency(userIn.Concurrency).
+		SetStatus(userIn.Status).
+		SetRpmLimit(userIn.RPMLimit).
+		Save(txCtx)
+	if err != nil {
+		return translatePersistenceError(err, service.ErrUserNotFound, service.ErrEmailExists)
+	}
+
+	if err := r.syncUserAllowedGroupsWithClient(txCtx, txClient, updated.ID, userIn.AllowedGroups); err != nil {
+		return err
+	}
+	if err := replaceEmailAuthIdentityWithClient(txCtx, txClient, updated.ID, oldEmail, updated.Email, "user_repo_update_profile"); err != nil {
+		return err
+	}
+
+	if tx != nil {
+		if err := tx.Commit(); err != nil {
+			return err
+		}
+	}
+
+	userIn.UpdatedAt = updated.UpdatedAt
+	return nil
+}
+
+// UpdateEmailAndPassword 仅更新邮箱与密码哈希（用于无 entClient 的邮箱绑定回退路径），
+// 复用邮箱唯一性加锁与身份同步，但不覆盖 balance/token_version 等并发字段。
+func (r *userRepository) UpdateEmailAndPassword(ctx context.Context, userID int64, email, passwordHash string) error {
+	if userID <= 0 {
+		return nil
+	}
+
+	tx, err := r.client.Tx(ctx)
+	if err != nil && !errors.Is(err, dbent.ErrTxStarted) {
+		return err
+	}
+
+	var txClient *dbent.Client
+	txCtx := ctx
+	if err == nil {
+		defer func() { _ = tx.Rollback() }()
+		txClient = tx.Client()
+		txCtx = dbent.NewTxContext(ctx, tx)
+	} else {
+		if existingTx := dbent.TxFromContext(ctx); existingTx != nil {
+			txClient = existingTx.Client()
+		} else {
+			txClient = r.client
+		}
+	}
+
+	releaseEmailLock, err := lockRepositoryScopedKeys(
+		txCtx,
+		txClient,
+		txAwareSQLExecutor(txCtx, r.sql, r.client),
+		normalizedEmailUniquenessLockKey(email),
+	)
+	if err != nil {
+		return err
+	}
+	defer releaseEmailLock()
+
+	if err := ensureNormalizedEmailAvailableWithClient(txCtx, txClient, userID, email); err != nil {
+		return err
+	}
+
+	existing, err := clientFromContext(txCtx, txClient).User.Get(txCtx, userID)
+	if err != nil {
+		return translatePersistenceError(err, service.ErrUserNotFound, nil)
+	}
+	oldEmail := existing.Email
+
+	updated, err := txClient.User.UpdateOneID(userID).
+		SetEmail(email).
+		SetPasswordHash(passwordHash).
+		Save(txCtx)
+	if err != nil {
+		return translatePersistenceError(err, service.ErrUserNotFound, service.ErrEmailExists)
+	}
+
+	if err := replaceEmailAuthIdentityWithClient(txCtx, txClient, updated.ID, oldEmail, updated.Email, "user_repo_update_email_password"); err != nil {
+		return err
+	}
+
+	if tx != nil {
+		if err := tx.Commit(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func ensureEmailAuthIdentityWithClient(ctx context.Context, client *dbent.Client, userID int64, email string, source string) error {
 	client = clientFromContext(ctx, client)
 	if client == nil || userID <= 0 {
@@ -844,6 +992,107 @@ func (r *userRepository) DeductBalanceIfSufficient(ctx context.Context, id int64
 			return service.ErrUserNotFound
 		}
 		return service.ErrInsufficientBalance
+	}
+	return nil
+}
+
+// SetBalanceAbsolute 以单条原子 UPDATE 将余额设置为绝对值（balance = $1），
+// 不读取旧快照、不覆盖其它列，避免与网关原子扣减发生 lost-update。
+func (r *userRepository) SetBalanceAbsolute(ctx context.Context, id int64, balance float64) error {
+	client := clientFromContext(ctx, r.client)
+	n, err := client.User.Update().
+		Where(dbuser.IDEQ(id)).
+		SetBalance(balance).
+		Save(ctx)
+	if err != nil {
+		return translatePersistenceError(err, service.ErrUserNotFound, nil)
+	}
+	if n == 0 {
+		return service.ErrUserNotFound
+	}
+	return nil
+}
+
+// AddBalanceOnly 原子增加余额（balance = balance + amount），不计入 total_recharged。
+// 供管理员手工调账使用：手工加款不是真实充值，不应推高累计充值（百分比余额提醒阈值的基数）。
+func (r *userRepository) AddBalanceOnly(ctx context.Context, id int64, amount float64) error {
+	client := clientFromContext(ctx, r.client)
+	n, err := client.User.Update().
+		Where(dbuser.IDEQ(id)).
+		AddBalance(amount).
+		Save(ctx)
+	if err != nil {
+		return translatePersistenceError(err, service.ErrUserNotFound, nil)
+	}
+	if n == 0 {
+		return service.ErrUserNotFound
+	}
+	return nil
+}
+
+// UpdateStatus 仅更新用户状态列，不触碰 balance/token_version 等并发字段。
+func (r *userRepository) UpdateStatus(ctx context.Context, id int64, status string) error {
+	client := clientFromContext(ctx, r.client)
+	n, err := client.User.Update().
+		Where(dbuser.IDEQ(id)).
+		SetStatus(status).
+		Save(ctx)
+	if err != nil {
+		return translatePersistenceError(err, service.ErrUserNotFound, nil)
+	}
+	if n == 0 {
+		return service.ErrUserNotFound
+	}
+	return nil
+}
+
+// UpdateUsername 仅更新用户名列，不触碰其它并发字段。
+func (r *userRepository) UpdateUsername(ctx context.Context, id int64, username string) error {
+	client := clientFromContext(ctx, r.client)
+	n, err := client.User.Update().
+		Where(dbuser.IDEQ(id)).
+		SetUsername(username).
+		Save(ctx)
+	if err != nil {
+		return translatePersistenceError(err, service.ErrUserNotFound, nil)
+	}
+	if n == 0 {
+		return service.ErrUserNotFound
+	}
+	return nil
+}
+
+// UpdatePasswordAndBumpTokenVersion 仅更新密码哈希并原子自增 token_version（失效全部令牌），
+// 不读旧快照覆盖整行，避免覆盖并发修改的 balance 等字段，同时消除 token_version 自身的 lost-update。
+func (r *userRepository) UpdatePasswordAndBumpTokenVersion(ctx context.Context, id int64, passwordHash string) error {
+	client := clientFromContext(ctx, r.client)
+	n, err := client.User.Update().
+		Where(dbuser.IDEQ(id)).
+		SetPasswordHash(passwordHash).
+		AddTokenVersion(1).
+		Save(ctx)
+	if err != nil {
+		return translatePersistenceError(err, service.ErrUserNotFound, nil)
+	}
+	if n == 0 {
+		return service.ErrUserNotFound
+	}
+	return nil
+}
+
+// BumpTokenVersion 以原子自增的方式失效用户所有令牌（token_version = token_version + 1），
+// 不读旧快照，避免覆盖并发字段并消除 token_version 自身的 lost-update。
+func (r *userRepository) BumpTokenVersion(ctx context.Context, id int64) error {
+	client := clientFromContext(ctx, r.client)
+	n, err := client.User.Update().
+		Where(dbuser.IDEQ(id)).
+		AddTokenVersion(1).
+		Save(ctx)
+	if err != nil {
+		return translatePersistenceError(err, service.ErrUserNotFound, nil)
+	}
+	if n == 0 {
+		return service.ErrUserNotFound
 	}
 	return nil
 }

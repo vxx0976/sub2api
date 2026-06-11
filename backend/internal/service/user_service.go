@@ -104,6 +104,18 @@ type UserRepository interface {
 	UpdateUserLastActiveAt(ctx context.Context, userID int64, activeAt time.Time) error
 
 	UpdateBalance(ctx context.Context, id int64, amount float64) error
+	// SetBalanceAbsolute 以原子单列 UPDATE 直接设置余额（避免全行覆盖丢失并发扣费）
+	SetBalanceAbsolute(ctx context.Context, id int64, balance float64) error
+	// AddBalanceOnly 原子增加余额但不计入 total_recharged（管理员手工调账用）
+	AddBalanceOnly(ctx context.Context, id int64, amount float64) error
+	// 针对性字段更新：只 SET 意图字段，避免"读快照 → 改字段 → 全行 Update"
+	// 用过期快照覆盖 balance/token_version 等并发更新字段。
+	UpdateProfile(ctx context.Context, user *User) error
+	UpdateEmailAndPassword(ctx context.Context, userID int64, email, passwordHash string) error
+	UpdateStatus(ctx context.Context, id int64, status string) error
+	UpdateUsername(ctx context.Context, id int64, username string) error
+	UpdatePasswordAndBumpTokenVersion(ctx context.Context, id int64, passwordHash string) error
+	BumpTokenVersion(ctx context.Context, id int64) error
 	// SumTotalBalance 汇总所有用户当前余额之和（USD）
 	SumTotalBalance(ctx context.Context) (float64, error)
 	DeductBalance(ctx context.Context, id int64, amount float64) error
@@ -960,13 +972,12 @@ func (s *UserService) ChangePassword(ctx context.Context, userID int64, req Chan
 		return fmt.Errorf("set password: %w", err)
 	}
 
-	// Increment TokenVersion to invalidate all existing tokens
-	// This ensures that any tokens issued before the password change become invalid
-	user.TokenVersion++
-
-	if err := s.userRepo.Update(ctx, user); err != nil {
+	// 仅更新 password_hash 并原子自增 token_version（失效全部既有令牌），
+	// 不走全行 Update，避免用旧快照覆盖并发的 balance 等字段。
+	if err := s.userRepo.UpdatePasswordAndBumpTokenVersion(ctx, user.ID, user.PasswordHash); err != nil {
 		return fmt.Errorf("update user: %w", err)
 	}
+	user.TokenVersion++
 
 	return nil
 }
@@ -1112,14 +1123,8 @@ func (s *UserService) UpdateConcurrency(ctx context.Context, userID int64, concu
 
 // UpdateStatus 更新用户状态（管理员功能）
 func (s *UserService) UpdateStatus(ctx context.Context, userID int64, status string) error {
-	user, err := s.userRepo.GetByID(ctx, userID)
-	if err != nil {
-		return fmt.Errorf("get user: %w", err)
-	}
-
-	user.Status = status
-
-	if err := s.userRepo.Update(ctx, user); err != nil {
+	// 仅更新 status 列，避免用 GetByID 旧快照整行覆盖并发字段（balance/token_version 等）。
+	if err := s.userRepo.UpdateStatus(ctx, userID, status); err != nil {
 		return fmt.Errorf("update user: %w", err)
 	}
 	if s.authCacheInvalidator != nil {

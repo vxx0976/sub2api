@@ -115,10 +115,18 @@ func (c *Client) CreatePayment(req CreatePaymentRequest) (*CreatePaymentResponse
 
 // QueryOrder 查询订单状态
 func (c *Client) QueryOrder(tradeNo string) (*QueryOrderResponse, error) {
-	u := fmt.Sprintf("%sapi.php?act=order&pid=%s&key=%s&trade_no=%s",
-		c.apiURL, c.pid, c.key, url.QueryEscape(tradeNo))
+	// 使用 POST form 传递商户密钥，避免 key 出现在 GET 查询串（日志/代理/Referer 泄露风险）
+	vals := url.Values{}
+	vals.Set("act", "order")
+	vals.Set("pid", c.pid)
+	vals.Set("key", c.key)
+	vals.Set("trade_no", tradeNo)
 
-	resp, err := c.httpClient.Get(u)
+	resp, err := c.httpClient.Post(
+		c.apiURL+"api.php",
+		"application/x-www-form-urlencoded",
+		strings.NewReader(vals.Encode()),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("epay: query request failed: %w", err)
 	}
@@ -145,14 +153,32 @@ func (c *Client) QueryOrder(tradeNo string) (*QueryOrderResponse, error) {
 func (c *Client) VerifyNotify(params map[string]string) bool {
 	sign := params["sign"]
 	if sign == "" {
-		logger.LegacyPrintf("epay", "verify notify failed: sign is empty, params=%v", params)
+		logger.LegacyPrintf("epay", "verify notify failed: sign is empty, params=%v", sanitizeParams(params))
 		return false
 	}
 
 	if !md5Verify(params, c.key, sign) {
-		logger.LegacyPrintf("epay", "verify notify failed: MD5 signature mismatch, params=%v", params)
+		logger.LegacyPrintf("epay", "verify notify failed: MD5 signature mismatch, params=%v", sanitizeParams(params))
 		return false
 	}
 
 	return true
+}
+
+// sanitizeParams 返回脱敏后的参数副本，移除/掩码敏感字段后再用于日志输出
+func sanitizeParams(params map[string]string) map[string]string {
+	sensitive := map[string]struct{}{
+		"key":  {},
+		"sign": {},
+		"pkey": {},
+	}
+	out := make(map[string]string, len(params))
+	for k, v := range params {
+		if _, ok := sensitive[strings.ToLower(k)]; ok {
+			out[k] = "***"
+			continue
+		}
+		out[k] = v
+	}
+	return out
 }

@@ -69,6 +69,12 @@ func (m *AlipayMonitor) Start() {
 			select {
 			case <-ticker.C:
 				m.runCycle()
+				// 热加载轮询间隔：每轮读取最新配置，若变化则重置 ticker
+				if newInterval := m.alipay.MonitorInterval(); newInterval > 0 && newInterval != m.interval {
+					m.interval = newInterval
+					ticker.Reset(newInterval)
+					log.Printf("[AlipayMonitor] Interval updated to %s", newInterval)
+				}
 			case <-m.stopCh:
 				log.Println("[AlipayMonitor] Stopped")
 				return
@@ -215,11 +221,39 @@ func (m *AlipayMonitor) matchBusinessQRBills(ctx context.Context, orders []Pendi
 
 		matched := false
 		for _, order := range orders {
-			tol := 0.001
+			// 确定该订单的应付金额：优先用显式存储的 payment_amount，
+			// legacy 订单回退到 Amount。异常/零金额订单不参与宽容匹配。
+			expectedAmount := order.PaymentAmount
 			if !order.HasPaymentAmount {
-				tol = 0.1 // wider tolerance for legacy orders without stored payment_amount
+				expectedAmount = order.Amount
 			}
-			if math.Abs(amount-order.PaymentAmount) > tol {
+			if expectedAmount <= 0 {
+				// 异常数据（无可信应付金额）：拒绝匹配，避免错配/少付足额入账
+				log.Printf("[AlipayMonitor] Order %s skipped: no reliable expected amount (payment=%.2f, amount=%.2f)",
+					order.OrderNo, order.PaymentAmount, order.Amount)
+				continue
+			}
+
+			if order.HasPaymentAmount {
+				// 可信金额：精确匹配（保留极小浮点容差）
+				if math.Abs(amount-expectedAmount) > 0.001 {
+					continue
+				}
+			} else {
+				// legacy 订单：收紧为方向性匹配——账单实付金额必须 >= 应付金额，
+				// 且不超过一个很小的上溢余量，杜绝“少付足额入账”。
+				if amount < expectedAmount-0.001 {
+					continue
+				}
+				if amount > expectedAmount+0.01 {
+					continue
+				}
+			}
+
+			// 入账前复核：账单实付金额不得小于订单应付金额
+			if amount < expectedAmount-0.001 {
+				log.Printf("[AlipayMonitor] Bill %s (%.2f) underpays order %s (expected %.2f), skip crediting",
+					bill.AlipayOrderNo, amount, order.OrderNo, expectedAmount)
 				continue
 			}
 

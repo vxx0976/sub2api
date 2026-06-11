@@ -56,6 +56,9 @@ type RedeemCodeRepository interface {
 	Update(ctx context.Context, code *RedeemCode) error
 	BatchUpdate(ctx context.Context, ids []int64, fields RedeemCodeBatchUpdateFields) (int64, error)
 	Delete(ctx context.Context, id int64) error
+	// DeleteIfUnused 仅当码仍为 unused 时删除（0 行返回 ErrRedeemCodeUsed），
+	// 供商户"删除退款"路径防双花使用。
+	DeleteIfUnused(ctx context.Context, id int64) error
 	Use(ctx context.Context, id, userID int64) error
 
 	List(ctx context.Context, params pagination.PaginationParams) ([]RedeemCode, *pagination.PaginationResult, error)
@@ -66,8 +69,9 @@ type RedeemCodeRepository interface {
 	ListByUserPaginated(ctx context.Context, userID int64, params pagination.PaginationParams, codeType string) ([]RedeemCode, *pagination.PaginationResult, error)
 	// SumPositiveBalanceByUser returns the total recharged amount (sum of positive balance values) for a user.
 	SumPositiveBalanceByUser(ctx context.Context, userID int64) (float64, error)
-	// SumPositiveValueByDayForTypes 按时区分桶汇总指定 type 列表中 value > 0 的 used 兑换码 value。
-	// 用于把"兑换码加余额"并入资金流入趋势（典型用法只传 'balance'，因为 admin_balance 含 audit shadow）。
+	// SumPositiveValueByDayForTypes 按时区分桶汇总指定 type 列表中 value > 0、owner_id IS NULL
+	// （仅平台码）的 used 兑换码 value。用于把"平台兑换码加余额"并入资金流入趋势
+	// （典型用法只传 'balance'，因为 admin_balance 含 audit shadow）。商户自费码不计入。
 	SumPositiveValueByDayForTypes(ctx context.Context, startTime, endTime time.Time, tzName string, types []string) (map[string]float64, error)
 	// SumManualAdminBalanceByDay 区间内按时区分桶汇总管理员真实手工加余额（admin_balance 类型，
 	// 已通过 notes 前缀排除 'AliMPay order ' / 'Recharge order ' 这类 audit shadow）。
@@ -426,6 +430,15 @@ func (s *RedeemService) Redeem(ctx context.Context, userID int64, code string) (
 		return nil, fmt.Errorf("get user: %w", err)
 	}
 
+	// 作用域校验：商户码（OwnerID != nil）只能由该商户旗下用户（ParentID == OwnerID）兑换，
+	// 禁止跨商户兑换；平台码（OwnerID == nil）维持全局可兑换。
+	if redeemCode.OwnerID != nil {
+		if user.ParentID == nil || *user.ParentID != *redeemCode.OwnerID {
+			s.incrementRedeemErrorCount(ctx, userID)
+			return nil, infraerrors.Forbidden("REDEEM_CODE_SCOPE", "this redeem code does not belong to your merchant")
+		}
+	}
+
 	// 使用数据库事务保证兑换码标记与权益发放的原子性
 	tx, err := s.entClient.Tx(ctx)
 	if err != nil {
@@ -502,8 +515,9 @@ func (s *RedeemService) Redeem(ctx context.Context, userID int64, code string) (
 	// 事务提交成功后失效缓存
 	s.invalidateRedeemCaches(ctx, userID, redeemCode)
 
-	// 余额类正数兑换码触发邀请返利（best-effort，失败不影响兑换结果）
-	if redeemCode.Type == RedeemTypeBalance && redeemCode.Value > 0 {
+	// 余额类正数兑换码触发邀请返利（best-effort，失败不影响兑换结果）。
+	// 仅平台码（OwnerID == nil）才发平台邀请返利；商户码不触发，避免商户自费码被平台返利。
+	if redeemCode.Type == RedeemTypeBalance && redeemCode.Value > 0 && redeemCode.OwnerID == nil {
 		s.tryAccrueAffiliateRebateForRedeem(ctx, userID, redeemCode.Value)
 	}
 

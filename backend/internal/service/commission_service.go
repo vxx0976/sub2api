@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"log/slog"
 	"sort"
 	"strconv"
 	"time"
@@ -18,6 +19,8 @@ var (
 	ErrWithdrawalNotPending    = infraerrors.BadRequest("WITHDRAWAL_NOT_PENDING", "only pending withdrawals can be cancelled")
 	ErrWithdrawalOwnership     = infraerrors.Forbidden("WITHDRAWAL_OWNERSHIP", "you do not own this withdrawal")
 	ErrInvalidWithdrawalStatus = infraerrors.BadRequest("INVALID_WITHDRAWAL_STATUS", "invalid withdrawal status, must be pending, paid, or rejected")
+	// ErrMerchantModeDisabled 当 reseller 未开通代理模式（merchant_mode != "enabled"）却访问佣金/提现能力时返回。
+	ErrMerchantModeDisabled = infraerrors.Forbidden("MERCHANT_MODE_DISABLED", "merchant mode is not enabled for this reseller")
 )
 
 // validWithdrawalStatuses 提现状态白名单
@@ -71,17 +74,6 @@ type CommissionSummary struct {
 	Withdrawn       float64 `json:"withdrawn"`
 	Pending         float64 `json:"pending"`
 	Available       float64 `json:"available"`
-}
-
-// CommissionDetailItem is one row in /reseller/commissions/detail
-type CommissionDetailItem struct {
-	UserID               int64     `json:"user_id"`
-	Model                string    `json:"model"`
-	TotalCost            float64   `json:"total_cost"`
-	MerchantRateSnapshot *float64  `json:"merchant_rate_snapshot"`
-	PlatformCostSnapshot *float64  `json:"platform_cost_snapshot"`
-	Commission           float64   `json:"commission"`
-	CreatedAt            time.Time `json:"created_at"`
 }
 
 // MerchantInfo is information about a reseller user
@@ -144,21 +136,46 @@ func (s *CommissionService) getSubUserIDs(ctx context.Context, resellerID int64)
 	return s.userRepo.ListIDsByParentID(ctx, resellerID)
 }
 
-// getCommissionRate returns the commission_rate for the reseller (default 0.1 = 10%)
+// requireMerchantMode 校验该 reseller 已开通代理模式（merchant_mode == "enabled"）。
+// 未开通则返回 ErrMerchantModeDisabled，作为佣金/提现相关入口的门槛。
+func (s *CommissionService) requireMerchantMode(ctx context.Context, resellerID int64) error {
+	mode, err := s.settingRepo.Get(ctx, resellerID, "merchant_mode")
+	if err != nil {
+		return err
+	}
+	if mode != "enabled" {
+		return ErrMerchantModeDisabled
+	}
+	return nil
+}
+
+// getCommissionRate returns the commission_rate for the reseller.
+// 未配置/解析失败时默认返回 0（不发佣金）；rate>1 视为误配，返回 0 并记 warn 日志。
 func (s *CommissionService) getCommissionRate(ctx context.Context, resellerID int64) (float64, error) {
 	val, err := s.settingRepo.Get(ctx, resellerID, "commission_rate")
 	if err != nil || val == "" {
-		return 0.1, nil // 默认10%
+		return 0, nil // 未配置：默认不发佣金
 	}
 	rate, err := strconv.ParseFloat(val, 64)
 	if err != nil || rate < 0 {
-		return 0.1, nil
+		return 0, nil
+	}
+	if rate > 1 {
+		// 误配（如把百分比 10 当成 0.1 填成 10），按 0 处理避免超额发放。
+		slog.Warn("commission_rate misconfigured (>1), treating as 0",
+			"reseller_id", resellerID, "rate", rate)
+		return 0, nil
 	}
 	return rate, nil
 }
 
 // GetSummary returns commission summary for a reseller
 func (s *CommissionService) GetSummary(ctx context.Context, resellerID int64) (*CommissionSummary, error) {
+	// 门槛：仅开通代理模式的 reseller 可访问佣金能力。
+	if err := s.requireMerchantMode(ctx, resellerID); err != nil {
+		return nil, err
+	}
+
 	userIDs, err := s.getSubUserIDs(ctx, resellerID)
 	if err != nil {
 		return nil, err
@@ -170,18 +187,21 @@ func (s *CommissionService) GetSummary(ctx context.Context, resellerID int64) (*
 	}
 
 	// 充值总额：原生充值订单的到账金额（EPAY RechargeOrder + AliMPay Order 两路并行）
+	// fail-fast：任一汇总查询出错都直接返回，避免把错误吞成 0 导致 available 算成深度负值。
 	var totalRecharge float64
 	if s.rechargeOrderRepo != nil && len(userIDs) > 0 {
 		nativeTotal, err := s.rechargeOrderRepo.SumPaidCreditByUserIDs(ctx, userIDs)
-		if err == nil {
-			totalRecharge += nativeTotal
+		if err != nil {
+			return nil, err
 		}
+		totalRecharge += nativeTotal
 	}
 	if s.orderRepo != nil && len(userIDs) > 0 {
 		alimpayTotal, err := s.orderRepo.SumPaidCreditByUserIDs(ctx, userIDs)
-		if err == nil {
-			totalRecharge += alimpayTotal
+		if err != nil {
+			return nil, err
 		}
+		totalRecharge += alimpayTotal
 	}
 
 	// 分成 = 充值总额 × 分成比例
@@ -218,20 +238,13 @@ func (s *CommissionService) GetSummary(ctx context.Context, resellerID int64) (*
 	}, nil
 }
 
-// GetDetail returns paginated commission detail for reseller's sub-users
-func (s *CommissionService) GetDetail(ctx context.Context, resellerID int64, startDate, endDate *time.Time, userIDFilter *int64, limit, offset int) ([]*CommissionDetailItem, int, error) {
-	userIDs, err := s.getSubUserIDs(ctx, resellerID)
-	if err != nil {
-		return nil, 0, err
-	}
-	if len(userIDs) == 0 {
-		return nil, 0, nil
-	}
-	return s.usageLogRepo.ListCommissionDetail(ctx, userIDs, startDate, endDate, userIDFilter, limit, offset)
-}
-
 // CreateWithdrawal creates a new withdrawal request
 func (s *CommissionService) CreateWithdrawal(ctx context.Context, resellerID int64, amount float64, paymentMethod, paymentAccount, paymentName string) (*ResellerWithdrawal, error) {
+	// 门槛：仅开通代理模式的 reseller 可发起提现。
+	if err := s.requireMerchantMode(ctx, resellerID); err != nil {
+		return nil, err
+	}
+
 	// 校验支付方式白名单
 	validMethods := map[string]struct{}{"alipay": {}, "wechat": {}, "bank": {}}
 	if _, ok := validMethods[paymentMethod]; !ok {
@@ -279,6 +292,10 @@ func (s *CommissionService) CreateWithdrawal(ctx context.Context, resellerID int
 
 // CancelWithdrawal cancels a pending withdrawal (reseller-initiated)
 func (s *CommissionService) CancelWithdrawal(ctx context.Context, resellerID, withdrawalID int64) error {
+	// 门槛：仅开通代理模式的 reseller 可取消提现。
+	if err := s.requireMerchantMode(ctx, resellerID); err != nil {
+		return err
+	}
 	w, err := s.withdrawalRepo.GetByID(ctx, withdrawalID)
 	if err != nil {
 		return err
@@ -294,6 +311,10 @@ func (s *CommissionService) CancelWithdrawal(ctx context.Context, resellerID, wi
 
 // ListWithdrawals lists withdrawals for a reseller
 func (s *CommissionService) ListWithdrawals(ctx context.Context, resellerID int64, status string, limit, offset int) ([]*ResellerWithdrawal, int, error) {
+	// 门槛：仅开通代理模式的 reseller 可查看提现列表。
+	if err := s.requireMerchantMode(ctx, resellerID); err != nil {
+		return nil, 0, err
+	}
 	if !isValidWithdrawalStatus(status) {
 		return nil, 0, ErrInvalidWithdrawalStatus
 	}
@@ -355,6 +376,11 @@ func (s *CommissionService) BackfillMerchantRateSnapshot(ctx context.Context) (i
 
 // ListRechargeDetail returns paginated recharge history for a reseller's sub-users
 func (s *CommissionService) ListRechargeDetail(ctx context.Context, resellerID int64, limit, offset int) ([]*RechargeDetailRecord, int, error) {
+	// 门槛：仅开通代理模式的 reseller 可查看充值明细。
+	if err := s.requireMerchantMode(ctx, resellerID); err != nil {
+		return nil, 0, err
+	}
+
 	// Collect all records from both sources, then sort and paginate
 	var allRecords []*RechargeDetailRecord
 

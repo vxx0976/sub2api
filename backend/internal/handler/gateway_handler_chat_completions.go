@@ -336,6 +336,15 @@ func (h *GatewayHandler) chatCompletionsErrorResponse(c *gin.Context, status int
 // handleCCFailoverExhausted writes a failover-exhausted error in CC format.
 func (h *GatewayHandler) handleCCFailoverExhausted(c *gin.Context, lastErr *service.UpstreamFailoverError, streamStarted bool) {
 	if streamStarted {
+		// SSE 头/数据已 flush，HTTP 200 已固化，无法回退 JSON。
+		// 通过 Chat Completions SSE 发一个 error chunk，再补 data: [DONE]，
+		// 避免客户端因连接直接 EOF 而把流当成异常截断。
+		if lastErr != nil && service.IsOpenAISilentRefusalErrorBody(lastErr.ResponseBody) {
+			service.SetOpsUpstreamError(c, http.StatusBadGateway, service.OpenAISilentRefusalClientMessage(), "")
+			writeChatCompletionsErrorSSE(c, "upstream_error", service.OpenAISilentRefusalClientMessage())
+			return
+		}
+		writeChatCompletionsErrorSSE(c, "server_error", "All available accounts exhausted")
 		return
 	}
 	statusCode := http.StatusBadGateway
@@ -348,4 +357,27 @@ func (h *GatewayHandler) handleCCFailoverExhausted(c *gin.Context, lastErr *serv
 		return
 	}
 	h.chatCompletionsErrorResponse(c, statusCode, "server_error", "All available accounts exhausted")
+}
+
+// writeChatCompletionsErrorSSE emits a Chat Completions SSE error frame followed
+// by the terminating `data: [DONE]` marker after the stream has already started.
+//
+// 一旦 SSE 头或任意数据已经 flush，HTTP 200 状态码已被固化，无法再回退 JSON 错误。
+// 此时通过 SSE 发一个含 error 子对象的帧，并补发 data: [DONE]，让客户端正常收尾，
+// 而不是把 TCP EOF 当成异常截断。
+func writeChatCompletionsErrorSSE(c *gin.Context, errType, message string) {
+	flusher, ok := c.Writer.(http.Flusher)
+	if !ok {
+		return
+	}
+	frame := "data: " + `{"error":{"type":` + strconv.Quote(errType) + `,"message":` + strconv.Quote(message) + `}}` + "\n\n"
+	if _, err := c.Writer.WriteString(frame); err != nil {
+		_ = c.Error(err)
+		return
+	}
+	if _, err := c.Writer.WriteString("data: [DONE]\n\n"); err != nil {
+		_ = c.Error(err)
+		return
+	}
+	flusher.Flush()
 }

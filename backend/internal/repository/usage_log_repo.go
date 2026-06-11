@@ -1307,7 +1307,7 @@ func execUsageLogInsertNoResult(ctx context.Context, sqlq sqlExecutor, prepared 
 			$10, $11, $12, $13,
 			$14, $15, $16, $17,
 			$18, $19, $20, $21, $22, $23,
-			$24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50
+			$24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50, $51, $52, $53, $54
 		)
 		ON CONFLICT (request_id, api_key_id) DO NOTHING
 	`, prepared.args...)
@@ -4819,94 +4819,6 @@ func (r *usageLogRepository) SumCommissionByUserIDs(ctx context.Context, userIDs
 		return 0, err
 	}
 	return totalCost, nil
-}
-
-// ListCommissionDetail returns paginated usage log items for given user IDs with commission fields.
-func (r *usageLogRepository) ListCommissionDetail(ctx context.Context, userIDs []int64, startDate, endDate *time.Time, userIDFilter *int64, limit, offset int) (results []*service.CommissionDetailItem, total int, err error) {
-	if len(userIDs) == 0 {
-		return nil, 0, nil
-	}
-
-	whereClause := "WHERE user_id = ANY($1)"
-	args := []any{pq.Array(userIDs)}
-
-	if startDate != nil {
-		args = append(args, *startDate)
-		whereClause += fmt.Sprintf(" AND created_at >= $%d", len(args))
-	}
-	if endDate != nil {
-		args = append(args, *endDate)
-		whereClause += fmt.Sprintf(" AND created_at < $%d", len(args))
-	}
-	if userIDFilter != nil {
-		args = append(args, *userIDFilter)
-		whereClause += fmt.Sprintf(" AND user_id = $%d", len(args))
-	}
-
-	countQuery := "SELECT COUNT(*) FROM usage_logs " + whereClause
-	if err := scanSingleRow(ctx, r.sql, countQuery, args, &total); err != nil {
-		return nil, 0, err
-	}
-
-	args = append(args, limit, offset)
-	selectQuery := fmt.Sprintf(`
-		SELECT
-			user_id,
-			model,
-			total_cost,
-			merchant_rate_snapshot,
-			platform_cost_snapshot,
-			CASE WHEN merchant_rate_snapshot IS NOT NULL AND platform_cost_snapshot IS NOT NULL
-				THEN total_cost * platform_cost_snapshot * (merchant_rate_snapshot - 1)
-				ELSE 0
-			END as commission,
-			created_at
-		FROM usage_logs
-		%s
-		ORDER BY created_at DESC
-		LIMIT $%d OFFSET $%d
-	`, whereClause, len(args)-1, len(args))
-
-	rows, err := r.sql.QueryContext(ctx, selectQuery, args...)
-	if err != nil {
-		return nil, 0, err
-	}
-	defer func() {
-		if closeErr := rows.Close(); closeErr != nil && err == nil {
-			err = closeErr
-			results = nil
-		}
-	}()
-
-	for rows.Next() {
-		var item service.CommissionDetailItem
-		var merchantRateSnapshot sql.NullFloat64
-		var platformCostSnapshot sql.NullFloat64
-		if err := rows.Scan(
-			&item.UserID,
-			&item.Model,
-			&item.TotalCost,
-			&merchantRateSnapshot,
-			&platformCostSnapshot,
-			&item.Commission,
-			&item.CreatedAt,
-		); err != nil {
-			return nil, 0, err
-		}
-		if merchantRateSnapshot.Valid {
-			v := merchantRateSnapshot.Float64
-			item.MerchantRateSnapshot = &v
-		}
-		if platformCostSnapshot.Valid {
-			v := platformCostSnapshot.Float64
-			item.PlatformCostSnapshot = &v
-		}
-		results = append(results, &item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, 0, err
-	}
-	return results, total, nil
 }
 
 // SumTodayCostByUserIDs returns today's total_cost for the given user IDs.

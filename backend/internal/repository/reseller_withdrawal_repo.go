@@ -143,7 +143,10 @@ func (r *ResellerWithdrawalRepo) sumByResellerIDAndStatus(ctx context.Context, r
 }
 
 func (r *ResellerWithdrawalRepo) UpdateStatus(ctx context.Context, id int64, status string, adminID int64, adminNotes string) error {
-	upd := r.clientFromCtx(ctx).ResellerWithdrawal.UpdateOneID(id).
+	// CAS 守卫：仅当当前状态为 pending 时才允许状态流转，避免并发双花
+	// （例如 pay 与 reject 并发、或取消与打款并发）。
+	upd := r.clientFromCtx(ctx).ResellerWithdrawal.Update().
+		Where(resellerwithdrawal.IDEQ(id), resellerwithdrawal.StatusEQ("pending")).
 		SetStatus(status).
 		SetAdminNotes(adminNotes).
 		SetAdminID(adminID)
@@ -154,12 +157,29 @@ func (r *ResellerWithdrawalRepo) UpdateStatus(ctx context.Context, id int64, sta
 	case "rejected":
 		upd = upd.SetRejectedAt(now)
 	}
-	_, err := upd.Save(ctx)
-	return translatePersistenceError(err, service.ErrWithdrawalNotFound, nil)
+	affected, err := upd.Save(ctx)
+	if err != nil {
+		return translatePersistenceError(err, service.ErrWithdrawalNotFound, nil)
+	}
+	if affected == 0 {
+		// 0 行受影响：记录不存在或已非 pending（已被并发处理）。
+		return service.ErrWithdrawalNotPending
+	}
+	return nil
 }
 
 func (r *ResellerWithdrawalRepo) Delete(ctx context.Context, id int64) error {
-	return translatePersistenceError(r.clientFromCtx(ctx).ResellerWithdrawal.DeleteOneID(id).Exec(ctx), service.ErrWithdrawalNotFound, nil)
+	// CAS 守卫：仅删除仍处于 pending 的提现，防止"取消"与"打款/拒绝"并发双花。
+	affected, err := r.clientFromCtx(ctx).ResellerWithdrawal.Delete().
+		Where(resellerwithdrawal.IDEQ(id), resellerwithdrawal.StatusEQ("pending")).
+		Exec(ctx)
+	if err != nil {
+		return translatePersistenceError(err, service.ErrWithdrawalNotFound, nil)
+	}
+	if affected == 0 {
+		return service.ErrWithdrawalNotPending
+	}
+	return nil
 }
 
 func entToServiceWithdrawal(record *dbent.ResellerWithdrawal) *service.ResellerWithdrawal {

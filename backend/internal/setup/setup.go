@@ -160,10 +160,20 @@ func NeedsSetup() bool {
 	return true
 }
 
+// quoteDSNValue 将 lib/pq keyword/value DSN 的单个值用单引号包裹并转义内部的
+// `\` 和 `'`，避免值中含空格导致连接失败，或含 `' sslmode=... host=evil`
+// 之类内容注入/覆盖其它 DSN 参数。
+func quoteDSNValue(v string) string {
+	v = strings.ReplaceAll(v, `\`, `\\`)
+	v = strings.ReplaceAll(v, `'`, `\'`)
+	return "'" + v + "'"
+}
+
 func buildPostgresDSN(cfg *DatabaseConfig, dbName string) string {
 	return fmt.Sprintf(
 		"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
-		cfg.Host, cfg.Port, cfg.User, cfg.Password, dbName, cfg.SSLMode,
+		quoteDSNValue(cfg.Host), cfg.Port, quoteDSNValue(cfg.User),
+		quoteDSNValue(cfg.Password), quoteDSNValue(dbName), quoteDSNValue(cfg.SSLMode),
 	)
 }
 
@@ -335,8 +345,8 @@ func createInstallLock() error {
 func initializeDatabase(cfg *SetupConfig) error {
 	dsn := fmt.Sprintf(
 		"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
-		cfg.Database.Host, cfg.Database.Port, cfg.Database.User,
-		cfg.Database.Password, cfg.Database.DBName, cfg.Database.SSLMode,
+		quoteDSNValue(cfg.Database.Host), cfg.Database.Port, quoteDSNValue(cfg.Database.User),
+		quoteDSNValue(cfg.Database.Password), quoteDSNValue(cfg.Database.DBName), quoteDSNValue(cfg.Database.SSLMode),
 	)
 
 	db, err := sql.Open("postgres", dsn)
@@ -358,8 +368,8 @@ func initializeDatabase(cfg *SetupConfig) error {
 func createAdminUser(cfg *SetupConfig) (bool, string, error) {
 	dsn := fmt.Sprintf(
 		"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
-		cfg.Database.Host, cfg.Database.Port, cfg.Database.User,
-		cfg.Database.Password, cfg.Database.DBName, cfg.Database.SSLMode,
+		quoteDSNValue(cfg.Database.Host), cfg.Database.Port, quoteDSNValue(cfg.Database.User),
+		quoteDSNValue(cfg.Database.Password), quoteDSNValue(cfg.Database.DBName), quoteDSNValue(cfg.Database.SSLMode),
 	)
 
 	db, err := sql.Open("postgres", dsn)

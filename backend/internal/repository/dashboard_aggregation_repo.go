@@ -156,7 +156,10 @@ func (r *dashboardAggregationRepository) recomputeRangeInTx(ctx context.Context,
 	if err := r.insertHourlyActiveUsers(ctx, hourStart, hourEnd); err != nil {
 		return err
 	}
-	if err := r.insertDailyActiveUsers(ctx, hourStart, hourEnd); err != nil {
+	// recompute 路径按整天 DELETE 了 daily_users，必须按整天回填，否则当天
+	// 非该小时窗口的活跃用户会从日活永久消失。hourly_users 整天数据仍在，
+	// insertDailyActiveUsers 可据此正确重建整天 daily_users。
+	if err := r.insertDailyActiveUsers(ctx, dayStart, dayEnd); err != nil {
 		return err
 	}
 	if err := r.upsertHourlyAggregates(ctx, hourStart, hourEnd); err != nil {

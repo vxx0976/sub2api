@@ -315,7 +315,16 @@ func (h *GatewayHandler) responsesErrorResponse(c *gin.Context, status int, code
 // handleResponsesFailoverExhausted writes a failover-exhausted error in Responses format.
 func (h *GatewayHandler) handleResponsesFailoverExhausted(c *gin.Context, lastErr *service.UpstreamFailoverError, streamStarted bool) {
 	if streamStarted {
-		return // Can't write error after stream started
+		// SSE 头/数据已 flush，HTTP 200 已固化，无法回退 JSON。
+		// 严格 SDK（Codex CLI）要求收到 Responses 协议的终止事件，否则会报
+		// "stream closed before response.completed"。发协议合规的 response.failed。
+		if lastErr != nil && service.IsOpenAISilentRefusalErrorBody(lastErr.ResponseBody) {
+			service.SetOpsUpstreamError(c, http.StatusBadGateway, service.OpenAISilentRefusalClientMessage(), "")
+			writeResponsesFailedSSE(c, "upstream_error", service.OpenAISilentRefusalClientMessage())
+			return
+		}
+		writeResponsesFailedSSE(c, "server_error", "All available accounts exhausted")
+		return
 	}
 	statusCode := http.StatusBadGateway
 	if lastErr != nil && lastErr.StatusCode > 0 {

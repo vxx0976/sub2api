@@ -299,6 +299,45 @@ func (r *contentModerationTestUserRepo) ListResellerUsers(ctx context.Context, p
 	panic("unexpected ListResellerUsers call")
 }
 
+func (r *contentModerationTestUserRepo) UpdateStatus(ctx context.Context, id int64, status string) error {
+	if r.user == nil {
+		return ErrUserNotFound
+	}
+	clone := *r.user
+	clone.Status = status
+	r.updated = append(r.updated, clone)
+	r.user = &clone
+	return nil
+}
+
+func (r *contentModerationTestUserRepo) SetBalanceAbsolute(ctx context.Context, id int64, balance float64) error {
+	panic("unexpected SetBalanceAbsolute call")
+}
+
+func (r *contentModerationTestUserRepo) AddBalanceOnly(ctx context.Context, id int64, amount float64) error {
+	panic("unexpected AddBalanceOnly call")
+}
+
+func (r *contentModerationTestUserRepo) UpdateProfile(ctx context.Context, user *User) error {
+	panic("unexpected UpdateProfile call")
+}
+
+func (r *contentModerationTestUserRepo) UpdateEmailAndPassword(ctx context.Context, userID int64, email, passwordHash string) error {
+	panic("unexpected UpdateEmailAndPassword call")
+}
+
+func (r *contentModerationTestUserRepo) UpdateUsername(ctx context.Context, id int64, username string) error {
+	panic("unexpected UpdateUsername call")
+}
+
+func (r *contentModerationTestUserRepo) UpdatePasswordAndBumpTokenVersion(ctx context.Context, id int64, passwordHash string) error {
+	panic("unexpected UpdatePasswordAndBumpTokenVersion call")
+}
+
+func (r *contentModerationTestUserRepo) BumpTokenVersion(ctx context.Context, id int64) error {
+	panic("unexpected BumpTokenVersion call")
+}
+
 func (r *contentModerationTestUserRepo) WithUserProfileIdentityTx(ctx context.Context, fn func(txCtx context.Context) error) error {
 	panic("unexpected WithUserProfileIdentityTx call")
 }

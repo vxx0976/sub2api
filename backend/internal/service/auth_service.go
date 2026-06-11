@@ -599,8 +599,9 @@ func (s *AuthService) LoginOrRegisterOAuth(ctx context.Context, email, username,
 	// 尽力补全：当用户名为空时，使用第三方返回的用户名回填。
 	if user.Username == "" && username != "" {
 		user.Username = username
-		if err := s.userRepo.Update(ctx, user); err != nil {
-			logger.LegacyPrintf("service.auth", "[Auth] Failed to update username after oauth login: %v", err)
+		// 仅更新 username 列，避免用旧快照整行覆盖并发字段（balance/token_version 等）。
+		if updErr := s.updateUsernameOnly(ctx, user.ID, username); updErr != nil {
+			logger.LegacyPrintf("service.auth", "[Auth] Failed to update username after oauth login: %v", updErr)
 		}
 	}
 	token, err := s.GenerateToken(user)
@@ -608,6 +609,11 @@ func (s *AuthService) LoginOrRegisterOAuth(ctx context.Context, email, username,
 		return "", nil, fmt.Errorf("generate token: %w", err)
 	}
 	return token, user, nil
+}
+
+// updateUsernameOnly 仅更新 username 列，杜绝整行覆盖并发字段。
+func (s *AuthService) updateUsernameOnly(ctx context.Context, userID int64, username string) error {
+	return s.userRepo.UpdateUsername(ctx, userID, username)
 }
 
 // canBypassRegistrationDisabledForOAuth 在钉钉企业模式（internal_only）且
@@ -778,8 +784,9 @@ func (s *AuthService) LoginOrRegisterOAuthWithTokenPair(ctx context.Context, ema
 
 	if user.Username == "" && username != "" {
 		user.Username = username
-		if err := s.userRepo.Update(ctx, user); err != nil {
-			logger.LegacyPrintf("service.auth", "[Auth] Failed to update username after oauth login: %v", err)
+		// 仅更新 username 列，避免用旧快照整行覆盖并发字段（balance/token_version 等）。
+		if updErr := s.updateUsernameOnly(ctx, user.ID, username); updErr != nil {
+			logger.LegacyPrintf("service.auth", "[Auth] Failed to update username after oauth login: %v", updErr)
 		}
 	}
 	tokenPair, err := s.GenerateTokenPair(ctx, user, "")
@@ -1417,14 +1424,14 @@ func (s *AuthService) ResetPassword(ctx context.Context, email, token, newPasswo
 		return fmt.Errorf("hash password: %w", err)
 	}
 
-	// Update password and increment TokenVersion
-	user.PasswordHash = hashedPassword
-	user.TokenVersion++ // Invalidate all existing tokens
-
-	if err := s.userRepo.Update(ctx, user); err != nil {
+	// Update password and atomically bump TokenVersion to invalidate existing tokens.
+	// 仅更新 password_hash 并原子自增 token_version，避免用旧快照整行覆盖并发的 balance 等字段。
+	if err := s.userRepo.UpdatePasswordAndBumpTokenVersion(ctx, user.ID, hashedPassword); err != nil {
 		logger.LegacyPrintf("service.auth", "[Auth] Database error updating password for user %d: %v", user.ID, err)
 		return ErrServiceUnavailable
 	}
+	user.PasswordHash = hashedPassword
+	user.TokenVersion++
 
 	// Also revoke all refresh tokens for this user
 	if err := s.RevokeAllUserSessions(ctx, user.ID); err != nil {
@@ -1633,14 +1640,10 @@ func (s *AuthService) RevokeAllUserSessions(ctx context.Context, userID int64) e
 // Access/refresh token verification both depend on TokenVersion, so bumping it provides
 // immediate revocation even if refresh-token cache cleanup later fails.
 func (s *AuthService) RevokeAllUserTokens(ctx context.Context, userID int64) error {
-	user, err := s.userRepo.GetByID(ctx, userID)
-	if err != nil {
-		return fmt.Errorf("get user: %w", err)
-	}
-
-	user.TokenVersion++
-	if err := s.userRepo.Update(ctx, user); err != nil {
-		return fmt.Errorf("update user: %w", err)
+	// 原子自增 token_version 即可失效所有访问/刷新令牌，无需读取-整行覆盖，
+	// 避免覆盖并发的 balance 等字段，并消除 token_version 自身的 lost-update。
+	if err := s.userRepo.BumpTokenVersion(ctx, userID); err != nil {
+		return fmt.Errorf("bump token version: %w", err)
 	}
 
 	if err := s.RevokeAllUserSessions(ctx, userID); err != nil {
