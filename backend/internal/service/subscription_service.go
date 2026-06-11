@@ -978,12 +978,18 @@ func (s *SubscriptionService) doWindowMaintenance(sub *UserSubscription) {
 	// 否则多周期订阅（有效月限额 = 单周期额度 × 剩余周期数）会因每月清零导致额度超发。
 	var group *Group
 	if s.groupRepo != nil {
-		if g, err := s.groupRepo.GetByID(ctx, sub.GroupID); err != nil {
-			// 取不到 group 时退回 nil（清零逻辑），仅记录日志不阻断维护流程
-			log.Printf("Failed to load group %d for window maintenance: %v", sub.GroupID, err)
-		} else {
-			group = g
+		g, err := s.groupRepo.GetByID(ctx, sub.GroupID)
+		if err != nil {
+			// 取不到 group 时跳过本轮重置：nil group 会让月窗口走清零分支，把多周期
+			// 订阅已累计的用量一笔勾销（窗口起点同时被推进，本周期内无法再补救）——
+			// 一次 DB 抖动就等于凭空多发整段额度。跳过后窗口仍处过期态，
+			// 下一个请求会重新触发维护重试。
+			log.Printf("Failed to load group %d for window maintenance, skip this round: %v", sub.GroupID, err)
+			// 上方激活可能已写库，仍需失效 L1 缓存再返回。
+			s.InvalidateSubCache(sub.UserID, sub.GroupID)
+			return
 		}
+		group = g
 	}
 	if err := s.CheckAndResetWindows(ctx, sub, group); err != nil {
 		log.Printf("Failed to reset subscription windows: %v", err)
