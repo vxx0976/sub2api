@@ -630,8 +630,11 @@ func (s *ResellerService) DeleteRedeemCode(ctx context.Context, resellerID, code
 		return fmt.Errorf("delete redeem code: %w", err)
 	}
 
-	// 删除成功后退款（ADD 操作），与删除处于同一事务，保证原子。
-	if err := s.userRepo.UpdateBalance(txCtx, resellerID, code.Value); err != nil {
+	// 删除成功后退款，与删除处于同一事务，保证原子。
+	// 用 AddBalanceOnly：退回的是生成时扣的自有资金（DeductBalanceIfSufficient 不动
+	// total_recharged），走 UpdateBalance 会同步推高 total_recharged——"生成→删除"
+	// 循环可无限刷高累计充值（百分比余额提醒阈值的基数）。
+	if err := s.userRepo.AddBalanceOnly(txCtx, resellerID, code.Value); err != nil {
 		return fmt.Errorf("refund balance: %w", err)
 	}
 
@@ -803,7 +806,9 @@ func (s *ResellerService) TransferBalance(ctx context.Context, resellerID, userI
 		if err := s.userRepo.DeductBalanceIfSufficient(txCtx, userID, amount); err != nil {
 			return nil, fmt.Errorf("deduct user balance: %w", err)
 		}
-		if err := s.userRepo.UpdateBalance(txCtx, resellerID, amount); err != nil {
+		// 回收的是商户划出去的自有资金，不是充值——AddBalanceOnly 不动 total_recharged，
+		// 否则"划拨→回收"循环会无限刷高商户累计充值基数。
+		if err := s.userRepo.AddBalanceOnly(txCtx, resellerID, amount); err != nil {
 			return nil, fmt.Errorf("add reseller balance: %w", err)
 		}
 		balanceDiff = -amount

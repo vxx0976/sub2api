@@ -151,9 +151,13 @@ func (s *CommissionService) requireMerchantMode(ctx context.Context, resellerID 
 
 // getCommissionRate returns the commission_rate for the reseller.
 // 未配置/解析失败时默认返回 0（不发佣金）；rate>1 视为误配，返回 0 并记 warn 日志。
+// DB 错误必须传播：吞成 0 会让 GetSummary 把 available 算成深度负值。
 func (s *CommissionService) getCommissionRate(ctx context.Context, resellerID int64) (float64, error) {
 	val, err := s.settingRepo.Get(ctx, resellerID, "commission_rate")
-	if err != nil || val == "" {
+	if err != nil {
+		return 0, err
+	}
+	if val == "" {
 		return 0, nil // 未配置：默认不发佣金
 	}
 	rate, err := strconv.ParseFloat(val, 64)
@@ -291,11 +295,11 @@ func (s *CommissionService) CreateWithdrawal(ctx context.Context, resellerID int
 }
 
 // CancelWithdrawal cancels a pending withdrawal (reseller-initiated)
+// 注意：这里不做 merchant_mode 门槛——已存在的 pending 提现是商户自己的数据，
+// 管理员事后关闭代理模式（或老商户从未写入 merchant_mode key）不应让其
+// 看不到/取消不了自己挂起的提现，否则提现被"冻结"而管理端仍可打款。
+// 创建提现（CreateWithdrawal）仍受门槛保护。
 func (s *CommissionService) CancelWithdrawal(ctx context.Context, resellerID, withdrawalID int64) error {
-	// 门槛：仅开通代理模式的 reseller 可取消提现。
-	if err := s.requireMerchantMode(ctx, resellerID); err != nil {
-		return err
-	}
 	w, err := s.withdrawalRepo.GetByID(ctx, withdrawalID)
 	if err != nil {
 		return err
@@ -310,11 +314,8 @@ func (s *CommissionService) CancelWithdrawal(ctx context.Context, resellerID, wi
 }
 
 // ListWithdrawals lists withdrawals for a reseller
+// 只读自有数据，不做 merchant_mode 门槛（理由见 CancelWithdrawal）。
 func (s *CommissionService) ListWithdrawals(ctx context.Context, resellerID int64, status string, limit, offset int) ([]*ResellerWithdrawal, int, error) {
-	// 门槛：仅开通代理模式的 reseller 可查看提现列表。
-	if err := s.requireMerchantMode(ctx, resellerID); err != nil {
-		return nil, 0, err
-	}
 	if !isValidWithdrawalStatus(status) {
 		return nil, 0, ErrInvalidWithdrawalStatus
 	}

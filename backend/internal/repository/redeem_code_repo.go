@@ -99,9 +99,16 @@ func (r *redeemCodeRepository) GetByCode(ctx context.Context, code string) (*ser
 }
 
 // Delete 无条件按 ID 删除（管理员路径：允许删除 expired/disabled 等任意状态的码；
-// 管理员删除不触发退款，无双花风险）。
+// 管理员删除不触发退款，无双花风险）。删除不存在的 ID 视为幂等成功——
+// DeleteOneID 的 NotFoundError 若原样上抛，管理端重复删除（双击/并发）会变 500。
 func (r *redeemCodeRepository) Delete(ctx context.Context, id int64) error {
-	return clientFromContext(ctx, r.client).RedeemCode.DeleteOneID(id).Exec(ctx)
+	if err := clientFromContext(ctx, r.client).RedeemCode.DeleteOneID(id).Exec(ctx); err != nil {
+		if dbent.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
+	return nil
 }
 
 // DeleteIfUnused 条件删除：仅当兑换码仍处于 unused 状态时才删除，供商户"删除退款"
