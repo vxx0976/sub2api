@@ -191,7 +191,7 @@
           <button
             type="submit"
             form="merchant-settings-form"
-            :disabled="settingsSubmitting || settingsLoadFailed"
+            :disabled="settingsSubmitting || settingsLoading || settingsLoadFailed"
             class="btn"
           >
             {{ settingsSubmitting ? t('common.saving') : t('common.save') }}
@@ -263,6 +263,7 @@ function merchantUpdateBalance(id: number, amount: number, operation: 'add' | 's
 // Settings Dialog
 const showSettingsDialog = ref(false)
 const settingsSubmitting = ref(false)
+const settingsLoading = ref(false)
 const settingsLoadFailed = ref(false)
 const editingMerchant = ref<MerchantUser | null>(null)
 const settingsForm = reactive({
@@ -277,6 +278,9 @@ async function openSettingsDialog(merchant: MerchantUser) {
   settingsForm.commission_rate = ''
   settingsForm.min_withdrawal = ''
   settingsLoadFailed.value = false
+  // 加载进行中同样禁止提交：GET 未返回时表单仍是空值，此刻保存会把 merchant_mode
+  // 静默置为 'disabled' 并清空佣金率（与加载失败同一危害）。
+  settingsLoading.value = true
   showSettingsDialog.value = true
   try {
     const kv = await adminAPI.merchants.getMerchantSettings(merchant.id)
@@ -288,6 +292,8 @@ async function openSettingsDialog(merchant: MerchantUser) {
     // 'disabled' 并清空佣金率，造成已开通商户被误关闭。
     settingsLoadFailed.value = true
     appStore.showError(t('admin.merchants.settingsLoadFailed'))
+  } finally {
+    settingsLoading.value = false
   }
 }
 
@@ -297,7 +303,7 @@ function closeSettingsDialog() {
 }
 
 async function handleSettingsSubmit() {
-  if (!editingMerchant.value) return
+  if (!editingMerchant.value || settingsLoading.value || settingsLoadFailed.value) return
   settingsSubmitting.value = true
   try {
     // merchant_mode 必须显式发 'enabled'/'disabled':后端 upsert 不删 key,

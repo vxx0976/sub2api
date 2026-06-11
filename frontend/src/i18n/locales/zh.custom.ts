@@ -1150,7 +1150,7 @@ export default {
       agentEnabled: '启用商户代理功能',
       agentEnabledHint: '开启后商户可查看佣金明细并申请提现',
       commissionRate: '分成比例',
-      commissionRateHint: '充值金额的百分比作为商户分成，默认 10%，填写 0.1 表示 10%',
+      commissionRateHint: '充值金额的百分比作为商户分成，填写 0.1 表示 10%；留空则不发佣金',
       notSet: '未设置',
       minWithdrawal: '最低提现金额',
       minWithdrawalPlaceholder: '例如：10',

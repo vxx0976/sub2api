@@ -1206,7 +1206,7 @@ export default {
       agentEnabled: 'Enable Agent Feature',
       agentEnabledHint: 'When enabled, merchant can view commission details and request withdrawals',
       commissionRate: 'Commission Rate',
-      commissionRateHint: 'Percentage of recharge amount as commission. Default 10% (enter 0.1 for 10%)',
+      commissionRateHint: 'Percentage of recharge amount as commission (enter 0.1 for 10%). Leave empty for no commission',
       notSet: 'Not set',
       minWithdrawal: 'Min Withdrawal Amount',
       minWithdrawalPlaceholder: 'e.g. 10',
