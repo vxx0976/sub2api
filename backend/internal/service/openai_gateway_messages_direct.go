@@ -38,6 +38,21 @@ func buildAnthropicDirectMessagesURL(account *Account) string {
 	}
 }
 
+// normalizeAnthropicDirectInputUsage 把直连上游的 usage 归一为主路径计费口径
+// （input_tokens 含 cache_read，下游 actualInput = input_tokens - cache_read）。
+//
+//   - DeepSeek（已实测 api.deepseek.com：input=71、cache_read=2944 对应 3015 token
+//     prompt）：input_tokens 永远只报缓存未命中数，必须无条件加回 cache_read；
+//     条件判断 (input < cache_read) 会在新增内容超过缓存前缀时漏计。
+//   - 其他平台（Kimi 等）：usage 语义未实测（仓库内 Kimi fixture 显示 input_tokens
+//     疑似总量口径），仅在 input_tokens < cache_read（明显为未命中口径）时加回，
+//     避免总量口径上游把缓存前缀按全价+缓存价双重计费。
+func normalizeAnthropicDirectInputUsage(platform string, usage *OpenAIUsage) {
+	if platform == PlatformDeepSeek || usage.InputTokens < usage.CacheReadInputTokens {
+		usage.InputTokens += usage.CacheReadInputTokens
+	}
+}
+
 // forwardAnthropicDirect forwards an Anthropic Messages request directly to
 // upstream platforms that expose a native Anthropic-compatible endpoint
 // (DeepSeek /anthropic, Kimi /coding). Unlike the normal ForwardAsAnthropic
@@ -152,9 +167,9 @@ func (s *OpenAIGatewayService) forwardAnthropicDirect(
 
 	// 7. Handle successful response.
 	if clientStream {
-		return s.handleAnthropicDirectStreamingResponse(resp, c, originalModel, billingModel, upstreamModel, startTime)
+		return s.handleAnthropicDirectStreamingResponse(resp, c, account.Platform, originalModel, billingModel, upstreamModel, startTime)
 	}
-	return s.handleAnthropicDirectBufferedResponse(resp, c, originalModel, billingModel, upstreamModel, startTime)
+	return s.handleAnthropicDirectBufferedResponse(resp, c, account.Platform, originalModel, billingModel, upstreamModel, startTime)
 }
 
 // handleAnthropicDirectStreamingResponse pipes an upstream Anthropic SSE stream
@@ -162,6 +177,7 @@ func (s *OpenAIGatewayService) forwardAnthropicDirect(
 func (s *OpenAIGatewayService) handleAnthropicDirectStreamingResponse(
 	resp *http.Response,
 	c *gin.Context,
+	platform string,
 	originalModel, billingModel, upstreamModel string,
 	startTime time.Time,
 ) (*OpenAIForwardResult, error) {
@@ -225,14 +241,8 @@ func (s *OpenAIGatewayService) handleAnthropicDirectStreamingResponse(
 			usage.CacheCreationInputTokens = int(msg.Get("usage.cache_creation_input_tokens").Int())
 			usage.CacheReadInputTokens = int(msg.Get("usage.cache_read_input_tokens").Int())
 
-			// DeepSeek/Kimi Anthropic compat: input_tokens ALWAYS reports only
-			// the cache-miss count (verified against api.deepseek.com: input=71,
-			// cache_read=2944 for a 3015-token prompt), never the total.
-			// Normalize unconditionally so downstream billing computes correct
-			// actualInput = input_tokens - cache_read = cache_miss. A conditional
-			// (input < cache_read) check here undercharged requests whose new
-			// content exceeded the cached prefix.
-			usage.InputTokens += usage.CacheReadInputTokens
+			// 归一化口径见 normalizeAnthropicDirectInputUsage（DeepSeek 无条件、其他平台条件加回）。
+			normalizeAnthropicDirectInputUsage(platform, &usage)
 
 		case "content_block_start", "content_block_delta":
 			if firstTokenMs == nil {
@@ -283,6 +293,7 @@ func (s *OpenAIGatewayService) handleAnthropicDirectStreamingResponse(
 func (s *OpenAIGatewayService) handleAnthropicDirectBufferedResponse(
 	resp *http.Response,
 	c *gin.Context,
+	platform string,
 	originalModel, billingModel, upstreamModel string,
 	startTime time.Time,
 ) (*OpenAIForwardResult, error) {
@@ -290,7 +301,7 @@ func (s *OpenAIGatewayService) handleAnthropicDirectBufferedResponse(
 	// return SSE. Detect by Content-Type and delegate to the streaming handler.
 	ct := resp.Header.Get("Content-Type")
 	if strings.Contains(ct, "text/event-stream") {
-		return s.handleAnthropicDirectBufferedSSE(resp, c, originalModel, billingModel, upstreamModel, startTime)
+		return s.handleAnthropicDirectBufferedSSE(resp, c, platform, originalModel, billingModel, upstreamModel, startTime)
 	}
 
 	respBody, err := io.ReadAll(resp.Body)
@@ -306,8 +317,8 @@ func (s *OpenAIGatewayService) handleAnthropicDirectBufferedResponse(
 	usage.CacheCreationInputTokens = int(gjson.GetBytes(respBody, "usage.cache_creation_input_tokens").Int())
 	usage.CacheReadInputTokens = int(gjson.GetBytes(respBody, "usage.cache_read_input_tokens").Int())
 
-	// DeepSeek/Kimi Anthropic compat: see streaming handler comment.
-	usage.InputTokens += usage.CacheReadInputTokens
+	// 归一化口径见 normalizeAnthropicDirectInputUsage。
+	normalizeAnthropicDirectInputUsage(platform, &usage)
 
 	responseID := gjson.GetBytes(respBody, "id").String()
 	requestID := resp.Header.Get("x-request-id")
@@ -335,6 +346,7 @@ func (s *OpenAIGatewayService) handleAnthropicDirectBufferedResponse(
 func (s *OpenAIGatewayService) handleAnthropicDirectBufferedSSE(
 	resp *http.Response,
 	c *gin.Context,
+	platform string,
 	originalModel, billingModel, upstreamModel string,
 	startTime time.Time,
 ) (*OpenAIForwardResult, error) {
@@ -367,8 +379,8 @@ func (s *OpenAIGatewayService) handleAnthropicDirectBufferedSSE(
 			usage.InputTokens = int(msg.Get("usage.input_tokens").Int())
 			usage.CacheCreationInputTokens = int(msg.Get("usage.cache_creation_input_tokens").Int())
 			usage.CacheReadInputTokens = int(msg.Get("usage.cache_read_input_tokens").Int())
-			// DeepSeek/Kimi Anthropic compat: see streaming handler comment.
-			usage.InputTokens += usage.CacheReadInputTokens
+			// 归一化口径见 normalizeAnthropicDirectInputUsage。
+			normalizeAnthropicDirectInputUsage(platform, &usage)
 			// Store the initial message object as the base for the final response.
 			lastMessageData = []byte(msg.Raw)
 
