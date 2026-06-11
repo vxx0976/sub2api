@@ -1619,3 +1619,88 @@ func generateLargeUnwrapJSON(minSize int) []byte {
 	b, _ := json.Marshal(outer)
 	return b
 }
+
+// --- 流式中途出错部分计费（PartialError 漏计费修复）测试 ---
+
+// shouldBillPartialAntigravityStream 的纯逻辑：仅当 streamRes 非 nil、携带 usage 且已交付内容
+// （firstTokenMs != nil）时才计费；未交付/nil 一律不计费（保留 failover 语义）。
+func TestShouldBillPartialAntigravityStream(t *testing.T) {
+	ms := 12
+	require.True(t, shouldBillPartialAntigravityStream(&antigravityStreamResult{usage: &ClaudeUsage{InputTokens: 10}, firstTokenMs: &ms}),
+		"已交付内容且有 usage：应计费")
+	require.False(t, shouldBillPartialAntigravityStream(&antigravityStreamResult{usage: &ClaudeUsage{InputTokens: 10}}),
+		"firstTokenMs 为 nil（未交付内容）：不计费")
+	require.False(t, shouldBillPartialAntigravityStream(&antigravityStreamResult{firstTokenMs: &ms}),
+		"usage 为 nil：不计费")
+	require.False(t, shouldBillPartialAntigravityStream(nil), "nil streamRes：不计费")
+}
+
+// TestHandleClaudeStreamingResponse_PartialDeliveryIsBillable
+// 流式已交付内容后上游中途断流（读错误）：handleClaudeStreamingResponse 返回 error，
+// 但 streamRes 必须带回 processor 已累计的 usage 且满足 shouldBillPartialAntigravityStream
+// （供 Forward 返回 PartialError 结果、上层对已交付 token 计费，而非整段零计费）。
+func TestHandleClaudeStreamingResponse_PartialDeliveryIsBillable(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	svc := newAntigravityTestService(&config.Config{
+		Gateway: config.GatewayConfig{MaxLineSize: defaultMaxLineSize},
+	})
+
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(http.MethodPost, "/", nil)
+
+	pr, pw := io.Pipe()
+	resp := &http.Response{StatusCode: http.StatusOK, Body: pr, Header: http.Header{}}
+
+	go func() {
+		// 先交付一段内容（带 usage），随后上游连接异常断开（非 EOF 读错误）
+		fmt.Fprintln(pw, `data: {"response":{"candidates":[{"content":{"parts":[{"text":"Hi there"}]}}],"usageMetadata":{"promptTokenCount":5,"candidatesTokenCount":3}}}`)
+		fmt.Fprintln(pw, "")
+		pw.CloseWithError(errors.New("upstream connection reset"))
+	}()
+
+	result, err := svc.handleClaudeStreamingResponse(c, resp, time.Now(), "claude-sonnet-4-5")
+	_ = pr.Close()
+
+	require.Error(t, err, "读错误应返回 error")
+	require.Contains(t, err.Error(), "stream read error")
+	require.NotNil(t, result, "不应丢弃已交付内容的 usage")
+	require.NotNil(t, result.usage)
+	require.Equal(t, 5, result.usage.InputTokens)
+	require.Equal(t, 3, result.usage.OutputTokens)
+	require.NotNil(t, result.firstTokenMs, "已交付内容，firstTokenMs 应被设置")
+	require.True(t, shouldBillPartialAntigravityStream(result), "已交付内容 + 有 usage：必须可计费")
+}
+
+// TestHandleGeminiStreamingResponse_PartialDeliveryIsBillable
+// Gemini 原生流式透传同上：读错误前已交付内容（带 usage），必须带回 usage 供上层计费。
+func TestHandleGeminiStreamingResponse_PartialDeliveryIsBillable(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	svc := newAntigravityTestService(&config.Config{
+		Gateway: config.GatewayConfig{MaxLineSize: defaultMaxLineSize},
+	})
+
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(http.MethodPost, "/", nil)
+
+	pr, pw := io.Pipe()
+	resp := &http.Response{StatusCode: http.StatusOK, Body: pr, Header: http.Header{}}
+
+	go func() {
+		fmt.Fprintln(pw, `data: {"candidates":[{"content":{"parts":[{"text":"Hello"}]}}],"usageMetadata":{"promptTokenCount":10,"candidatesTokenCount":3}}`)
+		fmt.Fprintln(pw, "")
+		pw.CloseWithError(errors.New("upstream connection reset"))
+	}()
+
+	result, err := svc.handleGeminiStreamingResponse(c, resp, time.Now())
+	_ = pr.Close()
+
+	require.Error(t, err, "读错误应返回 error")
+	require.NotNil(t, result, "不应丢弃已交付内容的 usage")
+	require.NotNil(t, result.usage)
+	require.Equal(t, 10, result.usage.InputTokens)
+	require.Equal(t, 3, result.usage.OutputTokens)
+	require.NotNil(t, result.firstTokenMs, "已交付内容，firstTokenMs 应被设置")
+	require.True(t, shouldBillPartialAntigravityStream(result), "已交付内容 + 有 usage：必须可计费")
+}

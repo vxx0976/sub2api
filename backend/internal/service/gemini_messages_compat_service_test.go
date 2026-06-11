@@ -937,3 +937,116 @@ func parseAnthropicContentBlockEvents(t *testing.T, raw string) []anthropicConte
 	}
 	return events
 }
+
+// --- 流式中途出错部分计费（PartialError 漏计费修复）测试 ---
+
+// geminiErrTailReader 先返回给定数据，随后返回指定的读错误（模拟上游中途断流）。
+type geminiErrTailReader struct {
+	data []byte
+	err  error
+	pos  int
+}
+
+func (r *geminiErrTailReader) Read(p []byte) (int, error) {
+	if r.pos < len(r.data) {
+		n := copy(p, r.data[r.pos:])
+		r.pos += n
+		return n, nil
+	}
+	return 0, r.err
+}
+
+func (r *geminiErrTailReader) Close() error { return nil }
+
+// shouldBillPartialGeminiStream 的纯逻辑：仅当 streamRes 非 nil、携带 usage 且已交付内容
+// （firstTokenMs != nil）时才计费；未交付/nil 一律不计费（保留 failover 语义）。
+func TestShouldBillPartialGeminiStream(t *testing.T) {
+	ms := 12
+	require.True(t, shouldBillPartialGeminiStream(&geminiStreamResult{usage: &ClaudeUsage{InputTokens: 10}, firstTokenMs: &ms}),
+		"已交付内容且有 usage：应计费")
+	require.False(t, shouldBillPartialGeminiStream(&geminiStreamResult{usage: &ClaudeUsage{InputTokens: 10}}),
+		"firstTokenMs 为 nil（未交付内容）：不计费")
+	require.False(t, shouldBillPartialGeminiStream(&geminiStreamResult{firstTokenMs: &ms}),
+		"usage 为 nil：不计费")
+	require.False(t, shouldBillPartialGeminiStream(nil), "nil streamRes：不计费")
+}
+
+// 漏计费修复的端到端验证（/v1/messages → Gemini 兼容路径）：流式上游交付了内容
+// （带 usageMetadata）后中途断流。Forward 必须返回带 PartialError 的 ForwardResult
+// （携带已产出 usage）连同 error——而不是整段丢弃 usage 返回 (nil, err)。
+func TestGeminiMessagesCompatForward_PartialStreamReturnsBillableUsage(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/messages", nil)
+
+	upstreamSSE := `data: {"candidates":[{"content":{"parts":[{"text":"hello"}]}}],"usageMetadata":{"promptTokenCount":10,"candidatesTokenCount":4,"cachedContentTokenCount":2}}` + "\n\n"
+	httpStub := &geminiCompatHTTPUpstreamStub{
+		response: &http.Response{
+			StatusCode: http.StatusOK,
+			Header:     http.Header{"Content-Type": []string{"text/event-stream"}, "x-request-id": []string{"rid-partial"}},
+			Body:       &geminiErrTailReader{data: []byte(upstreamSSE), err: fmt.Errorf("upstream connection reset")},
+		},
+	}
+	svc := &GeminiMessagesCompatService{httpUpstream: httpStub, cfg: &config.Config{}}
+	account := &Account{
+		ID:   11,
+		Type: AccountTypeAPIKey,
+		Credentials: map[string]any{
+			"api_key": "test-key",
+		},
+	}
+	body := []byte(`{"model":"gemini-2.5-pro","stream":true,"max_tokens":16,"messages":[{"role":"user","content":"hello"}]}`)
+
+	result, err := svc.Forward(context.Background(), c, account, body)
+
+	require.Error(t, err, "读错误应返回 error")
+	require.Contains(t, err.Error(), "stream read error")
+	require.NotNil(t, result, "Forward 不应丢弃已交付内容的 usage")
+	require.True(t, result.PartialError, "应标记为 PartialError 以便上层计费")
+	require.Equal(t, 8, result.Usage.InputTokens)
+	require.Equal(t, 4, result.Usage.OutputTokens)
+	require.Equal(t, 2, result.Usage.CacheReadInputTokens)
+	require.NotNil(t, result.FirstTokenMs, "已交付内容，FirstTokenMs 应被设置")
+	require.True(t, result.Stream)
+}
+
+// 漏计费修复的端到端验证（/v1/chat/completions → Gemini 兼容路径）：流式上游交付了
+// 内容（带 usageMetadata）后中途断流。ForwardAsChatCompletions 必须返回带 PartialError
+// 的 ForwardResult（携带已产出 usage）连同 error。
+func TestGeminiForwardAsChatCompletions_PartialStreamReturnsBillableUsage(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/chat/completions", nil)
+
+	upstreamSSE := `data: {"candidates":[{"content":{"parts":[{"text":"hello"}]}}],"usageMetadata":{"promptTokenCount":7,"candidatesTokenCount":3}}` + "\n\n"
+	httpStub := &geminiCompatHTTPUpstreamStub{
+		response: &http.Response{
+			StatusCode: http.StatusOK,
+			Header:     http.Header{"Content-Type": []string{"text/event-stream"}},
+			Body:       &geminiErrTailReader{data: []byte(upstreamSSE), err: fmt.Errorf("upstream connection reset")},
+		},
+	}
+	svc := &GeminiMessagesCompatService{httpUpstream: httpStub, cfg: &config.Config{}}
+	account := &Account{
+		ID:   12,
+		Type: AccountTypeAPIKey,
+		Credentials: map[string]any{
+			"api_key": "test-key",
+		},
+		Concurrency: 1,
+	}
+	body := []byte(`{"model":"gemini-2.5-flash","stream":true,"messages":[{"role":"user","content":"hi"}]}`)
+
+	result, err := svc.ForwardAsChatCompletions(context.Background(), c, account, body)
+
+	require.Error(t, err, "读错误应返回 error")
+	require.Contains(t, err.Error(), "stream read error")
+	require.NotNil(t, result, "ForwardAsChatCompletions 不应丢弃已交付内容的 usage")
+	require.True(t, result.PartialError, "应标记为 PartialError 以便上层计费")
+	require.Equal(t, 7, result.Usage.InputTokens)
+	require.Equal(t, 3, result.Usage.OutputTokens)
+	require.NotNil(t, result.FirstTokenMs, "已交付内容，FirstTokenMs 应被设置")
+	require.True(t, result.Stream)
+}

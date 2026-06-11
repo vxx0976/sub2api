@@ -1487,3 +1487,201 @@ func TestGatewayService_AnthropicAPIKeyPassthrough_StreamingUpstreamReadErrorAft
 	require.True(t, result.clientDisconnect)
 	require.Equal(t, 8, result.usage.InputTokens)
 }
+
+// 上游已交付内容后中途下发 SSE `event: error`（如 overloaded_error）：Forward 必须返回带
+// PartialError 的结果对已交付 token 计费，而不是丢弃 usage 返回裸 failover 错误——
+// 已写入内容时 handler 会阻止 failover，裸 failover 等于整段零计费。
+func TestGatewayService_Forward_UpstreamErrorEventAfterContent_BillsPartial(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/messages", nil)
+
+	body := []byte(`{"model":"claude-3-7-sonnet-20250219","stream":true,"messages":[{"role":"user","content":[{"type":"text","text":"hi"}]}]}`)
+	parsed := &ParsedRequest{
+		Body:   NewRequestBodyRef(body),
+		Model:  "claude-3-7-sonnet-20250219",
+		Stream: true,
+	}
+
+	upstreamSSE := strings.Join([]string{
+		`data: {"type":"message_start","message":{"usage":{"input_tokens":40,"cache_read_input_tokens":60}}}`,
+		"",
+		`data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"hello"}}`,
+		"",
+		"event: error",
+		`data: {"type":"error","error":{"type":"overloaded_error","message":"Overloaded"}}`,
+		"",
+		"",
+	}, "\n")
+
+	cfg := &config.Config{Gateway: config.GatewayConfig{MaxLineSize: defaultMaxLineSize}}
+	upstream := &anthropicHTTPUpstreamRecorder{
+		resp: &http.Response{
+			StatusCode: http.StatusOK,
+			Header:     http.Header{"Content-Type": []string{"text/event-stream"}, "x-request-id": []string{"rid-error-event"}},
+			Body:       io.NopCloser(strings.NewReader(upstreamSSE)),
+		},
+	}
+	svc := &GatewayService{
+		cfg:                  cfg,
+		responseHeaderFilter: compileResponseHeaderFilter(cfg),
+		httpUpstream:         upstream,
+		rateLimitService:     &RateLimitService{},
+		deferredService:      &DeferredService{},
+	}
+
+	account := &Account{
+		ID:          502,
+		Name:        "anthropic-apikey-error-event",
+		Platform:    PlatformAnthropic,
+		Type:        AccountTypeAPIKey,
+		Concurrency: 1,
+		Credentials: map[string]any{
+			"api_key":  "upstream-anthropic-key",
+			"base_url": "https://api.anthropic.com",
+		},
+		Status:      StatusActive,
+		Schedulable: true,
+	}
+
+	result, err := svc.Forward(context.Background(), c, account, parsed)
+
+	require.Error(t, err)
+	var failoverErr *UpstreamFailoverError
+	require.False(t, errors.As(err, &failoverErr), "已交付内容后的 error 事件不应再走 failover")
+	require.NotNil(t, result, "已交付内容的 usage 不应被丢弃")
+	require.True(t, result.PartialError, "应标记 PartialError 以便上层计费")
+	require.Equal(t, 40, result.Usage.InputTokens)
+	require.Equal(t, 60, result.Usage.CacheReadInputTokens)
+}
+
+// 上游在产出任何内容之前就下发 `event: error`：维持原 failover 语义（403），
+// 不产生 PartialError（无可计费内容）。
+func TestGatewayService_Forward_UpstreamErrorEventBeforeContent_FailsOver(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/messages", nil)
+
+	body := []byte(`{"model":"claude-3-7-sonnet-20250219","stream":true,"messages":[{"role":"user","content":[{"type":"text","text":"hi"}]}]}`)
+	parsed := &ParsedRequest{
+		Body:   NewRequestBodyRef(body),
+		Model:  "claude-3-7-sonnet-20250219",
+		Stream: true,
+	}
+
+	upstreamSSE := strings.Join([]string{
+		"event: error",
+		`data: {"type":"error","error":{"type":"overloaded_error","message":"Overloaded"}}`,
+		"",
+		"",
+	}, "\n")
+
+	cfg := &config.Config{Gateway: config.GatewayConfig{MaxLineSize: defaultMaxLineSize}}
+	upstream := &anthropicHTTPUpstreamRecorder{
+		resp: &http.Response{
+			StatusCode: http.StatusOK,
+			Header:     http.Header{"Content-Type": []string{"text/event-stream"}},
+			Body:       io.NopCloser(strings.NewReader(upstreamSSE)),
+		},
+	}
+	svc := &GatewayService{
+		cfg:                  cfg,
+		responseHeaderFilter: compileResponseHeaderFilter(cfg),
+		httpUpstream:         upstream,
+		rateLimitService:     &RateLimitService{},
+		deferredService:      &DeferredService{},
+	}
+
+	account := &Account{
+		ID:          503,
+		Name:        "anthropic-apikey-error-first",
+		Platform:    PlatformAnthropic,
+		Type:        AccountTypeAPIKey,
+		Concurrency: 1,
+		Credentials: map[string]any{
+			"api_key":  "upstream-anthropic-key",
+			"base_url": "https://api.anthropic.com",
+		},
+		Status:      StatusActive,
+		Schedulable: true,
+	}
+
+	result, err := svc.Forward(context.Background(), c, account, parsed)
+
+	require.Error(t, err)
+	require.Nil(t, result, "未产出内容时不应有可计费结果")
+	var failoverErr *UpstreamFailoverError
+	require.True(t, errors.As(err, &failoverErr), "未产出内容时 error 事件应维持 failover 语义")
+	require.Equal(t, 403, failoverErr.StatusCode)
+}
+
+// 透传账号流式中途断流（缺终止事件）：包装层 forwardAnthropicAPIKeyPassthroughWithInput
+// 不得丢弃内层返回的 usage——必须与主 Forward 路径同口径返回 PartialError 结果计费。
+func TestGatewayService_AnthropicAPIKeyPassthrough_PartialStreamReturnsBillableUsage(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/messages", nil)
+
+	body := []byte(`{"model":"claude-3-7-sonnet-20250219","stream":true,"messages":[{"role":"user","content":[{"type":"text","text":"hi"}]}]}`)
+	parsed := &ParsedRequest{
+		Body:   NewRequestBodyRef(body),
+		Model:  "claude-3-7-sonnet-20250219",
+		Stream: true,
+	}
+
+	upstreamSSE := strings.Join([]string{
+		`data: {"type":"message_start","message":{"usage":{"input_tokens":11,"cache_read_input_tokens":22}}}`,
+		"",
+		`data: {"type":"message_delta","usage":{"output_tokens":5}}`,
+		"",
+	}, "\n")
+
+	cfg := &config.Config{Gateway: config.GatewayConfig{MaxLineSize: defaultMaxLineSize}}
+	upstream := &anthropicHTTPUpstreamRecorder{
+		resp: &http.Response{
+			StatusCode: http.StatusOK,
+			Header:     http.Header{"Content-Type": []string{"text/event-stream"}, "x-request-id": []string{"rid-pass-partial"}},
+			Body:       io.NopCloser(strings.NewReader(upstreamSSE)),
+		},
+	}
+	svc := &GatewayService{
+		cfg:                  cfg,
+		responseHeaderFilter: compileResponseHeaderFilter(cfg),
+		httpUpstream:         upstream,
+		rateLimitService:     &RateLimitService{},
+		deferredService:      &DeferredService{},
+	}
+
+	account := &Account{
+		ID:          504,
+		Name:        "anthropic-apikey-pass-partial",
+		Platform:    PlatformAnthropic,
+		Type:        AccountTypeAPIKey,
+		Concurrency: 1,
+		Credentials: map[string]any{
+			"api_key":  "upstream-anthropic-key",
+			"base_url": "https://api.anthropic.com",
+		},
+		Extra: map[string]any{
+			"anthropic_passthrough": true,
+		},
+		Status:      StatusActive,
+		Schedulable: true,
+	}
+
+	result, err := svc.Forward(context.Background(), c, account, parsed)
+
+	require.Error(t, err, "缺终止事件应返回 error")
+	require.Contains(t, err.Error(), "missing terminal event")
+	require.NotNil(t, result, "透传包装层不得丢弃内层 usage")
+	require.True(t, result.PartialError, "应标记 PartialError 以便上层计费")
+	require.Equal(t, 11, result.Usage.InputTokens)
+	require.Equal(t, 22, result.Usage.CacheReadInputTokens)
+	require.Equal(t, 5, result.Usage.OutputTokens)
+}
