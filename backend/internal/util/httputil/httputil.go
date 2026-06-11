@@ -146,15 +146,21 @@ func truncateAtRuneBoundary(s string, max int) string {
 	// 回退到最近的合法 rune 起始边界，丢弃尾部不完整的多字节序列。
 	// DecodeLastRuneInString 对非法/不完整尾字节返回 (RuneError, 1)，
 	// 而真正编码的 U+FFFD 返回 size==3，可据此区分。
-	for len(cut) > 0 {
+	// 一个 UTF-8 rune 最长 4 字节，尾部不完整序列至多 3 字节——回退超过 3 字节
+	// 说明内容本就不是 UTF-8（GBK/二进制），此时按原字节截断返回，
+	// 否则循环会把整个前缀剥成空串，日志/错误摘要丢失全部内容。
+	for strip := 0; len(cut) > 0; strip++ {
 		r, size := utf8.DecodeLastRuneInString(cut)
-		if r == utf8.RuneError && size <= 1 {
-			cut = cut[:len(cut)-1]
-			continue
+		if r != utf8.RuneError || size > 1 {
+			return cut
 		}
-		break
+		if strip >= utf8.UTFMax-1 {
+			// 已回退 3 字节仍非法：内容本就不是 UTF-8，按原字节截断。
+			return s[:max]
+		}
+		cut = cut[:len(cut)-1]
 	}
-	return cut
+	return s[:max]
 }
 
 func firstNonEmpty(values ...string) string {
