@@ -343,11 +343,7 @@ func createInstallLock() error {
 }
 
 func initializeDatabase(cfg *SetupConfig) error {
-	dsn := fmt.Sprintf(
-		"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
-		quoteDSNValue(cfg.Database.Host), cfg.Database.Port, quoteDSNValue(cfg.Database.User),
-		quoteDSNValue(cfg.Database.Password), quoteDSNValue(cfg.Database.DBName), quoteDSNValue(cfg.Database.SSLMode),
-	)
+	dsn := buildPostgresDSN(&cfg.Database, cfg.Database.DBName)
 
 	db, err := sql.Open("postgres", dsn)
 	if err != nil {
@@ -366,11 +362,7 @@ func initializeDatabase(cfg *SetupConfig) error {
 }
 
 func createAdminUser(cfg *SetupConfig) (bool, string, error) {
-	dsn := fmt.Sprintf(
-		"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
-		quoteDSNValue(cfg.Database.Host), cfg.Database.Port, quoteDSNValue(cfg.Database.User),
-		quoteDSNValue(cfg.Database.Password), quoteDSNValue(cfg.Database.DBName), quoteDSNValue(cfg.Database.SSLMode),
-	)
+	dsn := buildPostgresDSN(&cfg.Database, cfg.Database.DBName)
 
 	db, err := sql.Open("postgres", dsn)
 	if err != nil {

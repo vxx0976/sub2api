@@ -526,48 +526,10 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 				}
 			}
 
-			// 捕获请求信息（用于异步记录，避免在 goroutine 中访问 gin.Context）
-			userAgent := c.GetHeader("User-Agent")
-			clientIP := ip.GetClientIP(c)
-			requestPayloadHash := service.HashUsageRequestPayload(body)
-			inboundEndpoint := GetInboundEndpoint(c)
-			upstreamEndpoint := GetUpstreamEndpoint(c, account.Platform)
-
-			if result.ReasoningEffort == nil {
-				result.ReasoningEffort = service.NormalizeClaudeOutputEffort(parsedReq.OutputEffort)
-			}
-
-			// 使用量记录通过有界 worker 池提交，避免请求热路径创建无界 goroutine。
-			// ForceCacheBilling 提前拍成标量，避免 worker 闭包保活 failover 状态里的响应体。
-			forceCacheBilling := fs.ForceCacheBilling
-			quotaPlatform := service.QuotaPlatform(c.Request.Context(), apiKey)
-			h.submitUsageRecordTask(c.Request.Context(), func(ctx context.Context) {
-				if err := h.gatewayService.RecordUsage(ctx, &service.RecordUsageInput{
-					Result:             result,
-					QuotaPlatform:      quotaPlatform,
-					APIKey:             apiKey,
-					User:               apiKey.User,
-					Account:            account,
-					Subscription:       subscription,
-					InboundEndpoint:    inboundEndpoint,
-					UpstreamEndpoint:   upstreamEndpoint,
-					UserAgent:          userAgent,
-					IPAddress:          clientIP,
-					RequestPayloadHash: requestPayloadHash,
-					ForceCacheBilling:  forceCacheBilling,
-					APIKeyService:      h.apiKeyService,
-					ChannelUsageFields: channelMapping.ToUsageFields(reqModel, result.UpstreamModel),
-				}); err != nil {
-					logger.L().With(
-						zap.String("component", "handler.gateway.messages"),
-						zap.Int64("user_id", subject.UserID),
-						zap.Int64("api_key_id", apiKey.ID),
-						zap.Any("group_id", apiKey.GroupID),
-						zap.String("model", reqModel),
-						zap.Int64("account_id", account.ID),
-					).Error("gateway.record_usage_failed", zap.Error(err))
-				}
-			})
+			// 使用量记录走与部分交付错误分支同一个 helper，避免两处口径漂移。
+			h.submitForwardUsageRecord(c, result, apiKey, subscription, account,
+				body, parsedReq.OutputEffort, channelMapping, reqModel,
+				fs.ForceCacheBilling, subject.UserID)
 			return
 		}
 	}
@@ -952,49 +914,11 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 				}
 			}
 
-			// 捕获请求信息（用于异步记录，避免在 goroutine 中访问 gin.Context）
-			userAgent := c.GetHeader("User-Agent")
-			clientIP := ip.GetClientIP(c)
+			// 使用量记录走与部分交付错误分支同一个 helper，避免口径漂移。
 			// Forward 内部可能继续改写 body，usage 去重指纹必须使用最终上游接受的当前 body。
-			requestPayloadHash := service.HashUsageRequestPayload(attemptParsedReq.Body.Bytes())
-			inboundEndpoint := GetInboundEndpoint(c)
-			upstreamEndpoint := GetUpstreamEndpoint(c, account.Platform)
-
-			if result.ReasoningEffort == nil {
-				result.ReasoningEffort = service.NormalizeClaudeOutputEffort(attemptParsedReq.OutputEffort)
-			}
-
-			// 使用量记录通过有界 worker 池提交，避免请求热路径创建无界 goroutine。
-			// ForceCacheBilling 提前拍成标量，避免 worker 闭包保活 failover 状态里的响应体。
-			forceCacheBilling := fs.ForceCacheBilling
-			quotaPlatform := service.QuotaPlatform(c.Request.Context(), currentAPIKey)
-			h.submitUsageRecordTask(c.Request.Context(), func(ctx context.Context) {
-				if err := h.gatewayService.RecordUsage(ctx, &service.RecordUsageInput{
-					Result:             result,
-					QuotaPlatform:      quotaPlatform,
-					APIKey:             currentAPIKey,
-					User:               currentAPIKey.User,
-					Account:            account,
-					Subscription:       currentSubscription,
-					InboundEndpoint:    inboundEndpoint,
-					UpstreamEndpoint:   upstreamEndpoint,
-					UserAgent:          userAgent,
-					IPAddress:          clientIP,
-					RequestPayloadHash: requestPayloadHash,
-					ForceCacheBilling:  forceCacheBilling,
-					APIKeyService:      h.apiKeyService,
-					ChannelUsageFields: channelMapping.ToUsageFields(reqModel, result.UpstreamModel),
-				}); err != nil {
-					logger.L().With(
-						zap.String("component", "handler.gateway.messages"),
-						zap.Int64("user_id", subject.UserID),
-						zap.Int64("api_key_id", currentAPIKey.ID),
-						zap.Any("group_id", currentAPIKey.GroupID),
-						zap.String("model", reqModel),
-						zap.Int64("account_id", account.ID),
-					).Error("gateway.record_usage_failed", zap.Error(err))
-				}
-			})
+			h.submitForwardUsageRecord(c, result, currentAPIKey, currentSubscription, account,
+				attemptParsedReq.Body.Bytes(), attemptParsedReq.OutputEffort, channelMapping, reqModel,
+				fs.ForceCacheBilling, subject.UserID)
 			return
 		}
 		if !retryWithFallback {

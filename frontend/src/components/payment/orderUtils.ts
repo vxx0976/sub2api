@@ -34,6 +34,17 @@ export function formatOrderDateTime(dateStr: string): string {
 }
 
 /**
+ * 与后端 fee.go 同口径的手续费计算: fee = RoundUp(base * rate / 100, 2)。
+ * (baseCents / 100) * rate 直接得到以「分」为单位的手续费(rate 是百分比数值,如 1 表示 1%),
+ * 先用 round 抹掉二进制浮点噪声,再 ceil 到整分,避免先乘后 ceil 把误差放大成整 1 分。
+ * 后端舍入规则变更时只改这里——PaymentView 与 deriveOrderBaseAmount 共用此实现。
+ */
+export function calcFeeCents(baseCents: number, feeRatePercent: number): number {
+  if (feeRatePercent <= 0 || baseCents <= 0) return 0
+  return Math.ceil(Math.round((baseCents / 100) * feeRatePercent * 1e6) / 1e6)
+}
+
+/**
  * 从 pay_amount 与 fee_rate(百分比) 精确反推下单基础金额与手续费。
  *
  * 后端口径: pay = base + RoundUp(base * rate / 100, 2)(手续费向上取整到分),
@@ -50,9 +61,7 @@ export function deriveOrderBaseAmount(
   if (!Number.isFinite(payCents) || payCents <= 0 || !Number.isFinite(rate) || rate <= 0) {
     return { base: payAmount, fee: 0 }
   }
-  // 与 PaymentView 的 calcFee 同一算法: 先 1e-6 量化消除二进制浮点噪声再向上取整到分
-  const feeCentsFor = (baseCents: number) =>
-    Math.ceil(Math.round((baseCents / 100) * rate * 1e6) / 1e6)
+  const feeCentsFor = (baseCents: number) => calcFeeCents(baseCents, rate)
   const guess = Math.round(payCents / (1 + rate / 100))
   for (const delta of [0, -1, 1, -2, 2]) {
     const baseCents = guess + delta

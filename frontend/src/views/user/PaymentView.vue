@@ -273,6 +273,7 @@ import {
 } from '@/components/payment/paymentFlow'
 import { platformAccentBarClass, platformBadgeLightClass, platformBadgeClass, platformTextClass, platformLabel } from '@/utils/platformColors'
 import SubscriptionPlanCard from '@/components/payment/SubscriptionPlanCard.vue'
+import { calcFeeCents } from '@/components/payment/orderUtils'
 import PaymentStatusPanel from '@/components/payment/PaymentStatusPanel.vue'
 import Icon from '@/components/icons/Icon.vue'
 import { formatPaymentAmount, normalizePaymentCurrency } from '@/components/payment/currency'
@@ -557,15 +558,9 @@ const methodOptions = computed<PaymentMethodOption[]>(() =>
 
 const feeRate = computed(() => checkout.value?.recharge_fee_rate ?? 0)
 
-/**
- * 计算手续费,与后端 fee.go 口径一致:fee = RoundUp(amount * rate / 100, 2)。
- * amount * rate 直接得到以「分」为单位的手续费(rate 是百分比数值,如 1 表示 1%),
- * 先用 round 抹掉二进制浮点噪声,再 ceil 到整分,避免先乘后 ceil 把误差放大成整 1 分。
- */
+// 手续费口径(后端 fee.go 的 RoundUp 到分)统一收敛在 orderUtils.calcFeeCents。
 function calcFee(amount: number, rate: number): number {
-  if (rate <= 0 || amount <= 0) return 0
-  const feeCents = Math.ceil(Math.round(amount * rate * 1e6) / 1e6)
-  return feeCents / 100
+  return calcFeeCents(Math.round(amount * 100), rate) / 100
 }
 
 const feeAmount = computed(() => calcFee(validAmount.value, feeRate.value))
