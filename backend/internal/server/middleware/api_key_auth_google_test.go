@@ -453,6 +453,123 @@ func TestApiKeyAuthWithSubscriptionGoogle_MarksUnavailableGroupBusinessLimited(t
 	require.Equal(t, service.OpsClientBusinessLimitedReasonAPIKeyGroupUnavailable, businessLimitedReason)
 }
 
+// 管理员撤销用户对某专属分组的访问（从 AllowedGroups 移除）后，仍绑定该分组的旧 API Key
+// 必须在 Gemini/Antigravity 原生 /v1beta 入口被 403 拒绝，与标准 OpenAI/Anthropic 入口一致。
+func TestApiKeyAuthWithSubscriptionGoogle_ExclusiveGroupNotAllowedReturns403(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	groupID := int64(202)
+	user := &service.User{
+		ID:            9,
+		Role:          service.RoleUser,
+		Status:        service.StatusActive,
+		Balance:       10,
+		Concurrency:   3,
+		AllowedGroups: []int64{}, // 用户已被撤销对该专属分组的访问
+	}
+	apiKey := &service.APIKey{
+		ID:      101,
+		UserID:  user.ID,
+		GroupID: &groupID,
+		Key:     "google-exclusive-not-allowed",
+		Status:  service.StatusActive,
+		User:    user,
+		Group: &service.Group{
+			ID:          groupID,
+			Name:        "exclusive",
+			Status:      service.StatusActive, // 分组本身正常（available 检查通过）
+			IsExclusive: true,
+			Platform:    service.PlatformGemini,
+			Hydrated:    true,
+		},
+	}
+
+	r := gin.New()
+	var markedBusinessLimited bool
+	var businessLimitedReason string
+	r.Use(func(c *gin.Context) {
+		c.Next()
+		markedBusinessLimited = service.HasOpsClientBusinessLimited(c)
+		if v, ok := c.Get(service.OpsClientBusinessLimitedReasonKey); ok {
+			businessLimitedReason, _ = v.(string)
+		}
+	})
+	apiKeyService := newTestAPIKeyService(fakeAPIKeyRepo{
+		getByKey: func(ctx context.Context, key string) (*service.APIKey, error) {
+			if key != apiKey.Key {
+				return nil, service.ErrAPIKeyNotFound
+			}
+			clone := *apiKey
+			return &clone, nil
+		},
+	})
+	r.Use(APIKeyAuthWithSubscriptionGoogle(apiKeyService, nil, &config.Config{RunMode: config.RunModeSimple}))
+	r.GET("/v1beta/test", func(c *gin.Context) { c.JSON(200, gin.H{"ok": true}) })
+
+	req := httptest.NewRequest(http.MethodGet, "/v1beta/test", nil)
+	req.Header.Set("x-goog-api-key", apiKey.Key)
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusForbidden, rec.Code)
+	var resp googleErrorResponse
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
+	require.Equal(t, "API Key 所属专属分组不再允许当前用户使用", resp.Error.Message)
+	require.True(t, markedBusinessLimited)
+	require.Equal(t, service.OpsClientBusinessLimitedReasonAPIKeyGroupUnavailable, businessLimitedReason)
+}
+
+// 用户仍在 AllowedGroups 内时，专属分组 Key 应正常放行（不被新增的鉴权误拦）。
+func TestApiKeyAuthWithSubscriptionGoogle_ExclusiveGroupAllowedPasses(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	groupID := int64(203)
+	user := &service.User{
+		ID:            10,
+		Role:          service.RoleUser,
+		Status:        service.StatusActive,
+		Balance:       10,
+		Concurrency:   3,
+		AllowedGroups: []int64{groupID}, // 用户仍被允许使用该专属分组
+	}
+	apiKey := &service.APIKey{
+		ID:      102,
+		UserID:  user.ID,
+		GroupID: &groupID,
+		Key:     "google-exclusive-allowed",
+		Status:  service.StatusActive,
+		User:    user,
+		Group: &service.Group{
+			ID:          groupID,
+			Name:        "exclusive-ok",
+			Status:      service.StatusActive,
+			IsExclusive: true,
+			Platform:    service.PlatformGemini,
+			Hydrated:    true,
+		},
+	}
+
+	r := gin.New()
+	apiKeyService := newTestAPIKeyService(fakeAPIKeyRepo{
+		getByKey: func(ctx context.Context, key string) (*service.APIKey, error) {
+			if key != apiKey.Key {
+				return nil, service.ErrAPIKeyNotFound
+			}
+			clone := *apiKey
+			return &clone, nil
+		},
+	})
+	r.Use(APIKeyAuthWithSubscriptionGoogle(apiKeyService, nil, &config.Config{RunMode: config.RunModeSimple}))
+	r.GET("/v1beta/test", func(c *gin.Context) { c.JSON(200, gin.H{"ok": true}) })
+
+	req := httptest.NewRequest(http.MethodGet, "/v1beta/test", nil)
+	req.Header.Set("x-goog-api-key", apiKey.Key)
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusOK, rec.Code)
+}
+
 func TestApiKeyAuthWithSubscriptionGoogle_RepoError(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 

@@ -85,6 +85,14 @@ func APIKeyAuthWithSubscriptionGoogle(apiKeyService *service.APIKeyService, subs
 			abortWithGoogleError(c, 403, message)
 			return
 		}
+		// 专属分组 allowed_groups 鉴权：与标准入口（api_key_auth.go 的
+		// abortIfAPIKeyGroupNotAllowed）对齐。管理员撤销用户对某 exclusive 分组的访问后，
+		// 仍绑定该分组的旧 API Key 必须在 Gemini/Antigravity 原生入口同样被拒，避免越权。
+		if !validateAPIKeyGroupAllowed(apiKey) {
+			service.MarkOpsClientBusinessLimited(c, service.OpsClientBusinessLimitedReasonAPIKeyGroupUnavailable)
+			abortWithGoogleError(c, 403, "API Key 所属专属分组不再允许当前用户使用")
+			return
+		}
 
 		// 简易模式：跳过余额和订阅检查
 		if cfg.RunMode == config.RunModeSimple {
