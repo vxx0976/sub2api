@@ -320,10 +320,10 @@ func (s *OrderService) RefundOrder(ctx context.Context, orderNo, reason string) 
 	if reason != "" {
 		notes = notes + ": " + reason
 	}
-	if _, err := s.adminService.RefundUserBalance(ctx, o.UserID, o.CreditAmount, notes); err != nil {
+	if err := s.adminService.RefundUserBalance(ctx, o.UserID, o.CreditAmount, notes); err != nil {
 		logger.LegacyPrintf("service.order", "refund clawback failed, rolling back: order=%s user=%d amount=%.2f err=%v", orderNo, o.UserID, o.CreditAmount, err)
 		if rbErr := s.orderRepo.UpdateStatus(ctx, orderNo, "refunded", "paid", nil, nil); rbErr != nil {
-			logger.LegacyPrintf("service.order", "CRITICAL: rollback refunded->paid failed: order=%s err=%v", orderNo, rbErr)
+			logger.LegacyPrintf("service.order", "CRITICAL: rollback refunded->paid failed, manual fix required: order=%s user=%d amount=%.2f err=%v", orderNo, o.UserID, o.CreditAmount, rbErr)
 		}
 		return nil, fmt.Errorf("refund clawback failed: %w", err)
 	}

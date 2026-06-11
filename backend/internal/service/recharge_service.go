@@ -375,11 +375,13 @@ func (s *RechargeService) RefundOrder(ctx context.Context, orderNo, reason strin
 	if reason != "" {
 		notes = notes + ": " + reason
 	}
-	if _, err := s.adminService.RefundUserBalance(ctx, order.UserID, order.CreditAmount, notes); err != nil {
+	if err := s.adminService.RefundUserBalance(ctx, order.UserID, order.CreditAmount, notes); err != nil {
 		logger.LegacyPrintf("service.recharge", "refund clawback failed, rolling back order status: order=%s user=%d amount=%.2f err=%v", orderNo, order.UserID, order.CreditAmount, err)
 		// 补偿：扣回失败则把订单状态还原为 paid，避免"订单已退款但余额未扣回"。
+		// 补偿也失败时订单停留在 refunded 而余额未扣——无自动对账，必须人工按下面
+		// 日志里的 order/user/amount 修复（对账入口：usage_logs 之外的 recharge_orders 表）。
 		if rbErr := s.orderRepo.UpdateStatus(ctx, orderNo, "refunded", "paid", nil, nil); rbErr != nil {
-			logger.LegacyPrintf("service.recharge", "CRITICAL: rollback refunded->paid failed: order=%s err=%v", orderNo, rbErr)
+			logger.LegacyPrintf("service.recharge", "CRITICAL: rollback refunded->paid failed, manual fix required: order=%s user=%d amount=%.2f err=%v", orderNo, order.UserID, order.CreditAmount, rbErr)
 		}
 		return nil, fmt.Errorf("refund clawback failed: %w", err)
 	}

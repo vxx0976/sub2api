@@ -69,14 +69,14 @@ type fakeRefundAdminService struct {
 	refundCalls    int
 }
 
-func (f *fakeRefundAdminService) RefundUserBalance(ctx context.Context, userID int64, amount float64, notes string) (*User, error) {
+func (f *fakeRefundAdminService) RefundUserBalance(ctx context.Context, userID int64, amount float64, notes string) error {
 	f.refundCalls++
 	if f.refundErr != nil {
-		return nil, f.refundErr
+		return f.refundErr
 	}
 	f.refundedUserID = userID
 	f.refundedAmount = amount
-	return &User{ID: userID, Balance: -amount, Status: StatusActive}, nil
+	return nil
 }
 
 // ---------- EPAY RechargeService.RefundOrder ----------
@@ -256,15 +256,14 @@ func TestRefundUserBalance_AllowsOverdraftAndAudits(t *testing.T) {
 	redeemRepo := &refundRedeemRepo{}
 	svc := &adminServiceImpl{userRepo: userRepo, redeemCodeRepo: redeemRepo}
 
-	user, err := svc.RefundUserBalance(context.Background(), 42, 12.5, "Refund recharge order R1")
-	if err != nil {
+	if err := svc.RefundUserBalance(context.Background(), 42, 12.5, "Refund recharge order R1"); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if len(userRepo.deductCalls) != 1 || userRepo.deductCalls[0] != 12.5 {
 		t.Fatalf("DeductBalance calls = %v, want [12.5]", userRepo.deductCalls)
 	}
-	if user.Balance != -7.5 {
-		t.Fatalf("balance = %.2f, want -7.5 (overdraft allowed)", user.Balance)
+	if userRepo.balance != -7.5 {
+		t.Fatalf("balance = %.2f, want -7.5 (overdraft allowed)", userRepo.balance)
 	}
 	if len(redeemRepo.created) != 1 {
 		t.Fatalf("expected one audit record, got %d", len(redeemRepo.created))
@@ -280,7 +279,7 @@ func TestRefundUserBalance_AllowsOverdraftAndAudits(t *testing.T) {
 
 func TestRefundUserBalance_RejectsNonPositive(t *testing.T) {
 	svc := &adminServiceImpl{userRepo: &refundUserRepo{}, redeemCodeRepo: &refundRedeemRepo{}}
-	if _, err := svc.RefundUserBalance(context.Background(), 1, 0, ""); err == nil {
+	if err := svc.RefundUserBalance(context.Background(), 1, 0, ""); err == nil {
 		t.Fatalf("expected error for non-positive refund amount")
 	}
 }

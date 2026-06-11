@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"errors"
+	"io"
 	"net/http"
 	"strconv"
 
@@ -254,8 +256,13 @@ func (h *RechargeHandler) AdminRefundOrder(c *gin.Context) {
 		response.Error(c, http.StatusBadRequest, "order_no is required")
 		return
 	}
+	// reason 可选：空 body 合法（EOF），但格式错误的 body 必须拒绝——
+	// 不能让带着错误负载的请求静默执行不可逆的资金扣回。
 	var req AdminRefundOrderRequest
-	_ = c.ShouldBindJSON(&req)
+	if err := c.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
+		response.Error(c, http.StatusBadRequest, "invalid request body")
+		return
+	}
 
 	order, err := h.rechargeService.RefundOrder(c.Request.Context(), orderNo, req.Reason)
 	if err != nil {
