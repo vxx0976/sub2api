@@ -307,6 +307,9 @@ func mergeResellerBranding(baseJSON []byte, info *middleware.ResellerDomainConte
 	delete(m, "contact_wechat")
 	delete(m, "contact_telegram")
 	delete(m, "contact_qq")
+	// 主站的余额提醒充值链接不下发给商户站点（商户用户不应被引导到主站充值；
+	// 该字段在用户侧前端无消费方，真正用它的是后端邮件模板，删除无副作用）
+	delete(m, "balance_low_notify_recharge_url")
 
 	// Override from reseller-global settings (contact_info, default_locale, etc.)
 	if rs := info.ResellerSettings; rs != nil {

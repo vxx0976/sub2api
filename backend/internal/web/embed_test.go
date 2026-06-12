@@ -5,6 +5,7 @@ package web
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -212,6 +213,24 @@ func TestFrontendServer_InjectSettings(t *testing.T) {
 
 		assert.Contains(t, string(result), `window.__APP_CONFIG__={"nested":{"array":[1,2,3]},"special":"<>&"};`)
 	})
+}
+
+func TestMergeResellerBranding_IsolatesMainSiteFields(t *testing.T) {
+	info := &middleware.ResellerDomainContext{
+		ResellerID: 42,
+		Domain:     "merchant.example.com",
+	}
+	base := []byte(`{"site_name":"Main","contact_info":"main contact","balance_low_notify_recharge_url":"https://mayi.one","balance_low_notify_enabled":true}`)
+
+	var m map[string]any
+	require.NoError(t, json.Unmarshal(mergeResellerBranding(base, info), &m))
+
+	// 主站专属字段被剔除
+	assert.NotContains(t, m, "balance_low_notify_recharge_url")
+	assert.NotContains(t, m, "contact_info")
+	// 非主站专属字段保留
+	assert.Equal(t, true, m["balance_low_notify_enabled"])
+	assert.Equal(t, "https://merchant.example.com", m["api_base_url"])
 }
 
 func TestFrontendServer_InjectSettings_ResellerSEORewrite(t *testing.T) {
