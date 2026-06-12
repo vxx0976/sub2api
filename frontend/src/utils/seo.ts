@@ -34,6 +34,33 @@ function upsertLink(rel: string, href: string) {
   link.href = href
 }
 
+function upsertAlternateLink(hreflang: string, href: string) {
+  let link = document.querySelector<HTMLLinkElement>(
+    `link[rel="alternate"][hreflang="${CSS.escape(hreflang)}"]`
+  )
+  if (!link) {
+    link = document.createElement('link')
+    link.rel = 'alternate'
+    link.hreflang = hreflang
+    document.head.appendChild(link)
+  }
+  link.href = href
+}
+
+function withLangParam(url: string, lang?: string) {
+  try {
+    const u = new URL(url)
+    if (lang) {
+      u.searchParams.set('lang', lang)
+    } else {
+      u.searchParams.delete('lang')
+    }
+    return u.toString()
+  } catch {
+    return url
+  }
+}
+
 function upsertJsonLd(id: string, data: unknown) {
   let script = document.querySelector<HTMLScriptElement>(`script#${CSS.escape(id)}`)
   if (!script) {
@@ -63,6 +90,15 @@ export function applySeoMeta(meta: SeoMeta) {
   upsertMeta({ name: 'robots' }, meta.noindex ? 'noindex,nofollow' : 'index,follow')
 
   upsertLink('canonical', meta.canonicalUrl)
+
+  // index.html 静态写死的 hreflang/preconnect/dns-prefetch 指向主站，
+  // 商户域名访问时必须跟随当前 origin 更新，否则会泄露主站域名
+  upsertAlternateLink('zh', withLangParam(meta.canonicalUrl))
+  upsertAlternateLink('en', withLangParam(meta.canonicalUrl, 'en'))
+  upsertAlternateLink('ru', withLangParam(meta.canonicalUrl, 'ru'))
+  upsertAlternateLink('x-default', withLangParam(meta.canonicalUrl))
+  upsertLink('preconnect', window.location.origin)
+  upsertLink('dns-prefetch', window.location.origin)
 
   // Open Graph
   upsertMeta({ property: 'og:type' }, 'website')

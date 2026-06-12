@@ -169,7 +169,7 @@ func TestFrontendServer_InjectSettings(t *testing.T) {
 		require.NoError(t, err)
 
 		settingsJSON := []byte(`{"test":"data"}`)
-		result := server.injectSettings(settingsJSON)
+		result := server.injectSettings(settingsJSON, "")
 
 		// Should contain the script with nonce placeholder
 		assert.Contains(t, string(result), `<script nonce="__CSP_NONCE_VALUE__">`)
@@ -186,7 +186,7 @@ func TestFrontendServer_InjectSettings(t *testing.T) {
 		require.NoError(t, err)
 
 		settingsJSON := []byte(`{}`)
-		result := server.injectSettings(settingsJSON)
+		result := server.injectSettings(settingsJSON, "")
 
 		// Script should be injected before </head>
 		headCloseIndex := bytes.Index(result, []byte("</head>"))
@@ -208,9 +208,52 @@ func TestFrontendServer_InjectSettings(t *testing.T) {
 		require.NoError(t, err)
 
 		settingsJSON := []byte(`{"nested":{"array":[1,2,3]},"special":"<>&"}`)
-		result := server.injectSettings(settingsJSON)
+		result := server.injectSettings(settingsJSON, "")
 
 		assert.Contains(t, string(result), `window.__APP_CONFIG__={"nested":{"array":[1,2,3]},"special":"<>&"};`)
+	})
+}
+
+func TestFrontendServer_InjectSettings_ResellerSEORewrite(t *testing.T) {
+	provider := &mockSettingsProvider{settings: map[string]string{}}
+	server, err := NewFrontendServer(provider)
+	require.NoError(t, err)
+
+	settingsJSON := []byte(`{"site_name":"Merchant","site_subtitle":"My Sub","seo_description":"Merchant desc","seo_keywords":"k1, k2","reseller_domain":"merchant.example.com"}`)
+
+	t.Run("reseller_domain_rewrites_main_site_seo", func(t *testing.T) {
+		result := string(server.injectSettings(settingsJSON, "merchant.example.com"))
+
+		// 注入的 __APP_CONFIG__ 不参与改写，校验只看其之前的 head 部分
+		head := result[:strings.Index(result, "window.__APP_CONFIG__")]
+		assert.NotContains(t, head, "mayi.one")
+		assert.NotContains(t, head, "官方直连")
+
+		assert.Contains(t, result, `<link rel="canonical" href="https://merchant.example.com/"`)
+		assert.Contains(t, result, `<link rel="alternate" hreflang="en" href="https://merchant.example.com/?lang=en"`)
+		assert.Contains(t, result, `<link rel="preconnect" href="https://merchant.example.com"`)
+		assert.Contains(t, result, `<link rel="dns-prefetch" href="https://merchant.example.com"`)
+		assert.Contains(t, result, `<meta property="og:url" content="https://merchant.example.com/"`)
+		assert.Contains(t, result, `<meta property="og:title" content="Merchant - My Sub"`)
+		assert.Contains(t, result, `<meta property="og:image" content="https://merchant.example.com/logo.png"`)
+		assert.Contains(t, result, `<meta name="twitter:description" content="Merchant desc"`)
+		assert.Contains(t, result, `content="k1, k2"`)
+		assert.Contains(t, result, "<title>Merchant - My Sub</title>")
+		assert.Contains(t, result, `"url":"https://merchant.example.com/"`)
+	})
+
+	t.Run("main_site_keeps_static_seo", func(t *testing.T) {
+		result := string(server.injectSettings([]byte(`{}`), ""))
+
+		assert.Contains(t, result, `<link rel="canonical" href="https://mayi.one/"`)
+		assert.Contains(t, result, `<link rel="preconnect" href="https://mayi.one"`)
+	})
+
+	t.Run("reseller_seo_values_are_html_escaped", func(t *testing.T) {
+		evil := []byte(`{"site_name":"M","seo_title":"a\"><script>alert(1)</script>","seo_description":"d"}`)
+		result := string(server.injectSettings(evil, "merchant.example.com"))
+
+		assert.NotContains(t, result, `a"><script>alert(1)</script>`)
 	})
 }
 
@@ -671,7 +714,7 @@ func TestServeEmbeddedFrontend(t *testing.T) {
 func TestHTMLCache(t *testing.T) {
 	t.Run("new_cache_returns_nil", func(t *testing.T) {
 		cache := NewHTMLCache()
-		assert.Nil(t, cache.Get())
+		assert.Nil(t, cache.Get(""))
 	})
 
 	t.Run("set_and_get", func(t *testing.T) {
@@ -680,9 +723,9 @@ func TestHTMLCache(t *testing.T) {
 
 		html := []byte("<html><body>test</body></html>")
 		settings := []byte(`{"key":"value"}`)
-		cache.Set(html, settings)
+		cache.Set("", html, settings)
 
-		result := cache.Get()
+		result := cache.Get("")
 		require.NotNil(t, result)
 		assert.Equal(t, html, result.Content)
 		assert.NotEmpty(t, result.ETag)
@@ -694,13 +737,13 @@ func TestHTMLCache(t *testing.T) {
 
 		html := []byte("<html><body>test</body></html>")
 		settings := []byte(`{"key":"value"}`)
-		cache.Set(html, settings)
+		cache.Set("", html, settings)
 
-		require.NotNil(t, cache.Get())
+		require.NotNil(t, cache.Get(""))
 
 		cache.Invalidate()
 
-		assert.Nil(t, cache.Get())
+		assert.Nil(t, cache.Get(""))
 	})
 
 	t.Run("etag_changes_with_settings", func(t *testing.T) {
@@ -709,12 +752,12 @@ func TestHTMLCache(t *testing.T) {
 
 		html := []byte("<html><body>test</body></html>")
 
-		cache.Set(html, []byte(`{"v":1}`))
-		etag1 := cache.Get().ETag
+		cache.Set("", html, []byte(`{"v":1}`))
+		etag1 := cache.Get("").ETag
 
 		cache.Invalidate()
-		cache.Set(html, []byte(`{"v":2}`))
-		etag2 := cache.Get().ETag
+		cache.Set("", html, []byte(`{"v":2}`))
+		etag2 := cache.Get("").ETag
 
 		assert.NotEqual(t, etag1, etag2)
 	})
@@ -723,8 +766,8 @@ func TestHTMLCache(t *testing.T) {
 		cache := NewHTMLCache()
 		cache.SetBaseHTML([]byte("<html></html>"))
 
-		cache.Set([]byte("<html></html>"), []byte(`{}`))
-		result := cache.Get()
+		cache.Set("", []byte("<html></html>"), []byte(`{}`))
+		result := cache.Get("")
 
 		// ETag should be quoted
 		assert.True(t, strings.HasPrefix(result.ETag, `"`))

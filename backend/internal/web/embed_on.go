@@ -7,11 +7,14 @@ import (
 	"context"
 	"embed"
 	"encoding/json"
+	"html"
 	"io"
 	"io/fs"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -212,7 +215,7 @@ func (s *FrontendServer) serveIndexHTML(c *gin.Context) {
 		settingsJSON = mergeResellerBranding(settingsJSON, resellerDomain)
 	}
 
-	rendered := s.injectSettings(settingsJSON)
+	rendered := s.injectSettings(settingsJSON, cacheKey)
 	s.cache.Set(cacheKey, rendered, settingsJSON)
 
 	// Replace nonce placeholder with actual nonce before serving
@@ -369,21 +372,26 @@ type seoSettings struct {
 	SiteLogo       string `json:"site_logo"`
 	SEOTitle       string `json:"seo_title"`
 	SEODescription string `json:"seo_description"`
+	SEOKeywords    string `json:"seo_keywords"`
 }
 
-func (s *FrontendServer) injectSettings(settingsJSON []byte) []byte {
-	// Create the script tag to inject with nonce placeholder
-	// The placeholder will be replaced with actual nonce at request time
-	script := []byte(`<script nonce="` + NonceHTMLPlaceholder + `">window.__APP_CONFIG__=` + string(settingsJSON) + `;</script>`)
-
+// injectSettings renders index.html with the given public settings.
+// resellerHost is the reseller custom domain ("" for the main site); when set,
+// the hardcoded main-site SEO tags in the build output are rewritten so the
+// raw HTML served on reseller domains never leaks main-site URLs or copy.
+func (s *FrontendServer) injectSettings(settingsJSON []byte, resellerHost string) []byte {
 	// Start with base HTML
 	result := s.baseHTML
 
 	// Extract SEO values from settings
 	var seo seoSettings
-	if err := json.Unmarshal(settingsJSON, &seo); err == nil {
+	seoOK := json.Unmarshal(settingsJSON, &seo) == nil
+
+	seoTitle := DefaultSEOTitle
+	seoDesc := DefaultSEODescription
+	seoImage := DefaultSEOImage
+	if seoOK {
 		// Build SEO title: prefer explicit seo_title, then "SiteName - SiteSubtitle", then default
-		seoTitle := DefaultSEOTitle
 		if seo.SEOTitle != "" {
 			seoTitle = seo.SEOTitle
 		} else if seo.SiteName != "" {
@@ -395,7 +403,6 @@ func (s *FrontendServer) injectSettings(settingsJSON []byte) []byte {
 		}
 
 		// SEO description: prefer explicit seo_description, then subtitle, then default
-		seoDesc := DefaultSEODescription
 		if seo.SEODescription != "" {
 			seoDesc = seo.SEODescription
 		} else if seo.SiteSubtitle != "" {
@@ -403,7 +410,6 @@ func (s *FrontendServer) injectSettings(settingsJSON []byte) []byte {
 		}
 
 		// SEO image: use logo or default
-		seoImage := DefaultSEOImage
 		if seo.SiteLogo != "" {
 			seoImage = seo.SiteLogo
 		}
@@ -414,14 +420,117 @@ func (s *FrontendServer) injectSettings(settingsJSON []byte) []byte {
 		result = bytes.ReplaceAll(result, []byte(SEOImagePlaceholder), []byte(seoImage))
 	}
 
-	// Inject script before </head>
-	headClose := []byte("</head>")
-	result = bytes.Replace(result, headClose, append(script, headClose...), 1)
-
 	// Replace <title> with custom site name so the browser tab shows it immediately
 	result = injectSiteTitle(result, settingsJSON)
 
+	// 商户域名：index.html 构建产物里写死了主站的 canonical/hreflang/og/twitter/JSON-LD。
+	// 链接预览与搜索爬虫大多不执行 JS，运行时 applySeoMeta 救不了原始 HTML，
+	// 必须在服务端把主站域名和文案替换成商户自己的，避免商户站点泄露主站内容。
+	if resellerHost != "" && seoOK {
+		result = rewriteResellerSEO(result, resellerHost, seo, seoTitle, seoDesc, seoImage)
+	}
+
+	// Inject settings script before </head>; the nonce placeholder is replaced
+	// with the per-request nonce at serve time.
+	script := []byte(`<script nonce="` + NonceHTMLPlaceholder + `">window.__APP_CONFIG__=` + string(settingsJSON) + `;</script>`)
+	headClose := []byte("</head>")
+	result = bytes.Replace(result, headClose, append(script, headClose...), 1)
+
 	return result
+}
+
+var (
+	reCanonicalHref = regexp.MustCompile(`<link rel="canonical" href="([^"]*)"`)
+	reMetaDesc      = regexp.MustCompile(`(<meta name="description" content=")[^"]*(")`)
+	reMetaKeywords  = regexp.MustCompile(`(<meta\s+name="keywords"\s+content=")[^"]*(")`)
+	reOGTitle       = regexp.MustCompile(`(<meta property="og:title" content=")[^"]*(")`)
+	reOGDesc        = regexp.MustCompile(`(<meta property="og:description" content=")[^"]*(")`)
+	reOGImage       = regexp.MustCompile(`(<meta property="og:image" content=")[^"]*(")`)
+	reTwitterTitle  = regexp.MustCompile(`(<meta name="twitter:title" content=")[^"]*(")`)
+	reTwitterDesc   = regexp.MustCompile(`(<meta name="twitter:description" content=")[^"]*(")`)
+	reTwitterImage  = regexp.MustCompile(`(<meta name="twitter:image" content=")[^"]*(")`)
+	reStructuredLD  = regexp.MustCompile(`(?s)(<script id="structured-data" type="application/ld\+json">).*?(</script>)`)
+)
+
+// replaceTagContent rewrites the content attribute matched by re with value,
+// escaping it for the double-quoted HTML attribute context.
+func replaceTagContent(htmlBytes []byte, re *regexp.Regexp, value string) []byte {
+	escaped := strings.ReplaceAll(html.EscapeString(value), "$", "$$")
+	return re.ReplaceAll(htmlBytes, []byte("${1}"+escaped+"${2}"))
+}
+
+// rewriteResellerSEO replaces the main-site SEO tags baked into index.html
+// with the reseller's own domain and branding.
+func rewriteResellerSEO(result []byte, host string, seo seoSettings, seoTitle, seoDesc, seoImage string) []byte {
+	origin := "https://" + host
+
+	// 主站 origin 从 canonical 标签里解析（不在 Go 侧硬编码主站域名），
+	// 整体替换后 canonical/hreflang/preconnect/dns-prefetch/og:url 全部指向商户域名。
+	if m := reCanonicalHref.FindSubmatch(result); m != nil {
+		if u, err := url.Parse(string(m[1])); err == nil && u.Scheme != "" && u.Host != "" {
+			mainOrigin := u.Scheme + "://" + u.Host
+			if mainOrigin != origin {
+				result = bytes.ReplaceAll(result, []byte(mainOrigin), []byte(origin))
+			}
+		}
+	}
+
+	// 分享图用商户配置的 logo；相对路径补成商户域名的绝对地址，
+	// data: URI 无法用于 og:image，回退到 /logo.png。
+	imageURL := seoImage
+	switch {
+	case strings.HasPrefix(imageURL, "http://"), strings.HasPrefix(imageURL, "https://"):
+	case strings.HasPrefix(imageURL, "/"):
+		imageURL = origin + imageURL
+	default:
+		imageURL = origin + "/logo.png"
+	}
+
+	result = replaceTitleTag(result, seoTitle)
+	result = replaceTagContent(result, reMetaDesc, seoDesc)
+	result = replaceTagContent(result, reMetaKeywords, seo.SEOKeywords)
+	result = replaceTagContent(result, reOGTitle, seoTitle)
+	result = replaceTagContent(result, reOGDesc, seoDesc)
+	result = replaceTagContent(result, reOGImage, imageURL)
+	result = replaceTagContent(result, reTwitterTitle, seoTitle)
+	result = replaceTagContent(result, reTwitterDesc, seoDesc)
+	result = replaceTagContent(result, reTwitterImage, imageURL)
+
+	// JSON-LD 整体重建为商户站点信息（运行时 applySeoMeta 还会按路由细化）
+	siteName := seo.SiteName
+	if siteName == "" {
+		siteName = seoTitle
+	}
+	ld := map[string]any{
+		"@context":    "https://schema.org",
+		"@type":       "WebSite",
+		"name":        siteName,
+		"url":         origin + "/",
+		"description": seoDesc,
+		"image":       imageURL,
+	}
+	// json.Marshal 默认转义 <>&，注入 <script> 上下文安全
+	if b, err := json.Marshal(ld); err == nil {
+		escaped := strings.ReplaceAll(string(b), "$", "$$")
+		result = reStructuredLD.ReplaceAll(result, []byte("${1}"+escaped+"${2}"))
+	}
+
+	return result
+}
+
+// replaceTitleTag replaces the <title> text with the given value.
+func replaceTitleTag(htmlBytes []byte, title string) []byte {
+	start := bytes.Index(htmlBytes, []byte("<title>"))
+	end := bytes.Index(htmlBytes, []byte("</title>"))
+	if start == -1 || end == -1 || end <= start {
+		return htmlBytes
+	}
+	var buf bytes.Buffer
+	buf.Write(htmlBytes[:start])
+	buf.WriteString("<title>")
+	buf.WriteString(html.EscapeString(title))
+	buf.Write(htmlBytes[end:])
+	return buf.Bytes()
 }
 
 // injectSiteTitle replaces the static <title> in HTML with the configured site name.
