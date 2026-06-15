@@ -6,6 +6,7 @@ import Toast from '@/components/common/Toast.vue'
 import NavigationProgress from '@/components/common/NavigationProgress.vue'
 import { resolveDocumentTitle } from '@/router/title'
 import AnnouncementPopup from '@/components/common/AnnouncementPopup.vue'
+import ChatWidget from '@/components/common/ChatWidget.vue'
 import { useAppStore, useAuthStore, useSubscriptionStore, useAnnouncementStore, useResellerSettingsStore } from '@/stores'
 import { getSetupStatus } from '@/api/setup'
 import { applySeoMeta } from '@/utils/seo'
@@ -195,4 +196,5 @@ onMounted(async () => {
   <RouterView />
   <Toast />
   <AnnouncementPopup />
+  <ChatWidget />
 </template>

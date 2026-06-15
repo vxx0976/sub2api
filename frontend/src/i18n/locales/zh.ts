@@ -484,6 +484,7 @@ export default {
     channelMonitor: '渠道监控',
     channelStatus: '渠道状态',
     riskControl: '风控中心',
+    chat: '在线客服',
   },
 
   // Auth
@@ -5017,6 +5018,31 @@ export default {
       deleteConfirm: '确定要删除该公告吗？此操作无法撤销。'
     },
 
+    chat: {
+      title: '在线客服',
+      description: '查看和回复客户咨询',
+      conversations: '会话列表',
+      noConversations: '暂无会话',
+      searchPlaceholder: '搜索会话...',
+      allStatus: '全部状态',
+      statusOpen: '进行中',
+      statusClosed: '已关闭',
+      visitorLabel: '访客',
+      adminLabel: '管理员',
+      close: '关闭会话',
+      reopen: '重新开启',
+      markRead: '标记已读',
+      reply: '回复',
+      replyPlaceholder: '输入回复内容...',
+      send: '发送',
+      unreadCount: '{count} 条未读',
+      noMessages: '暂无消息',
+      selectConversation: '请选择一个会话',
+      closedNotice: '会话已关闭',
+      closeConfirm: '确定要关闭此会话吗？',
+      newMessage: '新消息',
+    },
+
     // Usage Records
     usage: {
       title: '使用记录',
@@ -7086,6 +7112,17 @@ export default {
     emptyDescription: '暂时没有任何系统公告',
     readStatus: '您已阅读此公告',
     markReadHint: '点击"已读"标记此公告'
+  },
+
+  chat: {
+    title: '在线客服',
+    welcomeTitle: '你好！ 👋',
+    welcomeMessage: '有任何问题都可以在这里咨询，我们会尽快回复。',
+    gotIt: '知道了',
+    inputPlaceholder: '输入消息...',
+    emptyState: '发送消息开始对话',
+    conversationClosed: '此会话已关闭，如需帮助请开启新对话。',
+    connected: '已连接',
   },
 
   // User Subscriptions Page

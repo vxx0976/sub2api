@@ -2177,3 +2177,26 @@ export type {
   PlatformQuotaWindow,
   PlatformQuotasResponse,
 } from '@/api/admin/users'
+
+// ==================== Chat Types ====================
+
+export interface ChatConversation {
+  id: number
+  guest_token?: string
+  user_id?: number
+  visitor_name: string
+  status: 'open' | 'closed'
+  admin_unread_count: number
+  last_message_at?: string
+  last_message_preview: string
+  created_at: string
+  updated_at: string
+}
+
+export interface ChatMessage {
+  id: number
+  conversation_id: number
+  sender_type: 'visitor' | 'admin'
+  content: string
+  created_at: string
+}

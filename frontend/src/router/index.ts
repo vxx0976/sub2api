@@ -550,6 +550,18 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/admin/chat',
+    name: 'AdminChat',
+    component: () => import('@/views/admin/ChatView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: 'Customer Service',
+      titleKey: 'admin.chat.title',
+      descriptionKey: 'admin.chat.description'
+    }
+  },
+  {
     path: '/admin/proxies',
     name: 'AdminProxies',
     component: () => import('@/views/admin/ProxiesView.vue'),

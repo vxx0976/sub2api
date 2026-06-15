@@ -32,6 +32,9 @@ func RegisterAdminRoutes(
 		// 公告管理
 		registerAnnouncementRoutes(admin, h)
 
+		// 客服聊天
+		registerAdminChatRoutes(admin, h)
+
 		// OpenAI OAuth
 		registerOpenAIOAuthRoutes(admin, h)
 
@@ -733,5 +736,19 @@ func registerAffiliateRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 			users.PUT("/:user_id", h.Admin.Affiliate.UpdateUserSettings)
 			users.DELETE("/:user_id", h.Admin.Affiliate.ClearUserSettings)
 		}
+	}
+}
+
+func registerAdminChatRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
+	chat := admin.Group("/chat")
+	{
+		chat.GET("/conversations", h.Admin.Chat.ListConversations)
+		chat.GET("/conversations/:id", h.Admin.Chat.GetConversation)
+		chat.GET("/conversations/:id/messages", h.Admin.Chat.GetMessages)
+		chat.POST("/conversations/:id/messages", h.Admin.Chat.SendReply)
+		chat.POST("/conversations/:id/close", h.Admin.Chat.CloseConversation)
+		chat.POST("/conversations/:id/read", h.Admin.Chat.MarkRead)
+		chat.GET("/unread-count", h.Admin.Chat.GetUnreadCount)
+		chat.GET("/ws", h.Admin.Chat.AdminWebSocket)
 	}
 }

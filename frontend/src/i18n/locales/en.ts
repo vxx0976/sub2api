@@ -485,6 +485,7 @@ export default {
     channelMonitor: 'Channel Monitor',
     channelStatus: 'Channel Status',
     riskControl: 'Risk Control',
+    chat: 'Live Chat',
   },
 
   // Auth
@@ -5047,6 +5048,31 @@ export default {
       deleteConfirm: 'Are you sure you want to delete this announcement? This action cannot be undone.'
     },
 
+    chat: {
+      title: 'Live Chat',
+      description: 'View and reply to customer inquiries',
+      conversations: 'Conversations',
+      noConversations: 'No conversations',
+      searchPlaceholder: 'Search conversations...',
+      allStatus: 'All Status',
+      statusOpen: 'Open',
+      statusClosed: 'Closed',
+      visitorLabel: 'Visitor',
+      adminLabel: 'Admin',
+      close: 'Close Conversation',
+      reopen: 'Reopen',
+      markRead: 'Mark Read',
+      reply: 'Reply',
+      replyPlaceholder: 'Type your reply...',
+      send: 'Send',
+      unreadCount: '{count} unread',
+      noMessages: 'No messages',
+      selectConversation: 'Select a conversation',
+      closedNotice: 'Conversation closed',
+      closeConfirm: 'Are you sure you want to close this conversation?',
+      newMessage: 'New Message',
+    },
+
     // Usage Records
     usage: {
       title: 'Usage Records',
@@ -7121,6 +7147,17 @@ export default {
     emptyDescription: 'There are no system announcements at this time',
     readStatus: 'You have read this announcement',
     markReadHint: 'Click "Mark as read" to mark this announcement'
+  },
+
+  chat: {
+    title: 'Live Chat',
+    welcomeTitle: 'Hello! 👋',
+    welcomeMessage: 'Feel free to ask us anything. We\'ll get back to you as soon as possible.',
+    gotIt: 'Got it',
+    inputPlaceholder: 'Type a message...',
+    emptyState: 'Send a message to start a conversation',
+    conversationClosed: 'This conversation has been closed. Start a new one if you need help.',
+    connected: 'Connected',
   },
 
   // User Subscriptions Page

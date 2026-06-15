@@ -41,6 +41,7 @@ type AdminHandlers struct {
 	Payment                *admin.PaymentHandler
 	Affiliate              *admin.AffiliateHandler
 	Translation            *admin.TranslationHandler
+	Chat                   *admin.ChatHandler
 }
 
 // ResellerHandlers contains all reseller-related HTTP handlers
@@ -79,6 +80,7 @@ type Handlers struct {
 	Payment          *PaymentHandler
 	PaymentWebhook   *PaymentWebhookHandler
 	AvailableChannel *AvailableChannelHandler
+	Chat             *ChatHandler
 }
 
 // BuildInfo contains build-time information

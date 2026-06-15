@@ -662,6 +662,81 @@ var (
 			},
 		},
 	}
+	// ChatConversationsColumns holds the columns for the "chat_conversations" table.
+	ChatConversationsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "guest_token", Type: field.TypeString, Nullable: true, Size: 64},
+		{Name: "user_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "visitor_name", Type: field.TypeString, Size: 100, Default: ""},
+		{Name: "status", Type: field.TypeString, Size: 20, Default: "open"},
+		{Name: "admin_unread_count", Type: field.TypeInt, Default: 0},
+		{Name: "last_message_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "last_message_preview", Type: field.TypeString, Size: 200, Default: ""},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+	}
+	// ChatConversationsTable holds the schema information for the "chat_conversations" table.
+	ChatConversationsTable = &schema.Table{
+		Name:       "chat_conversations",
+		Columns:    ChatConversationsColumns,
+		PrimaryKey: []*schema.Column{ChatConversationsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "chatconversation_guest_token",
+				Unique:  false,
+				Columns: []*schema.Column{ChatConversationsColumns[1]},
+			},
+			{
+				Name:    "chatconversation_user_id",
+				Unique:  false,
+				Columns: []*schema.Column{ChatConversationsColumns[2]},
+			},
+			{
+				Name:    "chatconversation_status",
+				Unique:  false,
+				Columns: []*schema.Column{ChatConversationsColumns[4]},
+			},
+			{
+				Name:    "chatconversation_last_message_at",
+				Unique:  false,
+				Columns: []*schema.Column{ChatConversationsColumns[6]},
+			},
+		},
+	}
+	// ChatMessagesColumns holds the columns for the "chat_messages" table.
+	ChatMessagesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "sender_type", Type: field.TypeString, Size: 20},
+		{Name: "content", Type: field.TypeString, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "conversation_id", Type: field.TypeInt64},
+	}
+	// ChatMessagesTable holds the schema information for the "chat_messages" table.
+	ChatMessagesTable = &schema.Table{
+		Name:       "chat_messages",
+		Columns:    ChatMessagesColumns,
+		PrimaryKey: []*schema.Column{ChatMessagesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "chat_messages_chat_conversations_messages",
+				Columns:    []*schema.Column{ChatMessagesColumns[4]},
+				RefColumns: []*schema.Column{ChatConversationsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "chatmessage_conversation_id",
+				Unique:  false,
+				Columns: []*schema.Column{ChatMessagesColumns[4]},
+			},
+			{
+				Name:    "chatmessage_conversation_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{ChatMessagesColumns[4], ChatMessagesColumns[3]},
+			},
+		},
+	}
 	// ErrorPassthroughRulesColumns holds the columns for the "error_passthrough_rules" table.
 	ErrorPassthroughRulesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -2235,6 +2310,8 @@ var (
 		ChannelMonitorDailyRollupsTable,
 		ChannelMonitorHistoriesTable,
 		ChannelMonitorRequestTemplatesTable,
+		ChatConversationsTable,
+		ChatMessagesTable,
 		ErrorPassthroughRulesTable,
 		FailoverGroupEventsTable,
 		GroupsTable,
@@ -2317,6 +2394,13 @@ func init() {
 	}
 	ChannelMonitorRequestTemplatesTable.Annotation = &entsql.Annotation{
 		Table: "channel_monitor_request_templates",
+	}
+	ChatConversationsTable.Annotation = &entsql.Annotation{
+		Table: "chat_conversations",
+	}
+	ChatMessagesTable.ForeignKeys[0].RefTable = ChatConversationsTable
+	ChatMessagesTable.Annotation = &entsql.Annotation{
+		Table: "chat_messages",
 	}
 	ErrorPassthroughRulesTable.Annotation = &entsql.Annotation{
 		Table: "error_passthrough_rules",

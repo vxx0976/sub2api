@@ -17,6 +17,8 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitordailyrollup"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitorhistory"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitorrequesttemplate"
+	"github.com/Wei-Shaw/sub2api/ent/chatconversation"
+	"github.com/Wei-Shaw/sub2api/ent/chatmessage"
 	"github.com/Wei-Shaw/sub2api/ent/errorpassthroughrule"
 	"github.com/Wei-Shaw/sub2api/ent/failovergroupevent"
 	"github.com/Wei-Shaw/sub2api/ent/group"
@@ -787,6 +789,72 @@ func init() {
 	channelmonitorrequesttemplate.DefaultBodyOverrideMode = channelmonitorrequesttemplateDescBodyOverrideMode.Default.(string)
 	// channelmonitorrequesttemplate.BodyOverrideModeValidator is a validator for the "body_override_mode" field. It is called by the builders before save.
 	channelmonitorrequesttemplate.BodyOverrideModeValidator = channelmonitorrequesttemplateDescBodyOverrideMode.Validators[0].(func(string) error)
+	chatconversationFields := schema.ChatConversation{}.Fields()
+	_ = chatconversationFields
+	// chatconversationDescGuestToken is the schema descriptor for guest_token field.
+	chatconversationDescGuestToken := chatconversationFields[0].Descriptor()
+	// chatconversation.GuestTokenValidator is a validator for the "guest_token" field. It is called by the builders before save.
+	chatconversation.GuestTokenValidator = chatconversationDescGuestToken.Validators[0].(func(string) error)
+	// chatconversationDescVisitorName is the schema descriptor for visitor_name field.
+	chatconversationDescVisitorName := chatconversationFields[2].Descriptor()
+	// chatconversation.DefaultVisitorName holds the default value on creation for the visitor_name field.
+	chatconversation.DefaultVisitorName = chatconversationDescVisitorName.Default.(string)
+	// chatconversation.VisitorNameValidator is a validator for the "visitor_name" field. It is called by the builders before save.
+	chatconversation.VisitorNameValidator = chatconversationDescVisitorName.Validators[0].(func(string) error)
+	// chatconversationDescStatus is the schema descriptor for status field.
+	chatconversationDescStatus := chatconversationFields[3].Descriptor()
+	// chatconversation.DefaultStatus holds the default value on creation for the status field.
+	chatconversation.DefaultStatus = chatconversationDescStatus.Default.(string)
+	// chatconversation.StatusValidator is a validator for the "status" field. It is called by the builders before save.
+	chatconversation.StatusValidator = chatconversationDescStatus.Validators[0].(func(string) error)
+	// chatconversationDescAdminUnreadCount is the schema descriptor for admin_unread_count field.
+	chatconversationDescAdminUnreadCount := chatconversationFields[4].Descriptor()
+	// chatconversation.DefaultAdminUnreadCount holds the default value on creation for the admin_unread_count field.
+	chatconversation.DefaultAdminUnreadCount = chatconversationDescAdminUnreadCount.Default.(int)
+	// chatconversationDescLastMessagePreview is the schema descriptor for last_message_preview field.
+	chatconversationDescLastMessagePreview := chatconversationFields[6].Descriptor()
+	// chatconversation.DefaultLastMessagePreview holds the default value on creation for the last_message_preview field.
+	chatconversation.DefaultLastMessagePreview = chatconversationDescLastMessagePreview.Default.(string)
+	// chatconversation.LastMessagePreviewValidator is a validator for the "last_message_preview" field. It is called by the builders before save.
+	chatconversation.LastMessagePreviewValidator = chatconversationDescLastMessagePreview.Validators[0].(func(string) error)
+	// chatconversationDescCreatedAt is the schema descriptor for created_at field.
+	chatconversationDescCreatedAt := chatconversationFields[7].Descriptor()
+	// chatconversation.DefaultCreatedAt holds the default value on creation for the created_at field.
+	chatconversation.DefaultCreatedAt = chatconversationDescCreatedAt.Default.(func() time.Time)
+	// chatconversationDescUpdatedAt is the schema descriptor for updated_at field.
+	chatconversationDescUpdatedAt := chatconversationFields[8].Descriptor()
+	// chatconversation.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	chatconversation.DefaultUpdatedAt = chatconversationDescUpdatedAt.Default.(func() time.Time)
+	// chatconversation.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	chatconversation.UpdateDefaultUpdatedAt = chatconversationDescUpdatedAt.UpdateDefault.(func() time.Time)
+	chatmessageFields := schema.ChatMessage{}.Fields()
+	_ = chatmessageFields
+	// chatmessageDescSenderType is the schema descriptor for sender_type field.
+	chatmessageDescSenderType := chatmessageFields[1].Descriptor()
+	// chatmessage.SenderTypeValidator is a validator for the "sender_type" field. It is called by the builders before save.
+	chatmessage.SenderTypeValidator = func() func(string) error {
+		validators := chatmessageDescSenderType.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(sender_type string) error {
+			for _, fn := range fns {
+				if err := fn(sender_type); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// chatmessageDescContent is the schema descriptor for content field.
+	chatmessageDescContent := chatmessageFields[2].Descriptor()
+	// chatmessage.ContentValidator is a validator for the "content" field. It is called by the builders before save.
+	chatmessage.ContentValidator = chatmessageDescContent.Validators[0].(func(string) error)
+	// chatmessageDescCreatedAt is the schema descriptor for created_at field.
+	chatmessageDescCreatedAt := chatmessageFields[3].Descriptor()
+	// chatmessage.DefaultCreatedAt holds the default value on creation for the created_at field.
+	chatmessage.DefaultCreatedAt = chatmessageDescCreatedAt.Default.(func() time.Time)
 	errorpassthroughruleMixin := schema.ErrorPassthroughRule{}.Mixin()
 	errorpassthroughruleMixinFields0 := errorpassthroughruleMixin[0].Fields()
 	_ = errorpassthroughruleMixinFields0
