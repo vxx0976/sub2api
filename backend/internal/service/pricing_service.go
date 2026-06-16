@@ -570,31 +570,63 @@ func (s *PricingService) cnyToUSDRate() float64 {
 
 // kimiMoonshotPricingOverride returns CNY-based pricing converted to USD for
 // all Kimi/Moonshot models, or nil if the model is not recognized.
-func (s *PricingService) kimiMoonshotPricingOverride(modelLower string) *LiteLLMModelPricing {
+// Currency codes for usage-log price display.
+const (
+	CurrencyUSD = "USD"
+	CurrencyCNY = "CNY"
+)
+
+// ModelPriceCurrency reports the currency a model's usage cost is denominated in.
+// Returns CurrencyCNY when the model is priced via the official-RMB pricing tables
+// (the Kimi/Moonshot/DeepSeek overrides GetModelPricing applies before any USD source),
+// otherwise CurrencyUSD. It reuses the exact membership those overrides use, so the
+// displayed currency never drifts from how the cost was actually computed.
+// 注意：GLM/MiniMax 等走美元口径 JSON/fallback 的模型按 USD 返回（其成本数值本就是美元口径）。
+func ModelPriceCurrency(model string) string {
+	ml := strings.ToLower(strings.TrimSpace(model))
+	if ml == "" {
+		return CurrencyUSD
+	}
+	if _, ok := matchKimiMoonshotCNY(ml); ok {
+		return CurrencyCNY
+	}
+	if _, ok := matchDeepSeekCNY(ml); ok {
+		return CurrencyCNY
+	}
+	return CurrencyUSD
+}
+
+// matchKimiMoonshotCNY reports whether modelLower resolves to an official-RMB
+// Kimi/Moonshot price, returning the matched CNY pricing. Pure membership logic
+// shared by kimiMoonshotPricingOverride and ModelPriceCurrency (single source of truth).
+func matchKimiMoonshotCNY(modelLower string) (cnyModelPricing, bool) {
 	m := strings.ReplaceAll(modelLower, "_", "-")
 	m = strings.ReplaceAll(m, " ", "")
 	// Strip provider prefix: "moonshotai/kimi-k2.6" -> "kimi-k2.6"
 	m = lastSegment(m)
 
-	var cny cnyModelPricing
-	var found bool
-
-	if cny, found = kimiMoonshotPricingTable[m]; !found {
-		// kimi-k2.6 variants: kimi-k2-6 / kimi-k26
-		if strings.Contains(m, "kimi-k2-6") || strings.Contains(m, "kimi-k26") {
-			cny, found = kimiMoonshotPricingTable["kimi-k2.6"]
-		}
-		// vision-preview variants reuse the base model price
-		if !found && strings.HasSuffix(m, "-vision-preview") {
-			base := strings.TrimSuffix(m, "-vision-preview")
-			cny, found = kimiMoonshotPricingTable[base]
-		}
-		// 兜底：所有 kimi-* 模型（含未来新模型）统一按 kimi-k2.6 计费
-		if !found && strings.HasPrefix(m, "kimi-") {
-			cny, found = kimiMoonshotPricingTable["kimi-k2.6"]
+	if cny, found := kimiMoonshotPricingTable[m]; found {
+		return cny, true
+	}
+	// kimi-k2.6 variants: kimi-k2-6 / kimi-k26
+	if strings.Contains(m, "kimi-k2-6") || strings.Contains(m, "kimi-k26") {
+		return kimiMoonshotPricingTable["kimi-k2.6"], true
+	}
+	// vision-preview variants reuse the base model price
+	if strings.HasSuffix(m, "-vision-preview") {
+		if cny, found := kimiMoonshotPricingTable[strings.TrimSuffix(m, "-vision-preview")]; found {
+			return cny, true
 		}
 	}
+	// 兜底：所有 kimi-* 模型（含未来新模型）统一按 kimi-k2.6 计费
+	if strings.HasPrefix(m, "kimi-") {
+		return kimiMoonshotPricingTable["kimi-k2.6"], true
+	}
+	return cnyModelPricing{}, false
+}
 
+func (s *PricingService) kimiMoonshotPricingOverride(modelLower string) *LiteLLMModelPricing {
+	cny, found := matchKimiMoonshotCNY(modelLower)
 	if !found {
 		return nil
 	}
@@ -616,27 +648,29 @@ func (s *PricingService) kimiMoonshotPricingOverride(modelLower string) *LiteLLM
 
 // deepSeekPricingOverride returns CNY-based pricing converted to USD for
 // DeepSeek V4 models, or nil if the model is not recognized.
-func (s *PricingService) deepSeekPricingOverride(modelLower string) *LiteLLMModelPricing {
+// matchDeepSeekCNY reports whether modelLower resolves to an official-RMB DeepSeek
+// price. Pure membership logic shared by deepSeekPricingOverride and ModelPriceCurrency.
+func matchDeepSeekCNY(modelLower string) (cnyModelPricing, bool) {
 	m := lastSegment(modelLower) // Strip provider prefix: "deepseek/deepseek-v4-flash" -> "deepseek-v4-flash"
-
 	if !strings.HasPrefix(m, "deepseek") {
-		return nil
+		return cnyModelPricing{}, false
 	}
-
-	var cny cnyModelPricing
-	var found bool
-
 	// Exact match first
-	if cny, found = deepSeekPricingTable[m]; !found {
-		// Pattern match: v4-pro takes precedence over v4 (flash)
-		switch {
-		case strings.Contains(m, "v4-pro"):
-			cny, found = deepSeekPricingTable["deepseek-v4-pro"]
-		case strings.Contains(m, "v4"):
-			cny, found = deepSeekPricingTable["deepseek-v4-flash"]
-		}
+	if cny, found := deepSeekPricingTable[m]; found {
+		return cny, true
 	}
+	// Pattern match: v4-pro takes precedence over v4 (flash)
+	switch {
+	case strings.Contains(m, "v4-pro"):
+		return deepSeekPricingTable["deepseek-v4-pro"], true
+	case strings.Contains(m, "v4"):
+		return deepSeekPricingTable["deepseek-v4-flash"], true
+	}
+	return cnyModelPricing{}, false
+}
 
+func (s *PricingService) deepSeekPricingOverride(modelLower string) *LiteLLMModelPricing {
+	cny, found := matchDeepSeekCNY(modelLower)
 	if !found {
 		return nil
 	}

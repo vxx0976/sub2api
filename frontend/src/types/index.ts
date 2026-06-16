@@ -1436,6 +1436,9 @@ export interface UsageLog {
   // 计费模式
   billing_mode?: string | null
 
+  // 计价币种：'CNY'(国产官方人民币计价模型) / 'USD'(默认)。前端据此渲染 ¥/$。
+  price_currency?: string
+
   created_at: string
 
   user?: User

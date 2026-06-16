@@ -655,11 +655,13 @@ func usageLogFromServiceUser(l *service.UsageLog) UsageLog {
 		UserAgent:             l.UserAgent,
 		CacheTTLOverridden:    l.CacheTTLOverridden,
 		BillingMode:           l.BillingMode,
-		CreatedAt:             l.CreatedAt,
-		User:                  UserFromServiceShallow(l.User),
-		APIKey:                APIKeyFromService(l.APIKey),
-		Group:                 GroupFromServiceShallow(l.Group),
-		Subscription:          UserSubscriptionFromService(l.Subscription),
+		// 计价币种按实际计费模型判定（默认计费模型即 l.Model）：国产官方人民币价模型→CNY，其余→USD。
+		PriceCurrency: service.ModelPriceCurrency(l.Model),
+		CreatedAt:     l.CreatedAt,
+		User:          UserFromServiceShallow(l.User),
+		APIKey:        APIKeyFromService(l.APIKey),
+		Group:         GroupFromServiceShallow(l.Group),
+		Subscription:  UserSubscriptionFromService(l.Subscription),
 	}
 }
 
