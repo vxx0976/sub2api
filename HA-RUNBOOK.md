@@ -19,7 +19,7 @@
             api.dsrrr.com ───────────────────────► admin Caddy → 兜底(**生产库**,真实管理/预发)
             canary.dsrrr.com ────────────────────► hostdzire Caddy → canary(**隔离 test 库**,测新版本)
               │
-应用入口Caddy: 各节点 reverse_proxy  →  primary=hostdzire:8080  backup=admin:8080  (health /health, 切 5-10s)
+应用入口Caddy: 各节点 reverse_proxy  →  primary=hostdzire:8080  backup=admin:8080  (health /health, 切 5-10s; 2026-06-11 main/merchant 加 dial_timeout 2s + lb_retries 3 + lb_try_duration 5s,秒级mesh抖动自动重试admin,黑洞注入实测0失败,改前备份 Caddyfile.bak-20260611)
               ▼
 sub2api 应用: hostdzire 生产主(16G)  ⇄ 兜底 ⇄  admin 备(3G, 兼测试/预发)
               │ 各连本机 HAProxy
