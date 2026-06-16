@@ -141,7 +141,7 @@ func registerRoutes(
 	// 注册各模块路由
 	routes.RegisterAuthRoutes(v1, h, jwtAuth, redisClient, settingService)
 	routes.RegisterUserRoutes(v1, h, jwtAuth, settingService)
-	routes.RegisterAdminRoutes(v1, h, adminAuth)
+	routes.RegisterAdminRoutes(v1, h, adminAuth, settingService)
 	routes.RegisterRechargeRoutes(v1, h, jwtAuth, settingService)
 	routes.RegisterAliMPayRoutes(v1, h, jwtAuth, settingService)
 	routes.RegisterResellerRoutes(v1, h, resellerAuth)

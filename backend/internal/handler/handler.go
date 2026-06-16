@@ -42,6 +42,7 @@ type AdminHandlers struct {
 	Affiliate              *admin.AffiliateHandler
 	Translation            *admin.TranslationHandler
 	Chat                   *admin.ChatHandler
+	Compliance             *admin.ComplianceHandler
 }
 
 // ResellerHandlers contains all reseller-related HTTP handlers
