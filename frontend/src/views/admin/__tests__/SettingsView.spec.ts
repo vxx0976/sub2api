@@ -378,7 +378,12 @@ const baseSettingsResponse = {
   enable_fingerprint_unification: true,
   enable_metadata_passthrough: false,
   enable_cch_signing: false,
+  enable_claude_oauth_system_prompt_injection: true,
+  claude_oauth_system_prompt: "",
+  claude_oauth_system_prompt_blocks: "",
   enable_anthropic_cache_ttl_1h_injection: false,
+  cyber_session_block_enabled: false,
+  cyber_session_block_ttl_seconds: 3600,
   rewrite_message_cache_control: false,
   antigravity_user_agent_version: "",
   openai_codex_user_agent: "",
@@ -618,6 +623,64 @@ describe("admin SettingsView payment visible method controls", () => {
     expect(updateSettings).toHaveBeenCalledWith(
       expect.objectContaining({
         enable_anthropic_cache_ttl_1h_injection: true,
+      }),
+    );
+  });
+
+  it("submits Claude OAuth system prompt injection gateway settings", async () => {
+    const blocks = `[{"type":"text","text":"custom block","cache_control":true}]`;
+    getSettings.mockResolvedValueOnce({
+      ...baseSettingsResponse,
+      enable_claude_oauth_system_prompt_injection: false,
+      claude_oauth_system_prompt_blocks: blocks,
+    });
+
+    const wrapper = mountView();
+
+    await flushPromises();
+    await wrapper.find("form").trigger("submit.prevent");
+    await flushPromises();
+
+    expect(updateSettings).toHaveBeenCalledTimes(1);
+    expect(updateSettings).toHaveBeenCalledWith(
+      expect.objectContaining({
+        enable_claude_oauth_system_prompt_injection: false,
+      }),
+    );
+    const payload = updateSettings.mock.calls[0][0] as {
+      claude_oauth_system_prompt_blocks: string;
+    };
+    expect(JSON.parse(payload.claude_oauth_system_prompt_blocks)).toEqual([
+      {
+        enabled: true,
+        type: "text",
+        text: "custom block",
+        cache_control: {
+          type: "ephemeral",
+          ttl: "5m",
+        },
+      },
+    ]);
+  });
+
+  it("submits cyber session block gateway settings", async () => {
+    getSettings.mockResolvedValueOnce({
+      ...baseSettingsResponse,
+      cyber_session_block_enabled: true,
+      cyber_session_block_ttl_seconds: 1800,
+    });
+
+    const wrapper = mountView();
+
+    await flushPromises();
+    await wrapper.find("form").trigger("submit.prevent");
+    await flushPromises();
+
+    expect(updateSettings).toHaveBeenCalledTimes(1);
+    expect(updateSettings).toHaveBeenCalledWith(
+      expect.objectContaining({
+        cyber_session_block_enabled: true,
+        cyber_session_block_ttl_seconds: 1800,
       }),
     );
   });
