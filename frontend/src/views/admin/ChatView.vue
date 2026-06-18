@@ -49,7 +49,7 @@ async function loadConversations() {
   loading.value = true
   try {
     const data = await listConversations(1, 100)
-    conversations.value = data.conversations || []
+    conversations.value = data.items || []
   } catch (e) {
     console.error('Failed to load conversations:', e)
   } finally {
