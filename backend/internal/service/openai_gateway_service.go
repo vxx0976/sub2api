@@ -50,6 +50,13 @@ const (
 	// codex_cli_only 拒绝时单个请求头日志长度上限（字符）
 	codexCLIOnlyHeaderValueMaxBytes = 256
 
+	// kimiCodingUserAgent 是 Kimi For Coding（api.kimi.com）放行所需的 Coding Agent UA。
+	// Kimi 服务端对客户端做白名单校验：仅放行 Kimi CLI / Claude Code / Roo Code 等。
+	// 实测（2026-06-18）：匹配规则为大小写敏感的前缀 "claude-cli/"，版本号与 "(external, cli)"
+	// 后缀均不参与判定；旧值 "claude-code/1.0" 不在白名单内，Kimi 收紧校验后返回 403。
+	// 此处直接对齐真实 Claude Code 的 User-Agent 结构。
+	kimiCodingUserAgent = "claude-cli/2.1.162 (external, cli)"
+
 	// OpenAI WS Mode 失败后的重连次数上限（不含首次尝试）。
 	// 与 Codex 客户端保持一致：失败后最多重连 5 次。
 	openAIWSReconnectRetryLimit = 5
@@ -4289,11 +4296,11 @@ func (s *OpenAIGatewayService) buildUpstreamRequest(ctx context.Context, c *gin.
 		req.Header.Set("user-agent", customUA)
 	}
 
-	// Kimi Code API 要求 User-Agent 包含 "claude-code"，否则拒绝访问。
+	// Kimi For Coding 对客户端做白名单校验，需为 Coding Agent UA（前缀 claude-cli/）。
 	// 当 Moonshot 平台账号使用 api.kimi.com 端点且未自定义 UA 时，自动设置。
 	if account.Platform == PlatformMoonshot && customUA == "" {
 		if baseURL := account.GetCredential("base_url"); strings.Contains(baseURL, "api.kimi.com") {
-			req.Header.Set("user-agent", "claude-code/1.0")
+			req.Header.Set("user-agent", kimiCodingUserAgent)
 		}
 	}
 

@@ -93,11 +93,11 @@ func (s *OpenAIGatewayService) forwardAnthropicDirect(
 	req.Header.Set("anthropic-version", "2023-06-01")
 	req.Header.Set("accept", "application/json")
 
-	// Kimi Code API requires User-Agent containing "claude-code".
+	// Kimi For Coding 对客户端做白名单校验，需为 Coding Agent UA（前缀 claude-cli/）。
 	if account.Platform == PlatformMoonshot {
 		baseURL := account.GetMoonshotBaseURL()
 		if strings.Contains(baseURL, "api.kimi.com") {
-			req.Header.Set("user-agent", "claude-code/1.0")
+			req.Header.Set("user-agent", kimiCodingUserAgent)
 		}
 	}
 

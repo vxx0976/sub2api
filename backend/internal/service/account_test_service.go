@@ -723,9 +723,9 @@ func (s *AccountTestService) testOpenAIChatCompletionsConnection(
 	req.Header.Set("Accept", "text/event-stream")
 	req.Header.Set("Authorization", "Bearer "+authToken)
 
-	// Kimi Code API requires User-Agent containing "claude-code".
+	// Kimi For Coding 对客户端做白名单校验，需为 Coding Agent UA（前缀 claude-cli/）。
 	if account.IsMoonshot() {
-		req.Header.Set("User-Agent", "claude-code/1.0")
+		req.Header.Set("User-Agent", kimiCodingUserAgent)
 	}
 
 	proxyURL := ""
