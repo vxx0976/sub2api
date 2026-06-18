@@ -1,6 +1,7 @@
 package admin
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 	"strings"
@@ -54,8 +55,10 @@ func (h *ChatHandler) ListConversations(c *gin.Context) {
 	}
 
 	out := make([]gin.H, 0, len(items))
+	nameCache := make(map[int64]string)
 	for i := range items {
-		out = append(out, adminChatConversationDTO(&items[i]))
+		name := h.resolveDisplayName(c.Request.Context(), &items[i], nameCache)
+		out = append(out, adminChatConversationDTO(&items[i], name))
 	}
 	response.Paginated(c, out, paginationResult.Total, page, pageSize)
 }
@@ -74,7 +77,7 @@ func (h *ChatHandler) GetConversation(c *gin.Context) {
 		response.ErrorFrom(c, err)
 		return
 	}
-	response.Success(c, adminChatConversationDTO(conv))
+	response.Success(c, adminChatConversationDTO(conv, h.resolveDisplayName(c.Request.Context(), conv, nil)))
 }
 
 // GetMessages returns messages for a conversation.
@@ -284,13 +287,32 @@ func (c *adminChatWSConn) startWriter() {
 	}()
 }
 
-func adminChatConversationDTO(c *service.ChatConversation) gin.H {
+// resolveDisplayName 解析管理员列表展示名(登录用户名/邮箱, 访客显示"访客"),
+// 按 user_id 在本次请求内缓存去重以避免 N+1 查询。cache 传 nil 表示不缓存。
+func (h *ChatHandler) resolveDisplayName(ctx context.Context, conv *service.ChatConversation, cache map[int64]string) string {
+	if conv == nil || conv.UserID == nil {
+		return h.chatService.ResolveDisplayName(ctx, nil)
+	}
+	if cache != nil {
+		if name, ok := cache[*conv.UserID]; ok {
+			return name
+		}
+	}
+	name := h.chatService.ResolveDisplayName(ctx, conv.UserID)
+	if cache != nil {
+		cache[*conv.UserID] = name
+	}
+	return name
+}
+
+func adminChatConversationDTO(c *service.ChatConversation, displayName string) gin.H {
 	if c == nil {
 		return nil
 	}
 	dto := gin.H{
 		"id":                   c.ID,
 		"visitor_name":         c.VisitorName,
+		"display_name":         displayName,
 		"status":               c.Status,
 		"admin_unread_count":   c.AdminUnreadCount,
 		"last_message_preview": c.LastMessagePreview,

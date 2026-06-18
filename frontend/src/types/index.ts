@@ -2188,6 +2188,8 @@ export interface ChatConversation {
   guest_token?: string
   user_id?: number
   visitor_name: string
+  /** 管理端展示名：登录用户显示用户名/邮箱，未登录显示"访客"（后端解析） */
+  display_name?: string
   status: 'open' | 'closed'
   admin_unread_count: number
   last_message_at?: string

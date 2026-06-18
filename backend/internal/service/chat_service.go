@@ -14,12 +14,14 @@ import (
 type ChatService struct {
 	convRepo ChatConversationRepository
 	msgRepo  ChatMessageRepository
+	userRepo UserRepository
 }
 
-func NewChatService(convRepo ChatConversationRepository, msgRepo ChatMessageRepository) *ChatService {
+func NewChatService(convRepo ChatConversationRepository, msgRepo ChatMessageRepository, userRepo UserRepository) *ChatService {
 	return &ChatService{
 		convRepo: convRepo,
 		msgRepo:  msgRepo,
+		userRepo: userRepo,
 	}
 }
 
@@ -127,4 +129,24 @@ func (s *ChatService) MarkAdminRead(ctx context.Context, id int64) error {
 
 func (s *ChatService) CountUnread(ctx context.Context) (int64, error) {
 	return s.convRepo.CountUnread(ctx)
+}
+
+// ResolveDisplayName 返回管理员会话列表展示用的名称:
+// 登录用户 → 用户名(优先)或邮箱; 未登录访客 → "访客"。
+// 用户已被软删时仍按 ID 取名(管理员视角),取不到则回退为 "用户"。
+func (s *ChatService) ResolveDisplayName(ctx context.Context, userID *int64) string {
+	if userID == nil {
+		return "访客"
+	}
+	if s.userRepo != nil {
+		if u, err := s.userRepo.GetByIDIncludeDeleted(ctx, *userID); err == nil && u != nil {
+			if u.Username != "" {
+				return u.Username
+			}
+			if u.Email != "" {
+				return u.Email
+			}
+		}
+	}
+	return "用户"
 }

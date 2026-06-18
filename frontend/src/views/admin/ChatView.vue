@@ -38,6 +38,7 @@ const filteredConversations = computed(() => {
     const q = searchQuery.value.toLowerCase()
     list = list.filter(
       (c) =>
+        c.display_name?.toLowerCase().includes(q) ||
         c.visitor_name?.toLowerCase().includes(q) ||
         c.last_message_preview?.toLowerCase().includes(q)
     )
@@ -235,19 +236,19 @@ onUnmounted(() => {
             :key="conv.id"
             @click="selectConversation(conv)"
             :class="[
-              'cursor-pointer border-b border-gray-100 px-4 py-3 transition hover:bg-gray-50 dark:border-dark-700 dark:hover:bg-dark-700',
+              'cursor-pointer border-b border-gray-100 px-3 py-2 transition hover:bg-gray-50 dark:border-dark-700 dark:hover:bg-dark-700',
               selectedConv?.id === conv.id ? 'bg-blue-50 dark:bg-blue-900/20' : '',
             ]"
           >
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-2">
-                <div class="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 text-xs font-medium text-gray-600 dark:bg-dark-600 dark:text-gray-300">
-                  {{ (conv.visitor_name || '?')[0] }}
+                <div class="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-gray-200 text-xs font-medium text-gray-600 dark:bg-dark-600 dark:text-gray-300">
+                  {{ (conv.display_name || conv.visitor_name || '?')[0] }}
                 </div>
                 <div class="min-w-0">
                   <div class="flex items-center gap-1.5">
                     <span class="truncate text-sm font-medium text-gray-900 dark:text-white">
-                      {{ conv.visitor_name || t('admin.chat.visitorLabel') }}
+                      {{ conv.display_name || conv.visitor_name || t('admin.chat.visitorLabel') }}
                     </span>
                     <span
                       :class="[
@@ -284,7 +285,7 @@ onUnmounted(() => {
           <div class="flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3 dark:border-dark-600 dark:bg-dark-800">
             <div>
               <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
-                {{ selectedConv.visitor_name || t('admin.chat.visitorLabel') }}
+                {{ selectedConv.display_name || selectedConv.visitor_name || t('admin.chat.visitorLabel') }}
               </h3>
               <span
                 :class="[

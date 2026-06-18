@@ -259,7 +259,7 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	translationHandler := admin.NewTranslationHandler(translationService)
 	chatConversationRepository := repository.NewChatConversationRepository(client)
 	chatMessageRepository := repository.NewChatMessageRepository(client)
-	chatService := service.NewChatService(chatConversationRepository, chatMessageRepository)
+	chatService := service.NewChatService(chatConversationRepository, chatMessageRepository, userRepository)
 	chatHub := service.NewChatHub()
 	chatHandler := admin.NewChatHandler(chatService, chatHub)
 	complianceHandler := admin.NewComplianceHandler(settingService)
