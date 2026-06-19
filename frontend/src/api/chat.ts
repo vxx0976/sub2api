@@ -10,6 +10,18 @@ export async function createOrGetConversation(guestToken?: string): Promise<{
   return data
 }
 
+// 探查访客当前的开启会话(不创建),用于页面加载时判断是否有未读管理员回复
+export async function peekConversation(guestToken?: string): Promise<{
+  conversation: ChatConversation | null
+  messages: ChatMessage[]
+  admin_online?: boolean
+}> {
+  const { data } = await apiClient.get('/chat/conversation', {
+    params: { guest_token: guestToken },
+  })
+  return data
+}
+
 export async function sendMessage(
   conversationId: number,
   content: string,
@@ -34,4 +46,4 @@ export async function getMessages(
   return data
 }
 
-export default { createOrGetConversation, sendMessage, getMessages }
+export default { createOrGetConversation, peekConversation, sendMessage, getMessages }

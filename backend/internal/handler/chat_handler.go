@@ -79,6 +79,44 @@ func (h *ChatHandler) CreateOrGetConversation(c *gin.Context) {
 	})
 }
 
+// GetOpenConversation returns the visitor's existing open conversation WITHOUT creating one.
+// Used by the widget on page load to detect unread admin replies (red dot) without side effects.
+// GET /api/v1/chat/conversation
+func (h *ChatHandler) GetOpenConversation(c *gin.Context) {
+	var guestToken *string
+	var userID *int64
+
+	subject, ok := middleware2.GetAuthSubjectFromContext(c)
+	if ok && subject.UserID > 0 {
+		userID = &subject.UserID
+	} else if gt := c.Query("guest_token"); gt != "" {
+		if !uuidRegexp.MatchString(gt) {
+			response.ErrorFrom(c, service.ErrChatInvalidGuestToken)
+			return
+		}
+		guestToken = &gt
+	}
+
+	empty := gin.H{"conversation": nil, "messages": []gin.H{}, "admin_online": h.chatHub.AdminCount() > 0}
+	if userID == nil && guestToken == nil {
+		response.Success(c, empty)
+		return
+	}
+
+	conv, err := h.chatService.GetOpenConversation(c.Request.Context(), guestToken, userID)
+	if err != nil || conv == nil {
+		response.Success(c, empty)
+		return
+	}
+
+	msgs, _, _ := h.chatService.GetMessages(c.Request.Context(), conv.ID, 50, 0)
+	response.Success(c, gin.H{
+		"conversation": chatConversationDTO(conv),
+		"messages":     chatMessagesDTO(msgs),
+		"admin_online": h.chatHub.AdminCount() > 0,
+	})
+}
+
 // SendMessage sends a message from a visitor.
 // POST /api/v1/chat/conversations/:id/messages
 func (h *ChatHandler) SendMessage(c *gin.Context) {

@@ -18,6 +18,7 @@ func RegisterChatRoutes(
 	chat.Use(optionalJWTAuth(jwtAuth))
 	{
 		chat.POST("/conversations", h.Chat.CreateOrGetConversation)
+		chat.GET("/conversation", h.Chat.GetOpenConversation)
 		chat.GET("/conversations/:id/messages", h.Chat.GetMessages)
 		chat.POST("/conversations/:id/messages", h.Chat.SendMessage)
 		chat.GET("/ws", h.Chat.VisitorWebSocket)

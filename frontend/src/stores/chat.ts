@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { createOrGetConversation, sendMessage, getMessages } from '@/api/chat'
+import { createOrGetConversation, peekConversation, sendMessage, getMessages } from '@/api/chat'
 import type { ChatConversation, ChatMessage } from '@/types'
 import { useAuthStore } from './auth'
 
@@ -13,7 +13,11 @@ function generateUUID(): string {
 }
 
 const CONV_ID_KEY = 'chat_conversation_id'
-const LAST_READ_KEY = 'chat_last_read_id'
+// 已读位按「会话 id」持久化(chat_read_<id>):消息 id 全局自增,按会话隔离可避免
+// 同一浏览器多账号互相串读;刷新/换设备后仍能正确判断管理员回复是否已读。
+function readKey(convId: number): string {
+  return `chat_read_${convId}`
+}
 
 export const useChatStore = defineStore('chat', () => {
   const isOpen = ref(false)
@@ -22,12 +26,10 @@ export const useChatStore = defineStore('chat', () => {
   const loading = ref(false)
   const sending = ref(false)
   const hasNewMessage = ref(false)
-  // 客服(管理员)是否在线:开会话时由后端返回,离线则在对话框内提示联系方式
+  // 客服(管理员)是否在线:开会话/探查时由后端返回,离线则在对话框内提示联系方式
   const adminOnline = ref(true)
   const welcomeShown = ref(!!localStorage.getItem('chat_welcome_shown'))
 
-  // 已读到的最大消息 id（访客身份持久化，刷新后仍能判断是否有新回复）
-  let lastReadId = Number(localStorage.getItem(LAST_READ_KEY) || 0)
   // 轮询兜底定时器：面板关闭时 WS 已断开，靠轮询发现管理员的新回复
   let pollTimer: ReturnType<typeof setInterval> | null = null
 
@@ -44,20 +46,28 @@ export const useChatStore = defineStore('chat', () => {
     return !useAuthStore().isAuthenticated
   }
 
-  // 记住会话 id（仅访客持久化，便于刷新后继续轮询；登录用户会话随登录态变化不落盘）
+  function getLastRead(convId: number): number {
+    return Number(localStorage.getItem(readKey(convId)) || 0)
+  }
+
+  function markRead(convId: number, maxId: number) {
+    if (convId > 0 && maxId > getLastRead(convId)) {
+      localStorage.setItem(readKey(convId), String(maxId))
+    }
+  }
+
+  // 记住访客会话 id（仅访客落盘，作为轮询的兜底来源；登录用户由 restore 探查恢复）
   function rememberConversation(id: number) {
     if (isGuest()) localStorage.setItem(CONV_ID_KEY, String(id))
   }
 
-  function markReadUpTo(maxId: number) {
-    if (maxId > lastReadId) {
-      lastReadId = maxId
-      if (isGuest()) localStorage.setItem(LAST_READ_KEY, String(lastReadId))
-    }
-  }
-
   function maxMessageId(list: ChatMessage[]): number {
     return list.reduce((mx, m) => Math.max(mx, m.id), 0)
+  }
+
+  function hasUnreadAdmin(list: ChatMessage[], convId: number): boolean {
+    const lastRead = getLastRead(convId)
+    return list.some((m) => m.sender_type === 'admin' && m.id > lastRead)
   }
 
   // 当前要轮询的会话 id：优先内存中的会话，访客回退到持久化的会话 id
@@ -67,13 +77,40 @@ export const useChatStore = defineStore('chat', () => {
     return 0
   }
 
+  // 页面加载时探查既有会话(不创建空会话),恢复 convId 并据此点亮红点。
+  // 解决"登录用户刷新后内存无会话→轮询拿不到 convId→红点不亮"的盲区。
+  async function restoreConversation() {
+    if (conversation.value) return
+    let token: string | undefined
+    if (isGuest()) {
+      token = localStorage.getItem('chat_guest_token') || undefined
+      if (!token) return // 从未产生过访客身份 → 必无会话；不为探查而生成 token
+    }
+    try {
+      const result = await peekConversation(token)
+      if (!result?.conversation) {
+        if (typeof result?.admin_online === 'boolean') adminOnline.value = result.admin_online
+        return
+      }
+      conversation.value = result.conversation
+      messages.value = result.messages || []
+      adminOnline.value = result.admin_online ?? true
+      rememberConversation(result.conversation.id)
+      if (!isOpen.value && hasUnreadAdmin(messages.value, result.conversation.id)) {
+        hasNewMessage.value = true
+      }
+    } catch {
+      // ignore
+    }
+  }
+
   async function openChat() {
     isOpen.value = true
     hasNewMessage.value = false
 
     // 本会话已在内存中：直接打开，并把已读位推进到最新（含轮询期间合并进来的消息）
     if (conversation.value) {
-      markReadUpTo(maxMessageId(messages.value))
+      markRead(conversation.value.id, maxMessageId(messages.value))
       return
     }
     if (loading.value) return
@@ -87,7 +124,7 @@ export const useChatStore = defineStore('chat', () => {
       messages.value = result.messages || []
       adminOnline.value = result.admin_online ?? true
       rememberConversation(result.conversation.id)
-      markReadUpTo(maxMessageId(messages.value))
+      markRead(result.conversation.id, maxMessageId(messages.value))
     } catch (e) {
       console.error('Failed to open chat:', e)
     } finally {
@@ -110,7 +147,7 @@ export const useChatStore = defineStore('chat', () => {
       if (!messages.value.some((m) => m.id === msg.id)) {
         messages.value.push(msg)
       }
-      markReadUpTo(msg.id)
+      markRead(conversation.value.id, msg.id)
     } catch (e) {
       console.error('Failed to send message:', e)
     } finally {
@@ -128,7 +165,7 @@ export const useChatStore = defineStore('chat', () => {
         if (!isOpen.value) {
           hasNewMessage.value = true
         } else {
-          markReadUpTo(msg.id)
+          markRead(conversation.value.id, msg.id)
         }
       }
     }
@@ -145,7 +182,7 @@ export const useChatStore = defineStore('chat', () => {
       const list = data?.messages || []
       if (!list.length) return
 
-      const hasNewAdminReply = list.some((m) => m.sender_type === 'admin' && m.id > lastReadId)
+      const unread = hasUnreadAdmin(list, convId)
 
       // 若内存中正是该会话，顺带合并新消息，便于打开面板时立即看到最新
       if (conversation.value && conversation.value.id === convId) {
@@ -154,13 +191,13 @@ export const useChatStore = defineStore('chat', () => {
         }
       }
 
-      if (hasNewAdminReply) {
+      if (unread) {
         // 有管理员回复说明客服可达，隐藏离线提示（与 WS 路径一致）
         adminOnline.value = true
         hasNewMessage.value = true
       } else {
         // 没有未读的管理员回复（可能只是自己的消息），推进已读位
-        markReadUpTo(maxMessageId(list))
+        markRead(convId, maxMessageId(list))
       }
     } catch {
       // 静默失败，下次轮询自动重试
@@ -215,6 +252,7 @@ export const useChatStore = defineStore('chat', () => {
     closeChat,
     send,
     receiveMessage,
+    restoreConversation,
     startPolling,
     stopPolling,
     pollNewMessages,

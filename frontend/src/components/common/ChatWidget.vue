@@ -99,8 +99,9 @@ function formatTime(dateStr: string): string {
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
-onMounted(() => {
-  // 启动轮询兜底：面板关闭(WS 断开)时也能发现管理员的新回复并点亮红点
+onMounted(async () => {
+  // 先探查既有会话(刷新后内存为空时也能恢复 convId 并据此点亮红点),再启动轮询兜底
+  await chatStore.restoreConversation()
   chatStore.startPolling()
 })
 

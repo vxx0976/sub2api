@@ -35,6 +35,23 @@ func NewChatService(convRepo ChatConversationRepository, msgRepo ChatMessageRepo
 	}
 }
 
+// GetOpenConversation 返回访客当前的开启会话(不创建);没有则返回 nil。
+// 用于前台气泡在页面加载时"探查"是否有未读的管理员回复,而不副作用地新建空会话。
+func (s *ChatService) GetOpenConversation(ctx context.Context, guestToken *string, userID *int64) (*ChatConversation, error) {
+	if userID != nil {
+		if conv, err := s.convRepo.GetOpenByUserID(ctx, *userID); err == nil && conv != nil {
+			return conv, nil
+		}
+		return nil, nil
+	}
+	if guestToken != nil && *guestToken != "" {
+		if conv, err := s.convRepo.GetOpenByGuestToken(ctx, *guestToken); err == nil && conv != nil {
+			return conv, nil
+		}
+	}
+	return nil, nil
+}
+
 func (s *ChatService) GetOrCreateConversation(ctx context.Context, guestToken *string, userID *int64, visitorName string) (*ChatConversation, error) {
 	if userID != nil {
 		conv, err := s.convRepo.GetOpenByUserID(ctx, *userID)
