@@ -8,7 +8,6 @@ import AdminComplianceDialog from '@/components/admin/AdminComplianceDialog.vue'
 import { resolveDocumentTitle } from '@/router/title'
 import AnnouncementPopup from '@/components/common/AnnouncementPopup.vue'
 import ChatWidget from '@/components/common/ChatWidget.vue'
-import AdminChatNotifier from '@/components/common/AdminChatNotifier.vue'
 import { useAppStore, useAuthStore, useSubscriptionStore, useAnnouncementStore, useResellerSettingsStore, useAdminComplianceStore } from '@/stores'
 import { useAdminChatStore } from '@/stores/adminChat'
 import { getSetupStatus } from '@/api/setup'
@@ -145,6 +144,8 @@ watch(
         adminComplianceStore.fetchStatus().catch((error) => {
           console.error('Failed to fetch admin compliance status:', error)
         })
+        // 轮询客服待处理(未读)会话数,驱动侧边栏「在线客服」徽标(管理员不再有悬浮气泡)
+        adminChatStore.startPolling()
       }
 
       // User logged in: preload subscriptions and start polling
@@ -216,8 +217,7 @@ onMounted(async () => {
   <RouterView />
   <Toast />
   <AnnouncementPopup />
-  <!-- 访客客服气泡：仅对非管理员展示；管理员改用客服消息提醒入口 -->
+  <!-- 访客客服气泡：仅对非管理员展示；管理员通过侧边栏「在线客服」徽标提醒，无悬浮气泡 -->
   <ChatWidget v-if="!authStore.isAdmin" />
-  <AdminChatNotifier v-if="authStore.isAdmin" />
   <AdminComplianceDialog />
 </template>
