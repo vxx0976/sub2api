@@ -1235,6 +1235,7 @@ func (h *GatewayHandler) buildAPIKeyDailyUsage(c *gin.Context, userID, apiKeyID 
 func (h *GatewayHandler) usageQuotaLimited(c *gin.Context, ctx context.Context, apiKey *service.APIKey, usageData gin.H, dailyUsage any, modelStats any) {
 	resp := gin.H{
 		"mode":    "quota_limited",
+		"key_id":  apiKey.ID,
 		"isValid": apiKey.Status == service.StatusAPIKeyActive || apiKey.Status == service.StatusAPIKeyQuotaExhausted || apiKey.Status == service.StatusAPIKeyExpired,
 		"status":  apiKey.Status,
 	}
@@ -1330,6 +1331,7 @@ func (h *GatewayHandler) usageUnrestricted(c *gin.Context, ctx context.Context, 
 	if apiKey.Group != nil && apiKey.Group.IsSubscriptionType() {
 		resp := gin.H{
 			"mode":     "unrestricted",
+			"key_id":   apiKey.ID,
 			"isValid":  true,
 			"planName": apiKey.Group.Name,
 			"unit":     "USD",
@@ -1373,6 +1375,7 @@ func (h *GatewayHandler) usageUnrestricted(c *gin.Context, ctx context.Context, 
 
 	resp := gin.H{
 		"mode":      "unrestricted",
+		"key_id":    apiKey.ID,
 		"isValid":   true,
 		"planName":  "钱包余额",
 		"remaining": latestUser.Balance,
