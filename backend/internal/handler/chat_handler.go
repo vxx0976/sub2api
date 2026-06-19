@@ -75,6 +75,7 @@ func (h *ChatHandler) CreateOrGetConversation(c *gin.Context) {
 	response.Success(c, gin.H{
 		"conversation": chatConversationDTO(conv),
 		"messages":     chatMessagesDTO(msgs),
+		"admin_online": h.chatHub.AdminCount() > 0,
 	})
 }
 

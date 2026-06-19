@@ -7201,6 +7201,8 @@ export default {
     emptyState: '发送消息开始对话',
     conversationClosed: '此会话已关闭，如需帮助请开启新对话。',
     connected: '已连接',
+    offlineTitle: '客服当前不在线',
+    offlineContactHint: '您可以留言，或通过以下方式联系我们：',
   },
 
   // User Subscriptions Page

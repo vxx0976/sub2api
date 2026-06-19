@@ -22,6 +22,8 @@ export const useChatStore = defineStore('chat', () => {
   const loading = ref(false)
   const sending = ref(false)
   const hasNewMessage = ref(false)
+  // 客服(管理员)是否在线:开会话时由后端返回,离线则在对话框内提示联系方式
+  const adminOnline = ref(true)
   const welcomeShown = ref(!!localStorage.getItem('chat_welcome_shown'))
 
   // 已读到的最大消息 id（访客身份持久化，刷新后仍能判断是否有新回复）
@@ -83,6 +85,7 @@ export const useChatStore = defineStore('chat', () => {
       const result = await createOrGetConversation(token)
       conversation.value = result.conversation
       messages.value = result.messages || []
+      adminOnline.value = result.admin_online ?? true
       rememberConversation(result.conversation.id)
       markReadUpTo(maxMessageId(messages.value))
     } catch (e) {
@@ -120,6 +123,8 @@ export const useChatStore = defineStore('chat', () => {
       const exists = messages.value.some((m) => m.id === msg.id)
       if (!exists) {
         messages.value.push(msg)
+        // 收到管理员消息说明客服在线,隐藏离线提示
+        if (msg.sender_type === 'admin') adminOnline.value = true
         if (!isOpen.value) {
           hasNewMessage.value = true
         } else {
@@ -150,6 +155,8 @@ export const useChatStore = defineStore('chat', () => {
       }
 
       if (hasNewAdminReply) {
+        // 有管理员回复说明客服可达，隐藏离线提示（与 WS 路径一致）
+        adminOnline.value = true
         hasNewMessage.value = true
       } else {
         // 没有未读的管理员回复（可能只是自己的消息），推进已读位
@@ -191,6 +198,7 @@ export const useChatStore = defineStore('chat', () => {
     conversation.value = null
     messages.value = []
     hasNewMessage.value = false
+    adminOnline.value = true
   }
 
   return {
@@ -200,6 +208,7 @@ export const useChatStore = defineStore('chat', () => {
     loading,
     sending,
     hasNewMessage,
+    adminOnline,
     welcomeShown,
     guestToken,
     openChat,

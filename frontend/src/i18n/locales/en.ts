@@ -7236,6 +7236,8 @@ export default {
     emptyState: 'Send a message to start a conversation',
     conversationClosed: 'This conversation has been closed. Start a new one if you need help.',
     connected: 'Connected',
+    offlineTitle: 'Support is currently offline',
+    offlineContactHint: 'Leave a message, or reach us through:',
   },
 
   // User Subscriptions Page

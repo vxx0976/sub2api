@@ -4,6 +4,7 @@ import type { ChatConversation, ChatMessage } from '@/types'
 export async function createOrGetConversation(guestToken?: string): Promise<{
   conversation: ChatConversation
   messages: ChatMessage[]
+  admin_online?: boolean
 }> {
   const { data } = await apiClient.post('/chat/conversations', { guest_token: guestToken })
   return data
