@@ -611,6 +611,14 @@ func usageLogFromServiceUser(l *service.UsageLog) UsageLog {
 	if requestedModel == "" {
 		requestedModel = l.Model
 	}
+	// 币种按"实际计费模型"判：发生模型映射时（如 claude-opus-4-8 → deepseek-v4-pro），
+	// 成本是按上游模型计的，币种须跟上游模型走，否则国产上游会被错标成 $。
+	priceCurrencyModel := l.Model
+	if l.UpstreamModel != nil {
+		if up := strings.TrimSpace(*l.UpstreamModel); up != "" {
+			priceCurrencyModel = up
+		}
+	}
 	return UsageLog{
 		ID:                    l.ID,
 		UserID:                l.UserID,
@@ -656,7 +664,7 @@ func usageLogFromServiceUser(l *service.UsageLog) UsageLog {
 		CacheTTLOverridden:    l.CacheTTLOverridden,
 		BillingMode:           l.BillingMode,
 		// 计价币种按实际计费模型判定（默认计费模型即 l.Model）：国产官方人民币价模型→CNY，其余→USD。
-		PriceCurrency: service.ModelPriceCurrency(l.Model),
+		PriceCurrency: service.ModelPriceCurrency(priceCurrencyModel),
 		CreatedAt:     l.CreatedAt,
 		User:          UserFromServiceShallow(l.User),
 		APIKey:        APIKeyFromService(l.APIKey),

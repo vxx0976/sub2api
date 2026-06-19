@@ -134,6 +134,35 @@ func TestUsageLogFromService_ShowsUpstreamModelToUserKeepsRequestedForAdmin(t *t
 	require.Contains(t, string(adminJSON), `"upstream_model":"claude-sonnet-4-20250514"`)
 }
 
+func TestUsageLogFromService_PriceCurrencyFollowsBilledUpstreamModel(t *testing.T) {
+	t.Parallel()
+
+	// 映射场景：请求 claude-opus-4-8 → 上游 deepseek-v4-pro（按人民币计费）。
+	// 币种须跟"实际计费的上游模型"走，用户端与管理端都应判为 CNY（而非按请求名判成 USD）。
+	upstream := "deepseek-v4-pro"
+	mapped := &service.UsageLog{
+		RequestID:      "req_cny_map",
+		Model:          "claude-opus-4-8",
+		RequestedModel: "claude-opus-4-8",
+		UpstreamModel:  &upstream,
+	}
+	require.Equal(t, "CNY", UsageLogFromService(mapped).PriceCurrency)
+	require.Equal(t, "CNY", UsageLogFromServiceAdmin(mapped).PriceCurrency)
+
+	// 直连 deepseek（无映射）：按 model 判，CNY。
+	direct := &service.UsageLog{RequestID: "req_cny_direct", Model: "deepseek-v4-pro"}
+	require.Equal(t, "CNY", UsageLogFromService(direct).PriceCurrency)
+
+	// 直连 claude（无映射）：USD。
+	claude := &service.UsageLog{RequestID: "req_usd", Model: "claude-opus-4-8"}
+	require.Equal(t, "USD", UsageLogFromService(claude).PriceCurrency)
+
+	// 映射到海外模型：USD。
+	gpt := "gpt-5.4"
+	mappedUSD := &service.UsageLog{RequestID: "req_usd_map", Model: "claude-opus-4-8", UpstreamModel: &gpt}
+	require.Equal(t, "USD", UsageLogFromService(mappedUSD).PriceCurrency)
+}
+
 func TestUsageLogFromService_UserSeesMappedUpstreamModel(t *testing.T) {
 	t.Parallel()
 
