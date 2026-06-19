@@ -206,9 +206,10 @@ ssh hostdzire "cd /opt/sub2api && sed -i 's/DATABASE_HOST=10.88.0.4/DATABASE_HOS
 9. ~~etcd/sentinel 第5票迁出 solid~~ ✅ 已完成 (2026-05-29,迁到 bwh2)。**solid 退费时只剩**(备份已不依赖 solid,app→R2 接管): 摘 solid PG/Redis 数据从 + 删 mesh peer(.5)+ check.sh/Prometheus 去掉 solid + 退役 offsite 管道(见 §14)
 10. ~~解 admin 测试/兜底耦合~~ ✅ 已完成 (2026-05-29,测试环境整体迁到 hostdzire `/opt/sub2api-test`,canary 连独立 test 库;admin 只剩生产兜底,见 §12)
 11. ~~config.yaml 残留公网IP~~ ✅ 已修 (2026-05-29,admin/hostdzire 的 config.yaml db/redis host 改为本机 HAProxy 与 .env 一致)
-12. **ops_system_logs 表膨胀**: 单表 4.3GB = sub2api 库 76%(551万行/50天)。根因: 应用自带的 ops 清理 **CleanupEnabled 默认 false**(从没跑过)。修法: **后台「系统监控→高级设置→数据保留」开启清理 + 设 ErrorLogRetentionDays**(该项同时管 ops_error_logs + ops_system_logs;app 批量删 5000/批,cron `0 2`)。开启后首跑会删积压(约 2am),之后每日维护;下次 dump 即大幅瘦身。retention 建议 14–30 天(站长定)。
+12. **ops_system_logs 表膨胀**: ✅ 清理已开启并生效(2026-06-19,后台「系统监控→数据保留」,retention 30天)——autovacuum 健康(死元组 4–10%),活行已降到 ~30天量。但库仍 **8.2G**:30天日志量本身大,且 DELETE 不自动还盘。想再瘦(让备份/恢复/复制更快):retention 降 **7–14 天** + 一次性 `VACUUM FULL ops_system_logs`(+ `ops_error_logs`),**择 CN 夜里**做(会给 flaky hostdzire 灌 WAL,白天别做)。磁盘 158G 用 17%,不急。
 13. ~~一轮残留清理~~ ✅ (2026-05-29): 5节点清悬空镜像共 ~10.7GB;admin 删孤儿卷+停用空闲 Caddy;main/merchant 删孤儿卷 `sub2api_sub2api_data`+收敛 .bak;solid 清 etcd 残留(unit/datadir/bin)。**solid redis 从公网(45.59.186.84)改走 mesh(10.88.0.3)** —— 消除公网复制通道,也是关 #5 公网DB端口的前置。残留待办仅剩 main/merchant 的 legacy DB-ACCESS 白名单(可删,无害)
 14. **HA 对 glibc 异构 (2026-05-31 审计发现)**: admin=Debian glibc **2.36**、hostdzire=Ubuntu glibc **2.35**,所有库 `en_US.UTF-8`(locale 感知排序)。日常 App 经 HAProxy 只连主库 admin(2.36,stored=actual 匹配)→ **零影响**;隐患仅在**故障切换到 hostdzire 后**(用 2.35 排序导航 2.36 建的索引)。但 2.35→2.36 之间 en_US.UTF-8 排序数据实际未变(真正大改在 2.27→2.28),PG 仅按版本号字符串保守报警 → **实际风险低,建议接受 + 记录**。切换补救已写入 §4.2。长期最干净是两机 glibc 对齐(重装 hostdzire OS,代价大,暂不做)。复制层无碍:物理流复制按字节拷页,与排序无关。
+15. **2026-06-19 评审结论(成本/可靠性重审)**: ①**单机整合方案否决**——计费不许退化到小时、HA 形状本就对,就地演进不重建(别再探索"砍 HA 换单机")。②**per-IP 限流否决**——API 服务单 IP 高频正常(站长:5K rpm 都正常),限流会误伤;分布式洪水靠 CF 不靠 app。③**trusted_proxies 未设**: gin `c.ClientIP()` 取到前置 Caddy mesh IP → **API Key 的 IP 白/黑名单当前按 Caddy IP 判断 = 失效**;要用该 ACL 才修(`server.trusted_proxies: ["10.88.0.0/24"]`,会改 ACL 判定)。④**CF 逃生**: 被打时把 mayi.one 的 CF LB「已代理」拨开变橙云(手动一键,丢 CN2 换 L3/4 抗D;免费版 + 源站 IP 已泄 → 仅挡走 CF 的流量)。
 
 ---
 

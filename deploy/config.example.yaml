@@ -26,6 +26,11 @@ server:
   frontend_url: ""
   # Trusted proxies for X-Forwarded-For parsing (CIDR/IP). Empty disables trusted proxies.
   # 信任的代理地址（CIDR/IP 格式），用于解析 X-Forwarded-For 头。留空则禁用代理信任。
+  # PRODUCTION: set this to your front/CF hops so the real client IP is parsed and
+  # CANNOT be spoofed. Leaving it empty in release mode disables the trust chain and
+  # makes security-sensitive logging (Turnstile / abuse / audit) record the proxy IP.
+  # 生产环境必须设置为你的反代/CF 来源 IP 段，否则风控/审计日志记录的是代理 IP 而非真实客户端。
+  # Examples: ["173.245.48.0/20", "103.21.244.0/22"] (Cloudflare ranges), ["10.88.0.0/24"] (mesh)
   trusted_proxies: []
   # Global max request body size in bytes (default: 256MB)
   # 全局最大请求体大小（字节，默认 256MB）
