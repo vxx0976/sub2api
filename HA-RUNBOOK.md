@@ -231,6 +231,12 @@ ssh hostdzire "cd /opt/sub2api && sed -i 's/DATABASE_HOST=10.88.0.4/DATABASE_HOS
     - **脚本/巡检**: admin `pg_backup_jp.sh` → **`pg_backup_offsite.sh`**(dump 一次到 `/opt/backup/spool` 600 → 推 jp+sg → trap 清 spool;cron 每日 20:00 UTC),实测各推 360MB、gzip 完整、落盘 600/目录 700。main `check.sh` 改为解析 forced-command 的 stat 输出、**同时监 jp+sg 新鲜度**(>26h 各自告警 `backup_jp`/`backup_sg`,不可达跳过)。
     - **仍待办**: §7#18 的 ①密钥轮换 ②etcd RBAC+TLS+sentinel requirepass ④pg_hba 收敛 ⑤cleanup tar 清理 — 未动。
 
+20. **2026-06-19 低峰窗口:pg_hba 收敛(关 §7#18待办④)+ ②评估后判定不做 + cleanup tar 清理(⑤)**:
+    - **④ pg_hba 收敛(done)**: admin Patroni DCS 的 pg_hba 去掉 6 条公网 IP 授权行(`45.62.114.56`/`64.186.225.230`/`64.186.226.91`/`23.106.157.112` 的 `host all all`,及 main/merchant 公网的两条**弱 md5** `host all sub2api`),保留 localhost / docker 桥(172.18/172.21,app 用)/ **mesh 10.88.0.0/24** / 复制。手法 `patronictl edit-config --apply - --force`(回滚基线 `admin:/root/patroni-config.bak-20260619.yml`)。验证:leader+replica streaming lag=0、pg_hba.conf 公网行清零、mesh `psql select` ok、app healthy;**PG 未重启**(postmaster 自 5-28,journal 仅 `Reloading PostgreSQL configuration` = reload)。这些公网行本就被 DB-ACCESS 防火墙遮蔽,收敛是"防火墙失效时的兜底 + 去弱 md5"。
+    - **② etcd/sentinel 鉴权:评估后【决定不做】**(非偷懒,拓扑使然): ① **TLS 冗余**——mesh 是 WireGuard,传输已加密;② **etcd RBAC 价值≈0**——全 5 节点 main/merchant/admin/hostdzire/bwh2 **本身都是 etcd 成员**,一台被攻陷=一个 etcd 成员被攻陷(本地有 DCS 数据 + 参与 raft),RBAC 只挡"非成员"客户端,挡不住成员;③ **sentinel requirepass 价值低**——app/HAProxy 都走 `HAProxy:6380`(`tcp-check AUTH` 找主)**不连 sentinel**,且被攻陷节点多半本身就是 sentinel 宿主。结论:在"WG 加密 + 全节点皆成员 + 已全面加固 + 端口 mesh 收口"的前提下,这三项是安全表演且要在活集群冒险,**不划算 → 接受当前姿态**。威胁模型变化(如往 mesh 加入不可信节点)再议。
+    - **⑤ cleanup tar**: merchant `/root/cleanup-20260619` 已删;main 删配置 tar + .bak,**保留 `sub2apipay.tgz`**(含 4 月订单导出 xlsx,业务数据,待站长定夺删否)。
+    - **唯一仍待办**: ①**密钥轮换**(站长定稍后;因 admin/hostdzire 一批密钥曾长期 world-readable)。
+
 ---
 
 ## §8 当前故障自愈能力 (实测验证)
