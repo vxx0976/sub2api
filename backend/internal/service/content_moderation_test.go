@@ -298,6 +298,10 @@ func (r *contentModerationTestUserRepo) ListIDsByParentID(ctx context.Context, p
 	panic("unexpected ListIDsByParentID call")
 }
 
+func (r *contentModerationTestUserRepo) ListIDsByRole(ctx context.Context, role string) ([]int64, error) {
+	panic("unexpected ListIDsByRole call")
+}
+
 func (r *contentModerationTestUserRepo) CountByParentIDToday(ctx context.Context, parentID int64) (int64, error) {
 	panic("unexpected CountByParentIDToday call")
 }

@@ -123,6 +123,14 @@ func (r *chatConversationRepository) List(
 			),
 		)
 	}
+	if len(filters.ExcludeUserIDs) > 0 {
+		// 排除管理员自己的会话;访客会话(user_id 为 NULL)需显式保留
+		// (SQL `NOT IN` 会过滤掉 NULL 行)
+		q = q.Where(chatconversation.Or(
+			chatconversation.UserIDIsNil(),
+			chatconversation.UserIDNotIn(filters.ExcludeUserIDs...),
+		))
+	}
 
 	total, err := q.Count(ctx)
 	if err != nil {
@@ -143,13 +151,20 @@ func (r *chatConversationRepository) List(
 	return chatConversationEntitiesToService(items), paginationResultFromTotal(int64(total), params), nil
 }
 
-func (r *chatConversationRepository) CountUnread(ctx context.Context) (int64, error) {
-	count, err := r.client.ChatConversation.Query().
+func (r *chatConversationRepository) CountUnread(ctx context.Context, excludeUserIDs []int64) (int64, error) {
+	q := r.client.ChatConversation.Query().
 		Where(
 			chatconversation.StatusEQ(service.ChatConversationStatusOpen),
 			chatconversation.AdminUnreadCountGT(0),
-		).
-		Count(ctx)
+		)
+	if len(excludeUserIDs) > 0 {
+		// 与 List 一致:排除管理员会话,保留访客(user_id NULL)
+		q = q.Where(chatconversation.Or(
+			chatconversation.UserIDIsNil(),
+			chatconversation.UserIDNotIn(excludeUserIDs...),
+		))
+	}
+	count, err := q.Count(ctx)
 	return int64(count), err
 }
 

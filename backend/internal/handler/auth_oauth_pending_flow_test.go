@@ -2928,6 +2928,10 @@ func (r *oauthPendingFlowUserRepo) ListIDsByParentID(ctx context.Context, parent
 	return nil, nil
 }
 
+func (r *oauthPendingFlowUserRepo) ListIDsByRole(ctx context.Context, role string) ([]int64, error) {
+	return nil, nil
+}
+
 func (r *oauthPendingFlowUserRepo) ListResellerUsers(ctx context.Context, page, pageSize int, search string) ([]*service.MerchantInfo, int, error) {
 	return nil, 0, nil
 }

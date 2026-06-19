@@ -31,6 +31,8 @@ type ChatMessage = domain.ChatMessage
 type ChatConversationListFilters struct {
 	Status string
 	Search string
+	// ExcludeUserIDs 排除这些用户(管理员)的会话,不在客服列表中展示
+	ExcludeUserIDs []int64
 }
 
 type ChatConversationRepository interface {
@@ -43,7 +45,7 @@ type ChatConversationRepository interface {
 	ResetAdminUnread(ctx context.Context, id int64) error
 	UpdateLastMessage(ctx context.Context, id int64, preview string, at time.Time) error
 	List(ctx context.Context, params pagination.PaginationParams, filters ChatConversationListFilters) ([]ChatConversation, *pagination.PaginationResult, error)
-	CountUnread(ctx context.Context) (int64, error)
+	CountUnread(ctx context.Context, excludeUserIDs []int64) (int64, error)
 }
 
 type ChatMessageRepository interface {

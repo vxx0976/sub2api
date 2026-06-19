@@ -1404,6 +1404,27 @@ func (r *userRepository) ListIDsByParentID(ctx context.Context, parentID int64) 
 	return ids, rows.Err()
 }
 
+// ListIDsByRole returns all (non-deleted) user IDs with the given role.
+func (r *userRepository) ListIDsByRole(ctx context.Context, role string) ([]int64, error) {
+	rows, err := r.sql.QueryContext(ctx,
+		"SELECT id FROM users WHERE role = $1 AND deleted_at IS NULL",
+		role,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+	var ids []int64
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, rows.Err()
+}
+
 // CountByParentIDToday returns the number of sub-users registered today under parentID
 func (r *userRepository) CountByParentIDToday(ctx context.Context, parentID int64) (int64, error) {
 	var count int64

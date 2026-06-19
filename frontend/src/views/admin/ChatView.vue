@@ -11,9 +11,16 @@ import {
 } from '@/api/admin/chat'
 import { useChatWebSocket } from '@/composables/useChatWebSocket'
 import { useAdminChatStore } from '@/stores/adminChat'
+import Select from '@/components/common/Select.vue'
 import type { ChatConversation, ChatMessage } from '@/types'
 
 const { t } = useI18n()
+
+const statusOptions = computed(() => [
+  { value: '', label: t('admin.chat.allStatus') },
+  { value: 'open', label: t('admin.chat.statusOpen') },
+  { value: 'closed', label: t('admin.chat.statusClosed') },
+])
 
 // 会话展示名：登录用户显示用户名/邮箱，访客显示「访客」
 function convName(conv: ChatConversation): string {
@@ -258,11 +265,7 @@ onUnmounted(() => {
                 class="input w-full pl-8 text-sm"
               />
             </div>
-            <select v-model="statusFilter" class="input w-24 text-sm">
-              <option value="">{{ t('admin.chat.allStatus') }}</option>
-              <option value="open">{{ t('admin.chat.statusOpen') }}</option>
-              <option value="closed">{{ t('admin.chat.statusClosed') }}</option>
-            </select>
+            <Select v-model="statusFilter" :options="statusOptions" class="w-28 flex-shrink-0" />
           </div>
         </div>
 

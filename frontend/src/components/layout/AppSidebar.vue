@@ -106,9 +106,21 @@
               "
               @click="handleMenuItemClick(item.path)"
             >
-              <span v-if="item.iconSvg" class="h-5 w-5 flex-shrink-0 sidebar-svg-icon" v-html="sanitizeSvg(item.iconSvg)"></span>
-              <component v-else :is="item.icon" class="h-5 w-5 flex-shrink-0" />
+              <span class="relative flex-shrink-0">
+                <span v-if="item.iconSvg" class="block h-5 w-5 sidebar-svg-icon" v-html="sanitizeSvg(item.iconSvg)"></span>
+                <component v-else :is="item.icon" class="h-5 w-5" />
+                <!-- 折叠态:图标角标红点 -->
+                <span
+                  v-if="item.path === '/admin/chat' && chatUnread > 0 && sidebarCollapsed"
+                  class="absolute -right-1.5 -top-1.5 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white dark:ring-dark-900"
+                ></span>
+              </span>
               <span class="sidebar-label" :class="{ 'sidebar-label-collapsed': sidebarCollapsed }" :aria-hidden="sidebarCollapsed ? 'true' : 'false'">{{ item.label }}</span>
+              <!-- 展开态:行尾未读数徽标 -->
+              <span
+                v-if="item.path === '/admin/chat' && chatUnread > 0 && !sidebarCollapsed"
+                class="ml-auto inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1.5 text-[11px] font-semibold leading-none text-white"
+              >{{ chatBadge }}</span>
             </router-link>
           </template>
         </div>
@@ -204,6 +216,7 @@ import { computed, h, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAdminSettingsStore, useAppStore, useAuthStore, useOnboardingStore, useResellerSettingsStore } from '@/stores'
+import { useAdminChatStore } from '@/stores/adminChat'
 import { getMySubscriptions } from '@/api/subscriptions'
 import VersionBadge from '@/components/common/VersionBadge.vue'
 import { sanitizeSvg } from '@/utils/sanitize'
@@ -259,6 +272,11 @@ const sidebarCollapsed = computed(() => appStore.sidebarCollapsed)
 const mobileOpen = computed(() => appStore.mobileOpen)
 const isAdmin = computed(() => authStore.isAdmin)
 const isReseller = computed(() => authStore.isReseller)
+
+// 在线客服待处理(未读)会话数,用于菜单徽标
+const adminChatStore = useAdminChatStore()
+const chatUnread = computed(() => adminChatStore.unreadCount)
+const chatBadge = computed(() => (chatUnread.value > 99 ? '99+' : String(chatUnread.value)))
 const isDark = ref(document.documentElement.classList.contains('dark'))
 const hasSubscriptions = ref(false)
 

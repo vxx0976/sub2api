@@ -139,6 +139,8 @@ type UserRepository interface {
 
 	// ListIDsByParentID returns all user IDs with parent_id = parentID
 	ListIDsByParentID(ctx context.Context, parentID int64) ([]int64, error)
+	// ListIDsByRole returns all (non-deleted) user IDs with the given role
+	ListIDsByRole(ctx context.Context, role string) ([]int64, error)
 	// CountByParentIDToday returns the number of sub-users registered today under parentID
 	CountByParentIDToday(ctx context.Context, parentID int64) (int64, error)
 	// ListResellerUsers returns paginated reseller users with optional search

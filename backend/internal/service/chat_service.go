@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"strings"
+	"sync"
 	"time"
 	"unicode/utf8"
 
@@ -11,10 +12,19 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
 )
 
+// adminIDsCacheTTL 控制管理员 ID 列表的内存缓存时长。
+// 客服未读数被前台按 ~10s 轮询,缓存可避免每次都查 users 表(role 列无索引)。
+// 管理员变更极少,分钟级陈旧完全可接受。
+const adminIDsCacheTTL = 60 * time.Second
+
 type ChatService struct {
 	convRepo ChatConversationRepository
 	msgRepo  ChatMessageRepository
 	userRepo UserRepository
+
+	adminIDsMu       sync.Mutex
+	adminIDs         []int64
+	adminIDsExpireAt time.Time
 }
 
 func NewChatService(convRepo ChatConversationRepository, msgRepo ChatMessageRepository, userRepo UserRepository) *ChatService {
@@ -104,7 +114,29 @@ func (s *ChatService) SendMessage(ctx context.Context, conversationID int64, sen
 }
 
 func (s *ChatService) ListConversations(ctx context.Context, params pagination.PaginationParams, filters ChatConversationListFilters) ([]ChatConversation, *pagination.PaginationResult, error) {
+	filters.ExcludeUserIDs = s.adminUserIDs(ctx)
 	return s.convRepo.List(ctx, params, filters)
+}
+
+// adminUserIDs 返回管理员用户 ID(用于把管理员自己的会话排除出客服列表与未读统计),
+// 带 60s 内存缓存以避免高频轮询反复查库;出错时回退到上次缓存,避免误把管理员会话放出来。
+func (s *ChatService) adminUserIDs(ctx context.Context) []int64 {
+	if s.userRepo == nil {
+		return nil
+	}
+	s.adminIDsMu.Lock()
+	defer s.adminIDsMu.Unlock()
+	if time.Now().Before(s.adminIDsExpireAt) {
+		return s.adminIDs
+	}
+	ids, err := s.userRepo.ListIDsByRole(ctx, RoleAdmin)
+	if err != nil {
+		slog.Warn("chat: failed to list admin user ids for exclusion", "error", err)
+		return s.adminIDs // 复用上次结果(可能为 nil),不刷新过期时间,下次重试
+	}
+	s.adminIDs = ids
+	s.adminIDsExpireAt = time.Now().Add(adminIDsCacheTTL)
+	return ids
 }
 
 func (s *ChatService) GetConversation(ctx context.Context, id int64) (*ChatConversation, error) {
@@ -128,7 +160,7 @@ func (s *ChatService) MarkAdminRead(ctx context.Context, id int64) error {
 }
 
 func (s *ChatService) CountUnread(ctx context.Context) (int64, error) {
-	return s.convRepo.CountUnread(ctx)
+	return s.convRepo.CountUnread(ctx, s.adminUserIDs(ctx))
 }
 
 // ResolveDisplayName 返回管理员会话列表展示用的名称:
