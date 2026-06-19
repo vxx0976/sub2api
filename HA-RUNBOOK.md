@@ -200,7 +200,7 @@ ssh hostdzire "cd /opt/sub2api && sed -i 's/DATABASE_HOST=10.88.0.4/DATABASE_HOS
 3. ~~admin standby mem_limit 1.5G→3G~~ ✅ 已完成 (2026-05-28)
 4. **api.dsrrr.com / sub2api.dsrrr.com**: 确认用途,前者打 admin standby(1.5G),后者打老容器:9000
 5. ~~关 admin 公网 5432/6379~~ ✅ 已完成 (2026-05-29): 先在 DB-ACCESS 链顶加 `-i lo ACCEPT`(保回环),再把链尾 RETURN 改 DROP;`netfilter-persistent save` 持久化。放行=回环+mesh(10.88.0.0/24@wg0)。legacy main/merchant 公网白名单已删(2026-05-29,确认无公网连接)。前置: 已先把 solid redis 从公网改走 mesh(见 #13)
-6. **老容器 sub-sub2api-1(:9000)**: 站长确认是"另一套 sub2api 临时栈"(自带 sub-postgres-1/sub-redis-1,不碰生产库),~104MB 仍有外部流量。**可随时停,销毁等站长通知**。
+6. ~~**老容器 sub-sub2api-1(:9000)** 另一套 sub2api 临时栈~~ ✅ **已停 2026-06-19**(`/opt/sub` 整套 `docker compose stop`,容器+数据卷保留,`docker compose start` 可恢复;释放 ~364M,unless-stopped 重启宿主不复活)。停前仅 bwh1 每 ~30-60s 轮询 :9000(dashboard/探活,非真实用户——找出来停掉)。**销毁(`down -v` + 删 /opt/sub)待站长通知**。
 7. ~~异地备份 / WAL→R2 PITR~~ ✅ 已解决,且发现**重复**: sub2api **自带 S3/R2 备份**(后台数据备份页,每日 `0 2`→R2,留14天/3份,UI可下载恢复)早已配好。本次手搭的 solid→jp1/sg1/alice 管道是冗余,**待退役**(见 §14)。PITR 决定**跳过**(每日 R2 + canary 测 migration 已足够,不为分钟级 RPO 加复杂度)
 8. **监控告警** (阶段6): inkmirage Grafana 加 PG lag/Redis/Caddy upstream 面板
 9. ~~etcd/sentinel 第5票迁出 solid~~ ✅ 已完成 (2026-05-29,迁到 bwh2)。**solid 退费时只剩**(备份已不依赖 solid,app→R2 接管): 摘 solid PG/Redis 数据从 + 删 mesh peer(.5)+ check.sh/Prometheus 去掉 solid + 退役 offsite 管道(见 §14)
