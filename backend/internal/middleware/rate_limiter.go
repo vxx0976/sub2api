@@ -23,6 +23,9 @@ const (
 // RateLimitOptions 限流可选配置
 type RateLimitOptions struct {
 	FailureMode RateLimitFailureMode
+	// KeyFunc 自定义限流维度。返回非空字符串时用它替代默认的客户端 IP，
+	// 适用于单一后端 IP 但需按令牌/用户区分的 M2M 场景。返回空串则回退到 IP。
+	KeyFunc func(c *gin.Context) string
 }
 
 var rateLimitScript = redis.NewScript(`
@@ -88,8 +91,13 @@ func (r *RateLimiter) LimitWithOptions(key string, limit int, window time.Durati
 	}
 
 	return func(c *gin.Context) {
-		ip := c.ClientIP()
-		redisKey := r.prefix + key + ":" + ip
+		dimension := c.ClientIP()
+		if opts.KeyFunc != nil {
+			if custom := opts.KeyFunc(c); custom != "" {
+				dimension = custom
+			}
+		}
+		redisKey := r.prefix + key + ":" + dimension
 
 		ctx := c.Request.Context()
 

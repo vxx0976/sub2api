@@ -98,6 +98,7 @@ func ProvideResellerHandlers(
 	userHandler *reseller.UserHandler,
 	commissionHandler *reseller.CommissionHandler,
 	withdrawalHandler *reseller.WithdrawalHandler,
+	serviceTokenHandler *reseller.ServiceTokenHandler,
 ) *ResellerHandlers {
 	return &ResellerHandlers{
 		Dashboard:    dashboardHandler,
@@ -109,6 +110,7 @@ func ProvideResellerHandlers(
 		User:         userHandler,
 		Commission:   commissionHandler,
 		Withdrawal:   withdrawalHandler,
+		ServiceToken: serviceTokenHandler,
 	}
 }
 
@@ -256,6 +258,7 @@ var ProviderSet = wire.NewSet(
 	reseller.NewUserHandler,
 	reseller.NewCommissionHandler,
 	reseller.NewWithdrawalHandler,
+	reseller.NewServiceTokenHandler,
 
 	// AdminHandlers, ResellerHandlers and Handlers constructors
 	ProvideAdminHandlers,

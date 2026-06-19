@@ -369,6 +369,18 @@ func (f ReferralRewardFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Val
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ReferralRewardMutation", m)
 }
 
+// The ResellerAPITokenFunc type is an adapter to allow the use of ordinary
+// function as ResellerAPIToken mutator.
+type ResellerAPITokenFunc func(context.Context, *ent.ResellerAPITokenMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ResellerAPITokenFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ResellerAPITokenMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ResellerAPITokenMutation", m)
+}
+
 // The ResellerDomainFunc type is an adapter to allow the use of ordinary
 // function as ResellerDomain mutator.
 type ResellerDomainFunc func(context.Context, *ent.ResellerDomainMutation) (ent.Value, error)

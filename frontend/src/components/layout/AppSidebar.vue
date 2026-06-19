@@ -335,6 +335,21 @@ const KeyIcon = {
     )
 }
 
+const CodeIcon = {
+  render: () =>
+    h(
+      'svg',
+      { fill: 'none', viewBox: '0 0 24 24', stroke: 'currentColor', 'stroke-width': '1.5' },
+      [
+        h('path', {
+          'stroke-linecap': 'round',
+          'stroke-linejoin': 'round',
+          d: 'M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5'
+        })
+      ]
+    )
+}
+
 const ChartIcon = {
   render: () =>
     h(
@@ -768,6 +783,7 @@ const resellerNavItems = computed(() => {
     { path: '/dashboard', label: t('nav.dashboard'), icon: DashboardIcon },
     { path: '/keys', label: t('nav.apiKeys'), icon: KeyIcon },
     { path: '/usage', label: t('nav.usage'), icon: ChartIcon },
+    { path: '/merchant/service-tokens', label: t('nav.resellerServiceTokens'), icon: CodeIcon },
     { path: '/merchant/users', label: t('nav.resellerUsers'), icon: UsersIcon },
     { path: '/merchant/sites', label: t('nav.resellerSites'), icon: GlobeIcon },
     { path: '/merchant/redeem', label: t('nav.resellerRedeem'), icon: TicketIcon },

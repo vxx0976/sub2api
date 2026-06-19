@@ -56,6 +56,7 @@ type ResellerHandlers struct {
 	User         *reseller.UserHandler
 	Commission   *reseller.CommissionHandler
 	Withdrawal   *reseller.WithdrawalHandler
+	ServiceToken *reseller.ServiceTokenHandler
 }
 
 // Handlers contains all HTTP handlers

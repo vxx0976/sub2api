@@ -125,6 +125,17 @@ export const customRoutes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/merchant/service-tokens',
+    name: 'MerchantServiceTokens',
+    component: () => import('@/views/reseller/ServiceTokensView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresReseller: true,
+      title: 'Service Tokens',
+      titleKey: 'reseller.serviceTokens.title'
+    }
+  },
+  {
     path: '/merchant/announcements',
     name: 'MerchantAnnouncements',
     component: () => import('@/views/reseller/AnnouncementsView.vue'),

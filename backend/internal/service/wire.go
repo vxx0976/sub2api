@@ -648,6 +648,7 @@ var ProviderSet = wire.NewSet(
 	NewChannelService,
 	NewErrorPassthroughService,
 	NewResellerService,
+	NewResellerAPITokenService,
 	NewCommissionService,
 	NewTLSFingerprintProfileService,
 

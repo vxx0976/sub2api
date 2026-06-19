@@ -29,6 +29,7 @@ func SetupRouter(
 	adminAuth middleware2.AdminAuthMiddleware,
 	apiKeyAuth middleware2.APIKeyAuthMiddleware,
 	resellerAuth middleware2.ResellerAuthMiddleware,
+	resellerServiceTokenAuth middleware2.ResellerServiceTokenAuthMiddleware,
 	apiKeyService *service.APIKeyService,
 	subscriptionService *service.SubscriptionService,
 	opsService *service.OpsService,
@@ -97,7 +98,7 @@ func SetupRouter(
 	}
 
 	// 注册路由
-	registerRoutes(r, handlers, jwtAuth, adminAuth, apiKeyAuth, resellerAuth, apiKeyService, subscriptionService, opsService, settingService, domainRepo, settingRepo, cfg, redisClient, db, groupService, groupStatusCache)
+	registerRoutes(r, handlers, jwtAuth, adminAuth, apiKeyAuth, resellerAuth, resellerServiceTokenAuth, apiKeyService, subscriptionService, opsService, settingService, domainRepo, settingRepo, cfg, redisClient, db, groupService, groupStatusCache)
 
 	return r
 }
@@ -110,6 +111,7 @@ func registerRoutes(
 	adminAuth middleware2.AdminAuthMiddleware,
 	apiKeyAuth middleware2.APIKeyAuthMiddleware,
 	resellerAuth middleware2.ResellerAuthMiddleware,
+	resellerServiceTokenAuth middleware2.ResellerServiceTokenAuthMiddleware,
 	apiKeyService *service.APIKeyService,
 	subscriptionService *service.SubscriptionService,
 	opsService *service.OpsService,
@@ -145,6 +147,7 @@ func registerRoutes(
 	routes.RegisterRechargeRoutes(v1, h, jwtAuth, settingService)
 	routes.RegisterAliMPayRoutes(v1, h, jwtAuth, settingService)
 	routes.RegisterResellerRoutes(v1, h, resellerAuth)
+	routes.RegisterResellerServiceTokenAPIRoutes(v1, h, resellerServiceTokenAuth, redisClient)
 	routes.RegisterGatewayRoutes(r, h, apiKeyAuth, apiKeyService, subscriptionService, opsService, settingService, cfg)
 	routes.RegisterPaymentRoutes(v1, h.Payment, h.PaymentWebhook, h.Admin.Payment, jwtAuth, adminAuth, settingService)
 	routes.RegisterChatRoutes(v1, h, jwtAuth)

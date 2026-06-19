@@ -94,6 +94,7 @@ var ProviderSet = wire.NewSet(
 	NewErrorPassthroughRepository,
 	NewResellerDomainRepository,
 	NewResellerSettingRepository,
+	NewResellerAPITokenRepository,
 	NewResellerWithdrawalRepo,
 	wire.Bind(new(service.ResellerWithdrawalRepository), new(*ResellerWithdrawalRepo)),
 	NewTLSFingerprintProfileRepository,

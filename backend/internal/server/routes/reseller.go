@@ -42,6 +42,9 @@ func RegisterResellerRoutes(
 
 		// 提现管理
 		registerResellerWithdrawalRoutes(reseller, h)
+
+		// M2M 服务令牌管理（签发/列表/吊销）
+		registerResellerServiceTokenRoutes(reseller, h)
 	}
 }
 
@@ -53,6 +56,17 @@ func registerResellerKeyRoutes(reseller *gin.RouterGroup, h *handler.Handlers) {
 		keys.PUT("/:id", h.Reseller.Key.Update)
 		keys.DELETE("/:id", h.Reseller.Key.Delete)
 		keys.POST("/:id/reset-quota", h.Reseller.Key.ResetQuota)
+		keys.POST("/:id/enable", h.Reseller.Key.Enable)
+		keys.POST("/:id/disable", h.Reseller.Key.Disable)
+	}
+}
+
+func registerResellerServiceTokenRoutes(reseller *gin.RouterGroup, h *handler.Handlers) {
+	tokens := reseller.Group("/service-tokens")
+	{
+		tokens.GET("", h.Reseller.ServiceToken.List)
+		tokens.POST("", h.Reseller.ServiceToken.Create)
+		tokens.DELETE("/:id", h.Reseller.ServiceToken.Revoke)
 	}
 }
 

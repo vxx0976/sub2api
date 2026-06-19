@@ -42,6 +42,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/rechargeorder"
 	"github.com/Wei-Shaw/sub2api/ent/redeemcode"
 	"github.com/Wei-Shaw/sub2api/ent/referralreward"
+	"github.com/Wei-Shaw/sub2api/ent/resellerapitoken"
 	"github.com/Wei-Shaw/sub2api/ent/resellerdomain"
 	"github.com/Wei-Shaw/sub2api/ent/resellersetting"
 	"github.com/Wei-Shaw/sub2api/ent/resellerwithdrawal"
@@ -147,6 +148,7 @@ func checkColumn(t, c string) error {
 			rechargeorder.Table:                 rechargeorder.ValidColumn,
 			redeemcode.Table:                    redeemcode.ValidColumn,
 			referralreward.Table:                referralreward.ValidColumn,
+			resellerapitoken.Table:              resellerapitoken.ValidColumn,
 			resellerdomain.Table:                resellerdomain.ValidColumn,
 			resellersetting.Table:               resellersetting.ValidColumn,
 			resellerwithdrawal.Table:            resellerwithdrawal.ValidColumn,

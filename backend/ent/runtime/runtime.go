@@ -35,6 +35,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/rechargeorder"
 	"github.com/Wei-Shaw/sub2api/ent/redeemcode"
 	"github.com/Wei-Shaw/sub2api/ent/referralreward"
+	"github.com/Wei-Shaw/sub2api/ent/resellerapitoken"
 	"github.com/Wei-Shaw/sub2api/ent/resellerdomain"
 	"github.com/Wei-Shaw/sub2api/ent/resellersetting"
 	"github.com/Wei-Shaw/sub2api/ent/resellerwithdrawal"
@@ -1758,6 +1759,55 @@ func init() {
 	referralrewardDescSkipReferrerReason := referralrewardFields[5].Descriptor()
 	// referralreward.SkipReferrerReasonValidator is a validator for the "skip_referrer_reason" field. It is called by the builders before save.
 	referralreward.SkipReferrerReasonValidator = referralrewardDescSkipReferrerReason.Validators[0].(func(string) error)
+	resellerapitokenMixin := schema.ResellerAPIToken{}.Mixin()
+	resellerapitokenMixinFields0 := resellerapitokenMixin[0].Fields()
+	_ = resellerapitokenMixinFields0
+	resellerapitokenFields := schema.ResellerAPIToken{}.Fields()
+	_ = resellerapitokenFields
+	// resellerapitokenDescCreatedAt is the schema descriptor for created_at field.
+	resellerapitokenDescCreatedAt := resellerapitokenMixinFields0[0].Descriptor()
+	// resellerapitoken.DefaultCreatedAt holds the default value on creation for the created_at field.
+	resellerapitoken.DefaultCreatedAt = resellerapitokenDescCreatedAt.Default.(func() time.Time)
+	// resellerapitokenDescUpdatedAt is the schema descriptor for updated_at field.
+	resellerapitokenDescUpdatedAt := resellerapitokenMixinFields0[1].Descriptor()
+	// resellerapitoken.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	resellerapitoken.DefaultUpdatedAt = resellerapitokenDescUpdatedAt.Default.(func() time.Time)
+	// resellerapitoken.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	resellerapitoken.UpdateDefaultUpdatedAt = resellerapitokenDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// resellerapitokenDescName is the schema descriptor for name field.
+	resellerapitokenDescName := resellerapitokenFields[1].Descriptor()
+	// resellerapitoken.DefaultName holds the default value on creation for the name field.
+	resellerapitoken.DefaultName = resellerapitokenDescName.Default.(string)
+	// resellerapitoken.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	resellerapitoken.NameValidator = resellerapitokenDescName.Validators[0].(func(string) error)
+	// resellerapitokenDescTokenPrefix is the schema descriptor for token_prefix field.
+	resellerapitokenDescTokenPrefix := resellerapitokenFields[2].Descriptor()
+	// resellerapitoken.TokenPrefixValidator is a validator for the "token_prefix" field. It is called by the builders before save.
+	resellerapitoken.TokenPrefixValidator = resellerapitokenDescTokenPrefix.Validators[0].(func(string) error)
+	// resellerapitokenDescTokenHash is the schema descriptor for token_hash field.
+	resellerapitokenDescTokenHash := resellerapitokenFields[3].Descriptor()
+	// resellerapitoken.TokenHashValidator is a validator for the "token_hash" field. It is called by the builders before save.
+	resellerapitoken.TokenHashValidator = func() func(string) error {
+		validators := resellerapitokenDescTokenHash.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(token_hash string) error {
+			for _, fn := range fns {
+				if err := fn(token_hash); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// resellerapitokenDescStatus is the schema descriptor for status field.
+	resellerapitokenDescStatus := resellerapitokenFields[4].Descriptor()
+	// resellerapitoken.DefaultStatus holds the default value on creation for the status field.
+	resellerapitoken.DefaultStatus = resellerapitokenDescStatus.Default.(string)
+	// resellerapitoken.StatusValidator is a validator for the "status" field. It is called by the builders before save.
+	resellerapitoken.StatusValidator = resellerapitokenDescStatus.Validators[0].(func(string) error)
 	resellerdomainMixin := schema.ResellerDomain{}.Mixin()
 	resellerdomainMixinHooks1 := resellerdomainMixin[1].Hooks()
 	resellerdomain.Hooks[0] = resellerdomainMixinHooks1[0]

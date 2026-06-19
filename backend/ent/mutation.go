@@ -43,6 +43,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/rechargeorder"
 	"github.com/Wei-Shaw/sub2api/ent/redeemcode"
 	"github.com/Wei-Shaw/sub2api/ent/referralreward"
+	"github.com/Wei-Shaw/sub2api/ent/resellerapitoken"
 	"github.com/Wei-Shaw/sub2api/ent/resellerdomain"
 	"github.com/Wei-Shaw/sub2api/ent/resellersetting"
 	"github.com/Wei-Shaw/sub2api/ent/resellerwithdrawal"
@@ -100,6 +101,7 @@ const (
 	TypeRechargeOrder                 = "RechargeOrder"
 	TypeRedeemCode                    = "RedeemCode"
 	TypeReferralReward                = "ReferralReward"
+	TypeResellerAPIToken              = "ResellerAPIToken"
 	TypeResellerDomain                = "ResellerDomain"
 	TypeResellerSetting               = "ResellerSetting"
 	TypeResellerWithdrawal            = "ResellerWithdrawal"
@@ -40223,6 +40225,841 @@ func (m *ReferralRewardMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown ReferralReward edge %s", name)
+}
+
+// ResellerAPITokenMutation represents an operation that mutates the ResellerAPIToken nodes in the graph.
+type ResellerAPITokenMutation struct {
+	config
+	op             Op
+	typ            string
+	id             *int64
+	created_at     *time.Time
+	updated_at     *time.Time
+	reseller_id    *int64
+	addreseller_id *int64
+	name           *string
+	token_prefix   *string
+	token_hash     *string
+	status         *string
+	last_used_at   *time.Time
+	expires_at     *time.Time
+	clearedFields  map[string]struct{}
+	done           bool
+	oldValue       func(context.Context) (*ResellerAPIToken, error)
+	predicates     []predicate.ResellerAPIToken
+}
+
+var _ ent.Mutation = (*ResellerAPITokenMutation)(nil)
+
+// resellerapitokenOption allows management of the mutation configuration using functional options.
+type resellerapitokenOption func(*ResellerAPITokenMutation)
+
+// newResellerAPITokenMutation creates new mutation for the ResellerAPIToken entity.
+func newResellerAPITokenMutation(c config, op Op, opts ...resellerapitokenOption) *ResellerAPITokenMutation {
+	m := &ResellerAPITokenMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeResellerAPIToken,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withResellerAPITokenID sets the ID field of the mutation.
+func withResellerAPITokenID(id int64) resellerapitokenOption {
+	return func(m *ResellerAPITokenMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *ResellerAPIToken
+		)
+		m.oldValue = func(ctx context.Context) (*ResellerAPIToken, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().ResellerAPIToken.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withResellerAPIToken sets the old ResellerAPIToken of the mutation.
+func withResellerAPIToken(node *ResellerAPIToken) resellerapitokenOption {
+	return func(m *ResellerAPITokenMutation) {
+		m.oldValue = func(context.Context) (*ResellerAPIToken, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ResellerAPITokenMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ResellerAPITokenMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *ResellerAPITokenMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *ResellerAPITokenMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().ResellerAPIToken.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *ResellerAPITokenMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *ResellerAPITokenMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the ResellerAPIToken entity.
+// If the ResellerAPIToken object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ResellerAPITokenMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *ResellerAPITokenMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *ResellerAPITokenMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *ResellerAPITokenMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the ResellerAPIToken entity.
+// If the ResellerAPIToken object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ResellerAPITokenMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *ResellerAPITokenMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetResellerID sets the "reseller_id" field.
+func (m *ResellerAPITokenMutation) SetResellerID(i int64) {
+	m.reseller_id = &i
+	m.addreseller_id = nil
+}
+
+// ResellerID returns the value of the "reseller_id" field in the mutation.
+func (m *ResellerAPITokenMutation) ResellerID() (r int64, exists bool) {
+	v := m.reseller_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldResellerID returns the old "reseller_id" field's value of the ResellerAPIToken entity.
+// If the ResellerAPIToken object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ResellerAPITokenMutation) OldResellerID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldResellerID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldResellerID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldResellerID: %w", err)
+	}
+	return oldValue.ResellerID, nil
+}
+
+// AddResellerID adds i to the "reseller_id" field.
+func (m *ResellerAPITokenMutation) AddResellerID(i int64) {
+	if m.addreseller_id != nil {
+		*m.addreseller_id += i
+	} else {
+		m.addreseller_id = &i
+	}
+}
+
+// AddedResellerID returns the value that was added to the "reseller_id" field in this mutation.
+func (m *ResellerAPITokenMutation) AddedResellerID() (r int64, exists bool) {
+	v := m.addreseller_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetResellerID resets all changes to the "reseller_id" field.
+func (m *ResellerAPITokenMutation) ResetResellerID() {
+	m.reseller_id = nil
+	m.addreseller_id = nil
+}
+
+// SetName sets the "name" field.
+func (m *ResellerAPITokenMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *ResellerAPITokenMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the ResellerAPIToken entity.
+// If the ResellerAPIToken object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ResellerAPITokenMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *ResellerAPITokenMutation) ResetName() {
+	m.name = nil
+}
+
+// SetTokenPrefix sets the "token_prefix" field.
+func (m *ResellerAPITokenMutation) SetTokenPrefix(s string) {
+	m.token_prefix = &s
+}
+
+// TokenPrefix returns the value of the "token_prefix" field in the mutation.
+func (m *ResellerAPITokenMutation) TokenPrefix() (r string, exists bool) {
+	v := m.token_prefix
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTokenPrefix returns the old "token_prefix" field's value of the ResellerAPIToken entity.
+// If the ResellerAPIToken object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ResellerAPITokenMutation) OldTokenPrefix(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTokenPrefix is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTokenPrefix requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTokenPrefix: %w", err)
+	}
+	return oldValue.TokenPrefix, nil
+}
+
+// ResetTokenPrefix resets all changes to the "token_prefix" field.
+func (m *ResellerAPITokenMutation) ResetTokenPrefix() {
+	m.token_prefix = nil
+}
+
+// SetTokenHash sets the "token_hash" field.
+func (m *ResellerAPITokenMutation) SetTokenHash(s string) {
+	m.token_hash = &s
+}
+
+// TokenHash returns the value of the "token_hash" field in the mutation.
+func (m *ResellerAPITokenMutation) TokenHash() (r string, exists bool) {
+	v := m.token_hash
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTokenHash returns the old "token_hash" field's value of the ResellerAPIToken entity.
+// If the ResellerAPIToken object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ResellerAPITokenMutation) OldTokenHash(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTokenHash is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTokenHash requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTokenHash: %w", err)
+	}
+	return oldValue.TokenHash, nil
+}
+
+// ResetTokenHash resets all changes to the "token_hash" field.
+func (m *ResellerAPITokenMutation) ResetTokenHash() {
+	m.token_hash = nil
+}
+
+// SetStatus sets the "status" field.
+func (m *ResellerAPITokenMutation) SetStatus(s string) {
+	m.status = &s
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *ResellerAPITokenMutation) Status() (r string, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the ResellerAPIToken entity.
+// If the ResellerAPIToken object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ResellerAPITokenMutation) OldStatus(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *ResellerAPITokenMutation) ResetStatus() {
+	m.status = nil
+}
+
+// SetLastUsedAt sets the "last_used_at" field.
+func (m *ResellerAPITokenMutation) SetLastUsedAt(t time.Time) {
+	m.last_used_at = &t
+}
+
+// LastUsedAt returns the value of the "last_used_at" field in the mutation.
+func (m *ResellerAPITokenMutation) LastUsedAt() (r time.Time, exists bool) {
+	v := m.last_used_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastUsedAt returns the old "last_used_at" field's value of the ResellerAPIToken entity.
+// If the ResellerAPIToken object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ResellerAPITokenMutation) OldLastUsedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastUsedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastUsedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastUsedAt: %w", err)
+	}
+	return oldValue.LastUsedAt, nil
+}
+
+// ClearLastUsedAt clears the value of the "last_used_at" field.
+func (m *ResellerAPITokenMutation) ClearLastUsedAt() {
+	m.last_used_at = nil
+	m.clearedFields[resellerapitoken.FieldLastUsedAt] = struct{}{}
+}
+
+// LastUsedAtCleared returns if the "last_used_at" field was cleared in this mutation.
+func (m *ResellerAPITokenMutation) LastUsedAtCleared() bool {
+	_, ok := m.clearedFields[resellerapitoken.FieldLastUsedAt]
+	return ok
+}
+
+// ResetLastUsedAt resets all changes to the "last_used_at" field.
+func (m *ResellerAPITokenMutation) ResetLastUsedAt() {
+	m.last_used_at = nil
+	delete(m.clearedFields, resellerapitoken.FieldLastUsedAt)
+}
+
+// SetExpiresAt sets the "expires_at" field.
+func (m *ResellerAPITokenMutation) SetExpiresAt(t time.Time) {
+	m.expires_at = &t
+}
+
+// ExpiresAt returns the value of the "expires_at" field in the mutation.
+func (m *ResellerAPITokenMutation) ExpiresAt() (r time.Time, exists bool) {
+	v := m.expires_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExpiresAt returns the old "expires_at" field's value of the ResellerAPIToken entity.
+// If the ResellerAPIToken object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ResellerAPITokenMutation) OldExpiresAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExpiresAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExpiresAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExpiresAt: %w", err)
+	}
+	return oldValue.ExpiresAt, nil
+}
+
+// ClearExpiresAt clears the value of the "expires_at" field.
+func (m *ResellerAPITokenMutation) ClearExpiresAt() {
+	m.expires_at = nil
+	m.clearedFields[resellerapitoken.FieldExpiresAt] = struct{}{}
+}
+
+// ExpiresAtCleared returns if the "expires_at" field was cleared in this mutation.
+func (m *ResellerAPITokenMutation) ExpiresAtCleared() bool {
+	_, ok := m.clearedFields[resellerapitoken.FieldExpiresAt]
+	return ok
+}
+
+// ResetExpiresAt resets all changes to the "expires_at" field.
+func (m *ResellerAPITokenMutation) ResetExpiresAt() {
+	m.expires_at = nil
+	delete(m.clearedFields, resellerapitoken.FieldExpiresAt)
+}
+
+// Where appends a list predicates to the ResellerAPITokenMutation builder.
+func (m *ResellerAPITokenMutation) Where(ps ...predicate.ResellerAPIToken) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the ResellerAPITokenMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *ResellerAPITokenMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.ResellerAPIToken, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *ResellerAPITokenMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *ResellerAPITokenMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (ResellerAPIToken).
+func (m *ResellerAPITokenMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *ResellerAPITokenMutation) Fields() []string {
+	fields := make([]string, 0, 9)
+	if m.created_at != nil {
+		fields = append(fields, resellerapitoken.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, resellerapitoken.FieldUpdatedAt)
+	}
+	if m.reseller_id != nil {
+		fields = append(fields, resellerapitoken.FieldResellerID)
+	}
+	if m.name != nil {
+		fields = append(fields, resellerapitoken.FieldName)
+	}
+	if m.token_prefix != nil {
+		fields = append(fields, resellerapitoken.FieldTokenPrefix)
+	}
+	if m.token_hash != nil {
+		fields = append(fields, resellerapitoken.FieldTokenHash)
+	}
+	if m.status != nil {
+		fields = append(fields, resellerapitoken.FieldStatus)
+	}
+	if m.last_used_at != nil {
+		fields = append(fields, resellerapitoken.FieldLastUsedAt)
+	}
+	if m.expires_at != nil {
+		fields = append(fields, resellerapitoken.FieldExpiresAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *ResellerAPITokenMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case resellerapitoken.FieldCreatedAt:
+		return m.CreatedAt()
+	case resellerapitoken.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case resellerapitoken.FieldResellerID:
+		return m.ResellerID()
+	case resellerapitoken.FieldName:
+		return m.Name()
+	case resellerapitoken.FieldTokenPrefix:
+		return m.TokenPrefix()
+	case resellerapitoken.FieldTokenHash:
+		return m.TokenHash()
+	case resellerapitoken.FieldStatus:
+		return m.Status()
+	case resellerapitoken.FieldLastUsedAt:
+		return m.LastUsedAt()
+	case resellerapitoken.FieldExpiresAt:
+		return m.ExpiresAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *ResellerAPITokenMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case resellerapitoken.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case resellerapitoken.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case resellerapitoken.FieldResellerID:
+		return m.OldResellerID(ctx)
+	case resellerapitoken.FieldName:
+		return m.OldName(ctx)
+	case resellerapitoken.FieldTokenPrefix:
+		return m.OldTokenPrefix(ctx)
+	case resellerapitoken.FieldTokenHash:
+		return m.OldTokenHash(ctx)
+	case resellerapitoken.FieldStatus:
+		return m.OldStatus(ctx)
+	case resellerapitoken.FieldLastUsedAt:
+		return m.OldLastUsedAt(ctx)
+	case resellerapitoken.FieldExpiresAt:
+		return m.OldExpiresAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown ResellerAPIToken field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ResellerAPITokenMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case resellerapitoken.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case resellerapitoken.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case resellerapitoken.FieldResellerID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetResellerID(v)
+		return nil
+	case resellerapitoken.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case resellerapitoken.FieldTokenPrefix:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTokenPrefix(v)
+		return nil
+	case resellerapitoken.FieldTokenHash:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTokenHash(v)
+		return nil
+	case resellerapitoken.FieldStatus:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
+		return nil
+	case resellerapitoken.FieldLastUsedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastUsedAt(v)
+		return nil
+	case resellerapitoken.FieldExpiresAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExpiresAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ResellerAPIToken field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *ResellerAPITokenMutation) AddedFields() []string {
+	var fields []string
+	if m.addreseller_id != nil {
+		fields = append(fields, resellerapitoken.FieldResellerID)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *ResellerAPITokenMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case resellerapitoken.FieldResellerID:
+		return m.AddedResellerID()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ResellerAPITokenMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case resellerapitoken.FieldResellerID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddResellerID(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ResellerAPIToken numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *ResellerAPITokenMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(resellerapitoken.FieldLastUsedAt) {
+		fields = append(fields, resellerapitoken.FieldLastUsedAt)
+	}
+	if m.FieldCleared(resellerapitoken.FieldExpiresAt) {
+		fields = append(fields, resellerapitoken.FieldExpiresAt)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *ResellerAPITokenMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ResellerAPITokenMutation) ClearField(name string) error {
+	switch name {
+	case resellerapitoken.FieldLastUsedAt:
+		m.ClearLastUsedAt()
+		return nil
+	case resellerapitoken.FieldExpiresAt:
+		m.ClearExpiresAt()
+		return nil
+	}
+	return fmt.Errorf("unknown ResellerAPIToken nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *ResellerAPITokenMutation) ResetField(name string) error {
+	switch name {
+	case resellerapitoken.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case resellerapitoken.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case resellerapitoken.FieldResellerID:
+		m.ResetResellerID()
+		return nil
+	case resellerapitoken.FieldName:
+		m.ResetName()
+		return nil
+	case resellerapitoken.FieldTokenPrefix:
+		m.ResetTokenPrefix()
+		return nil
+	case resellerapitoken.FieldTokenHash:
+		m.ResetTokenHash()
+		return nil
+	case resellerapitoken.FieldStatus:
+		m.ResetStatus()
+		return nil
+	case resellerapitoken.FieldLastUsedAt:
+		m.ResetLastUsedAt()
+		return nil
+	case resellerapitoken.FieldExpiresAt:
+		m.ResetExpiresAt()
+		return nil
+	}
+	return fmt.Errorf("unknown ResellerAPIToken field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *ResellerAPITokenMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *ResellerAPITokenMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *ResellerAPITokenMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *ResellerAPITokenMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *ResellerAPITokenMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *ResellerAPITokenMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *ResellerAPITokenMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown ResellerAPIToken unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *ResellerAPITokenMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown ResellerAPIToken edge %s", name)
 }
 
 // ResellerDomainMutation represents an operation that mutates the ResellerDomain nodes in the graph.

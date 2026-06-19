@@ -462,6 +462,7 @@ export default {
     allStatuses: 'Все статусы',
     totalItems: 'Всего: {count}',
     loadFailed: 'Не удалось загрузить',
+    operationFailed: 'Операция не удалась',
     saveSuccess: 'Сохранено',
     saveFailed: 'Не удалось сохранить',
     confirmDelete: 'Подтвердите удаление',
@@ -531,6 +532,7 @@ export default {
     resellerUsers: 'Пользователи',
     resellerSites: 'Управление сайтами',
     resellerRedeem: 'Коды активации',
+    resellerServiceTokens: 'API-токены',
     resellerAnnouncements: 'Объявления'
   },
 
@@ -5133,6 +5135,39 @@ export default {
       adminAdjustment: 'Корректировка админа',
       depositNotesPlaceholder: 'напр. Бонус нового пользователя, промо-пополнение',
       withdrawNotesPlaceholder: 'напр. Возврат за проблему с сервисом, отмена ошибочного списания'
+    },
+    serviceTokens: {
+      title: 'API-токены',
+      description: 'Позвольте вашему бэкенду автоматизировать управление ключами (сброс квоты, включение/отключение, создание ключей) без входа в панель.',
+      create: 'Выпустить новый токен',
+      name: 'Метка',
+      namePlaceholder: 'напр. billing-backend',
+      expiresInDays: 'Срок действия (дней)',
+      expiresInDaysHint: 'Оставьте пустым или 0 — без срока',
+      neverExpires: 'Без срока',
+      issue: 'Выпустить',
+      createdTitle: 'Токен выпущен',
+      createdWarning: 'Скопируйте сейчас — открытый токен показывается только один раз и больше не будет доступен.',
+      copy: 'Копировать',
+      copied: 'Скопировано',
+      never: 'Не использовался',
+      statusActive: 'Активен',
+      statusRevoked: 'Отозван',
+      revoke: 'Отозвать',
+      revokeConfirm: 'Отзыв немедленно разорвёт работу бэкенда с этим токеном. Продолжить?',
+      revokeSuccess: 'Токен отозван',
+      empty: 'Пока нет API-токенов',
+      usageTitle: 'Как использовать',
+      usageHint: 'Передавайте заголовок X-Reseller-Token для вызова эндпоинтов ниже (только ваши собственные ключи):',
+      usageResetComment: 'После оплаты клиентом: сброс квоты (ключи, отключённые из-за исчерпания квоты, реактивируются)',
+      usageEnableComment: 'Включить ключ при необходимости',
+      columns: {
+        name: 'Метка',
+        prefix: 'Префикс',
+        status: 'Статус',
+        lastUsed: 'Использован',
+        expiresAt: 'Истекает'
+      }
     },
     settings: {
       title: 'Настройки',

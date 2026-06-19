@@ -11,6 +11,7 @@ import (
 	"time"
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
+	"github.com/Wei-Shaw/sub2api/internal/domain"
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
 )
@@ -523,6 +524,28 @@ func (s *ResellerService) ResetKeyQuota(ctx context.Context, resellerID, keyID i
 	resetTrue := true
 	req := UpdateAPIKeyRequest{
 		ResetQuota: &resetTrue,
+	}
+	return s.apiKeyService.Update(ctx, keyID, resellerID, req)
+}
+
+// SetKeyStatus 启用/禁用分销商自己的某个 API Key。
+// status 仅接受受控常量（active / disabled），避免任意状态字符串写入数据库。
+func (s *ResellerService) SetKeyStatus(ctx context.Context, resellerID, keyID int64, status string) (*APIKey, error) {
+	switch status {
+	case domain.StatusActive, domain.StatusDisabled:
+	default:
+		return nil, infraerrors.BadRequest("INVALID_STATUS", "status must be 'active' or 'disabled'")
+	}
+	// 防止"启用已过期 key"变成静默无效操作：网关仍会按时间判定过期而 403，
+	// 这里提前对已拥有的过期 key 报错，提示需延长有效期或新建 key。
+	if status == domain.StatusActive {
+		if existing, err := s.apiKeyService.GetByID(ctx, keyID); err == nil && existing != nil &&
+			existing.UserID == resellerID && existing.IsExpired() {
+			return nil, infraerrors.BadRequest("KEY_EXPIRED", "cannot enable an expired key; extend its expiration or create a new key")
+		}
+	}
+	req := UpdateAPIKeyRequest{
+		Status: &status,
 	}
 	return s.apiKeyService.Update(ctx, keyID, resellerID, req)
 }

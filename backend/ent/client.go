@@ -45,6 +45,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/rechargeorder"
 	"github.com/Wei-Shaw/sub2api/ent/redeemcode"
 	"github.com/Wei-Shaw/sub2api/ent/referralreward"
+	"github.com/Wei-Shaw/sub2api/ent/resellerapitoken"
 	"github.com/Wei-Shaw/sub2api/ent/resellerdomain"
 	"github.com/Wei-Shaw/sub2api/ent/resellersetting"
 	"github.com/Wei-Shaw/sub2api/ent/resellerwithdrawal"
@@ -129,6 +130,8 @@ type Client struct {
 	RedeemCode *RedeemCodeClient
 	// ReferralReward is the client for interacting with the ReferralReward builders.
 	ReferralReward *ReferralRewardClient
+	// ResellerAPIToken is the client for interacting with the ResellerAPIToken builders.
+	ResellerAPIToken *ResellerAPITokenClient
 	// ResellerDomain is the client for interacting with the ResellerDomain builders.
 	ResellerDomain *ResellerDomainClient
 	// ResellerSetting is the client for interacting with the ResellerSetting builders.
@@ -200,6 +203,7 @@ func (c *Client) init() {
 	c.RechargeOrder = NewRechargeOrderClient(c.config)
 	c.RedeemCode = NewRedeemCodeClient(c.config)
 	c.ReferralReward = NewReferralRewardClient(c.config)
+	c.ResellerAPIToken = NewResellerAPITokenClient(c.config)
 	c.ResellerDomain = NewResellerDomainClient(c.config)
 	c.ResellerSetting = NewResellerSettingClient(c.config)
 	c.ResellerWithdrawal = NewResellerWithdrawalClient(c.config)
@@ -337,6 +341,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		RechargeOrder:                 NewRechargeOrderClient(cfg),
 		RedeemCode:                    NewRedeemCodeClient(cfg),
 		ReferralReward:                NewReferralRewardClient(cfg),
+		ResellerAPIToken:              NewResellerAPITokenClient(cfg),
 		ResellerDomain:                NewResellerDomainClient(cfg),
 		ResellerSetting:               NewResellerSettingClient(cfg),
 		ResellerWithdrawal:            NewResellerWithdrawalClient(cfg),
@@ -401,6 +406,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		RechargeOrder:                 NewRechargeOrderClient(cfg),
 		RedeemCode:                    NewRedeemCodeClient(cfg),
 		ReferralReward:                NewReferralRewardClient(cfg),
+		ResellerAPIToken:              NewResellerAPITokenClient(cfg),
 		ResellerDomain:                NewResellerDomainClient(cfg),
 		ResellerSetting:               NewResellerSettingClient(cfg),
 		ResellerWithdrawal:            NewResellerWithdrawalClient(cfg),
@@ -452,11 +458,11 @@ func (c *Client) Use(hooks ...Hook) {
 		c.ErrorPassthroughRule, c.FailoverGroupEvent, c.Group, c.IdempotencyRecord,
 		c.IdentityAdoptionDecision, c.Order, c.PaymentAuditLog, c.PaymentOrder,
 		c.PaymentProviderInstance, c.PendingAuthSession, c.PromoCode, c.PromoCodeUsage,
-		c.Proxy, c.RechargeOrder, c.RedeemCode, c.ReferralReward, c.ResellerDomain,
-		c.ResellerSetting, c.ResellerWithdrawal, c.SecuritySecret, c.Setting,
-		c.SubscriptionPlan, c.TLSFingerprintProfile, c.UsageCleanupTask, c.UsageLog,
-		c.User, c.UserAllowedGroup, c.UserAttributeDefinition, c.UserAttributeValue,
-		c.UserPlatformQuota, c.UserSubscription,
+		c.Proxy, c.RechargeOrder, c.RedeemCode, c.ReferralReward, c.ResellerAPIToken,
+		c.ResellerDomain, c.ResellerSetting, c.ResellerWithdrawal, c.SecuritySecret,
+		c.Setting, c.SubscriptionPlan, c.TLSFingerprintProfile, c.UsageCleanupTask,
+		c.UsageLog, c.User, c.UserAllowedGroup, c.UserAttributeDefinition,
+		c.UserAttributeValue, c.UserPlatformQuota, c.UserSubscription,
 	} {
 		n.Use(hooks...)
 	}
@@ -473,11 +479,11 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.ErrorPassthroughRule, c.FailoverGroupEvent, c.Group, c.IdempotencyRecord,
 		c.IdentityAdoptionDecision, c.Order, c.PaymentAuditLog, c.PaymentOrder,
 		c.PaymentProviderInstance, c.PendingAuthSession, c.PromoCode, c.PromoCodeUsage,
-		c.Proxy, c.RechargeOrder, c.RedeemCode, c.ReferralReward, c.ResellerDomain,
-		c.ResellerSetting, c.ResellerWithdrawal, c.SecuritySecret, c.Setting,
-		c.SubscriptionPlan, c.TLSFingerprintProfile, c.UsageCleanupTask, c.UsageLog,
-		c.User, c.UserAllowedGroup, c.UserAttributeDefinition, c.UserAttributeValue,
-		c.UserPlatformQuota, c.UserSubscription,
+		c.Proxy, c.RechargeOrder, c.RedeemCode, c.ReferralReward, c.ResellerAPIToken,
+		c.ResellerDomain, c.ResellerSetting, c.ResellerWithdrawal, c.SecuritySecret,
+		c.Setting, c.SubscriptionPlan, c.TLSFingerprintProfile, c.UsageCleanupTask,
+		c.UsageLog, c.User, c.UserAllowedGroup, c.UserAttributeDefinition,
+		c.UserAttributeValue, c.UserPlatformQuota, c.UserSubscription,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -546,6 +552,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.RedeemCode.mutate(ctx, m)
 	case *ReferralRewardMutation:
 		return c.ReferralReward.mutate(ctx, m)
+	case *ResellerAPITokenMutation:
+		return c.ResellerAPIToken.mutate(ctx, m)
 	case *ResellerDomainMutation:
 		return c.ResellerDomain.mutate(ctx, m)
 	case *ResellerSettingMutation:
@@ -5364,6 +5372,139 @@ func (c *ReferralRewardClient) mutate(ctx context.Context, m *ReferralRewardMuta
 	}
 }
 
+// ResellerAPITokenClient is a client for the ResellerAPIToken schema.
+type ResellerAPITokenClient struct {
+	config
+}
+
+// NewResellerAPITokenClient returns a client for the ResellerAPIToken from the given config.
+func NewResellerAPITokenClient(c config) *ResellerAPITokenClient {
+	return &ResellerAPITokenClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `resellerapitoken.Hooks(f(g(h())))`.
+func (c *ResellerAPITokenClient) Use(hooks ...Hook) {
+	c.hooks.ResellerAPIToken = append(c.hooks.ResellerAPIToken, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `resellerapitoken.Intercept(f(g(h())))`.
+func (c *ResellerAPITokenClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ResellerAPIToken = append(c.inters.ResellerAPIToken, interceptors...)
+}
+
+// Create returns a builder for creating a ResellerAPIToken entity.
+func (c *ResellerAPITokenClient) Create() *ResellerAPITokenCreate {
+	mutation := newResellerAPITokenMutation(c.config, OpCreate)
+	return &ResellerAPITokenCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ResellerAPIToken entities.
+func (c *ResellerAPITokenClient) CreateBulk(builders ...*ResellerAPITokenCreate) *ResellerAPITokenCreateBulk {
+	return &ResellerAPITokenCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ResellerAPITokenClient) MapCreateBulk(slice any, setFunc func(*ResellerAPITokenCreate, int)) *ResellerAPITokenCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ResellerAPITokenCreateBulk{err: fmt.Errorf("calling to ResellerAPITokenClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ResellerAPITokenCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ResellerAPITokenCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ResellerAPIToken.
+func (c *ResellerAPITokenClient) Update() *ResellerAPITokenUpdate {
+	mutation := newResellerAPITokenMutation(c.config, OpUpdate)
+	return &ResellerAPITokenUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ResellerAPITokenClient) UpdateOne(_m *ResellerAPIToken) *ResellerAPITokenUpdateOne {
+	mutation := newResellerAPITokenMutation(c.config, OpUpdateOne, withResellerAPIToken(_m))
+	return &ResellerAPITokenUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ResellerAPITokenClient) UpdateOneID(id int64) *ResellerAPITokenUpdateOne {
+	mutation := newResellerAPITokenMutation(c.config, OpUpdateOne, withResellerAPITokenID(id))
+	return &ResellerAPITokenUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ResellerAPIToken.
+func (c *ResellerAPITokenClient) Delete() *ResellerAPITokenDelete {
+	mutation := newResellerAPITokenMutation(c.config, OpDelete)
+	return &ResellerAPITokenDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ResellerAPITokenClient) DeleteOne(_m *ResellerAPIToken) *ResellerAPITokenDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ResellerAPITokenClient) DeleteOneID(id int64) *ResellerAPITokenDeleteOne {
+	builder := c.Delete().Where(resellerapitoken.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ResellerAPITokenDeleteOne{builder}
+}
+
+// Query returns a query builder for ResellerAPIToken.
+func (c *ResellerAPITokenClient) Query() *ResellerAPITokenQuery {
+	return &ResellerAPITokenQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeResellerAPIToken},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ResellerAPIToken entity by its id.
+func (c *ResellerAPITokenClient) Get(ctx context.Context, id int64) (*ResellerAPIToken, error) {
+	return c.Query().Where(resellerapitoken.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ResellerAPITokenClient) GetX(ctx context.Context, id int64) *ResellerAPIToken {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *ResellerAPITokenClient) Hooks() []Hook {
+	return c.hooks.ResellerAPIToken
+}
+
+// Interceptors returns the client interceptors.
+func (c *ResellerAPITokenClient) Interceptors() []Interceptor {
+	return c.inters.ResellerAPIToken
+}
+
+func (c *ResellerAPITokenClient) mutate(ctx context.Context, m *ResellerAPITokenMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ResellerAPITokenCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ResellerAPITokenUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ResellerAPITokenUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ResellerAPITokenDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ResellerAPIToken mutation op: %q", m.Op())
+	}
+}
+
 // ResellerDomainClient is a client for the ResellerDomain schema.
 type ResellerDomainClient struct {
 	config
@@ -7922,10 +8063,10 @@ type (
 		IdempotencyRecord, IdentityAdoptionDecision, Order, PaymentAuditLog,
 		PaymentOrder, PaymentProviderInstance, PendingAuthSession, PromoCode,
 		PromoCodeUsage, Proxy, RechargeOrder, RedeemCode, ReferralReward,
-		ResellerDomain, ResellerSetting, ResellerWithdrawal, SecuritySecret, Setting,
-		SubscriptionPlan, TLSFingerprintProfile, UsageCleanupTask, UsageLog, User,
-		UserAllowedGroup, UserAttributeDefinition, UserAttributeValue,
-		UserPlatformQuota, UserSubscription []ent.Hook
+		ResellerAPIToken, ResellerDomain, ResellerSetting, ResellerWithdrawal,
+		SecuritySecret, Setting, SubscriptionPlan, TLSFingerprintProfile,
+		UsageCleanupTask, UsageLog, User, UserAllowedGroup, UserAttributeDefinition,
+		UserAttributeValue, UserPlatformQuota, UserSubscription []ent.Hook
 	}
 	inters struct {
 		APIKey, Account, AccountGroup, Announcement, AnnouncementRead, AuthIdentity,
@@ -7935,10 +8076,10 @@ type (
 		IdempotencyRecord, IdentityAdoptionDecision, Order, PaymentAuditLog,
 		PaymentOrder, PaymentProviderInstance, PendingAuthSession, PromoCode,
 		PromoCodeUsage, Proxy, RechargeOrder, RedeemCode, ReferralReward,
-		ResellerDomain, ResellerSetting, ResellerWithdrawal, SecuritySecret, Setting,
-		SubscriptionPlan, TLSFingerprintProfile, UsageCleanupTask, UsageLog, User,
-		UserAllowedGroup, UserAttributeDefinition, UserAttributeValue,
-		UserPlatformQuota, UserSubscription []ent.Interceptor
+		ResellerAPIToken, ResellerDomain, ResellerSetting, ResellerWithdrawal,
+		SecuritySecret, Setting, SubscriptionPlan, TLSFingerprintProfile,
+		UsageCleanupTask, UsageLog, User, UserAllowedGroup, UserAttributeDefinition,
+		UserAttributeValue, UserPlatformQuota, UserSubscription []ent.Interceptor
 	}
 )
 

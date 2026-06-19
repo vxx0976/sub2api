@@ -17,10 +17,14 @@ type APIKeyAuthMiddleware gin.HandlerFunc
 // ResellerAuthMiddleware 分销商认证中间件类型
 type ResellerAuthMiddleware gin.HandlerFunc
 
+// ResellerServiceTokenAuthMiddleware 分销商服务令牌（M2M）认证中间件类型
+type ResellerServiceTokenAuthMiddleware gin.HandlerFunc
+
 // ProviderSet 中间件层的依赖注入
 var ProviderSet = wire.NewSet(
 	NewJWTAuthMiddleware,
 	NewAdminAuthMiddleware,
 	NewAPIKeyAuthMiddleware,
 	NewResellerAuthMiddleware,
+	NewResellerServiceTokenAuthMiddleware,
 )

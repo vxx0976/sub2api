@@ -1586,6 +1586,37 @@ var (
 			},
 		},
 	}
+	// ResellerAPITokensColumns holds the columns for the "reseller_api_tokens" table.
+	ResellerAPITokensColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "reseller_id", Type: field.TypeInt64},
+		{Name: "name", Type: field.TypeString, Size: 100, Default: ""},
+		{Name: "token_prefix", Type: field.TypeString, Size: 20},
+		{Name: "token_hash", Type: field.TypeString, Unique: true, Size: 64},
+		{Name: "status", Type: field.TypeString, Size: 20, Default: "active"},
+		{Name: "last_used_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "expires_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+	}
+	// ResellerAPITokensTable holds the schema information for the "reseller_api_tokens" table.
+	ResellerAPITokensTable = &schema.Table{
+		Name:       "reseller_api_tokens",
+		Columns:    ResellerAPITokensColumns,
+		PrimaryKey: []*schema.Column{ResellerAPITokensColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "resellerapitoken_token_hash",
+				Unique:  true,
+				Columns: []*schema.Column{ResellerAPITokensColumns[6]},
+			},
+			{
+				Name:    "resellerapitoken_reseller_id",
+				Unique:  false,
+				Columns: []*schema.Column{ResellerAPITokensColumns[3]},
+			},
+		},
+	}
 	// ResellerDomainsColumns holds the columns for the "reseller_domains" table.
 	ResellerDomainsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -2329,6 +2360,7 @@ var (
 		RechargeOrdersTable,
 		RedeemCodesTable,
 		ReferralRewardsTable,
+		ResellerAPITokensTable,
 		ResellerDomainsTable,
 		ResellerSettingsTable,
 		ResellerWithdrawalsTable,
@@ -2462,6 +2494,9 @@ func init() {
 	ReferralRewardsTable.ForeignKeys[2].RefTable = UsersTable
 	ReferralRewardsTable.Annotation = &entsql.Annotation{
 		Table: "referral_rewards",
+	}
+	ResellerAPITokensTable.Annotation = &entsql.Annotation{
+		Table: "reseller_api_tokens",
 	}
 	ResellerDomainsTable.ForeignKeys[0].RefTable = UsersTable
 	ResellerDomainsTable.Annotation = &entsql.Annotation{

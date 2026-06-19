@@ -39,6 +39,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/rechargeorder"
 	"github.com/Wei-Shaw/sub2api/ent/redeemcode"
 	"github.com/Wei-Shaw/sub2api/ent/referralreward"
+	"github.com/Wei-Shaw/sub2api/ent/resellerapitoken"
 	"github.com/Wei-Shaw/sub2api/ent/resellerdomain"
 	"github.com/Wei-Shaw/sub2api/ent/resellersetting"
 	"github.com/Wei-Shaw/sub2api/ent/resellerwithdrawal"
@@ -922,6 +923,33 @@ func (f TraverseReferralReward) Traverse(ctx context.Context, q ent.Query) error
 	return fmt.Errorf("unexpected query type %T. expect *ent.ReferralRewardQuery", q)
 }
 
+// The ResellerAPITokenFunc type is an adapter to allow the use of ordinary function as a Querier.
+type ResellerAPITokenFunc func(context.Context, *ent.ResellerAPITokenQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f ResellerAPITokenFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.ResellerAPITokenQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.ResellerAPITokenQuery", q)
+}
+
+// The TraverseResellerAPIToken type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseResellerAPIToken func(context.Context, *ent.ResellerAPITokenQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseResellerAPIToken) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseResellerAPIToken) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.ResellerAPITokenQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.ResellerAPITokenQuery", q)
+}
+
 // The ResellerDomainFunc type is an adapter to allow the use of ordinary function as a Querier.
 type ResellerDomainFunc func(context.Context, *ent.ResellerDomainQuery) (ent.Value, error)
 
@@ -1390,6 +1418,8 @@ func NewQuery(q ent.Query) (Query, error) {
 		return &query[*ent.RedeemCodeQuery, predicate.RedeemCode, redeemcode.OrderOption]{typ: ent.TypeRedeemCode, tq: q}, nil
 	case *ent.ReferralRewardQuery:
 		return &query[*ent.ReferralRewardQuery, predicate.ReferralReward, referralreward.OrderOption]{typ: ent.TypeReferralReward, tq: q}, nil
+	case *ent.ResellerAPITokenQuery:
+		return &query[*ent.ResellerAPITokenQuery, predicate.ResellerAPIToken, resellerapitoken.OrderOption]{typ: ent.TypeResellerAPIToken, tq: q}, nil
 	case *ent.ResellerDomainQuery:
 		return &query[*ent.ResellerDomainQuery, predicate.ResellerDomain, resellerdomain.OrderOption]{typ: ent.TypeResellerDomain, tq: q}, nil
 	case *ent.ResellerSettingQuery:

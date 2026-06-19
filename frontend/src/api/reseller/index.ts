@@ -11,6 +11,7 @@ import announcementsAPI from './announcements'
 import usersAPI from './users'
 import commissionsAPI from './commissions'
 import withdrawalsAPI from './withdrawals'
+import serviceTokensAPI from './serviceTokens'
 
 export const resellerAPI = {
   dashboard: dashboardAPI,
@@ -21,7 +22,8 @@ export const resellerAPI = {
   announcements: announcementsAPI,
   users: usersAPI,
   commissions: commissionsAPI,
-  withdrawals: withdrawalsAPI
+  withdrawals: withdrawalsAPI,
+  serviceTokens: serviceTokensAPI
 }
 
 export {
@@ -33,7 +35,8 @@ export {
   announcementsAPI,
   usersAPI,
   commissionsAPI,
-  withdrawalsAPI
+  withdrawalsAPI,
+  serviceTokensAPI
 }
 
 export default resellerAPI
@@ -48,3 +51,4 @@ export type { ResellerAnnouncement, ResellerAnnouncementListResponse, CreateAnno
 export type { ResellerUserListResponse, ResellerBalanceHistoryItem, ResellerBalanceHistoryResponse } from './users'
 export type { CommissionSummary } from './commissions'
 export type { WithdrawalItem, WithdrawalListResponse } from './withdrawals'
+export type { ResellerServiceToken, CreateServiceTokenRequest, CreateServiceTokenResponse } from './serviceTokens'
