@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, nextTick, watch, onUnmounted } from 'vue'
+import { ref, nextTick, watch, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useChatStore } from '@/stores/chat'
 import { useAuthStore } from '@/stores/auth'
@@ -86,8 +86,14 @@ function formatTime(dateStr: string): string {
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
+onMounted(() => {
+  // 启动轮询兜底：面板关闭(WS 断开)时也能发现管理员的新回复并点亮红点
+  chatStore.startPolling()
+})
+
 onUnmounted(() => {
   disconnect()
+  chatStore.stopPolling()
 })
 </script>
 
