@@ -8,12 +8,33 @@ import {
   sendReply,
   closeConversation,
   markRead,
-  getUnreadCount,
 } from '@/api/admin/chat'
 import { useChatWebSocket } from '@/composables/useChatWebSocket'
+import { useAdminChatStore } from '@/stores/adminChat'
 import type { ChatConversation, ChatMessage } from '@/types'
 
 const { t } = useI18n()
+
+// 会话展示名：登录用户显示用户名/邮箱，访客显示「访客」
+function convName(conv: ChatConversation): string {
+  return conv.display_name || conv.visitor_name || t('admin.chat.visitorLabel')
+}
+
+// 头像渐变：按名称稳定取色，让会话列表更有辨识度
+const AVATAR_GRADIENTS = [
+  'from-blue-500 to-indigo-500',
+  'from-emerald-500 to-teal-500',
+  'from-amber-500 to-orange-500',
+  'from-pink-500 to-rose-500',
+  'from-violet-500 to-purple-500',
+  'from-cyan-500 to-sky-500',
+]
+function avatarGradient(name: string): string {
+  const s = name || '?'
+  let h = 0
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0
+  return AVATAR_GRADIENTS[h % AVATAR_GRADIENTS.length]
+}
 
 const conversations = ref<ChatConversation[]>([])
 const selectedConv = ref<ChatConversation | null>(null)
@@ -24,8 +45,11 @@ const replyText = ref('')
 const sending = ref(false)
 const searchQuery = ref('')
 const statusFilter = ref('')
-const totalUnread = ref(0)
 const messageContainer = ref<HTMLDivElement | null>(null)
+
+// 未读数以全局 store 为单一来源，悬浮提醒与本页徽标保持一致
+const adminChat = useAdminChatStore()
+const totalUnread = computed(() => adminChat.unreadCount)
 
 const { connect, disconnect, isConnected } = useChatWebSocket()
 
@@ -58,15 +82,6 @@ async function loadConversations() {
   }
 }
 
-async function loadUnreadCount() {
-  try {
-    const data = await getUnreadCount()
-    totalUnread.value = data.count
-  } catch {
-    // ignore
-  }
-}
-
 async function selectConversation(conv: ChatConversation) {
   selectedConv.value = conv
   messages.value = []
@@ -81,7 +96,7 @@ async function selectConversation(conv: ChatConversation) {
     if (conv.admin_unread_count > 0) {
       await markRead(conv.id)
       conv.admin_unread_count = 0
-      loadUnreadCount()
+      adminChat.fetchUnreadCount()
     }
   } catch (e) {
     console.error('Failed to load messages:', e)
@@ -172,7 +187,7 @@ function connectAdminWS() {
         } else {
           loadConversations()
         }
-        loadUnreadCount()
+        adminChat.fetchUnreadCount()
       }
     },
   })
@@ -180,7 +195,7 @@ function connectAdminWS() {
 
 onMounted(() => {
   loadConversations()
-  loadUnreadCount()
+  adminChat.fetchUnreadCount()
   connectAdminWS()
 })
 
@@ -191,30 +206,58 @@ onUnmounted(() => {
 
 <template>
   <AppLayout>
-    <div class="flex h-[calc(100vh-64px)] overflow-hidden">
+    <div class="-m-4 flex h-[calc(100dvh-4rem)] overflow-hidden rounded-none bg-white md:-m-6 lg:-m-8 dark:bg-dark-900">
       <!-- Left: Conversation list -->
-      <div class="flex w-80 flex-shrink-0 flex-col border-r border-gray-200 bg-white dark:border-dark-600 dark:bg-dark-800">
+      <div class="flex w-80 flex-shrink-0 flex-col border-r border-gray-200 bg-white dark:border-dark-700 dark:bg-dark-800">
         <!-- Header -->
-        <div class="border-b border-gray-200 px-4 py-3 dark:border-dark-600">
+        <div class="flex-shrink-0 border-b border-gray-200 px-4 py-3 dark:border-dark-700">
           <div class="flex items-center justify-between">
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+            <h2 class="flex items-center gap-2 text-base font-semibold text-gray-900 dark:text-white">
               {{ t('admin.chat.title') }}
-            </h2>
-            <div class="flex items-center gap-2">
-              <span v-if="isConnected" class="h-2 w-2 rounded-full bg-green-500"></span>
-              <span v-if="totalUnread > 0" class="rounded-full bg-red-500 px-2 py-0.5 text-xs text-white">
-                {{ totalUnread }}
+              <span
+                v-if="totalUnread > 0"
+                class="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1.5 text-[11px] font-semibold text-white"
+              >
+                {{ totalUnread > 99 ? '99+' : totalUnread }}
               </span>
-            </div>
+            </h2>
+            <span
+              class="flex items-center gap-1.5 text-[11px] font-medium"
+              :class="isConnected ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400'"
+              :title="isConnected ? t('admin.chat.online') : t('admin.chat.offline')"
+            >
+              <span class="relative flex h-2 w-2">
+                <span
+                  v-if="isConnected"
+                  class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"
+                ></span>
+                <span
+                  class="relative inline-flex h-2 w-2 rounded-full"
+                  :class="isConnected ? 'bg-emerald-500' : 'bg-gray-400'"
+                ></span>
+              </span>
+              {{ isConnected ? t('admin.chat.online') : t('admin.chat.offline') }}
+            </span>
           </div>
           <!-- Search + Filter -->
-          <div class="mt-2 flex gap-2">
-            <input
-              v-model="searchQuery"
-              type="text"
-              :placeholder="t('admin.chat.searchPlaceholder')"
-              class="input flex-1 text-sm"
-            />
+          <div class="mt-3 flex gap-2">
+            <div class="relative flex-1">
+              <svg
+                class="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
+              </svg>
+              <input
+                v-model="searchQuery"
+                type="text"
+                :placeholder="t('admin.chat.searchPlaceholder')"
+                class="input w-full pl-8 text-sm"
+              />
+            </div>
             <select v-model="statusFilter" class="input w-24 text-sm">
               <option value="">{{ t('admin.chat.allStatus') }}</option>
               <option value="open">{{ t('admin.chat.statusOpen') }}</option>
@@ -225,52 +268,66 @@ onUnmounted(() => {
 
         <!-- Conversation list -->
         <div class="flex-1 overflow-y-auto">
-          <div v-if="loading" class="flex justify-center py-8">
+          <div v-if="loading" class="flex justify-center py-10">
             <div class="h-6 w-6 animate-spin rounded-full border-2 border-blue-600 border-t-transparent"></div>
           </div>
-          <div v-else-if="filteredConversations.length === 0" class="px-4 py-8 text-center text-sm text-gray-400">
-            {{ t('admin.chat.noConversations') }}
+          <div v-else-if="filteredConversations.length === 0" class="flex flex-col items-center justify-center gap-2 px-4 py-12 text-center text-gray-400">
+            <svg class="h-9 w-9 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+            <span class="text-sm">{{ t('admin.chat.noConversations') }}</span>
           </div>
           <div
             v-for="conv in filteredConversations"
             :key="conv.id"
             @click="selectConversation(conv)"
             :class="[
-              'cursor-pointer border-b border-gray-100 px-3 py-2 transition hover:bg-gray-50 dark:border-dark-700 dark:hover:bg-dark-700',
-              selectedConv?.id === conv.id ? 'bg-blue-50 dark:bg-blue-900/20' : '',
+              'relative flex w-full cursor-pointer items-center gap-2.5 border-b border-gray-100 px-3 py-2.5 text-left transition-colors hover:bg-gray-50 dark:border-dark-700/60 dark:hover:bg-dark-700/50',
+              selectedConv?.id === conv.id ? 'bg-blue-50/70 dark:bg-blue-900/20' : '',
             ]"
           >
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <div class="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-gray-200 text-xs font-medium text-gray-600 dark:bg-dark-600 dark:text-gray-300">
-                  {{ (conv.display_name || conv.visitor_name || '?')[0] }}
-                </div>
-                <div class="min-w-0">
-                  <div class="flex items-center gap-1.5">
-                    <span class="truncate text-sm font-medium text-gray-900 dark:text-white">
-                      {{ conv.display_name || conv.visitor_name || t('admin.chat.visitorLabel') }}
-                    </span>
-                    <span
-                      :class="[
-                        'inline-flex h-1.5 w-1.5 rounded-full',
-                        conv.status === 'open' ? 'bg-green-500' : 'bg-gray-400',
-                      ]"
-                    ></span>
-                  </div>
-                  <p class="truncate text-xs text-gray-500 dark:text-gray-400">
-                    {{ conv.last_message_preview || '...' }}
-                  </p>
-                </div>
+            <span
+              v-if="selectedConv?.id === conv.id"
+              class="absolute inset-y-0 left-0 w-1 rounded-r bg-gradient-to-b from-blue-500 to-indigo-500"
+            ></span>
+            <!-- Avatar -->
+            <div class="relative flex-shrink-0">
+              <div
+                class="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br text-sm font-semibold uppercase text-white shadow-sm"
+                :class="avatarGradient(convName(conv))"
+              >
+                {{ (convName(conv) || '?')[0] }}
               </div>
-              <div class="flex flex-col items-end gap-1">
-                <span class="text-[10px] text-gray-400">
+              <span
+                class="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white dark:border-dark-800"
+                :class="conv.status === 'open' ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-dark-500'"
+              ></span>
+            </div>
+            <!-- Content -->
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center justify-between gap-2">
+                <span
+                  class="truncate text-sm font-medium text-gray-900 dark:text-white"
+                  :class="{ 'font-semibold': conv.admin_unread_count > 0 }"
+                >
+                  {{ convName(conv) }}
+                </span>
+                <span class="flex-shrink-0 text-[10px] text-gray-400">
                   {{ conv.last_message_at ? formatTime(conv.last_message_at) : '' }}
                 </span>
+              </div>
+              <div class="mt-0.5 flex items-center justify-between gap-2">
+                <p
+                  class="truncate text-xs"
+                  :class="conv.admin_unread_count > 0 ? 'font-medium text-gray-700 dark:text-gray-200' : 'text-gray-500 dark:text-gray-400'"
+                >
+                  {{ conv.last_message_preview || '...' }}
+                </p>
                 <span
                   v-if="conv.admin_unread_count > 0"
-                  class="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] text-white"
+                  class="flex h-[18px] min-w-[18px] flex-shrink-0 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold text-white"
                 >
-                  {{ conv.admin_unread_count }}
+                  {{ conv.admin_unread_count > 99 ? '99+' : conv.admin_unread_count }}
                 </span>
               </div>
             </div>
@@ -282,21 +339,31 @@ onUnmounted(() => {
       <div class="flex flex-1 flex-col bg-gray-50 dark:bg-dark-900">
         <template v-if="selectedConv">
           <!-- Chat header -->
-          <div class="flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3 dark:border-dark-600 dark:bg-dark-800">
-            <div>
-              <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
-                {{ selectedConv.display_name || selectedConv.visitor_name || t('admin.chat.visitorLabel') }}
-              </h3>
-              <span
-                :class="[
-                  'text-xs',
-                  selectedConv.status === 'open' ? 'text-green-600' : 'text-gray-400',
-                ]"
+          <div class="flex flex-shrink-0 items-center justify-between border-b border-gray-200 bg-white px-5 py-3 dark:border-dark-700 dark:bg-dark-800">
+            <div class="flex min-w-0 items-center gap-3">
+              <div
+                class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-sm font-semibold uppercase text-white shadow-sm"
+                :class="avatarGradient(convName(selectedConv))"
               >
-                {{ selectedConv.status === 'open' ? t('admin.chat.statusOpen') : t('admin.chat.statusClosed') }}
-              </span>
+                {{ (convName(selectedConv) || '?')[0] }}
+              </div>
+              <div class="min-w-0">
+                <h3 class="truncate text-sm font-semibold text-gray-900 dark:text-white">
+                  {{ convName(selectedConv) }}
+                </h3>
+                <span
+                  class="inline-flex items-center gap-1 text-xs"
+                  :class="selectedConv.status === 'open' ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400'"
+                >
+                  <span
+                    class="h-1.5 w-1.5 rounded-full"
+                    :class="selectedConv.status === 'open' ? 'bg-emerald-500' : 'bg-gray-400'"
+                  ></span>
+                  {{ selectedConv.status === 'open' ? t('admin.chat.statusOpen') : t('admin.chat.statusClosed') }}
+                </span>
+              </div>
             </div>
-            <div class="flex gap-2">
+            <div class="flex flex-shrink-0 gap-2">
               <button
                 v-if="selectedConv.status === 'open'"
                 @click="handleClose"
@@ -306,7 +373,7 @@ onUnmounted(() => {
               </button>
               <button
                 @click="loadConversations"
-                class="btn btn-secondary text-xs"
+                class="btn btn-secondary !px-2 text-xs"
                 :title="t('common.refresh')"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -317,72 +384,81 @@ onUnmounted(() => {
           </div>
 
           <!-- Messages -->
-          <div ref="messageContainer" class="flex-1 space-y-3 overflow-y-auto px-6 py-4">
+          <div ref="messageContainer" class="flex-1 space-y-4 overflow-y-auto px-6 py-5">
             <div v-if="messagesLoading" class="flex justify-center py-8">
               <div class="h-6 w-6 animate-spin rounded-full border-2 border-blue-600 border-t-transparent"></div>
             </div>
-            <div v-else-if="messages.length === 0" class="flex flex-col items-center justify-center py-12 text-gray-400">
-              <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <div v-else-if="messages.length === 0" class="flex flex-col items-center justify-center py-16 text-gray-400">
+              <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 h-10 w-10 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
               </svg>
               <span class="text-sm">{{ t('admin.chat.noMessages') }}</span>
             </div>
-            <template v-for="msg in messages" :key="msg.id">
-              <div :class="msg.sender_type === 'admin' ? 'flex justify-end' : 'flex justify-start'">
-                <div class="max-w-[65%]">
-                  <div class="mb-0.5 text-[10px] text-gray-400" :class="msg.sender_type === 'admin' ? 'text-right' : 'text-left'">
-                    {{ msg.sender_type === 'admin' ? t('admin.chat.adminLabel') : t('admin.chat.visitorLabel') }}
-                  </div>
-                  <div
-                    :class="[
-                      'rounded-2xl px-4 py-2 text-sm leading-relaxed',
-                      msg.sender_type === 'admin'
-                        ? 'rounded-br-md bg-blue-600 text-white'
-                        : 'rounded-bl-md bg-white text-gray-900 shadow-sm dark:bg-dark-700 dark:text-gray-100',
-                    ]"
-                  >
-                    {{ msg.content }}
-                  </div>
-                  <div class="mt-0.5 text-[10px] text-gray-400" :class="msg.sender_type === 'admin' ? 'text-right' : 'text-left'">
-                    {{ formatTime(msg.created_at) }}
-                  </div>
+            <div
+              v-for="msg in messages"
+              :key="msg.id"
+              :class="msg.sender_type === 'admin' ? 'flex justify-end' : 'flex justify-start'"
+            >
+              <div class="flex max-w-[72%] flex-col" :class="msg.sender_type === 'admin' ? 'items-end' : 'items-start'">
+                <span class="mb-1 px-1 text-[10px] text-gray-400">
+                  {{ msg.sender_type === 'admin' ? t('admin.chat.adminLabel') : t('admin.chat.visitorLabel') }}
+                </span>
+                <div
+                  :class="[
+                    'whitespace-pre-wrap break-words px-4 py-2.5 text-sm leading-relaxed shadow-sm',
+                    msg.sender_type === 'admin'
+                      ? 'rounded-2xl rounded-br-md bg-gradient-to-br from-blue-600 to-indigo-600 text-white'
+                      : 'rounded-2xl rounded-bl-md bg-white text-gray-900 ring-1 ring-gray-100 dark:bg-dark-700 dark:text-gray-100 dark:ring-dark-600',
+                  ]"
+                >
+                  {{ msg.content }}
                 </div>
+                <span class="mt-1 px-1 text-[10px] text-gray-400">
+                  {{ formatTime(msg.created_at) }}
+                </span>
               </div>
-            </template>
+            </div>
           </div>
 
           <!-- Reply input -->
-          <div v-if="selectedConv.status === 'open'" class="border-t border-gray-200 bg-white px-4 py-3 dark:border-dark-600 dark:bg-dark-800">
+          <div v-if="selectedConv.status === 'open'" class="flex-shrink-0 border-t border-gray-200 bg-white px-4 py-3 dark:border-dark-700 dark:bg-dark-800">
             <div class="flex items-end gap-3">
               <textarea
                 v-model="replyText"
                 @keydown.enter.exact.prevent="handleSendReply"
                 :placeholder="t('admin.chat.replyPlaceholder')"
                 :disabled="sending"
-                rows="2"
-                class="input flex-1 resize-none text-sm"
+                rows="1"
+                class="input min-h-[42px] flex-1 resize-none text-sm"
                 style="max-height: 120px"
               ></textarea>
               <button
                 @click="handleSendReply"
                 :disabled="!replyText.trim() || sending"
-                class="btn btn-primary flex-shrink-0"
+                class="btn btn-primary flex flex-shrink-0 items-center gap-1.5"
               >
+                <svg v-if="!sending" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                </svg>
+                <span v-if="sending" class="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></span>
                 {{ t('admin.chat.send') }}
               </button>
             </div>
+            <p class="mt-1.5 px-1 text-[10px] text-gray-400">{{ t('admin.chat.enterToSend') }}</p>
           </div>
-          <div v-else class="border-t border-gray-200 bg-gray-50 px-4 py-3 text-center text-sm text-gray-500 dark:border-dark-600 dark:bg-dark-900">
+          <div v-else class="flex-shrink-0 border-t border-gray-200 bg-gray-50 px-4 py-3 text-center text-sm text-gray-500 dark:border-dark-700 dark:bg-dark-900">
             {{ t('admin.chat.closedNotice') }}
           </div>
         </template>
 
         <!-- No conversation selected -->
-        <div v-else class="flex flex-1 flex-col items-center justify-center text-gray-400">
-          <svg xmlns="http://www.w3.org/2000/svg" class="mb-3 h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-          </svg>
-          <span class="text-sm">{{ t('admin.chat.selectConversation') }}</span>
+        <div v-else class="flex flex-1 flex-col items-center justify-center px-6 text-center text-gray-400">
+          <div class="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-dark-800 dark:to-dark-700">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-blue-400/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.3">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+          </div>
+          <span class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ t('admin.chat.selectConversation') }}</span>
         </div>
       </div>
     </div>

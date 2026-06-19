@@ -8,7 +8,9 @@ import AdminComplianceDialog from '@/components/admin/AdminComplianceDialog.vue'
 import { resolveDocumentTitle } from '@/router/title'
 import AnnouncementPopup from '@/components/common/AnnouncementPopup.vue'
 import ChatWidget from '@/components/common/ChatWidget.vue'
+import AdminChatNotifier from '@/components/common/AdminChatNotifier.vue'
 import { useAppStore, useAuthStore, useSubscriptionStore, useAnnouncementStore, useResellerSettingsStore, useAdminComplianceStore } from '@/stores'
+import { useAdminChatStore } from '@/stores/adminChat'
 import { getSetupStatus } from '@/api/setup'
 import { applySeoMeta } from '@/utils/seo'
 
@@ -21,6 +23,7 @@ const subscriptionStore = useSubscriptionStore()
 const announcementStore = useAnnouncementStore()
 const resellerSettingsStore = useResellerSettingsStore()
 const adminComplianceStore = useAdminComplianceStore()
+const adminChatStore = useAdminChatStore()
 
 /**
  * Update favicon dynamically
@@ -167,6 +170,7 @@ watch(
       announcementStore.reset()
       resellerSettingsStore.reset()
       adminComplianceStore.reset()
+      adminChatStore.reset()
       document.removeEventListener('visibilitychange', onVisibilityChange)
     }
   },
@@ -212,6 +216,8 @@ onMounted(async () => {
   <RouterView />
   <Toast />
   <AnnouncementPopup />
-  <ChatWidget />
+  <!-- 访客客服气泡：仅对非管理员展示；管理员改用客服消息提醒入口 -->
+  <ChatWidget v-if="!authStore.isAdmin" />
+  <AdminChatNotifier v-if="authStore.isAdmin" />
   <AdminComplianceDialog />
 </template>

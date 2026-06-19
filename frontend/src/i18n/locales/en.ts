@@ -5118,6 +5118,10 @@ export default {
       closedNotice: 'Conversation closed',
       closeConfirm: 'Are you sure you want to close this conversation?',
       newMessage: 'New Message',
+      online: 'Online',
+      offline: 'Offline',
+      enterToSend: 'Press Enter to send, Shift + Enter for a new line',
+      notifierTitle: 'Customer messages',
     },
 
     // Usage Records

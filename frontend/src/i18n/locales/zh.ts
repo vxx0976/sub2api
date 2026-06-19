@@ -5088,6 +5088,10 @@ export default {
       closedNotice: '会话已关闭',
       closeConfirm: '确定要关闭此会话吗？',
       newMessage: '新消息',
+      online: '在线',
+      offline: '离线',
+      enterToSend: '按 Enter 发送，Shift + Enter 换行',
+      notifierTitle: '客服消息',
     },
 
     // Usage Records
