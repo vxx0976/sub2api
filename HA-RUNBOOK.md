@@ -217,7 +217,7 @@ ssh hostdzire "cd /opt/sub2api && sed -i 's/DATABASE_HOST=10.88.0.4/DATABASE_HOS
     - **修复**: ①v4 补封 `:9121`(admin/hostdzire,照 9100 式样 lo+mesh ACCEPT / DROP);②v6 每台加 `-A INPUT -i lo ACCEPT` + 敏感端口 DROP——admin=`5432,6379,9100,9121`、main/merchant=`9100`、hostdzire=`9100,9121`(22/80/443 保持公网;mesh 是 v4 无需放行);③持久化:main/merchant/admin 走 netfilter-persistent(已 enabled,rules.v6 落盘),**hostdzire 原来根本没有开机加载 iptables 的机制**(rules.v4/v6 在但没人 restore,重启全丢)→ 新建并 enable `iptables-restore.service`(oneshot,`--test` 校验通过)。
     - **验证**: 跨节点公网 v6 探 4 个目标**全 blocked**;mesh v4 抓取仍正常;**PG 复制 leader+replica streaming lag=0**(v6 5432 DROP 不影响走 mesh 的流复制)。
     - **清理**: admin `authorized_keys` 有**重复 RSA**(`s0I`,= bwh1/bwh2→admin 活跃)→去重保一份 + 标 `bwh1-bwh2-root`(备份在 `~/.ssh/authorized_keys.bak-20260619`);admin 删 `~/.local/share/claude` 670M(/root→8.5M)+ `docker image prune` 163M;bwh2 删 `~/.claude/downloads` 225M(/root→616K)。
-    - **待定(需站长拍板)**: ⓐ bwh2 `*:42422` = **xray**(公网代理跑在 quorum 投票节点上,`/root/microsocks` 是没在跑的死目录)——保留/迁走/封?ⓑ admin `/opt/sub` 474M = §7#6 那套已停的 sub-* 临时栈——是否 `docker compose down` + 删目录彻底销毁?
+    - **站长已决定(2026-06-19,均保留不动)**: ⓐ bwh2 `*:42422` = **xray**(站长自有公网代理,跑在 quorum 投票节点上;注意 0.5G 内存与 etcd/sentinel 共存,被刷可能 OOM 影响仲裁——**保留不动**)。`/root/microsocks` 是没在跑的死目录(留着)。ⓑ admin `/opt/sub` 474M(已停 sub-* 临时栈)**先留着**(磁盘 17% 不缺),可随时 `docker compose start` 恢复或日后 down 销毁。
 
 ---
 
