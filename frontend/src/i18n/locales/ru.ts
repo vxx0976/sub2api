@@ -535,7 +535,9 @@ export default {
     resellerSites: 'Управление сайтами',
     resellerRedeem: 'Коды активации',
     resellerServiceTokens: 'API-токены',
-    resellerAnnouncements: 'Объявления'
+    resellerAnnouncements: 'Объявления',
+    usdtRecharge: 'Пополнение USDT',
+    adminUsdtOrders: 'USDT заказы'
   },
 
   // Docs
@@ -4358,7 +4360,53 @@ export default {
       failedToLoad: 'Не удалось загрузить настройки',
       failedToSave: 'Не удалось сохранить настройки',
       failedToTestSmtp: 'Тест SMTP-подключения не удался',
-      failedToSendTestEmail: 'Не удалось отправить тестовое письмо'
+      failedToSendTestEmail: 'Не удалось отправить тестовое письмо',
+      usdt: {
+        title: 'Приём USDT (мультичейн, self-hosted)',
+        description: 'Приём USDT через опрос данных в блокчейне, поддержка TRC20 / BEP20 / TON. Изменения применяются сразу, без перезапуска.',
+        chainsSection: 'Сети приёма (адрес и ключ сканирования настраиваются для каждой сети)',
+        chainAddress: 'Адрес приёма',
+        chainApiBaseUrl: 'API-шлюз (пусто = по умолчанию)',
+        bep20PaidNote: 'Бесплатно: сканирование через публичный узел BSC (eth_getLogs), ключ API не нужен (по умолчанию publicnode; можно указать любой публичный RPC).',
+        trc20KeyNote: 'Необязательно: пусто = анонимный доступ к TronGrid, достаточно для одного адреса с редким опросом; при лимитах зарегистрируйте бесплатный ключ на trongrid.io.',
+        enabled: 'Включить USDT',
+        enabledHint: 'Показывает пользователям пункт пополнения USDT и запускает мониторинг блокчейна',
+        minAmount: 'Мин. пополнение (USDT)',
+        maxAmount: 'Макс. пополнение (USDT)',
+        maxAmountHint: '0 = без верхнего предела',
+        receivingAddress: 'Адрес приёма TRC20',
+        receivingAddressHint: 'Адрес TRON, начинающийся с T; все заказы поступают на него (используйте watch-only кошелёк, не храните приватные ключи на сервере)',
+        tronApiKey: 'TronGrid API Key',
+        tronApiKeyPlaceholder: 'API-ключ с trongrid.io',
+        tronApiKeyHint: 'Повышает лимиты TronGrid; настоятельно рекомендуется',
+        keyConfigured: 'Настроено',
+        keyKeepPlaceholder: 'Настроено (пусто — оставить текущее)',
+        rateSection: 'Курс обмена',
+        rateAutoFetch: 'Автоматический курс',
+        rateAutoFetchHint: 'Берёт курс USDT/CNY с CoinGecko, при ошибке откатывается к ручному курсу',
+        manualRate: 'Ручной курс (1 USDT = ? CNY)',
+        manualRateHint: 'Используется, когда авто-курс выключен, и как запасной при сбое',
+        rateMarkup: 'Наценка (0~1)',
+        rateMarkupHint: 'Курс пересчёта = курс×(1-наценка), пользователь платит чуть больше USDT; 0 = без наценки',
+        advanced: 'Дополнительно',
+        tronApiBaseUrl: 'Адрес шлюза TronGrid',
+        amountOffset: 'Шаг уникальной суммы (USDT)',
+        amountTolerance: 'Допуск суммы (USDT)',
+        amountToleranceHint: 'Поступление в пределах ±допуска считается успешным (зачисляется сумма заказа); шаг суммы автоматически >2×допуска во избежание путаницы',
+        confirmSeconds: 'Ожидание подтверждения (сек)',
+        orderTimeoutSeconds: 'Таймаут заказа (сек)',
+        monitorIntervalSeconds: 'Интервал опроса (сек)',
+        queryMinutesBack: 'Окно просмотра блокчейна (мин)',
+        saveButton: 'Сохранить настройки USDT',
+        saveSuccess: 'Настройки USDT сохранены и применены',
+      }
+    },
+
+    usdtOrders: {
+      title: 'USDT заказы',
+      description: 'Просмотр и управление заказами пополнения USDT (TRC20)',
+      usdtAmount: 'Сумма USDT',
+      txHash: 'Хеш транзакции',
     },
 
     // Error Passthrough Rules
@@ -4785,7 +4833,8 @@ export default {
     addressLabel: 'Адрес получения ({chain})',
     countdown: 'Осталось времени {time}',
     expiredHint: 'Заказ истёк. Закройте и создайте новый заказ.',
-    waitingPayment: 'Ожидание подтверждения в сети…'
+    waitingPayment: 'Ожидание подтверждения в сети…',
+    waitNotice: 'После перевода подождите ~5 минут до зачисления. Если средства не поступили в течение 30 минут, обратитесь в поддержку.'
   },
 
   // User Orders
