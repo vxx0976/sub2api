@@ -21,6 +21,7 @@ const (
 	SettingKeyUsdtRateAutoFetch          = "usdt_rate_auto_fetch"
 	SettingKeyUsdtRateMarkup             = "usdt_rate_markup"
 	SettingKeyUsdtAmountOffset           = "usdt_amount_offset"
+	SettingKeyUsdtAmountTolerance        = "usdt_amount_tolerance"
 	SettingKeyUsdtConfirmSeconds         = "usdt_confirm_seconds"
 	SettingKeyUsdtMonitorIntervalSeconds = "usdt_monitor_interval_seconds"
 	SettingKeyUsdtQueryMinutesBack       = "usdt_query_minutes_back"
@@ -107,6 +108,11 @@ func (u *UsdtPayment) Reload(ctx context.Context) {
 	if v := get(SettingKeyUsdtAmountOffset); v != "" {
 		if f, err := strconv.ParseFloat(v, 64); err == nil && f > 0 {
 			cfg.AmountOffset = f
+		}
+	}
+	if v := get(SettingKeyUsdtAmountTolerance); v != "" {
+		if f, err := strconv.ParseFloat(v, 64); err == nil && f >= 0 {
+			cfg.AmountTolerance = f
 		}
 	}
 	if v := get(SettingKeyUsdtConfirmSeconds); v != "" {
@@ -201,11 +207,24 @@ func (u *UsdtPayment) UsableChains(ctx context.Context) []string {
 }
 
 // AmountOffset 唯一金额尾数步长（USDT），默认 0.0001。
-func (u *UsdtPayment) AmountOffset() float64 {
-	if v := u.sharedSnapshot().AmountOffset; v > 0 {
-		return v
+// AmountTolerance 到账金额容差（USDT），默认 0.01。实收与应付在 ±容差内即算匹配成功。
+func (u *UsdtPayment) AmountTolerance() float64 {
+	if t := u.sharedSnapshot().AmountTolerance; t > 0 {
+		return t
 	}
-	return 0.0001
+	return 0.01
+}
+
+func (u *UsdtPayment) AmountOffset() float64 {
+	off := u.sharedSnapshot().AmountOffset
+	if off <= 0 {
+		off = 0.05
+	}
+	// 自动保证间隔 > 2*容差：否则容差匹配时相邻订单金额落入同一容差带导致归属歧义。
+	if minOff := 2*u.AmountTolerance() + 0.001; off < minOff {
+		off = minOff
+	}
+	return off
 }
 
 // ConfirmDuration 到账交易需达到的最小链上时长才入账，默认 60s。

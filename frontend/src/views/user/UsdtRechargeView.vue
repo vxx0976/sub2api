@@ -52,40 +52,31 @@
               </div>
 
               <div>
-                <label for="amount" class="input-label">{{ t('recharge.amountLabel') }}</label>
+                <label for="amount" class="input-label">{{ t('usdt.amountLabel') }}</label>
                 <div class="relative mt-1">
-                  <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
-                    <span class="text-gray-400 dark:text-dark-500 font-medium">¥</span>
-                  </div>
                   <input
                     id="amount"
                     v-model.number="amount"
                     type="number"
                     required
-                    :min="config.min_amount"
-                    :max="config.max_amount"
+                    :min="usdtMin"
+                    :max="usdtMax"
                     :step="0.01"
-                    :placeholder="t('recharge.amountPlaceholder', { min: config.min_amount, max: config.max_amount })"
+                    :placeholder="t('usdt.amountPlaceholder')"
                     :disabled="submitting"
-                    class="input py-3 pl-10 text-lg"
+                    class="input py-3 pr-16 text-lg"
                   />
+                  <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4">
+                    <span class="text-gray-400 dark:text-dark-500 font-medium">USDT</span>
+                  </div>
                 </div>
-                <p class="input-hint">{{ t('recharge.amountHint', { min: config.min_amount, max: config.max_amount }) }}</p>
+                <p class="input-hint">{{ t('usdt.amountHint', { min: usdtMin.toFixed(2), max: usdtMax.toFixed(2) }) }}</p>
               </div>
 
-              <div v-if="amount && amount > 0" class="space-y-2">
-                <div v-if="creditPreview > 0" class="rounded-lg bg-emerald-50 p-3 dark:bg-emerald-900/20">
-                  <div class="flex items-center justify-between">
-                    <span class="text-sm text-emerald-700 dark:text-emerald-300">{{ t('recharge.creditPreview') }}</span>
-                    <span class="text-lg font-bold text-emerald-600 dark:text-emerald-400">${{ creditPreview.toFixed(2) }}</span>
-                  </div>
-                </div>
-                <div v-if="estimatedUsdt > 0" class="rounded-lg bg-blue-50 p-3 dark:bg-blue-900/20">
-                  <div class="flex items-center justify-between">
-                    <span class="text-sm text-blue-700 dark:text-blue-300">{{ t('usdt.estimatedPay') }}</span>
-                    <span class="text-base font-semibold text-blue-600 dark:text-blue-400">≈ {{ estimatedUsdt.toFixed(2) }} USDT</span>
-                  </div>
-                  <p class="mt-1 text-xs text-blue-500 dark:text-blue-400/80">{{ t('usdt.rateHint', { rate: config.rate.toFixed(2) }) }}</p>
+              <div v-if="amount && amount > 0 && creditPreview > 0" class="rounded-lg bg-emerald-50 p-3 dark:bg-emerald-900/20">
+                <div class="flex items-center justify-between">
+                  <span class="text-sm text-emerald-700 dark:text-emerald-300">{{ t('recharge.creditPreview') }}</span>
+                  <span class="text-lg font-bold text-emerald-600 dark:text-emerald-400">${{ creditPreview.toFixed(2) }}</span>
                 </div>
               </div>
 
@@ -307,18 +298,20 @@ const formatCountdown = (seconds: number) => {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 }
 
-// CNY → 余额 1:1
-const creditPreview = computed(() => (amount.value && amount.value > 0 ? Math.round(amount.value * 100) / 100 : 0))
-
-const estimatedUsdt = computed(() => {
+// 用户输入 USDT 数量；到账余额 = USDT × 汇率
+const creditPreview = computed(() => {
   if (!config.value || !amount.value || config.value.rate <= 0) return 0
-  return Math.round((amount.value / config.value.rate) * 100) / 100
+  return Math.round(amount.value * config.value.rate * 100) / 100
 })
 
+// 充值限额是余额(CNY)口径，换算成 USDT 输入范围
+const usdtMin = computed(() => (config.value && config.value.rate > 0 ? config.value.min_amount / config.value.rate : 0))
+const usdtMax = computed(() => (config.value && config.value.rate > 0 ? config.value.max_amount / config.value.rate : 0))
+
 const canSubmit = computed(() => {
-  if (!config.value || !amount.value || !selectedChain.value) return false
+  if (!config.value || !amount.value || !selectedChain.value || config.value.rate <= 0) return false
   if (!config.value.chains?.includes(selectedChain.value)) return false
-  return amount.value >= config.value.min_amount && amount.value <= config.value.max_amount
+  return creditPreview.value >= config.value.min_amount && creditPreview.value <= config.value.max_amount
 })
 
 const copy = async (text: string) => {

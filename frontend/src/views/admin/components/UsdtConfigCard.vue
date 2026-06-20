@@ -87,7 +87,12 @@
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label class="mb-1 block text-xs text-gray-600 dark:text-gray-400">{{ t('admin.settings.usdt.amountOffset') }}</label>
-            <input v-model.number="form.amount_offset" type="number" step="0.0001" min="0.0001" class="input font-mono text-sm" />
+            <input v-model.number="form.amount_offset" type="number" step="0.01" min="0.01" class="input font-mono text-sm" />
+          </div>
+          <div>
+            <label class="mb-1 block text-xs text-gray-600 dark:text-gray-400">{{ t('admin.settings.usdt.amountTolerance') }}</label>
+            <input v-model.number="form.amount_tolerance" type="number" step="0.001" min="0" class="input font-mono text-sm" />
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('admin.settings.usdt.amountToleranceHint') }}</p>
           </div>
           <div>
             <label class="mb-1 block text-xs text-gray-600 dark:text-gray-400">{{ t('admin.settings.usdt.confirmSeconds') }}</label>
@@ -161,7 +166,8 @@ const form = reactive({
   manual_rate: 7.2,
   rate_auto_fetch: false,
   rate_markup: 0,
-  amount_offset: 0.0001,
+  amount_offset: 0.05,
+  amount_tolerance: 0.01,
   confirm_seconds: 60,
   monitor_interval_seconds: 15,
   query_minutes_back: 30,
@@ -181,7 +187,8 @@ async function loadConfig() {
     form.manual_rate = cfg.manual_rate > 0 ? cfg.manual_rate : 7.2
     form.rate_auto_fetch = cfg.rate_auto_fetch
     form.rate_markup = cfg.rate_markup >= 0 ? cfg.rate_markup : 0
-    form.amount_offset = cfg.amount_offset > 0 ? cfg.amount_offset : 0.0001
+    form.amount_offset = cfg.amount_offset > 0 ? cfg.amount_offset : 0.05
+    form.amount_tolerance = cfg.amount_tolerance >= 0 ? cfg.amount_tolerance : 0.01
     form.confirm_seconds = cfg.confirm_seconds >= 0 ? cfg.confirm_seconds : 60
     form.monitor_interval_seconds = cfg.monitor_interval_seconds > 0 ? cfg.monitor_interval_seconds : 15
     form.query_minutes_back = cfg.query_minutes_back > 0 ? cfg.query_minutes_back : 30
@@ -222,6 +229,7 @@ async function handleSave() {
       rate_auto_fetch: form.rate_auto_fetch,
       rate_markup: form.rate_markup,
       amount_offset: form.amount_offset,
+      amount_tolerance: form.amount_tolerance,
       confirm_seconds: form.confirm_seconds,
       monitor_interval_seconds: form.monitor_interval_seconds,
       query_minutes_back: form.query_minutes_back,

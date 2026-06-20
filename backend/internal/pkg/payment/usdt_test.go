@@ -50,6 +50,50 @@ func TestQueryRateSanity(t *testing.T) {
 	}
 }
 
+func TestMatchByTolerance(t *testing.T) {
+	orders := []UsdtPendingOrder{
+		{OrderNo: "a", UsdtAtomic: 100_000000}, // 100.000000 USDT
+		{OrderNo: "b", UsdtAtomic: 100_050000}, // 100.050000 (offset 0.05 apart)
+	}
+	tol := int64(10000) // 0.01 USDT
+
+	if o, ok, amb := matchByTolerance(orders, 100_000000, tol); !ok || amb || o.OrderNo != "a" {
+		t.Errorf("exact a: %v ok=%v amb=%v", o.OrderNo, ok, amb)
+	}
+	// 实收略少 100.005 仍命中 a（差 0.005 < 0.01）
+	if o, ok, amb := matchByTolerance(orders, 100_005000, tol); !ok || amb || o.OrderNo != "a" {
+		t.Errorf("near a: %v ok=%v amb=%v", o.OrderNo, ok, amb)
+	}
+	if o, ok, _ := matchByTolerance(orders, 100_045000, tol); !ok || o.OrderNo != "b" {
+		t.Errorf("near b should match b, got %v", o.OrderNo)
+	}
+	// 100.025 距 a/b 均 0.025 > 容差 → 不命中
+	if _, ok, amb := matchByTolerance(orders, 100_025000, tol); ok || amb {
+		t.Errorf("no-match expected, got ok=%v amb=%v", ok, amb)
+	}
+	// 容差过大(0.06)同时覆盖 a,b → 歧义，跳过保安全
+	if _, ok, amb := matchByTolerance(orders, 100_000000, 60000); ok || !amb {
+		t.Errorf("ambiguous expected, got ok=%v amb=%v", ok, amb)
+	}
+	// tol=0 退化为精确匹配
+	if _, ok, _ := matchByTolerance(orders, 100_005000, 0); ok {
+		t.Errorf("tol=0 should not match near")
+	}
+}
+
+func TestAmountOffsetInvariant(t *testing.T) {
+	// 默认容差 0.01 → offset 必 > 2*容差
+	u := newTestUsdt(config.UsdtPaymentConfig{})
+	if u.AmountOffset() <= 2*u.AmountTolerance() {
+		t.Errorf("offset %.4f must be > 2*tol %.4f", u.AmountOffset(), u.AmountTolerance())
+	}
+	// 大容差自动撑大 offset
+	u2 := newTestUsdt(config.UsdtPaymentConfig{AmountTolerance: 1.0, AmountOffset: 0.05})
+	if u2.AmountOffset() <= 2*1.0 {
+		t.Errorf("offset should grow to > 2*tol(1.0), got %v", u2.AmountOffset())
+	}
+}
+
 func TestPinEndpointFirst(t *testing.T) {
 	eps := []string{"a", "b", "c"}
 	got := pinEndpointFirst(eps, "b")

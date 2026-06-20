@@ -24,6 +24,7 @@ type AdminUsdtConfig struct {
 	RateAutoFetch          bool                            `json:"rate_auto_fetch"`
 	RateMarkup             float64                         `json:"rate_markup"`
 	AmountOffset           float64                         `json:"amount_offset"`
+	AmountTolerance        float64                         `json:"amount_tolerance"`
 	ConfirmSeconds         int                             `json:"confirm_seconds"`
 	MonitorIntervalSeconds int                             `json:"monitor_interval_seconds"`
 	QueryMinutesBack       int                             `json:"query_minutes_back"`
@@ -46,6 +47,7 @@ type AdminUsdtConfigUpdate struct {
 	RateAutoFetch          *bool                                 `json:"rate_auto_fetch"`
 	RateMarkup             *float64                              `json:"rate_markup"`
 	AmountOffset           *float64                              `json:"amount_offset"`
+	AmountTolerance        *float64                              `json:"amount_tolerance"`
 	ConfirmSeconds         *int                                  `json:"confirm_seconds"`
 	MonitorIntervalSeconds *int                                  `json:"monitor_interval_seconds"`
 	QueryMinutesBack       *int                                  `json:"query_minutes_back"`
@@ -74,6 +76,7 @@ func (s *UsdtOrderService) GetAdminUsdtConfig(ctx context.Context) (*AdminUsdtCo
 		RateAutoFetch:          get(payment.SettingKeyUsdtRateAutoFetch) == "true",
 		RateMarkup:             parseFloat(get(payment.SettingKeyUsdtRateMarkup)),
 		AmountOffset:           parseFloat(get(payment.SettingKeyUsdtAmountOffset)),
+		AmountTolerance:        parseFloat(get(payment.SettingKeyUsdtAmountTolerance)),
 		ConfirmSeconds:         parseInt(get(payment.SettingKeyUsdtConfirmSeconds)),
 		MonitorIntervalSeconds: parseInt(get(payment.SettingKeyUsdtMonitorIntervalSeconds)),
 		QueryMinutesBack:       parseInt(get(payment.SettingKeyUsdtQueryMinutesBack)),
@@ -122,6 +125,11 @@ func (s *UsdtOrderService) UpdateAdminUsdtConfig(ctx context.Context, req *Admin
 	}
 	if req.AmountOffset != nil {
 		if err := set(payment.SettingKeyUsdtAmountOffset, strconv.FormatFloat(*req.AmountOffset, 'f', -1, 64)); err != nil {
+			return err
+		}
+	}
+	if req.AmountTolerance != nil {
+		if err := set(payment.SettingKeyUsdtAmountTolerance, strconv.FormatFloat(*req.AmountTolerance, 'f', -1, 64)); err != nil {
 			return err
 		}
 	}

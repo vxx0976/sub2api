@@ -111,7 +111,8 @@ type UsdtPaymentConfig struct {
 	ManualRate             float64 `mapstructure:"manual_rate"`              // 手动汇率：1 USDT = ? CNY
 	RateAutoFetch          bool    `mapstructure:"rate_auto_fetch"`          // 自动拉取汇率（失败回退 manual_rate）
 	RateMarkup             float64 `mapstructure:"rate_markup"`              // 加价系数：换算用汇率=rate*(1-markup)，让用户多付一点 USDT；默认 0
-	AmountOffset           float64 `mapstructure:"amount_offset"`            // 唯一金额尾数步长（USDT），默认 0.0001
+	AmountOffset           float64 `mapstructure:"amount_offset"`            // 唯一金额尾数步长（USDT），默认 0.05；自动保证 > 2*容差
+	AmountTolerance        float64 `mapstructure:"amount_tolerance"`         // 到账金额容差（USDT），默认 0.01；实收在 ±容差内即算成功（按下单金额入账）
 	ConfirmSeconds         int     `mapstructure:"confirm_seconds"`          // 到账交易需达到的最小链上时长（秒）才入账，默认 60
 	MonitorIntervalSeconds int     `mapstructure:"monitor_interval_seconds"` // 轮询间隔（秒），默认 15
 	QueryMinutesBack       int     `mapstructure:"query_minutes_back"`       // 链上回看窗口（分钟），默认 30

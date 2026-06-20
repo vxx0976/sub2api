@@ -130,6 +130,7 @@ func (m *UsdtMonitor) runCycle() {
 	minTs := time.Now().Add(-time.Duration(m.usdt.QueryMinutesBack())*time.Minute - 5*time.Minute).UnixMilli()
 	confirmCutoff := time.Now().Add(-m.usdt.ConfirmDuration())
 	grace := m.usdt.GraceWindow()
+	tolMicro := UsdtToAtomic(m.usdt.AmountTolerance()) // 金额容差（micro-USDT）
 
 	for _, chain := range usable {
 		pend := byChain[chain]
@@ -145,11 +146,6 @@ func (m *UsdtMonitor) runCycle() {
 			continue
 		}
 
-		byAmt := make(map[int64]UsdtPendingOrder, len(pend))
-		for _, o := range pend {
-			byAmt[o.UsdtAtomic] = o
-		}
-
 		for _, tr := range transfers {
 			txKey := chain + ":" + tr.TxID
 			if m.isMatched(txKey) {
@@ -162,7 +158,13 @@ func (m *UsdtMonitor) runCycle() {
 				continue
 			}
 			micro := UsdtToAtomic(tr.AmountHuman)
-			order, ok := byAmt[micro]
+			// 容差匹配：实收在应付金额 ±容差内即算命中（手续费/取整差额）。
+			// 间隔已保证 > 2*容差，正常情形不会歧义；歧义时跳过保安全。
+			order, ok, ambiguous := matchByTolerance(pend, micro, tolMicro)
+			if ambiguous {
+				log.Printf("[UsdtMonitor] [%s] tx %s amount %.6f within tolerance of multiple pending orders; skip", chain, tr.TxID, tr.AmountHuman)
+				continue
+			}
 			if !ok {
 				continue
 			}
@@ -214,4 +216,34 @@ func (m *UsdtMonitor) markMatched(key string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.matchedTx[key] = time.Now()
+}
+
+// matchByTolerance 在 orders 中找应付金额(micro)与实收 micro 相差 <= tol 的订单。
+// 命中唯一 → (order,true,false)；无命中 → (_,false,false)；命中多个 → (_,false,true) 歧义。
+// tol=0 时退化为精确匹配。
+func matchByTolerance(orders []UsdtPendingOrder, micro, tol int64) (UsdtPendingOrder, bool, bool) {
+	var best UsdtPendingOrder
+	bestDiff := int64(-1)
+	count := 0
+	for _, o := range orders {
+		d := micro - o.UsdtAtomic
+		if d < 0 {
+			d = -d
+		}
+		if d <= tol {
+			count++
+			if bestDiff < 0 || d < bestDiff {
+				bestDiff = d
+				best = o
+			}
+		}
+	}
+	switch {
+	case count == 0:
+		return UsdtPendingOrder{}, false, false
+	case count > 1:
+		return UsdtPendingOrder{}, false, true
+	default:
+		return best, true, false
+	}
 }

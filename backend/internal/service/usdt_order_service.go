@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"math"
 	"math/big"
 	"strconv"
 	"sync"
@@ -157,7 +158,8 @@ type CreateUsdtOrderResult struct {
 }
 
 // CreateOrder 创建 USDT 充值订单（指定链）。
-func (s *UsdtOrderService) CreateOrder(ctx context.Context, userID int64, amount float64, chain, sourceDomain string) (*CreateUsdtOrderResult, error) {
+// 入参 usdtAmount 是用户填写的 USDT 数量（填多少付多少）；到账余额 = usdtAmount × 汇率。
+func (s *UsdtOrderService) CreateOrder(ctx context.Context, userID int64, usdtAmount float64, chain, sourceDomain string) (*CreateUsdtOrderResult, error) {
 	if s.usdt == nil {
 		return nil, fmt.Errorf("usdt is not configured")
 	}
@@ -171,7 +173,19 @@ func (s *UsdtOrderService) CreateOrder(ctx context.Context, userID int64, amount
 	}
 	addr := s.usdt.ChainAddress(chain)
 
-	// 金额范围（与 EPAY/AliMPay 共享 recharge 限额）
+	if usdtAmount <= 0 {
+		return nil, fmt.Errorf("usdt amount must be positive")
+	}
+
+	// 汇率快照：1 USDT = rate CNY（含加价 markup）
+	rate, err := s.usdt.QueryRate(ctx)
+	if err != nil || rate <= 0 {
+		return nil, fmt.Errorf("usdt rate unavailable: %v", err)
+	}
+	// 到账余额 = 用户填写的 USDT × 汇率（按下单金额入账，与实收无关，容差内即成功）。
+	credit := math.Round(usdtAmount*rate*100) / 100
+
+	// 限额按到账余额校验（与 EPAY/AliMPay 共享 recharge 限额，单位是余额/CNY）。
 	minAmount := 10.0
 	maxAmount := 10000.0
 	if v, _ := s.settingRepo.GetValue(ctx, SettingKeyRechargeMinAmount); v != "" {
@@ -180,18 +194,8 @@ func (s *UsdtOrderService) CreateOrder(ctx context.Context, userID int64, amount
 	if v, _ := s.settingRepo.GetValue(ctx, SettingKeyRechargeMaxAmount); v != "" {
 		maxAmount, _ = strconv.ParseFloat(v, 64)
 	}
-	if amount < minAmount || amount > maxAmount {
-		return nil, fmt.Errorf("amount must be between %.2f and %.2f", minAmount, maxAmount)
-	}
-
-	// 汇率快照：1 USDT = rate CNY
-	rate, err := s.usdt.QueryRate(ctx)
-	if err != nil || rate <= 0 {
-		return nil, fmt.Errorf("usdt rate unavailable: %v", err)
-	}
-	baseUsdt := amount / rate
-	if baseUsdt <= 0 {
-		return nil, fmt.Errorf("invalid usdt amount computed")
+	if credit < minAmount || credit > maxAmount {
+		return nil, fmt.Errorf("credited amount %.2f must be between %.2f and %.2f", credit, minAmount, maxAmount)
 	}
 
 	expiresIn := s.usdt.OrderTimeoutSeconds()
@@ -206,8 +210,8 @@ func (s *UsdtOrderService) CreateOrder(ctx context.Context, userID int64, amount
 	order := &UsdtOrder{
 		OrderNo:          orderNo,
 		UserID:           userID,
-		Amount:           amount,
-		CreditAmount:     amount, // 1:1 入账（CNY → 余额单位）
+		Amount:           credit, // 余额价值（admin 展示）
+		CreditAmount:     credit, // 入账余额 = USDT × 汇率
 		Multiplier:       1.0,
 		Chain:            chain,
 		ReceivingAddress: addr,
@@ -217,7 +221,8 @@ func (s *UsdtOrderService) CreateOrder(ctx context.Context, userID int64, amount
 		SourceDomain:     sourceDomain,
 		ExpiredAt:        &expiredAt,
 	}
-	if err := s.usdtRepo.CreateWithUniqueUsdtAmount(ctx, order, baseUsdt, s.usdt.AmountOffset(), s.usdt.AmountReuseWindow()); err != nil {
+	// 链上应付基数 = 用户填写的 USDT（再叠加唯一尾数用于归属匹配）。
+	if err := s.usdtRepo.CreateWithUniqueUsdtAmount(ctx, order, usdtAmount, s.usdt.AmountOffset(), s.usdt.AmountReuseWindow()); err != nil {
 		return nil, fmt.Errorf("create usdt order: %w", err)
 	}
 

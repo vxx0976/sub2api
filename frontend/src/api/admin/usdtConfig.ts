@@ -18,6 +18,7 @@ export interface AdminUsdtConfig {
   rate_auto_fetch: boolean
   rate_markup: number
   amount_offset: number
+  amount_tolerance: number
   confirm_seconds: number
   monitor_interval_seconds: number
   query_minutes_back: number
@@ -38,6 +39,7 @@ export interface AdminUsdtConfigUpdate {
   rate_auto_fetch?: boolean
   rate_markup?: number
   amount_offset?: number
+  amount_tolerance?: number
   confirm_seconds?: number
   monitor_interval_seconds?: number
   query_minutes_back?: number
