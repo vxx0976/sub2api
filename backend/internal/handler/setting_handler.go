@@ -84,6 +84,7 @@ func (h *SettingHandler) GetPublicSettings(c *gin.Context) {
 		CustomEndpoints:                  dto.ParseCustomEndpoints(settings.CustomEndpoints),
 		RechargeEnabled:                  settings.RechargeEnabled,
 		AliMPayEnabled:                   settings.AliMPayEnabled,
+		UsdtEnabled:                      settings.UsdtEnabled,
 		DingTalkOAuthEnabled:             settings.DingTalkOAuthEnabled,
 		LinuxDoOAuthEnabled:              settings.LinuxDoOAuthEnabled,
 		WeChatOAuthEnabled:               settings.WeChatOAuthEnabled,

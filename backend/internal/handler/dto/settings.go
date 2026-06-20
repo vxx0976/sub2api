@@ -329,6 +329,7 @@ type PublicSettings struct {
 	CustomEndpoints                  []CustomEndpoint         `json:"custom_endpoints"`
 	RechargeEnabled                  bool                     `json:"recharge_enabled"`
 	AliMPayEnabled                   bool                     `json:"alimpay_enabled"`
+	UsdtEnabled                      bool                     `json:"usdt_enabled"`
 	DingTalkOAuthEnabled             bool                     `json:"dingtalk_oauth_enabled"`
 	LinuxDoOAuthEnabled              bool                     `json:"linuxdo_oauth_enabled"`
 	WeChatOAuthEnabled               bool                     `json:"wechat_oauth_enabled"`
