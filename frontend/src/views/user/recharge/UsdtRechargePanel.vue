@@ -93,11 +93,11 @@
           <div class="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-700/50 dark:bg-amber-900/10">
             <p class="text-center text-sm font-medium text-amber-800 dark:text-amber-200">{{ t('usdt.payExactAmountNotice') }}</p>
             <div class="mt-3 flex items-center justify-center gap-2">
-              <p class="text-3xl font-bold tracking-tight text-amber-700 dark:text-amber-300">{{ qrUsdtAmount }} USDT</p>
+              <p class="text-3xl font-bold tracking-tight text-amber-700 dark:text-amber-300">{{ trimUsdt(qrUsdtAmount) }} USDT</p>
               <button
                 class="rounded-lg p-1.5 text-amber-600 hover:bg-amber-100 dark:text-amber-400 dark:hover:bg-amber-900/30"
                 :title="t('usdt.copy')"
-                @click="copy(qrUsdtAmount)"
+                @click="copy(trimUsdt(qrUsdtAmount))"
               >
                 <Icon name="clipboard" size="sm" />
               </button>
@@ -108,7 +108,7 @@
           <!-- QR of address -->
           <div class="mb-3 flex justify-center">
             <div class="rounded-xl border-2 border-gray-100 bg-white p-3 dark:border-dark-600">
-              <img :src="qrCodeDataURL" alt="USDT Address QR Code" class="h-48 w-48" />
+              <img :src="qrCodeDataURL" alt="USDT Address QR Code" class="h-64 w-64" style="image-rendering: pixelated" />
             </div>
           </div>
 
@@ -135,6 +135,11 @@
             {{ t('usdt.countdown', { time: formatCountdown(remainingSeconds) }) }}
           </div>
           <div v-else class="mb-2 text-center text-sm font-medium text-gray-500 dark:text-gray-400">{{ t('usdt.expiredHint') }}</div>
+
+          <!-- 耐心等待 + 客服提示 -->
+          <div class="mb-2 rounded-lg bg-gray-50 p-2.5 text-center text-xs leading-relaxed text-gray-500 dark:bg-dark-700/50 dark:text-dark-400">
+            {{ t('usdt.waitNotice') }}
+          </div>
 
           <div class="mt-2 flex items-center justify-center gap-2 text-xs text-gray-400 dark:text-dark-500">
             <svg class="h-3.5 w-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -175,6 +180,12 @@ const submitting = ref(false)
 
 const CHAIN_LABELS: Record<string, string> = { trc20: 'TRC20 (TRON)', bep20: 'BEP20 (BSC)', ton: 'TON' }
 const chainLabel = (c: string) => CHAIN_LABELS[c] || c.toUpperCase()
+
+// 去掉金额尾部多余的 0（1.500000 → 1.5；1.000000 → 1；1.55 → 1.55）
+const trimUsdt = (s: string) => {
+  if (!s || s.indexOf('.') < 0) return s || ''
+  return s.replace(/0+$/, '').replace(/\.$/, '')
+}
 
 let pollTimer: ReturnType<typeof setInterval> | null = null
 let countdownTimer: ReturnType<typeof setInterval> | null = null
@@ -235,7 +246,8 @@ const handleCreateOrder = async () => {
     qrUsdtAmount.value = result.usdt_amount_str
     qrChain.value = result.chain
     try {
-      qrCodeDataURL.value = await QRCode.toDataURL(result.address, { width: 280, margin: 2 })
+      // 高纠错 + 足够留白 + 高分辨率，避免缩放发虚导致钱包扫不出
+      qrCodeDataURL.value = await QRCode.toDataURL(result.address, { errorCorrectionLevel: 'H', margin: 4, width: 512 })
       showQRModal.value = true
     } catch {
       // 二维码生成失败时中止，避免误报「下单成功」并启动看不见的轮询

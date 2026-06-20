@@ -99,8 +99,9 @@ const (
 	ChainTON   = "ton"
 )
 
-// SupportedChains 是当前支持的链顺序（用于前端展示顺序与校验）。
-var SupportedChains = []string{ChainTRC20, ChainBEP20, ChainTON}
+// SupportedChains 是当前支持的链顺序（用于前端选择器展示顺序与校验）。
+// 按手续费从低到高排：BEP20/TON 便宜在前，TRC20 手续费最贵排最后。
+var SupportedChains = []string{ChainBEP20, ChainTON, ChainTRC20}
 
 // IsSupportedChain 判断链标识是否受支持。
 func IsSupportedChain(chain string) bool {

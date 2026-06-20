@@ -1435,6 +1435,7 @@ export default {
     countdown: '剩余支付时间 {time}',
     expiredHint: '订单已过期，请关闭窗口后重新下单',
     waitingPayment: '等待链上到账确认…',
+    waitNotice: '转账后请耐心等待约 5 分钟到账；若 30 分钟仍未到账，请联系客服处理。',
   },
 
   // Profile

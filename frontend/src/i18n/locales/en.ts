@@ -1432,6 +1432,7 @@ export default {
     countdown: 'Time left {time}',
     expiredHint: 'Order expired. Please close and create a new order.',
     waitingPayment: 'Waiting for on-chain confirmation…',
+    waitNotice: 'After sending, please wait ~5 minutes for the credit. If not credited within 30 minutes, contact support.',
   },
 
   // Profile

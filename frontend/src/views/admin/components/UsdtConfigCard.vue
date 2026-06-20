@@ -158,9 +158,9 @@ interface ChainMeta {
 }
 
 const CHAINS: ChainMeta[] = [
-  { key: 'trc20', label: 'TRC20 (TRON)', addrPlaceholder: 'T...', apiKeyLabel: 'TronGrid API Key (可选)', apiKeyPlaceholder: '可选，留空走匿名', baseUrlPlaceholder: 'https://api.trongrid.io', note: 'admin.settings.usdt.trc20KeyNote' },
   { key: 'bep20', label: 'BEP20 (BSC)', addrPlaceholder: '0x...', apiKeyLabel: 'RPC API Key (可选)', apiKeyPlaceholder: '公共节点无需填', baseUrlPlaceholder: 'https://bsc-rpc.publicnode.com', note: 'admin.settings.usdt.bep20PaidNote' },
-  { key: 'ton', label: 'TON', addrPlaceholder: 'EQ... / UQ...', apiKeyLabel: 'TonCenter API Key', apiKeyPlaceholder: 'TonCenter key', baseUrlPlaceholder: 'https://toncenter.com/api/v3' }
+  { key: 'ton', label: 'TON', addrPlaceholder: 'EQ... / UQ...', apiKeyLabel: 'TonCenter API Key', apiKeyPlaceholder: 'TonCenter key', baseUrlPlaceholder: 'https://toncenter.com/api/v3' },
+  { key: 'trc20', label: 'TRC20 (TRON)', addrPlaceholder: 'T...', apiKeyLabel: 'TronGrid API Key (可选)', apiKeyPlaceholder: '可选，留空走匿名', baseUrlPlaceholder: 'https://api.trongrid.io', note: 'admin.settings.usdt.trc20KeyNote' }
 ]
 
 const loading = ref(true)
