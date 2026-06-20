@@ -35,9 +35,9 @@ const (
 	// bscGetLogsMaxRange 是单次 eth_getLogs 的区块跨度（公共免费节点普遍限制 getLogs 跨度 <=50 块，
 	// 故取 50 分页查询：跨度=50、首尾差 49，安全低于"0-50"上限，杜绝 -32602）。
 	bscGetLogsMaxRange = 50
-	// bscLookbackCapBlocks 是 fromBlock 回看的区块上限（~15 分钟=300 块）。
-	// 远大于确认窗(60s)+轮询间隔，足够不漏；同时把每轮分页次数限制在 ~6 次，避免免费节点过载。
-	bscLookbackCapBlocks = 300
+	// bscLookbackCapBlocks 是 fromBlock 回看的区块上限（~7.5 分钟=150 块）。
+	// 远大于确认窗(60s)，足够不漏；每轮仅 ~3 次分页查询，降低免费节点 -32005 限流（失败自动故障转移）。
+	bscLookbackCapBlocks = 150
 )
 
 // bscFallbackRPCs 是按顺序尝试的免费 keyless 公共 BSC RPC（均支持 eth_getLogs）。
