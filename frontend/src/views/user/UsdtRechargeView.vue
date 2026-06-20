@@ -60,7 +60,7 @@
                     type="number"
                     required
                     :min="usdtMin"
-                    :max="usdtMax"
+                    :max="usdtMax > 0 ? usdtMax : undefined"
                     :step="0.01"
                     :placeholder="t('usdt.amountPlaceholder')"
                     :disabled="submitting"
@@ -70,7 +70,11 @@
                     <span class="text-gray-400 dark:text-dark-500 font-medium">USDT</span>
                   </div>
                 </div>
-                <p class="input-hint">{{ t('usdt.amountHint', { min: usdtMin.toFixed(2), max: usdtMax.toFixed(2) }) }}</p>
+                <p class="input-hint">
+                  {{ usdtMax > 0
+                    ? t('usdt.amountHint', { min: usdtMin, max: usdtMax })
+                    : t('usdt.amountHintNoMax', { min: usdtMin }) }}
+                </p>
               </div>
 
               <div v-if="amount && amount > 0 && creditPreview > 0" class="rounded-lg bg-emerald-50 p-3 dark:bg-emerald-900/20">
@@ -304,14 +308,16 @@ const creditPreview = computed(() => {
   return Math.round(amount.value * config.value.rate * 100) / 100
 })
 
-// 充值限额是余额(CNY)口径，换算成 USDT 输入范围
-const usdtMin = computed(() => (config.value && config.value.rate > 0 ? config.value.min_amount / config.value.rate : 0))
-const usdtMax = computed(() => (config.value && config.value.rate > 0 ? config.value.max_amount / config.value.rate : 0))
+// 限额直接是 USDT 口径（min 默认 0.1，max=0 表示无上限）
+const usdtMin = computed(() => (config.value && config.value.min_amount > 0 ? config.value.min_amount : 0.1))
+const usdtMax = computed(() => (config.value ? config.value.max_amount : 0))
 
 const canSubmit = computed(() => {
   if (!config.value || !amount.value || !selectedChain.value || config.value.rate <= 0) return false
   if (!config.value.chains?.includes(selectedChain.value)) return false
-  return creditPreview.value >= config.value.min_amount && creditPreview.value <= config.value.max_amount
+  if (amount.value < usdtMin.value) return false
+  if (usdtMax.value > 0 && amount.value > usdtMax.value) return false
+  return true
 })
 
 const copy = async (text: string) => {

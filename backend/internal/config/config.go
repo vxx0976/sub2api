@@ -108,6 +108,8 @@ type PaymentConfig struct {
 // UsdtPaymentConfig USDT 多链自建收款的共享配置（settings 表可运行时覆盖 config.yaml）。
 // per-chain 配置（收款地址/api key/启用）只在后台 settings 配，不走 yaml。
 type UsdtPaymentConfig struct {
+	MinAmount              float64 `mapstructure:"min_amount"`               // 充值最小 USDT 数量，默认 0.1
+	MaxAmount              float64 `mapstructure:"max_amount"`               // 充值最大 USDT 数量，0 = 不限
 	ManualRate             float64 `mapstructure:"manual_rate"`              // 手动汇率：1 USDT = ? CNY
 	RateAutoFetch          bool    `mapstructure:"rate_auto_fetch"`          // 自动拉取汇率（失败回退 manual_rate）
 	RateMarkup             float64 `mapstructure:"rate_markup"`              // 加价系数：换算用汇率=rate*(1-markup)，让用户多付一点 USDT；默认 0

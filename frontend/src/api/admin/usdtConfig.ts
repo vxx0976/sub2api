@@ -14,6 +14,8 @@ export interface AdminUsdtChainConfig {
 
 export interface AdminUsdtConfig {
   enabled: boolean // 主开关
+  min_amount: number
+  max_amount: number
   manual_rate: number
   rate_auto_fetch: boolean
   rate_markup: number
@@ -35,6 +37,8 @@ export interface AdminUsdtChainConfigUpdate {
 
 export interface AdminUsdtConfigUpdate {
   enabled?: boolean
+  min_amount?: number
+  max_amount?: number
   manual_rate?: number
   rate_auto_fetch?: boolean
   rate_markup?: number

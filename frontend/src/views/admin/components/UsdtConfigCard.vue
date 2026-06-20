@@ -17,6 +17,19 @@
         <Toggle v-model="form.enabled" />
       </div>
 
+      <!-- Limits (USDT) -->
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="mb-1 block text-xs text-gray-600 dark:text-gray-400">{{ t('admin.settings.usdt.minAmount') }}</label>
+          <input v-model.number="form.min_amount" type="number" step="0.1" min="0" class="input font-mono text-sm" />
+        </div>
+        <div>
+          <label class="mb-1 block text-xs text-gray-600 dark:text-gray-400">{{ t('admin.settings.usdt.maxAmount') }}</label>
+          <input v-model.number="form.max_amount" type="number" step="1" min="0" class="input font-mono text-sm" />
+          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('admin.settings.usdt.maxAmountHint') }}</p>
+        </div>
+      </div>
+
       <!-- Per-chain config -->
       <div class="border-t border-gray-100 pt-4 dark:border-dark-700">
         <div class="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('admin.settings.usdt.chainsSection') }}</div>
@@ -163,6 +176,8 @@ interface ChainForm {
 
 const form = reactive({
   enabled: false,
+  min_amount: 0.1,
+  max_amount: 0,
   manual_rate: 7.2,
   rate_auto_fetch: false,
   rate_markup: 0,
@@ -184,6 +199,8 @@ async function loadConfig() {
   try {
     const cfg = await adminAPI.usdtConfig.getUsdtConfig()
     form.enabled = cfg.enabled
+    form.min_amount = cfg.min_amount > 0 ? cfg.min_amount : 0.1
+    form.max_amount = cfg.max_amount >= 0 ? cfg.max_amount : 0
     form.manual_rate = cfg.manual_rate > 0 ? cfg.manual_rate : 7.2
     form.rate_auto_fetch = cfg.rate_auto_fetch
     form.rate_markup = cfg.rate_markup >= 0 ? cfg.rate_markup : 0
@@ -225,6 +242,8 @@ async function handleSave() {
     }
     const payload: AdminUsdtConfigUpdate = {
       enabled: form.enabled,
+      min_amount: form.min_amount,
+      max_amount: form.max_amount,
       manual_rate: form.manual_rate,
       rate_auto_fetch: form.rate_auto_fetch,
       rate_markup: form.rate_markup,

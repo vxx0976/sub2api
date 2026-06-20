@@ -20,6 +20,8 @@ type AdminUsdtChainConfig struct {
 // 敏感字段 per-chain api_key 在 GET 时只返回 has_api_key。
 type AdminUsdtConfig struct {
 	Enabled                bool                            `json:"enabled"` // 主开关
+	MinAmount              float64                         `json:"min_amount"`
+	MaxAmount              float64                         `json:"max_amount"`
 	ManualRate             float64                         `json:"manual_rate"`
 	RateAutoFetch          bool                            `json:"rate_auto_fetch"`
 	RateMarkup             float64                         `json:"rate_markup"`
@@ -43,6 +45,8 @@ type AdminUsdtChainConfigUpdate struct {
 // AdminUsdtConfigUpdate 更新请求（nil 指针=不变）。
 type AdminUsdtConfigUpdate struct {
 	Enabled                *bool                                 `json:"enabled"`
+	MinAmount              *float64                              `json:"min_amount"`
+	MaxAmount              *float64                              `json:"max_amount"`
 	ManualRate             *float64                              `json:"manual_rate"`
 	RateAutoFetch          *bool                                 `json:"rate_auto_fetch"`
 	RateMarkup             *float64                              `json:"rate_markup"`
@@ -72,6 +76,8 @@ func (s *UsdtOrderService) GetAdminUsdtConfig(ctx context.Context) (*AdminUsdtCo
 
 	cfg := &AdminUsdtConfig{
 		Enabled:                get(payment.SettingKeyUsdtEnabled) == "true",
+		MinAmount:              parseFloat(get(payment.SettingKeyUsdtMinAmount)),
+		MaxAmount:              parseFloat(get(payment.SettingKeyUsdtMaxAmount)),
 		ManualRate:             parseFloat(get(payment.SettingKeyUsdtManualRate)),
 		RateAutoFetch:          get(payment.SettingKeyUsdtRateAutoFetch) == "true",
 		RateMarkup:             parseFloat(get(payment.SettingKeyUsdtRateMarkup)),
@@ -105,6 +111,16 @@ func (s *UsdtOrderService) UpdateAdminUsdtConfig(ctx context.Context, req *Admin
 
 	if req.Enabled != nil {
 		if err := set(payment.SettingKeyUsdtEnabled, strconv.FormatBool(*req.Enabled)); err != nil {
+			return err
+		}
+	}
+	if req.MinAmount != nil {
+		if err := set(payment.SettingKeyUsdtMinAmount, strconv.FormatFloat(*req.MinAmount, 'f', -1, 64)); err != nil {
+			return err
+		}
+	}
+	if req.MaxAmount != nil {
+		if err := set(payment.SettingKeyUsdtMaxAmount, strconv.FormatFloat(*req.MaxAmount, 'f', -1, 64)); err != nil {
 			return err
 		}
 	}

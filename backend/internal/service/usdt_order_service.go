@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"math"
 	"math/big"
-	"strconv"
 	"sync"
 	"time"
 
@@ -134,12 +133,8 @@ func (s *UsdtOrderService) GetConfig(ctx context.Context) (*UsdtOrderPublicConfi
 	v, _ := s.settingRepo.GetValue(ctx, payment.SettingKeyUsdtEnabled)
 	cfg.Enabled = v == "true"
 
-	if minStr, _ := s.settingRepo.GetValue(ctx, SettingKeyRechargeMinAmount); minStr != "" {
-		cfg.MinAmount, _ = strconv.ParseFloat(minStr, 64)
-	}
-	if maxStr, _ := s.settingRepo.GetValue(ctx, SettingKeyRechargeMaxAmount); maxStr != "" {
-		cfg.MaxAmount, _ = strconv.ParseFloat(maxStr, 64)
-	}
+	cfg.MinAmount = s.usdt.MinUsdt()
+	cfg.MaxAmount = s.usdt.MaxUsdt() // 0 = 无上限
 	if rate, err := s.usdt.QueryRate(ctx); err == nil {
 		cfg.Rate = rate
 	}
@@ -182,21 +177,18 @@ func (s *UsdtOrderService) CreateOrder(ctx context.Context, userID int64, usdtAm
 	if err != nil || rate <= 0 {
 		return nil, fmt.Errorf("usdt rate unavailable: %v", err)
 	}
+	// 限额按 USDT 数量校验（USDT 专属，与 CNY recharge 限额解耦）。max=0 表示不限。
+	minU := s.usdt.MinUsdt()
+	maxU := s.usdt.MaxUsdt()
+	if usdtAmount < minU {
+		return nil, fmt.Errorf("amount must be at least %s USDT", payment.FormatUsdt(minU))
+	}
+	if maxU > 0 && usdtAmount > maxU {
+		return nil, fmt.Errorf("amount must not exceed %s USDT", payment.FormatUsdt(maxU))
+	}
+
 	// 到账余额 = 用户填写的 USDT × 汇率（按下单金额入账，与实收无关，容差内即成功）。
 	credit := math.Round(usdtAmount*rate*100) / 100
-
-	// 限额按到账余额校验（与 EPAY/AliMPay 共享 recharge 限额，单位是余额/CNY）。
-	minAmount := 10.0
-	maxAmount := 10000.0
-	if v, _ := s.settingRepo.GetValue(ctx, SettingKeyRechargeMinAmount); v != "" {
-		minAmount, _ = strconv.ParseFloat(v, 64)
-	}
-	if v, _ := s.settingRepo.GetValue(ctx, SettingKeyRechargeMaxAmount); v != "" {
-		maxAmount, _ = strconv.ParseFloat(v, 64)
-	}
-	if credit < minAmount || credit > maxAmount {
-		return nil, fmt.Errorf("credited amount %.2f must be between %.2f and %.2f", credit, minAmount, maxAmount)
-	}
 
 	expiresIn := s.usdt.OrderTimeoutSeconds()
 	if expiresIn <= 0 {

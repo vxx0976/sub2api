@@ -17,6 +17,8 @@ import (
 // 共享 setting keys（与链无关；前端 SettingsView / 后台可配置）
 const (
 	SettingKeyUsdtEnabled                = "usdt_enabled" // 主开关
+	SettingKeyUsdtMinAmount              = "usdt_min_amount"
+	SettingKeyUsdtMaxAmount              = "usdt_max_amount"
 	SettingKeyUsdtManualRate             = "usdt_manual_rate"
 	SettingKeyUsdtRateAutoFetch          = "usdt_rate_auto_fetch"
 	SettingKeyUsdtRateMarkup             = "usdt_rate_markup"
@@ -92,6 +94,16 @@ func (u *UsdtPayment) Reload(ctx context.Context) {
 
 	// 共享配置
 	cfg := u.fallbackCfg
+	if v := get(SettingKeyUsdtMinAmount); v != "" {
+		if f, err := strconv.ParseFloat(v, 64); err == nil && f > 0 {
+			cfg.MinAmount = f
+		}
+	}
+	if v := get(SettingKeyUsdtMaxAmount); v != "" {
+		if f, err := strconv.ParseFloat(v, 64); err == nil && f >= 0 {
+			cfg.MaxAmount = f
+		}
+	}
 	if v := get(SettingKeyUsdtManualRate); v != "" {
 		if f, err := strconv.ParseFloat(v, 64); err == nil && f > 0 {
 			cfg.ManualRate = f
@@ -207,6 +219,22 @@ func (u *UsdtPayment) UsableChains(ctx context.Context) []string {
 }
 
 // AmountOffset 唯一金额尾数步长（USDT），默认 0.0001。
+// MinUsdt 充值最小 USDT 数量，默认 0.1。
+func (u *UsdtPayment) MinUsdt() float64 {
+	if v := u.sharedSnapshot().MinAmount; v > 0 {
+		return v
+	}
+	return 0.1
+}
+
+// MaxUsdt 充值最大 USDT 数量；0 = 不限。
+func (u *UsdtPayment) MaxUsdt() float64 {
+	if v := u.sharedSnapshot().MaxAmount; v > 0 {
+		return v
+	}
+	return 0
+}
+
 // AmountTolerance 到账金额容差（USDT），默认 0.01。实收与应付在 ±容差内即算匹配成功。
 func (u *UsdtPayment) AmountTolerance() float64 {
 	if t := u.sharedSnapshot().AmountTolerance; t > 0 {
