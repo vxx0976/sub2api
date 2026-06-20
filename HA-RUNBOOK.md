@@ -97,7 +97,7 @@ ssh dmit-admin "docker ps --filter name=^sub2api$ --format '{{.Status}}'"
 | 凭据 | 位置 |
 |---|---|
 | PG superuser(postgres) | `/etc/patroni/config.yml` (admin/hostdzire) 的 authentication.superuser |
-| PG replicator | 同上 replication 段 (值 `Fan@931025`) |
+| PG replicator | `/etc/patroni/config.yml` (admin/hostdzire) 的 replication 段 (**口令不在此明文记录;以节点 config.yml 为准**) |
 | sub2api DB/Redis 密码 | `/opt/sub2api/.env` (hostdzire/admin) |
 | Redis requirepass | `/etc/redis/redis.conf` (admin) |
 | 本地临时存的 patroni 密码 | 本机 `/tmp/patroni_pgpw.txt` (重启丢失,以 config.yml 为准) |
@@ -243,7 +243,7 @@ ssh hostdzire "cd /opt/sub2api && sed -i 's/DATABASE_HOST=10.88.0.4/DATABASE_HOS
 
 | 故障 | 自愈 | RTO |
 |---|---|---|
-| hostdzire 挂 | ✅ Caddy 切 standby | 5-10s |
+| hostdzire 挂 | ✅ Caddy 切 standby（⚠️**容量降级**: 兜底 admin 仅 3G vs 生产 16G,峰值需手工扩容,见 §4.1） | 5-10s |
 | admin 挂 | ✅ patroni+sentinel+HAProxy | ~30s |
 | bwh2 (仲裁) 挂 | ✅ 无感 (etcd/sentinel 仍 4/5 过半) | 0 |
 | main 挂 | ❌ mayi.one 入口失效 (待阶段4) | 人工 |
@@ -397,10 +397,10 @@ ssh hostdzire "cd /opt/sub2api && sed -i 's/DATABASE_HOST=10.88.0.4/DATABASE_HOS
 ### 单台宕机
 | 宕机 | 影响 & 自愈 | RTO | <1min |
 |---|---|---|---|
-| solid | 异地灾备从丢失,无感 | 0s | ✅ |
-| hostdzire | Caddy 切 admin standby;PG/Redis 主在 admin 不动;mayi 默认源站 main 仍在 | 5–10s | ✅ |
+| bwh2(仲裁) | 第5票丢失,etcd/sentinel 仍 4/5 过半,无感 | 0s | ✅ |
+| hostdzire | Caddy 切 admin standby（⚠️容量降级 16G→3G,见 §4.1/§8）;PG/Redis 主在 admin 不动;mayi 默认源站 main 仍在 | 5–10s | ✅ |
 | admin | patroni 提 hostdzire 为主 + sentinel 切 Redis + HAProxy 跟随 | ~30s | ✅ |
-| main | mayi.one + 挂它的商户子域靠 CF LB 切 hostdzire;**监控 check.sh 随 main 失效**(solid 自检兜底) | ~60s+TTL | ⚠️ 卡线/偏超 |
+| main | mayi.one + 挂它的商户子域靠 CF LB 切 hostdzire;**监控 check.sh 随 main 失效**(bwh2 哨兵独立兜底,见 §10) | ~60s+TTL | ⚠️ 卡线/偏超 |
 | merchant | 标准接入商户子域随 CF LB 不受影响 ✅;**`dsrrr.com`本站 + apex + 旧A记录商户 入口失效,手动改DNS** | dsrrr 人工 | ❌(仅 dsrrr/apex) |
 
 ### DMIT 内部双挂 (同服务商,realistic)
@@ -416,16 +416,18 @@ ssh hostdzire "cd /opt/sub2api && sed -i 's/DATABASE_HOST=10.88.0.4/DATABASE_HOS
 
 ### 已澄清,无开放待办
 - **`10.88.0.4` 是 WireGuard mesh 分配地址,非脆弱硬编码** (mesh 网段 `10.88.0.x`,见 §6: .4=hostdzire / .3=admin)。ask-tls 指向哪台是稳定事实;商户域名既定为尽力而为,此项不再追。
-- **check.sh 是告警发送方本身(必要,非冗余)**: §10 cron 每分钟跑 14 项 → TG+邮件,发告警的就是它。唯一盲区是「main 自己挂 → 告警器随之挂」,而 §10 已记录该场景由 CF LB/DNS 切换暴露 + solid 自检独立兜底,站长已接受。无新待办。
+- **check.sh 是告警发送方本身(必要,非冗余)**: §10 cron 每分钟跑 14 项 → TG+邮件,发告警的就是它。唯一盲区是「main 自己挂 → 告警器随之挂」,而 §10 已记录该场景由 CF LB/DNS 切换暴露 + **bwh2 哨兵**(独立服务商,见 §10)独立兜底,站长已接受。无新待办。
 
 ### 一句话结论 (按站长决定收敛后,最终)
-**应用层 + 数据层: 所有现实的一/两节点故障都在 ~30s 内自愈** —— 单台 admin/hostdzire/solid,及 DMIT 内部双挂(main+merchant / main+admin / merchant+admin),app 始终有 hostdzire 主或 admin standby 兜底、DB 始终能 patroni 提 hostdzire 主。**唯二不在 1 分钟内自愈的就是两条已接受的入口取舍**(merchant 入口单点 + mayi CN2 尽力而为)。**无其余开放缺口或待办。**
+**应用层 + 数据层: 所有现实的一/两节点故障都在 ~30s 内自愈** —— 单台 admin/hostdzire,及 DMIT 内部双挂(main+merchant / main+admin / merchant+admin),app 始终有 hostdzire 主或 admin standby 兜底、DB 始终能 patroni 提 hostdzire 主。**唯二不在 1 分钟内自愈的就是两条已接受的入口取舍**(merchant 入口单点 + mayi CN2 尽力而为)。
+> ⚠️ **结论范围限定**: 上述"自愈"仅指【一/两节点故障】这一类。以下**已登记的尾部/系统性残余风险不在此结论内**,勿据本句认为"零缺口": ①DMIT 账号级/全局网络级事件可一次打掉 3/5 票→quorum 丢失停写(§1);②CF 账号级事件可同时打掉 mayi 权威 DNS+LB+R2 备份+橙云逃生;③hostdzire failover 后 admin 3G 兜底容量降级(§4.1/§8);④Prometheus 单点、Grafana 面板未做(§10);⑤密钥轮换待办(§7#20)。这些是【已知并(多数)已接受】,非"无缺口"。
 
 ---
 
 ## §14 备份与异地容灾 (2026-05-29)
 
 > HA(节点挂)≠ 备份(数据坏)。流复制会把误删/逻辑损坏复制到所有从库,只有备份能回滚。本节是数据持久性的底线。
+> 📌 **现状(2026-06-19 更新,以 §7#19/#20 为准)**: 备份已扩到**三份独立** = ① app→**R2**(每日 `0 2`,UI 一键恢复)② admin pg_dump→**jp**(每日 20:00 UTC)③ admin pg_dump→**sg**(每日)。下方 2026-05-29 的"仅 app→R2 一条"段落是历史记录,**已被 §7#19 取代**。jp/sg 恢复路径 = `scp + zcat | psql`(⚠️尚未端到端演练,见审查 bk-4)。
 
 ### 主备份: sub2api 自带 → Cloudflare R2 (✅ 站长早已配好;2026-05-29 确认)
 - 后台「系统设置 → 数据备份」: S3/R2(`…r2.cloudflarestorage.com`, bucket `sub2api-backups`, 前缀 `backups/`),**定时 `0 2 * * *`**,保留 **14天 / 3份**。产物 `.sql.gz`(~440MB/天),UI 可**下载 + 一键恢复**(应用 BackupService)。R2 durable —— **这是数据持久性的正主**。RPO=24h。
