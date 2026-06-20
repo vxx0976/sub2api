@@ -10,7 +10,7 @@ export interface UsdtConfig {
   enabled: boolean
   min_amount: number
   max_amount: number
-  chain: string
+  chains: string[] // 当前可收款的链：trc20 / bep20 / ton
   rate: number // 当前换算汇率：1 USDT = ? CNY
 }
 
@@ -67,8 +67,8 @@ export async function getConfig(): Promise<UsdtConfig> {
   return data
 }
 
-export async function createOrder(amount: number): Promise<UsdtOrderResult> {
-  const { data } = await apiClient.post<UsdtOrderResult>('/usdt/create', { amount })
+export async function createOrder(amount: number, chain: string): Promise<UsdtOrderResult> {
+  const { data } = await apiClient.post<UsdtOrderResult>('/usdt/create', { amount, chain })
   return data
 }
 

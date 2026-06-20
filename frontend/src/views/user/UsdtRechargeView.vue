@@ -31,6 +31,26 @@
             <h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">{{ t('usdt.formTitle') }}</h2>
 
             <form @submit.prevent="handleCreateOrder" class="space-y-5">
+              <div v-if="config.chains && config.chains.length">
+                <label class="input-label">{{ t('usdt.selectChain') }}</label>
+                <div class="mt-1 grid grid-cols-3 gap-2">
+                  <button
+                    v-for="c in config.chains"
+                    :key="c"
+                    type="button"
+                    :class="[
+                      'rounded-lg border px-3 py-2 text-sm font-medium transition-colors',
+                      selectedChain === c
+                        ? 'border-primary-500 bg-primary-50 text-primary-600 dark:border-primary-400 dark:bg-primary-900/20 dark:text-primary-300'
+                        : 'border-gray-200 text-gray-600 hover:border-gray-300 dark:border-dark-600 dark:text-dark-300'
+                    ]"
+                    @click="selectedChain = c"
+                  >
+                    {{ chainLabel(c) }}
+                  </button>
+                </div>
+              </div>
+
               <div>
                 <label for="amount" class="input-label">{{ t('recharge.amountLabel') }}</label>
                 <div class="relative mt-1">
@@ -126,7 +146,7 @@
                       {{ order.usdt_amount_str }} USDT
                       <span class="text-xs text-gray-500 dark:text-dark-400"> → ${{ order.credit_amount.toFixed(2) }}</span>
                     </p>
-                    <p class="text-xs text-gray-500 dark:text-dark-400">{{ formatDateTime(order.created_at) }}</p>
+                    <p class="text-xs text-gray-500 dark:text-dark-400">{{ chainLabel(order.chain) }} · {{ formatDateTime(order.created_at) }}</p>
                   </div>
                 </div>
                 <div class="text-right">
@@ -178,7 +198,7 @@
               <svg class="mt-0.5 h-4 w-4 flex-shrink-0 text-red-500 dark:text-red-400" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
               </svg>
-              <p class="text-sm font-medium text-red-700 dark:text-red-300">{{ t('usdt.networkWarning') }}</p>
+              <p class="text-sm font-medium text-red-700 dark:text-red-300">{{ t('usdt.networkWarning', { chain: chainLabel(qrChain) }) }}</p>
             </div>
           </div>
 
@@ -207,7 +227,7 @@
 
           <!-- Address with copy -->
           <div class="mb-3">
-            <label class="mb-1 block text-xs text-gray-500 dark:text-dark-400">{{ t('usdt.addressLabel', { chain: 'TRC20' }) }}</label>
+            <label class="mb-1 block text-xs text-gray-500 dark:text-dark-400">{{ t('usdt.addressLabel', { chain: chainLabel(qrChain) }) }}</label>
             <div class="flex items-center gap-2 rounded-lg bg-gray-50 p-2 dark:bg-dark-700">
               <span class="flex-1 break-all font-mono text-xs text-gray-800 dark:text-gray-200">{{ qrAddress }}</span>
               <button
@@ -262,7 +282,11 @@ const user = computed(() => authStore.user)
 const loadingConfig = ref(true)
 const config = ref<UsdtConfig | null>(null)
 const amount = ref<number | null>(null)
+const selectedChain = ref('')
 const submitting = ref(false)
+
+const CHAIN_LABELS: Record<string, string> = { trc20: 'TRC20 (TRON)', bep20: 'BEP20 (BSC)', ton: 'TON' }
+const chainLabel = (c: string) => CHAIN_LABELS[c] || c.toUpperCase()
 
 const orders = ref<UsdtOrderItem[]>([])
 const loadingOrders = ref(false)
@@ -274,6 +298,7 @@ const showQRModal = ref(false)
 const qrCodeDataURL = ref('')
 const qrAddress = ref('')
 const qrUsdtAmount = ref('')
+const qrChain = ref('')
 const remainingSeconds = ref(0)
 
 const formatCountdown = (seconds: number) => {
@@ -291,7 +316,8 @@ const estimatedUsdt = computed(() => {
 })
 
 const canSubmit = computed(() => {
-  if (!config.value || !amount.value) return false
+  if (!config.value || !amount.value || !selectedChain.value) return false
+  if (!config.value.chains?.includes(selectedChain.value)) return false
   return amount.value >= config.value.min_amount && amount.value <= config.value.max_amount
 })
 
@@ -308,6 +334,9 @@ const fetchConfig = async () => {
   loadingConfig.value = true
   try {
     config.value = await usdtAPI.getConfig()
+    if (config.value.chains?.length && !config.value.chains.includes(selectedChain.value)) {
+      selectedChain.value = config.value.chains[0]
+    }
   } catch {
     appStore.showError(t('recharge.loadConfigFailed'))
   } finally {
@@ -331,9 +360,10 @@ const handleCreateOrder = async () => {
   if (!canSubmit.value || !amount.value) return
   submitting.value = true
   try {
-    const result = await usdtAPI.createOrder(amount.value)
+    const result = await usdtAPI.createOrder(amount.value, selectedChain.value)
     qrAddress.value = result.address
     qrUsdtAmount.value = result.usdt_amount_str
+    qrChain.value = result.chain
     try {
       qrCodeDataURL.value = await QRCode.toDataURL(result.address, { width: 280, margin: 2 })
       showQRModal.value = true

@@ -8,7 +8,6 @@ import (
 )
 
 // UsdtOrderMatcher 是 UsdtOrderService 实现的接口，供 UsdtMonitor 匹配并确认链上到账。
-// 单独定义（不复用 OrderMatcher），避免 wire 把它绑成 AliMPay 的 *OrderService。
 type UsdtOrderMatcher interface {
 	GetPendingUsdtOrders(ctx context.Context) ([]UsdtPendingOrder, error)
 	ConfirmUsdtOrderPaid(ctx context.Context, orderNo string, deposit UsdtDeposit) error
@@ -17,23 +16,25 @@ type UsdtOrderMatcher interface {
 // UsdtPendingOrder 是一笔待支付的 USDT 订单（供链上金额匹配）。
 type UsdtPendingOrder struct {
 	OrderNo    string
+	Chain      string
 	UsdtAmount float64 // 期望的精确应付金额
-	UsdtAtomic int64   // 期望的链上最小单位（= UsdtToAtomic(UsdtAmount)）
+	UsdtAtomic int64   // 期望金额的 micro-USDT（6 位定点 = UsdtToAtomic(UsdtAmount)），跨链统一匹配
 	CreatedAt  time.Time
 	ExpiredAt  *time.Time
 }
 
-// UsdtDeposit 是匹配成功的链上转账信息（确认入账时写入订单）。
+// UsdtDeposit 是匹配成功的链上转账信息。
 type UsdtDeposit struct {
 	TxID           string
+	Chain          string
 	FromAddress    string
 	PaidUsdtAtomic int64
 	PaidUsdt       float64
 	BlockTimeMs    int64
 }
 
-// UsdtMonitor 轮询 TronGrid，按唯一金额把 USDT 到账匹配到 pending 订单。
-// 结构镜像 AlipayMonitor：始终启动，运行时按 settings.usdt_enabled 决定是否真正工作。
+// UsdtMonitor 轮询各启用链，按唯一金额把 USDT 到账匹配到 pending 订单。
+// 始终启动，运行时按 settings.usdt_enabled + per-chain 开关决定是否真正工作。
 type UsdtMonitor struct {
 	usdt    *UsdtPayment
 	matcher UsdtOrderMatcher
@@ -42,9 +43,8 @@ type UsdtMonitor struct {
 	stopCh   chan struct{}
 	wg       sync.WaitGroup
 
-	// 已确认 tx 去重（DB trade_no 唯一索引是最终保证，这里减少无谓重试）
 	mu        sync.Mutex
-	matchedTx map[string]time.Time
+	matchedTx map[string]time.Time // key = chain:txid
 }
 
 // NewUsdtMonitor 创建监控器。
@@ -63,7 +63,7 @@ func (m *UsdtMonitor) Start() {
 	m.wg.Add(1)
 	go func() {
 		defer m.wg.Done()
-		log.Println("[UsdtMonitor] Started (gated by settings.usdt_enabled at runtime)")
+		log.Println("[UsdtMonitor] Started (gated by settings.usdt_enabled + per-chain switches)")
 
 		m.runCycle()
 
@@ -93,15 +93,15 @@ func (m *UsdtMonitor) Stop() {
 }
 
 func (m *UsdtMonitor) runCycle() {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
 	defer cancel()
 
-	// 热加载配置
 	m.usdt.Reload(ctx)
 	if !m.usdt.IsEnabled(ctx) {
 		return
 	}
-	if m.usdt.ReceivingAddress() == "" {
+	usable := m.usdt.UsableChains(ctx)
+	if len(usable) == 0 {
 		return
 	}
 
@@ -114,66 +114,73 @@ func (m *UsdtMonitor) runCycle() {
 		return
 	}
 
-	minTs := time.Now().Add(-time.Duration(m.usdt.QueryMinutesBack())*time.Minute - 5*time.Minute).UnixMilli()
-	transfers, err := m.usdt.QueryIncomingTransfers(ctx, minTs)
-	if err != nil {
-		log.Printf("[UsdtMonitor] query transfers failed: %v", err)
-		return
-	}
-	if len(transfers) == 0 {
-		return
-	}
-
 	m.cleanupMatched()
 
-	// 唯一金额 → 订单（pending 订单的 usdt_amount 在 (chain,amount) 上唯一）
-	byAtomic := make(map[int64]UsdtPendingOrder, len(orders))
+	byChain := make(map[string][]UsdtPendingOrder)
 	for _, o := range orders {
-		byAtomic[o.UsdtAtomic] = o
+		byChain[o.Chain] = append(byChain[o.Chain], o)
 	}
 
+	minTs := time.Now().Add(-time.Duration(m.usdt.QueryMinutesBack())*time.Minute - 5*time.Minute).UnixMilli()
 	confirmCutoff := time.Now().Add(-m.usdt.ConfirmDuration())
 
-	for _, tr := range transfers {
-		if m.isMatched(tr.TxID) {
+	for _, chain := range usable {
+		pend := byChain[chain]
+		if len(pend) == 0 {
 			continue
 		}
-		// 等待链上确认：交易需足够「老」才入账（粗粒度的 finality 保护）。
-		blockTime := time.UnixMilli(tr.BlockTimeMs)
-		if blockTime.After(confirmCutoff) {
+		transfers, err := m.usdt.QueryIncoming(ctx, chain, minTs)
+		if err != nil {
+			log.Printf("[UsdtMonitor] [%s] query transfers failed: %v", chain, err)
 			continue
 		}
-		atomic, ok := new64(tr.ValueAtomic)
-		if !ok || atomic <= 0 {
-			continue
-		}
-		order, ok := byAtomic[atomic]
-		if !ok {
-			log.Printf("[UsdtMonitor] transfer %s (%s USDT atomic) no matching pending order", tr.TxID, tr.ValueAtomic)
-			continue
-		}
-		// 时间窗校验：转账不能早于订单创建（留 5min 容差），不能晚于过期。
-		if blockTime.Before(order.CreatedAt.Add(-5 * time.Minute)) {
-			continue
-		}
-		if order.ExpiredAt != nil && blockTime.After(*order.ExpiredAt) {
+		if len(transfers) == 0 {
 			continue
 		}
 
-		paidUsdt, _ := AtomicToUsdt(tr.ValueAtomic)
-		deposit := UsdtDeposit{
-			TxID:           tr.TxID,
-			FromAddress:    tr.From,
-			PaidUsdtAtomic: atomic,
-			PaidUsdt:       paidUsdt,
-			BlockTimeMs:    tr.BlockTimeMs,
+		byAmt := make(map[int64]UsdtPendingOrder, len(pend))
+		for _, o := range pend {
+			byAmt[o.UsdtAtomic] = o
 		}
-		log.Printf("[UsdtMonitor] matched order %s ← tx %s (%.6f USDT)", order.OrderNo, tr.TxID, paidUsdt)
-		if err := m.matcher.ConfirmUsdtOrderPaid(ctx, order.OrderNo, deposit); err != nil {
-			log.Printf("[UsdtMonitor] confirm order %s failed: %v", order.OrderNo, err)
-			continue
+
+		for _, tr := range transfers {
+			txKey := chain + ":" + tr.TxID
+			if m.isMatched(txKey) {
+				continue
+			}
+			hasTime := tr.BlockTimeMs > 0
+			blockTime := time.UnixMilli(tr.BlockTimeMs)
+			// 等待链上确认：交易需足够「老」（粗粒度 finality 保护）。无时间戳则视为已确认。
+			if hasTime && blockTime.After(confirmCutoff) {
+				continue
+			}
+			micro := UsdtToAtomic(tr.AmountHuman)
+			order, ok := byAmt[micro]
+			if !ok {
+				continue
+			}
+			if hasTime && blockTime.Before(order.CreatedAt.Add(-5*time.Minute)) {
+				continue
+			}
+			if hasTime && order.ExpiredAt != nil && blockTime.After(*order.ExpiredAt) {
+				continue
+			}
+
+			deposit := UsdtDeposit{
+				TxID:           tr.TxID,
+				Chain:          chain,
+				FromAddress:    tr.From,
+				PaidUsdtAtomic: micro,
+				PaidUsdt:       tr.AmountHuman,
+				BlockTimeMs:    tr.BlockTimeMs,
+			}
+			log.Printf("[UsdtMonitor] [%s] matched order %s ← tx %s (%.6f USDT)", chain, order.OrderNo, tr.TxID, tr.AmountHuman)
+			if err := m.matcher.ConfirmUsdtOrderPaid(ctx, order.OrderNo, deposit); err != nil {
+				log.Printf("[UsdtMonitor] [%s] confirm order %s failed: %v", chain, order.OrderNo, err)
+				continue
+			}
+			m.markMatched(txKey)
 		}
-		m.markMatched(tr.TxID)
 	}
 }
 
@@ -188,33 +195,15 @@ func (m *UsdtMonitor) cleanupMatched() {
 	}
 }
 
-func (m *UsdtMonitor) isMatched(tx string) bool {
+func (m *UsdtMonitor) isMatched(key string) bool {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	_, ok := m.matchedTx[tx]
+	_, ok := m.matchedTx[key]
 	return ok
 }
 
-func (m *UsdtMonitor) markMatched(tx string) {
+func (m *UsdtMonitor) markMatched(key string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.matchedTx[tx] = time.Now()
-}
-
-// new64 把十进制字符串解析为 int64（链上 USDT 金额最小单位不会溢出 int64）。
-func new64(s string) (int64, bool) {
-	var n int64
-	if s == "" {
-		return 0, false
-	}
-	for _, r := range s {
-		if r < '0' || r > '9' {
-			return 0, false
-		}
-		n = n*10 + int64(r-'0')
-		if n < 0 { // 溢出
-			return 0, false
-		}
-	}
-	return n, true
+	m.matchedTx[key] = time.Now()
 }

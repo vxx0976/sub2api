@@ -1,15 +1,19 @@
 /**
- * Admin USDT (TRC20) config API
+ * Admin USDT (多链) config API
  * 独立于 SettingsView 主 save payload，单独保存。
  */
 
 import { apiClient } from '../client'
 
-export interface AdminUsdtConfig {
+export interface AdminUsdtChainConfig {
   enabled: boolean
-  receiving_address: string
-  tron_api_base_url: string
-  has_tron_api_key: boolean
+  address: string
+  has_api_key: boolean
+  api_base_url: string
+}
+
+export interface AdminUsdtConfig {
+  enabled: boolean // 主开关
   manual_rate: number
   rate_auto_fetch: boolean
   rate_markup: number
@@ -18,19 +22,18 @@ export interface AdminUsdtConfig {
   monitor_interval_seconds: number
   query_minutes_back: number
   order_timeout_seconds: number
+  chains: Record<string, AdminUsdtChainConfig>
 }
 
-/**
- * 敏感字段（tron_api_key）：
- *   - undefined/null 字段不更新
- *   - 空字符串 "" 保留原值（不清空）
- *   - 非空字符串覆盖保存
- */
+export interface AdminUsdtChainConfigUpdate {
+  enabled?: boolean
+  address?: string
+  api_key?: string // 空字符串=保留原值
+  api_base_url?: string
+}
+
 export interface AdminUsdtConfigUpdate {
   enabled?: boolean
-  receiving_address?: string
-  tron_api_base_url?: string
-  tron_api_key?: string
   manual_rate?: number
   rate_auto_fetch?: boolean
   rate_markup?: number
@@ -39,6 +42,7 @@ export interface AdminUsdtConfigUpdate {
   monitor_interval_seconds?: number
   query_minutes_back?: number
   order_timeout_seconds?: number
+  chains?: Record<string, AdminUsdtChainConfigUpdate>
 }
 
 export async function getUsdtConfig(): Promise<AdminUsdtConfig> {

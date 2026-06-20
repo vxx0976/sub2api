@@ -8,7 +8,7 @@
     <div v-if="loading" class="p-6 text-sm text-gray-400">{{ t('common.loading') }}</div>
 
     <div v-else class="space-y-6 p-6">
-      <!-- Enable Toggle -->
+      <!-- Master enable -->
       <div class="flex items-center justify-between">
         <div>
           <label class="font-medium text-gray-900 dark:text-white">{{ t('admin.settings.usdt.enabled') }}</label>
@@ -17,29 +17,47 @@
         <Toggle v-model="form.enabled" />
       </div>
 
-      <!-- Receiving Address -->
-      <div>
-        <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('admin.settings.usdt.receivingAddress') }}</label>
-        <input v-model="form.receiving_address" type="text" class="input font-mono text-sm" placeholder="T..." />
-        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('admin.settings.usdt.receivingAddressHint') }}</p>
+      <!-- Per-chain config -->
+      <div class="border-t border-gray-100 pt-4 dark:border-dark-700">
+        <div class="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('admin.settings.usdt.chainsSection') }}</div>
+        <div class="space-y-4">
+          <div
+            v-for="chain in CHAINS"
+            :key="chain.key"
+            class="rounded-xl border border-gray-200 p-4 dark:border-dark-700"
+          >
+            <div class="mb-3 flex items-center justify-between">
+              <span class="font-medium text-gray-900 dark:text-white">{{ chain.label }}</span>
+              <Toggle v-model="form.chains[chain.key].enabled" />
+            </div>
+            <div class="space-y-3">
+              <div>
+                <label class="mb-1 block text-xs text-gray-600 dark:text-gray-400">{{ t('admin.settings.usdt.chainAddress') }}</label>
+                <input v-model="form.chains[chain.key].address" type="text" class="input font-mono text-sm" :placeholder="chain.addrPlaceholder" />
+              </div>
+              <div>
+                <label class="mb-1 block text-xs text-gray-600 dark:text-gray-400">
+                  {{ chain.apiKeyLabel }}
+                  <span v-if="hasApiKey[chain.key]" class="ml-2 text-emerald-600 dark:text-emerald-400">{{ t('admin.settings.usdt.keyConfigured') }}</span>
+                </label>
+                <input
+                  v-model="form.chains[chain.key].api_key"
+                  type="text"
+                  class="input font-mono text-sm"
+                  :placeholder="hasApiKey[chain.key] ? t('admin.settings.usdt.keyKeepPlaceholder') : chain.apiKeyPlaceholder"
+                />
+                <p v-if="chain.note" class="mt-1 text-xs text-amber-600 dark:text-amber-400">{{ t(chain.note) }}</p>
+              </div>
+              <div>
+                <label class="mb-1 block text-xs text-gray-600 dark:text-gray-400">{{ t('admin.settings.usdt.chainApiBaseUrl') }}</label>
+                <input v-model="form.chains[chain.key].api_base_url" type="text" class="input font-mono text-sm" :placeholder="chain.baseUrlPlaceholder" />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <!-- TronGrid API Key (sensitive) -->
-      <div>
-        <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-          {{ t('admin.settings.usdt.tronApiKey') }}
-          <span v-if="hasTronApiKey" class="ml-2 text-xs text-emerald-600 dark:text-emerald-400">{{ t('admin.settings.usdt.keyConfigured') }}</span>
-        </label>
-        <input
-          v-model="form.tron_api_key"
-          type="text"
-          class="input font-mono text-sm"
-          :placeholder="hasTronApiKey ? t('admin.settings.usdt.keyKeepPlaceholder') : t('admin.settings.usdt.tronApiKeyPlaceholder')"
-        />
-        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('admin.settings.usdt.tronApiKeyHint') }}</p>
-      </div>
-
-      <!-- Rate config -->
+      <!-- Rate -->
       <div class="border-t border-gray-100 pt-4 dark:border-dark-700">
         <div class="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('admin.settings.usdt.rateSection') }}</div>
         <div class="flex items-center justify-between">
@@ -68,10 +86,6 @@
         <div class="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('admin.settings.usdt.advanced') }}</div>
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="mb-1 block text-xs text-gray-600 dark:text-gray-400">{{ t('admin.settings.usdt.tronApiBaseUrl') }}</label>
-            <input v-model="form.tron_api_base_url" type="text" class="input font-mono text-sm" placeholder="https://api.trongrid.io" />
-          </div>
-          <div>
             <label class="mb-1 block text-xs text-gray-600 dark:text-gray-400">{{ t('admin.settings.usdt.amountOffset') }}</label>
             <input v-model.number="form.amount_offset" type="number" step="0.0001" min="0.0001" class="input font-mono text-sm" />
           </div>
@@ -94,7 +108,6 @@
         </div>
       </div>
 
-      <!-- Save button -->
       <div class="flex justify-end border-t border-gray-100 pt-4 dark:border-dark-700">
         <button class="btn btn-primary" :disabled="saving" @click="handleSave">
           {{ saving ? t('common.saving') : t('admin.settings.usdt.saveButton') }}
@@ -108,7 +121,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { adminAPI } from '@/api/admin'
-import type { AdminUsdtConfigUpdate } from '@/api/admin/usdtConfig'
+import type { AdminUsdtConfigUpdate, AdminUsdtChainConfigUpdate } from '@/api/admin/usdtConfig'
 import { useAppStore } from '@/stores'
 import Toggle from '@/components/common/Toggle.vue'
 import { extractApiErrorMessage } from '@/utils/apiError'
@@ -116,15 +129,35 @@ import { extractApiErrorMessage } from '@/utils/apiError'
 const { t } = useI18n()
 const appStore = useAppStore()
 
+interface ChainMeta {
+  key: string
+  label: string
+  addrPlaceholder: string
+  apiKeyLabel: string
+  apiKeyPlaceholder: string
+  baseUrlPlaceholder: string
+  note?: string
+}
+
+const CHAINS: ChainMeta[] = [
+  { key: 'trc20', label: 'TRC20 (TRON)', addrPlaceholder: 'T...', apiKeyLabel: 'TronGrid API Key', apiKeyPlaceholder: 'TronGrid key', baseUrlPlaceholder: 'https://api.trongrid.io' },
+  { key: 'bep20', label: 'BEP20 (BSC)', addrPlaceholder: '0x...', apiKeyLabel: 'Etherscan API Key', apiKeyPlaceholder: 'Etherscan key', baseUrlPlaceholder: 'https://api.etherscan.io/v2/api', note: 'admin.settings.usdt.bep20PaidNote' },
+  { key: 'ton', label: 'TON', addrPlaceholder: 'EQ... / UQ...', apiKeyLabel: 'TonCenter API Key', apiKeyPlaceholder: 'TonCenter key', baseUrlPlaceholder: 'https://toncenter.com/api/v3' }
+]
+
 const loading = ref(true)
 const saving = ref(false)
-const hasTronApiKey = ref(false)
+const hasApiKey = reactive<Record<string, boolean>>({ trc20: false, bep20: false, ton: false })
 
-const form = reactive<Required<AdminUsdtConfigUpdate>>({
+interface ChainForm {
+  enabled: boolean
+  address: string
+  api_key: string
+  api_base_url: string
+}
+
+const form = reactive({
   enabled: false,
-  receiving_address: '',
-  tron_api_base_url: '',
-  tron_api_key: '',
   manual_rate: 7.2,
   rate_auto_fetch: false,
   rate_markup: 0,
@@ -132,7 +165,12 @@ const form = reactive<Required<AdminUsdtConfigUpdate>>({
   confirm_seconds: 60,
   monitor_interval_seconds: 15,
   query_minutes_back: 30,
-  order_timeout_seconds: 1800
+  order_timeout_seconds: 1800,
+  chains: {
+    trc20: { enabled: false, address: '', api_key: '', api_base_url: '' } as ChainForm,
+    bep20: { enabled: false, address: '', api_key: '', api_base_url: '' } as ChainForm,
+    ton: { enabled: false, address: '', api_key: '', api_base_url: '' } as ChainForm
+  } as Record<string, ChainForm>
 })
 
 async function loadConfig() {
@@ -140,8 +178,6 @@ async function loadConfig() {
   try {
     const cfg = await adminAPI.usdtConfig.getUsdtConfig()
     form.enabled = cfg.enabled
-    form.receiving_address = cfg.receiving_address
-    form.tron_api_base_url = cfg.tron_api_base_url
     form.manual_rate = cfg.manual_rate > 0 ? cfg.manual_rate : 7.2
     form.rate_auto_fetch = cfg.rate_auto_fetch
     form.rate_markup = cfg.rate_markup >= 0 ? cfg.rate_markup : 0
@@ -150,8 +186,16 @@ async function loadConfig() {
     form.monitor_interval_seconds = cfg.monitor_interval_seconds > 0 ? cfg.monitor_interval_seconds : 15
     form.query_minutes_back = cfg.query_minutes_back > 0 ? cfg.query_minutes_back : 30
     form.order_timeout_seconds = cfg.order_timeout_seconds > 0 ? cfg.order_timeout_seconds : 1800
-    hasTronApiKey.value = cfg.has_tron_api_key
-    form.tron_api_key = ''
+    for (const c of CHAINS) {
+      const cc = cfg.chains?.[c.key]
+      hasApiKey[c.key] = !!cc?.has_api_key
+      form.chains[c.key] = {
+        enabled: !!cc?.enabled,
+        address: cc?.address || '',
+        api_key: '',
+        api_base_url: cc?.api_base_url || ''
+      }
+    }
   } catch (e) {
     appStore.showError(extractApiErrorMessage(e))
   } finally {
@@ -162,11 +206,18 @@ async function loadConfig() {
 async function handleSave() {
   saving.value = true
   try {
+    const chains: Record<string, AdminUsdtChainConfigUpdate> = {}
+    for (const c of CHAINS) {
+      const f = form.chains[c.key]
+      chains[c.key] = {
+        enabled: f.enabled,
+        address: f.address,
+        api_key: f.api_key,
+        api_base_url: f.api_base_url
+      }
+    }
     const payload: AdminUsdtConfigUpdate = {
       enabled: form.enabled,
-      receiving_address: form.receiving_address,
-      tron_api_base_url: form.tron_api_base_url,
-      tron_api_key: form.tron_api_key,
       manual_rate: form.manual_rate,
       rate_auto_fetch: form.rate_auto_fetch,
       rate_markup: form.rate_markup,
@@ -174,11 +225,14 @@ async function handleSave() {
       confirm_seconds: form.confirm_seconds,
       monitor_interval_seconds: form.monitor_interval_seconds,
       query_minutes_back: form.query_minutes_back,
-      order_timeout_seconds: form.order_timeout_seconds
+      order_timeout_seconds: form.order_timeout_seconds,
+      chains
     }
     const updated = await adminAPI.usdtConfig.updateUsdtConfig(payload)
-    hasTronApiKey.value = updated.has_tron_api_key
-    form.tron_api_key = ''
+    for (const c of CHAINS) {
+      hasApiKey[c.key] = !!updated.chains?.[c.key]?.has_api_key
+      form.chains[c.key].api_key = ''
+    }
     await appStore.fetchPublicSettings(true)
     appStore.showSuccess(t('admin.settings.usdt.saveSuccess'))
   } catch (e) {

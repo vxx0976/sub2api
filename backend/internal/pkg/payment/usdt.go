@@ -7,7 +7,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"net/url"
 	"strconv"
 	"sync"
 	"time"
@@ -15,12 +14,9 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/config"
 )
 
-// Setting keys for USDT(TRC20) runtime config（前端 SettingsView / 后台可配置）
+// 共享 setting keys（与链无关；前端 SettingsView / 后台可配置）
 const (
-	SettingKeyUsdtEnabled                = "usdt_enabled"
-	SettingKeyUsdtReceivingAddress       = "usdt_receiving_address"
-	SettingKeyUsdtTronAPIBaseURL         = "usdt_tron_api_base_url"
-	SettingKeyUsdtTronAPIKey             = "usdt_tron_api_key"
+	SettingKeyUsdtEnabled                = "usdt_enabled" // 主开关
 	SettingKeyUsdtManualRate             = "usdt_manual_rate"
 	SettingKeyUsdtRateAutoFetch          = "usdt_rate_auto_fetch"
 	SettingKeyUsdtRateMarkup             = "usdt_rate_markup"
@@ -31,33 +27,56 @@ const (
 	SettingKeyUsdtOrderTimeoutSeconds    = "usdt_order_timeout_seconds"
 )
 
-// UsdtPayment 是 USDT(TRC20) 自建收款的「SDK / 配置持有者」。
-// 配置优先级：settings 表（动态）> config.yaml（fallback）。镜像 AlipayPayment 的结构。
+// UsdtChainSettingKey 返回某条链某字段的 setting key，如 usdt_trc20_address。
+// suffix ∈ {enabled,address,api_key,api_base_url}
+func UsdtChainSettingKey(chain, suffix string) string {
+	return "usdt_" + chain + "_" + suffix
+}
+
+// chainRuntime 是一条链的运行时配置快照。
+type chainRuntime struct {
+	Enabled bool
+	Address string
+	APIKey  string
+	BaseURL string
+}
+
+// UsdtPayment 是多链 USDT 自建收款的「配置持有者」。
+// 共享配置优先级：settings 表（动态）> config.yaml（fallback）；
+// per-chain 配置（地址/api key/启用）只来自 settings（在后台配置）。
 type UsdtPayment struct {
 	mu          sync.Mutex
-	cfg         config.UsdtPaymentConfig
+	cfg         config.UsdtPaymentConfig // 共享字段
 	fallbackCfg config.UsdtPaymentConfig
-	settings    SettingGetter // 可为 nil（纯 yaml 模式）
+	settings    SettingGetter
+	chains      map[string]*chainRuntime // chain -> 运行时配置
+
+	adapters map[string]ChainAdapter
 
 	httpClient *http.Client
 
-	// 汇率缓存（自动拉取时）
 	rateMu        sync.Mutex
 	cachedRate    float64
 	cachedRateExp time.Time
 }
 
-// NewUsdtPayment 创建 UsdtPayment。fallback 是 config.yaml 初始值，settings 非 nil 时动态覆盖。
+// NewUsdtPayment 创建 UsdtPayment。
 func NewUsdtPayment(fallback config.UsdtPaymentConfig, settings SettingGetter) (*UsdtPayment, error) {
-	return &UsdtPayment{
+	up := &UsdtPayment{
 		cfg:         fallback,
 		fallbackCfg: fallback,
 		settings:    settings,
+		chains:      make(map[string]*chainRuntime),
+		adapters:    newAdapters(),
 		httpClient:  &http.Client{Timeout: 15 * time.Second},
-	}, nil
+	}
+	for _, c := range SupportedChains {
+		up.chains[c] = &chainRuntime{}
+	}
+	return up, nil
 }
 
-// Reload 从 settings 表读取最新配置覆盖 fallback。建议在 CreateOrder 和 Monitor runCycle 调用。
+// Reload 从 settings 表读取最新共享配置 + per-chain 配置。
 func (u *UsdtPayment) Reload(ctx context.Context) {
 	if u == nil || u.settings == nil {
 		return
@@ -65,20 +84,13 @@ func (u *UsdtPayment) Reload(ctx context.Context) {
 	u.mu.Lock()
 	defer u.mu.Unlock()
 
-	cfg := u.fallbackCfg
 	get := func(k string) string {
 		v, _ := u.settings.GetValue(ctx, k)
 		return v
 	}
-	if v := get(SettingKeyUsdtReceivingAddress); v != "" {
-		cfg.ReceivingAddress = v
-	}
-	if v := get(SettingKeyUsdtTronAPIBaseURL); v != "" {
-		cfg.TronAPIBaseURL = v
-	}
-	if v := get(SettingKeyUsdtTronAPIKey); v != "" {
-		cfg.TronAPIKey = v
-	}
+
+	// 共享配置
+	cfg := u.fallbackCfg
 	if v := get(SettingKeyUsdtManualRate); v != "" {
 		if f, err := strconv.ParseFloat(v, 64); err == nil && f > 0 {
 			cfg.ManualRate = f
@@ -118,9 +130,19 @@ func (u *UsdtPayment) Reload(ctx context.Context) {
 		}
 	}
 	u.cfg = cfg
+
+	// per-chain 配置
+	for _, chain := range SupportedChains {
+		u.chains[chain] = &chainRuntime{
+			Enabled: get(UsdtChainSettingKey(chain, "enabled")) == "true",
+			Address: get(UsdtChainSettingKey(chain, "address")),
+			APIKey:  get(UsdtChainSettingKey(chain, "api_key")),
+			BaseURL: get(UsdtChainSettingKey(chain, "api_base_url")),
+		}
+	}
 }
 
-// IsEnabled 返回当前是否启用（查 setting usdt_enabled，nil settings 下始终 false）。
+// IsEnabled 主开关（查 settings.usdt_enabled，nil settings 恒 false）。
 func (u *UsdtPayment) IsEnabled(ctx context.Context) bool {
 	if u == nil || u.settings == nil {
 		return false
@@ -129,35 +151,58 @@ func (u *UsdtPayment) IsEnabled(ctx context.Context) bool {
 	return v == "true"
 }
 
-func (u *UsdtPayment) snapshot() config.UsdtPaymentConfig {
-	if u == nil {
-		return config.UsdtPaymentConfig{}
+func (u *UsdtPayment) chainSnapshot(chain string) chainRuntime {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	if cr, ok := u.chains[chain]; ok && cr != nil {
+		return *cr
 	}
+	return chainRuntime{}
+}
+
+func (u *UsdtPayment) sharedSnapshot() config.UsdtPaymentConfig {
 	u.mu.Lock()
 	defer u.mu.Unlock()
 	return u.cfg
 }
 
-// ReceivingAddress 当前收款地址。
-func (u *UsdtPayment) ReceivingAddress() string { return u.snapshot().ReceivingAddress }
-
-// Chain 目前固定 trc20。
-func (u *UsdtPayment) Chain() string { return "trc20" }
-
-// TronAPIBaseURL 返回 TronGrid 网关（带默认值）。
-func (u *UsdtPayment) TronAPIBaseURL() string {
-	if v := u.snapshot().TronAPIBaseURL; v != "" {
-		return v
-	}
-	return DefaultTronAPIBaseURL
+// Adapter 返回某条链的适配器。
+func (u *UsdtPayment) Adapter(chain string) ChainAdapter {
+	return u.adapters[chain]
 }
 
-// TronAPIKey 返回 TronGrid API Key（可空）。
-func (u *UsdtPayment) TronAPIKey() string { return u.snapshot().TronAPIKey }
+// ChainAddress 返回某条链的收款地址。
+func (u *UsdtPayment) ChainAddress(chain string) string {
+	return u.chainSnapshot(chain).Address
+}
+
+// IsChainUsable 判断某条链当前是否可收款：主开关开 + 该链启用 + 地址合法。
+func (u *UsdtPayment) IsChainUsable(ctx context.Context, chain string) bool {
+	if !u.IsEnabled(ctx) {
+		return false
+	}
+	adapter, ok := u.adapters[chain]
+	if !ok {
+		return false
+	}
+	cr := u.chainSnapshot(chain)
+	return cr.Enabled && cr.Address != "" && adapter.ValidateAddress(cr.Address)
+}
+
+// UsableChains 返回当前可收款的链（按 SupportedChains 顺序）。
+func (u *UsdtPayment) UsableChains(ctx context.Context) []string {
+	out := make([]string, 0, len(SupportedChains))
+	for _, c := range SupportedChains {
+		if u.IsChainUsable(ctx, c) {
+			out = append(out, c)
+		}
+	}
+	return out
+}
 
 // AmountOffset 唯一金额尾数步长（USDT），默认 0.0001。
 func (u *UsdtPayment) AmountOffset() float64 {
-	if v := u.snapshot().AmountOffset; v > 0 {
+	if v := u.sharedSnapshot().AmountOffset; v > 0 {
 		return v
 	}
 	return 0.0001
@@ -165,7 +210,7 @@ func (u *UsdtPayment) AmountOffset() float64 {
 
 // ConfirmDuration 到账交易需达到的最小链上时长才入账，默认 60s。
 func (u *UsdtPayment) ConfirmDuration() time.Duration {
-	if v := u.snapshot().ConfirmSeconds; v > 0 {
+	if v := u.sharedSnapshot().ConfirmSeconds; v > 0 {
 		return time.Duration(v) * time.Second
 	}
 	return 60 * time.Second
@@ -173,7 +218,7 @@ func (u *UsdtPayment) ConfirmDuration() time.Duration {
 
 // MonitorInterval 轮询间隔，默认 15s，最低 5s。
 func (u *UsdtPayment) MonitorInterval() time.Duration {
-	v := u.snapshot().MonitorIntervalSeconds
+	v := u.sharedSnapshot().MonitorIntervalSeconds
 	if v < 5 {
 		return 15 * time.Second
 	}
@@ -182,23 +227,23 @@ func (u *UsdtPayment) MonitorInterval() time.Duration {
 
 // QueryMinutesBack 链上回看窗口（分钟），默认 30。
 func (u *UsdtPayment) QueryMinutesBack() int {
-	if v := u.snapshot().QueryMinutesBack; v > 0 {
+	if v := u.sharedSnapshot().QueryMinutesBack; v > 0 {
 		return v
 	}
 	return 30
 }
 
-// OrderTimeoutSeconds 订单超时（秒），默认 1800（30 分钟，链上结算较慢）。
+// OrderTimeoutSeconds 订单超时（秒），默认 1800。
 func (u *UsdtPayment) OrderTimeoutSeconds() int {
-	if v := u.snapshot().OrderTimeoutSeconds; v > 0 {
+	if v := u.sharedSnapshot().OrderTimeoutSeconds; v > 0 {
 		return v
 	}
 	return 1800
 }
 
-// AmountReuseWindow 唯一金额释放回池前的等待时间 = max(OrderTimeout, QueryMinutesBack)。
+// AmountReuseWindow 唯一金额释放回池前的等待 = max(OrderTimeout, QueryMinutesBack)。
 func (u *UsdtPayment) AmountReuseWindow() time.Duration {
-	snap := u.snapshot()
+	snap := u.sharedSnapshot()
 	timeout := time.Duration(snap.OrderTimeoutSeconds) * time.Second
 	if timeout <= 0 {
 		timeout = 30 * time.Minute
@@ -210,10 +255,9 @@ func (u *UsdtPayment) AmountReuseWindow() time.Duration {
 	return queryBack
 }
 
-// QueryRate 返回换算用汇率（1 USDT = ? CNY，已叠加加价 markup）。
-// 自动拉取启用时优先取市场价（缓存 60s）并回退手动价；否则用手动价。
+// QueryRate 返回换算用汇率（1 USDT = ? CNY，已叠加加价 markup），所有链共用。
 func (u *UsdtPayment) QueryRate(ctx context.Context) (float64, error) {
-	snap := u.snapshot()
+	snap := u.sharedSnapshot()
 	base := snap.ManualRate
 	if snap.RateAutoFetch {
 		if mkt, err := u.fetchMarketRate(ctx); err == nil && mkt > 0 {
@@ -231,11 +275,9 @@ func (u *UsdtPayment) QueryRate(ctx context.Context) (float64, error) {
 	if markup < 0 || markup >= 1 {
 		markup = 0
 	}
-	// 加价：换算用汇率更低 → 用户多付一点 USDT。
 	return base * (1 - markup), nil
 }
 
-// fetchMarketRate 从 CoinGecko 拉取 USDT/CNY 市场价（缓存 60s）。
 func (u *UsdtPayment) fetchMarketRate(ctx context.Context) (float64, error) {
 	u.rateMu.Lock()
 	if u.cachedRate > 0 && time.Now().Before(u.cachedRateExp) {
@@ -260,7 +302,7 @@ func (u *UsdtPayment) fetchMarketRate(ctx context.Context) (float64, error) {
 		return 0, err
 	}
 	if resp.StatusCode != http.StatusOK {
-		return 0, fmt.Errorf("coingecko status %d: %s", resp.StatusCode, string(body))
+		return 0, fmt.Errorf("coingecko status %d: %s", resp.StatusCode, truncate(string(body), 200))
 	}
 	var parsed struct {
 		Tether struct {
@@ -280,7 +322,7 @@ func (u *UsdtPayment) fetchMarketRate(ctx context.Context) (float64, error) {
 	return parsed.Tether.CNY, nil
 }
 
-// UsdtPaymentInfo 是返回给前端展示的收款信息。
+// UsdtPaymentInfo 返回给前端展示的收款信息。
 type UsdtPaymentInfo struct {
 	Chain         string  `json:"chain"`
 	Address       string  `json:"address"`
@@ -289,108 +331,26 @@ type UsdtPaymentInfo struct {
 	Rate          float64 `json:"rate"`
 }
 
-// GeneratePaymentInfo 生成收款展示信息（QR 内容用纯地址，最兼容各钱包）。
-func (u *UsdtPayment) GeneratePaymentInfo(usdtAmount, rate float64) *UsdtPaymentInfo {
+// GeneratePaymentInfo 生成某条链的收款展示信息（QR 内容用纯地址）。
+func (u *UsdtPayment) GeneratePaymentInfo(chain string, usdtAmount, rate float64) *UsdtPaymentInfo {
 	return &UsdtPaymentInfo{
-		Chain:         u.Chain(),
-		Address:       u.ReceivingAddress(),
+		Chain:         chain,
+		Address:       u.ChainAddress(chain),
 		UsdtAmount:    usdtAmount,
 		UsdtAmountStr: FormatUsdt(usdtAmount),
 		Rate:          rate,
 	}
 }
 
-// Trc20Transfer 是从 TronGrid 解析出的一笔 TRC20 转账。
-type Trc20Transfer struct {
-	TxID         string
-	From         string
-	To           string
-	ValueAtomic  string // 链上最小单位（字符串）
-	BlockTimeMs  int64  // 区块时间（毫秒）
-	ContractAddr string
-}
-
-// QueryIncomingTransfers 通过 TronGrid 拉取收款地址在 minTimestampMs 之后收到的 USDT(TRC20) 转账。
-func (u *UsdtPayment) QueryIncomingTransfers(ctx context.Context, minTimestampMs int64) ([]Trc20Transfer, error) {
-	addr := u.ReceivingAddress()
-	if addr == "" {
-		return nil, fmt.Errorf("usdt receiving address not configured")
+// QueryIncoming 拉取某条链收款地址在 minTimestampMs 之后收到的 USDT 转账。
+func (u *UsdtPayment) QueryIncoming(ctx context.Context, chain string, minTimestampMs int64) ([]IncomingTransfer, error) {
+	adapter, ok := u.adapters[chain]
+	if !ok {
+		return nil, fmt.Errorf("unsupported chain: %s", chain)
 	}
-
-	q := url.Values{}
-	q.Set("only_to", "true")
-	q.Set("contract_address", UsdtTRC20Contract)
-	q.Set("limit", "200")
-	q.Set("order_by", "block_timestamp,desc")
-	if minTimestampMs > 0 {
-		q.Set("min_timestamp", strconv.FormatInt(minTimestampMs, 10))
+	cr := u.chainSnapshot(chain)
+	if cr.Address == "" {
+		return nil, fmt.Errorf("chain %s receiving address not configured", chain)
 	}
-	endpoint := fmt.Sprintf("%s/v1/accounts/%s/transactions/trc20?%s", u.TronAPIBaseURL(), url.PathEscape(addr), q.Encode())
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
-	if err != nil {
-		return nil, err
-	}
-	if key := u.TronAPIKey(); key != "" {
-		req.Header.Set("TRON-PRO-API-KEY", key)
-	}
-	resp, err := u.httpClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = resp.Body.Close() }()
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("trongrid status %d: %s", resp.StatusCode, truncate(string(body), 300))
-	}
-
-	var parsed struct {
-		Success bool `json:"success"`
-		Data    []struct {
-			TransactionID  string `json:"transaction_id"`
-			From           string `json:"from"`
-			To             string `json:"to"`
-			Value          string `json:"value"`
-			Type           string `json:"type"`
-			BlockTimestamp int64  `json:"block_timestamp"`
-			TokenInfo      struct {
-				Address string `json:"address"`
-			} `json:"token_info"`
-		} `json:"data"`
-	}
-	if err := json.Unmarshal(body, &parsed); err != nil {
-		return nil, fmt.Errorf("parse trongrid response: %w (body: %s)", err, truncate(string(body), 300))
-	}
-
-	out := make([]Trc20Transfer, 0, len(parsed.Data))
-	for _, d := range parsed.Data {
-		if d.Type != "" && d.Type != "Transfer" {
-			continue
-		}
-		if d.To != addr {
-			continue
-		}
-		if d.TokenInfo.Address != "" && d.TokenInfo.Address != UsdtTRC20Contract {
-			continue
-		}
-		out = append(out, Trc20Transfer{
-			TxID:         d.TransactionID,
-			From:         d.From,
-			To:           d.To,
-			ValueAtomic:  d.Value,
-			BlockTimeMs:  d.BlockTimestamp,
-			ContractAddr: d.TokenInfo.Address,
-		})
-	}
-	return out, nil
-}
-
-func truncate(s string, n int) string {
-	if len(s) <= n {
-		return s
-	}
-	return s[:n] + "..."
+	return adapter.QueryIncoming(ctx, cr.Address, cr.APIKey, cr.BaseURL, minTimestampMs)
 }

@@ -45,6 +45,7 @@ func (h *UsdtHandler) CreateOrder(c *gin.Context) {
 	}
 	var req struct {
 		Amount float64 `json:"amount" binding:"required,gt=0"`
+		Chain  string  `json:"chain" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, err.Error())
@@ -56,7 +57,7 @@ func (h *UsdtHandler) CreateOrder(c *gin.Context) {
 		sourceDomain = c.Request.Host
 	}
 
-	result, err := h.usdtService.CreateOrder(c.Request.Context(), subject.UserID, req.Amount, sourceDomain)
+	result, err := h.usdtService.CreateOrder(c.Request.Context(), subject.UserID, req.Amount, req.Chain, sourceDomain)
 	if err != nil {
 		response.BadRequest(c, err.Error())
 		return

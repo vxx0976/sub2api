@@ -2,9 +2,13 @@ package payment
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha256"
+	"encoding/json"
+	"fmt"
 	"math"
 	"math/big"
+	"net/url"
 	"strconv"
 	"strings"
 )
@@ -99,4 +103,84 @@ func AtomicToUsdt(atomic string) (float64, bool) {
 // FormatUsdt 把 USDT 金额格式化为固定 6 位小数字符串（用于展示精确应付金额）。
 func FormatUsdt(amount float64) string {
 	return strconv.FormatFloat(amount, 'f', UsdtDecimals, 64)
+}
+
+// ===== TRON(TRC20) 链适配器 =====
+
+type tronAdapter struct{}
+
+func (a *tronAdapter) Chain() string { return ChainTRC20 }
+
+func (a *tronAdapter) Decimals() int { return UsdtDecimals }
+
+func (a *tronAdapter) ValidateAddress(addr string) bool { return ValidateTronAddress(addr) }
+
+// QueryIncoming 通过 TronGrid /v1/accounts/{addr}/transactions/trc20 拉取流入的 USDT 转账。
+func (a *tronAdapter) QueryIncoming(ctx context.Context, address, apiKey, baseURL string, minTimestampMs int64) ([]IncomingTransfer, error) {
+	if baseURL == "" {
+		baseURL = DefaultTronAPIBaseURL
+	}
+	q := url.Values{}
+	q.Set("only_to", "true")
+	q.Set("contract_address", UsdtTRC20Contract)
+	q.Set("limit", "200")
+	q.Set("order_by", "block_timestamp,desc")
+	if minTimestampMs > 0 {
+		q.Set("min_timestamp", strconv.FormatInt(minTimestampMs, 10))
+	}
+	endpoint := fmt.Sprintf("%s/v1/accounts/%s/transactions/trc20?%s", baseURL, url.PathEscape(address), q.Encode())
+
+	headers := map[string]string{}
+	if apiKey != "" {
+		headers["TRON-PRO-API-KEY"] = apiKey
+	}
+	body, status, err := adapterGet(ctx, endpoint, headers)
+	if err != nil {
+		return nil, err
+	}
+	if status != 200 {
+		return nil, fmt.Errorf("trongrid status %d: %s", status, truncate(string(body), 300))
+	}
+
+	var parsed struct {
+		Data []struct {
+			TransactionID  string `json:"transaction_id"`
+			From           string `json:"from"`
+			To             string `json:"to"`
+			Value          string `json:"value"`
+			Type           string `json:"type"`
+			BlockTimestamp int64  `json:"block_timestamp"`
+			TokenInfo      struct {
+				Address string `json:"address"`
+			} `json:"token_info"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(body, &parsed); err != nil {
+		return nil, fmt.Errorf("parse trongrid response: %w (body: %s)", err, truncate(string(body), 300))
+	}
+
+	out := make([]IncomingTransfer, 0, len(parsed.Data))
+	for _, d := range parsed.Data {
+		if d.Type != "" && d.Type != "Transfer" {
+			continue
+		}
+		if d.To != address {
+			continue
+		}
+		if d.TokenInfo.Address != "" && d.TokenInfo.Address != UsdtTRC20Contract {
+			continue
+		}
+		human, ok := humanFromAtomic(d.Value, UsdtDecimals)
+		if !ok || human <= 0 {
+			continue
+		}
+		out = append(out, IncomingTransfer{
+			TxID:        d.TransactionID,
+			From:        d.From,
+			To:          d.To,
+			AmountHuman: human,
+			BlockTimeMs: d.BlockTimestamp,
+		})
+	}
+	return out, nil
 }

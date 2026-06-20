@@ -8,37 +8,49 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/pkg/payment"
 )
 
-// AdminUsdtConfig USDT 后台配置 DTO。
-// 敏感字段 TronAPIKey 在 GET 时只返回 has_tron_api_key，PUT 空字符串表示保留原值。
-type AdminUsdtConfig struct {
-	Enabled                bool    `json:"enabled"`
-	ReceivingAddress       string  `json:"receiving_address"`
-	TronAPIBaseURL         string  `json:"tron_api_base_url"`
-	HasTronAPIKey          bool    `json:"has_tron_api_key"`
-	ManualRate             float64 `json:"manual_rate"`
-	RateAutoFetch          bool    `json:"rate_auto_fetch"`
-	RateMarkup             float64 `json:"rate_markup"`
-	AmountOffset           float64 `json:"amount_offset"`
-	ConfirmSeconds         int     `json:"confirm_seconds"`
-	MonitorIntervalSeconds int     `json:"monitor_interval_seconds"`
-	QueryMinutesBack       int     `json:"query_minutes_back"`
-	OrderTimeoutSeconds    int     `json:"order_timeout_seconds"`
+// AdminUsdtChainConfig 单条链的后台配置（GET，敏感字段脱敏）。
+type AdminUsdtChainConfig struct {
+	Enabled    bool   `json:"enabled"`
+	Address    string `json:"address"`
+	HasAPIKey  bool   `json:"has_api_key"`
+	APIBaseURL string `json:"api_base_url"`
 }
 
-// AdminUsdtConfigUpdate 更新请求（nil 指针=不变；TronAPIKey 空字符串=保留原值）。
+// AdminUsdtConfig USDT 多链后台配置 DTO。
+// 敏感字段 per-chain api_key 在 GET 时只返回 has_api_key。
+type AdminUsdtConfig struct {
+	Enabled                bool                            `json:"enabled"` // 主开关
+	ManualRate             float64                         `json:"manual_rate"`
+	RateAutoFetch          bool                            `json:"rate_auto_fetch"`
+	RateMarkup             float64                         `json:"rate_markup"`
+	AmountOffset           float64                         `json:"amount_offset"`
+	ConfirmSeconds         int                             `json:"confirm_seconds"`
+	MonitorIntervalSeconds int                             `json:"monitor_interval_seconds"`
+	QueryMinutesBack       int                             `json:"query_minutes_back"`
+	OrderTimeoutSeconds    int                             `json:"order_timeout_seconds"`
+	Chains                 map[string]AdminUsdtChainConfig `json:"chains"`
+}
+
+// AdminUsdtChainConfigUpdate 单条链的更新（nil=不变；api_key 空字符串=保留原值）。
+type AdminUsdtChainConfigUpdate struct {
+	Enabled    *bool   `json:"enabled"`
+	Address    *string `json:"address"`
+	APIKey     *string `json:"api_key"`
+	APIBaseURL *string `json:"api_base_url"`
+}
+
+// AdminUsdtConfigUpdate 更新请求（nil 指针=不变）。
 type AdminUsdtConfigUpdate struct {
-	Enabled                *bool    `json:"enabled"`
-	ReceivingAddress       *string  `json:"receiving_address"`
-	TronAPIBaseURL         *string  `json:"tron_api_base_url"`
-	TronAPIKey             *string  `json:"tron_api_key"` // 空字符串=保留原值
-	ManualRate             *float64 `json:"manual_rate"`
-	RateAutoFetch          *bool    `json:"rate_auto_fetch"`
-	RateMarkup             *float64 `json:"rate_markup"`
-	AmountOffset           *float64 `json:"amount_offset"`
-	ConfirmSeconds         *int     `json:"confirm_seconds"`
-	MonitorIntervalSeconds *int     `json:"monitor_interval_seconds"`
-	QueryMinutesBack       *int     `json:"query_minutes_back"`
-	OrderTimeoutSeconds    *int     `json:"order_timeout_seconds"`
+	Enabled                *bool                                 `json:"enabled"`
+	ManualRate             *float64                              `json:"manual_rate"`
+	RateAutoFetch          *bool                                 `json:"rate_auto_fetch"`
+	RateMarkup             *float64                              `json:"rate_markup"`
+	AmountOffset           *float64                              `json:"amount_offset"`
+	ConfirmSeconds         *int                                  `json:"confirm_seconds"`
+	MonitorIntervalSeconds *int                                  `json:"monitor_interval_seconds"`
+	QueryMinutesBack       *int                                  `json:"query_minutes_back"`
+	OrderTimeoutSeconds    *int                                  `json:"order_timeout_seconds"`
+	Chains                 map[string]AdminUsdtChainConfigUpdate `json:"chains"`
 }
 
 // GetAdminUsdtConfig 读取当前配置（敏感字段脱敏）。
@@ -55,11 +67,9 @@ func (s *UsdtOrderService) GetAdminUsdtConfig(ctx context.Context) (*AdminUsdtCo
 		i, _ := strconv.Atoi(v)
 		return i
 	}
-	return &AdminUsdtConfig{
+
+	cfg := &AdminUsdtConfig{
 		Enabled:                get(payment.SettingKeyUsdtEnabled) == "true",
-		ReceivingAddress:       get(payment.SettingKeyUsdtReceivingAddress),
-		TronAPIBaseURL:         get(payment.SettingKeyUsdtTronAPIBaseURL),
-		HasTronAPIKey:          get(payment.SettingKeyUsdtTronAPIKey) != "",
 		ManualRate:             parseFloat(get(payment.SettingKeyUsdtManualRate)),
 		RateAutoFetch:          get(payment.SettingKeyUsdtRateAutoFetch) == "true",
 		RateMarkup:             parseFloat(get(payment.SettingKeyUsdtRateMarkup)),
@@ -68,10 +78,20 @@ func (s *UsdtOrderService) GetAdminUsdtConfig(ctx context.Context) (*AdminUsdtCo
 		MonitorIntervalSeconds: parseInt(get(payment.SettingKeyUsdtMonitorIntervalSeconds)),
 		QueryMinutesBack:       parseInt(get(payment.SettingKeyUsdtQueryMinutesBack)),
 		OrderTimeoutSeconds:    parseInt(get(payment.SettingKeyUsdtOrderTimeoutSeconds)),
-	}, nil
+		Chains:                 make(map[string]AdminUsdtChainConfig, len(payment.SupportedChains)),
+	}
+	for _, chain := range payment.SupportedChains {
+		cfg.Chains[chain] = AdminUsdtChainConfig{
+			Enabled:    get(payment.UsdtChainSettingKey(chain, "enabled")) == "true",
+			Address:    get(payment.UsdtChainSettingKey(chain, "address")),
+			HasAPIKey:  get(payment.UsdtChainSettingKey(chain, "api_key")) != "",
+			APIBaseURL: get(payment.UsdtChainSettingKey(chain, "api_base_url")),
+		}
+	}
+	return cfg, nil
 }
 
-// UpdateAdminUsdtConfig 更新配置（nil 不变；TronAPIKey 空字符串保留原值）。保存后 Reload。
+// UpdateAdminUsdtConfig 更新配置（nil 不变；per-chain api_key 空字符串保留原值）。保存后 Reload。
 func (s *UsdtOrderService) UpdateAdminUsdtConfig(ctx context.Context, req *AdminUsdtConfigUpdate) error {
 	if req == nil {
 		return nil
@@ -80,27 +100,8 @@ func (s *UsdtOrderService) UpdateAdminUsdtConfig(ctx context.Context, req *Admin
 		return s.settingRepo.Set(ctx, key, value)
 	}
 
-	if req.ReceivingAddress != nil {
-		addr := *req.ReceivingAddress
-		if addr != "" && !payment.ValidateTronAddress(addr) {
-			return fmt.Errorf("invalid TRON address")
-		}
-		if err := set(payment.SettingKeyUsdtReceivingAddress, addr); err != nil {
-			return err
-		}
-	}
 	if req.Enabled != nil {
 		if err := set(payment.SettingKeyUsdtEnabled, strconv.FormatBool(*req.Enabled)); err != nil {
-			return err
-		}
-	}
-	if req.TronAPIBaseURL != nil {
-		if err := set(payment.SettingKeyUsdtTronAPIBaseURL, *req.TronAPIBaseURL); err != nil {
-			return err
-		}
-	}
-	if req.TronAPIKey != nil && *req.TronAPIKey != "" {
-		if err := set(payment.SettingKeyUsdtTronAPIKey, *req.TronAPIKey); err != nil {
 			return err
 		}
 	}
@@ -142,6 +143,38 @@ func (s *UsdtOrderService) UpdateAdminUsdtConfig(ctx context.Context, req *Admin
 	if req.OrderTimeoutSeconds != nil {
 		if err := set(payment.SettingKeyUsdtOrderTimeoutSeconds, strconv.Itoa(*req.OrderTimeoutSeconds)); err != nil {
 			return err
+		}
+	}
+
+	// per-chain
+	for chain, cu := range req.Chains {
+		if !payment.IsSupportedChain(chain) {
+			return fmt.Errorf("unsupported chain: %s", chain)
+		}
+		adapter := s.usdt.Adapter(chain)
+		if cu.Address != nil {
+			addr := *cu.Address
+			if addr != "" && adapter != nil && !adapter.ValidateAddress(addr) {
+				return fmt.Errorf("invalid %s address", chain)
+			}
+			if err := set(payment.UsdtChainSettingKey(chain, "address"), addr); err != nil {
+				return err
+			}
+		}
+		if cu.Enabled != nil {
+			if err := set(payment.UsdtChainSettingKey(chain, "enabled"), strconv.FormatBool(*cu.Enabled)); err != nil {
+				return err
+			}
+		}
+		if cu.APIBaseURL != nil {
+			if err := set(payment.UsdtChainSettingKey(chain, "api_base_url"), *cu.APIBaseURL); err != nil {
+				return err
+			}
+		}
+		if cu.APIKey != nil && *cu.APIKey != "" {
+			if err := set(payment.UsdtChainSettingKey(chain, "api_key"), *cu.APIKey); err != nil {
+				return err
+			}
 		}
 	}
 

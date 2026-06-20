@@ -128,7 +128,7 @@ func (s *UsdtOrderService) runExpireCycle() {
 // GetConfig 获取 USDT 下单页面配置。
 func (s *UsdtOrderService) GetConfig(ctx context.Context) (*UsdtOrderPublicConfig, error) {
 	s.usdt.Reload(ctx)
-	cfg := &UsdtOrderPublicConfig{Chain: s.usdt.Chain()}
+	cfg := &UsdtOrderPublicConfig{Chains: s.usdt.UsableChains(ctx)}
 
 	v, _ := s.settingRepo.GetValue(ctx, payment.SettingKeyUsdtEnabled)
 	cfg.Enabled = v == "true"
@@ -156,21 +156,20 @@ type CreateUsdtOrderResult struct {
 	ExpiresIn     int
 }
 
-// CreateOrder 创建 USDT 充值订单。
-func (s *UsdtOrderService) CreateOrder(ctx context.Context, userID int64, amount float64, sourceDomain string) (*CreateUsdtOrderResult, error) {
+// CreateOrder 创建 USDT 充值订单（指定链）。
+func (s *UsdtOrderService) CreateOrder(ctx context.Context, userID int64, amount float64, chain, sourceDomain string) (*CreateUsdtOrderResult, error) {
 	if s.usdt == nil {
 		return nil, fmt.Errorf("usdt is not configured")
 	}
 	s.usdt.Reload(ctx)
 
-	if v, _ := s.settingRepo.GetValue(ctx, payment.SettingKeyUsdtEnabled); v != "true" {
-		return nil, fmt.Errorf("usdt is not enabled")
+	if !payment.IsSupportedChain(chain) {
+		return nil, fmt.Errorf("unsupported chain: %s", chain)
 	}
-
-	addr := s.usdt.ReceivingAddress()
-	if !payment.ValidateTronAddress(addr) {
-		return nil, fmt.Errorf("usdt receiving address not configured or invalid")
+	if !s.usdt.IsChainUsable(ctx, chain) {
+		return nil, fmt.Errorf("chain %s is not enabled or not configured", chain)
 	}
+	addr := s.usdt.ChainAddress(chain)
 
 	// 金额范围（与 EPAY/AliMPay 共享 recharge 限额）
 	minAmount := 10.0
@@ -210,7 +209,7 @@ func (s *UsdtOrderService) CreateOrder(ctx context.Context, userID int64, amount
 		Amount:           amount,
 		CreditAmount:     amount, // 1:1 入账（CNY → 余额单位）
 		Multiplier:       1.0,
-		Chain:            s.usdt.Chain(),
+		Chain:            chain,
 		ReceivingAddress: addr,
 		UsdtRate:         rate,
 		Status:           "pending",
@@ -309,6 +308,7 @@ func (s *UsdtOrderService) GetPendingUsdtOrders(ctx context.Context) ([]payment.
 	for _, o := range orders {
 		out = append(out, payment.UsdtPendingOrder{
 			OrderNo:    o.OrderNo,
+			Chain:      o.Chain,
 			UsdtAmount: o.UsdtAmount,
 			UsdtAtomic: payment.UsdtToAtomic(o.UsdtAmount),
 			CreatedAt:  o.CreatedAt,

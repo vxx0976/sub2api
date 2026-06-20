@@ -37,11 +37,11 @@ type UsdtOrder struct {
 
 // UsdtOrderPublicConfig USDT 充值页面配置。
 type UsdtOrderPublicConfig struct {
-	Enabled   bool    `json:"enabled"`
-	MinAmount float64 `json:"min_amount"`
-	MaxAmount float64 `json:"max_amount"`
-	Chain     string  `json:"chain"`
-	Rate      float64 `json:"rate"` // 当前换算汇率（1 USDT = ? CNY），供前端预估
+	Enabled   bool     `json:"enabled"`
+	MinAmount float64  `json:"min_amount"`
+	MaxAmount float64  `json:"max_amount"`
+	Chains    []string `json:"chains"` // 当前可收款的链（trc20/bep20/ton）
+	Rate      float64  `json:"rate"`   // 当前换算汇率（1 USDT = ? CNY），供前端预估
 }
 
 // UsdtPaidUpdate 确认到账时写入订单的链上信息。
