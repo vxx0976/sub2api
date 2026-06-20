@@ -77,10 +77,12 @@ func (a *bscAdapter) QueryIncoming(ctx context.Context, address, apiKey, baseURL
 	_ = apiKey
 	endpoints := bscEndpoints(baseURL)
 
-	head, err := a.blockNumber(ctx, endpoints)
+	head, used, err := a.blockNumber(ctx, endpoints)
 	if err != nil {
 		return nil, fmt.Errorf("bsc eth_blockNumber: %w", err)
 	}
+	// 同一轮 poll 把 head 所在节点 pin 到最前，避免 getLogs/getBlock 落到滞后的另一后端导致漏扫。
+	endpoints = pinEndpointFirst(endpoints, used)
 
 	fromBlock := bscFromBlock(head, minTimestampMs)
 
@@ -100,7 +102,8 @@ func (a *bscAdapter) QueryIncoming(ctx context.Context, address, apiKey, baseURL
 			return nil, fmt.Errorf("bsc eth_getLogs [%d-%d]: %w", lo, hi, err)
 		}
 		for _, lg := range logs {
-			if len(lg.Topics) < 3 {
+			// 防御：标准 Transfer 有 3 个 topic，每个 32 字节(0x+64hex)。畸形日志直接跳过，避免切片越界 panic。
+			if len(lg.Topics) < 3 || len(lg.Topics[1]) < 40 || len(lg.Topics[2]) < 40 {
 				continue
 			}
 			to := "0x" + strings.ToLower(lg.Topics[2][len(lg.Topics[2])-40:])
@@ -143,12 +146,13 @@ type bscLog struct {
 }
 
 // bscRPCCall 对 endpoints 顺序故障转移地发一次 JSON-RPC，把 result 反序列化进 out。
-func bscRPCCall(ctx context.Context, endpoints []string, method string, params []any, out any) error {
+// 返回实际成功的 endpoint（供调用方把同一节点 pin 在后续调用最前，避免 head 与 getLogs 落到不同后端导致的滞后不一致）。
+func bscRPCCall(ctx context.Context, endpoints []string, method string, params []any, out any) (string, error) {
 	reqBody, err := json.Marshal(map[string]any{
 		"jsonrpc": "2.0", "id": 1, "method": method, "params": params,
 	})
 	if err != nil {
-		return err
+		return "", err
 	}
 	// 显式 UA：部分公共节点会拦截空/陌生 User-Agent（默认 publicnode 不拦，但 fallback 节点更挑）。
 	headers := map[string]string{"User-Agent": "sub2api-usdt/1.0"}
@@ -179,25 +183,26 @@ func bscRPCCall(ctx context.Context, endpoints []string, method string, params [
 			continue // 换下一个节点（范围超限/限流/节点滞后都可能）。
 		}
 		if out == nil {
-			return nil
+			return ep, nil
 		}
 		if err := json.Unmarshal(resp.Result, out); err != nil {
-			return fmt.Errorf("decode rpc result: %w", err)
+			return ep, fmt.Errorf("decode rpc result: %w", err)
 		}
-		return nil
+		return ep, nil
 	}
 	if lastErr == nil {
 		lastErr = fmt.Errorf("no rpc endpoint available")
 	}
-	return lastErr
+	return "", lastErr
 }
 
-func (a *bscAdapter) blockNumber(ctx context.Context, endpoints []string) (uint64, error) {
+func (a *bscAdapter) blockNumber(ctx context.Context, endpoints []string) (uint64, string, error) {
 	var hexHead string
-	if err := bscRPCCall(ctx, endpoints, "eth_blockNumber", []any{}, &hexHead); err != nil {
-		return 0, err
+	used, err := bscRPCCall(ctx, endpoints, "eth_blockNumber", []any{}, &hexHead)
+	if err != nil {
+		return 0, "", err
 	}
-	return hexToUint64(hexHead), nil
+	return hexToUint64(hexHead), used, nil
 }
 
 func (a *bscAdapter) getLogs(ctx context.Context, endpoints []string, from, to uint64, paddedTo string) ([]bscLog, error) {
@@ -209,7 +214,7 @@ func (a *bscAdapter) getLogs(ctx context.Context, endpoints []string, from, to u
 		"topics": []any{erc20TransferTopic, nil, paddedTo},
 	}
 	var logs []bscLog
-	if err := bscRPCCall(ctx, endpoints, "eth_getLogs", []any{filter}, &logs); err != nil {
+	if _, err := bscRPCCall(ctx, endpoints, "eth_getLogs", []any{filter}, &logs); err != nil {
 		return nil, err
 	}
 	return logs, nil
@@ -222,7 +227,7 @@ func (a *bscAdapter) blockTimeMs(ctx context.Context, endpoints []string, blockH
 	var blk struct {
 		Timestamp string `json:"timestamp"`
 	}
-	if err := bscRPCCall(ctx, endpoints, "eth_getBlockByNumber", []any{blockHex, false}, &blk); err != nil {
+	if _, err := bscRPCCall(ctx, endpoints, "eth_getBlockByNumber", []any{blockHex, false}, &blk); err != nil {
 		return 0, err
 	}
 	if blk.Timestamp == "" {
@@ -231,6 +236,21 @@ func (a *bscAdapter) blockTimeMs(ctx context.Context, endpoints []string, blockH
 	ms := int64(hexToUint64(blk.Timestamp)) * 1000
 	cache[blockHex] = ms
 	return ms, nil
+}
+
+// pinEndpointFirst 把 first 排到最前（同一轮 poll 复用同一节点，保证 head 与 getLogs 一致），保留其余作 fallback。
+func pinEndpointFirst(endpoints []string, first string) []string {
+	if first == "" {
+		return endpoints
+	}
+	out := make([]string, 0, len(endpoints))
+	out = append(out, first)
+	for _, e := range endpoints {
+		if e != first {
+			out = append(out, e)
+		}
+	}
+	return out
 }
 
 // ----- 辅助 -----

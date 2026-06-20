@@ -255,13 +255,36 @@ func (u *UsdtPayment) AmountReuseWindow() time.Duration {
 	return queryBack
 }
 
+// GraceWindow 订单过期后仍可被链上到账匹配并补入账的宽限期。
+// 防"用户临近/略超截止才转账→已付却永不入账"的孤儿单（链上确认有延迟，加密资金不可逆）。
+// = clamp( max(10min, 2*ConfirmDuration), 上限=AmountReuseWindow )。
+// 必须 <= AmountReuseWindow，否则唯一金额可能已被新订单复用，导致匹配歧义。
+func (u *UsdtPayment) GraceWindow() time.Duration {
+	grace := 2 * u.ConfirmDuration()
+	if grace < 10*time.Minute {
+		grace = 10 * time.Minute
+	}
+	if reuse := u.AmountReuseWindow(); grace > reuse {
+		grace = reuse
+	}
+	return grace
+}
+
+// usdt 换算汇率(CNY/USDT)合理性硬上下限：防异常/被污染的市场价让用户近乎零成本充值。
+const (
+	usdtRateFloor = 1.0   // 1 USDT < 1 CNY 不可能
+	usdtRateCeil  = 100.0 // 1 USDT > 100 CNY 不可能
+)
+
 // QueryRate 返回换算用汇率（1 USDT = ? CNY，已叠加加价 markup），所有链共用。
 func (u *UsdtPayment) QueryRate(ctx context.Context) (float64, error) {
 	snap := u.sharedSnapshot()
 	base := snap.ManualRate
+	usedMarket := false
 	if snap.RateAutoFetch {
 		if mkt, err := u.fetchMarketRate(ctx); err == nil && mkt > 0 {
 			base = mkt
+			usedMarket = true
 		} else if base <= 0 {
 			return 0, fmt.Errorf("usdt rate unavailable: auto-fetch failed and no manual rate: %v", err)
 		} else {
@@ -271,6 +294,25 @@ func (u *UsdtPayment) QueryRate(ctx context.Context) (float64, error) {
 	if base <= 0 {
 		return 0, fmt.Errorf("usdt manual rate not configured")
 	}
+
+	// 合理性护栏：市场价超出硬区间、或与手动价偏离 >±30% 时，回退手动价；手动价本身也校验硬区间。
+	if usedMarket {
+		bad := base < usdtRateFloor || base > usdtRateCeil
+		if !bad && snap.ManualRate > 0 && (base < snap.ManualRate*0.7 || base > snap.ManualRate*1.3) {
+			bad = true
+		}
+		if bad {
+			if snap.ManualRate >= usdtRateFloor && snap.ManualRate <= usdtRateCeil {
+				log.Printf("[UsdtPayment] market rate %.4f rejected (out of band / >±30%% vs manual), using manual %.4f", base, snap.ManualRate)
+				base = snap.ManualRate
+			} else {
+				return 0, fmt.Errorf("usdt market rate %.4f out of sane band [%.0f,%.0f] and no valid manual rate", base, usdtRateFloor, usdtRateCeil)
+			}
+		}
+	} else if base < usdtRateFloor || base > usdtRateCeil {
+		return 0, fmt.Errorf("usdt manual rate %.4f out of sane band [%.0f,%.0f]", base, usdtRateFloor, usdtRateCeil)
+	}
+
 	markup := snap.RateMarkup
 	if markup < 0 || markup >= 1 {
 		markup = 0

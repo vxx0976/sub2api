@@ -282,6 +282,31 @@ func (r *usdtOrderRepo) ListPending(ctx context.Context) ([]*service.UsdtOrder, 
 	return out, nil
 }
 
+// ListMatchable 返回 watcher 可匹配的订单：pending + 宽限期内刚过期(expired 且 expired_at > graceCutoff)。
+// 让"临近/略超截止才到账"的订单仍能被链上匹配并补入账，避免孤儿单。
+func (r *usdtOrderRepo) ListMatchable(ctx context.Context, graceCutoff time.Time) ([]*service.UsdtOrder, error) {
+	rows, err := r.client.UsdtOrder.Query().
+		Where(
+			usdtorder.Or(
+				usdtorder.StatusEQ("pending"),
+				usdtorder.And(
+					usdtorder.StatusEQ("expired"),
+					usdtorder.ExpiredAtGT(graceCutoff),
+				),
+			),
+		).
+		Order(ent.Desc(usdtorder.FieldCreatedAt)).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]*service.UsdtOrder, len(rows))
+	for i, row := range rows {
+		out[i] = toServiceUsdtOrder(row)
+	}
+	return out, nil
+}
+
 func toServiceUsdtOrder(row *ent.UsdtOrder) *service.UsdtOrder {
 	o := &service.UsdtOrder{
 		ID:               row.ID,

@@ -93,6 +93,12 @@ func (m *UsdtMonitor) Stop() {
 }
 
 func (m *UsdtMonitor) runCycle() {
+	// 兜底：任一适配器(畸形响应/解码)即便 panic 也不拖垮进程，下轮继续。
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("[UsdtMonitor] recovered from panic in runCycle: %v", r)
+		}
+	}()
 	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
 	defer cancel()
 
@@ -123,6 +129,7 @@ func (m *UsdtMonitor) runCycle() {
 
 	minTs := time.Now().Add(-time.Duration(m.usdt.QueryMinutesBack())*time.Minute - 5*time.Minute).UnixMilli()
 	confirmCutoff := time.Now().Add(-m.usdt.ConfirmDuration())
+	grace := m.usdt.GraceWindow()
 
 	for _, chain := range usable {
 		pend := byChain[chain]
@@ -162,7 +169,8 @@ func (m *UsdtMonitor) runCycle() {
 			if hasTime && blockTime.Before(order.CreatedAt.Add(-5*time.Minute)) {
 				continue
 			}
-			if hasTime && order.ExpiredAt != nil && blockTime.After(*order.ExpiredAt) {
+			// 允许过期后 grace 宽限内的到账仍匹配（订单也已在 GetPendingUsdtOrders 的宽限窗内）。
+			if hasTime && order.ExpiredAt != nil && blockTime.After(order.ExpiredAt.Add(grace)) {
 				continue
 			}
 

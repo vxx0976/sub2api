@@ -65,6 +65,8 @@ type UsdtOrderRepository interface {
 	ExpirePendingOrders(ctx context.Context) (int, error)
 	ListAll(ctx context.Context, status string, userID *int64, limit, offset int) ([]*UsdtOrder, int, error)
 	ListPending(ctx context.Context) ([]*UsdtOrder, error)
+	// ListMatchable 返回 pending + 宽限期内刚过期的订单，供 watcher 匹配（防过期后到账孤儿单）。
+	ListMatchable(ctx context.Context, graceCutoff time.Time) ([]*UsdtOrder, error)
 }
 
 // SettingKeyUsdtEnabled USDT 运行时开关 key（与 payment.SettingKeyUsdtEnabled 同值，

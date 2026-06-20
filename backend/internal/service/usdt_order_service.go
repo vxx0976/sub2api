@@ -298,9 +298,11 @@ func (s *UsdtOrderService) RefundOrder(ctx context.Context, orderNo, reason stri
 
 // ===== payment.UsdtOrderMatcher 接口实现 =====
 
-// GetPendingUsdtOrders UsdtMonitor 调用：拉取待支付订单供链上金额匹配。
+// GetPendingUsdtOrders UsdtMonitor 调用：拉取可匹配订单（pending + 宽限期内刚过期）供链上金额匹配。
+// 含宽限期是为了让"临近/略超截止才到账"的订单仍能补入账（链上确认有延迟，加密资金不可逆）。
 func (s *UsdtOrderService) GetPendingUsdtOrders(ctx context.Context) ([]payment.UsdtPendingOrder, error) {
-	orders, err := s.usdtRepo.ListPending(ctx)
+	graceCutoff := time.Now().Add(-s.usdt.GraceWindow())
+	orders, err := s.usdtRepo.ListMatchable(ctx, graceCutoff)
 	if err != nil {
 		return nil, err
 	}
