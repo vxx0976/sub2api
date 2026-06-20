@@ -4,23 +4,49 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/url"
-	"strconv"
+	"math/big"
 	"strings"
+	"time"
 )
 
-// ===== BNB Smart Chain (BEP20) 链适配器 =====
+// ===== BNB Smart Chain (BEP20) 链适配器 — 免费公共 RPC eth_getLogs =====
+//
+// 不依赖已收费的 Etherscan V2 tokentx。改为直接打免费公共 BSC JSON-RPC：
+//   eth_blockNumber       拿链头高度
+//   eth_getLogs           按 USDT 合约 + Transfer 事件 + 收款地址(indexed to) 过滤拉日志
+//   eth_getBlockByNumber  仅为命中的区块补真实时间戳
+// 收款匹配/确认逻辑全在 watcher 里按金额+时间做，本适配器只负责"查到流入并带准时间戳"。
 
 const (
 	// UsdtBEP20Contract 是 BSC 上的 Binance-Peg USDT(BSC-USD) 合约地址。
 	UsdtBEP20Contract = "0x55d398326f99059fF775485246999027B3197955"
 	// UsdtBEP20Decimals BEP20 USDT 精度为 18。
 	UsdtBEP20Decimals = 18
-	// DefaultEtherscanV2BaseURL Etherscan V2 统一网关（2025 起 BscScan 并入，chainid=56 即 BSC）。
-	DefaultEtherscanV2BaseURL = "https://api.etherscan.io/v2/api"
-	// bscChainID BSC 在 Etherscan V2 的 chainid。
-	bscChainID = "56"
+
+	// DefaultBSCRPCURL 默认免费公共 BSC RPC（keyless，支持 eth_getLogs）。
+	// 注意：官方 bsc-dataseed*.binance.org 关闭了 eth_getLogs，绝不能用作默认。
+	DefaultBSCRPCURL = "https://bsc-rpc.publicnode.com"
+
+	// erc20TransferTopic = keccak256("Transfer(address,address,uint256)")，所有 ERC20/BEP20 通用。
+	erc20TransferTopic = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+
+	// bscBlockSeconds 是 BSC 出块间隔（秒），用于把回看时间窗换算成区块数。
+	bscBlockSeconds = 3
+	// bscGetLogsMaxRange 是单次 eth_getLogs 的区块跨度上限（保守值，安全低于多数节点上限）。
+	bscGetLogsMaxRange = 2000
+	// bscLookbackCapBlocks 是 fromBlock 回看的安全上限（~6 小时），防止异常 minTimestampMs 触发超大范围。
+	bscLookbackCapBlocks = 7200
 )
+
+// bscFallbackRPCs 是按顺序尝试的免费 keyless 公共 BSC RPC（均支持 eth_getLogs）。
+// 配置的 baseURL 永远排在最前面优先尝试。
+var bscFallbackRPCs = []string{
+	DefaultBSCRPCURL,
+	"https://bsc.drpc.org",
+	"https://binance.llamarpc.com",
+	"https://bsc.meowrpc.com",
+	"https://1rpc.io/bnb",
+}
 
 type bscAdapter struct{}
 
@@ -42,90 +68,235 @@ func (a *bscAdapter) ValidateAddress(addr string) bool {
 	return true
 }
 
-// QueryIncoming 通过 Etherscan V2 (chainid=56) 的 tokentx 拉取流入收款地址的 USDT(BEP20) 转账。
+// QueryIncoming 通过免费公共 BSC RPC 的 eth_getLogs 拉取流入收款地址的 USDT(BEP20) 转账。
+//
+//	apiKey  当前未用（公共节点无需 Key；保留以兼容未来付费节点）。
+//	baseURL 可选，空时用 DefaultBSCRPCURL；并按 bscFallbackRPCs 自动故障转移。
+//	minTimestampMs 回看窗口下界，换算成 fromBlock。
 func (a *bscAdapter) QueryIncoming(ctx context.Context, address, apiKey, baseURL string, minTimestampMs int64) ([]IncomingTransfer, error) {
-	if baseURL == "" {
-		baseURL = DefaultEtherscanV2BaseURL
-	}
-	q := url.Values{}
-	q.Set("chainid", bscChainID)
-	q.Set("module", "account")
-	q.Set("action", "tokentx")
-	q.Set("contractaddress", UsdtBEP20Contract)
-	q.Set("address", address)
-	q.Set("page", "1")
-	q.Set("offset", "100")
-	q.Set("sort", "desc")
-	if apiKey != "" {
-		q.Set("apikey", apiKey)
-	}
-	endpoint := baseURL + "?" + q.Encode()
+	_ = apiKey
+	endpoints := bscEndpoints(baseURL)
 
-	body, status, err := adapterGet(ctx, endpoint, nil)
+	head, err := a.blockNumber(ctx, endpoints)
 	if err != nil {
-		return nil, err
-	}
-	if status != 200 {
-		return nil, fmt.Errorf("etherscan status %d: %s", status, truncate(string(body), 300))
+		return nil, fmt.Errorf("bsc eth_blockNumber: %w", err)
 	}
 
-	var parsed struct {
-		Status  string `json:"status"`
-		Message string `json:"message"`
-		Result  []struct {
-			Hash            string `json:"hash"`
-			From            string `json:"from"`
-			To              string `json:"to"`
-			Value           string `json:"value"`
-			TokenDecimal    string `json:"tokenDecimal"`
-			ContractAddress string `json:"contractAddress"`
-			TimeStamp       string `json:"timeStamp"`
-		} `json:"result"`
-	}
-	if err := json.Unmarshal(body, &parsed); err != nil {
-		return nil, fmt.Errorf("parse etherscan response: %w (body: %s)", err, truncate(string(body), 300))
-	}
-	// status="0" 且无结果是正常的"无交易"；带错误消息才报错。
-	if parsed.Status != "1" && len(parsed.Result) == 0 {
-		if parsed.Message != "" && !strings.EqualFold(parsed.Message, "No transactions found") && !strings.EqualFold(parsed.Message, "OK") {
-			return nil, fmt.Errorf("etherscan error: %s", parsed.Message)
-		}
-		return nil, nil
-	}
+	fromBlock := bscFromBlock(head, minTimestampMs)
 
-	addrLower := strings.ToLower(address)
-	out := make([]IncomingTransfer, 0, len(parsed.Result))
-	for _, r := range parsed.Result {
-		if strings.ToLower(r.To) != addrLower {
-			continue
+	padded := padTopicAddress(address) // 0x + 24 个 0 + 40 hex
+	addrLower := strings.ToLower(strings.TrimSpace(address))
+
+	tsCache := make(map[string]int64) // blockNumber(hex) -> blockTimeMs，去重补时间戳
+	out := make([]IncomingTransfer, 0, 8)
+
+	for lo := fromBlock; lo <= head; lo += bscGetLogsMaxRange {
+		hi := lo + bscGetLogsMaxRange - 1
+		if hi > head {
+			hi = head
 		}
-		if r.ContractAddress != "" && !strings.EqualFold(r.ContractAddress, UsdtBEP20Contract) {
-			continue
+		logs, err := a.getLogs(ctx, endpoints, lo, hi, padded)
+		if err != nil {
+			return nil, fmt.Errorf("bsc eth_getLogs [%d-%d]: %w", lo, hi, err)
 		}
-		decimals := UsdtBEP20Decimals
-		if r.TokenDecimal != "" {
-			if d, e := strconv.Atoi(r.TokenDecimal); e == nil && d > 0 {
-				decimals = d
+		for _, lg := range logs {
+			if len(lg.Topics) < 3 {
+				continue
 			}
+			to := "0x" + strings.ToLower(lg.Topics[2][len(lg.Topics[2])-40:])
+			if to != addrLower {
+				continue // server 端已按 to 过滤；双保险。
+			}
+			from := "0x" + strings.ToLower(lg.Topics[1][len(lg.Topics[1])-40:])
+			human, ok := humanFromAtomic(hexToDecString(lg.Data), UsdtBEP20Decimals)
+			if !ok || human <= 0 {
+				continue
+			}
+			// 为命中区块补真实时间戳（watcher 的确认/有效期判定全靠它，绝不能为 0）。
+			blockMs, err := a.blockTimeMs(ctx, endpoints, lg.BlockNumber, tsCache)
+			if err != nil {
+				continue // 拿不到时间戳本轮跳过，下个周期再试；返回 0 会绕过 finality 保护。
+			}
+			if minTimestampMs > 0 && blockMs > 0 && blockMs < minTimestampMs {
+				continue
+			}
+			out = append(out, IncomingTransfer{
+				TxID:        lg.TxHash,
+				From:        from,
+				To:          to,
+				AmountHuman: human,
+				BlockTimeMs: blockMs,
+			})
 		}
-		human, ok := humanFromAtomic(r.Value, decimals)
-		if !ok || human <= 0 {
-			continue
-		}
-		var blockMs int64
-		if ts, e := strconv.ParseInt(r.TimeStamp, 10, 64); e == nil {
-			blockMs = ts * 1000
-		}
-		if minTimestampMs > 0 && blockMs > 0 && blockMs < minTimestampMs {
-			continue
-		}
-		out = append(out, IncomingTransfer{
-			TxID:        r.Hash,
-			From:        r.From,
-			To:          r.To,
-			AmountHuman: human,
-			BlockTimeMs: blockMs,
-		})
 	}
 	return out, nil
+}
+
+// ----- JSON-RPC -----
+
+type bscLog struct {
+	Address     string   `json:"address"`
+	Topics      []string `json:"topics"`
+	Data        string   `json:"data"`
+	BlockNumber string   `json:"blockNumber"`
+	TxHash      string   `json:"transactionHash"`
+}
+
+// bscRPCCall 对 endpoints 顺序故障转移地发一次 JSON-RPC，把 result 反序列化进 out。
+func bscRPCCall(ctx context.Context, endpoints []string, method string, params []any, out any) error {
+	reqBody, err := json.Marshal(map[string]any{
+		"jsonrpc": "2.0", "id": 1, "method": method, "params": params,
+	})
+	if err != nil {
+		return err
+	}
+	// 显式 UA：部分公共节点会拦截空/陌生 User-Agent（默认 publicnode 不拦，但 fallback 节点更挑）。
+	headers := map[string]string{"User-Agent": "sub2api-usdt/1.0"}
+	var lastErr error
+	for _, ep := range endpoints {
+		body, status, err := adapterPostJSON(ctx, ep, reqBody, headers)
+		if err != nil {
+			lastErr = err
+			continue
+		}
+		if status != 200 {
+			lastErr = fmt.Errorf("rpc status %d: %s", status, truncate(string(body), 200))
+			continue
+		}
+		var resp struct {
+			Result json.RawMessage `json:"result"`
+			Error  *struct {
+				Code    int    `json:"code"`
+				Message string `json:"message"`
+			} `json:"error"`
+		}
+		if err := json.Unmarshal(body, &resp); err != nil {
+			lastErr = fmt.Errorf("parse rpc response: %w (body: %s)", err, truncate(string(body), 200))
+			continue
+		}
+		if resp.Error != nil {
+			lastErr = fmt.Errorf("rpc %s error %d: %s", method, resp.Error.Code, resp.Error.Message)
+			continue // 换下一个节点（范围超限/限流/节点滞后都可能）。
+		}
+		if out == nil {
+			return nil
+		}
+		if err := json.Unmarshal(resp.Result, out); err != nil {
+			return fmt.Errorf("decode rpc result: %w", err)
+		}
+		return nil
+	}
+	if lastErr == nil {
+		lastErr = fmt.Errorf("no rpc endpoint available")
+	}
+	return lastErr
+}
+
+func (a *bscAdapter) blockNumber(ctx context.Context, endpoints []string) (uint64, error) {
+	var hexHead string
+	if err := bscRPCCall(ctx, endpoints, "eth_blockNumber", []any{}, &hexHead); err != nil {
+		return 0, err
+	}
+	return hexToUint64(hexHead), nil
+}
+
+func (a *bscAdapter) getLogs(ctx context.Context, endpoints []string, from, to uint64, paddedTo string) ([]bscLog, error) {
+	filter := map[string]any{
+		"fromBlock": fmt.Sprintf("0x%x", from),
+		"toBlock":   fmt.Sprintf("0x%x", to),
+		"address":   UsdtBEP20Contract,
+		// topics: [Transfer, anyFrom, to=收款地址]，节点端按 to 过滤。
+		"topics": []any{erc20TransferTopic, nil, paddedTo},
+	}
+	var logs []bscLog
+	if err := bscRPCCall(ctx, endpoints, "eth_getLogs", []any{filter}, &logs); err != nil {
+		return nil, err
+	}
+	return logs, nil
+}
+
+func (a *bscAdapter) blockTimeMs(ctx context.Context, endpoints []string, blockHex string, cache map[string]int64) (int64, error) {
+	if ms, ok := cache[blockHex]; ok {
+		return ms, nil
+	}
+	var blk struct {
+		Timestamp string `json:"timestamp"`
+	}
+	if err := bscRPCCall(ctx, endpoints, "eth_getBlockByNumber", []any{blockHex, false}, &blk); err != nil {
+		return 0, err
+	}
+	if blk.Timestamp == "" {
+		return 0, fmt.Errorf("empty block timestamp for %s", blockHex)
+	}
+	ms := int64(hexToUint64(blk.Timestamp)) * 1000
+	cache[blockHex] = ms
+	return ms, nil
+}
+
+// ----- 辅助 -----
+
+// bscEndpoints 构造尝试顺序：配置的 baseURL 优先，然后是不重复的内置 fallback。
+func bscEndpoints(baseURL string) []string {
+	eps := make([]string, 0, len(bscFallbackRPCs)+1)
+	seen := make(map[string]bool)
+	add := func(u string) {
+		u = strings.TrimRight(strings.TrimSpace(u), "/")
+		if u == "" || seen[u] {
+			return
+		}
+		seen[u] = true
+		eps = append(eps, u)
+	}
+	add(baseURL)
+	for _, u := range bscFallbackRPCs {
+		add(u)
+	}
+	return eps
+}
+
+// bscFromBlock 把回看时间窗换算成 fromBlock：head - ceil(lookbackSeconds/3)，带安全上限。
+func bscFromBlock(head uint64, minTimestampMs int64) uint64 {
+	if minTimestampMs <= 0 {
+		if head > bscLookbackCapBlocks {
+			return head - bscLookbackCapBlocks
+		}
+		return 0
+	}
+	lookbackSec := (time.Now().UnixMilli() - minTimestampMs) / 1000
+	if lookbackSec < 0 {
+		lookbackSec = 0
+	}
+	blocks := uint64((lookbackSec+bscBlockSeconds-1)/bscBlockSeconds) + 5
+	if blocks > bscLookbackCapBlocks {
+		blocks = bscLookbackCapBlocks
+	}
+	if head > blocks {
+		return head - blocks
+	}
+	return 0
+}
+
+// padTopicAddress 把 EVM 地址左补零成 32 字节 topic：0x + 24 个 0 + 40 hex（小写）。
+func padTopicAddress(addr string) string {
+	a := strings.ToLower(strings.TrimPrefix(strings.TrimSpace(addr), "0x"))
+	if len(a) > 64 {
+		a = a[len(a)-64:]
+	}
+	return "0x" + strings.Repeat("0", 64-len(a)) + a
+}
+
+// hexToUint64 解析 0x 十六进制为 uint64。
+func hexToUint64(h string) uint64 {
+	n := new(big.Int)
+	n.SetString(strings.TrimPrefix(strings.TrimSpace(h), "0x"), 16)
+	return n.Uint64()
+}
+
+// hexToDecString 把 0x 十六进制（uint256）转成十进制字符串，喂给 humanFromAtomic。
+func hexToDecString(h string) string {
+	n := new(big.Int)
+	if _, ok := n.SetString(strings.TrimPrefix(strings.TrimSpace(h), "0x"), 16); !ok {
+		return "0"
+	}
+	return n.String()
 }

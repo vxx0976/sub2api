@@ -6477,7 +6477,7 @@ export default {
         chainsSection: '收款链（按链分别配置收款地址与扫链 Key）',
         chainAddress: '收款地址',
         chainApiBaseUrl: 'API 网关（留空用默认）',
-        bep20PaidNote: '注意：BSC(链 ID 56) 的 Etherscan V2 tokentx 已转为付费档，免费 Key 可能不可用，需付费 Key 或自建/第三方节点。',
+        bep20PaidNote: '免费方案：直接走公共 BSC 节点的 eth_getLogs 扫链，无需 API Key（默认 publicnode，可改其他公共 RPC）。',
         enabled: '启用 USDT',
         enabledHint: '开启后前端显示 USDT 充值入口，后台 Monitor 开始扫描链上到账',
         receivingAddress: 'TRC20 收款地址',

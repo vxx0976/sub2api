@@ -6510,7 +6510,7 @@ export default {
         chainsSection: 'Receiving chains (configure address + scan key per chain)',
         chainAddress: 'Receiving address',
         chainApiBaseUrl: 'API base URL (blank = default)',
-        bep20PaidNote: 'Note: Etherscan V2 tokentx for BSC (chainid 56) is now a paid tier; a free key may not work — use a paid key or a self/3rd-party node.',
+        bep20PaidNote: 'Free: scans via a public BSC node eth_getLogs, no API key needed (default publicnode; override with any public RPC).',
         enabled: 'Enable USDT',
         enabledHint: 'Shows the USDT recharge entry to users and starts the chain monitor',
         receivingAddress: 'TRC20 Receiving Address',

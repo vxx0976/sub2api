@@ -141,7 +141,7 @@ interface ChainMeta {
 
 const CHAINS: ChainMeta[] = [
   { key: 'trc20', label: 'TRC20 (TRON)', addrPlaceholder: 'T...', apiKeyLabel: 'TronGrid API Key', apiKeyPlaceholder: 'TronGrid key', baseUrlPlaceholder: 'https://api.trongrid.io' },
-  { key: 'bep20', label: 'BEP20 (BSC)', addrPlaceholder: '0x...', apiKeyLabel: 'Etherscan API Key', apiKeyPlaceholder: 'Etherscan key', baseUrlPlaceholder: 'https://api.etherscan.io/v2/api', note: 'admin.settings.usdt.bep20PaidNote' },
+  { key: 'bep20', label: 'BEP20 (BSC)', addrPlaceholder: '0x...', apiKeyLabel: 'RPC API Key (可选)', apiKeyPlaceholder: '公共节点无需填', baseUrlPlaceholder: 'https://bsc-rpc.publicnode.com', note: 'admin.settings.usdt.bep20PaidNote' },
   { key: 'ton', label: 'TON', addrPlaceholder: 'EQ... / UQ...', apiKeyLabel: 'TonCenter API Key', apiKeyPlaceholder: 'TonCenter key', baseUrlPlaceholder: 'https://toncenter.com/api/v3' }
 ]
 

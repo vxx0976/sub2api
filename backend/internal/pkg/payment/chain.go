@@ -1,6 +1,7 @@
 package payment
 
 import (
+	"bytes"
 	"context"
 	"io"
 	"math/big"
@@ -17,6 +18,30 @@ func adapterGet(ctx context.Context, endpoint string, headers map[string]string)
 	if err != nil {
 		return nil, 0, err
 	}
+	for k, v := range headers {
+		if v != "" {
+			req.Header.Set(k, v)
+		}
+	}
+	resp, err := adapterHTTPClient.Do(req)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, resp.StatusCode, err
+	}
+	return body, resp.StatusCode, nil
+}
+
+// adapterPostJSON 发起 POST JSON 请求并返回 body + 状态码（用于 EVM JSON-RPC）。
+func adapterPostJSON(ctx context.Context, endpoint string, payload []byte, headers map[string]string) ([]byte, int, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(payload))
+	if err != nil {
+		return nil, 0, err
+	}
+	req.Header.Set("Content-Type", "application/json")
 	for k, v := range headers {
 		if v != "" {
 			req.Header.Set(k, v)
