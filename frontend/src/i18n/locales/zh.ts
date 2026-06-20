@@ -503,7 +503,7 @@ export default {
     resellerServiceTokens: 'API 令牌',
     resellerAnnouncements: '公告管理',
     resellerSettings: '系统设置',
-    recharge: '微信充值',
+    recharge: '充值',
     alimpayRecharge: '支付宝充值',
     usdtRecharge: 'USDT 充值',
     myOrders: '我的订单',

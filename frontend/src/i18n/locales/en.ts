@@ -504,7 +504,7 @@ export default {
     resellerServiceTokens: 'API Tokens',
     resellerAnnouncements: 'Announcements',
     resellerSettings: 'Settings',
-    recharge: 'WeChat Recharge',
+    recharge: 'Recharge',
     alimpayRecharge: 'Alipay Recharge',
     usdtRecharge: 'USDT Recharge',
     myOrders: 'My Orders',
