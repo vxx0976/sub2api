@@ -48,15 +48,19 @@ func TestBscFromBlock(t *testing.T) {
 		t.Errorf("bscFromBlock(100000,0) = %d, want %d", got, 100000-bscLookbackCapBlocks)
 	}
 	// head 小于 cap → 0
-	if got := bscFromBlock(1000, 0); got != 0 {
-		t.Errorf("bscFromBlock(1000,0) = %d, want 0", got)
+	if got := bscFromBlock(100, 0); got != 0 {
+		t.Errorf("bscFromBlock(100,0) = %d, want 0", got)
 	}
-	// 35 分钟回看 ≈ 700 块（+5 缓冲），远小于 cap
+	// 35 分钟回看 ≈ 705 块，但被 cap(300) 钳制 → 实际回看 = cap
 	head := uint64(50_000_000)
 	from := bscFromBlock(head, NowMinus(35))
-	blocks := head - from
-	if blocks < 690 || blocks > 720 {
-		t.Errorf("35min lookback blocks = %d, want ~705", blocks)
+	if blocks := head - from; blocks != bscLookbackCapBlocks {
+		t.Errorf("35min lookback blocks = %d, want cap %d", blocks, bscLookbackCapBlocks)
+	}
+	// 小回看(2分钟≈40块)不触发 cap
+	from2 := bscFromBlock(head, NowMinus(2))
+	if blocks := head - from2; blocks < 40 || blocks > 60 {
+		t.Errorf("2min lookback blocks = %d, want ~45", blocks)
 	}
 }
 
