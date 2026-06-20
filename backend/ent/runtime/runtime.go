@@ -46,6 +46,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/tlsfingerprintprofile"
 	"github.com/Wei-Shaw/sub2api/ent/usagecleanuptask"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
+	"github.com/Wei-Shaw/sub2api/ent/usdtorder"
 	"github.com/Wei-Shaw/sub2api/ent/user"
 	"github.com/Wei-Shaw/sub2api/ent/userallowedgroup"
 	"github.com/Wei-Shaw/sub2api/ent/userattributedefinition"
@@ -2356,6 +2357,82 @@ func init() {
 	usagelogDescCreatedAt := usagelogFields[44].Descriptor()
 	// usagelog.DefaultCreatedAt holds the default value on creation for the created_at field.
 	usagelog.DefaultCreatedAt = usagelogDescCreatedAt.Default.(func() time.Time)
+	usdtorderFields := schema.UsdtOrder{}.Fields()
+	_ = usdtorderFields
+	// usdtorderDescOrderNo is the schema descriptor for order_no field.
+	usdtorderDescOrderNo := usdtorderFields[0].Descriptor()
+	// usdtorder.OrderNoValidator is a validator for the "order_no" field. It is called by the builders before save.
+	usdtorder.OrderNoValidator = func() func(string) error {
+		validators := usdtorderDescOrderNo.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(order_no string) error {
+			for _, fn := range fns {
+				if err := fn(order_no); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// usdtorderDescTradeNo is the schema descriptor for trade_no field.
+	usdtorderDescTradeNo := usdtorderFields[1].Descriptor()
+	// usdtorder.TradeNoValidator is a validator for the "trade_no" field. It is called by the builders before save.
+	usdtorder.TradeNoValidator = usdtorderDescTradeNo.Validators[0].(func(string) error)
+	// usdtorderDescCreditAmount is the schema descriptor for credit_amount field.
+	usdtorderDescCreditAmount := usdtorderFields[4].Descriptor()
+	// usdtorder.DefaultCreditAmount holds the default value on creation for the credit_amount field.
+	usdtorder.DefaultCreditAmount = usdtorderDescCreditAmount.Default.(float64)
+	// usdtorderDescMultiplier is the schema descriptor for multiplier field.
+	usdtorderDescMultiplier := usdtorderFields[5].Descriptor()
+	// usdtorder.DefaultMultiplier holds the default value on creation for the multiplier field.
+	usdtorder.DefaultMultiplier = usdtorderDescMultiplier.Default.(float64)
+	// usdtorderDescChain is the schema descriptor for chain field.
+	usdtorderDescChain := usdtorderFields[6].Descriptor()
+	// usdtorder.DefaultChain holds the default value on creation for the chain field.
+	usdtorder.DefaultChain = usdtorderDescChain.Default.(string)
+	// usdtorder.ChainValidator is a validator for the "chain" field. It is called by the builders before save.
+	usdtorder.ChainValidator = usdtorderDescChain.Validators[0].(func(string) error)
+	// usdtorderDescReceivingAddress is the schema descriptor for receiving_address field.
+	usdtorderDescReceivingAddress := usdtorderFields[7].Descriptor()
+	// usdtorder.ReceivingAddressValidator is a validator for the "receiving_address" field. It is called by the builders before save.
+	usdtorder.ReceivingAddressValidator = usdtorderDescReceivingAddress.Validators[0].(func(string) error)
+	// usdtorderDescUsdtRate is the schema descriptor for usdt_rate field.
+	usdtorderDescUsdtRate := usdtorderFields[8].Descriptor()
+	// usdtorder.DefaultUsdtRate holds the default value on creation for the usdt_rate field.
+	usdtorder.DefaultUsdtRate = usdtorderDescUsdtRate.Default.(float64)
+	// usdtorderDescFromAddress is the schema descriptor for from_address field.
+	usdtorderDescFromAddress := usdtorderFields[11].Descriptor()
+	// usdtorder.FromAddressValidator is a validator for the "from_address" field. It is called by the builders before save.
+	usdtorder.FromAddressValidator = usdtorderDescFromAddress.Validators[0].(func(string) error)
+	// usdtorderDescStatus is the schema descriptor for status field.
+	usdtorderDescStatus := usdtorderFields[13].Descriptor()
+	// usdtorder.DefaultStatus holds the default value on creation for the status field.
+	usdtorder.DefaultStatus = usdtorderDescStatus.Default.(string)
+	// usdtorder.StatusValidator is a validator for the "status" field. It is called by the builders before save.
+	usdtorder.StatusValidator = usdtorderDescStatus.Validators[0].(func(string) error)
+	// usdtorderDescPayType is the schema descriptor for pay_type field.
+	usdtorderDescPayType := usdtorderFields[14].Descriptor()
+	// usdtorder.DefaultPayType holds the default value on creation for the pay_type field.
+	usdtorder.DefaultPayType = usdtorderDescPayType.Default.(string)
+	// usdtorder.PayTypeValidator is a validator for the "pay_type" field. It is called by the builders before save.
+	usdtorder.PayTypeValidator = usdtorderDescPayType.Validators[0].(func(string) error)
+	// usdtorderDescSourceDomain is the schema descriptor for source_domain field.
+	usdtorderDescSourceDomain := usdtorderFields[16].Descriptor()
+	// usdtorder.SourceDomainValidator is a validator for the "source_domain" field. It is called by the builders before save.
+	usdtorder.SourceDomainValidator = usdtorderDescSourceDomain.Validators[0].(func(string) error)
+	// usdtorderDescCreatedAt is the schema descriptor for created_at field.
+	usdtorderDescCreatedAt := usdtorderFields[17].Descriptor()
+	// usdtorder.DefaultCreatedAt holds the default value on creation for the created_at field.
+	usdtorder.DefaultCreatedAt = usdtorderDescCreatedAt.Default.(func() time.Time)
+	// usdtorderDescUpdatedAt is the schema descriptor for updated_at field.
+	usdtorderDescUpdatedAt := usdtorderFields[18].Descriptor()
+	// usdtorder.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	usdtorder.DefaultUpdatedAt = usdtorderDescUpdatedAt.Default.(func() time.Time)
+	// usdtorder.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	usdtorder.UpdateDefaultUpdatedAt = usdtorderDescUpdatedAt.UpdateDefault.(func() time.Time)
 	userMixin := schema.User{}.Mixin()
 	userMixinHooks1 := userMixin[1].Hooks()
 	user.Hooks[0] = userMixinHooks1[0]

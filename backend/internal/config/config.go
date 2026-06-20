@@ -102,6 +102,22 @@ type Config struct {
 type PaymentConfig struct {
 	Enabled bool                `mapstructure:"enabled"`
 	Alipay  AlipayPaymentConfig `mapstructure:"alipay"`
+	Usdt    UsdtPaymentConfig   `mapstructure:"usdt"`
+}
+
+// UsdtPaymentConfig USDT(TRC20) 自建收款配置（settings 表可运行时覆盖 config.yaml）
+type UsdtPaymentConfig struct {
+	ReceivingAddress       string  `mapstructure:"receiving_address"`        // TRC20 收款地址（T 开头）
+	TronAPIBaseURL         string  `mapstructure:"tron_api_base_url"`        // 默认 https://api.trongrid.io
+	TronAPIKey             string  `mapstructure:"tron_api_key"`             // TronGrid TRON-PRO-API-KEY
+	ManualRate             float64 `mapstructure:"manual_rate"`              // 手动汇率：1 USDT = ? CNY
+	RateAutoFetch          bool    `mapstructure:"rate_auto_fetch"`          // 自动拉取汇率（失败回退 manual_rate）
+	RateMarkup             float64 `mapstructure:"rate_markup"`              // 加价系数：换算用汇率=rate*(1-markup)，让用户多付一点 USDT；默认 0
+	AmountOffset           float64 `mapstructure:"amount_offset"`            // 唯一金额尾数步长（USDT），默认 0.0001
+	ConfirmSeconds         int     `mapstructure:"confirm_seconds"`          // 到账交易需达到的最小链上时长（秒）才入账，默认 60
+	MonitorIntervalSeconds int     `mapstructure:"monitor_interval_seconds"` // 轮询间隔（秒），默认 15
+	QueryMinutesBack       int     `mapstructure:"query_minutes_back"`       // 链上回看窗口（分钟），默认 30
+	OrderTimeoutSeconds    int     `mapstructure:"order_timeout_seconds"`    // 订单超时（秒），默认 1800
 }
 
 // AlipayPaymentConfig 支付宝原生支付配置

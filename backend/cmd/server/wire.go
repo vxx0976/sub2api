@@ -95,6 +95,8 @@ func provideCleanup(
 	rechargeService *service.RechargeService,
 	orderService *service.OrderService,
 	alipayMonitor *pkgpayment.AlipayMonitor,
+	usdtOrderService *service.UsdtOrderService,
+	usdtMonitor *pkgpayment.UsdtMonitor,
 	oauth *service.OAuthService,
 	openaiOAuth *service.OpenAIOAuthService,
 	geminiOAuth *service.GeminiOAuthService,
@@ -209,6 +211,18 @@ func provideCleanup(
 			{"AlipayMonitor", func() error {
 				if alipayMonitor != nil {
 					alipayMonitor.Stop()
+				}
+				return nil
+			}},
+			{"UsdtOrderService", func() error {
+				if usdtOrderService != nil {
+					usdtOrderService.Stop()
+				}
+				return nil
+			}},
+			{"UsdtMonitor", func() error {
+				if usdtMonitor != nil {
+					usdtMonitor.Stop()
 				}
 				return nil
 			}},

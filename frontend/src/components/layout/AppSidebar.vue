@@ -759,6 +759,9 @@ const userNavItems = computed((): NavItem[] => {
     ...(appStore.cachedPublicSettings?.alimpay_enabled
       ? [{ path: '/alimpay-recharge', label: t('nav.alimpayRecharge'), icon: CreditCardIcon, hideInSimpleMode: true }]
       : []),
+    ...(appStore.cachedPublicSettings?.usdt_enabled
+      ? [{ path: '/usdt-recharge', label: t('nav.usdtRecharge'), icon: CreditCardIcon, hideInSimpleMode: true }]
+      : []),
     { path: '/affiliate', label: t('nav.affiliate'), icon: UsersIcon, hideInSimpleMode: true, featureFlag: flagAffiliate },
     { path: '/profile', label: t('nav.profile'), icon: UserIcon },
     ...customMenuItemsForUser.value.map((item): NavItem => ({
@@ -804,6 +807,9 @@ const resellerNavItems = computed(() => {
     ...(appStore.cachedPublicSettings?.alimpay_enabled
       ? [{ path: '/alimpay-recharge', label: t('nav.alimpayRecharge'), icon: CreditCardIcon }]
       : []),
+    ...(appStore.cachedPublicSettings?.usdt_enabled
+      ? [{ path: '/usdt-recharge', label: t('nav.usdtRecharge'), icon: CreditCardIcon }]
+      : []),
     { path: '/merchant/settings', label: t('nav.resellerSettings'), icon: CogIcon },
   ]
   return items
@@ -830,6 +836,9 @@ const personalNavItems = computed((): NavItem[] => {
       : []),
     ...(appStore.cachedPublicSettings?.alimpay_enabled
       ? [{ path: '/alimpay-recharge', label: t('nav.alimpayRecharge'), icon: CreditCardIcon, hideInSimpleMode: true }]
+      : []),
+    ...(appStore.cachedPublicSettings?.usdt_enabled
+      ? [{ path: '/usdt-recharge', label: t('nav.usdtRecharge'), icon: CreditCardIcon, hideInSimpleMode: true }]
       : []),
     { path: '/profile', label: t('nav.profile'), icon: UserIcon },
   ]
@@ -872,6 +881,9 @@ const adminNavItems = computed((): NavItem[] => {
     { path: '/admin/recharge-orders', label: t('nav.adminRechargeOrders'), icon: WalletIcon },
     ...(appStore.cachedPublicSettings?.alimpay_enabled
       ? [{ path: '/admin/alimpay-orders', label: t('nav.adminAliMPayOrders'), icon: WalletIcon }]
+      : []),
+    ...(appStore.cachedPublicSettings?.usdt_enabled
+      ? [{ path: '/admin/usdt-orders', label: t('nav.adminUsdtOrders'), icon: WalletIcon }]
       : []),
     {
       path: '/admin/affiliates',

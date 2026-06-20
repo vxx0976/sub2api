@@ -489,6 +489,18 @@ func (f UsageLogFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, er
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.UsageLogMutation", m)
 }
 
+// The UsdtOrderFunc type is an adapter to allow the use of ordinary
+// function as UsdtOrder mutator.
+type UsdtOrderFunc func(context.Context, *ent.UsdtOrderMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f UsdtOrderFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.UsdtOrderMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.UsdtOrderMutation", m)
+}
+
 // The UserFunc type is an adapter to allow the use of ordinary
 // function as User mutator.
 type UserFunc func(context.Context, *ent.UserMutation) (ent.Value, error)

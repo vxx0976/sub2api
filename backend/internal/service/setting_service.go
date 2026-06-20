@@ -831,6 +831,7 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		SettingKeyBackendModeEnabled,
 		SettingKeyRechargeEnabled,
 		SettingKeyAliMPayEnabled,
+		SettingKeyUsdtEnabled,
 		SettingPaymentEnabled,
 		SettingKeyOIDCConnectEnabled,
 		SettingKeyOIDCConnectProviderName,
@@ -956,6 +957,7 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		BackendModeEnabled:               settings[SettingKeyBackendModeEnabled] == "true",
 		RechargeEnabled:                  settings[SettingKeyRechargeEnabled] == "true",
 		AliMPayEnabled:                   settings[SettingKeyAliMPayEnabled] == "true",
+		UsdtEnabled:                      settings[SettingKeyUsdtEnabled] == "true",
 		PaymentEnabled:                   settings[SettingPaymentEnabled] == "true",
 		OIDCOAuthEnabled:                 oidcEnabled,
 		OIDCOAuthProviderName:            oidcProviderName,
@@ -1266,6 +1268,7 @@ type PublicSettingsInjectionPayload struct {
 	CustomEndpoints                  json.RawMessage          `json:"custom_endpoints"`
 	RechargeEnabled                  bool                     `json:"recharge_enabled"`
 	AliMPayEnabled                   bool                     `json:"alimpay_enabled"`
+	UsdtEnabled                      bool                     `json:"usdt_enabled"`
 	LinuxDoOAuthEnabled              bool                     `json:"linuxdo_oauth_enabled"`
 	DingTalkOAuthEnabled             bool                     `json:"dingtalk_oauth_enabled"`
 	WeChatOAuthEnabled               bool                     `json:"wechat_oauth_enabled"`
@@ -1338,6 +1341,7 @@ func (s *SettingService) GetPublicSettingsForInjection(ctx context.Context) (any
 		CustomEndpoints:                  safeRawJSONArray(settings.CustomEndpoints),
 		RechargeEnabled:                  settings.RechargeEnabled,
 		AliMPayEnabled:                   settings.AliMPayEnabled,
+		UsdtEnabled:                      settings.UsdtEnabled,
 		LinuxDoOAuthEnabled:              settings.LinuxDoOAuthEnabled,
 		DingTalkOAuthEnabled:             settings.DingTalkOAuthEnabled,
 		WeChatOAuthEnabled:               settings.WeChatOAuthEnabled,

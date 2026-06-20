@@ -2008,6 +2008,74 @@ var (
 			},
 		},
 	}
+	// UsdtOrdersColumns holds the columns for the "usdt_orders" table.
+	UsdtOrdersColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "order_no", Type: field.TypeString, Unique: true, Size: 64},
+		{Name: "trade_no", Type: field.TypeString, Nullable: true, Size: 80},
+		{Name: "user_id", Type: field.TypeInt64},
+		{Name: "amount", Type: field.TypeFloat64, SchemaType: map[string]string{"postgres": "decimal(10,2)"}},
+		{Name: "credit_amount", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(10,2)"}},
+		{Name: "multiplier", Type: field.TypeFloat64, Default: 1, SchemaType: map[string]string{"postgres": "decimal(10,2)"}},
+		{Name: "chain", Type: field.TypeString, Size: 20, Default: "trc20"},
+		{Name: "receiving_address", Type: field.TypeString, Size: 64},
+		{Name: "usdt_rate", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
+		{Name: "usdt_amount", Type: field.TypeFloat64, SchemaType: map[string]string{"postgres": "decimal(20,6)"}},
+		{Name: "paid_usdt_amount", Type: field.TypeFloat64, Nullable: true, SchemaType: map[string]string{"postgres": "decimal(20,6)"}},
+		{Name: "from_address", Type: field.TypeString, Nullable: true, Size: 64},
+		{Name: "block_number", Type: field.TypeInt64, Nullable: true},
+		{Name: "status", Type: field.TypeString, Size: 20, Default: "pending"},
+		{Name: "pay_type", Type: field.TypeString, Nullable: true, Size: 20, Default: "usdt"},
+		{Name: "paid_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "source_domain", Type: field.TypeString, Nullable: true, Size: 255},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "expired_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+	}
+	// UsdtOrdersTable holds the schema information for the "usdt_orders" table.
+	UsdtOrdersTable = &schema.Table{
+		Name:       "usdt_orders",
+		Columns:    UsdtOrdersColumns,
+		PrimaryKey: []*schema.Column{UsdtOrdersColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "usdtorder_user_id",
+				Unique:  false,
+				Columns: []*schema.Column{UsdtOrdersColumns[3]},
+			},
+			{
+				Name:    "usdtorder_status",
+				Unique:  false,
+				Columns: []*schema.Column{UsdtOrdersColumns[14]},
+			},
+			{
+				Name:    "usdtorder_order_no",
+				Unique:  false,
+				Columns: []*schema.Column{UsdtOrdersColumns[1]},
+			},
+			{
+				Name:    "usdtorder_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{UsdtOrdersColumns[18]},
+			},
+			{
+				Name:    "usdtorder_chain_usdt_amount",
+				Unique:  true,
+				Columns: []*schema.Column{UsdtOrdersColumns[7], UsdtOrdersColumns[10]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "status = 'pending'",
+				},
+			},
+			{
+				Name:    "usdtorder_trade_no",
+				Unique:  true,
+				Columns: []*schema.Column{UsdtOrdersColumns[2]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "trade_no IS NOT NULL",
+				},
+			},
+		},
+	}
 	// UsersColumns holds the columns for the "users" table.
 	UsersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -2370,6 +2438,7 @@ var (
 		TLSFingerprintProfilesTable,
 		UsageCleanupTasksTable,
 		UsageLogsTable,
+		UsdtOrdersTable,
 		UsersTable,
 		UserAllowedGroupsTable,
 		UserAttributeDefinitionsTable,
@@ -2530,6 +2599,9 @@ func init() {
 	UsageLogsTable.ForeignKeys[4].RefTable = UserSubscriptionsTable
 	UsageLogsTable.Annotation = &entsql.Annotation{
 		Table: "usage_logs",
+	}
+	UsdtOrdersTable.Annotation = &entsql.Annotation{
+		Table: "usdt_orders",
 	}
 	UsersTable.ForeignKeys[0].RefTable = UsersTable
 	UsersTable.Annotation = &entsql.Annotation{

@@ -79,6 +79,7 @@ type Handlers struct {
 	KeyQuery         *KeyQueryHandler
 	Recharge         *RechargeHandler
 	Order            *OrderHandler
+	Usdt             *UsdtHandler
 	Payment          *PaymentHandler
 	PaymentWebhook   *PaymentWebhookHandler
 	AvailableChannel *AvailableChannelHandler

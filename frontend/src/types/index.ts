@@ -230,6 +230,7 @@ export interface PublicSettings {
   custom_endpoints: CustomEndpoint[]
   recharge_enabled: boolean
   alimpay_enabled: boolean
+  usdt_enabled: boolean
   linuxdo_oauth_enabled: boolean
   dingtalk_oauth_enabled?: boolean
   wechat_oauth_enabled: boolean

@@ -221,6 +221,18 @@ export const customRoutes: RouteRecordRaw[] = [
     }
   },
 
+  {
+    path: '/admin/usdt-orders',
+    name: 'AdminUsdtOrders',
+    component: () => import('@/views/admin/UsdtOrdersView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: 'USDT Orders',
+      titleKey: 'admin.usdtOrders.title'
+    }
+  },
+
   // ==================== Public Key Query ====================
   {
     path: '/key-query',

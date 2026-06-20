@@ -298,13 +298,20 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	}
 	orderService := service.NewOrderService(orderRepository, settingRepository, adminService, settingService, alipayPayment, leaderLockCache, db)
 	orderHandler := handler.NewOrderHandler(orderService, adminService)
+	usdtOrderRepository := repository.NewUsdtOrderRepo(client, db)
+	usdtPayment, err := payment2.ProvideUsdtPayment(configConfig, settingGetter)
+	if err != nil {
+		return nil, err
+	}
+	usdtOrderService := service.NewUsdtOrderService(usdtOrderRepository, settingRepository, adminService, settingService, usdtPayment, leaderLockCache, db)
+	usdtHandler := handler.NewUsdtHandler(usdtOrderService, adminService)
 	handlerPaymentHandler := handler.NewPaymentHandler(paymentService, paymentConfigService, channelService)
 	paymentWebhookHandler := handler.NewPaymentWebhookHandler(paymentService, registry)
 	availableChannelHandler := handler.NewAvailableChannelHandler(channelService, apiKeyService, settingService)
 	handlerChatHandler := handler.NewChatHandler(chatService, chatHub)
 	idempotencyCoordinator := service.ProvideIdempotencyCoordinator(idempotencyRepository, configConfig)
 	idempotencyCleanupService := service.ProvideIdempotencyCleanupService(idempotencyRepository, configConfig, leaderLockCache, db)
-	handlers := handler.ProvideHandlers(authHandler, userHandler, apiKeyHandler, usageHandler, redeemHandler, subscriptionHandler, announcementHandler, channelMonitorUserHandler, adminHandlers, resellerHandlers, gatewayHandler, openAIGatewayHandler, handlerSettingHandler, handlerReferralHandler, totpHandler, keyQueryHandler, rechargeHandler, orderHandler, handlerPaymentHandler, paymentWebhookHandler, availableChannelHandler, handlerChatHandler, idempotencyCoordinator, idempotencyCleanupService)
+	handlers := handler.ProvideHandlers(authHandler, userHandler, apiKeyHandler, usageHandler, redeemHandler, subscriptionHandler, announcementHandler, channelMonitorUserHandler, adminHandlers, resellerHandlers, gatewayHandler, openAIGatewayHandler, handlerSettingHandler, handlerReferralHandler, totpHandler, keyQueryHandler, rechargeHandler, orderHandler, usdtHandler, handlerPaymentHandler, paymentWebhookHandler, availableChannelHandler, handlerChatHandler, idempotencyCoordinator, idempotencyCleanupService)
 	jwtAuthMiddleware := middleware.NewJWTAuthMiddleware(authService, userService)
 	adminAuthMiddleware := middleware.NewAdminAuthMiddleware(authService, userService, settingService)
 	apiKeyAuthMiddleware := middleware.NewAPIKeyAuthMiddleware(apiKeyService, subscriptionService, configConfig)
@@ -322,11 +329,12 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	proxyExpiryService := service.ProvideProxyExpiryService(proxyRepository)
 	subscriptionExpiryService := service.ProvideSubscriptionExpiryService(userSubscriptionRepository, settingRepository, notificationEmailService, leaderLockCache, db)
 	alipayMonitor := payment2.ProvideAlipayMonitor(alipayPayment, orderService)
+	usdtMonitor := payment2.ProvideUsdtMonitor(usdtPayment, usdtOrderService)
 	scheduledTestRunnerService := service.ProvideScheduledTestRunnerService(scheduledTestPlanRepository, scheduledTestService, accountTestService, rateLimitService, configConfig, leaderLockCache, db)
 	paymentOrderExpiryService := service.ProvidePaymentOrderExpiryService(paymentService, leaderLockCache, db)
 	channelMonitorRunner := service.ProvideChannelMonitorRunner(channelMonitorService, settingService)
 	userPlatformQuotaUsageFlusher := service.ProvideUserPlatformQuotaUsageFlusher(configConfig, billingCache, serviceUserPlatformQuotaRepository, timingWheelService)
-	v := provideCleanup(client, redisClient, opsMetricsCollector, opsAggregationService, opsAlertEvaluatorService, opsCleanupService, opsScheduledReportService, opsSystemLogSink, schedulerSnapshotService, tokenRefreshService, accountExpiryService, proxyExpiryService, subscriptionExpiryService, usageCleanupService, idempotencyCleanupService, pricingService, emailQueueService, billingCacheService, usageRecordWorkerPool, subscriptionService, rechargeService, orderService, alipayMonitor, oAuthService, openAIOAuthService, geminiOAuthService, antigravityOAuthService, openAIGatewayService, scheduledTestRunnerService, groupHealthCheckService, backupService, paymentOrderExpiryService, channelMonitorRunner, userPlatformQuotaUsageFlusher)
+	v := provideCleanup(client, redisClient, opsMetricsCollector, opsAggregationService, opsAlertEvaluatorService, opsCleanupService, opsScheduledReportService, opsSystemLogSink, schedulerSnapshotService, tokenRefreshService, accountExpiryService, proxyExpiryService, subscriptionExpiryService, usageCleanupService, idempotencyCleanupService, pricingService, emailQueueService, billingCacheService, usageRecordWorkerPool, subscriptionService, rechargeService, orderService, alipayMonitor, usdtOrderService, usdtMonitor, oAuthService, openAIOAuthService, geminiOAuthService, antigravityOAuthService, openAIGatewayService, scheduledTestRunnerService, groupHealthCheckService, backupService, paymentOrderExpiryService, channelMonitorRunner, userPlatformQuotaUsageFlusher)
 	application := &Application{
 		Server:  httpServer,
 		Cleanup: v,
@@ -376,6 +384,8 @@ func provideCleanup(
 	rechargeService *service.RechargeService,
 	orderService *service.OrderService,
 	alipayMonitor *payment2.AlipayMonitor,
+	usdtOrderService *service.UsdtOrderService,
+	usdtMonitor *payment2.UsdtMonitor,
 	oauth *service.OAuthService,
 	openaiOAuth *service.OpenAIOAuthService,
 	geminiOAuth *service.GeminiOAuthService,
@@ -489,6 +499,18 @@ func provideCleanup(
 			{"AlipayMonitor", func() error {
 				if alipayMonitor != nil {
 					alipayMonitor.Stop()
+				}
+				return nil
+			}},
+			{"UsdtOrderService", func() error {
+				if usdtOrderService != nil {
+					usdtOrderService.Stop()
+				}
+				return nil
+			}},
+			{"UsdtMonitor", func() error {
+				if usdtMonitor != nil {
+					usdtMonitor.Stop()
 				}
 				return nil
 			}},

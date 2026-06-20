@@ -267,6 +267,18 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/usdt-recharge',
+    name: 'UsdtRecharge',
+    component: () => import('@/views/user/UsdtRechargeView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: false,
+      title: 'USDT Recharge',
+      titleKey: 'usdt.title',
+      descriptionKey: 'usdt.description'
+    }
+  },
+  {
     path: '/affiliate',
     name: 'Affiliate',
     component: () => import('@/views/user/AffiliateView.vue'),

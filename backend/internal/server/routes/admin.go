@@ -116,6 +116,9 @@ func RegisterAdminRoutes(
 		// AliMPay 订单管理
 		registerAdminAliMPayRoutes(admin, h)
 
+		// USDT(TRC20) 订单管理
+		registerAdminUsdtRoutes(admin, h)
+
 		// 风控中心
 		registerContentModerationRoutes(admin, h)
 
@@ -142,6 +145,16 @@ func registerAdminAliMPayRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 		alimpay.POST("/orders/:orderNo/refund", h.Order.AdminRefundOrder)
 		alimpay.GET("/config", h.Order.AdminGetConfig)
 		alimpay.PUT("/config", h.Order.AdminUpdateConfig)
+	}
+}
+
+func registerAdminUsdtRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
+	usdt := admin.Group("/usdt")
+	{
+		usdt.GET("/orders", h.Usdt.AdminListOrders)
+		usdt.POST("/orders/:orderNo/refund", h.Usdt.AdminRefundOrder)
+		usdt.GET("/config", h.Usdt.AdminGetConfig)
+		usdt.PUT("/config", h.Usdt.AdminUpdateConfig)
 	}
 }
 

@@ -301,6 +301,7 @@ type PublicSettings struct {
 
 	RechargeEnabled          bool
 	AliMPayEnabled           bool
+	UsdtEnabled              bool
 	LinuxDoOAuthEnabled      bool
 	DingTalkOAuthEnabled     bool
 	WeChatOAuthEnabled       bool

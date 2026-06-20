@@ -55,6 +55,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/tlsfingerprintprofile"
 	"github.com/Wei-Shaw/sub2api/ent/usagecleanuptask"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
+	"github.com/Wei-Shaw/sub2api/ent/usdtorder"
 	"github.com/Wei-Shaw/sub2api/ent/user"
 	"github.com/Wei-Shaw/sub2api/ent/userallowedgroup"
 	"github.com/Wei-Shaw/sub2api/ent/userattributedefinition"
@@ -150,6 +151,8 @@ type Client struct {
 	UsageCleanupTask *UsageCleanupTaskClient
 	// UsageLog is the client for interacting with the UsageLog builders.
 	UsageLog *UsageLogClient
+	// UsdtOrder is the client for interacting with the UsdtOrder builders.
+	UsdtOrder *UsdtOrderClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
 	// UserAllowedGroup is the client for interacting with the UserAllowedGroup builders.
@@ -213,6 +216,7 @@ func (c *Client) init() {
 	c.TLSFingerprintProfile = NewTLSFingerprintProfileClient(c.config)
 	c.UsageCleanupTask = NewUsageCleanupTaskClient(c.config)
 	c.UsageLog = NewUsageLogClient(c.config)
+	c.UsdtOrder = NewUsdtOrderClient(c.config)
 	c.User = NewUserClient(c.config)
 	c.UserAllowedGroup = NewUserAllowedGroupClient(c.config)
 	c.UserAttributeDefinition = NewUserAttributeDefinitionClient(c.config)
@@ -351,6 +355,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		TLSFingerprintProfile:         NewTLSFingerprintProfileClient(cfg),
 		UsageCleanupTask:              NewUsageCleanupTaskClient(cfg),
 		UsageLog:                      NewUsageLogClient(cfg),
+		UsdtOrder:                     NewUsdtOrderClient(cfg),
 		User:                          NewUserClient(cfg),
 		UserAllowedGroup:              NewUserAllowedGroupClient(cfg),
 		UserAttributeDefinition:       NewUserAttributeDefinitionClient(cfg),
@@ -416,6 +421,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		TLSFingerprintProfile:         NewTLSFingerprintProfileClient(cfg),
 		UsageCleanupTask:              NewUsageCleanupTaskClient(cfg),
 		UsageLog:                      NewUsageLogClient(cfg),
+		UsdtOrder:                     NewUsdtOrderClient(cfg),
 		User:                          NewUserClient(cfg),
 		UserAllowedGroup:              NewUserAllowedGroupClient(cfg),
 		UserAttributeDefinition:       NewUserAttributeDefinitionClient(cfg),
@@ -461,7 +467,7 @@ func (c *Client) Use(hooks ...Hook) {
 		c.Proxy, c.RechargeOrder, c.RedeemCode, c.ReferralReward, c.ResellerAPIToken,
 		c.ResellerDomain, c.ResellerSetting, c.ResellerWithdrawal, c.SecuritySecret,
 		c.Setting, c.SubscriptionPlan, c.TLSFingerprintProfile, c.UsageCleanupTask,
-		c.UsageLog, c.User, c.UserAllowedGroup, c.UserAttributeDefinition,
+		c.UsageLog, c.UsdtOrder, c.User, c.UserAllowedGroup, c.UserAttributeDefinition,
 		c.UserAttributeValue, c.UserPlatformQuota, c.UserSubscription,
 	} {
 		n.Use(hooks...)
@@ -482,7 +488,7 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.Proxy, c.RechargeOrder, c.RedeemCode, c.ReferralReward, c.ResellerAPIToken,
 		c.ResellerDomain, c.ResellerSetting, c.ResellerWithdrawal, c.SecuritySecret,
 		c.Setting, c.SubscriptionPlan, c.TLSFingerprintProfile, c.UsageCleanupTask,
-		c.UsageLog, c.User, c.UserAllowedGroup, c.UserAttributeDefinition,
+		c.UsageLog, c.UsdtOrder, c.User, c.UserAllowedGroup, c.UserAttributeDefinition,
 		c.UserAttributeValue, c.UserPlatformQuota, c.UserSubscription,
 	} {
 		n.Intercept(interceptors...)
@@ -572,6 +578,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.UsageCleanupTask.mutate(ctx, m)
 	case *UsageLogMutation:
 		return c.UsageLog.mutate(ctx, m)
+	case *UsdtOrderMutation:
+		return c.UsdtOrder.mutate(ctx, m)
 	case *UserMutation:
 		return c.User.mutate(ctx, m)
 	case *UserAllowedGroupMutation:
@@ -6800,6 +6808,139 @@ func (c *UsageLogClient) mutate(ctx context.Context, m *UsageLogMutation) (Value
 	}
 }
 
+// UsdtOrderClient is a client for the UsdtOrder schema.
+type UsdtOrderClient struct {
+	config
+}
+
+// NewUsdtOrderClient returns a client for the UsdtOrder from the given config.
+func NewUsdtOrderClient(c config) *UsdtOrderClient {
+	return &UsdtOrderClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `usdtorder.Hooks(f(g(h())))`.
+func (c *UsdtOrderClient) Use(hooks ...Hook) {
+	c.hooks.UsdtOrder = append(c.hooks.UsdtOrder, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `usdtorder.Intercept(f(g(h())))`.
+func (c *UsdtOrderClient) Intercept(interceptors ...Interceptor) {
+	c.inters.UsdtOrder = append(c.inters.UsdtOrder, interceptors...)
+}
+
+// Create returns a builder for creating a UsdtOrder entity.
+func (c *UsdtOrderClient) Create() *UsdtOrderCreate {
+	mutation := newUsdtOrderMutation(c.config, OpCreate)
+	return &UsdtOrderCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of UsdtOrder entities.
+func (c *UsdtOrderClient) CreateBulk(builders ...*UsdtOrderCreate) *UsdtOrderCreateBulk {
+	return &UsdtOrderCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *UsdtOrderClient) MapCreateBulk(slice any, setFunc func(*UsdtOrderCreate, int)) *UsdtOrderCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &UsdtOrderCreateBulk{err: fmt.Errorf("calling to UsdtOrderClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*UsdtOrderCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &UsdtOrderCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for UsdtOrder.
+func (c *UsdtOrderClient) Update() *UsdtOrderUpdate {
+	mutation := newUsdtOrderMutation(c.config, OpUpdate)
+	return &UsdtOrderUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *UsdtOrderClient) UpdateOne(_m *UsdtOrder) *UsdtOrderUpdateOne {
+	mutation := newUsdtOrderMutation(c.config, OpUpdateOne, withUsdtOrder(_m))
+	return &UsdtOrderUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *UsdtOrderClient) UpdateOneID(id int64) *UsdtOrderUpdateOne {
+	mutation := newUsdtOrderMutation(c.config, OpUpdateOne, withUsdtOrderID(id))
+	return &UsdtOrderUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for UsdtOrder.
+func (c *UsdtOrderClient) Delete() *UsdtOrderDelete {
+	mutation := newUsdtOrderMutation(c.config, OpDelete)
+	return &UsdtOrderDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *UsdtOrderClient) DeleteOne(_m *UsdtOrder) *UsdtOrderDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *UsdtOrderClient) DeleteOneID(id int64) *UsdtOrderDeleteOne {
+	builder := c.Delete().Where(usdtorder.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &UsdtOrderDeleteOne{builder}
+}
+
+// Query returns a query builder for UsdtOrder.
+func (c *UsdtOrderClient) Query() *UsdtOrderQuery {
+	return &UsdtOrderQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeUsdtOrder},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a UsdtOrder entity by its id.
+func (c *UsdtOrderClient) Get(ctx context.Context, id int64) (*UsdtOrder, error) {
+	return c.Query().Where(usdtorder.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *UsdtOrderClient) GetX(ctx context.Context, id int64) *UsdtOrder {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *UsdtOrderClient) Hooks() []Hook {
+	return c.hooks.UsdtOrder
+}
+
+// Interceptors returns the client interceptors.
+func (c *UsdtOrderClient) Interceptors() []Interceptor {
+	return c.inters.UsdtOrder
+}
+
+func (c *UsdtOrderClient) mutate(ctx context.Context, m *UsdtOrderMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&UsdtOrderCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&UsdtOrderUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&UsdtOrderUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&UsdtOrderDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown UsdtOrder mutation op: %q", m.Op())
+	}
+}
+
 // UserClient is a client for the User schema.
 type UserClient struct {
 	config
@@ -8065,8 +8206,9 @@ type (
 		PromoCodeUsage, Proxy, RechargeOrder, RedeemCode, ReferralReward,
 		ResellerAPIToken, ResellerDomain, ResellerSetting, ResellerWithdrawal,
 		SecuritySecret, Setting, SubscriptionPlan, TLSFingerprintProfile,
-		UsageCleanupTask, UsageLog, User, UserAllowedGroup, UserAttributeDefinition,
-		UserAttributeValue, UserPlatformQuota, UserSubscription []ent.Hook
+		UsageCleanupTask, UsageLog, UsdtOrder, User, UserAllowedGroup,
+		UserAttributeDefinition, UserAttributeValue, UserPlatformQuota,
+		UserSubscription []ent.Hook
 	}
 	inters struct {
 		APIKey, Account, AccountGroup, Announcement, AnnouncementRead, AuthIdentity,
@@ -8078,8 +8220,9 @@ type (
 		PromoCodeUsage, Proxy, RechargeOrder, RedeemCode, ReferralReward,
 		ResellerAPIToken, ResellerDomain, ResellerSetting, ResellerWithdrawal,
 		SecuritySecret, Setting, SubscriptionPlan, TLSFingerprintProfile,
-		UsageCleanupTask, UsageLog, User, UserAllowedGroup, UserAttributeDefinition,
-		UserAttributeValue, UserPlatformQuota, UserSubscription []ent.Interceptor
+		UsageCleanupTask, UsageLog, UsdtOrder, User, UserAllowedGroup,
+		UserAttributeDefinition, UserAttributeValue, UserPlatformQuota,
+		UserSubscription []ent.Interceptor
 	}
 )
 

@@ -28,6 +28,8 @@ import merchantWithdrawalsAPI from './merchantWithdrawals'
 import rechargeOrdersAPI from './rechargeOrders'
 import alimpayOrdersAPI from './alimpayOrders'
 import alimpayConfigAPI from './alimpayConfig'
+import usdtOrdersAPI from './usdtOrders'
+import usdtConfigAPI from './usdtConfig'
 import backupAPI from './backup'
 import tlsFingerprintProfileAPI from './tlsFingerprintProfile'
 import channelsAPI from './channels'
@@ -68,6 +70,8 @@ export const adminAPI = {
   rechargeOrders: rechargeOrdersAPI,
   alimpayOrders: alimpayOrdersAPI,
   alimpayConfig: alimpayConfigAPI,
+  usdtOrders: usdtOrdersAPI,
+  usdtConfig: usdtConfigAPI,
   backup: backupAPI,
   tlsFingerprintProfiles: tlsFingerprintProfileAPI,
   channelMonitor: channelMonitorAPI,
@@ -105,6 +109,8 @@ export {
   rechargeOrdersAPI,
   alimpayOrdersAPI,
   alimpayConfigAPI,
+  usdtOrdersAPI,
+  usdtConfigAPI,
   backupAPI,
   tlsFingerprintProfileAPI,
   channelMonitorAPI,
@@ -126,5 +132,7 @@ export type { AdminWithdrawalItem, AdminWithdrawalListResponse } from './merchan
 export type { AdminRechargeOrderItem, AdminRechargeOrderListResponse } from './rechargeOrders'
 export type { AdminAliMPayOrderItem, AdminAliMPayOrderListResponse } from './alimpayOrders'
 export type { AdminAliMPayConfig, AdminAliMPayConfigUpdate } from './alimpayConfig'
+export type { AdminUsdtOrderItem, AdminUsdtOrderListResponse } from './usdtOrders'
+export type { AdminUsdtConfig, AdminUsdtConfigUpdate } from './usdtConfig'
 export type { TLSFingerprintProfile, CreateProfileRequest, UpdateProfileRequest } from './tlsFingerprintProfile'
 export type { ContentModerationConfig, ContentModerationLog, ModerationMode } from './riskControl'
