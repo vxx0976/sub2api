@@ -753,14 +753,12 @@ const userNavItems = computed((): NavItem[] => {
         ]
       : []),
     { path: '/redeem', label: t('nav.redeem'), icon: TicketIcon, hideInSimpleMode: true },
-    ...(appStore.cachedPublicSettings?.recharge_enabled
-      ? [{ path: '/recharge', label: t('nav.recharge'), icon: CreditCardIcon, hideInSimpleMode: true }]
-      : []),
-    ...(appStore.cachedPublicSettings?.alimpay_enabled
-      ? [{ path: '/alimpay-recharge', label: t('nav.alimpayRecharge'), icon: CreditCardIcon, hideInSimpleMode: true }]
-      : []),
-    ...(appStore.cachedPublicSettings?.usdt_enabled
-      ? [{ path: '/usdt-recharge', label: t('nav.usdtRecharge'), icon: CreditCardIcon, hideInSimpleMode: true }]
+    // 充值入口合并为一个（支付宝/微信/USDT 在 /recharge 内切换）+ 充值记录
+    ...((appStore.cachedPublicSettings?.recharge_enabled || appStore.cachedPublicSettings?.alimpay_enabled || appStore.cachedPublicSettings?.usdt_enabled)
+      ? [
+          { path: '/recharge', label: t('nav.recharge'), icon: CreditCardIcon, hideInSimpleMode: true },
+          { path: '/recharge-orders', label: t('nav.rechargeOrders'), icon: OrderListIcon, hideInSimpleMode: true },
+        ]
       : []),
     { path: '/affiliate', label: t('nav.affiliate'), icon: UsersIcon, hideInSimpleMode: true, featureFlag: flagAffiliate },
     { path: '/profile', label: t('nav.profile'), icon: UserIcon },
@@ -801,14 +799,11 @@ const resellerNavItems = computed(() => {
     ...(appStore.cachedPublicSettings?.payment_enabled ? [
       { path: '/orders', label: t('nav.myOrders'), icon: OrderListIcon },
     ] : []),
-    ...(appStore.cachedPublicSettings?.recharge_enabled
-      ? [{ path: '/recharge', label: t('nav.recharge'), icon: CreditCardIcon }]
-      : []),
-    ...(appStore.cachedPublicSettings?.alimpay_enabled
-      ? [{ path: '/alimpay-recharge', label: t('nav.alimpayRecharge'), icon: CreditCardIcon }]
-      : []),
-    ...(appStore.cachedPublicSettings?.usdt_enabled
-      ? [{ path: '/usdt-recharge', label: t('nav.usdtRecharge'), icon: CreditCardIcon }]
+    ...((appStore.cachedPublicSettings?.recharge_enabled || appStore.cachedPublicSettings?.alimpay_enabled || appStore.cachedPublicSettings?.usdt_enabled)
+      ? [
+          { path: '/recharge', label: t('nav.recharge'), icon: CreditCardIcon },
+          { path: '/recharge-orders', label: t('nav.rechargeOrders'), icon: OrderListIcon },
+        ]
       : []),
     { path: '/merchant/settings', label: t('nav.resellerSettings'), icon: CogIcon },
   ]
@@ -831,14 +826,12 @@ const personalNavItems = computed((): NavItem[] => {
       ? [{ path: '/orders', label: t('nav.myOrders'), icon: OrderListIcon, hideInSimpleMode: true }]
       : []),
     { path: '/redeem', label: t('nav.redeem'), icon: TicketIcon, hideInSimpleMode: true },
-    ...(appStore.cachedPublicSettings?.recharge_enabled
-      ? [{ path: '/recharge', label: t('nav.recharge'), icon: CreditCardIcon, hideInSimpleMode: true }]
-      : []),
-    ...(appStore.cachedPublicSettings?.alimpay_enabled
-      ? [{ path: '/alimpay-recharge', label: t('nav.alimpayRecharge'), icon: CreditCardIcon, hideInSimpleMode: true }]
-      : []),
-    ...(appStore.cachedPublicSettings?.usdt_enabled
-      ? [{ path: '/usdt-recharge', label: t('nav.usdtRecharge'), icon: CreditCardIcon, hideInSimpleMode: true }]
+    // 充值入口合并为一个（支付宝/微信/USDT 在 /recharge 内切换）+ 充值记录
+    ...((appStore.cachedPublicSettings?.recharge_enabled || appStore.cachedPublicSettings?.alimpay_enabled || appStore.cachedPublicSettings?.usdt_enabled)
+      ? [
+          { path: '/recharge', label: t('nav.recharge'), icon: CreditCardIcon, hideInSimpleMode: true },
+          { path: '/recharge-orders', label: t('nav.rechargeOrders'), icon: OrderListIcon, hideInSimpleMode: true },
+        ]
       : []),
     { path: '/profile', label: t('nav.profile'), icon: UserIcon },
   ]
@@ -878,13 +871,8 @@ const adminNavItems = computed((): NavItem[] => {
     { path: '/admin/usage', label: t('nav.usage'), icon: ChartIcon },
     { path: '/admin/merchants', label: t('nav.adminMerchants'), icon: UsersIcon },
     { path: '/admin/merchant-withdrawals', label: t('nav.adminMerchantWithdrawals'), icon: CreditCardIcon },
-    { path: '/admin/recharge-orders', label: t('nav.adminRechargeOrders'), icon: WalletIcon },
-    ...(appStore.cachedPublicSettings?.alimpay_enabled
-      ? [{ path: '/admin/alimpay-orders', label: t('nav.adminAliMPayOrders'), icon: WalletIcon }]
-      : []),
-    ...(appStore.cachedPublicSettings?.usdt_enabled
-      ? [{ path: '/admin/usdt-orders', label: t('nav.adminUsdtOrders'), icon: WalletIcon }]
-      : []),
+    // 充值/支付宝免签/USDT 三套订单合并为一个「充值订单」入口（混排一张表）
+    { path: '/admin/topup-orders', label: t('nav.adminTopupOrders'), icon: WalletIcon },
     {
       path: '/admin/affiliates',
       label: t('nav.affiliateManagement'),

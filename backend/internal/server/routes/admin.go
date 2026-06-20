@@ -119,6 +119,9 @@ func RegisterAdminRoutes(
 		// USDT(TRC20) 订单管理
 		registerAdminUsdtRoutes(admin, h)
 
+		// 跨通道合并充值订单
+		registerAdminTopupRoutes(admin, h)
+
 		// 风控中心
 		registerContentModerationRoutes(admin, h)
 
@@ -155,6 +158,13 @@ func registerAdminUsdtRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 		usdt.POST("/orders/:orderNo/refund", h.Usdt.AdminRefundOrder)
 		usdt.GET("/config", h.Usdt.AdminGetConfig)
 		usdt.PUT("/config", h.Usdt.AdminUpdateConfig)
+	}
+}
+
+func registerAdminTopupRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
+	topup := admin.Group("/topup")
+	{
+		topup.GET("/orders", h.MergedOrder.AdminListOrders)
 	}
 }
 

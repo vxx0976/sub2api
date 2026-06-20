@@ -254,28 +254,19 @@ const routes: RouteRecordRaw[] = [
       descriptionKey: 'recharge.description'
     }
   },
+  // 旧的独立充值入口（支付宝个人免签 / USDT）已合并到 /recharge 统一充值页，保留重定向以兼容老链接
+  { path: '/alimpay-recharge', redirect: '/recharge' },
+  { path: '/usdt-recharge', redirect: '/recharge' },
   {
-    path: '/alimpay-recharge',
-    name: 'AliMPayRecharge',
-    component: () => import('@/views/user/AliMPayRechargeView.vue'),
+    path: '/recharge-orders',
+    name: 'TopupOrders',
+    component: () => import('@/views/user/TopupOrdersView.vue'),
     meta: {
       requiresAuth: true,
       requiresAdmin: false,
-      title: 'AliMPay Recharge',
-      titleKey: 'alimpay.title',
-      descriptionKey: 'alimpay.description'
-    }
-  },
-  {
-    path: '/usdt-recharge',
-    name: 'UsdtRecharge',
-    component: () => import('@/views/user/UsdtRechargeView.vue'),
-    meta: {
-      requiresAuth: true,
-      requiresAdmin: false,
-      title: 'USDT Recharge',
-      titleKey: 'usdt.title',
-      descriptionKey: 'usdt.description'
+      title: 'Recharge Orders',
+      titleKey: 'topupOrders.title',
+      descriptionKey: 'topupOrders.description'
     }
   },
   {

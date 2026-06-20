@@ -147,6 +147,7 @@ func registerRoutes(
 	routes.RegisterRechargeRoutes(v1, h, jwtAuth, settingService)
 	routes.RegisterAliMPayRoutes(v1, h, jwtAuth, settingService)
 	routes.RegisterUsdtRoutes(v1, h, jwtAuth, settingService)
+	routes.RegisterTopupRoutes(v1, h, jwtAuth, settingService)
 	routes.RegisterResellerRoutes(v1, h, resellerAuth)
 	routes.RegisterResellerServiceTokenAPIRoutes(v1, h, resellerServiceTokenAuth, redisClient)
 	routes.RegisterGatewayRoutes(r, h, apiKeyAuth, apiKeyService, subscriptionService, opsService, settingService, cfg)

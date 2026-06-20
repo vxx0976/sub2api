@@ -197,41 +197,22 @@ export const customRoutes: RouteRecordRaw[] = [
     }
   },
 
+  // 充值/支付宝免签/USDT 三套订单已合并到统一的「充值订单」页（按时间混排一张表）
   {
-    path: '/admin/recharge-orders',
-    name: 'AdminRechargeOrders',
-    component: () => import('@/views/admin/RechargeOrdersView.vue'),
+    path: '/admin/topup-orders',
+    name: 'AdminTopupOrders',
+    component: () => import('@/views/admin/orders/AdminTopupOrdersView.vue'),
     meta: {
       requiresAuth: true,
       requiresAdmin: true,
-      title: 'Recharge Orders',
-      titleKey: 'admin.rechargeOrders.title'
+      title: 'Topup Orders',
+      titleKey: 'topupOrders.adminTitle'
     }
   },
-
-  {
-    path: '/admin/alimpay-orders',
-    name: 'AdminAliMPayOrders',
-    component: () => import('@/views/admin/AliMPayOrdersView.vue'),
-    meta: {
-      requiresAuth: true,
-      requiresAdmin: true,
-      title: 'AliMPay Orders',
-      titleKey: 'admin.alimpayOrders.title'
-    }
-  },
-
-  {
-    path: '/admin/usdt-orders',
-    name: 'AdminUsdtOrders',
-    component: () => import('@/views/admin/UsdtOrdersView.vue'),
-    meta: {
-      requiresAuth: true,
-      requiresAdmin: true,
-      title: 'USDT Orders',
-      titleKey: 'admin.usdtOrders.title'
-    }
-  },
+  // 旧的独立订单路由重定向到合并页，兼容老链接/书签
+  { path: '/admin/recharge-orders', redirect: '/admin/topup-orders' },
+  { path: '/admin/alimpay-orders', redirect: '/admin/topup-orders' },
+  { path: '/admin/usdt-orders', redirect: '/admin/topup-orders' },
 
   // ==================== Public Key Query ====================
   {

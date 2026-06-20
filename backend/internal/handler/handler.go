@@ -80,6 +80,7 @@ type Handlers struct {
 	Recharge         *RechargeHandler
 	Order            *OrderHandler
 	Usdt             *UsdtHandler
+	MergedOrder      *MergedOrderHandler
 	Payment          *PaymentHandler
 	PaymentWebhook   *PaymentWebhookHandler
 	AvailableChannel *AvailableChannelHandler
