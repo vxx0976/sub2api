@@ -6511,6 +6511,7 @@ export default {
         chainAddress: 'Receiving address',
         chainApiBaseUrl: 'API base URL (blank = default)',
         bep20PaidNote: 'Free: scans via a public BSC node eth_getLogs, no API key needed (default publicnode; override with any public RPC).',
+        trc20KeyNote: 'Optional: blank = anonymous TronGrid, plenty for single-address low-frequency polling; register a free key at trongrid.io only if you hit rate limits.',
         enabled: 'Enable USDT',
         enabledHint: 'Shows the USDT recharge entry to users and starts the chain monitor',
         receivingAddress: 'TRC20 Receiving Address',

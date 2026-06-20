@@ -6478,6 +6478,7 @@ export default {
         chainAddress: '收款地址',
         chainApiBaseUrl: 'API 网关（留空用默认）',
         bep20PaidNote: '免费方案：直接走公共 BSC 节点的 eth_getLogs 扫链，无需 API Key（默认 publicnode，可改其他公共 RPC）。',
+        trc20KeyNote: '可选：留空走 TronGrid 匿名访问，单地址低频轮询完全够用；如量大被限流，再去 trongrid.io 免费注册一个 Key 提额度。',
         enabled: '启用 USDT',
         enabledHint: '开启后前端显示 USDT 充值入口，后台 Monitor 开始扫描链上到账',
         receivingAddress: 'TRC20 收款地址',
