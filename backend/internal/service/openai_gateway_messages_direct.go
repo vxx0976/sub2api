@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -23,6 +24,8 @@ import (
 //
 //   - DeepSeek: https://api.deepseek.com  →  https://api.deepseek.com/anthropic/v1/messages
 //   - Moonshot: https://api.kimi.com/coding/v1  →  https://api.kimi.com/coding/v1/messages
+//   - GLM 官方: https://open.bigmodel.cn  →  https://open.bigmodel.cn/api/anthropic/v1/messages
+//   - GLM 中转: https://relay.orbitai.cc  →  https://relay.orbitai.cc/v1/messages
 func buildAnthropicDirectMessagesURL(account *Account) string {
 	switch account.Platform {
 	case PlatformDeepSeek:
@@ -33,6 +36,19 @@ func buildAnthropicDirectMessagesURL(account *Account) string {
 	case PlatformMoonshot:
 		baseURL := account.GetMoonshotBaseURL()
 		return strings.TrimRight(baseURL, "/") + "/messages"
+	case PlatformGLM:
+		// GLM 原生 Anthropic 端点的根因上游而异：
+		//   - 智谱官方 open.bigmodel.cn / api.z.ai：端点在 /api/anthropic 下
+		//     （官方 ANTHROPIC_BASE_URL=https://open.bigmodel.cn/api/anthropic）。
+		//   - NewAPI 类中转（如 relay.orbitai.cc）：直接在根暴露 /v1/messages。
+		baseURL := strings.TrimRight(account.GetGLMBaseURL(), "/")
+		if u, err := url.Parse(baseURL); err == nil &&
+			(u.Host == "open.bigmodel.cn" || u.Host == "api.z.ai") &&
+			!strings.Contains(u.Path, "/api/anthropic") {
+			return u.Scheme + "://" + u.Host + "/api/anthropic/v1/messages"
+		}
+		baseURL = strings.TrimSuffix(baseURL, "/v1")
+		return baseURL + "/v1/messages"
 	default:
 		return ""
 	}

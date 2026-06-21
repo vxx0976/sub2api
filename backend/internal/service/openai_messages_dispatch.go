@@ -61,6 +61,8 @@ func (g *Group) defaultMessagesDispatchModels() (opus, sonnet, haiku string) {
 		return "deepseek-v4-pro", "deepseek-v4-pro", "deepseek-v4-flash"
 	case PlatformMoonshot:
 		return "kimi-k2.6", "kimi-k2.6", "kimi-k2.6"
+	case PlatformGLM:
+		return "glm-4.6", "glm-4.6", "glm-4.5-air"
 	default:
 		return defaultOpenAIMessagesDispatchOpusMappedModel,
 			defaultOpenAIMessagesDispatchSonnetMappedModel,
@@ -110,7 +112,7 @@ func sanitizeGroupMessagesDispatchFields(g *Group) {
 		return
 	}
 	switch g.Platform {
-	case PlatformOpenAI, PlatformDeepSeek, PlatformMoonshot:
+	case PlatformOpenAI, PlatformDeepSeek, PlatformMoonshot, PlatformGLM:
 		// 这些平台支持 Messages API 调度，保留配置
 		return
 	default:

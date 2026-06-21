@@ -1268,9 +1268,9 @@
           </div>
         </div>
 
-        <!-- OpenAI Messages 调度配置（openai/deepseek/moonshot 平台） -->
+        <!-- OpenAI Messages 调度配置（openai/deepseek/moonshot/glm 平台） -->
         <div
-          v-if="createForm.platform === 'openai' || createForm.platform === 'deepseek' || createForm.platform === 'moonshot'"
+          v-if="groupSupportsMessagesDispatch(createForm.platform)"
           class="border-t border-gray-200 dark:border-dark-400 pt-4 mt-4"
         >
           <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
@@ -2735,9 +2735,9 @@
           </div>
         </div>
 
-        <!-- OpenAI Messages 调度配置（openai/deepseek/moonshot 平台） -->
+        <!-- OpenAI Messages 调度配置（openai/deepseek/moonshot/glm 平台） -->
         <div
-          v-if="editForm.platform === 'openai' || editForm.platform === 'deepseek' || editForm.platform === 'moonshot'"
+          v-if="groupSupportsMessagesDispatch(editForm.platform)"
           class="border-t border-gray-200 dark:border-dark-400 pt-4 mt-4"
         >
           <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
@@ -3473,6 +3473,7 @@ import { useKeyedDebouncedSearch } from '@/composables/useKeyedDebouncedSearch'
 import { getPersistedPageSize } from '@/composables/usePersistedPageSize'
 import {
   createDefaultMessagesDispatchFormState,
+  groupSupportsMessagesDispatch,
   messagesDispatchConfigToFormState,
   messagesDispatchFormStateToConfig,
   resetMessagesDispatchFormState,
@@ -4561,7 +4562,7 @@ const handleCreateGroup = async () => {
         createForm.supported_model_scopes,
       ),
       messages_dispatch_model_config:
-        createForm.platform === 'openai' || createForm.platform === 'deepseek' || createForm.platform === 'moonshot'
+        groupSupportsMessagesDispatch(createForm.platform)
           ? messagesDispatchFormStateToConfig({
               allow_messages_dispatch: createForm.allow_messages_dispatch,
               opus_mapped_model: createForm.opus_mapped_model,
@@ -4707,7 +4708,7 @@ const handleUpdateGroup = async () => {
         editForm.supported_model_scopes,
       ),
       messages_dispatch_model_config:
-        editForm.platform === 'openai' || editForm.platform === 'deepseek' || editForm.platform === 'moonshot'
+        groupSupportsMessagesDispatch(editForm.platform)
           ? messagesDispatchFormStateToConfig({
               allow_messages_dispatch: editForm.allow_messages_dispatch,
               opus_mapped_model: editForm.opus_mapped_model,
@@ -4865,7 +4866,7 @@ watch(
     if (!['anthropic', 'antigravity'].includes(newVal)) {
       editForm.fallback_group_id_on_invalid_request = null
     }
-    if (!['openai', 'deepseek', 'moonshot'].includes(newVal)) {
+    if (!groupSupportsMessagesDispatch(newVal)) {
       editForm.allow_messages_dispatch = false
       editForm.default_mapped_model = ''
     }

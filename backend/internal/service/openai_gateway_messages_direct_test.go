@@ -43,3 +43,32 @@ func TestNormalizeAnthropicDirectInputUsage(t *testing.T) {
 		require.Equal(t, 100, u.InputTokens)
 	})
 }
+
+// buildAnthropicDirectMessagesURL 的逐平台 URL 约定契约。
+// GLM 端点根因上游而异：智谱官方/z.ai 在 /api/anthropic 下，NewAPI 中转在根。
+func TestBuildAnthropicDirectMessagesURL(t *testing.T) {
+	apikey := func(platform, baseURL string) *Account {
+		return &Account{Platform: platform, Type: AccountTypeAPIKey, Credentials: map[string]any{"base_url": baseURL}}
+	}
+	cases := []struct {
+		name    string
+		account *Account
+		want    string
+	}{
+		{"DeepSeek 默认", &Account{Platform: PlatformDeepSeek, Type: AccountTypeAPIKey}, "https://api.deepseek.com/anthropic/v1/messages"},
+		{"Moonshot 默认", &Account{Platform: PlatformMoonshot, Type: AccountTypeAPIKey}, "https://api.kimi.com/coding/v1/messages"},
+		{"GLM 官方默认 base 补 /api/anthropic", &Account{Platform: PlatformGLM, Type: AccountTypeAPIKey}, "https://open.bigmodel.cn/api/anthropic/v1/messages"},
+		{"GLM 官方 paas 根也归一到 /api/anthropic", apikey(PlatformGLM, "https://open.bigmodel.cn/api/paas/v4"), "https://open.bigmodel.cn/api/anthropic/v1/messages"},
+		{"GLM 官方已含 /api/anthropic 不重复", apikey(PlatformGLM, "https://open.bigmodel.cn/api/anthropic"), "https://open.bigmodel.cn/api/anthropic/v1/messages"},
+		{"GLM z.ai 补 /api/anthropic", apikey(PlatformGLM, "https://api.z.ai"), "https://api.z.ai/api/anthropic/v1/messages"},
+		{"GLM NewAPI 中转根直挂 /v1/messages", apikey(PlatformGLM, "https://relay.orbitai.cc"), "https://relay.orbitai.cc/v1/messages"},
+		{"GLM 中转 base 带 /v1 归一", apikey(PlatformGLM, "https://relay.orbitai.cc/v1"), "https://relay.orbitai.cc/v1/messages"},
+		{"GLM 中转 base 带末尾斜杠", apikey(PlatformGLM, "https://relay.orbitai.cc/"), "https://relay.orbitai.cc/v1/messages"},
+		{"未支持平台返回空", &Account{Platform: PlatformOpenAI, Type: AccountTypeAPIKey}, ""},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			require.Equal(t, tc.want, buildAnthropicDirectMessagesURL(tc.account))
+		})
+	}
+}
