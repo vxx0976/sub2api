@@ -571,7 +571,6 @@ export interface SystemSettings {
   // Gateway forwarding behavior
   enable_fingerprint_unification: boolean;
   enable_metadata_passthrough: boolean;
-  enable_cch_signing: boolean;
   enable_claude_oauth_system_prompt_injection: boolean;
   claude_oauth_system_prompt: string;
   claude_oauth_system_prompt_blocks: string;
@@ -825,7 +824,6 @@ export interface UpdateSettingsRequest {
   epay_key?: string;
   enable_fingerprint_unification?: boolean;
   enable_metadata_passthrough?: boolean;
-  enable_cch_signing?: boolean;
   enable_claude_oauth_system_prompt_injection?: boolean;
   claude_oauth_system_prompt?: string;
   claude_oauth_system_prompt_blocks?: string;

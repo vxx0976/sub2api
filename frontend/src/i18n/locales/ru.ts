@@ -6352,8 +6352,6 @@ export default {
         fingerprintUnificationHint: 'Унифицировать заголовки X-Stainless-* для пользователей, использующих один OAuth-аккаунт. При выключении исходные заголовки клиента передаются как есть.',
         metadataPassthrough: 'Передача Metadata',
         metadataPassthroughHint: 'Передавать исходный metadata.user_id клиента без перезаписи. Может повысить процент попаданий в кэш на вышестоящем сервере.',
-        cchSigning: 'Подпись CCH',
-        cchSigningHint: 'Подписывать billing header пересылаемых запросов хэшем CCH. При выключении исходный placeholder сохраняется.',
         claudeOAuthSystemPromptInjection: 'Внедрение System-блоков Claude OAuth',
         claudeOAuthSystemPromptInjectionHint: 'Внедрять system blocks в стиле Claude Code для запросов Claude OAuth от клиентов, отличных от Claude Code. Включено по умолчанию.',
         claudeOAuthSystemPrompt: 'Расширенный промпт Claude OAuth',
