@@ -593,6 +593,9 @@ func ModelPriceCurrency(model string) string {
 	if _, ok := matchDeepSeekCNY(ml); ok {
 		return CurrencyCNY
 	}
+	if _, ok := matchQwenCNY(ml); ok {
+		return CurrencyCNY
+	}
 	return CurrencyUSD
 }
 
@@ -690,6 +693,60 @@ func (s *PricingService) deepSeekPricingOverride(modelLower string) *LiteLLMMode
 	return p
 }
 
+// matchQwenCNY reports whether modelLower resolves to an official-RMB Qwen
+// (通义千问/DashScope) price. Pure membership logic shared by qwenPricingOverride
+// and ModelPriceCurrency. 精确匹配优先，其次按 coder/flash/turbo/long/max 模式回退，
+// 最后所有 qwen*/qwq*/qvq* 兜底按 qwen-plus 计费（避免新模型 $0）。
+func matchQwenCNY(modelLower string) (cnyModelPricing, bool) {
+	m := lastSegment(modelLower) // Strip provider prefix: "qwen/qwen3-max" -> "qwen3-max"
+	if !strings.HasPrefix(m, "qwen") && !strings.HasPrefix(m, "qwq") && !strings.HasPrefix(m, "qvq") {
+		return cnyModelPricing{}, false
+	}
+	if cny, found := qwenPricingTable[m]; found {
+		return cny, true
+	}
+	switch {
+	case strings.Contains(m, "coder"):
+		if strings.Contains(m, "flash") {
+			return qwenPricingTable["qwen3-coder-flash"], true
+		}
+		return qwenPricingTable["qwen3-coder-plus"], true
+	case strings.Contains(m, "flash"):
+		return qwenPricingTable["qwen-flash"], true
+	case strings.Contains(m, "turbo"):
+		return qwenPricingTable["qwen-turbo"], true
+	case strings.Contains(m, "long"):
+		return qwenPricingTable["qwen-long"], true
+	case strings.Contains(m, "max"):
+		if strings.Contains(m, "qwen3") || strings.Contains(m, "qwen-3") {
+			return qwenPricingTable["qwen3-max"], true
+		}
+		return qwenPricingTable["qwen-max"], true
+	}
+	return qwenPricingTable["qwen-plus"], true
+}
+
+func (s *PricingService) qwenPricingOverride(modelLower string) *LiteLLMModelPricing {
+	cny, found := matchQwenCNY(modelLower)
+	if !found {
+		return nil
+	}
+
+	rate := s.cnyToUSDRate()
+	const perToken = 1.0 / 1_000_000.0
+	p := &LiteLLMModelPricing{
+		InputCostPerToken:  cny.inputCNY / rate * perToken,
+		OutputCostPerToken: cny.outputCNY / rate * perToken,
+		LiteLLMProvider:    "dashscope",
+		Mode:               "chat",
+	}
+	if cny.hasCache {
+		p.CacheReadInputTokenCost = cny.cacheReadCNY / rate * perToken
+		p.SupportsPromptCaching = true
+	}
+	return p
+}
+
 // GetModelPricing 获取模型价格（带模糊匹配）
 func (s *PricingService) GetModelPricing(modelName string) *LiteLLMModelPricing {
 	s.mu.RLock()
@@ -710,6 +767,11 @@ func (s *PricingService) GetModelPricing(modelName string) *LiteLLMModelPricing 
 
 	// DeepSeek V4：同上，人民币官方计价，运行时汇率折算。
 	if pricing := s.deepSeekPricingOverride(modelLower); pricing != nil {
+		return pricing
+	}
+
+	// Qwen（通义千问/DashScope）：同上，阿里云百炼官方人民币计价，运行时汇率折算。
+	if pricing := s.qwenPricingOverride(modelLower); pricing != nil {
 		return pricing
 	}
 
@@ -1043,6 +1105,23 @@ func (s *PricingService) matchOpenAIModel(model string) *LiteLLMModelPricing {
 var deepSeekPricingTable = map[string]cnyModelPricing{
 	"deepseek-v4-flash": {inputCNY: 1.0, cacheReadCNY: 0.02, outputCNY: 2.0, hasCache: true},
 	"deepseek-v4-pro":   {inputCNY: 3.0, cacheReadCNY: 0.025, outputCNY: 6.0, hasCache: true},
+}
+
+// qwenPricingTable 阿里云百炼(DashScope)通义千问官方价（人民币/每百万 token，
+// 国内区、基础档 0-32K、标准价，非 Batch/限时）。缓存命中按官方隐式缓存=输入价 20%。
+// 来源 help.aliyun.com/zh/model-studio/model-pricing 及各模型价格页，2026-06 核对。
+//   - qwen-plus / qwen-turbo / qwen3-max / qwen3-coder-plus：官方明确价
+//   - qwen-max：当前分档价（旧版 ¥20/¥60 已降）；qwen-flash 输出、qwen-long、
+//     qwen3-coder-flash 为合理估值，如与控制台不符可在此微调（站长可改）。
+var qwenPricingTable = map[string]cnyModelPricing{
+	"qwen3-max":         {inputCNY: 6.0, cacheReadCNY: 1.2, outputCNY: 24.0, hasCache: true},
+	"qwen-max":          {inputCNY: 2.4, cacheReadCNY: 0.48, outputCNY: 9.6, hasCache: true},
+	"qwen-plus":         {inputCNY: 0.8, cacheReadCNY: 0.16, outputCNY: 2.0, hasCache: true},
+	"qwen-flash":        {inputCNY: 0.15, cacheReadCNY: 0.03, outputCNY: 1.5, hasCache: true},
+	"qwen-turbo":        {inputCNY: 0.3, cacheReadCNY: 0.06, outputCNY: 0.6, hasCache: true},
+	"qwen-long":         {inputCNY: 0.5, cacheReadCNY: 0.1, outputCNY: 2.0, hasCache: true},
+	"qwen3-coder-plus":  {inputCNY: 4.0, cacheReadCNY: 0.8, outputCNY: 16.0, hasCache: true},
+	"qwen3-coder-flash": {inputCNY: 1.5, cacheReadCNY: 0.3, outputCNY: 6.0, hasCache: true},
 }
 
 // matchByPlatformFallback 为 DeepSeek / Moonshot (Kimi) / GLM 等独立平台模型提供

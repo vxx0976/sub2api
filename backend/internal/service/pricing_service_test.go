@@ -145,6 +145,67 @@ func TestGetModelPricing_DeepSeekV4RateConfigurable(t *testing.T) {
 	require.InDelta(t, 1.0/defaultCNYToUSDRate/1e6, got2.InputCostPerToken, 1e-15)
 }
 
+func TestGetModelPricing_QwenAllModels(t *testing.T) {
+	const rate = 1.0
+	svc := newCNYPricingService(rate)
+
+	tests := []struct {
+		model     string
+		inputCNY  float64
+		outputCNY float64
+		cacheCNY  float64
+	}{
+		{"qwen3-max", 6.0, 24.0, 1.2},
+		{"qwen-max", 2.4, 9.6, 0.48},
+		{"qwen-plus", 0.8, 2.0, 0.16},
+		{"qwen-flash", 0.15, 1.5, 0.03},
+		{"qwen-turbo", 0.3, 0.6, 0.06},
+		{"qwen-long", 0.5, 2.0, 0.1},
+		{"qwen3-coder-plus", 4.0, 16.0, 0.8},
+		{"qwen3-coder-flash", 1.5, 6.0, 0.3},
+	}
+	for _, tt := range tests {
+		got := svc.GetModelPricing(tt.model)
+		require.NotNilf(t, got, "expected pricing for %q", tt.model)
+		require.InDeltaf(t, tt.inputCNY/rate/1e6, got.InputCostPerToken, 1e-15, "%s input", tt.model)
+		require.InDeltaf(t, tt.outputCNY/rate/1e6, got.OutputCostPerToken, 1e-15, "%s output", tt.model)
+		require.InDeltaf(t, tt.cacheCNY/rate/1e6, got.CacheReadInputTokenCost, 1e-15, "%s cache", tt.model)
+		require.True(t, got.SupportsPromptCaching, "%s should support caching", tt.model)
+		require.Equal(t, "dashscope", got.LiteLLMProvider)
+		require.Equal(t, CurrencyCNY, ModelPriceCurrency(tt.model), "%s currency", tt.model)
+	}
+}
+
+func TestGetModelPricing_QwenNameVariantsAndFallback(t *testing.T) {
+	const rate = 1.0
+	svc := newCNYPricingService(rate)
+
+	// 精确/前缀变体 + 按模式回退（dated 版本、provider 前缀、未知 qwen 兜底 qwen-plus）。
+	cases := []struct {
+		model    string
+		inputCNY float64 // 期望命中的档位输入价
+	}{
+		{"qwen3-max-2026-01-23", 6.0},            // → qwen3-max
+		{"qwen-max-latest", 2.4},                 // → qwen-max（非 qwen3）
+		{"dashscope/qwen3-coder-plus", 4.0},      // provider 前缀剥离 → coder-plus
+		{"qwen3-coder-480b-a35b-instruct", 4.0},  // 含 coder → coder-plus
+		{"qwen3-coder-flash-2025-07-22", 1.5},    // 含 coder+flash → coder-flash
+		{"qwen3-235b-a22b", 0.8},                 // 未知 → 兜底 qwen-plus
+		{"qwq-32b", 0.8},                         // qwq 前缀 → 兜底 qwen-plus
+	}
+	for _, c := range cases {
+		got := svc.GetModelPricing(c.model)
+		require.NotNilf(t, got, "expected pricing for %q", c.model)
+		require.InDeltaf(t, c.inputCNY/rate/1e6, got.InputCostPerToken, 1e-15, "%s input", c.model)
+		require.Equal(t, "dashscope", got.LiteLLMProvider)
+		require.Equal(t, CurrencyCNY, ModelPriceCurrency(c.model), "%s currency", c.model)
+	}
+
+	// 汇率可配置 + 缺失回退兜底汇率。
+	require.InDelta(t, 0.8/7.0/1e6, newCNYPricingService(7.0).GetModelPricing("qwen-plus").InputCostPerToken, 1e-15)
+	require.InDelta(t, 0.8/defaultCNYToUSDRate/1e6, newCNYPricingService(0).GetModelPricing("qwen-plus").InputCostPerToken, 1e-15)
+}
+
 func TestParsePricingData_ParsesPriorityAndServiceTierFields(t *testing.T) {
 	svc := &PricingService{}
 	body := []byte(`{
