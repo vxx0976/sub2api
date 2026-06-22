@@ -2,18 +2,25 @@ package service
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
 // writableSettingRepo 是支持 Set 的最小测试替身（包内已有的 fakeSettingRepo 的 Set 会 panic）。
-type writableSettingRepo struct{ store map[string]string }
+type writableSettingRepo struct {
+	store    map[string]string
+	forceErr error // 非 nil 时 GetValue 返回此错误（模拟 DB 瞬时故障）
+}
 
 func (w *writableSettingRepo) Get(_ context.Context, _ string) (*Setting, error) {
 	return nil, ErrSettingNotFound
 }
 func (w *writableSettingRepo) GetValue(_ context.Context, key string) (string, error) {
+	if w.forceErr != nil {
+		return "", w.forceErr
+	}
 	if v, ok := w.store[key]; ok {
 		return v, nil
 	}
@@ -89,6 +96,45 @@ func TestModelPricingOverride_CurrencyConversion(t *testing.T) {
 
 	require.InDelta(t, 700.0/7.0/1e6, svc.GetModelPricing("x-cny").InputCostPerToken, 1e-12) // CNY ÷ 7
 	require.InDelta(t, 100.0/1e6, svc.GetModelPricing("x-usd").InputCostPerToken, 1e-12)      // USD 不除
+}
+
+func TestModelPricingOverride_ProviderPrefix(t *testing.T) {
+	// 上游模型带 provider 前缀（z-ai/glm-5.1），用户用短名/无前缀覆盖也应命中（lastSegment 对齐内置 ¥ 表）。
+	repo := &writableSettingRepo{store: map[string]string{
+		SettingKeyModelPricingOverrides: `[
+			{"model":"glm","currency":"CNY","input":3,"output":6,"enabled":true},
+			{"model":"deepseek-v4","currency":"CNY","input":1,"output":2,"enabled":true}
+		]`,
+	}}
+	svc := newCNYPricingService(1.0)
+	svc.SetSettingRepository(repo)
+
+	// 前缀回退 + lastSegment：z-ai/glm-5.1 → 去前缀 glm-5.1 → 前缀命中 "glm"
+	require.InDelta(t, 3.0/1e6, svc.GetModelPricing("z-ai/glm-5.1").InputCostPerToken, 1e-12)
+	// deepseek/deepseek-v4-pro → 去前缀 deepseek-v4-pro → 前缀命中 "deepseek-v4"
+	require.InDelta(t, 1.0/1e6, svc.GetModelPricing("deepseek/deepseek-v4-pro").InputCostPerToken, 1e-12)
+}
+
+func TestModelPricingOverride_TransientErrorKeepsCache(t *testing.T) {
+	repo := &writableSettingRepo{store: map[string]string{
+		SettingKeyModelPricingOverrides: `[{"model":"foo","currency":"CNY","input":50,"output":50,"enabled":true}]`,
+	}}
+	svc := newCNYPricingService(1.0)
+	svc.SetSettingRepository(repo)
+
+	// 先正常加载一次
+	require.InDelta(t, 50.0/1e6, svc.GetModelPricing("foo").InputCostPerToken, 1e-12)
+
+	// 模拟 DB 瞬时故障 + 缓存失效：应保留上一份覆盖，而非回退（少收费）
+	repo.forceErr = errors.New("db timeout")
+	svc.InvalidateOverrideCache()
+	require.InDelta(t, 50.0/1e6, svc.GetModelPricing("foo").InputCostPerToken, 1e-12)
+
+	// 故障恢复 + 失效后能读到新值
+	repo.forceErr = nil
+	repo.store[SettingKeyModelPricingOverrides] = `[{"model":"foo","currency":"CNY","input":1,"output":1,"enabled":true}]`
+	svc.InvalidateOverrideCache()
+	require.InDelta(t, 1.0/1e6, svc.GetModelPricing("foo").InputCostPerToken, 1e-12)
 }
 
 func TestModelPricingOverride_NilRepoSafe(t *testing.T) {

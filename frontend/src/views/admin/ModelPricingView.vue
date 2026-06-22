@@ -127,7 +127,14 @@ function removeRow(i: number) {
 async function handleSave() {
   saving.value = true
   try {
-    const cfg = await adminAPI.modelPricing.updateModelPricing({ entries: rows.value })
+    // 价格框清空时 v-model.number 会产出空字符串，需转数兜底，否则后端 float 解析返回 400。
+    const entries = rows.value.map((r) => ({
+      ...r,
+      input: Number(r.input) || 0,
+      output: Number(r.output) || 0,
+      cache: Number(r.cache) || 0
+    }))
+    const cfg = await adminAPI.modelPricing.updateModelPricing({ entries })
     rows.value = cfg.entries ?? []
     appStore.showSuccess(t('admin.modelPricing.saveSuccess'))
   } catch (err) {

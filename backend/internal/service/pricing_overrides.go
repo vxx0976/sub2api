@@ -8,6 +8,8 @@ import (
 	"strings"
 	"sync/atomic"
 	"time"
+
+	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
 )
 
 // SettingKeyModelPricingOverrides 是 settings 表里存放“通用模型价格覆盖表”的 key。
@@ -60,19 +62,50 @@ func (s *PricingService) loadOverrides() []modelPricingOverride {
 	}
 	s.overrideMu.RUnlock()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-	raw, err := s.settingRepo.GetValue(ctx, SettingKeyModelPricingOverrides)
-	var list []modelPricingOverride
-	if err == nil && strings.TrimSpace(raw) != "" {
-		_ = json.Unmarshal([]byte(raw), &list) // 未配置 / 坏 JSON => 空表，安全回退原链
+	// 缓存过期：singleflight 合并并发读，只有一个 goroutine 真打 DB，其余共享结果（防惊群）。
+	v, _, _ := s.overrideSF.Do("model_pricing_overrides", func() (interface{}, error) {
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
+		raw, err := s.settingRepo.GetValue(ctx, SettingKeyModelPricingOverrides)
+		if err != nil && !errors.Is(err, ErrSettingNotFound) {
+			// 瞬时故障（超时/连接抖动）：保留上一份缓存继续用，短 TTL 后重试，绝不落空表，
+			// 否则覆盖价会静默失效、计费回退到内置低价（方向是少收费）。
+			s.overrideMu.Lock()
+			prev := s.overrideCache
+			s.overrideLoadedAt = now + int64(5*time.Second)
+			s.overrideMu.Unlock()
+			logger.LegacyPrintf("service.pricing", "[Pricing] load model pricing overrides failed, keep previous cache: %v", err)
+			return prev, nil
+		}
+		var list []modelPricingOverride
+		if err == nil && strings.TrimSpace(raw) != "" {
+			_ = json.Unmarshal([]byte(raw), &list) // NotFound/空串/坏 JSON => 空表（用户可见地清空，非故障）
+		}
+		s.overrideMu.Lock()
+		s.overrideCache = list
+		s.overrideMatchList = sortedEnabledOverrides(list)
+		s.overrideLoadedAt = now + int64(60*time.Second)
+		s.overrideMu.Unlock()
+		return list, nil
+	})
+	if list, ok := v.([]modelPricingOverride); ok {
+		return list
 	}
+	return nil
+}
 
-	s.overrideMu.Lock()
-	s.overrideCache = list
-	s.overrideLoadedAt = now + int64(60*time.Second)
-	s.overrideMu.Unlock()
-	return list
+// sortedEnabledOverrides 返回仅 enabled、按 Model 长度降序排序的副本（供 matchOverride 前缀回退，最长前缀优先）。
+func sortedEnabledOverrides(list []modelPricingOverride) []modelPricingOverride {
+	out := make([]modelPricingOverride, 0, len(list))
+	for _, ov := range list {
+		if ov.Enabled && strings.TrimSpace(ov.Model) != "" {
+			out = append(out, ov)
+		}
+	}
+	sort.SliceStable(out, func(i, j int) bool {
+		return len(strings.TrimSpace(out[i].Model)) > len(strings.TrimSpace(out[j].Model))
+	})
+	return out
 }
 
 // InvalidateOverrideCache 置缓存失效，使下次读立即重载（admin 写后调用，即时生效）。
@@ -85,29 +118,43 @@ func (s *PricingService) InvalidateOverrideCache() {
 	s.overrideMu.Unlock()
 }
 
-// matchOverride 精确匹配优先，无则按最长前缀回退（仅 enabled 项）。modelLower 须已小写。
+// matchOverride 精确匹配优先，无则按最长前缀回退。modelLower 须已小写。
+//
+// 同时尝试完整名与去 provider 前缀名（lastSegment），与内置 ¥ 表口径对齐——
+// 上游传入的可能是带前缀的 "z-ai/glm-5.1"、"deepseek/deepseek-v4"，用户用短名/无前缀
+// 覆盖（如 "glm"）也应能命中。overrideMatchList 已是 enabled + 按长度降序。
 func (s *PricingService) matchOverride(modelLower string) (modelPricingOverride, bool) {
-	list := s.loadOverrides()
+	if s == nil || s.settingRepo == nil {
+		return modelPricingOverride{}, false
+	}
+	s.loadOverrides() // 确保缓存新鲜（TTL/singleflight/错误处理均在内部）
+	s.overrideMu.RLock()
+	list := s.overrideMatchList
+	s.overrideMu.RUnlock()
 	if len(list) == 0 {
 		return modelPricingOverride{}, false
 	}
-	// 第一遍：精确匹配
+
+	forms := []string{modelLower}
+	if seg := lastSegment(modelLower); seg != modelLower {
+		forms = append(forms, seg)
+	}
+	// 第一遍：精确匹配（任一形态）
 	for _, ov := range list {
-		if ov.Enabled && strings.ToLower(strings.TrimSpace(ov.Model)) == modelLower {
-			return ov, true
+		om := strings.ToLower(strings.TrimSpace(ov.Model))
+		for _, f := range forms {
+			if om == f {
+				return ov, true
+			}
 		}
 	}
-	// 第二遍：最长前缀回退（按 Model 长度降序，避免短前缀 "glm" 抢先于 "glm-4.6"）
-	cand := make([]modelPricingOverride, 0, len(list))
+	// 第二遍：最长前缀回退（list 已按 Model 长度降序；任一形态）
 	for _, ov := range list {
-		if ov.Enabled && strings.TrimSpace(ov.Model) != "" {
-			cand = append(cand, ov)
-		}
-	}
-	sort.SliceStable(cand, func(i, j int) bool { return len(cand[i].Model) > len(cand[j].Model) })
-	for _, ov := range cand {
-		if strings.HasPrefix(modelLower, strings.ToLower(strings.TrimSpace(ov.Model))) {
-			return ov, true
+		om := strings.ToLower(strings.TrimSpace(ov.Model))
+		for _, f := range forms {
+			if strings.HasPrefix(f, om) {
+				return ov, true
+			}
 		}
 	}
 	return modelPricingOverride{}, false

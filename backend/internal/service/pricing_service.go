@@ -18,6 +18,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/openai"
 	"github.com/Wei-Shaw/sub2api/internal/util/urlvalidator"
+	"golang.org/x/sync/singleflight"
 	"go.uber.org/zap"
 )
 
@@ -148,10 +149,12 @@ type PricingService struct {
 
 	// 用户自定义价格覆盖表（UI 配置，存 settings）。独立锁，绝不复用 s.mu，
 	// 因为 GetModelPricing 全程持 s.mu.RLock 并在其中查覆盖，复用会重入死锁。
-	settingRepo      SettingRepository
-	overrideMu       sync.RWMutex
-	overrideCache    []modelPricingOverride
-	overrideLoadedAt int64 // unix nano；0=未加载/已失效
+	settingRepo       SettingRepository
+	overrideMu        sync.RWMutex
+	overrideCache     []modelPricingOverride // 原始顺序（供 DTO 展示）
+	overrideMatchList []modelPricingOverride // 仅 enabled、按 Model 长度降序（供前缀匹配，免每请求 sort）
+	overrideLoadedAt  int64                  // unix nano；0=未加载/已失效
+	overrideSF        singleflight.Group     // 缓存过期时合并并发 DB 读，防惊群
 
 	// 停止信号
 	stopCh chan struct{}
@@ -762,9 +765,6 @@ func (s *PricingService) qwenPricingOverride(modelLower string) *LiteLLMModelPri
 
 // GetModelPricing 获取模型价格（带模糊匹配）
 func (s *PricingService) GetModelPricing(modelName string) *LiteLLMModelPricing {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
 	if modelName == "" {
 		return nil
 	}
@@ -773,10 +773,15 @@ func (s *PricingService) GetModelPricing(modelName string) *LiteLLMModelPricing 
 	modelLower := strings.ToLower(strings.TrimSpace(modelName))
 
 	// 用户自定义价格覆盖表（UI 配置，优先级最高，先于内置 ¥ 表与 JSON 同步源）。
-	// matchOverride 只用 overrideMu，不碰 s.mu，故在 s.mu.RLock 持有期内调用安全。
+	// 放在 s.mu.RLock 之前：matchOverride 走独立 overrideMu，缓存 miss 时会做 DB 读，
+	// 绝不能在 s.mu.RLock 持有期内进行，否则慢 DB 调用会阻塞 pricing 周期刷新的写锁与
+	// 整条计费热路径（s.mu 是 writer-preferring）。
 	if ov, ok := s.matchOverride(modelLower); ok {
 		return s.overrideToLiteLLM(ov)
 	}
+
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 
 	// Kimi / Moonshot：官方人民币计价，用官方价 + 可配置汇率折算成美元覆盖，
 	// 确保按官方价计费（汇率见 pricing.cny_to_usd_rate 配置）。
