@@ -9,7 +9,7 @@
 
 ## §1 架构速览
 
-> 本图聚焦 sub2api。inkmirage 共用同一批节点(及 etcd/sentinel/HAProxy/CF),另行讨论。
+> 本图聚焦 sub2api。**inkmirage + 监控栈(Prometheus/Grafana/Loki)已于 2026-06-22 整体迁到 spartan(SpartanHost 西雅图,公网 172.83.153.98 / mesh 10.88.0.5,自带本地 PG),不再共用 sub2api 节点;spartan 仅为抓取指标入 mesh,非 PG/etcd/sentinel 成员。** sub2api 集群已 DROP 掉 inkmirage 库。
 > 📊 可视化架构图: [docs/architecture-cn.png](docs/architecture-cn.png)(中文) · [docs/architecture-en.png](docs/architecture-en.png)(英文)。下方 ASCII 图为**权威源**,改架构时以文字为准、图后补。
 
 ```
@@ -40,8 +40,8 @@ HAProxy:     :5433 → 当前 PG 主      :6380 → 当前 Redis 主   (查 patr
 |---|---|---|---|---|---|---|---|---|---|
 | dmit-main | 2C/2G·CN2 | mayi.one源站 | — | — | — | — | ✅ | ✅ | 监控脚本 |
 | dmit-merchant | 2C/2G·CN2 | dsrrr/商户 | — | — | — | — | ✅ | ✅ | — |
-| dmit-admin | 4C/8G·T1 | **api.dsrrr**(→兜底/生产库) | **backup兜底**(3G) | 备 | **主★** | **主★** | ✅ | ✅ | HAProxy |
-| hostdzire | 6C/16G·别家 | mayi备/inkmir/**canary.dsrrr** | **生产主★** + canary(dev) | **主★** | 从 | 从 | ✅ | ✅ | HAProxy、Prometheus、**测试栈(canary+独立test库,/opt/sub2api-test)** |
+| dmit-admin | 4C/8G·T1 | **api.dsrrr**(→兜底/生产库) | **backup兜底**(3G) | — | **主★** | **主★** | ✅ | ✅ | HAProxy |
+| hostdzire | 6C/16G·别家 | mayi备/**canary.dsrrr** | **生产主★** + canary(dev) | — | 从 | 从 | ✅ | ✅ | HAProxy、**测试栈(canary+独立test库,/opt/sub2api-test)**(Prometheus 已迁 spartan) |
 | ~~solid~~ | 8C/16G·异地 | — | — | — | — | — | — | — | **已释放 2026-05-29**(退集群,数据从+第二备份均停) |
 | **bwh2** | 1C/0.5G·搬瓦工 | — | — | — | — | — | ✅ | ✅ | **第5票** + main独立哨兵 + node_exporter |
 
@@ -294,8 +294,8 @@ ssh hostdzire "cd /opt/sub2api && sed -i 's/DATABASE_HOST=10.88.0.4/DATABASE_HOS
 
 ### 数据采集
 - node_exporter (main/merchant/admin/hostdzire/**bwh2** :9100,bwh2 原生绑 10.88.0.6) + redis_exporter (admin/hostdzire :9121) + patroni 自带 metrics (:8008/metrics)
-- → inkmirage Prometheus (hostdzire 容器,`/opt/inkmirage/docker/prometheus/prometheus.yml` 的 ha-* jobs;ha-node 含 bwh2)
-- 改 prometheus 配置后: `docker exec inkmirage-prometheus-1 promtool check config /etc/prometheus/prometheus.yml` 校验,再 `docker restart inkmirage-prometheus-1` (没开 hot reload)
+- → Prometheus (**2026-06-22 起在 spartan**,ssh `spartan` / mesh 10.88.0.5,`/opt/inkmirage/docker/prometheus/prometheus.yml` 的 ha-* jobs;ha-node 含 bwh2。原 hostdzire 的 inkmirage 容器已随 inkmirage 整体迁走;spartan 在 mesh 内抓取,实测 10/10 目标 up,且修复了旧机抓自身 :9100 的 self-loop)
+- 改 prometheus 配置后(**在 spartan**): `docker exec inkmirage-prometheus-1 promtool check config /etc/prometheus/prometheus.yml` 校验,再 `docker restart inkmirage-prometheus-1` (没开 hot reload)
 
 ### 告警 (TG + 邮件,状态变化才发)
 - **主监控**: dmit-main `/opt/ha-monitor/check.sh` (cron 每分钟)。14 项: PG有主/patroni从数/mesh可达(含bwh2)/mayi+dsrrr业务/redis主/磁盘(含bwh2)
