@@ -390,6 +390,24 @@ func (s *OpenAIGatewayService) handleAnthropicDirectBufferedSSE(
 	var usage OpenAIUsage
 	var lastMessageData []byte
 	var responseID, requestID string
+	var stopReason string
+
+	// 累积各 content block 的文本/思考增量，用于在非流式响应里重建 content 数组。
+	type sseContentBlock struct {
+		typ string
+		sb  strings.Builder
+	}
+	contentBlocks := map[int]*sseContentBlock{}
+	var blockOrder []int
+	blockAt := func(idx int) *sseContentBlock {
+		b := contentBlocks[idx]
+		if b == nil {
+			b = &sseContentBlock{}
+			contentBlocks[idx] = b
+			blockOrder = append(blockOrder, idx)
+		}
+		return b
+	}
 
 	scanner := bufio.NewScanner(resp.Body)
 	scanner.Buffer(make([]byte, 0, 64*1024), 16*1024*1024)
@@ -421,15 +439,32 @@ func (s *OpenAIGatewayService) handleAnthropicDirectBufferedSSE(
 			// Store the initial message object as the base for the final response.
 			lastMessageData = []byte(msg.Raw)
 
+		case "content_block_start":
+			idx := int(gjson.Get(data, "index").Int())
+			blockAt(idx).typ = gjson.Get(data, "content_block.type").String()
+
 		case "content_block_delta":
-			// Content is assembled by the client from the streamed message;
-			// for buffered mode we need to build it ourselves. For simplicity
-			// we accumulate text from deltas.
-			// (Full assembly would require tracking content blocks, but most
-			// coding-agent flows only have a single text block.)
+			// 重建 content：累积 text / thinking 增量（按 block index 归位）。
+			idx := int(gjson.Get(data, "index").Int())
+			b := blockAt(idx)
+			switch gjson.Get(data, "delta.type").String() {
+			case "thinking_delta":
+				if b.typ == "" {
+					b.typ = "thinking"
+				}
+				b.sb.WriteString(gjson.Get(data, "delta.thinking").String())
+			case "text_delta", "":
+				if b.typ == "" {
+					b.typ = "text"
+				}
+				b.sb.WriteString(gjson.Get(data, "delta.text").String())
+			}
 
 		case "message_delta":
 			usage.OutputTokens = int(gjson.Get(data, "usage.output_tokens").Int())
+			if sr := gjson.Get(data, "delta.stop_reason").String(); sr != "" {
+				stopReason = sr
+			}
 		}
 	}
 
@@ -454,6 +489,27 @@ func (s *OpenAIGatewayService) handleAnthropicDirectBufferedSSE(
 				OutputTokens:             usage.OutputTokens,
 				CacheCreationInputTokens: usage.CacheCreationInputTokens,
 				CacheReadInputTokens:     usage.CacheReadInputTokens,
+			}
+			// 用累积的增量重建 content 数组（text / thinking 块）。message_start 的
+			// content 为空，必须在此回填，否则非流式客户端拿到空响应。
+			// tool_use 等块本路径不重建（流式路径已正确处理）。
+			if len(blockOrder) > 0 {
+				blocks := make([]map[string]any, 0, len(blockOrder))
+				for _, idx := range blockOrder {
+					b := contentBlocks[idx]
+					switch b.typ {
+					case "thinking":
+						blocks = append(blocks, map[string]any{"type": "thinking", "thinking": b.sb.String()})
+					case "text", "":
+						blocks = append(blocks, map[string]any{"type": "text", "text": b.sb.String()})
+					}
+				}
+				if len(blocks) > 0 {
+					msgResp["content"] = blocks
+				}
+			}
+			if stopReason != "" {
+				msgResp["stop_reason"] = stopReason
 			}
 			finalBody, _ := json.Marshal(msgResp)
 			c.Writer.Header().Set("Content-Type", "application/json")
