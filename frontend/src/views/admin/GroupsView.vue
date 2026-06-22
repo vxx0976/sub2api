@@ -3623,6 +3623,7 @@ const PLATFORM_PILL_COLORS: Record<string, string> = {
   deepseek: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400',
   moonshot: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400',
   glm: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400',
+  qwen: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400',
   seedance: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
 }
 function platformPillClass(p: string): string {
@@ -3637,6 +3638,7 @@ const platformOptions = computed(() => [
   { value: 'deepseek', label: 'DeepSeek' },
   { value: 'moonshot', label: 'Kimi' },
   { value: 'glm', label: 'GLM' },
+  { value: 'qwen', label: 'Qwen' },
   { value: 'seedance', label: 'Seedance' }
 ])
 
@@ -3649,6 +3651,7 @@ const platformFilterOptions = computed(() => [
   { value: 'deepseek', label: 'DeepSeek' },
   { value: 'moonshot', label: 'Kimi' },
   { value: 'glm', label: 'GLM' },
+  { value: 'qwen', label: 'Qwen' },
   { value: 'seedance', label: 'Seedance' }
 ])
 

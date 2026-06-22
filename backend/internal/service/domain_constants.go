@@ -45,6 +45,7 @@ const (
 	PlatformDeepSeek    = domain.PlatformDeepSeek
 	PlatformMoonshot    = domain.PlatformMoonshot
 	PlatformGLM         = domain.PlatformGLM
+	PlatformQwen        = domain.PlatformQwen
 	PlatformSeedance    = domain.PlatformSeedance
 )
 
@@ -59,6 +60,7 @@ var AllowedQuotaPlatforms = []string{
 	PlatformDeepSeek,
 	PlatformMoonshot,
 	PlatformGLM,
+	PlatformQwen,
 	PlatformSeedance,
 }
 

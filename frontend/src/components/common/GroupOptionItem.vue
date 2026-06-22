@@ -105,6 +105,7 @@ const RATE_PILL_COLORS: Record<string, string> = {
   deepseek: 'bg-cyan-50 text-cyan-700 dark:bg-cyan-900/20 dark:text-cyan-400',
   moonshot: 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-400',
   glm: 'bg-rose-50 text-rose-700 dark:bg-rose-900/20 dark:text-rose-400',
+  qwen: 'bg-violet-50 text-violet-700 dark:bg-violet-900/20 dark:text-violet-400',
   seedance: 'bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400',
 }
 const ratePillClass = computed(() => {

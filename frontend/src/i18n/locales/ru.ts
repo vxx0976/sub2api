@@ -2538,6 +2538,7 @@ export default {
         deepseek: 'DeepSeek',
         moonshot: 'Kimi',
         glm: 'GLM',
+        qwen: 'Qwen',
         seedance: 'Seedance'
       },
       saving: 'Сохранение...',
@@ -3764,6 +3765,7 @@ export default {
         deepseek: 'DeepSeek',
         moonshot: 'Kimi',
         glm: 'GLM',
+        qwen: 'Qwen',
         seedance: 'Seedance'
       },
       types: {
@@ -4624,6 +4626,10 @@ export default {
       glm: {
         baseUrlHint: 'Оставьте пустым для официального Zhipu GLM API (open.bigmodel.cn)',
         apiKeyHint: 'Ваш Zhipu GLM API Key'
+      },
+      qwen: {
+        baseUrlHint: 'Оставьте пустым для официального Tongyi Qwen DashScope API (dashscope.aliyuncs.com)',
+        apiKeyHint: 'Ваш Tongyi Qwen DashScope API Key (sk-...)'
       },
       seedance: {
         baseUrlHint: 'Оставьте пустым для Volcano Ark API (ark.cn-beijing.volces.com)',

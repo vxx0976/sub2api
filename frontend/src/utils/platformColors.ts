@@ -5,7 +5,7 @@
  * instead of defining their own color mappings.
  */
 
-export type Platform = 'anthropic' | 'openai' | 'antigravity' | 'gemini' | 'deepseek' | 'moonshot' | 'glm' | 'seedance'
+export type Platform = 'anthropic' | 'openai' | 'antigravity' | 'gemini' | 'deepseek' | 'moonshot' | 'glm' | 'qwen' | 'seedance'
 
 // ── Badge (bg + text + border, for inline badges with border) ───────
 const BADGE: Record<Platform, string> = {
@@ -16,6 +16,7 @@ const BADGE: Record<Platform, string> = {
   deepseek: 'bg-cyan-500/10 text-cyan-600 border-cyan-500/30 dark:text-cyan-400',
   moonshot: 'bg-indigo-500/10 text-indigo-600 border-indigo-500/30 dark:text-indigo-400',
   glm: 'bg-rose-500/10 text-rose-600 border-rose-500/30 dark:text-rose-400',
+  qwen: 'bg-violet-500/10 text-violet-600 border-violet-500/30 dark:text-violet-400',
   seedance: 'bg-amber-500/10 text-amber-600 border-amber-500/30 dark:text-amber-400',
 }
 const BADGE_DEFAULT = 'bg-slate-500/10 text-slate-600 border-slate-500/30 dark:text-slate-400'
@@ -29,6 +30,7 @@ const BADGE_LIGHT: Record<Platform, string> = {
   deepseek: 'bg-cyan-500/10 text-cyan-600 dark:bg-cyan-500/10 dark:text-cyan-300',
   moonshot: 'bg-indigo-500/10 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-300',
   glm: 'bg-rose-500/10 text-rose-600 dark:bg-rose-500/10 dark:text-rose-300',
+  qwen: 'bg-violet-500/10 text-violet-600 dark:bg-violet-500/10 dark:text-violet-300',
   seedance: 'bg-amber-500/10 text-amber-600 dark:bg-amber-500/10 dark:text-amber-300',
 }
 
@@ -41,6 +43,7 @@ const BORDER: Record<Platform, string> = {
   deepseek: 'border-cyan-500/20 dark:border-cyan-500/20',
   moonshot: 'border-indigo-500/20 dark:border-indigo-500/20',
   glm: 'border-rose-500/20 dark:border-rose-500/20',
+  qwen: 'border-violet-500/20 dark:border-violet-500/20',
   seedance: 'border-amber-500/20 dark:border-amber-500/20',
 }
 const BORDER_DEFAULT = 'border-gray-200 dark:border-dark-700'
@@ -54,6 +57,7 @@ const ACCENT_BAR: Record<Platform, string> = {
   deepseek: 'bg-gradient-to-r from-cyan-400 to-cyan-500',
   moonshot: 'bg-gradient-to-r from-indigo-400 to-indigo-500',
   glm: 'bg-gradient-to-r from-rose-400 to-rose-500',
+  qwen: 'bg-gradient-to-r from-violet-400 to-violet-500',
   seedance: 'bg-gradient-to-r from-amber-400 to-amber-500',
 }
 const ACCENT_BAR_DEFAULT = 'bg-gradient-to-r from-primary-400 to-primary-500'
@@ -67,6 +71,7 @@ const TEXT: Record<Platform, string> = {
   deepseek: 'text-cyan-600 dark:text-cyan-400',
   moonshot: 'text-indigo-600 dark:text-indigo-400',
   glm: 'text-rose-600 dark:text-rose-400',
+  qwen: 'text-violet-600 dark:text-violet-400',
   seedance: 'text-amber-600 dark:text-amber-400',
 }
 const TEXT_DEFAULT = 'text-primary-600 dark:text-primary-400'
@@ -80,6 +85,7 @@ const ICON: Record<Platform, string> = {
   deepseek: 'text-cyan-500 dark:text-cyan-400',
   moonshot: 'text-indigo-500 dark:text-indigo-400',
   glm: 'text-rose-500 dark:text-rose-400',
+  qwen: 'text-violet-500 dark:text-violet-400',
   seedance: 'text-amber-500 dark:text-amber-400',
 }
 const ICON_DEFAULT = 'text-primary-500 dark:text-primary-400'
@@ -93,6 +99,7 @@ const BUTTON: Record<Platform, string> = {
   deepseek: 'bg-cyan-500 text-white hover:bg-cyan-600 active:bg-cyan-700 dark:bg-cyan-500/80 dark:hover:bg-cyan-500',
   moonshot: 'bg-indigo-500 text-white hover:bg-indigo-600 active:bg-indigo-700 dark:bg-indigo-500/80 dark:hover:bg-indigo-500',
   glm: 'bg-rose-500 text-white hover:bg-rose-600 active:bg-rose-700 dark:bg-rose-500/80 dark:hover:bg-rose-500',
+  qwen: 'bg-violet-500 text-white hover:bg-violet-600 active:bg-violet-700 dark:bg-violet-500/80 dark:hover:bg-violet-500',
   seedance: 'bg-amber-500 text-white hover:bg-amber-600 active:bg-amber-700 dark:bg-amber-500/80 dark:hover:bg-amber-500',
 }
 const BUTTON_DEFAULT = 'bg-primary-500 text-white hover:bg-primary-600 dark:bg-primary-600 dark:hover:bg-primary-500'
@@ -106,6 +113,7 @@ const DISCOUNT: Record<Platform, string> = {
   deepseek: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300',
   moonshot: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300',
   glm: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300',
+  qwen: 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300',
   seedance: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
 }
 const DISCOUNT_DEFAULT = 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
@@ -119,6 +127,7 @@ const GRADIENT: Record<Platform, string> = {
   deepseek: 'from-cyan-500 to-cyan-600',
   moonshot: 'from-indigo-500 to-indigo-600',
   glm: 'from-rose-500 to-rose-600',
+  qwen: 'from-violet-500 to-violet-600',
   seedance: 'from-amber-500 to-amber-600',
 }
 const GRADIENT_DEFAULT = 'from-primary-500 to-primary-600'
@@ -132,6 +141,7 @@ const GRADIENT_TEXT: Record<Platform, string> = {
   deepseek: 'text-cyan-100',
   moonshot: 'text-indigo-100',
   glm: 'text-rose-100',
+  qwen: 'text-violet-100',
   seedance: 'text-amber-100',
 }
 const GRADIENT_TEXT_DEFAULT = 'text-primary-100'
@@ -144,6 +154,7 @@ const GRADIENT_SUBTEXT: Record<Platform, string> = {
   deepseek: 'text-cyan-200',
   moonshot: 'text-indigo-200',
   glm: 'text-rose-200',
+  qwen: 'text-violet-200',
   seedance: 'text-amber-200',
 }
 const GRADIENT_SUBTEXT_DEFAULT = 'text-primary-200'
@@ -152,7 +163,7 @@ const GRADIENT_SUBTEXT_DEFAULT = 'text-primary-200'
 
 function isPlatform(p: string): p is Platform {
   return p === 'anthropic' || p === 'openai' || p === 'antigravity' || p === 'gemini' ||
-    p === 'deepseek' || p === 'moonshot' || p === 'glm' || p === 'seedance'
+    p === 'deepseek' || p === 'moonshot' || p === 'glm' || p === 'qwen' || p === 'seedance'
 }
 
 export function platformBadgeClass(p: string): string {
@@ -208,6 +219,7 @@ export function platformLabel(p: string): string {
     case 'deepseek': return 'DeepSeek'
     case 'moonshot': return 'Kimi'
     case 'glm': return 'GLM'
+    case 'qwen': return 'Qwen'
     case 'seedance': return 'Seedance'
     default: return p || 'API'
   }

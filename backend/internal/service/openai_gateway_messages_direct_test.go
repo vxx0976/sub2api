@@ -64,6 +64,10 @@ func TestBuildAnthropicDirectMessagesURL(t *testing.T) {
 		{"GLM NewAPI 中转根直挂 /v1/messages", apikey(PlatformGLM, "https://relay.orbitai.cc"), "https://relay.orbitai.cc/v1/messages"},
 		{"GLM 中转 base 带 /v1 归一", apikey(PlatformGLM, "https://relay.orbitai.cc/v1"), "https://relay.orbitai.cc/v1/messages"},
 		{"GLM 中转 base 带末尾斜杠", apikey(PlatformGLM, "https://relay.orbitai.cc/"), "https://relay.orbitai.cc/v1/messages"},
+		{"Qwen 官方默认 base → claude-code-proxy", &Account{Platform: PlatformQwen, Type: AccountTypeAPIKey}, "https://dashscope.aliyuncs.com/api/v2/apps/claude-code-proxy/v1/messages"},
+		{"Qwen 显式 compatible-mode → claude-code-proxy", apikey(PlatformQwen, "https://dashscope.aliyuncs.com/compatible-mode/v1"), "https://dashscope.aliyuncs.com/api/v2/apps/claude-code-proxy/v1/messages"},
+		{"Qwen 中转 host 剥 compatible-mode/v1", apikey(PlatformQwen, "https://relay.example.com/compatible-mode/v1"), "https://relay.example.com/v1/messages"},
+		{"Qwen 中转 host 根直挂", apikey(PlatformQwen, "https://relay.example.com"), "https://relay.example.com/v1/messages"},
 		{"未支持平台返回空", &Account{Platform: PlatformOpenAI, Type: AccountTypeAPIKey}, ""},
 	}
 	for _, tc := range cases {

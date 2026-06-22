@@ -1636,6 +1636,7 @@ func setDefaults() {
 		"api.anthropic.com",
 		"api.kimi.com",
 		"open.bigmodel.cn",
+		"dashscope.aliyuncs.com",
 		"api.minimaxi.com",
 		"generativelanguage.googleapis.com",
 		"cloudcode-pa.googleapis.com",

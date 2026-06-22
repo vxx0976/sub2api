@@ -50,11 +50,12 @@ func (s *OpenAIGatewayService) ForwardAsAnthropic(
 	billingModel := resolveOpenAIForwardModel(account, normalizedModel, defaultMappedModel)
 	upstreamModel := normalizeOpenAIModelForUpstream(account, billingModel)
 
-	// 2b. Platforms with native Anthropic Messages endpoints (DeepSeek, Kimi, GLM):
+	// 2b. Platforms with native Anthropic Messages endpoints (DeepSeek, Kimi, GLM, Qwen):
 	// forward the request directly without converting to OpenAI Responses format.
-	// GLM（智谱 / NewAPI 中转 / api.z.ai）在 {base}/v1/messages 暴露原生 Anthropic 端点，
-	// 同样直转，避免无谓的 Anthropic→Responses 转换打到上游不存在的 /v1/responses。
-	if account.Type == AccountTypeAPIKey && (account.IsDeepSeek() || account.IsMoonshot() || account.IsGLM()) {
+	// GLM（智谱 / NewAPI 中转 / api.z.ai）在 {base}/v1/messages、Qwen（DashScope）在
+	// claude-code-proxy 暴露原生 Anthropic 端点，同样直转，避免无谓的 Anthropic→Responses
+	// 转换打到上游不存在的 /v1/responses。
+	if account.Type == AccountTypeAPIKey && (account.IsDeepSeek() || account.IsMoonshot() || account.IsGLM() || account.IsQwen()) {
 		return s.forwardAnthropicDirect(ctx, c, account, body, originalModel, billingModel, upstreamModel, clientStream, startTime)
 	}
 

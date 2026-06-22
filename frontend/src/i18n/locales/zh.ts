@@ -2528,6 +2528,7 @@ export default {
         deepseek: 'DeepSeek',
         moonshot: 'Kimi',
         glm: 'GLM',
+        qwen: 'Qwen',
         seedance: 'Seedance',
       },
       saving: '保存中...',
@@ -3702,6 +3703,7 @@ export default {
         deepseek: 'DeepSeek',
         moonshot: 'Kimi',
         glm: 'GLM',
+        qwen: 'Qwen',
         seedance: 'Seedance',
       },
       types: {
@@ -4607,6 +4609,11 @@ export default {
       glm: {
         baseUrlHint: '留空使用官方智谱 API（open.bigmodel.cn）',
         apiKeyHint: '您的智谱 GLM API Key'
+      },
+      // Qwen (通义千问 / Alibaba DashScope) specific
+      qwen: {
+        baseUrlHint: '留空使用官方通义千问 DashScope API（dashscope.aliyuncs.com）',
+        apiKeyHint: '您的通义千问 DashScope API Key（sk-...）'
       },
       // Seedance (ByteDance) specific
       seedance: {

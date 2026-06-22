@@ -264,6 +264,7 @@ func isOpenAICompatPlatform(platform string) bool {
 		service.PlatformDeepSeek,
 		service.PlatformMoonshot,
 		service.PlatformGLM,
+		service.PlatformQwen,
 		service.PlatformSeedance:
 		return true
 	}

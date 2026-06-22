@@ -1100,11 +1100,11 @@ func (a *Account) IsOpenAI() bool {
 }
 
 // IsOpenAICompatible returns true if this account uses an OpenAI-compatible API
-// (OpenAI, DeepSeek, Moonshot, GLM, Seedance). Used by the OpenAI gateway scheduler
+// (OpenAI, DeepSeek, Moonshot, GLM, Qwen, Seedance). Used by the OpenAI gateway scheduler
 // to determine whether an account can serve /v1/chat/completions requests.
 func (a *Account) IsOpenAICompatible() bool {
 	switch a.Platform {
-	case PlatformOpenAI, PlatformDeepSeek, PlatformMoonshot, PlatformGLM, PlatformSeedance:
+	case PlatformOpenAI, PlatformDeepSeek, PlatformMoonshot, PlatformGLM, PlatformQwen, PlatformSeedance:
 		return true
 	}
 	return false
@@ -1184,6 +1184,22 @@ func (a *Account) GetGLMBaseURL() string {
 	return "https://open.bigmodel.cn"
 }
 
+func (a *Account) IsQwen() bool {
+	return a.Platform == PlatformQwen
+}
+
+func (a *Account) GetQwenBaseURL() string {
+	if !a.IsQwen() {
+		return ""
+	}
+	if a.Type == AccountTypeAPIKey {
+		if baseURL := a.GetCredential("base_url"); baseURL != "" {
+			return baseURL
+		}
+	}
+	return "https://dashscope.aliyuncs.com/compatible-mode/v1"
+}
+
 func (a *Account) IsSeedance() bool {
 	return a.Platform == PlatformSeedance
 }
@@ -1226,6 +1242,8 @@ func (a *Account) GetOpenAIBaseURL() string {
 		return "https://api.kimi.com/coding/v1"
 	case PlatformGLM:
 		return "https://open.bigmodel.cn"
+	case PlatformQwen:
+		return "https://dashscope.aliyuncs.com/compatible-mode/v1"
 	case PlatformSeedance:
 		return "https://ark.cn-beijing.volces.com"
 	default:

@@ -115,6 +115,7 @@ const platformOptions = computed(() => [
   { value: 'deepseek', label: 'DeepSeek' },
   { value: 'moonshot', label: 'Kimi' },
   { value: 'glm', label: 'GLM' },
+  { value: 'qwen', label: 'Qwen' },
   { value: 'seedance', label: 'Seedance' }
 ])
 

@@ -26,6 +26,8 @@ import (
 //   - Moonshot: https://api.kimi.com/coding/v1  →  https://api.kimi.com/coding/v1/messages
 //   - GLM 官方: https://open.bigmodel.cn  →  https://open.bigmodel.cn/api/anthropic/v1/messages
 //   - GLM 中转: https://relay.orbitai.cc  →  https://relay.orbitai.cc/v1/messages
+//   - Qwen 官方: https://dashscope.aliyuncs.com/compatible-mode/v1
+//       →  https://dashscope.aliyuncs.com/api/v2/apps/claude-code-proxy/v1/messages
 func buildAnthropicDirectMessagesURL(account *Account) string {
 	switch account.Platform {
 	case PlatformDeepSeek:
@@ -47,6 +49,19 @@ func buildAnthropicDirectMessagesURL(account *Account) string {
 			!strings.Contains(u.Path, "/api/anthropic") {
 			return u.Scheme + "://" + u.Host + "/api/anthropic/v1/messages"
 		}
+		baseURL = strings.TrimSuffix(baseURL, "/v1")
+		return baseURL + "/v1/messages"
+	case PlatformQwen:
+		// Qwen(DashScope) 原生 Anthropic 端点与 chat 端点同 host 不同 path：
+		//   chat:      https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions
+		//   anthropic: https://dashscope.aliyuncs.com/api/v2/apps/claude-code-proxy/v1/messages
+		// 默认 base_url 存 compatible-mode/v1，此处按官方 host 派生 claude-code-proxy 路径。
+		baseURL := strings.TrimRight(account.GetQwenBaseURL(), "/")
+		if u, err := url.Parse(baseURL); err == nil && u.Host == "dashscope.aliyuncs.com" {
+			return u.Scheme + "://" + u.Host + "/api/v2/apps/claude-code-proxy/v1/messages"
+		}
+		// 中转/自定义 host：剥 /compatible-mode/v1 或 /v1 尾巴后兜底 {base}/v1/messages。
+		baseURL = strings.TrimSuffix(baseURL, "/compatible-mode/v1")
 		baseURL = strings.TrimSuffix(baseURL, "/v1")
 		return baseURL + "/v1/messages"
 	default:
@@ -104,7 +119,13 @@ func (s *OpenAIGatewayService) forwardAnthropicDirect(
 	if err != nil {
 		return nil, fmt.Errorf("build anthropic direct request: %w", err)
 	}
-	req.Header.Set("x-api-key", token)
+	// Qwen(DashScope) 的 claude-code-proxy 端点用 Authorization: Bearer（实测，非 x-api-key）；
+	// DeepSeek / Moonshot / GLM 用标准 Anthropic x-api-key。
+	if account.Platform == PlatformQwen {
+		req.Header.Set("authorization", "Bearer "+token)
+	} else {
+		req.Header.Set("x-api-key", token)
+	}
 	req.Header.Set("content-type", "application/json")
 	req.Header.Set("anthropic-version", "2023-06-01")
 	req.Header.Set("accept", "application/json")

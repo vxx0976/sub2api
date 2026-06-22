@@ -100,6 +100,7 @@ const zhipuModels = [
 
 // 阿里 通义千问
 const qwenModels = [
+  'qwen3-max', 'qwen-flash', 'qwen3-coder-plus', 'qwen3-coder-flash',
   'qwen-turbo', 'qwen-plus', 'qwen-max', 'qwen-max-longcontext', 'qwen-long',
   'qwen2-72b-instruct', 'qwen2-57b-a14b-instruct', 'qwen2-7b-instruct',
   'qwen2.5-72b-instruct', 'qwen2.5-32b-instruct', 'qwen2.5-14b-instruct',
@@ -325,6 +326,13 @@ const glmPresetMappings = [
   { label: 'GLM-4.7 Flash', from: 'glm-4.7-flash', to: 'glm-4.7-flash', color: 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400' }
 ]
 
+// Qwen (通义千问 / Alibaba DashScope) 预设映射
+const qwenPresetMappings = [
+  { label: 'Qwen3 Coder Plus', from: 'qwen3-coder-plus', to: 'qwen3-coder-plus', color: 'bg-violet-100 text-violet-700 hover:bg-violet-200 dark:bg-violet-900/30 dark:text-violet-400' },
+  { label: 'Qwen Plus', from: 'qwen-plus', to: 'qwen-plus', color: 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-400' },
+  { label: 'Qwen Max', from: 'qwen-max', to: 'qwen-max', color: 'bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400' }
+]
+
 // Seedance (ByteDance) 预设映射
 const seedancePresetMappings = [
   { label: 'Seedance 2.0 Lite', from: 'seedance-2.0-lite', to: 'seedance-2.0-lite', color: 'bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-400' }
@@ -451,6 +459,7 @@ export function getPresetMappingsByPlatform(platform: string) {
   if (platform === 'deepseek') return deepseekPresetMappings
   if (platform === 'moonshot') return moonshotPresetMappings
   if (platform === 'glm') return glmPresetMappings
+  if (platform === 'qwen') return qwenPresetMappings
   if (platform === 'seedance') return seedancePresetMappings
   if (platform === 'antigravity') return antigravityPresetMappings
   if (platform === 'bedrock') return bedrockPresetMappings

@@ -26,6 +26,7 @@ const (
 	PlatformDeepSeek    = "deepseek"
 	PlatformMoonshot    = "moonshot"
 	PlatformGLM         = "glm"
+	PlatformQwen        = "qwen"
 	PlatformSeedance    = "seedance"
 )
 

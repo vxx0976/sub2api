@@ -192,8 +192,8 @@ func (s *AccountTestService) TestAccountConnection(c *gin.Context, accountID int
 		return s.routeAntigravityTest(c, account, modelID, prompt)
 	}
 
-	// OpenAI-compatible platforms: DeepSeek, Moonshot (Kimi), GLM, Seedance
-	if account.IsDeepSeek() || account.IsMoonshot() || account.IsGLM() || account.IsSeedance() {
+	// OpenAI-compatible platforms: DeepSeek, Moonshot (Kimi), GLM, Qwen, Seedance
+	if account.IsDeepSeek() || account.IsMoonshot() || account.IsGLM() || account.IsQwen() || account.IsSeedance() {
 		return s.testOpenAICompatPlatformConnection(c, account, modelID, prompt)
 	}
 
@@ -213,6 +213,8 @@ func (s *AccountTestService) testOpenAICompatPlatformConnection(c *gin.Context, 
 			testModelID = "kimi-k2"
 		case PlatformGLM:
 			testModelID = "GLM-5.1"
+		case PlatformQwen:
+			testModelID = "qwen-plus"
 		case PlatformSeedance:
 			testModelID = "doubao-1-5-pro-32k"
 		default:
@@ -238,6 +240,8 @@ func (s *AccountTestService) testOpenAICompatPlatformConnection(c *gin.Context, 
 		baseURL = account.GetMoonshotBaseURL()
 	case PlatformGLM:
 		baseURL = account.GetGLMBaseURL()
+	case PlatformQwen:
+		baseURL = account.GetQwenBaseURL()
 	case PlatformSeedance:
 		baseURL = account.GetSeedanceBaseURL()
 	}

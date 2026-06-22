@@ -2589,6 +2589,7 @@ export default {
         deepseek: 'DeepSeek',
         moonshot: 'Kimi',
         glm: 'GLM',
+        qwen: 'Qwen',
         seedance: 'Seedance',
       },
       deleteConfirm:
@@ -3577,6 +3578,7 @@ export default {
         deepseek: 'DeepSeek',
         moonshot: 'Kimi',
         glm: 'GLM',
+        qwen: 'Qwen',
         seedance: 'Seedance',
       },
       types: {
@@ -4588,6 +4590,11 @@ export default {
       glm: {
         baseUrlHint: 'Leave default for official Zhipu GLM API (open.bigmodel.cn)',
         apiKeyHint: 'Your Zhipu GLM API Key'
+      },
+      // Qwen (Tongyi Qianwen / Alibaba DashScope) specific
+      qwen: {
+        baseUrlHint: 'Leave default for official Tongyi Qwen DashScope API (dashscope.aliyuncs.com)',
+        apiKeyHint: 'Your Tongyi Qwen DashScope API Key (sk-...)'
       },
       // Seedance (ByteDance) specific
       seedance: {

@@ -2148,7 +2148,7 @@ func (s *OpenAIGatewayService) selectAccountWithLoadAwareness(ctx context.Contex
 }
 
 // openAICompatPlatforms lists platforms that share the OpenAI-compatible gateway.
-var openAICompatPlatforms = []string{PlatformOpenAI, PlatformDeepSeek, PlatformMoonshot, PlatformGLM, PlatformSeedance}
+var openAICompatPlatforms = []string{PlatformOpenAI, PlatformDeepSeek, PlatformMoonshot, PlatformGLM, PlatformQwen, PlatformSeedance}
 
 func (s *OpenAIGatewayService) listSchedulableAccounts(ctx context.Context, groupID *int64) ([]Account, error) {
 	if s.schedulerSnapshot != nil {
@@ -2360,6 +2360,8 @@ func (s *OpenAIGatewayService) resolveTokenProviderForPlatform(platform string) 
 		return NewMoonshotTokenProvider()
 	case PlatformGLM:
 		return NewGLMTokenProvider()
+	case PlatformQwen:
+		return NewQwenTokenProvider()
 	case PlatformSeedance:
 		return NewSeedanceTokenProvider()
 	default:
