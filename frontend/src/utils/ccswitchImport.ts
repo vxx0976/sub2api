@@ -1,6 +1,6 @@
 import type { GroupPlatform } from '@/types'
 
-export const OPENAI_CC_SWITCH_CODEX_MODEL = 'gpt-5.4'
+export const OPENAI_CC_SWITCH_CODEX_MODEL = 'gpt-5.5'
 export const DEEPSEEK_CC_SWITCH_CODEX_MODEL = 'deepseek-v4-flash'
 export const MOONSHOT_CC_SWITCH_CODEX_MODEL = 'kimi-for-coding'
 
