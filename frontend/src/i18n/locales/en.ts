@@ -515,6 +515,7 @@ export default {
     adminAliMPayOrders: 'AliMPay Orders',
     adminUsdtOrders: 'USDT Orders',
     channelManagement: 'Channels',
+    modelPricing: 'Model Pricing',
     channelPricing: 'Channel Pricing',
     channelMonitor: 'Channel Monitor',
     channelStatus: 'Channel Status',
@@ -2979,6 +2980,28 @@ export default {
          syncModelsError: 'Failed to sync models'
        }
      },
+
+    modelPricing: {
+      title: 'Model Pricing',
+      description: 'Global model price overrides (take precedence over built-in and synced prices; effective immediately)',
+      addRow: 'Add Model',
+      save: 'Save',
+      saveSuccess: 'Saved',
+      loadFailed: 'Failed to load',
+      saveFailed: 'Failed to save',
+      empty: 'No overrides yet. Click "Add Model" to start.',
+      hint: 'Prices are per 1M tokens. Exact match first, otherwise longest-prefix fallback (e.g. qwen-plus matches qwen-plus-2025-xx, glm matches glm-*).',
+      columns: {
+        model: 'Model',
+        currency: 'Currency',
+        input: 'Input (per 1M)',
+        output: 'Output (per 1M)',
+        cache: 'Cache read (per 1M)',
+        hasCache: 'Cache',
+        enabled: 'Enabled',
+        actions: 'Actions'
+      }
+    },
 
     riskControl: {
       title: 'Risk Control',

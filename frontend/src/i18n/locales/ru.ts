@@ -505,6 +505,7 @@ export default {
     adminAliMPayOrders: 'Заказы AliMPay',
     adminUsdtOrders: 'USDT заказы',
     channelManagement: 'Каналы',
+    modelPricing: 'Цены моделей',
     channelPricing: 'Тарификация каналов',
     channelMonitor: 'Мониторинг каналов',
     channelStatus: 'Статус каналов',
@@ -3043,6 +3044,28 @@ export default {
       visitWebsite: 'Перейти на сайт',
       lastChecked: 'Последняя проверка'
     },
+    modelPricing: {
+      title: 'Цены моделей',
+      description: 'Глобальные переопределения цен моделей (приоритетнее встроенных и синхронизированных; вступают в силу сразу)',
+      addRow: 'Добавить модель',
+      save: 'Сохранить',
+      saveSuccess: 'Сохранено',
+      loadFailed: 'Не удалось загрузить',
+      saveFailed: 'Не удалось сохранить',
+      empty: 'Пока нет переопределений. Нажмите «Добавить модель».',
+      hint: 'Цены за 1 млн токенов. Сначала точное совпадение, иначе откат по самому длинному префиксу (например, qwen-plus → qwen-plus-2025-xx, glm → glm-*).',
+      columns: {
+        model: 'Модель',
+        currency: 'Валюта',
+        input: 'Вход (за 1 млн)',
+        output: 'Выход (за 1 млн)',
+        cache: 'Чтение кэша (за 1 млн)',
+        hasCache: 'Кэш',
+        enabled: 'Вкл.',
+        actions: 'Действия'
+      }
+    },
+
     riskControl: {
       title: 'Центр контроля рисков',
       description: 'Настройка политики аудита контента и просмотр записей проверок',

@@ -39,6 +39,7 @@ import adminPaymentAPI from './payment'
 import affiliatesAPI from './affiliates'
 import riskControlAPI from './riskControl'
 import adminComplianceAPI from './compliance'
+import modelPricingAPI from './modelPricing'
 
 /**
  * Unified admin API object for convenient access
@@ -79,7 +80,8 @@ export const adminAPI = {
   payment: adminPaymentAPI,
   affiliates: affiliatesAPI,
   riskControl: riskControlAPI,
-  compliance: adminComplianceAPI
+  compliance: adminComplianceAPI,
+  modelPricing: modelPricingAPI
 }
 
 export {
@@ -118,7 +120,8 @@ export {
   adminPaymentAPI,
   affiliatesAPI,
   riskControlAPI,
-  adminComplianceAPI
+  adminComplianceAPI,
+  modelPricingAPI
 }
 
 export default adminAPI
@@ -136,3 +139,4 @@ export type { AdminUsdtOrderItem, AdminUsdtOrderListResponse } from './usdtOrder
 export type { AdminUsdtConfig, AdminUsdtConfigUpdate } from './usdtConfig'
 export type { TLSFingerprintProfile, CreateProfileRequest, UpdateProfileRequest } from './tlsFingerprintProfile'
 export type { ContentModerationConfig, ContentModerationLog, ModerationMode } from './riskControl'
+export type { ModelPricingConfig, ModelPricingEntry } from './modelPricing'

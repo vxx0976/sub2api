@@ -38,6 +38,7 @@ type AdminHandlers struct {
 	Merchant               *admin.MerchantHandler
 	AdminWithdrawal        *admin.AdminWithdrawalHandler
 	ContentModeration      *admin.ContentModerationHandler
+	ModelPricing           *admin.ModelPricingHandler
 	Payment                *admin.PaymentHandler
 	Affiliate              *admin.AffiliateHandler
 	Translation            *admin.TranslationHandler

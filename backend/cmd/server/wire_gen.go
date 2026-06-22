@@ -105,7 +105,7 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	schedulerOutboxRepository := repository.NewSchedulerOutboxRepository(db)
 	schedulerSnapshotService := service.ProvideSchedulerSnapshotService(schedulerCache, schedulerOutboxRepository, accountRepository, groupRepository, configConfig)
 	pricingRemoteClient := repository.ProvidePricingRemoteClient(configConfig)
-	pricingService, err := service.ProvidePricingService(configConfig, pricingRemoteClient)
+	pricingService, err := service.ProvidePricingService(configConfig, pricingRemoteClient, settingRepository)
 	if err != nil {
 		return nil, err
 	}
@@ -263,7 +263,8 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	chatHub := service.NewChatHub()
 	chatHandler := admin.NewChatHandler(chatService, chatHub)
 	complianceHandler := admin.NewComplianceHandler(settingService)
-	adminHandlers := handler.ProvideAdminHandlers(dashboardHandler, adminUserHandler, groupHandler, accountHandler, adminAnnouncementHandler, dataManagementHandler, backupHandler, oAuthHandler, openAIOAuthHandler, geminiOAuthHandler, antigravityOAuthHandler, proxyHandler, adminRedeemHandler, promoHandler, settingHandler, opsHandler, systemHandler, adminSubscriptionHandler, adminUsageHandler, userAttributeHandler, referralHandler, channelHandler, channelMonitorHandler, channelMonitorRequestTemplateHandler, errorPassthroughHandler, tlsFingerprintProfileHandler, adminAPIKeyHandler, scheduledTestHandler, merchantHandler, adminWithdrawalHandler, contentModerationHandler, paymentHandler, affiliateHandler, translationHandler, chatHandler, complianceHandler)
+	modelPricingHandler := admin.NewModelPricingHandler(pricingService)
+	adminHandlers := handler.ProvideAdminHandlers(dashboardHandler, adminUserHandler, groupHandler, accountHandler, adminAnnouncementHandler, dataManagementHandler, backupHandler, oAuthHandler, openAIOAuthHandler, geminiOAuthHandler, antigravityOAuthHandler, proxyHandler, adminRedeemHandler, promoHandler, settingHandler, opsHandler, systemHandler, adminSubscriptionHandler, adminUsageHandler, userAttributeHandler, referralHandler, channelHandler, channelMonitorHandler, channelMonitorRequestTemplateHandler, errorPassthroughHandler, tlsFingerprintProfileHandler, adminAPIKeyHandler, scheduledTestHandler, merchantHandler, adminWithdrawalHandler, contentModerationHandler, paymentHandler, affiliateHandler, translationHandler, chatHandler, complianceHandler, modelPricingHandler)
 	resellerService := service.NewResellerService(userRepository, resellerDomainRepository, groupRepository, resellerSettingRepository, apiKeyRepository, apiKeyService, redeemCodeRepository, announcementRepository, client)
 	resellerDashboardHandler := reseller.NewDashboardHandler(resellerService)
 	domainHandler := reseller.NewDomainHandler(resellerService, settingService)

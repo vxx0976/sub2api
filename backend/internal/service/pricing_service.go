@@ -146,6 +146,13 @@ type PricingService struct {
 	lastUpdated  time.Time
 	localHash    string
 
+	// 用户自定义价格覆盖表（UI 配置，存 settings）。独立锁，绝不复用 s.mu，
+	// 因为 GetModelPricing 全程持 s.mu.RLock 并在其中查覆盖，复用会重入死锁。
+	settingRepo      SettingRepository
+	overrideMu       sync.RWMutex
+	overrideCache    []modelPricingOverride
+	overrideLoadedAt int64 // unix nano；0=未加载/已失效
+
 	// 停止信号
 	stopCh chan struct{}
 	wg     sync.WaitGroup
@@ -587,6 +594,12 @@ func ModelPriceCurrency(model string) string {
 	if ml == "" {
 		return CurrencyUSD
 	}
+	// 用户自定义覆盖优先：命中则按其币种展示，与实际计费口径一致。
+	if ps := currentPricingService.Load(); ps != nil {
+		if ov, ok := ps.matchOverride(ml); ok {
+			return ov.Currency
+		}
+	}
 	if _, ok := matchKimiMoonshotCNY(ml); ok {
 		return CurrencyCNY
 	}
@@ -758,6 +771,12 @@ func (s *PricingService) GetModelPricing(modelName string) *LiteLLMModelPricing 
 
 	// 标准化模型名称（同时兼容 "models/xxx"、VertexAI 资源名等前缀）
 	modelLower := strings.ToLower(strings.TrimSpace(modelName))
+
+	// 用户自定义价格覆盖表（UI 配置，优先级最高，先于内置 ¥ 表与 JSON 同步源）。
+	// matchOverride 只用 overrideMu，不碰 s.mu，故在 s.mu.RLock 持有期内调用安全。
+	if ov, ok := s.matchOverride(modelLower); ok {
+		return s.overrideToLiteLLM(ov)
+	}
 
 	// Kimi / Moonshot：官方人民币计价，用官方价 + 可配置汇率折算成美元覆盖，
 	// 确保按官方价计费（汇率见 pricing.cny_to_usd_rate 配置）。

@@ -1,0 +1,118 @@
+package service
+
+import (
+	"context"
+	"testing"
+
+	"github.com/stretchr/testify/require"
+)
+
+// writableSettingRepo 是支持 Set 的最小测试替身（包内已有的 fakeSettingRepo 的 Set 会 panic）。
+type writableSettingRepo struct{ store map[string]string }
+
+func (w *writableSettingRepo) Get(_ context.Context, _ string) (*Setting, error) {
+	return nil, ErrSettingNotFound
+}
+func (w *writableSettingRepo) GetValue(_ context.Context, key string) (string, error) {
+	if v, ok := w.store[key]; ok {
+		return v, nil
+	}
+	return "", ErrSettingNotFound
+}
+func (w *writableSettingRepo) Set(_ context.Context, key, value string) error {
+	if w.store == nil {
+		w.store = map[string]string{}
+	}
+	w.store[key] = value
+	return nil
+}
+func (w *writableSettingRepo) GetMultiple(_ context.Context, _ []string) (map[string]string, error) {
+	return nil, nil
+}
+func (w *writableSettingRepo) SetMultiple(_ context.Context, _ map[string]string) error { return nil }
+func (w *writableSettingRepo) GetAll(_ context.Context) (map[string]string, error)      { return nil, nil }
+func (w *writableSettingRepo) Delete(_ context.Context, key string) error {
+	delete(w.store, key)
+	return nil
+}
+
+func TestModelPricingOverride_GetModelPricing(t *testing.T) {
+	svc := newCNYPricingService(1.0) // rate = 1.0
+	repo := &writableSettingRepo{store: map[string]string{
+		SettingKeyModelPricingOverrides: `[
+			{"model":"qwen-plus","currency":"CNY","input":999,"output":888,"cache":100,"has_cache":true,"enabled":true},
+			{"model":"glm","currency":"USD","input":5,"output":15,"enabled":true},
+			{"model":"glm-4.6","currency":"CNY","input":1,"output":2,"enabled":true},
+			{"model":"kimi-k2.6","currency":"CNY","input":1,"output":1,"enabled":false}
+		]`,
+	}}
+	svc.SetSettingRepository(repo)
+
+	// 精确匹配 + CNY 折算（rate=1）+ cache
+	p := svc.GetModelPricing("qwen-plus")
+	require.NotNil(t, p)
+	require.InDelta(t, 999.0/1e6, p.InputCostPerToken, 1e-12)
+	require.InDelta(t, 888.0/1e6, p.OutputCostPerToken, 1e-12)
+	require.InDelta(t, 100.0/1e6, p.CacheReadInputTokenCost, 1e-12)
+	require.True(t, p.SupportsPromptCaching)
+	require.Equal(t, "override", p.LiteLLMProvider)
+	require.Equal(t, CurrencyCNY, ModelPriceCurrency("qwen-plus"))
+
+	// 前缀回退：qwen-plus-2025-xx → qwen-plus
+	require.InDelta(t, 999.0/1e6, svc.GetModelPricing("qwen-plus-2025-09-11").InputCostPerToken, 1e-12)
+
+	// 精确优先于前缀：glm-4.6 命中 glm-4.6(CNY 1) 而非 glm(USD 5)
+	require.InDelta(t, 1.0/1e6, svc.GetModelPricing("glm-4.6").InputCostPerToken, 1e-12)
+
+	// 前缀：glm-5.2 → glm(USD 5)，USD 不除汇率
+	require.InDelta(t, 5.0/1e6, svc.GetModelPricing("glm-5.2").InputCostPerToken, 1e-12)
+	require.Equal(t, CurrencyUSD, ModelPriceCurrency("glm-5.2"))
+
+	// enabled=false 不命中：kimi-k2.6 回退内置 ¥ 表(输入 6.5)
+	require.InDelta(t, 6.5/1e6, svc.GetModelPricing("kimi-k2.6").InputCostPerToken, 1e-12)
+
+	// 失效后即时重载
+	repo.store[SettingKeyModelPricingOverrides] = `[{"model":"qwen-plus","currency":"CNY","input":1,"output":1,"enabled":true}]`
+	svc.InvalidateOverrideCache()
+	require.InDelta(t, 1.0/1e6, svc.GetModelPricing("qwen-plus").InputCostPerToken, 1e-12)
+}
+
+func TestModelPricingOverride_CurrencyConversion(t *testing.T) {
+	repo := &writableSettingRepo{store: map[string]string{
+		SettingKeyModelPricingOverrides: `[
+			{"model":"x-cny","currency":"CNY","input":700,"output":700,"enabled":true},
+			{"model":"x-usd","currency":"USD","input":100,"output":100,"enabled":true}
+		]`,
+	}}
+	svc := newCNYPricingService(7.0) // rate = 7
+	svc.SetSettingRepository(repo)
+
+	require.InDelta(t, 700.0/7.0/1e6, svc.GetModelPricing("x-cny").InputCostPerToken, 1e-12) // CNY ÷ 7
+	require.InDelta(t, 100.0/1e6, svc.GetModelPricing("x-usd").InputCostPerToken, 1e-12)      // USD 不除
+}
+
+func TestModelPricingOverride_NilRepoSafe(t *testing.T) {
+	svc := newCNYPricingService(1.0) // 不注入 settingRepo
+	require.NotPanics(t, func() { _ = svc.GetModelPricing("qwen-plus") })
+	_, ok := svc.matchOverride("anything")
+	require.False(t, ok)
+}
+
+func TestModelPricingOverride_UpdateRoundTrip(t *testing.T) {
+	svc := newCNYPricingService(1.0)
+	svc.SetSettingRepository(&writableSettingRepo{store: map[string]string{}})
+
+	out, err := svc.UpdateModelPricingOverrides(context.Background(), &ModelPricingOverridesDTO{Entries: []modelPricingOverride{
+		{Model: "  foo  ", Currency: "CNY", InputPerM: 1, OutputPerM: 2, Enabled: true},
+		{Model: "", Currency: "USD", InputPerM: 9, Enabled: true},     // 空模型名被丢弃
+		{Model: "bar", Currency: "xx", InputPerM: -5, Enabled: false}, // 非法币种→CNY，负价→0
+	}})
+	require.NoError(t, err)
+	require.Len(t, out.Entries, 2)
+	require.Equal(t, "foo", out.Entries[0].Model) // 已 trim
+	require.Equal(t, CurrencyCNY, out.Entries[1].Currency)
+	require.Zero(t, out.Entries[1].InputPerM)
+
+	// 写后即时生效
+	require.InDelta(t, 1.0/1e6, svc.GetModelPricing("foo").InputCostPerToken, 1e-12)
+}

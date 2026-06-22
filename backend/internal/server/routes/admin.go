@@ -125,6 +125,9 @@ func RegisterAdminRoutes(
 		// 风控中心
 		registerContentModerationRoutes(admin, h)
 
+		// 模型定价（通用价格覆盖表）
+		registerAdminModelPricingRoutes(admin, h)
+
 		// 一键翻译
 		registerTranslationRoutes(admin, h)
 
@@ -173,6 +176,14 @@ func registerAdminComplianceRoutes(admin *gin.RouterGroup, h *handler.Handlers) 
 	{
 		compliance.GET("", h.Admin.Compliance.GetStatus)
 		compliance.POST("/accept", h.Admin.Compliance.Accept)
+	}
+}
+
+func registerAdminModelPricingRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
+	g := admin.Group("/model-pricing")
+	{
+		g.GET("", h.Admin.ModelPricing.List)
+		g.PUT("", h.Admin.ModelPricing.Update)
 	}
 }
 

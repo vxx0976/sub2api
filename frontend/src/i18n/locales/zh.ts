@@ -514,6 +514,7 @@ export default {
     adminAliMPayOrders: '支付宝订单',
     adminUsdtOrders: 'USDT 订单',
     channelManagement: '渠道管理',
+    modelPricing: '模型定价',
     channelPricing: '渠道定价',
     channelMonitor: '渠道监控',
     channelStatus: '渠道状态',
@@ -2971,6 +2972,28 @@ export default {
         syncModelsSuccess: '已同步 {count} 个新模型',
         syncModelsAlreadyUpToDate: '模型列表已是最新',
         syncModelsError: '同步模型失败'
+      }
+    },
+
+    modelPricing: {
+      title: '模型定价',
+      description: '通用模型价格覆盖表（优先于内置 ¥ 表与同步价，改完即时生效）',
+      addRow: '添加模型',
+      save: '保存',
+      saveSuccess: '已保存',
+      loadFailed: '加载失败',
+      saveFailed: '保存失败',
+      empty: '暂无覆盖，点「添加模型」开始',
+      hint: '价格单位：每百万 token。精确匹配优先，无则按最长前缀回退（如 qwen-plus 命中 qwen-plus-2025-xx，glm 命中 glm-*）。',
+      columns: {
+        model: '模型名',
+        currency: '币种',
+        input: '输入价(每百万)',
+        output: '输出价(每百万)',
+        cache: '缓存读取价(每百万)',
+        hasCache: '支持缓存',
+        enabled: '启用',
+        actions: '操作'
       }
     },
 
