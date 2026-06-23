@@ -139,4 +139,10 @@ export type { AdminUsdtOrderItem, AdminUsdtOrderListResponse } from './usdtOrder
 export type { AdminUsdtConfig, AdminUsdtConfigUpdate } from './usdtConfig'
 export type { TLSFingerprintProfile, CreateProfileRequest, UpdateProfileRequest } from './tlsFingerprintProfile'
 export type { ContentModerationConfig, ContentModerationLog, ModerationMode } from './riskControl'
-export type { ModelPricingConfig, ModelPricingEntry } from './modelPricing'
+export type {
+  ModelPricingConfig,
+  ModelPricingEntry,
+  BuiltinPricingEntry,
+  PricingChange,
+  PricingRefreshPreview
+} from './modelPricing'
