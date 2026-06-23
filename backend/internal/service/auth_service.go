@@ -279,7 +279,8 @@ func (s *AuthService) RegisterWithVerification(ctx context.Context, email, passw
 		if _, err := s.affiliateService.EnsureUserAffiliate(ctx, user.ID); err != nil {
 			logger.LegacyPrintf("service.auth", "[Auth] Failed to initialize affiliate profile for user %d: %v", user.ID, err)
 		}
-		if code := strings.TrimSpace(affiliateCode); code != "" {
+		// 商户子用户（parent_id 非空）不参与平台级邀请返利，跳过邀请人绑定，避免被刷为下线
+		if code := strings.TrimSpace(affiliateCode); code != "" && user.ParentID == nil {
 			if err := s.affiliateService.BindInviterByCode(ctx, user.ID, code); err != nil {
 				// 邀请返利码绑定失败不影响注册，只记录日志
 				logger.LegacyPrintf("service.auth", "[Auth] Failed to bind affiliate inviter for user %d: %v", user.ID, err)
@@ -926,6 +927,13 @@ func authSourceSignupSettings(defaults *AuthSourceDefaultSettings, signupSource 
 	}
 }
 
+// isResellerSubUser 判断用户是否为商户子用户（parent_id 非空）。
+// 商户子用户隶属于分销商，不参与平台级邀请返利，注册时不应被绑定为他人下线。
+func (s *AuthService) isResellerSubUser(ctx context.Context, userID int64) bool {
+	u, err := s.userRepo.GetByID(ctx, userID)
+	return err == nil && u != nil && u.ParentID != nil
+}
+
 // bindOAuthAffiliate initializes the affiliate profile and binds the inviter
 // for an OAuth-registered user. Failures are logged but never block registration.
 func (s *AuthService) bindOAuthAffiliate(ctx context.Context, userID int64, affiliateCode string) {
@@ -936,6 +944,10 @@ func (s *AuthService) bindOAuthAffiliate(ctx context.Context, userID int64, affi
 		logger.LegacyPrintf("service.auth", "[Auth] Failed to initialize affiliate profile for user %d: %v", userID, err)
 	}
 	if code := strings.TrimSpace(affiliateCode); code != "" {
+		// 商户子用户不参与平台级邀请返利，跳过邀请人绑定
+		if s.isResellerSubUser(ctx, userID) {
+			return
+		}
 		if err := s.affiliateService.BindInviterByCode(ctx, userID, code); err != nil {
 			logger.LegacyPrintf("service.auth", "[Auth] Failed to bind affiliate inviter for user %d: %v", userID, err)
 		}

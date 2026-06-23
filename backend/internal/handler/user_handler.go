@@ -194,12 +194,31 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	response.Success(c, profileResp)
 }
 
+// rejectAffiliateForResellerSubUser 拒绝商户子用户（parent_id 非空）访问邀请返利功能。
+// 商户子用户隶属于分销商，不参与平台级邀请返利；前端已隐藏入口与路由，此处作为后端兜底，
+// 防止直接调用 API 绕过。返回 true 表示已写入响应，调用方应立即 return。
+func (h *UserHandler) rejectAffiliateForResellerSubUser(c *gin.Context, userID int64) bool {
+	user, err := h.userService.GetByID(c.Request.Context(), userID)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return true
+	}
+	if user.ParentID != nil {
+		response.Forbidden(c, "Affiliate program is not available for merchant sub-users")
+		return true
+	}
+	return false
+}
+
 // GetAffiliate returns the current user's affiliate details.
 // GET /api/v1/user/aff
 func (h *UserHandler) GetAffiliate(c *gin.Context) {
 	subject, ok := middleware2.GetAuthSubjectFromContext(c)
 	if !ok {
 		response.Unauthorized(c, "User not authenticated")
+		return
+	}
+	if h.rejectAffiliateForResellerSubUser(c, subject.UserID) {
 		return
 	}
 
@@ -217,6 +236,9 @@ func (h *UserHandler) TransferAffiliateQuota(c *gin.Context) {
 	subject, ok := middleware2.GetAuthSubjectFromContext(c)
 	if !ok {
 		response.Unauthorized(c, "User not authenticated")
+		return
+	}
+	if h.rejectAffiliateForResellerSubUser(c, subject.UserID) {
 		return
 	}
 

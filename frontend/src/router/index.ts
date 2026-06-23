@@ -953,14 +953,15 @@ router.beforeEach(async (to, _from, next) => {
     }
   }
 
-  // On reseller domains or for reseller's sub-users, redirect subscription-related routes.
+  // On reseller domains or for reseller's sub-users, redirect subscription-related routes
+  // and the affiliate page (sub-users don't participate in platform-level rebates).
   // When agent mode is enabled, /purchase is allowed (reseller users can recharge).
   if (appStore.isResellerDomain || authStore.isResellerUser) {
-    const subscriptionPaths = ['/subscriptions']
+    const blockedPaths = ['/subscriptions', '/affiliate']
     if (!appStore.resellerAgentEnabled) {
-      subscriptionPaths.push('/purchase')
+      blockedPaths.push('/purchase')
     }
-    if (subscriptionPaths.includes(to.path)) {
+    if (blockedPaths.includes(to.path)) {
       next('/console-home')
       return
     }

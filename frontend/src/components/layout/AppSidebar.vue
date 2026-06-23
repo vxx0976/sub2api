@@ -772,7 +772,10 @@ const userNavItems = computed((): NavItem[] => {
   const visible = applyFeatureFlags(items)
   let filtered = authStore.isSimpleMode ? visible.filter(item => !item.hideInSimpleMode) : visible
   if (appStore.isResellerDomain || authStore.isResellerUser) {
-    const hiddenPaths = appStore.resellerAgentEnabled ? ['/subscriptions'] : ['/subscriptions', '/purchase']
+    // 商户域名/商户子用户：隐藏订阅相关入口，并隐藏邀请返利（子用户不参与平台级返利）
+    const hiddenPaths = appStore.resellerAgentEnabled
+      ? ['/subscriptions', '/affiliate']
+      : ['/subscriptions', '/purchase', '/affiliate']
     filtered = filtered.filter(item => !hiddenPaths.includes(item.path))
   }
   return filtered

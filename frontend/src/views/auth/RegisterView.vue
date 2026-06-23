@@ -470,7 +470,9 @@ onMounted(async () => {
     const settings = await getPublicSettings()
     registrationEnabled.value = settings.registration_enabled
     emailVerifyEnabled.value = settings.email_verify_enabled
-    promoCodeEnabled.value = settings.promo_code_enabled
+    // 商户域名注册页隐藏优惠码框（可被识别为推荐返利码），避免商户子用户误填平台返利码——
+    // 他们不参与平台级邀请返利。此处统一受控：模板显示、URL 读取、提交逻辑均依赖 promoCodeEnabled。
+    promoCodeEnabled.value = settings.promo_code_enabled && !appStore.isResellerDomain
     invitationCodeEnabled.value = settings.invitation_code_enabled
     turnstileEnabled.value = settings.turnstile_enabled
     turnstileSiteKey.value = settings.turnstile_site_key || ''
