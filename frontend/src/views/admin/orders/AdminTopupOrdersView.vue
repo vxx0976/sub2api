@@ -19,6 +19,7 @@
               <option value="alimpay">{{ t('topupOrders.methodAlipay') }}</option>
               <option value="recharge">{{ t('topupOrders.methodWechat') }}</option>
               <option value="usdt">USDT</option>
+              <option value="manual">{{ t('topupOrders.methodManual') }}</option>
             </select>
           </div>
           <div class="flex items-center gap-2">

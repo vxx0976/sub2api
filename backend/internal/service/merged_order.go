@@ -16,12 +16,16 @@ const (
 	MergedChannelRecharge = "recharge"
 	MergedChannelAliMPay  = "alimpay"
 	MergedChannelUsdt     = "usdt"
+	MergedChannelManual   = "manual" // 管理员手工加/扣款（admin_balance 审计流水），非真实充值订单
 )
+
+// mergedStatusCompleted 手工调整没有 pending/paid/expired/refunded 生命周期，统一记为"已完成"。
+const mergedStatusCompleted = "completed"
 
 // MergedOrder 三个自建充值通道（EPAY 充值 / AliMPay 个人免签 / USDT 多链）订单的归一化视图。
 // 金额统一格式化为字符串（与各通道处理器保持一致的精度），通道特有字段在不适用时为 nil。
 type MergedOrder struct {
-	Channel      string  `json:"channel"` // recharge | alimpay | usdt
+	Channel      string  `json:"channel"` // recharge | alimpay | usdt | manual
 	ID           int64   `json:"id"`      // 各通道表内行 id（非全局唯一）
 	OrderNo      string  `json:"order_no"`
 	TradeNo      string  `json:"trade_no"`
@@ -41,6 +45,7 @@ type MergedOrder struct {
 	UsdtRate      *string `json:"usdt_rate"`       // 仅 usdt
 	UsdtChain     *string `json:"usdt_chain"`      // 仅 usdt（如 trc20）
 	SourceDomain  *string `json:"source_domain"`   // alimpay + usdt
+	Note          *string `json:"note"`            // 仅 manual：管理员调整备注/原因
 
 	// 排序键：不参与 JSON 序列化。
 	createdAt time.Time
@@ -48,7 +53,7 @@ type MergedOrder struct {
 
 // MergedOrderFilter 合并列表的过滤条件。
 type MergedOrderFilter struct {
-	Channel string // "" = 全部；recharge | alimpay | usdt
+	Channel string // "" = 全部；recharge | alimpay | usdt | manual
 	Status  string // "" = 全部；pending | paid | expired | refunded
 	UserID  *int64 // nil = 全部用户（仅 admin）；非 nil = 限定该用户
 }
@@ -129,6 +134,20 @@ func (s *MergedOrderService) ListMerged(ctx context.Context, f MergedOrderFilter
 		total += int64(cnt)
 		for _, o := range orders {
 			all = append(all, mapUsdtOrder(o))
+		}
+	}
+
+	// 手工调整（admin_balance 审计流水）：始终"已完成"，无 pending/paid/expired/refunded 生命周期，
+	// 因此仅在未按状态过滤（f.Status == ""）时并入；按任一具体状态过滤时不出现。
+	if want(MergedChannelManual) && f.Status == "" {
+		codes, cnt, err := s.adminService.ListAdminBalanceAdjustments(ctx, f.UserID, fetchLimit)
+		if err != nil {
+			return nil, 0, err
+		}
+		total += cnt
+		for _, code := range codes {
+			c := code
+			all = append(all, mapManualAdjustment(&c))
 		}
 	}
 
@@ -245,6 +264,42 @@ func mapAliMPayOrder(o *Order) *MergedOrder {
 		PaymentAmount: mergedStrPtr(fmtCNY(pay)),
 		SourceDomain:  mergedStrPtr(o.SourceDomain),
 		createdAt:     o.CreatedAt,
+	}
+}
+
+// mapManualAdjustment 把一条"管理员调整余额"审计流水（admin_balance）归一化为订单视图。
+// 金额取流水 value（加为正、扣减/退款为负），仅填到账列；无"支付金额"概念故 Amount 留空。
+func mapManualAdjustment(code *RedeemCode) *MergedOrder {
+	// 流水时间以 used_at（实际发生时刻）为准，缺失时回退 created_at。
+	when := code.CreatedAt
+	if code.UsedAt != nil {
+		when = *code.UsedAt
+	}
+
+	var userID int64
+	if code.UsedBy != nil {
+		userID = *code.UsedBy
+	}
+
+	var note *string
+	if code.Notes != "" {
+		note = mergedStrPtr(code.Notes)
+	}
+
+	return &MergedOrder{
+		Channel: MergedChannelManual,
+		ID:      code.ID,
+		// 手工调整无真实订单号；code.Code 是随机审计码，对用户无意义，用合成的 ADJ-<id> 更直观。
+		OrderNo:      "ADJ-" + strconv.FormatInt(code.ID, 10),
+		UserID:       userID,
+		Amount:       "", // 手工调整无"支付金额"口径
+		CreditAmount: fmtCNY(code.Value),
+		Status:       mergedStatusCompleted,
+		PayType:      MergedChannelManual,
+		CreatedAt:    fmtTime(when),
+		PaidAt:       fmtTimePtr(&when),
+		Note:         note,
+		createdAt:    when,
 	}
 }
 

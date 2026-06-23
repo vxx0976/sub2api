@@ -10,7 +10,7 @@ import rechargeOrdersAPI from './admin/rechargeOrders'
 import alimpayOrdersAPI from './admin/alimpayOrders'
 import usdtOrdersAPI from './admin/usdtOrders'
 
-export type TopupChannel = 'recharge' | 'alimpay' | 'usdt'
+export type TopupChannel = 'recharge' | 'alimpay' | 'usdt' | 'manual'
 
 export interface MergedTopupOrder {
   channel: TopupChannel
@@ -32,6 +32,7 @@ export interface MergedTopupOrder {
   usdt_rate: string | null
   usdt_chain: string | null
   source_domain: string | null
+  note: string | null // 仅 manual：管理员调整备注/原因
 }
 
 export interface MergedTopupOrderListResponse {
@@ -80,6 +81,9 @@ export async function refundTopupOrder(channel: TopupChannel, orderNo: string, r
       return alimpayOrdersAPI.refundAdminAliMPayOrder(orderNo, reason)
     case 'usdt':
       return usdtOrdersAPI.refundAdminUsdtOrder(orderNo, reason)
+    default:
+      // manual（手工调整）等通道不支持订单退款；UI 不应触达此分支，显式抛错避免静默"成功"。
+      throw new Error(`refund not supported for channel: ${channel}`)
   }
 }
 

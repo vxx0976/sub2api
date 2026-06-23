@@ -67,6 +67,11 @@ type RedeemCodeRepository interface {
 	// ListByUserPaginated returns paginated balance/concurrency history for a specific user.
 	// codeType filter is optional - pass empty string to return all types.
 	ListByUserPaginated(ctx context.Context, userID int64, params pagination.PaginationParams, codeType string) ([]RedeemCode, *pagination.PaginationResult, error)
+	// ListManualBalanceAdjustments returns genuine admin manual balance adjustments (type=admin_balance),
+	// EXCLUDING the audit-shadow rows that UpdateUserBalance/RefundUserBalance auto-write for every
+	// paid/refunded recharge/alimpay/usdt order (matched by their fixed notes prefix). userID nil = all
+	// users. Ordered by used_at desc; returns the top `limit` rows plus the total count of the filtered set.
+	ListManualBalanceAdjustments(ctx context.Context, userID *int64, limit int) ([]RedeemCode, int64, error)
 	// SumPositiveBalanceByUser returns the total recharged amount (sum of positive balance values) for a user.
 	SumPositiveBalanceByUser(ctx context.Context, userID int64) (float64, error)
 	// SumPositiveValueByDayForTypes 按时区分桶汇总指定 type 列表中 value > 0、owner_id IS NULL

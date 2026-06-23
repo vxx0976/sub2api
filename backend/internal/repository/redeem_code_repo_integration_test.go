@@ -527,3 +527,72 @@ func (s *RedeemCodeRepoSuite) TestCreateBatch_Filters_Use_Idempotency_ListByUser
 	s.Require().Len(used, 2, "expected 2 used codes")
 	s.Require().Equal("CODEA", used[0].Code, "expected newest used code first")
 }
+
+// --- ListManualBalanceAdjustments ---
+
+func (s *RedeemCodeRepoSuite) TestListManualBalanceAdjustments_ExcludesShadows() {
+	user := s.createUser(uniqueTestValue(s.T(), "manual") + "@example.com")
+	base := time.Date(2025, 3, 1, 0, 0, 0, 0, time.UTC)
+
+	// 创建一条 type=admin_balance 记录的小工具。
+	mk := func(code, notes string, value float64, usedAt time.Time) {
+		_, err := s.client.RedeemCode.Create().
+			SetCode(code).
+			SetType("admin_balance").
+			SetStatus(service.StatusUsed).
+			SetValue(value).
+			SetNotes(notes).
+			SetValidityDays(30).
+			SetUsedBy(user.ID).
+			SetUsedAt(usedAt).
+			Save(s.ctx)
+		s.Require().NoError(err, "create "+code)
+	}
+
+	// 真实手工调整：加款（带备注）、扣减（空备注）。
+	mk("GENUINE-ADD", "VIP gift", 100, base.Add(5*time.Hour))
+	mk("GENUINE-SUB", "", -20, base.Add(6*time.Hour))
+	// audit shadow：三通道的到账 + 退款影子，均应被排除。
+	mk("SHADOW-ALIPAY", "AliMPay order X1, paid ¥1.00, credited $1.00", 50, base.Add(1*time.Hour))
+	mk("SHADOW-RECHARGE", "Recharge order X2, paid ¥1.00, credited $1.00", 50, base.Add(2*time.Hour))
+	mk("SHADOW-USDT", "USDT order X3, paid 1.000000 USDT, credited $1.00", 30, base.Add(3*time.Hour))
+	mk("SHADOW-REFUND-ALIPAY", "Refund AliMPay order X1 (credited $1.00)", -50, base.Add(4*time.Hour))
+	mk("SHADOW-REFUND-USDT", "Refund USDT order X3 (credited $1.00)", -30, base.Add(4*time.Hour+30*time.Minute))
+	mk("SHADOW-REFUND-RECHARGE", "Refund recharge order X2 (credited $1.00)", -50, base.Add(4*time.Hour+45*time.Minute))
+
+	// 另一类型（普通余额码）也应被 type 过滤掉。
+	_, err := s.client.RedeemCode.Create().
+		SetCode("OTHER-TYPE").
+		SetType(service.RedeemTypeBalance).
+		SetStatus(service.StatusUsed).
+		SetValue(99).
+		SetNotes("").
+		SetValidityDays(30).
+		SetUsedBy(user.ID).
+		SetUsedAt(base.Add(7 * time.Hour)).
+		Save(s.ctx)
+	s.Require().NoError(err)
+
+	// 限定用户：仅返回两条真实手工调整，按 used_at 倒序（扣减更晚）。
+	codes, total, err := s.repo.ListManualBalanceAdjustments(s.ctx, &user.ID, 100)
+	s.Require().NoError(err, "ListManualBalanceAdjustments")
+	s.Require().Equal(int64(2), total, "total must exclude audit shadows and other types")
+	s.Require().Len(codes, 2)
+	s.Require().Equal("GENUINE-SUB", codes[0].Code, "newest (used_at desc) first")
+	s.Require().Equal("GENUINE-ADD", codes[1].Code)
+
+	// limit 生效：只取最新一条。
+	codes, total, err = s.repo.ListManualBalanceAdjustments(s.ctx, &user.ID, 1)
+	s.Require().NoError(err)
+	s.Require().Equal(int64(2), total, "total reflects full filtered set, not the page size")
+	s.Require().Len(codes, 1)
+	s.Require().Equal("GENUINE-SUB", codes[0].Code)
+
+	// 全用户（userID=nil）同样排除影子。
+	allCodes, allTotal, err := s.repo.ListManualBalanceAdjustments(s.ctx, nil, 100)
+	s.Require().NoError(err)
+	s.Require().GreaterOrEqual(allTotal, int64(2))
+	for _, c := range allCodes {
+		s.Require().NotContains(c.Code, "SHADOW", "no audit shadow may leak into all-users view")
+	}
+}

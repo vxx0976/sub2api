@@ -49,6 +49,10 @@ type AdminService interface {
 	// codeType is optional - pass empty string to return all types.
 	// Also returns totalRecharged (sum of all positive balance top-ups).
 	GetUserBalanceHistory(ctx context.Context, userID int64, page, pageSize int, codeType string) ([]RedeemCode, int64, float64, error)
+	// ListAdminBalanceAdjustments returns GENUINE admin manual balance adjustments
+	// (type=admin_balance, add/subtract/set; audit-shadow rows of paid/refunded orders excluded).
+	// userID nil = all users. Returns the top `limit` rows (by used_at desc) plus the filtered total.
+	ListAdminBalanceAdjustments(ctx context.Context, userID *int64, limit int) ([]RedeemCode, int64, error)
 	BindUserAuthIdentity(ctx context.Context, userID int64, input AdminBindAuthIdentityInput) (*AdminBoundAuthIdentity, error)
 
 	// Group management
@@ -1361,6 +1365,14 @@ func (s *adminServiceImpl) GetUserBalanceHistory(ctx context.Context, userID int
 		return nil, 0, 0, err
 	}
 	return codes, total, totalRecharged, nil
+}
+
+// ListAdminBalanceAdjustments returns GENUINE admin manual balance adjustments (type=admin_balance,
+// audit-shadow rows excluded — see RedeemCodeRepository.ListManualBalanceAdjustments). userID non-nil
+// scopes to that user; nil spans all users (admin view). It's a top-N fetch (no offset/1000-clamp), which
+// is what the merged-order list needs before its in-memory cross-channel merge.
+func (s *adminServiceImpl) ListAdminBalanceAdjustments(ctx context.Context, userID *int64, limit int) ([]RedeemCode, int64, error) {
+	return s.redeemCodeRepo.ListManualBalanceAdjustments(ctx, userID, limit)
 }
 
 func (s *adminServiceImpl) getAllUserBalanceHistory(ctx context.Context, userID int64, params pagination.PaginationParams) ([]RedeemCode, int64, float64, error) {

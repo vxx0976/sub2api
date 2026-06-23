@@ -416,6 +416,55 @@ func (r *redeemCodeRepository) ListByUserPaginated(ctx context.Context, userID i
 	return redeemCodeEntitiesToService(codes), paginationResultFromTotal(int64(total), params), nil
 }
 
+// manualBalanceShadowPrefixes 是 adminService.UpdateUserBalance / RefundUserBalance 为每笔充值/退款订单
+// 成功时自动写入的 type='admin_balance' 审计影子记录的 notes 前缀（见 recharge_service.go / order_service.go /
+// usdt_order_service.go 中对应的 fmt.Sprintf）。列"手工调整"时必须排除这些影子，否则每笔真实订单都会再多出
+// 一条重复的"手工"行并把分页 total 翻倍——仅保留管理员后台直接加/扣余额的真实记录。
+var manualBalanceShadowPrefixes = []string{
+	"Recharge order ",        // recharge_service.go 充值到账
+	"AliMPay order ",         // order_service.go 充值到账
+	"USDT order ",            // usdt_order_service.go 充值到账
+	"Refund recharge order ", // recharge_service.go 退款回冲
+	"Refund AliMPay order ",  // order_service.go 退款回冲
+	"Refund USDT order ",     // usdt_order_service.go 退款回冲
+}
+
+// ListManualBalanceAdjustments 见 service.RedeemCodeRepository 接口注释。
+func (r *redeemCodeRepository) ListManualBalanceAdjustments(ctx context.Context, userID *int64, limit int) ([]service.RedeemCode, int64, error) {
+	if limit <= 0 {
+		limit = 20
+	}
+
+	q := r.client.RedeemCode.Query().
+		Where(redeemcode.TypeEQ(service.AdjustmentTypeAdminBalance))
+	if userID != nil {
+		q = q.Where(redeemcode.UsedByEQ(*userID))
+	}
+	// 排除 audit shadow：notes 为 NULL（真实手工调整可能不带备注）始终保留，否则要求不以任一影子前缀开头。
+	for _, prefix := range manualBalanceShadowPrefixes {
+		q = q.Where(redeemcode.Or(
+			redeemcode.NotesIsNil(),
+			redeemcode.Not(redeemcode.NotesHasPrefix(prefix)),
+		))
+	}
+
+	total, err := q.Count(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	codes, err := q.
+		WithGroup().
+		Order(dbent.Desc(redeemcode.FieldUsedAt), dbent.Desc(redeemcode.FieldID)).
+		Limit(limit).
+		All(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return redeemCodeEntitiesToService(codes), int64(total), nil
+}
+
 // ListByOwnerID returns paginated balance redeem codes owned by the given reseller.
 func (r *redeemCodeRepository) ListByOwnerID(ctx context.Context, ownerID int64, params pagination.PaginationParams) ([]service.RedeemCode, *pagination.PaginationResult, error) {
 	q := r.client.RedeemCode.Query().

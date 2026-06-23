@@ -22,7 +22,7 @@ func NewMergedOrderHandler(mergedService *service.MergedOrderService) *MergedOrd
 
 // 合法的 channel / status 取值（空串表示全部）。
 var (
-	mergedValidChannels = map[string]bool{"": true, "recharge": true, "alimpay": true, "usdt": true}
+	mergedValidChannels = map[string]bool{"": true, "recharge": true, "alimpay": true, "usdt": true, "manual": true}
 	mergedValidStatuses = map[string]bool{"": true, "pending": true, "paid": true, "expired": true, "refunded": true}
 )
 
