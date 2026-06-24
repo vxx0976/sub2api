@@ -758,7 +758,7 @@ func (s *AuthService) loginOrRegisterOAuthWithTokenPair(ctx context.Context, ema
 					s.assignSubscriptions(ctx, user.ID, grantPlan.Subscriptions, "auto assigned by signup defaults")
 					// snapshot user × platform quota（fail-open）
 					_ = s.snapshotPlatformQuotaDefaults(ctx, user.ID, &grantPlan)
-					s.bindOAuthAffiliate(ctx, user.ID, affiliateCode)
+					s.bindOAuthAffiliate(ctx, user, affiliateCode)
 				}
 			} else {
 				if err := s.userRepo.Create(ctx, newUser); err != nil {
@@ -779,7 +779,7 @@ func (s *AuthService) loginOrRegisterOAuthWithTokenPair(ctx context.Context, ema
 					s.assignSubscriptions(ctx, user.ID, grantPlan.Subscriptions, "auto assigned by signup defaults")
 					// snapshot user × platform quota（fail-open）
 					_ = s.snapshotPlatformQuotaDefaults(ctx, user.ID, &grantPlan)
-					s.bindOAuthAffiliate(ctx, user.ID, affiliateCode)
+					s.bindOAuthAffiliate(ctx, user, affiliateCode)
 					if invitationRedeemCode != nil {
 						if err := s.redeemRepo.Use(ctx, invitationRedeemCode.ID, user.ID); err != nil {
 							return nil, nil, ErrInvitationCodeInvalid
@@ -927,29 +927,24 @@ func authSourceSignupSettings(defaults *AuthSourceDefaultSettings, signupSource 
 	}
 }
 
-// isResellerSubUser 判断用户是否为商户子用户（parent_id 非空）。
-// 商户子用户隶属于分销商，不参与平台级邀请返利，注册时不应被绑定为他人下线。
-func (s *AuthService) isResellerSubUser(ctx context.Context, userID int64) bool {
-	u, err := s.userRepo.GetByID(ctx, userID)
-	return err == nil && u != nil && u.ParentID != nil
-}
-
 // bindOAuthAffiliate initializes the affiliate profile and binds the inviter
 // for an OAuth-registered user. Failures are logged but never block registration.
-func (s *AuthService) bindOAuthAffiliate(ctx context.Context, userID int64, affiliateCode string) {
-	if s.affiliateService == nil || userID <= 0 {
+// 用已加载的 user（含 parent_id）判定商户子用户，避免在注册事务内再 GetByID——
+// 后者会在单连接环境（如测试用 shared-cache sqlite）与外层事务争用连接而死锁。
+func (s *AuthService) bindOAuthAffiliate(ctx context.Context, user *User, affiliateCode string) {
+	if s.affiliateService == nil || user == nil || user.ID <= 0 {
 		return
 	}
-	if _, err := s.affiliateService.EnsureUserAffiliate(ctx, userID); err != nil {
-		logger.LegacyPrintf("service.auth", "[Auth] Failed to initialize affiliate profile for user %d: %v", userID, err)
+	if _, err := s.affiliateService.EnsureUserAffiliate(ctx, user.ID); err != nil {
+		logger.LegacyPrintf("service.auth", "[Auth] Failed to initialize affiliate profile for user %d: %v", user.ID, err)
 	}
 	if code := strings.TrimSpace(affiliateCode); code != "" {
-		// 商户子用户不参与平台级邀请返利，跳过邀请人绑定
-		if s.isResellerSubUser(ctx, userID) {
+		// 商户子用户（parent_id 非空）隶属分销商，不参与平台级邀请返利，跳过邀请人绑定。
+		if user.ParentID != nil {
 			return
 		}
-		if err := s.affiliateService.BindInviterByCode(ctx, userID, code); err != nil {
-			logger.LegacyPrintf("service.auth", "[Auth] Failed to bind affiliate inviter for user %d: %v", userID, err)
+		if err := s.affiliateService.BindInviterByCode(ctx, user.ID, code); err != nil {
+			logger.LegacyPrintf("service.auth", "[Auth] Failed to bind affiliate inviter for user %d: %v", user.ID, err)
 		}
 	}
 }
