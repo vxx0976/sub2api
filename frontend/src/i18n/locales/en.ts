@@ -3017,7 +3017,6 @@ export default {
       builtinHint: 'The full built-in model price table (Claude/GPT/Gemini/domestic, etc.) used for actual billing. Read-only; click "Override" to create an editable override from it.',
       searchPlaceholder: 'Search model name…',
       builtinEmpty: 'No matching models',
-      showMore: 'Show more ({n} left)',
       categoryAll: 'All',
       categoryOther: 'Other',
       preview: {

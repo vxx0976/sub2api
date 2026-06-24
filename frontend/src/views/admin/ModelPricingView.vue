@@ -120,13 +120,18 @@
                 </tr>
               </thead>
               <tbody v-for="g in visibleGroups" :key="g.key">
-                <tr class="cursor-pointer select-none border-b border-gray-100 bg-gray-50 dark:border-dark-700 dark:bg-dark-800/60" @click="toggleGroup(g.key)">
-                  <td colspan="7" class="px-3 py-1.5 text-xs font-semibold text-gray-600 dark:text-gray-300">
-                    <span class="inline-flex items-center gap-1">
+                <tr class="select-none border-b border-gray-100 bg-gray-50 dark:border-dark-700 dark:bg-dark-800/60">
+                  <td colspan="7" class="p-0">
+                    <button
+                      type="button"
+                      class="flex w-full items-center gap-1 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-dark-700/60"
+                      :aria-expanded="isExpanded(g.key)"
+                      @click="toggleGroup(g.key)"
+                    >
                       <Icon :name="isExpanded(g.key) ? 'chevronDown' : 'chevronRight'" size="xs" />
                       {{ g.label }}
                       <span class="font-normal text-gray-400">({{ g.items.length }})</span>
-                    </span>
+                    </button>
                   </td>
                 </tr>
                 <template v-if="isExpanded(g.key)">

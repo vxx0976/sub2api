@@ -3011,7 +3011,6 @@ export default {
       builtinHint: '系统内置的全量模型价（Claude/GPT/Gemini/国产 等），真实计费用它。只读；点「覆盖」可基于它新建一条可编辑覆盖。',
       searchPlaceholder: '搜索模型名…',
       builtinEmpty: '无匹配模型',
-      showMore: '展开更多（剩 {n}）',
       categoryAll: '全部',
       categoryOther: '其他',
       preview: {
