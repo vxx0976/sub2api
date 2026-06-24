@@ -231,7 +231,7 @@ func (h *ChatHandler) AdminWebSocket(c *gin.Context) {
 	h.chatHub.RegisterAdmin(subject.UserID, conn)
 	defer func() {
 		h.chatHub.UnregisterAdmin(subject.UserID)
-		ws.Close()
+		_ = ws.Close()
 	}()
 
 	conn.startWriter()

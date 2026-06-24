@@ -605,7 +605,7 @@ func TestAggregateChatCompletionsSSEToJSON(t *testing.T) {
 	require.True(t, ok)
 	s := string(assembled)
 	require.Contains(t, s, `"object":"chat.completion"`)
-	require.Contains(t, s, `你好世界`)              // content 增量已拼接
+	require.Contains(t, s, `你好世界`) // content 增量已拼接
 	require.Contains(t, s, `"finish_reason":"stop"`)
 	require.Contains(t, s, `"prompt_tokens":250`)
 	require.Contains(t, s, `"completion_tokens":5`)

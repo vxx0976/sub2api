@@ -275,7 +275,7 @@ func (h *ChatHandler) VisitorWebSocket(c *gin.Context) {
 	h.chatHub.RegisterVisitor(convID, conn)
 	defer func() {
 		h.chatHub.UnregisterVisitor(convID)
-		ws.Close()
+		_ = ws.Close()
 	}()
 
 	conn.startWriter()
@@ -331,13 +331,13 @@ func chatConversationDTO(c *service.ChatConversation) gin.H {
 		return nil
 	}
 	dto := gin.H{
-		"id":                  c.ID,
-		"visitor_name":        c.VisitorName,
-		"status":              c.Status,
-		"admin_unread_count":  c.AdminUnreadCount,
+		"id":                   c.ID,
+		"visitor_name":         c.VisitorName,
+		"status":               c.Status,
+		"admin_unread_count":   c.AdminUnreadCount,
 		"last_message_preview": c.LastMessagePreview,
-		"created_at":          c.CreatedAt,
-		"updated_at":          c.UpdatedAt,
+		"created_at":           c.CreatedAt,
+		"updated_at":           c.UpdatedAt,
 	}
 	if c.UserID != nil {
 		dto["user_id"] = *c.UserID
@@ -368,4 +368,3 @@ func chatMessagesDTO(msgs []service.ChatMessage) []gin.H {
 	}
 	return out
 }
-

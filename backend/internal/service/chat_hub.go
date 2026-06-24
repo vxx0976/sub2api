@@ -11,8 +11,8 @@ type ChatWSConn interface {
 }
 
 type ChatWSMessage struct {
-	Type string      `json:"type"`
-	Data interface{} `json:"data"`
+	Type string `json:"type"`
+	Data any    `json:"data"`
 }
 
 type ChatHub struct {

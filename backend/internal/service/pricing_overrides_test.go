@@ -95,7 +95,7 @@ func TestModelPricingOverride_CurrencyConversion(t *testing.T) {
 	svc.SetSettingRepository(repo)
 
 	require.InDelta(t, 700.0/7.0/1e6, svc.GetModelPricing("x-cny").InputCostPerToken, 1e-12) // CNY ÷ 7
-	require.InDelta(t, 100.0/1e6, svc.GetModelPricing("x-usd").InputCostPerToken, 1e-12)      // USD 不除
+	require.InDelta(t, 100.0/1e6, svc.GetModelPricing("x-usd").InputCostPerToken, 1e-12)     // USD 不除
 }
 
 func TestModelPricingOverride_ProviderPrefix(t *testing.T) {

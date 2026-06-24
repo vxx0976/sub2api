@@ -185,13 +185,13 @@ func TestGetModelPricing_QwenNameVariantsAndFallback(t *testing.T) {
 		model    string
 		inputCNY float64 // 期望命中的档位输入价
 	}{
-		{"qwen3-max-2026-01-23", 6.0},            // → qwen3-max
-		{"qwen-max-latest", 2.4},                 // → qwen-max（非 qwen3）
-		{"dashscope/qwen3-coder-plus", 4.0},      // provider 前缀剥离 → coder-plus
-		{"qwen3-coder-480b-a35b-instruct", 4.0},  // 含 coder → coder-plus
-		{"qwen3-coder-flash-2025-07-22", 1.5},    // 含 coder+flash → coder-flash
-		{"qwen3-235b-a22b", 0.8},                 // 未知 → 兜底 qwen-plus
-		{"qwq-32b", 0.8},                         // qwq 前缀 → 兜底 qwen-plus
+		{"qwen3-max-2026-01-23", 6.0},           // → qwen3-max
+		{"qwen-max-latest", 2.4},                // → qwen-max（非 qwen3）
+		{"dashscope/qwen3-coder-plus", 4.0},     // provider 前缀剥离 → coder-plus
+		{"qwen3-coder-480b-a35b-instruct", 4.0}, // 含 coder → coder-plus
+		{"qwen3-coder-flash-2025-07-22", 1.5},   // 含 coder+flash → coder-flash
+		{"qwen3-235b-a22b", 0.8},                // 未知 → 兜底 qwen-plus
+		{"qwq-32b", 0.8},                        // qwq 前缀 → 兜底 qwen-plus
 	}
 	for _, c := range cases {
 		got := svc.GetModelPricing(c.model)
