@@ -95,6 +95,17 @@
             </div>
           </div>
           <p class="mb-2 text-xs text-gray-400">{{ t('admin.modelPricing.builtinHint') }}</p>
+
+          <!-- 平台分类筛选 -->
+          <div class="mb-2 flex flex-wrap gap-1.5">
+            <button type="button" :class="chipClass('all')" @click="activeCategory = 'all'">
+              {{ t('admin.modelPricing.categoryAll') }} ({{ searchedBuiltin.length }})
+            </button>
+            <button v-for="g in groupedBuiltin" :key="g.key" type="button" :class="chipClass(g.key)" @click="activeCategory = g.key">
+              {{ g.label }} ({{ g.items.length }})
+            </button>
+          </div>
+
           <div class="overflow-x-auto rounded-lg border border-gray-100 bg-white shadow-sm dark:border-dark-700 dark:bg-dark-800">
             <table class="min-w-full text-sm">
               <thead>
@@ -108,33 +119,41 @@
                   <th class="px-3 py-2 font-medium">{{ t('admin.modelPricing.columns.actions') }}</th>
                 </tr>
               </thead>
-              <tbody>
-                <tr v-for="entry in pagedBuiltin" :key="entry.model" class="border-b border-gray-50 dark:border-dark-700/60">
-                  <td class="px-3 py-2 font-mono text-xs">{{ entry.model }}</td>
-                  <td class="px-3 py-2">
-                    <span class="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] text-gray-500 dark:bg-dark-700 dark:text-gray-400">{{ entry.source }}</span>
-                  </td>
-                  <td class="px-3 py-2">{{ entry.currency }}</td>
-                  <td class="px-3 py-2">{{ fmtPrice(entry.input) }}</td>
-                  <td class="px-3 py-2">{{ fmtPrice(entry.output) }}</td>
-                  <td class="px-3 py-2">{{ entry.has_cache ? fmtPrice(entry.cache) : '—' }}</td>
-                  <td class="px-3 py-2">
-                    <span v-if="isOverridden(entry.model)" class="text-xs text-emerald-500">{{ t('admin.modelPricing.overridden') }}</span>
-                    <button v-else type="button" class="text-xs text-primary-600 hover:text-primary-700" @click="overrideBuiltin(entry)">
-                      {{ t('admin.modelPricing.override') }}
-                    </button>
+              <tbody v-for="g in visibleGroups" :key="g.key">
+                <tr class="cursor-pointer select-none border-b border-gray-100 bg-gray-50 dark:border-dark-700 dark:bg-dark-800/60" @click="toggleGroup(g.key)">
+                  <td colspan="7" class="px-3 py-1.5 text-xs font-semibold text-gray-600 dark:text-gray-300">
+                    <span class="inline-flex items-center gap-1">
+                      <Icon :name="isExpanded(g.key) ? 'chevronDown' : 'chevronRight'" size="xs" />
+                      {{ g.label }}
+                      <span class="font-normal text-gray-400">({{ g.items.length }})</span>
+                    </span>
                   </td>
                 </tr>
-                <tr v-if="filteredBuiltin.length === 0">
+                <template v-if="isExpanded(g.key)">
+                  <tr v-for="entry in g.items" :key="entry.model" class="border-b border-gray-50 dark:border-dark-700/60">
+                    <td class="px-3 py-2 font-mono text-xs">{{ entry.model }}</td>
+                    <td class="px-3 py-2">
+                      <span class="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] text-gray-500 dark:bg-dark-700 dark:text-gray-400">{{ entry.source }}</span>
+                    </td>
+                    <td class="px-3 py-2">{{ entry.currency }}</td>
+                    <td class="px-3 py-2">{{ fmtPrice(entry.input) }}</td>
+                    <td class="px-3 py-2">{{ fmtPrice(entry.output) }}</td>
+                    <td class="px-3 py-2">{{ entry.has_cache ? fmtPrice(entry.cache) : '—' }}</td>
+                    <td class="px-3 py-2">
+                      <span v-if="isOverridden(entry.model)" class="text-xs text-emerald-500">{{ t('admin.modelPricing.overridden') }}</span>
+                      <button v-else type="button" class="text-xs text-primary-600 hover:text-primary-700" @click="overrideBuiltin(entry)">
+                        {{ t('admin.modelPricing.override') }}
+                      </button>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+              <tbody v-if="visibleGroups.length === 0">
+                <tr>
                   <td colspan="7" class="px-3 py-10 text-center text-sm text-gray-400">{{ t('admin.modelPricing.builtinEmpty') }}</td>
                 </tr>
               </tbody>
             </table>
-          </div>
-          <div v-if="filteredBuiltin.length > builtinLimit" class="mt-2 text-center">
-            <button type="button" class="btn btn-secondary btn-sm" @click="builtinLimit += 100">
-              {{ t('admin.modelPricing.showMore', { n: filteredBuiltin.length - builtinLimit }) }}
-            </button>
           </div>
         </div>
       </template>
@@ -212,7 +231,9 @@ const saving = ref(false)
 const rows = ref<ModelPricingEntry[]>([])
 const builtin = ref<BuiltinPricingEntry[]>([])
 const builtinSearch = ref('')
-const builtinLimit = ref(100)
+const activeCategory = ref('all')
+// 默认折叠体量大的西方平台与「其他」,初始视图聚焦国产 + Claude(国产是本项目重点)。
+const collapsed = ref<Set<string>>(new Set(['gpt', 'gemini', 'other']))
 
 const refreshing = ref(false)
 const applying = ref(false)
@@ -224,17 +245,83 @@ const currencyOptions: SelectOption[] = [
   { value: 'USD', label: '$ USD' }
 ]
 
-const filteredBuiltin = computed(() => {
+// 平台分类(按品牌归类内置模型,顺序即展示顺序)。
+const CATEGORIES: { key: string; label: string }[] = [
+  { key: 'claude', label: 'Claude' },
+  { key: 'gpt', label: 'GPT · OpenAI' },
+  { key: 'gemini', label: 'Gemini' },
+  { key: 'deepseek', label: 'DeepSeek' },
+  { key: 'qwen', label: 'Qwen 通义' },
+  { key: 'glm', label: 'GLM 智谱' },
+  { key: 'kimi', label: 'Kimi · Moonshot' }
+]
+
+function categoryOf(e: BuiltinPricingEntry): string {
+  const m = e.model.toLowerCase()
+  const s = (e.source || '').toLowerCase()
+  if (m.includes('claude') || s.includes('anthropic')) return 'claude'
+  if (m.includes('gemini') || m.includes('gemma') || s.includes('vertex') || s.includes('google')) return 'gemini'
+  if (m.includes('deepseek') || s.includes('deepseek')) return 'deepseek'
+  if (m.includes('qwen') || m.startsWith('qwq') || m.startsWith('qvq') || s.includes('qwen') || s.includes('dashscope')) return 'qwen'
+  if (m.includes('glm') || s.includes('zhipu') || s.includes('z-ai') || s.includes('bigmodel')) return 'glm'
+  if (m.includes('kimi') || m.includes('moonshot') || s.includes('moonshot')) return 'kimi'
+  if (/^(gpt|o1|o3|o4|chatgpt|codex)/.test(m) || m.includes('gpt') || s.includes('openai')) return 'gpt'
+  return 'other'
+}
+
+function categoryLabel(key: string): string {
+  return CATEGORIES.find((c) => c.key === key)?.label ?? t('admin.modelPricing.categoryOther')
+}
+
+// 文本搜索过滤(模型名 / 来源)。
+const searchedBuiltin = computed(() => {
   const q = builtinSearch.value.trim().toLowerCase()
   if (!q) return builtin.value
   return builtin.value.filter((e) => e.model.toLowerCase().includes(q) || e.source.toLowerCase().includes(q))
 })
 
-const pagedBuiltin = computed(() => filteredBuiltin.value.slice(0, builtinLimit.value))
+// 按平台分组(仅保留非空组,品牌组在前、「其他」垫底)。
+const groupedBuiltin = computed(() => {
+  const map: Record<string, BuiltinPricingEntry[]> = {}
+  for (const e of searchedBuiltin.value) {
+    const k = categoryOf(e)
+    ;(map[k] ||= []).push(e)
+  }
+  const ordered = [...CATEGORIES.map((c) => c.key), 'other']
+  return ordered
+    .filter((k) => (map[k]?.length ?? 0) > 0)
+    .map((k) => ({ key: k, label: categoryLabel(k), items: map[k] }))
+})
 
-// 搜索条件变化时重置展开量,避免搜出少量结果却仍按上次展开量渲染。
+const visibleGroups = computed(() =>
+  activeCategory.value === 'all'
+    ? groupedBuiltin.value
+    : groupedBuiltin.value.filter((g) => g.key === activeCategory.value)
+)
+
+function toggleGroup(key: string) {
+  const next = new Set(collapsed.value)
+  next.has(key) ? next.delete(key) : next.add(key)
+  collapsed.value = next
+}
+
+// 选中具体分类、或正在搜索时一律展开,便于直接看到结果。
+function isExpanded(key: string): boolean {
+  if (activeCategory.value !== 'all') return true
+  if (builtinSearch.value.trim()) return true
+  return !collapsed.value.has(key)
+}
+
+function chipClass(key: string): string {
+  const base = 'rounded-full px-3 py-1 text-xs transition-colors'
+  return activeCategory.value === key
+    ? `${base} bg-primary-600 text-white`
+    : `${base} bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-dark-700 dark:text-gray-300 dark:hover:bg-dark-600`
+}
+
+// 搜索变化时回到「全部」,避免停留在搜索后已为空的分类上。
 watch(builtinSearch, () => {
-  builtinLimit.value = 100
+  activeCategory.value = 'all'
 })
 
 // 与后端 matchOverride 同口径(精确或最长前缀):标记某内置项是否已被启用的覆盖盖住。

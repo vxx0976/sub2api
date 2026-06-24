@@ -3018,6 +3018,8 @@ export default {
       searchPlaceholder: 'Search model name…',
       builtinEmpty: 'No matching models',
       showMore: 'Show more ({n} left)',
+      categoryAll: 'All',
+      categoryOther: 'Other',
       preview: {
         title: 'Fetch preview',
         summary: 'Remote {remote} models, current built-in {current}',

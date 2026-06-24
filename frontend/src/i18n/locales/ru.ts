@@ -3081,6 +3081,8 @@ export default {
       searchPlaceholder: 'Поиск по имени модели…',
       builtinEmpty: 'Нет подходящих моделей',
       showMore: 'Показать ещё (осталось {n})',
+      categoryAll: 'Все',
+      categoryOther: 'Другие',
       preview: {
         title: 'Предпросмотр загрузки',
         summary: 'Удалённо {remote} моделей, текущих встроенных {current}',

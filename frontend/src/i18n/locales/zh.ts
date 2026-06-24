@@ -3012,6 +3012,8 @@ export default {
       searchPlaceholder: '搜索模型名…',
       builtinEmpty: '无匹配模型',
       showMore: '展开更多（剩 {n}）',
+      categoryAll: '全部',
+      categoryOther: '其他',
       preview: {
         title: '拉取预览',
         summary: '远程 {remote} 个模型，当前内置 {current} 个',
