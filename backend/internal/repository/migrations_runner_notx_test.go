@@ -242,6 +242,9 @@ func TestApplyMigrationsFS_TransactionalMigration(t *testing.T) {
 		WithArgs("001_add_col.sql").
 		WillReturnError(sql.ErrNoRows)
 	mock.ExpectBegin()
+	// 运行器在迁移事务内、执行迁移 SQL 前先 SET LOCAL lock_timeout（migrations_runner.go:273）。
+	mock.ExpectExec("SET LOCAL lock_timeout").
+		WillReturnResult(sqlmock.NewResult(0, 0))
 	mock.ExpectExec("ALTER TABLE t ADD COLUMN name TEXT").
 		WillReturnResult(sqlmock.NewResult(0, 0))
 	mock.ExpectExec("INSERT INTO schema_migrations \\(filename, checksum\\) VALUES \\(\\$1, \\$2\\)").

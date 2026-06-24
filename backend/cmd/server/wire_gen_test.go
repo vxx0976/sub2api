@@ -73,6 +73,8 @@ func TestProvideCleanup_WithMinimalDependencies_NoPanic(t *testing.T) {
 		nil, // rechargeService
 		nil, // orderService
 		nil, // alipayMonitor
+		nil, // usdtOrderService
+		nil, // usdtMonitor
 		oauthSvc,
 		openAIOAuthSvc,
 		geminiOAuthSvc,
