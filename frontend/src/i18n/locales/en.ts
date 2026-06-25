@@ -6127,6 +6127,15 @@ export default {
           defaultInterval: 'Default check interval (seconds)',
           defaultIntervalHint: 'Pre-fills the interval when creating a new monitor; each monitor can override it. Range 15 – 3600.',
         },
+        channelBalanceRefresh: {
+          title: 'Auto-refresh Channel Balances',
+          description: 'Periodically refresh the cached balance of every channel that has a balance query URL — the background equivalent of clicking "Refresh all channel balances". When off, balances only refresh manually.',
+          configureLink: 'Configure each channel\'s balance query URL in Channel Management',
+          enabled: 'Enable auto-refresh',
+          enabledHint: 'Disabling stops the background sweep; cached balances are kept and can still be refreshed manually on the channels page.',
+          interval: 'Refresh interval (minutes)',
+          intervalHint: 'How often all channel balances are refreshed. Range 1 – 1440 minutes.',
+        },
         availableChannels: {
           title: 'Available Channels',
           description: 'Show logged-in users an aggregate view of the channels, models and pricing they can access. Disabled by default.',

@@ -382,6 +382,16 @@ const (
 	// pre-filled when creating a new channel monitor from the admin UI. Range: [15, 3600].
 	SettingKeyChannelMonitorDefaultIntervalSeconds = "channel_monitor_default_interval_seconds"
 
+	// SettingKeyChannelBalanceRefreshEnabled is a DB-backed soft switch for the periodic
+	// all-channel balance refresh (the background equivalent of the admin "刷新所有渠道额度"
+	// button). When false the scheduler skips its sweep. Defaults to true.
+	SettingKeyChannelBalanceRefreshEnabled = "channel_balance_refresh_enabled"
+
+	// SettingKeyChannelBalanceRefreshIntervalMinutes controls how often (minutes) the
+	// scheduler refreshes the cached balance of every channel that has a balance_url
+	// configured. Range: [1, 1440]. Defaults to 10.
+	SettingKeyChannelBalanceRefreshIntervalMinutes = "channel_balance_refresh_interval_minutes"
+
 	// SettingKeyAvailableChannelsEnabled is a DB-backed soft switch for the "Available Channels"
 	// user-facing aggregate view. When false: user endpoint returns an empty list and the
 	// sidebar entry is hidden. Defaults to false (opt-in feature).

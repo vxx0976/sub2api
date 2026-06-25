@@ -3419,6 +3419,56 @@
         <div class="card">
           <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
             <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+              {{ t('admin.settings.features.channelBalanceRefresh.title') }}
+            </h2>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              {{ t('admin.settings.features.channelBalanceRefresh.description') }}
+            </p>
+            <p class="mt-1.5 text-xs">
+              <router-link
+                to="/admin/channels"
+                class="inline-flex items-center gap-1 text-primary-600 hover:underline dark:text-primary-400"
+              >
+                {{ t('admin.settings.features.channelBalanceRefresh.configureLink') }}
+                <span aria-hidden="true">→</span>
+              </router-link>
+            </p>
+          </div>
+          <div class="space-y-5 p-6">
+            <div class="flex items-center justify-between">
+              <div>
+                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {{ t('admin.settings.features.channelBalanceRefresh.enabled') }}
+                </label>
+                <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                  {{ t('admin.settings.features.channelBalanceRefresh.enabledHint') }}
+                </p>
+              </div>
+              <Toggle v-model="form.channel_balance_refresh_enabled" />
+            </div>
+
+            <div v-if="form.channel_balance_refresh_enabled">
+              <label class="input-label">
+                {{ t('admin.settings.features.channelBalanceRefresh.interval') }}
+                <span class="text-red-500">*</span>
+              </label>
+              <input
+                v-model.number="form.channel_balance_refresh_interval_minutes"
+                type="number"
+                min="1"
+                max="1440"
+                class="input"
+              />
+              <p class="mt-1 text-xs text-gray-400">
+                {{ t('admin.settings.features.channelBalanceRefresh.intervalHint') }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
               {{ t('admin.settings.features.availableChannels.title') }}
             </h2>
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
@@ -6264,6 +6314,9 @@ const form = reactive<SettingsForm>({
   // Channel Monitor feature switch
   channel_monitor_enabled: true,
   channel_monitor_default_interval_seconds: 60,
+  // Periodic channel balance refresh feature switch
+  channel_balance_refresh_enabled: true,
+  channel_balance_refresh_interval_minutes: 10,
   // Available Channels feature switch
   available_channels_enabled: false,
   // Login agreement (from main)
@@ -7219,6 +7272,10 @@ async function saveSettings() {
       channel_monitor_enabled: form.channel_monitor_enabled,
       channel_monitor_default_interval_seconds:
         Number(form.channel_monitor_default_interval_seconds) || 60,
+      // Periodic channel balance refresh feature switch
+      channel_balance_refresh_enabled: form.channel_balance_refresh_enabled,
+      channel_balance_refresh_interval_minutes:
+        Number(form.channel_balance_refresh_interval_minutes) || 10,
       // Available Channels feature switch
       available_channels_enabled: form.available_channels_enabled,
       // Risk Control (内容审计)

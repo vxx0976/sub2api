@@ -16,6 +16,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
+	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/singleflight"
 )
 
@@ -941,6 +942,13 @@ func (s *ChannelService) RefreshBalance(ctx context.Context, id int64) (*Channel
 	now := time.Now()
 	balance, queryErr := s.fetchBalance(ctx, channel)
 
+	// 若父 context 已取消（批量刷新整体超时 / 进程关闭），fetch 失败只是被打断，
+	// 不写入 last_error，避免用误导性的取消错误覆盖上一次的真实状态。
+	// 注意：渠道自身 30s HTTP 超时不会触发 ctx.Err()，仍会被当作真实失败记录。
+	if queryErr != nil && ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
+
 	var balancePtr *float64
 	var lastError string
 	if queryErr != nil {
@@ -955,6 +963,51 @@ func (s *ChannelService) RefreshBalance(ctx context.Context, id int64) (*Channel
 	}
 
 	return s.repo.GetByID(ctx, id)
+}
+
+// RefreshAllBalances 刷新所有配置了 balance_url 的渠道余额（后台版"刷新所有渠道额度"）。
+// concurrency 限制并发上游查询数（<=0 视为 1）。返回 (成功处理数, 待刷新渠道总数, error)。
+// 单个渠道刷新失败（含上游不可达）只记日志、不中断整体，也不取消其它渠道。
+func (s *ChannelService) RefreshAllBalances(ctx context.Context, concurrency int) (int, int, error) {
+	channels, err := s.repo.ListAll(ctx)
+	if err != nil {
+		return 0, 0, fmt.Errorf("list channels: %w", err)
+	}
+	if concurrency <= 0 {
+		concurrency = 1
+	}
+
+	var targets []int64
+	for i := range channels {
+		if channels[i].BalanceURL != "" {
+			targets = append(targets, channels[i].ID)
+		}
+	}
+	total := len(targets)
+	if total == 0 {
+		return 0, 0, nil
+	}
+
+	var ok atomic.Int64
+	g, gctx := errgroup.WithContext(ctx)
+	g.SetLimit(concurrency)
+	for _, id := range targets {
+		g.Go(func() error {
+			// RefreshBalance 对上游 fetch 失败是软失败（写入 last_error 后返回 nil），
+			// 仅 DB 级错误或 ctx 取消才返回非 nil；此处一律吞掉以保证整批不被单个渠道中断。
+			if _, err := s.RefreshBalance(gctx, id); err != nil {
+				// ctx 取消（整体超时/关闭）时不刷日志，避免关停期噪声。
+				if gctx.Err() == nil {
+					slog.Warn("refresh channel balance failed", "channel_id", id, "error", err)
+				}
+				return nil
+			}
+			ok.Add(1)
+			return nil
+		})
+	}
+	_ = g.Wait() // 所有 g.Go 均返回 nil，Wait 不会返回错误
+	return int(ok.Load()), total, nil
 }
 
 // fetchBalance 执行 HTTP 请求获取余额

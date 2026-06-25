@@ -1012,6 +1012,63 @@ func clampChannelMonitorInterval(v int) int {
 	return v
 }
 
+const (
+	channelBalanceRefreshIntervalMin      = 1
+	channelBalanceRefreshIntervalMax      = 1440 // 24h
+	channelBalanceRefreshIntervalFallback = 10
+)
+
+// parseChannelBalanceRefreshInterval parses the stored string (minutes) and clamps
+// to [1, 1440]. Empty / invalid input falls back to channelBalanceRefreshIntervalFallback.
+func parseChannelBalanceRefreshInterval(raw string) int {
+	v, err := strconv.Atoi(strings.TrimSpace(raw))
+	if err != nil {
+		return channelBalanceRefreshIntervalFallback
+	}
+	if c := clampChannelBalanceRefreshInterval(v); c > 0 {
+		return c
+	}
+	return channelBalanceRefreshIntervalFallback
+}
+
+// clampChannelBalanceRefreshInterval clamps v (minutes) to the allowed range.
+// 0 means "not provided".
+func clampChannelBalanceRefreshInterval(v int) int {
+	if v <= 0 {
+		return 0
+	}
+	if v < channelBalanceRefreshIntervalMin {
+		return channelBalanceRefreshIntervalMin
+	}
+	if v > channelBalanceRefreshIntervalMax {
+		return channelBalanceRefreshIntervalMax
+	}
+	return v
+}
+
+// ChannelBalanceRefreshRuntime is the lightweight view of the periodic balance
+// refresh feature consumed by the scheduler.
+type ChannelBalanceRefreshRuntime struct {
+	Enabled         bool
+	IntervalMinutes int
+}
+
+// GetChannelBalanceRefreshRuntime reads the periodic balance-refresh flags directly
+// from the settings store. Fail-open: on error returns Enabled=true with the default interval.
+func (s *SettingService) GetChannelBalanceRefreshRuntime(ctx context.Context) ChannelBalanceRefreshRuntime {
+	vals, err := s.settingRepo.GetMultiple(ctx, []string{
+		SettingKeyChannelBalanceRefreshEnabled,
+		SettingKeyChannelBalanceRefreshIntervalMinutes,
+	})
+	if err != nil {
+		return ChannelBalanceRefreshRuntime{Enabled: true, IntervalMinutes: channelBalanceRefreshIntervalFallback}
+	}
+	return ChannelBalanceRefreshRuntime{
+		Enabled:         !isFalseSettingValue(vals[SettingKeyChannelBalanceRefreshEnabled]),
+		IntervalMinutes: parseChannelBalanceRefreshInterval(vals[SettingKeyChannelBalanceRefreshIntervalMinutes]),
+	}
+}
+
 // ChannelMonitorRuntime is the lightweight view of the channel monitor feature
 // consumed by the runner and user-facing handlers.
 type ChannelMonitorRuntime struct {
@@ -2001,6 +2058,12 @@ func (s *SettingService) buildSystemSettingsUpdates(ctx context.Context, setting
 		updates[SettingKeyChannelMonitorDefaultIntervalSeconds] = strconv.Itoa(v)
 	}
 
+	// Periodic channel balance refresh feature switch
+	updates[SettingKeyChannelBalanceRefreshEnabled] = strconv.FormatBool(settings.ChannelBalanceRefreshEnabled)
+	if v := clampChannelBalanceRefreshInterval(settings.ChannelBalanceRefreshIntervalMinutes); v > 0 {
+		updates[SettingKeyChannelBalanceRefreshIntervalMinutes] = strconv.Itoa(v)
+	}
+
 	// Available channels feature switch
 	updates[SettingKeyAvailableChannelsEnabled] = strconv.FormatBool(settings.AvailableChannelsEnabled)
 
@@ -2982,6 +3045,10 @@ func (s *SettingService) InitializeDefaultSettings(ctx context.Context) error {
 		SettingKeyChannelMonitorEnabled:                "true",
 		SettingKeyChannelMonitorDefaultIntervalSeconds: "60",
 
+		// Periodic channel balance refresh defaults (enabled, 10 minutes)
+		SettingKeyChannelBalanceRefreshEnabled:         "true",
+		SettingKeyChannelBalanceRefreshIntervalMinutes: "10",
+
 		// Available channels feature (default disabled; opt-in)
 		SettingKeyAvailableChannelsEnabled: "false",
 
@@ -3496,6 +3563,12 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 	result.ChannelMonitorEnabled = !isFalseSettingValue(settings[SettingKeyChannelMonitorEnabled])
 	result.ChannelMonitorDefaultIntervalSeconds = parseChannelMonitorInterval(
 		settings[SettingKeyChannelMonitorDefaultIntervalSeconds],
+	)
+
+	// Periodic channel balance refresh (default: enabled, 10 minutes)
+	result.ChannelBalanceRefreshEnabled = !isFalseSettingValue(settings[SettingKeyChannelBalanceRefreshEnabled])
+	result.ChannelBalanceRefreshIntervalMinutes = parseChannelBalanceRefreshInterval(
+		settings[SettingKeyChannelBalanceRefreshIntervalMinutes],
 	)
 
 	// Available channels feature (default: disabled; strict true)

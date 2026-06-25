@@ -625,6 +625,10 @@ export interface SystemSettings {
   channel_monitor_enabled: boolean;
   channel_monitor_default_interval_seconds: number;
 
+  // Periodic channel balance refresh feature switch
+  channel_balance_refresh_enabled: boolean;
+  channel_balance_refresh_interval_minutes: number;
+
   // Available Channels feature switch
   available_channels_enabled: boolean;
 
@@ -874,6 +878,10 @@ export interface UpdateSettingsRequest {
   // Channel Monitor feature switch
   channel_monitor_enabled?: boolean;
   channel_monitor_default_interval_seconds?: number;
+
+  // Periodic channel balance refresh feature switch
+  channel_balance_refresh_enabled?: boolean;
+  channel_balance_refresh_interval_minutes?: number;
 
   // Available Channels feature switch
   available_channels_enabled?: boolean;

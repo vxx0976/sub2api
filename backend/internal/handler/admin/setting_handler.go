@@ -308,6 +308,9 @@ func (h *SettingHandler) GetSettings(c *gin.Context) {
 		ChannelMonitorEnabled:                settings.ChannelMonitorEnabled,
 		ChannelMonitorDefaultIntervalSeconds: settings.ChannelMonitorDefaultIntervalSeconds,
 
+		ChannelBalanceRefreshEnabled:         settings.ChannelBalanceRefreshEnabled,
+		ChannelBalanceRefreshIntervalMinutes: settings.ChannelBalanceRefreshIntervalMinutes,
+
 		AvailableChannelsEnabled: settings.AvailableChannelsEnabled,
 
 		AffiliateEnabled: settings.AffiliateEnabled,
@@ -670,6 +673,10 @@ type UpdateSettingsRequest struct {
 	// Channel Monitor feature switch
 	ChannelMonitorEnabled                *bool `json:"channel_monitor_enabled"`
 	ChannelMonitorDefaultIntervalSeconds *int  `json:"channel_monitor_default_interval_seconds"`
+
+	// Periodic channel balance refresh feature switch
+	ChannelBalanceRefreshEnabled         *bool `json:"channel_balance_refresh_enabled"`
+	ChannelBalanceRefreshIntervalMinutes *int  `json:"channel_balance_refresh_interval_minutes"`
 
 	// Available Channels feature switch (user-facing)
 	AvailableChannelsEnabled *bool `json:"available_channels_enabled"`
@@ -1836,6 +1843,18 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 			}
 			return previousSettings.ChannelMonitorDefaultIntervalSeconds
 		}(),
+		ChannelBalanceRefreshEnabled: func() bool {
+			if req.ChannelBalanceRefreshEnabled != nil {
+				return *req.ChannelBalanceRefreshEnabled
+			}
+			return previousSettings.ChannelBalanceRefreshEnabled
+		}(),
+		ChannelBalanceRefreshIntervalMinutes: func() int {
+			if req.ChannelBalanceRefreshIntervalMinutes != nil {
+				return *req.ChannelBalanceRefreshIntervalMinutes
+			}
+			return previousSettings.ChannelBalanceRefreshIntervalMinutes
+		}(),
 		AvailableChannelsEnabled: func() bool {
 			if req.AvailableChannelsEnabled != nil {
 				return *req.AvailableChannelsEnabled
@@ -2194,6 +2213,9 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 
 		ChannelMonitorEnabled:                updatedSettings.ChannelMonitorEnabled,
 		ChannelMonitorDefaultIntervalSeconds: updatedSettings.ChannelMonitorDefaultIntervalSeconds,
+
+		ChannelBalanceRefreshEnabled:         updatedSettings.ChannelBalanceRefreshEnabled,
+		ChannelBalanceRefreshIntervalMinutes: updatedSettings.ChannelBalanceRefreshIntervalMinutes,
 
 		AvailableChannelsEnabled: updatedSettings.AvailableChannelsEnabled,
 
@@ -2691,6 +2713,12 @@ func diffSettings(before *service.SystemSettings, after *service.SystemSettings,
 	}
 	if before.ChannelMonitorDefaultIntervalSeconds != after.ChannelMonitorDefaultIntervalSeconds {
 		changed = append(changed, "channel_monitor_default_interval_seconds")
+	}
+	if before.ChannelBalanceRefreshEnabled != after.ChannelBalanceRefreshEnabled {
+		changed = append(changed, "channel_balance_refresh_enabled")
+	}
+	if before.ChannelBalanceRefreshIntervalMinutes != after.ChannelBalanceRefreshIntervalMinutes {
+		changed = append(changed, "channel_balance_refresh_interval_minutes")
 	}
 	if before.AvailableChannelsEnabled != after.AvailableChannelsEnabled {
 		changed = append(changed, "available_channels_enabled")

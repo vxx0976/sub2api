@@ -258,6 +258,10 @@ type SystemSettings struct {
 	ChannelMonitorEnabled                bool `json:"channel_monitor_enabled"`
 	ChannelMonitorDefaultIntervalSeconds int  `json:"channel_monitor_default_interval_seconds"`
 
+	// Periodic channel balance refresh feature switch
+	ChannelBalanceRefreshEnabled         bool `json:"channel_balance_refresh_enabled"`
+	ChannelBalanceRefreshIntervalMinutes int  `json:"channel_balance_refresh_interval_minutes"`
+
 	// Available Channels feature switch (user-facing aggregate view)
 	AvailableChannelsEnabled bool `json:"available_channels_enabled"`
 

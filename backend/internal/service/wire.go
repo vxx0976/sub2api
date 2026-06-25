@@ -194,6 +194,15 @@ func ProvideSubscriptionExpiryService(userSubRepo UserSubscriptionRepository, se
 	return svc
 }
 
+// ProvideChannelBalanceRefreshService creates and starts ChannelBalanceRefreshService,
+// the background scheduler that periodically refreshes all channel balances.
+func ProvideChannelBalanceRefreshService(channelService *ChannelService, settingService *SettingService, lockCache LeaderLockCache, db *sql.DB) *ChannelBalanceRefreshService {
+	svc := NewChannelBalanceRefreshService(channelService, settingService)
+	svc.SetLeaderLock(lockCache, db)
+	svc.Start()
+	return svc
+}
+
 // ProvideTimingWheelService creates and starts TimingWheelService
 func ProvideTimingWheelService() (*TimingWheelService, error) {
 	svc, err := NewTimingWheelService()
@@ -637,6 +646,7 @@ var ProviderSet = wire.NewSet(
 	ProvideAccountExpiryService,
 	ProvideProxyExpiryService,
 	ProvideSubscriptionExpiryService,
+	ProvideChannelBalanceRefreshService,
 	ProvideTimingWheelService,
 	ProvideDashboardAggregationService,
 	ProvideUsageCleanupService,

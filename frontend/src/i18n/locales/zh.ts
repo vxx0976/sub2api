@@ -6098,6 +6098,15 @@ export default {
           defaultInterval: '默认检测间隔（秒）',
           defaultIntervalHint: '新建渠道监控时表单的默认值，可被单个渠道覆盖。范围 15 – 3600 秒。',
         },
+        channelBalanceRefresh: {
+          title: '渠道额度自动刷新',
+          description: '后台定时刷新所有配置了额度查询地址的渠道余额，等价于自动点击"刷新所有渠道额度"。关闭后仅能手动刷新。',
+          configureLink: '前往 渠道管理 配置渠道的额度查询地址',
+          enabled: '启用自动刷新',
+          enabledHint: '关闭后后台不再定时刷新，已缓存的额度保留，仍可在渠道页手动刷新。',
+          interval: '刷新间隔（分钟）',
+          intervalHint: '每隔多少分钟刷新一次全部渠道额度。范围 1 – 1440 分钟。',
+        },
         availableChannels: {
           title: '可用渠道',
           description: '向已登录用户展示他们能访问的渠道、模型和定价聚合视图。默认关闭。',
