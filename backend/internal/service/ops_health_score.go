@@ -100,7 +100,20 @@ func computeInfraHealth(now time.Time, overview *OpsDashboardOverview) float64 {
 		computeScore = (cpuScore + memScore) / 2
 	}
 
-	// Background jobs score
+	// Background jobs score: a job counts as failed only when its most recent
+	// run ended in error.
+	//
+	// We deliberately do NOT flag jobs as "stale" by a fixed time threshold.
+	// Cadences here span ~60s (metrics collector) to daily (cleanup), and several
+	// are admin-configurable cron schedules (cleanup, scheduled reports), so any
+	// fixed staleness window perpetually false-flags the infrequent jobs — the old
+	// 15-minute rule pinned this component ~3-4pts low year-round.
+	//
+	// Known gap: a job that silently stops emitting heartbeats (without recording an
+	// error) is currently NOT reflected here, and there is no heartbeat-staleness
+	// alert today either. Detecting it correctly requires each job's expected cadence
+	// to be carried on the heartbeat, which this coarse gauge intentionally does not
+	// model.
 	jobScore := 100.0
 	failedJobs := 0
 	totalJobs := 0
@@ -110,8 +123,6 @@ func computeInfraHealth(now time.Time, overview *OpsDashboardOverview) float64 {
 		}
 		totalJobs++
 		if hb.LastErrorAt != nil && (hb.LastSuccessAt == nil || hb.LastErrorAt.After(*hb.LastSuccessAt)) {
-			failedJobs++
-		} else if hb.LastSuccessAt != nil && now.Sub(*hb.LastSuccessAt) > 15*time.Minute {
 			failedJobs++
 		}
 	}

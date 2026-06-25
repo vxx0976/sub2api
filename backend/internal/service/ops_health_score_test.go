@@ -413,6 +413,28 @@ func TestComputeInfraHealth(t *testing.T) {
 			wantMin: 70,
 			wantMax: 90,
 		},
+		{
+			name: "stale-but-healthy infrequent job is not penalized",
+			overview: &OpsDashboardOverview{
+				RequestCountTotal: 1000,
+				SystemMetrics: &OpsSystemMetricsSnapshot{
+					DBOK:               boolPtr(true),
+					RedisOK:            boolPtr(true),
+					CPUUsagePercent:    float64Ptr(30),
+					MemoryUsagePercent: float64Ptr(40),
+				},
+				JobHeartbeats: []*OpsJobHeartbeat{
+					{
+						// daily job: last success 9h ago, never errored → must score healthy.
+						// Regression guard: the old 15m staleness rule flagged this as failed.
+						JobName:       "ops_cleanup",
+						LastSuccessAt: timePtr(now.Add(-9 * time.Hour)),
+					},
+				},
+			},
+			wantMin: 100,
+			wantMax: 100,
+		},
 	}
 
 	for _, tt := range tests {
