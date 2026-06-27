@@ -312,6 +312,10 @@ func getDefaultTestModel(platform string) string {
 		return "GLM-5.1"
 	case "seedance":
 		return "doubao-1-5-pro-32k"
+	case "qwen":
+		return "qwen-turbo"
+	case "grok":
+		return "grok-4.3"
 	default:
 		return "claude-haiku-4-5-20251001"
 	}

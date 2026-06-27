@@ -267,7 +267,13 @@ const PLATFORM_LABELS: Record<string, string> = {
   anthropic: 'Claude',
   openai: 'OpenAI',
   gemini: 'Gemini',
-  antigravity: 'Antigravity'
+  antigravity: 'Antigravity',
+  grok: 'Grok',
+  deepseek: 'DeepSeek',
+  moonshot: 'Kimi',
+  glm: 'GLM',
+  qwen: 'Qwen',
+  seedance: 'Seedance'
 }
 
 const platformLabel = (p: string) => PLATFORM_LABELS[p] ?? p
