@@ -41,11 +41,12 @@ const (
 	PlatformGLM         = "glm"
 	PlatformQwen        = "qwen"
 	PlatformSeedance    = "seedance"
+	PlatformGrok        = "grok"
 )
 
 // AllPlatforms 返回所有支持的平台列表
 func AllPlatforms() []string {
-	return []string{PlatformAnthropic, PlatformOpenAI, PlatformGemini, PlatformAntigravity, PlatformDeepSeek, PlatformMoonshot, PlatformGLM, PlatformQwen, PlatformSeedance}
+	return []string{PlatformAnthropic, PlatformOpenAI, PlatformGemini, PlatformAntigravity, PlatformDeepSeek, PlatformMoonshot, PlatformGLM, PlatformQwen, PlatformSeedance, PlatformGrok}
 }
 
 // Validate 验证规则配置的有效性

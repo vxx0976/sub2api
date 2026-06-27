@@ -112,6 +112,7 @@ const platformOptions = computed(() => [
   { value: 'anthropic', label: 'Anthropic' },
   { value: 'gemini', label: 'Gemini' },
   { value: 'antigravity', label: 'Antigravity' },
+  { value: 'grok', label: 'Grok' },
   { value: 'deepseek', label: 'DeepSeek' },
   { value: 'moonshot', label: 'Kimi' },
   { value: 'glm', label: 'GLM' },
