@@ -213,6 +213,9 @@ const iconKey = computed(() => {
   // Doubao (ByteDance)
   if (modelLower.includes('doubao')) return 'doubao'
 
+  // Seedance / Jimeng (ByteDance video) — reuse Doubao (ByteDance) glyph
+  if (modelLower.includes('seedance') || modelLower.includes('jimeng')) return 'doubao'
+
   // MiniMax
   if (modelLower.includes('abab') || modelLower.includes('minimax')) return 'minimax'
 
