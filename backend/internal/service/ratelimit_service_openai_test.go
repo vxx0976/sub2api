@@ -219,6 +219,24 @@ func TestHandle429_OpenAISyncsObservedPlanType(t *testing.T) {
 	require.Equal(t, account.ID, repo.rateLimitedID)
 }
 
+func TestHandle429_OpenAIKeepsConsumerPlanOverBusiness(t *testing.T) {
+	repo := &openAI429SnapshotRepo{}
+	svc := NewRateLimitService(repo, nil, nil, nil, nil)
+	account := &Account{
+		ID:          125,
+		Platform:    PlatformOpenAI,
+		Type:        AccountTypeOAuth,
+		Credentials: map[string]any{"plan_type": "pro"},
+	}
+	// 429 来自曾加入的 business 工作区上下文，不应把个人 Pro 覆盖成 business 计划。
+	body := []byte(`{"error":{"type":"usage_limit_reached","message":"limit reached","plan_type":"self_serve_business_usage_based","resets_at":1777283883}}`)
+
+	svc.handle429(context.Background(), account, http.Header{}, body)
+
+	require.Equal(t, "pro", account.Credentials["plan_type"])
+	require.Nil(t, repo.bulkUpdatedIDs)
+}
+
 func TestNormalizedCodexLimits(t *testing.T) {
 	// Test the Normalize() method directly
 	pUsed := 100.0

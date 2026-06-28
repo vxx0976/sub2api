@@ -1418,6 +1418,13 @@ func persistOpenAI429PlanType(ctx context.Context, repo AccountRepository, accou
 		return
 	}
 
+	// business/工作区计划(如 self_serve_business_usage_based)的 429 可能来自用户曾加入的
+	// business 工作区上下文，并不代表个人订阅(pro/plus/team)本身降级，故不覆盖已有个人订阅。
+	if isBusinessPlanType(planType) && isConsumerPlanType(current) {
+		slog.Debug("openai_429_plan_type_skip_business", "account_id", account.ID, "current", current, "observed", planType)
+		return
+	}
+
 	if _, err := repo.BulkUpdate(ctx, []int64{account.ID}, AccountBulkUpdate{
 		Credentials: map[string]any{"plan_type": planType},
 	}); err != nil {

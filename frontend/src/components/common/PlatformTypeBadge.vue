@@ -120,9 +120,24 @@ const planLabel = computed(() => {
       return 'Free'
     case 'abnormal':
       return t('admin.accounts.subscriptionAbnormal')
-    default:
-      return props.planType
   }
+  // ChatGPT 企业/工作区类计划(如 self_serve_business_usage_based)：business/enterprise 词够独特，用 includes 即可。
+  if (lower.includes('enterprise')) return 'Enterprise'
+  if (lower.includes('business')) return 'Business'
+  // 个人订阅按 token 匹配，避免 "pro" 等子串误命中(如 approved/promotional)，
+  // 同时兼容 subscription_plan 长名变体(chatgptproplan / proplan 等)。
+  const tokens = lower.split(/[_\s]+/).filter(Boolean)
+  const hasPlan = (kw: string) =>
+    tokens.some(t => t === kw || t === `chatgpt${kw}` || t === `chatgpt${kw}plan` || t === `${kw}plan`)
+  if (hasPlan('pro')) return 'Pro'
+  if (hasPlan('plus')) return 'Plus'
+  if (hasPlan('team')) return 'Team'
+  // 兜底：未知值转成可读的 Title Case，不再泄露 raw snake_case。
+  return props.planType
+    .split(/[_\s]+/)
+    .filter(Boolean)
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ')
 })
 
 const platformClass = computed(() => {

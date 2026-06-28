@@ -143,54 +143,9 @@ func fetchChatGPTAccountInfo(ctx context.Context, clientFactory PrivacyClientFac
 		return nil
 	}
 
-	// 优先匹配 orgID 对应的账号（access_token JWT 中的 poid）
-	if orgID != "" {
-		if acctRaw, ok := accounts[orgID]; ok {
-			if acct, ok := acctRaw.(map[string]any); ok {
-				fillAccountInfo(info, acct)
-			}
-		}
-	}
-
-	// 未匹配到时，遍历所有账号：优先 is_default，次选非 free
-	if info.PlanType == "" {
-		type candidate struct {
-			planType  string
-			expiresAt string
-		}
-		var defaultC, paidC, anyC candidate
-		for _, acctRaw := range accounts {
-			acct, ok := acctRaw.(map[string]any)
-			if !ok {
-				continue
-			}
-			planType := extractPlanType(acct)
-			if planType == "" {
-				continue
-			}
-			ea := extractEntitlementExpiresAt(acct)
-			if anyC.planType == "" {
-				anyC = candidate{planType, ea}
-			}
-			if account, ok := acct["account"].(map[string]any); ok {
-				if isDefault, _ := account["is_default"].(bool); isDefault {
-					defaultC = candidate{planType, ea}
-				}
-			}
-			if !strings.EqualFold(planType, "free") && paidC.planType == "" {
-				paidC = candidate{planType, ea}
-			}
-		}
-		// 优先级：default > 非 free > 任意
-		switch {
-		case defaultC.planType != "":
-			info.PlanType, info.SubscriptionExpiresAt = defaultC.planType, defaultC.expiresAt
-		case paidC.planType != "":
-			info.PlanType, info.SubscriptionExpiresAt = paidC.planType, paidC.expiresAt
-		default:
-			info.PlanType, info.SubscriptionExpiresAt = anyC.planType, anyC.expiresAt
-		}
-	}
+	// 在多账号里挑最能代表用户订阅的计划：个人订阅(pro/plus/team)优先于
+	// business 工作区，避免"曾加入过 business 计划"污染计划展示。
+	info.PlanType, info.SubscriptionExpiresAt = selectChatGPTPlanType(accounts, orgID)
 
 	if info.PlanType == "" {
 		slog.Debug("chatgpt_account_check_no_plan_type", "body", truncate(resp.String(), 300))
@@ -257,10 +212,93 @@ func fetchChatGPTSubscriptionExpiresAt(ctx context.Context, clientFactory Privac
 	return activeUntil
 }
 
-// fillAccountInfo 从单个 account 对象中提取 plan_type 和 subscription_expires_at
-func fillAccountInfo(info *ChatGPTAccountInfo, acct map[string]any) {
-	info.PlanType = extractPlanType(acct)
-	info.SubscriptionExpiresAt = extractEntitlementExpiresAt(acct)
+// selectChatGPTPlanType 从 accounts/check 的多账号里挑最能代表用户订阅的计划。
+// 选号优先级：计划类型分值(个人订阅 > business/未知 > free) > orgID(poid)命中 > is_default。
+// 个人订阅(pro/plus/team)优先于 business 工作区，避免"曾加入 business"污染计划展示；
+// 个人订阅之间则按 orgID 命中(token 实际作用的 org)决定，保持原有语义。
+func selectChatGPTPlanType(accounts map[string]any, orgID string) (planType, expiresAt string) {
+	type candidate struct {
+		id        string
+		planType  string
+		expiresAt string
+		priority  int
+		orgMatch  bool
+		isDefault bool
+	}
+	var best *candidate
+	for id, acctRaw := range accounts {
+		acct, ok := acctRaw.(map[string]any)
+		if !ok {
+			continue
+		}
+		pt := extractPlanType(acct)
+		if pt == "" {
+			continue
+		}
+		cur := candidate{
+			id:        id,
+			planType:  pt,
+			expiresAt: extractEntitlementExpiresAt(acct),
+			priority:  planTypePriority(pt),
+			orgMatch:  orgID != "" && id == orgID,
+		}
+		if account, ok := acct["account"].(map[string]any); ok {
+			cur.isDefault, _ = account["is_default"].(bool)
+		}
+		better := best == nil
+		if best != nil {
+			switch {
+			case cur.priority != best.priority:
+				better = cur.priority > best.priority
+			case cur.orgMatch != best.orgMatch:
+				better = cur.orgMatch
+			case cur.isDefault != best.isDefault:
+				better = cur.isDefault
+			default:
+				// 全部相等时用账号 id 兜底，保证选号在 Go map 随机遍历下确定。
+				better = cur.id < best.id
+			}
+		}
+		if better {
+			c := cur
+			best = &c
+		}
+	}
+	if best == nil {
+		return "", ""
+	}
+	return best.planType, best.expiresAt
+}
+
+// planTypePriority 给计划类型打分用于多账号选号：
+// 个人订阅(pro/plus/team)=3 > business/企业/未知=2 > free=1 > 空=0。
+func planTypePriority(planType string) int {
+	switch {
+	case strings.TrimSpace(planType) == "":
+		return 0
+	case isConsumerPlanType(planType):
+		return 3
+	case strings.EqualFold(strings.TrimSpace(planType), "free"):
+		return 1
+	default: // business / enterprise / 未知
+		return 2
+	}
+}
+
+// isBusinessPlanType 判断是否为企业/工作区类计划(非个人订阅)，
+// 例如 self_serve_business_usage_based、business、enterprise。
+func isBusinessPlanType(planType string) bool {
+	p := strings.ToLower(strings.TrimSpace(planType))
+	return strings.Contains(p, "business") || strings.Contains(p, "enterprise")
+}
+
+// isConsumerPlanType 判断是否为个人订阅计划(pro/plus/team)。
+func isConsumerPlanType(planType string) bool {
+	if isBusinessPlanType(planType) {
+		return false
+	}
+	p := strings.ToLower(strings.TrimSpace(planType))
+	return strings.Contains(p, "pro") || strings.Contains(p, "plus") || strings.Contains(p, "team")
 }
 
 // extractPlanType 从单个 account 对象中提取 plan_type
