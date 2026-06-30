@@ -186,7 +186,7 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	resellerDomainRepository := repository.NewResellerDomainRepository(client)
 	adminUserHandler := admin.NewUserHandler(adminService, concurrencyService, resellerDomainRepository, serviceUserPlatformQuotaRepository, billingCache)
 	groupCapacityService := service.NewGroupCapacityService(accountRepository, groupRepository, concurrencyService, sessionLimitCache, rpmCache)
-	accountTestService := service.NewAccountTestService(accountRepository, geminiTokenProvider, claudeTokenProvider, antigravityGatewayService, httpUpstream, configConfig, tlsFingerprintProfileService)
+	accountTestService := service.NewAccountTestService(accountRepository, geminiTokenProvider, claudeTokenProvider, grokTokenProvider, antigravityGatewayService, httpUpstream, configConfig, tlsFingerprintProfileService)
 	groupHealthCheckService := service.ProvideGroupHealthCheckService(groupRepository, accountRepository, accountTestService, rateLimitService, configConfig, leaderLockCache, db)
 	groupHandler := admin.NewGroupHandler(adminService, dashboardService, groupCapacityService, groupHealthCheckService)
 	claudeUsageFetcher := repository.NewClaudeUsageFetcher(httpUpstream)
