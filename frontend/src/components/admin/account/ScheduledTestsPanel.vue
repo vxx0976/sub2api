@@ -159,7 +159,7 @@
               <!-- Model -->
               <div class="min-w-0">
                 <div class="text-sm font-medium text-gray-900 dark:text-gray-100">
-                  {{ plan.model_id }}
+                  {{ modelLabel(plan.model_id) }}
                 </div>
                 <div class="mt-0.5 font-mono text-xs text-gray-500 dark:text-gray-400">
                   {{ plan.cron_expression }}
@@ -463,7 +463,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watch } from 'vue'
+import { ref, reactive, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BaseDialog from '@/components/common/BaseDialog.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
@@ -489,6 +489,16 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'close'): void
 }>()
+
+// 计划里存的是原始 model_id；用选择器的 options 反查漂亮显示名（与下拉一致），回退到原始 id。
+const modelLabelMap = computed(() => {
+  const map: Record<string, string> = {}
+  for (const opt of props.modelOptions) {
+    if (opt?.value != null) map[String(opt.value)] = opt.label || String(opt.value)
+  }
+  return map
+})
+const modelLabel = (id: string): string => modelLabelMap.value[id] || id
 
 // State
 const loading = ref(false)

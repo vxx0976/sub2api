@@ -23,6 +23,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/pkg/claude"
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/geminicli"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/modelname"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/openai"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/timezone"
@@ -2112,7 +2113,7 @@ func (h *AccountHandler) GetAvailableModels(c *gin.Context) {
 					ID:          requestedModel,
 					Object:      "model",
 					Type:        "model",
-					DisplayName: requestedModel,
+					DisplayName: modelname.FormatDisplayName(requestedModel),
 				})
 			}
 		}
@@ -2149,7 +2150,7 @@ func (h *AccountHandler) GetAvailableModels(c *gin.Context) {
 				models = append(models, geminicli.Model{
 					ID:          requestedModel,
 					Type:        "model",
-					DisplayName: requestedModel,
+					DisplayName: modelname.FormatDisplayName(requestedModel),
 					CreatedAt:   "",
 				})
 			}
@@ -2208,7 +2209,7 @@ func (h *AccountHandler) GetAvailableModels(c *gin.Context) {
 				ID:          requestedModel,
 				Object:      "model",
 				OwnedBy:     "xai",
-				DisplayName: requestedModel,
+				DisplayName: modelname.FormatDisplayName(requestedModel),
 			})
 		}
 		response.Success(c, models)
@@ -2247,7 +2248,7 @@ func (h *AccountHandler) GetAvailableModels(c *gin.Context) {
 			models = append(models, claude.Model{
 				ID:          requestedModel,
 				Type:        "model",
-				DisplayName: requestedModel,
+				DisplayName: modelname.FormatDisplayName(requestedModel),
 				CreatedAt:   "",
 			})
 		}
