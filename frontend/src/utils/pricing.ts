@@ -11,3 +11,10 @@ export function formatScaled(value: number | null, scale: number): string {
   if (value == null) return '-'
   return `$${(value * scale).toPrecision(10).replace(/\.?0+$/, '')}`
 }
+
+/**
+ * 默认 CNY/USD 汇率，用于「模型广场」本站价换算在 /pricing/public/fx-rate 拉取
+ * 失败时的降级值。本系统采用 1¥=1$ 余额模型，默认为 1（本站价 = 官方价 × 分组倍率，
+ * 不额外换汇）；实际值由后端 fx-rate 端点返回。
+ */
+export const DEFAULT_CNY_PER_USD = 1

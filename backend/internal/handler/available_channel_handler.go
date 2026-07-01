@@ -1,7 +1,9 @@
 package handler
 
 import (
+	"context"
 	"sort"
+	"strings"
 
 	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
 	"github.com/Wei-Shaw/sub2api/internal/server/middleware"
@@ -24,18 +26,26 @@ type AvailableChannelHandler struct {
 	channelService *service.ChannelService
 	apiKeyService  *service.APIKeyService
 	settingService *service.SettingService
+	billingService *service.BillingService
+	accountService *service.AccountService
 }
 
 // NewAvailableChannelHandler 创建用户侧可用渠道 handler。
+// billingService / accountService 供公开「模型广场」端点解析模型集合与官方价；
+// 可为 nil（此时官方价与账号交集兜底部分留空）。
 func NewAvailableChannelHandler(
 	channelService *service.ChannelService,
 	apiKeyService *service.APIKeyService,
 	settingService *service.SettingService,
+	billingService *service.BillingService,
+	accountService *service.AccountService,
 ) *AvailableChannelHandler {
 	return &AvailableChannelHandler{
 		channelService: channelService,
 		apiKeyService:  apiKeyService,
 		settingService: settingService,
+		billingService: billingService,
+		accountService: accountService,
 	}
 }
 
@@ -280,4 +290,248 @@ func toUserPricing(p *service.ChannelModelPricing) *userSupportedModelPricing {
 		PerRequestPrice:  p.PerRequestPrice,
 		Intervals:        intervals,
 	}
+}
+
+// ============================ 模型广场（公开定价端点）============================
+
+// userPricingModel 模型广场端点（group）下的单条模型定价。
+//
+// 价格字段两套，均为"基础单价"（USD / per token）语义：
+//   - input_price / output_price / cache_write_price / cache_read_price：渠道
+//     管理员显式配置的基础单价；nil 表示该字段未配置，前端回退到 official_*。
+//   - official_*：LiteLLM 官方价。
+//
+// 前端在 site 模式按 (group.rate_multiplier / cny_per_usd) 乘出本站价，与计费链路
+// actualCost = totalCost × RateMultiplier 一致。billing_mode / intervals 用于
+// per_request / image 等非 token 模式。
+type userPricingModel struct {
+	Name                    string                   `json:"name"`
+	BillingMode             string                   `json:"billing_mode,omitempty"`
+	InputPrice              *float64                 `json:"input_price,omitempty"`
+	OutputPrice             *float64                 `json:"output_price,omitempty"`
+	CacheWritePrice         *float64                 `json:"cache_write_price,omitempty"`
+	CacheReadPrice          *float64                 `json:"cache_read_price,omitempty"`
+	PerRequestPrice         *float64                 `json:"per_request_price,omitempty"`
+	Intervals               []userPricingIntervalDTO `json:"intervals,omitempty"`
+	OfficialInputPrice      *float64                 `json:"official_input_price,omitempty"`
+	OfficialOutputPrice     *float64                 `json:"official_output_price,omitempty"`
+	OfficialCacheWritePrice *float64                 `json:"official_cache_write_price,omitempty"`
+	OfficialCacheReadPrice  *float64                 `json:"official_cache_read_price,omitempty"`
+}
+
+// userPricingGroup 模型广场展示页的端点 = 一个 group。折扣由 rate_multiplier 决定。
+type userPricingGroup struct {
+	ID             int64              `json:"id"`
+	Name           string             `json:"name"`
+	Platform       string             `json:"platform"`
+	RateMultiplier float64            `json:"rate_multiplier"`
+	IsExclusive    bool               `json:"is_exclusive"`
+	Models         []userPricingModel `json:"models"`
+}
+
+// PricingGroupListPublic 返回所有公开（非专属、非订阅）的活跃分组，用于未登录访客
+// 的"模型广场"展示。不应用任何用户/商户上下文，不受 available_channels_enabled 开关限制。
+//
+// GET /api/v1/pricing/public/groups
+func (h *AvailableChannelHandler) PricingGroupListPublic(c *gin.Context) {
+	ctx := c.Request.Context()
+	groups, err := h.apiKeyService.ListPublicGroups(ctx)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	if len(groups) == 0 {
+		response.Success(c, []userPricingGroup{})
+		return
+	}
+
+	// 官方价 lookup 缓存
+	priceCache := make(map[string]*service.ModelPricing, 32)
+	lookupOfficial := func(model string) *service.ModelPricing {
+		if p, ok := priceCache[model]; ok {
+			return p
+		}
+		if h.billingService == nil {
+			priceCache[model] = nil
+			return nil
+		}
+		p, err := h.billingService.GetModelPricing(model)
+		if err != nil {
+			priceCache[model] = nil
+			return nil
+		}
+		priceCache[model] = p
+		return p
+	}
+
+	// LiteLLM 兜底：每个 platform 一次拉全表缓存。
+	litellmByPlatform := map[string][]string{}
+	getLiteLLMModels := func(platform string) []string {
+		if v, ok := litellmByPlatform[platform]; ok {
+			return v
+		}
+		var out []string
+		if h.billingService != nil {
+			for _, e := range h.billingService.ListAllModelPricings(platform) {
+				out = append(out, e.Model)
+			}
+		}
+		litellmByPlatform[platform] = out
+		return out
+	}
+
+	out := make([]userPricingGroup, 0, len(groups))
+	for i := range groups {
+		g := groups[i]
+		modelNames := h.resolveGroupModelsByAccount(ctx, g.ID, g.Platform, getLiteLLMModels)
+		item := userPricingGroup{
+			ID:             g.ID,
+			Name:           g.Name,
+			Platform:       g.Platform,
+			RateMultiplier: g.RateMultiplier,
+			IsExclusive:    g.IsExclusive,
+			Models:         []userPricingModel{},
+		}
+		for _, name := range modelNames {
+			item.Models = append(item.Models, h.buildPricingModel(ctx, g.ID, name, lookupOfficial))
+		}
+		out = append(out, item)
+	}
+
+	response.Success(c, out)
+}
+
+// GetFXRate 返回展示用汇率 cny_per_usd，供模型广场「本站价 vs 官方价」换算。
+// 值由 pricing.cny_to_usd_rate 派生（cny_per_usd = 1 / cny_to_usd_rate）；
+// 1¥=1$ 余额模型下默认为 1.0。公开无需认证。
+//
+// GET /api/v1/pricing/public/fx-rate
+func (h *AvailableChannelHandler) GetFXRate(c *gin.Context) {
+	rate := 1.0
+	if h.billingService != nil {
+		if v := h.billingService.CNYPerUSD(); v > 0 {
+			rate = v
+		}
+	}
+	response.Success(c, gin.H{"cny_per_usd": rate, "last_updated": nil})
+}
+
+// buildPricingModel 拼装单条模型的定价 DTO：渠道显式配置的基础单价覆盖到独立字段，
+// LiteLLM 官方价填到 official_*。两套字段都保持"基础单价"语义。
+// channelService 未注入或 group 未绑定 channel 时，channel 价部分留空。
+func (h *AvailableChannelHandler) buildPricingModel(
+	ctx context.Context,
+	groupID int64,
+	name string,
+	lookupOfficial func(string) *service.ModelPricing,
+) userPricingModel {
+	m := userPricingModel{Name: name}
+	if p := lookupOfficial(name); p != nil {
+		m.OfficialInputPrice = positiveFloatPtr(p.InputPricePerToken)
+		m.OfficialOutputPrice = positiveFloatPtr(p.OutputPricePerToken)
+		m.OfficialCacheWritePrice = positiveFloatPtr(p.CacheCreationPricePerToken)
+		m.OfficialCacheReadPrice = positiveFloatPtr(p.CacheReadPricePerToken)
+	}
+	if h.channelService != nil {
+		if cp := h.channelService.GetChannelModelPricing(ctx, groupID, name); cp != nil {
+			m.BillingMode = string(cp.BillingMode)
+			m.InputPrice = cp.InputPrice
+			m.OutputPrice = cp.OutputPrice
+			m.CacheWritePrice = cp.CacheWritePrice
+			m.CacheReadPrice = cp.CacheReadPrice
+			m.PerRequestPrice = cp.PerRequestPrice
+			if len(cp.Intervals) > 0 {
+				m.Intervals = make([]userPricingIntervalDTO, 0, len(cp.Intervals))
+				for _, iv := range cp.Intervals {
+					m.Intervals = append(m.Intervals, userPricingIntervalDTO{
+						MinTokens:       iv.MinTokens,
+						MaxTokens:       iv.MaxTokens,
+						TierLabel:       iv.TierLabel,
+						InputPrice:      iv.InputPrice,
+						OutputPrice:     iv.OutputPrice,
+						CacheWritePrice: iv.CacheWritePrice,
+						CacheReadPrice:  iv.CacheReadPrice,
+						PerRequestPrice: iv.PerRequestPrice,
+					})
+				}
+			}
+		}
+	}
+	return m
+}
+
+// resolveGroupModelsByAccount 按"account 交集 + LiteLLM 兜底"算法计算 group 的模型列表。
+//
+//   - 拉该 group 下所有 active account（accountService.ListByGroup）
+//   - 对每个 account 取 GetModelMapping()：空 mapping 或全通配符 → 透传，不参与交集；
+//     含非通配符 from → 这些 from 就是该 account 显式支持的模型
+//   - 所有参与的 account 之间取交集
+//   - 无参与 / 无 account → LiteLLM 按 platform 兜底
+func (h *AvailableChannelHandler) resolveGroupModelsByAccount(
+	ctx context.Context,
+	groupID int64,
+	platform string,
+	getLiteLLMModels func(platform string) []string,
+) []string {
+	var intersect map[string]struct{} // nil 表示还没遇到任何"显式列模型"的账号
+
+	if h.accountService != nil {
+		accounts, err := h.accountService.ListByGroup(ctx, groupID)
+		if err == nil {
+			for i := range accounts {
+				acc := accounts[i]
+				if acc.Status != service.StatusActive {
+					continue
+				}
+				if acc.Platform != platform {
+					// 防御性：理论上 account.platform 跟 group.platform 应该一致
+					continue
+				}
+				mapping := acc.GetModelMapping()
+				if len(mapping) == 0 {
+					// 透传，不参与交集
+					continue
+				}
+				cur := map[string]struct{}{}
+				for from := range mapping {
+					if strings.HasSuffix(from, "*") {
+						continue // 通配符 from 不算具体模型
+					}
+					cur[from] = struct{}{}
+				}
+				if len(cur) == 0 {
+					// 只有通配符 → 视为透传，不参与交集
+					continue
+				}
+				if intersect == nil {
+					intersect = cur
+					continue
+				}
+				next := map[string]struct{}{}
+				for k := range intersect {
+					if _, ok := cur[k]; ok {
+						next[k] = struct{}{}
+					}
+				}
+				intersect = next
+			}
+		}
+	}
+
+	if intersect == nil {
+		return append([]string(nil), getLiteLLMModels(platform)...)
+	}
+	out := make([]string, 0, len(intersect))
+	for k := range intersect {
+		out = append(out, k)
+	}
+	sort.Strings(out)
+	return out
+}
+
+func positiveFloatPtr(v float64) *float64 {
+	if v <= 0 {
+		return nil
+	}
+	return &v
 }

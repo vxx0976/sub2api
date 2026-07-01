@@ -71,6 +71,63 @@ export async function getAvailable(options?: { signal?: AbortSignal }): Promise<
   return data
 }
 
-export const userChannelsAPI = { getAvailable }
+/**
+ * 「模型广场」端点（group）下的单条模型定价。
+ * input_price 等为渠道显式配置的基础单价（USD / per token），未配置时为 null，
+ * 前端回退到对应 official_*（LiteLLM 官方价，USD / per token）。site 模式按
+ * group.rate_multiplier / cny_per_usd 换算本站价，与计费链路一致。
+ */
+export interface UserPricingModel {
+  name: string
+  /** 'token'（默认）按 token 计费；'per_request' / 'image' 渲染 intervals 子表。 */
+  billing_mode?: BillingMode | string
+  input_price?: number | null
+  output_price?: number | null
+  cache_write_price?: number | null
+  cache_read_price?: number | null
+  /** per_request / image 模式：每次请求/每图片的基础单价（USD）。 */
+  per_request_price?: number | null
+  /** per_request / image 模式：tier 分层定价。复用 UserPricingInterval。 */
+  intervals?: UserPricingInterval[]
+  /** LiteLLM 官方价（USD / per token）。模型不在 LiteLLM 表里或为 0 时缺失。 */
+  official_input_price?: number | null
+  official_output_price?: number | null
+  official_cache_write_price?: number | null
+  official_cache_read_price?: number | null
+}
+
+/** 「模型广场」展示页的端点 = 一个 group。models 由后端按账号映射交集/LiteLLM 兜底解析。 */
+export interface UserPricingGroup {
+  id: number
+  name: string
+  platform: string
+  rate_multiplier: number
+  is_exclusive: boolean
+  models: UserPricingModel[]
+}
+
+/** GET /pricing/public/groups — 模型广场公开端点：只返回非专属、非订阅的活跃分组。 */
+export async function getPublicPricingGroups(options?: { signal?: AbortSignal }): Promise<UserPricingGroup[]> {
+  const { data } = await apiClient.get<UserPricingGroup[]>('/pricing/public/groups', {
+    signal: options?.signal,
+  })
+  return data
+}
+
+/** 展示用汇率：cny_per_usd = 1 / cny_to_usd_rate（1¥=1$ 余额模型下默认为 1）。 */
+export interface FXRate {
+  cny_per_usd: number
+  last_updated: string | null
+}
+
+/** GET /pricing/public/fx-rate — 模型广场本站价换算用汇率（公开，无需认证）。 */
+export async function getPublicFXRate(options?: { signal?: AbortSignal }): Promise<FXRate> {
+  const { data } = await apiClient.get<FXRate>('/pricing/public/fx-rate', {
+    signal: options?.signal,
+  })
+  return data
+}
+
+export const userChannelsAPI = { getAvailable, getPublicPricingGroups, getPublicFXRate }
 
 export default userChannelsAPI

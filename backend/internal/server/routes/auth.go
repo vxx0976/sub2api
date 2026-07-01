@@ -235,6 +235,16 @@ func RegisterAuthRoutes(
 		publicGroup.GET("/announcements", h.Announcement.ListPublic)
 	}
 
+	// 公开「模型广场」定价（无需认证）：只列出非专属、非订阅的活跃分组及其模型定价。
+	// 只读展示端点，用 fail-open 限流防刷（Redis 故障时放行，不阻断浏览）。
+	publicPricing := v1.Group("/pricing/public")
+	pricingRateOpts := middleware.RateLimitOptions{FailureMode: middleware.RateLimitFailOpen}
+	{
+		// 每个端点独立计数键，避免共享配额（前端每次刷新会并发打这两个端点）。
+		publicPricing.GET("/groups", rateLimiter.LimitWithOptions("pricing-public-groups", 30, time.Minute, pricingRateOpts), h.AvailableChannel.PricingGroupListPublic)
+		publicPricing.GET("/fx-rate", rateLimiter.LimitWithOptions("pricing-public-fxrate", 60, time.Minute, pricingRateOpts), h.AvailableChannel.GetFXRate)
+	}
+
 	// 需要认证的当前用户信息
 	authenticated := v1.Group("")
 	authenticated.Use(gin.HandlerFunc(jwtAuth))

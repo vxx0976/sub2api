@@ -17,6 +17,7 @@ export default {
     },
     nav: {
       home: 'Главная',
+      models: 'Модели',
       pricing: 'Тарифы',
       docs: 'Документация',
       status: 'Статус'
@@ -8959,5 +8960,48 @@ export default {
       contactInfo: 'Контактная информация',
       cryptoPlaceholder: 'По одному на строку, формат: МОНЕТА:адрес'
     }
+  },
+
+  publicModels: {
+    pageTitle: 'Модели',
+    badge: 'Публичные модели',
+    title: 'Каталог моделей',
+    subtitle: 'Просматривайте все публичные группы и поддерживаемые ими модели — без входа в систему.',
+    statGroups: 'Группы',
+    statModels: 'Модели',
+    statPlatforms: 'Платформы',
+    filterAll: 'Все',
+    searchPlaceholder: 'Поиск по группам, платформам или названиям моделей…',
+    searchEmpty: 'Нет подходящих групп или моделей.',
+    empty: 'Пока нет публичных групп.',
+    loadErrorTitle: 'Не удалось загрузить',
+    loadErrorDescription: 'Пожалуйста, обновите страницу и попробуйте позже.',
+    refresh: 'Обновить',
+    footnote: 'Эксклюзивные / подписочные группы здесь не отображаются. Итоговая доступность, цены и права определяются консолью.',
+    apiBaseTitle: 'Базовый URL API',
+    apiBaseHint: 'Укажите этот адрес как Base URL в вашем клиенте; для авторизации используйте ключ, созданный в консоли.',
+    copyApiBase: 'Копировать',
+    copyModelHint: 'Нажмите, чтобы скопировать название модели',
+    modelCount: 'Моделей: {count}',
+    noModels: 'В этой группе пока нет моделей.',
+    officialPrice: 'Оф. цена',
+    sitePrice: 'Цена сайта',
+    fxNote: '1 USD ≈ {rate} CNY',
+    showMore: 'Показать ещё {count} моделей',
+    columns: {
+      model: 'Модель',
+      input: 'Ввод',
+      output: 'Вывод',
+      cacheWrite: 'Запись кэша',
+      cacheRead: 'Чтение кэша',
+    },
+    tier: {
+      label: 'Уровень',
+      price: 'Цена',
+    },
+    modeBadge: {
+      perRequest: 'За запрос',
+      image: 'За изображение',
+    },
   }
 }

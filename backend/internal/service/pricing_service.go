@@ -1221,6 +1221,53 @@ func (s *PricingService) generateOpenAIModelVariants(model string, datePattern *
 	return variants
 }
 
+// LiteLLMModelEntry 列表返回项：模型名 + 价格数据。
+type LiteLLMModelEntry struct {
+	Model   string
+	Pricing *LiteLLMModelPricing
+}
+
+// ListAll 返回 LiteLLM 价格表中所有模型，按字母序排序。
+//
+//   - providerFilter 非空时按 litellm_provider 大小写不敏感匹配过滤
+//   - 仅返回 mode == "chat" 或为空（兼容老条目）的模型；embedding/image_generation
+//     等非 chat 模式不参与模型广场兜底
+func (s *PricingService) ListAll(providerFilter string) []LiteLLMModelEntry {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	filter := strings.ToLower(strings.TrimSpace(providerFilter))
+	out := make([]LiteLLMModelEntry, 0, len(s.pricingData))
+	for name, p := range s.pricingData {
+		if p == nil {
+			continue
+		}
+		if filter != "" && !strings.EqualFold(p.LiteLLMProvider, filter) {
+			continue
+		}
+		if p.Mode != "" && p.Mode != "chat" {
+			continue
+		}
+		out = append(out, LiteLLMModelEntry{Model: name, Pricing: p})
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].Model < out[j].Model })
+	return out
+}
+
+// CNYPerUSD 返回展示用的 CNY/USD 汇率（= 1 / cny_to_usd_rate），供模型广场
+// 「本站价 vs 官方价」换算使用。本系统采用 1¥=1$ 余额模型，cny_to_usd_rate 默认
+// 为 1.0 → 返回 1.0（本站价 = 官方价 × 分组倍率，不额外换汇）；配置了真实汇率时
+// 按其倒数换算。
+func (s *PricingService) CNYPerUSD() float64 {
+	rate := defaultCNYToUSDRate
+	if s.cfg != nil && s.cfg.Pricing.CNYToUSDRate > 0 {
+		rate = s.cfg.Pricing.CNYToUSDRate
+	}
+	if rate <= 0 {
+		return 1.0
+	}
+	return 1.0 / rate
+}
+
 // GetStatus 获取服务状态
 func (s *PricingService) GetStatus() map[string]any {
 	s.mu.RLock()

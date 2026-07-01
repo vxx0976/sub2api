@@ -180,6 +180,16 @@ const routes: RouteRecordRaw[] = [
       title: 'Legal Document'
     }
   },
+  {
+    path: '/models',
+    name: 'PublicModels',
+    component: () => import('@/views/public/PublicModelsView.vue'),
+    meta: {
+      requiresAuth: false,
+      title: 'Models',
+      titleKey: 'publicModels.pageTitle'
+    }
+  },
 
   // ==================== User Routes ====================
   {
