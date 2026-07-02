@@ -21,6 +21,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/pkg/antigravity"
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/openai"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/timezone"
 	"github.com/imroc/req/v3"
 	"golang.org/x/sync/singleflight"
 )
@@ -1548,12 +1549,15 @@ type PublicSettingsInjectionPayload struct {
 	GoogleOAuthEnabled               bool                     `json:"google_oauth_enabled"`
 	BackendModeEnabled               bool                     `json:"backend_mode_enabled"`
 	PaymentEnabled                   bool                     `json:"payment_enabled"`
-	Version                          string                   `json:"version,omitempty"`
+	Version                          string                   `json:"version"`
 	Announcements                    []SimpleAnnouncement     `json:"announcements,omitempty"`
 	DefaultLocale                    string                   `json:"default_locale,omitempty"`
 	ContactWechat                    string                   `json:"contact_wechat,omitempty"`
 	ContactTelegram                  string                   `json:"contact_telegram,omitempty"`
 	ContactQQ                        string                   `json:"contact_qq,omitempty"`
+	// 服务器全局时区（IANA 名称与当前 UTC 偏移），高峰时段等服务端本地时间窗口的展示标注用
+	ServerTimezone                   string                   `json:"server_timezone"`
+	ServerUTCOffset                  string                   `json:"server_utc_offset"`
 	BalanceLowNotifyEnabled          bool                     `json:"balance_low_notify_enabled"`
 	AccountQuotaNotifyEnabled        bool                     `json:"account_quota_notify_enabled"`
 	BalanceLowNotifyThreshold        float64                  `json:"balance_low_notify_threshold"`
@@ -1627,6 +1631,8 @@ func (s *SettingService) GetPublicSettingsForInjection(ctx context.Context) (any
 		ContactWechat:                    settings.ContactWechat,
 		ContactTelegram:                  settings.ContactTelegram,
 		ContactQQ:                        settings.ContactQQ,
+		ServerTimezone:                   timezone.Name(),
+		ServerUTCOffset:                  timezone.UTCOffset(),
 		BalanceLowNotifyEnabled:          settings.BalanceLowNotifyEnabled,
 		AccountQuotaNotifyEnabled:        settings.AccountQuotaNotifyEnabled,
 		BalanceLowNotifyThreshold:        settings.BalanceLowNotifyThreshold,

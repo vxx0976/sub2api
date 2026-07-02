@@ -93,9 +93,10 @@ type ChatGPTAccountInfo struct {
 	SubscriptionExpiresAt string // entitlement.expires_at (RFC3339)
 }
 
-const chatGPTAccountsCheckURL = "https://chatgpt.com/backend-api/accounts/check/v4-2023-04-27"
-
-var chatGPTSubscriptionsURL = "https://chatgpt.com/backend-api/subscriptions"
+var (
+	chatGPTAccountsCheckURL = "https://chatgpt.com/backend-api/accounts/check/v4-2023-04-27"
+	chatGPTSubscriptionsURL = "https://chatgpt.com/backend-api/subscriptions"
+)
 
 // fetchChatGPTAccountInfo calls ChatGPT backend-api to get account info (plan_type, etc.).
 // Used as fallback when id_token doesn't contain these fields (e.g., Mobile RT).
@@ -145,6 +146,7 @@ func fetchChatGPTAccountInfo(ctx context.Context, clientFactory PrivacyClientFac
 
 	// 在多账号里挑最能代表用户订阅的计划：个人订阅(pro/plus/team)优先于
 	// business 工作区，避免"曾加入过 business 计划"污染计划展示。
+	// 选号时跳过已停用/过期的账号（isUsableChatGPTAccountCandidate）。
 	info.PlanType, info.SubscriptionExpiresAt = selectChatGPTPlanType(accounts, orgID)
 
 	if info.PlanType == "" {
@@ -226,9 +228,14 @@ func selectChatGPTPlanType(accounts map[string]any, orgID string) (planType, exp
 		isDefault bool
 	}
 	var best *candidate
+	now := time.Now()
 	for id, acctRaw := range accounts {
 		acct, ok := acctRaw.(map[string]any)
 		if !ok {
+			continue
+		}
+		// 跳过已停用/过期的账号，避免"曾加入过"污染计划展示。
+		if !isUsableChatGPTAccountCandidate(acct, now) {
 			continue
 		}
 		pt := extractPlanType(acct)
@@ -314,6 +321,46 @@ func extractPlanType(acct map[string]any) string {
 		}
 	}
 	return ""
+}
+
+func isUsableChatGPTAccountCandidate(acct map[string]any, now time.Time) bool {
+	if acct == nil || hasChatGPTAccountDeactivatedMarker(acct) {
+		return false
+	}
+	if account, ok := acct["account"].(map[string]any); ok && hasChatGPTAccountDeactivatedMarker(account) {
+		return false
+	}
+
+	expiresAt := extractEntitlementExpiresAt(acct)
+	if expiresAt == "" {
+		return true
+	}
+	expiry, err := time.Parse(time.RFC3339, expiresAt)
+	if err != nil {
+		return true
+	}
+	return expiry.After(now)
+}
+
+func hasChatGPTAccountDeactivatedMarker(obj map[string]any) bool {
+	for _, key := range []string{"deactivated", "is_deactivated", "disabled", "is_disabled"} {
+		if value, ok := obj[key].(bool); ok && value {
+			return true
+		}
+	}
+	for _, key := range []string{"deactivated_at", "disabled_at", "deleted_at"} {
+		if value, ok := obj[key].(string); ok && strings.TrimSpace(value) != "" {
+			return true
+		}
+	}
+	for _, key := range []string{"status", "state"} {
+		value, _ := obj[key].(string)
+		switch strings.ToLower(strings.TrimSpace(value)) {
+		case "deactivated", "disabled", "deleted", "inactive", "suspended":
+			return true
+		}
+	}
+	return false
 }
 
 // extractEntitlementExpiresAt 从 entitlement 中提取 expires_at。

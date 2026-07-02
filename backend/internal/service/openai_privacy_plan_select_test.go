@@ -26,17 +26,18 @@ func acct(planType, expiresAt string, isDefault bool) map[string]any {
 func TestSelectChatGPTPlanType_ConsumerWinsOverBusiness(t *testing.T) {
 	accounts := map[string]any{
 		// poid 指向 business 工作区，但用户个人是 Pro：应取 Pro。
-		"org-biz": acct("self_serve_business_usage_based", "2026-01-01T00:00:00+00:00", true),
-		"org-pro": acct("pro", "2026-12-31T00:00:00+00:00", false),
+		// 到期日均取远期，避免触发 selectChatGPTPlanType 内的“跳过已过期账号”过滤。
+		"org-biz": acct("self_serve_business_usage_based", "2099-01-01T00:00:00+00:00", true),
+		"org-pro": acct("pro", "2099-12-31T00:00:00+00:00", false),
 	}
 	plan, expiresAt := selectChatGPTPlanType(accounts, "org-biz")
 	require.Equal(t, "pro", plan)
-	require.Equal(t, "2026-12-31T00:00:00+00:00", expiresAt)
+	require.Equal(t, "2099-12-31T00:00:00+00:00", expiresAt)
 }
 
 func TestSelectChatGPTPlanType_BusinessOnly(t *testing.T) {
 	accounts := map[string]any{
-		"org-biz": acct("self_serve_business_usage_based", "2026-01-01T00:00:00+00:00", true),
+		"org-biz": acct("self_serve_business_usage_based", "2099-01-01T00:00:00+00:00", true),
 	}
 	plan, _ := selectChatGPTPlanType(accounts, "org-biz")
 	require.Equal(t, "self_serve_business_usage_based", plan)
@@ -45,18 +46,18 @@ func TestSelectChatGPTPlanType_BusinessOnly(t *testing.T) {
 func TestSelectChatGPTPlanType_OrgMatchBreaksConsumerTie(t *testing.T) {
 	// 个人订阅之间(plus vs team)按 orgID 命中决定，保持原有"token 实际作用 org"语义。
 	accounts := map[string]any{
-		"org-team": acct("team", "2026-06-01T00:00:00+00:00", false),
-		"org-plus": acct("plus", "2026-07-01T00:00:00+00:00", false),
+		"org-team": acct("team", "2099-06-01T00:00:00+00:00", false),
+		"org-plus": acct("plus", "2099-07-01T00:00:00+00:00", false),
 	}
 	plan, expiresAt := selectChatGPTPlanType(accounts, "org-team")
 	require.Equal(t, "team", plan)
-	require.Equal(t, "2026-06-01T00:00:00+00:00", expiresAt)
+	require.Equal(t, "2099-06-01T00:00:00+00:00", expiresAt)
 }
 
 func TestSelectChatGPTPlanType_BusinessBeatsFree(t *testing.T) {
 	accounts := map[string]any{
 		"org-free": acct("free", "", true),
-		"org-biz":  acct("self_serve_business_usage_based", "2026-01-01T00:00:00+00:00", false),
+		"org-biz":  acct("self_serve_business_usage_based", "2099-01-01T00:00:00+00:00", false),
 	}
 	plan, _ := selectChatGPTPlanType(accounts, "")
 	require.Equal(t, "self_serve_business_usage_based", plan)
@@ -65,8 +66,8 @@ func TestSelectChatGPTPlanType_BusinessBeatsFree(t *testing.T) {
 func TestSelectChatGPTPlanType_DeterministicTieBreak(t *testing.T) {
 	// 两个同优先级、均无 orgID 命中、均非 default：必须在 Go map 随机遍历下结果稳定。
 	accounts := map[string]any{
-		"org-a": acct("plus", "2026-05-01T00:00:00+00:00", false),
-		"org-b": acct("team", "2026-06-01T00:00:00+00:00", false),
+		"org-a": acct("plus", "2099-05-01T00:00:00+00:00", false),
+		"org-b": acct("team", "2099-06-01T00:00:00+00:00", false),
 	}
 	first, _ := selectChatGPTPlanType(accounts, "")
 	for i := 0; i < 50; i++ {
@@ -81,6 +82,23 @@ func TestSelectChatGPTPlanType_Empty(t *testing.T) {
 	plan, expiresAt := selectChatGPTPlanType(map[string]any{}, "")
 	require.Equal(t, "", plan)
 	require.Equal(t, "", expiresAt)
+}
+
+func TestSelectChatGPTPlanType_SkipsExpiredAndDeactivated(t *testing.T) {
+	// 上游并入的行为：已过期/已停用账号不参与选号，避免“曾加入过”污染计划展示。
+	expiredBiz := acct("self_serve_business_usage_based", "2000-01-01T00:00:00+00:00", true)
+	activePlus := acct("plus", "2099-07-01T00:00:00+00:00", false)
+	accounts := map[string]any{
+		"org-expired": expiredBiz,
+		"org-active":  activePlus,
+	}
+	plan, _ := selectChatGPTPlanType(accounts, "org-expired")
+	require.Equal(t, "plus", plan, "过期的 business 账号应被跳过，取仍有效的个人订阅")
+
+	deactivated := acct("pro", "2099-01-01T00:00:00+00:00", true)
+	deactivated["deactivated"] = true
+	plan2, _ := selectChatGPTPlanType(map[string]any{"org-off": deactivated}, "org-off")
+	require.Equal(t, "", plan2, "已停用账号应被跳过")
 }
 
 func TestPlanTypeClassifiers(t *testing.T) {
