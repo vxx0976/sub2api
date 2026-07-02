@@ -23,8 +23,9 @@ type UserSubscription struct {
 	AssignedAt time.Time `json:"assigned_at"`
 	Notes      string    `json:"notes,omitempty"`
 
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt time.Time  `json:"updated_at"`
+	DeletedAt *time.Time `json:"deleted_at,omitempty"`
 
 	User           *User  `json:"user,omitempty"`
 	Group          *Group `json:"group,omitempty"`

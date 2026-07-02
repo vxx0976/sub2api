@@ -18,7 +18,7 @@ const BADGE: Record<Platform, string> = {
   glm: 'bg-rose-500/10 text-rose-600 border-rose-500/30 dark:text-rose-400',
   qwen: 'bg-violet-500/10 text-violet-600 border-violet-500/30 dark:text-violet-400',
   seedance: 'bg-amber-500/10 text-amber-600 border-amber-500/30 dark:text-amber-400',
-  grok: 'bg-slate-500/10 text-slate-600 border-slate-500/30 dark:text-slate-300',
+  grok: 'bg-zinc-800/10 text-zinc-800 border-zinc-800/30 dark:bg-zinc-500/10 dark:text-zinc-200 dark:border-zinc-500/30',
 }
 const BADGE_DEFAULT = 'bg-slate-500/10 text-slate-600 border-slate-500/30 dark:text-slate-400'
 
@@ -33,7 +33,7 @@ const BADGE_LIGHT: Record<Platform, string> = {
   glm: 'bg-rose-500/10 text-rose-600 dark:bg-rose-500/10 dark:text-rose-300',
   qwen: 'bg-violet-500/10 text-violet-600 dark:bg-violet-500/10 dark:text-violet-300',
   seedance: 'bg-amber-500/10 text-amber-600 dark:bg-amber-500/10 dark:text-amber-300',
-  grok: 'bg-slate-500/10 text-slate-600 dark:bg-slate-500/10 dark:text-slate-300',
+  grok: 'bg-zinc-800/10 text-zinc-800 dark:bg-zinc-500/10 dark:text-zinc-200',
 }
 
 // ── Border ──────────────────────────────────────────────────────────
@@ -47,7 +47,7 @@ const BORDER: Record<Platform, string> = {
   glm: 'border-rose-500/20 dark:border-rose-500/20',
   qwen: 'border-violet-500/20 dark:border-violet-500/20',
   seedance: 'border-amber-500/20 dark:border-amber-500/20',
-  grok: 'border-slate-500/20 dark:border-slate-500/20',
+  grok: 'border-zinc-800/20 dark:border-zinc-500/20',
 }
 const BORDER_DEFAULT = 'border-gray-200 dark:border-dark-700'
 
@@ -62,7 +62,7 @@ const ACCENT_BAR: Record<Platform, string> = {
   glm: 'bg-gradient-to-r from-rose-400 to-rose-500',
   qwen: 'bg-gradient-to-r from-violet-400 to-violet-500',
   seedance: 'bg-gradient-to-r from-amber-400 to-amber-500',
-  grok: 'bg-gradient-to-r from-slate-500 to-cyan-500',
+  grok: 'bg-gradient-to-r from-zinc-700 to-zinc-900',
 }
 const ACCENT_BAR_DEFAULT = 'bg-gradient-to-r from-primary-400 to-primary-500'
 
@@ -77,7 +77,7 @@ const TEXT: Record<Platform, string> = {
   glm: 'text-rose-600 dark:text-rose-400',
   qwen: 'text-violet-600 dark:text-violet-400',
   seedance: 'text-amber-600 dark:text-amber-400',
-  grok: 'text-slate-700 dark:text-slate-300',
+  grok: 'text-zinc-800 dark:text-zinc-200',
 }
 const TEXT_DEFAULT = 'text-primary-600 dark:text-primary-400'
 
@@ -92,7 +92,7 @@ const ICON: Record<Platform, string> = {
   glm: 'text-rose-500 dark:text-rose-400',
   qwen: 'text-violet-500 dark:text-violet-400',
   seedance: 'text-amber-500 dark:text-amber-400',
-  grok: 'text-slate-500 dark:text-slate-300',
+  grok: 'text-zinc-800 dark:text-zinc-200',
 }
 const ICON_DEFAULT = 'text-primary-500 dark:text-primary-400'
 
@@ -107,7 +107,7 @@ const BUTTON: Record<Platform, string> = {
   glm: 'bg-rose-500 text-white hover:bg-rose-600 active:bg-rose-700 dark:bg-rose-500/80 dark:hover:bg-rose-500',
   qwen: 'bg-violet-500 text-white hover:bg-violet-600 active:bg-violet-700 dark:bg-violet-500/80 dark:hover:bg-violet-500',
   seedance: 'bg-amber-500 text-white hover:bg-amber-600 active:bg-amber-700 dark:bg-amber-500/80 dark:hover:bg-amber-500',
-  grok: 'bg-slate-700 text-white hover:bg-slate-800 active:bg-slate-900 dark:bg-slate-600 dark:hover:bg-slate-500',
+  grok: 'bg-zinc-800 text-white hover:bg-zinc-900 active:bg-black dark:bg-zinc-700 dark:hover:bg-zinc-600',
 }
 const BUTTON_DEFAULT = 'bg-primary-500 text-white hover:bg-primary-600 dark:bg-primary-600 dark:hover:bg-primary-500'
 
@@ -122,7 +122,7 @@ const DISCOUNT: Record<Platform, string> = {
   glm: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300',
   qwen: 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300',
   seedance: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
-  grok: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
+  grok: 'bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200',
 }
 const DISCOUNT_DEFAULT = 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
 
@@ -137,7 +137,7 @@ const GRADIENT: Record<Platform, string> = {
   glm: 'from-rose-500 to-rose-600',
   qwen: 'from-violet-500 to-violet-600',
   seedance: 'from-amber-500 to-amber-600',
-  grok: 'from-slate-600 to-cyan-600',
+  grok: 'from-zinc-700 to-zinc-900',
 }
 const GRADIENT_DEFAULT = 'from-primary-500 to-primary-600'
 
@@ -152,7 +152,7 @@ const GRADIENT_TEXT: Record<Platform, string> = {
   glm: 'text-rose-100',
   qwen: 'text-violet-100',
   seedance: 'text-amber-100',
-  grok: 'text-slate-100',
+  grok: 'text-zinc-100',
 }
 const GRADIENT_TEXT_DEFAULT = 'text-primary-100'
 
@@ -166,7 +166,7 @@ const GRADIENT_SUBTEXT: Record<Platform, string> = {
   glm: 'text-rose-200',
   qwen: 'text-violet-200',
   seedance: 'text-amber-200',
-  grok: 'text-slate-200',
+  grok: 'text-zinc-300',
 }
 const GRADIENT_SUBTEXT_DEFAULT = 'text-primary-200'
 

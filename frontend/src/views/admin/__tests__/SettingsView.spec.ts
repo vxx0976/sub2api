@@ -384,6 +384,7 @@ const baseSettingsResponse = {
   cyber_session_block_enabled: false,
   cyber_session_block_ttl_seconds: 3600,
   rewrite_message_cache_control: false,
+  enable_client_dateline_normalization: true,
   antigravity_user_agent_version: "",
   openai_codex_user_agent: "",
   payment_enabled: true,

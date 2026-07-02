@@ -41,7 +41,7 @@
           <span class="font-bold">{{ userRateMultiplier }}x</span>
         </template>
         <template v-else>
-          {{ rateMultiplier }}x {{ t('common.rateMultiplier') }}
+          {{ rateMultiplier }}x {{ t('admin.groups.rateLabel') }}
         </template>
       </span>
       <!-- Checkmark -->
@@ -107,6 +107,7 @@ const RATE_PILL_COLORS: Record<string, string> = {
   glm: 'bg-rose-50 text-rose-700 dark:bg-rose-900/20 dark:text-rose-400',
   qwen: 'bg-violet-50 text-violet-700 dark:bg-violet-900/20 dark:text-violet-400',
   seedance: 'bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400',
+  grok: 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200',
 }
 const ratePillClass = computed(() => {
   return RATE_PILL_COLORS[props.platform] || 'bg-violet-50 text-violet-700 dark:bg-violet-900/20 dark:text-violet-400'
