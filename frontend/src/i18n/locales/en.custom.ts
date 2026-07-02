@@ -1062,8 +1062,41 @@ export default {
 
   // Admin sub-sections
   admin: {
+    accounts: {
+      fromModel: 'Source Model',
+      toModel: 'Target Model',
+      oauth: {
+        openai: {
+          mobileRefreshTokenAuth: 'Authorize with mobile refresh token',
+          accessTokenAuth: 'Authorize with access token'
+        }
+      }
+    },
+    users: {
+      passwordCopied: 'Password copied'
+    },
     // Channel Management
     channels: {
+      noGroupsSelected: 'No groups selected for platform {platform}',
+      emptyModelsInPricing: 'Platform {platform} has pricing entries with no models selected',
+      form: {
+        balanceConfig: 'Balance Query Config',
+        balanceUrl: 'Balance API URL',
+        balanceMethod: 'Method',
+        balanceUnit: 'Unit',
+        balancePath: 'JSON Path / Expression',
+        balancePathPlaceholder: 'data.balance or data.limit - data.used',
+        balancePathHint: 'Supports gjson paths or arithmetic expressions (+ - * /) with spaces around operators, e.g. data.limit - data.used',
+        balanceHeaders: 'Headers (JSON)',
+        balanceBody: 'Request Body',
+        testBalance: 'Test',
+        testBalanceHint: 'Run a test query to preview the response structure (not saved)',
+        testBalanceFailed: 'Test request failed',
+        extractedValue: 'Extracted Value',
+        responseTruncated: 'Response too long, truncated to first 16KB',
+        balanceUrlRequired: 'Balance URL is required',
+        invalidBalanceHeaders: 'Balance headers must be valid JSON'
+      },
       title: 'Channel Management',
       description: 'Configure channels and query balances',
       createChannel: 'Create Channel',
@@ -1332,5 +1365,22 @@ export default {
     adminRechargeOrders: 'Recharge Orders',
     alimpayRecharge: 'Alipay Recharge',
     adminAliMPayOrders: 'AliMPay Orders',
+  },
+  common: {
+    clear: 'Clear',
+    creating: 'Creating...',
+    required: 'Required',
+    apply: 'Apply',
+    sending: 'Sending...',
+    tryAgain: 'Try again'
+  },
+  plans: {
+    enterprise: {
+      dialog: {
+        title: 'Contact Us',
+        subtitle: 'For enterprise plans, reach us via the channels below',
+        tip: 'We will get back to you as soon as possible during business hours'
+      }
+    }
   },
 } as const

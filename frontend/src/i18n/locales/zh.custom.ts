@@ -1063,8 +1063,41 @@ export default {
 
   // Admin sub-sections
   admin: {
+    accounts: {
+      fromModel: '源模型',
+      toModel: '目标模型',
+      oauth: {
+        openai: {
+          mobileRefreshTokenAuth: '使用移动端 Refresh Token 授权',
+          accessTokenAuth: '使用 Access Token 授权'
+        }
+      }
+    },
+    users: {
+      passwordCopied: '密码已复制'
+    },
     // Channel Management
     channels: {
+      noGroupsSelected: '{platform} 平台未选择分组',
+      emptyModelsInPricing: '{platform} 平台存在未选择模型的定价条目',
+      form: {
+        balanceConfig: '余额查询配置',
+        balanceUrl: '查询 URL',
+        balanceMethod: '请求方式',
+        balanceUnit: '余额单位',
+        balancePath: '余额字段路径',
+        balancePathPlaceholder: 'data.balance 或 data.limit - data.used',
+        balancePathHint: '支持 gjson 路径或算术表达式（+ - * /），运算符两侧需有空格，如 data.limit - data.used',
+        balanceHeaders: '请求头（JSON）',
+        balanceBody: '请求体',
+        testBalance: '测试',
+        testBalanceHint: '试跑一次查询以预览响应结构（不会保存）',
+        testBalanceFailed: '测试请求失败',
+        extractedValue: '解析结果',
+        responseTruncated: '响应过长，已截断前 16KB',
+        balanceUrlRequired: '请填写余额查询 URL',
+        invalidBalanceHeaders: '请求头必须是合法的 JSON'
+      },
       title: '渠道管理',
       description: '配置多个渠道并查询余额',
       createChannel: '添加渠道',
@@ -1337,5 +1370,22 @@ export default {
     adminRechargeOrders: '充值订单',
     alimpayRecharge: '支付宝充值',
     adminAliMPayOrders: '支付宝订单',
+  },
+  common: {
+    clear: '清空',
+    creating: '创建中...',
+    required: '必填',
+    apply: '应用',
+    sending: '发送中...',
+    tryAgain: '重试'
+  },
+  plans: {
+    enterprise: {
+      dialog: {
+        title: '联系我们',
+        subtitle: '企业定制方案，请通过以下方式联系我们',
+        tip: '我们会在工作时间内尽快回复'
+      }
+    }
   },
 } as const
