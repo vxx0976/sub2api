@@ -1556,12 +1556,12 @@ type PublicSettingsInjectionPayload struct {
 	ContactTelegram                  string                   `json:"contact_telegram,omitempty"`
 	ContactQQ                        string                   `json:"contact_qq,omitempty"`
 	// 服务器全局时区（IANA 名称与当前 UTC 偏移），高峰时段等服务端本地时间窗口的展示标注用
-	ServerTimezone                   string                   `json:"server_timezone"`
-	ServerUTCOffset                  string                   `json:"server_utc_offset"`
-	BalanceLowNotifyEnabled          bool                     `json:"balance_low_notify_enabled"`
-	AccountQuotaNotifyEnabled        bool                     `json:"account_quota_notify_enabled"`
-	BalanceLowNotifyThreshold        float64                  `json:"balance_low_notify_threshold"`
-	BalanceLowNotifyRechargeURL      string                   `json:"balance_low_notify_recharge_url"`
+	ServerTimezone              string  `json:"server_timezone"`
+	ServerUTCOffset             string  `json:"server_utc_offset"`
+	BalanceLowNotifyEnabled     bool    `json:"balance_low_notify_enabled"`
+	AccountQuotaNotifyEnabled   bool    `json:"account_quota_notify_enabled"`
+	BalanceLowNotifyThreshold   float64 `json:"balance_low_notify_threshold"`
+	BalanceLowNotifyRechargeURL string  `json:"balance_low_notify_recharge_url"`
 
 	// Feature flags — MUST match the opt-in/opt-out registry in
 	// frontend/src/utils/featureFlags.ts. Missing a field here is the bug
