@@ -31,7 +31,7 @@ type UsdtOrder struct {
 	Multiplier float64 `json:"multiplier,omitempty"`
 	// 链/网络：trc20
 	Chain string `json:"chain,omitempty"`
-	// 收款地址快照（下单时冻结）
+	// 收款地址快照（下单时冻结）。128：TON raw 形态 0:<64hex> 达 66 字符，超过 Tron/EVM 长度
 	ReceivingAddress string `json:"receiving_address,omitempty"`
 	// 下单时冻结的汇率：1 USDT = ? CNY
 	UsdtRate float64 `json:"usdt_rate,omitempty"`
@@ -39,7 +39,7 @@ type UsdtOrder struct {
 	UsdtAmount float64 `json:"usdt_amount,omitempty"`
 	// 实际收到的 USDT 金额
 	PaidUsdtAmount *float64 `json:"paid_usdt_amount,omitempty"`
-	// 付款方地址
+	// 付款方地址。放宽到 128：TON 付款方地址为 raw 形态（0: 前缀 + 64 位 hex，共 66 字符），超过原 64 上限（会让 MarkPaid 校验失败、订单永不入账）
 	FromAddress *string `json:"from_address,omitempty"`
 	// 到账交易所在区块高度
 	BlockNumber *int64 `json:"block_number,omitempty"`

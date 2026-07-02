@@ -57,8 +57,8 @@ func (UsdtOrder) Fields() []ent.Field {
 			Default("trc20").
 			Comment("链/网络：trc20"),
 		field.String("receiving_address").
-			MaxLen(64).
-			Comment("收款地址快照（下单时冻结）"),
+			MaxLen(128).
+			Comment("收款地址快照（下单时冻结）。128：TON raw 形态 0:<64hex> 达 66 字符，超过 Tron/EVM 长度"),
 		field.Float("usdt_rate").
 			SchemaType(map[string]string{dialect.Postgres: "decimal(20,8)"}).
 			Default(0).
@@ -72,10 +72,10 @@ func (UsdtOrder) Fields() []ent.Field {
 			Nillable().
 			Comment("实际收到的 USDT 金额"),
 		field.String("from_address").
-			MaxLen(64).
+			MaxLen(128).
 			Optional().
 			Nillable().
-			Comment("付款方地址"),
+			Comment("付款方地址。放宽到 128：TON 付款方地址为 raw 形态（0: 前缀 + 64 位 hex，共 66 字符），超过原 64 上限（会让 MarkPaid 校验失败、订单永不入账）"),
 		field.Int64("block_number").
 			Optional().
 			Nillable().
