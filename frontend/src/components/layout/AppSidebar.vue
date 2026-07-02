@@ -730,6 +730,7 @@ const userNavItems = computed((): NavItem[] => {
     { path: '/keys', label: t('nav.apiKeys'), icon: KeyIcon },
     { path: '/usage', label: t('nav.usage'), icon: ChartIcon, hideInSimpleMode: true },
     { path: '/available-channels', label: t('nav.availableChannels'), icon: ChannelIcon, hideInSimpleMode: true, featureFlag: flagAvailableChannels },
+    { path: '/model-pricing', label: t('nav.modelPricing'), icon: WalletIcon, hideInSimpleMode: true },
     { path: '/monitor', label: t('nav.channelStatus'), icon: SignalIcon, featureFlag: flagChannelMonitor },
     ...(hasSubscriptions.value ? [{ path: '/subscriptions', label: t('nav.mySubscriptions'), icon: CreditCardIcon }] : []),
     ...((appStore.cachedPublicSettings?.purchase_enabled || appStore.cachedPublicSettings?.payment_enabled)
@@ -820,6 +821,7 @@ const personalNavItems = computed((): NavItem[] => {
     { path: '/keys', label: t('nav.apiKeys'), icon: KeyIcon },
     { path: '/usage', label: t('nav.usage'), icon: ChartIcon, hideInSimpleMode: true },
     { path: '/available-channels', label: t('nav.availableChannels'), icon: ChannelIcon, hideInSimpleMode: true, featureFlag: flagAvailableChannels },
+    { path: '/model-pricing', label: t('nav.modelPricing'), icon: WalletIcon, hideInSimpleMode: true },
     { path: '/monitor', label: t('nav.channelStatus'), icon: SignalIcon, featureFlag: flagChannelMonitor },
     ...(hasSubscriptions.value ? [{ path: '/subscriptions', label: t('nav.mySubscriptions'), icon: CreditCardIcon }] : []),
     ...((appStore.cachedPublicSettings?.purchase_enabled || appStore.cachedPublicSettings?.payment_enabled)

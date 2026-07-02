@@ -114,6 +114,14 @@ export async function getPublicPricingGroups(options?: { signal?: AbortSignal })
   return data
 }
 
+/** GET /pricing/groups — 登录后「模型定价」页：当前用户可访问的分组（含专属/订阅组）。 */
+export async function getPricingGroups(options?: { signal?: AbortSignal }): Promise<UserPricingGroup[]> {
+  const { data } = await apiClient.get<UserPricingGroup[]>('/pricing/groups', {
+    signal: options?.signal,
+  })
+  return data
+}
+
 /** 展示用汇率：cny_per_usd = 1 / cny_to_usd_rate（1¥=1$ 余额模型下默认为 1）。 */
 export interface FXRate {
   cny_per_usd: number
@@ -128,6 +136,6 @@ export async function getPublicFXRate(options?: { signal?: AbortSignal }): Promi
   return data
 }
 
-export const userChannelsAPI = { getAvailable, getPublicPricingGroups, getPublicFXRate }
+export const userChannelsAPI = { getAvailable, getPublicPricingGroups, getPricingGroups, getPublicFXRate }
 
 export default userChannelsAPI

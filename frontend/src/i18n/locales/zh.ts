@@ -8048,6 +8048,38 @@ export default {
     },
   },
 
+  modelPricing: {
+    title: '模型列表',
+    description: '查看每个端点支持的模型及价格，本站价 vs 官方原厂价一目了然',
+    searchPlaceholder: '搜索端点或模型...',
+    endpoints: '可用端点',
+    empty: '暂无可用端点',
+    noModels: '该平台暂无模型',
+    selectPrompt: '请从左侧选择一个端点查看模型价格',
+    modelsUnit: '个模型',
+    rateLabel: '计费倍率',
+    filterAll: '全部',
+    fxNote: '当前汇率 1 USD ≈ {rate} CNY',
+    officialPrice: '官方价格',
+    sitePrice: '本站价格',
+    exclusive: '专属',
+    columns: {
+      model: '模型',
+      input: '输入价格',
+      output: '输出价格',
+      cacheWrite: '缓存创建价格',
+      cacheRead: '缓存读取价格'
+    },
+    badge: {
+      perRequest: '按次计费',
+      image: '图片计费'
+    },
+    tier: {
+      label: '档位',
+      price: '每次价格'
+    }
+  },
+
   publicModels: {
     pageTitle: '模型广场',
     badge: '公开模型',

@@ -8058,6 +8058,38 @@ export default {
     },
   },
 
+  modelPricing: {
+    title: 'Model Pricing',
+    description: 'Browse models supported by each endpoint with site price vs vendor official price side by side',
+    searchPlaceholder: 'Search endpoints or models...',
+    endpoints: 'Endpoints',
+    empty: 'No endpoints available',
+    noModels: 'No models on this platform',
+    selectPrompt: 'Pick an endpoint on the left to view its model pricing',
+    modelsUnit: 'models',
+    rateLabel: 'Rate',
+    filterAll: 'All',
+    fxNote: 'FX: 1 USD ≈ {rate} CNY',
+    officialPrice: 'Official Price',
+    sitePrice: 'Site Price',
+    exclusive: 'Exclusive',
+    columns: {
+      model: 'Model',
+      input: 'Input',
+      output: 'Output',
+      cacheWrite: 'Cache Write',
+      cacheRead: 'Cache Read'
+    },
+    badge: {
+      perRequest: 'Per Request',
+      image: 'Per Image'
+    },
+    tier: {
+      label: 'Tier',
+      price: 'Price / Request'
+    }
+  },
+
   publicModels: {
     pageTitle: 'Models',
     badge: 'Public Models',

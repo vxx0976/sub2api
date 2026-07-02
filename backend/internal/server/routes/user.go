@@ -78,6 +78,12 @@ func RegisterUserRoutes(
 			channels.GET("/available", h.AvailableChannel.List)
 		}
 
+		// 登录后「模型定价」页：当前用户可访问分组的模型 + 本站价/官方价
+		pricing := authenticated.Group("/pricing")
+		{
+			pricing.GET("/groups", h.AvailableChannel.PricingGroupList)
+		}
+
 		// 使用记录
 		usage := authenticated.Group("/usage")
 		{

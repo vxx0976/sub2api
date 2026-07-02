@@ -329,22 +329,9 @@ type userPricingGroup struct {
 	Models         []userPricingModel `json:"models"`
 }
 
-// PricingGroupListPublic 返回所有公开（非专属、非订阅）的活跃分组，用于未登录访客
-// 的"模型广场"展示。不应用任何用户/商户上下文，不受 available_channels_enabled 开关限制。
-//
-// GET /api/v1/pricing/public/groups
-func (h *AvailableChannelHandler) PricingGroupListPublic(c *gin.Context) {
-	ctx := c.Request.Context()
-	groups, err := h.apiKeyService.ListPublicGroups(ctx)
-	if err != nil {
-		response.ErrorFrom(c, err)
-		return
-	}
-	if len(groups) == 0 {
-		response.Success(c, []userPricingGroup{})
-		return
-	}
-
+// buildPricingGroups 把一批分组渲染成模型广场/定价 DTO：按账号交集(+LiteLLM 兜底)
+// 解析每组模型集合，并填充渠道显式价与 LiteLLM 官方价。公开端点与认证端点共用。
+func (h *AvailableChannelHandler) buildPricingGroups(ctx context.Context, groups []service.Group) []userPricingGroup {
 	// 官方价 lookup 缓存
 	priceCache := make(map[string]*service.ModelPricing, 32)
 	lookupOfficial := func(model string) *service.ModelPricing {
@@ -397,8 +384,49 @@ func (h *AvailableChannelHandler) PricingGroupListPublic(c *gin.Context) {
 		}
 		out = append(out, item)
 	}
+	return out
+}
 
-	response.Success(c, out)
+// PricingGroupListPublic 返回所有公开（非专属、非订阅）的活跃分组，用于未登录访客
+// 的"模型广场"展示。不应用任何用户上下文，不受 available_channels_enabled 开关限制。
+//
+// GET /api/v1/pricing/public/groups
+func (h *AvailableChannelHandler) PricingGroupListPublic(c *gin.Context) {
+	ctx := c.Request.Context()
+	groups, err := h.apiKeyService.ListPublicGroups(ctx)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	if len(groups) == 0 {
+		response.Success(c, []userPricingGroup{})
+		return
+	}
+	response.Success(c, h.buildPricingGroups(ctx, groups))
+}
+
+// PricingGroupList 返回当前登录用户可访问的分组及其模型定价（含专属/订阅组），用于
+// 登录后的「模型定价」页。与公开端点共享模型解析与官方价逻辑，按 group.rate_multiplier
+// 展示倍率（本 fork 无商户 sell_rate 概念）。
+//
+// GET /api/v1/pricing/groups
+func (h *AvailableChannelHandler) PricingGroupList(c *gin.Context) {
+	subject, ok := middleware.GetAuthSubjectFromContext(c)
+	if !ok {
+		response.Unauthorized(c, "User not authenticated")
+		return
+	}
+	ctx := c.Request.Context()
+	groups, err := h.apiKeyService.GetAvailableGroups(ctx, subject.UserID)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	if len(groups) == 0 {
+		response.Success(c, []userPricingGroup{})
+		return
+	}
+	response.Success(c, h.buildPricingGroups(ctx, groups))
 }
 
 // GetFXRate 返回展示用汇率 cny_per_usd，供模型广场「本站价 vs 官方价」换算。

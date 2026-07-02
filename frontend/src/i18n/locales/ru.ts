@@ -8962,6 +8962,38 @@ export default {
     }
   },
 
+  modelPricing: {
+    title: 'Цены на модели',
+    description: 'Модели каждого эндпоинта: цена сайта и официальная цена вендора рядом',
+    searchPlaceholder: 'Поиск эндпоинтов или моделей...',
+    endpoints: 'Эндпоинты',
+    empty: 'Нет доступных эндпоинтов',
+    noModels: 'Нет моделей на этой платформе',
+    selectPrompt: 'Выберите эндпоинт слева, чтобы увидеть цены на модели',
+    modelsUnit: 'моделей',
+    rateLabel: 'Коэффициент',
+    filterAll: 'Все',
+    fxNote: 'Курс: 1 USD ≈ {rate} CNY',
+    officialPrice: 'Официальная цена',
+    sitePrice: 'Цена сайта',
+    exclusive: 'Эксклюзив',
+    columns: {
+      model: 'Модель',
+      input: 'Ввод',
+      output: 'Вывод',
+      cacheWrite: 'Запись кэша',
+      cacheRead: 'Чтение кэша'
+    },
+    badge: {
+      perRequest: 'За запрос',
+      image: 'За изображение'
+    },
+    tier: {
+      label: 'Уровень',
+      price: 'Цена / запрос'
+    }
+  },
+
   publicModels: {
     pageTitle: 'Модели',
     badge: 'Публичные модели',
