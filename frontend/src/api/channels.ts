@@ -94,6 +94,8 @@ export interface UserPricingModel {
   official_output_price?: number | null
   official_cache_write_price?: number | null
   official_cache_read_price?: number | null
+  /** 价格币种口径：'CNY' = 国产人民币计价模型（显示 ¥），其余 'USD'。与用量页同源。 */
+  price_currency?: string
 }
 
 /** 「模型广场」展示页的端点 = 一个 group。models 由后端按账号映射交集/LiteLLM 兜底解析。 */
@@ -122,7 +124,7 @@ export async function getPricingGroups(options?: { signal?: AbortSignal }): Prom
   return data
 }
 
-/** 展示用汇率：cny_per_usd = 1 / cny_to_usd_rate（1¥=1$ 余额模型下默认为 1）。 */
+/** 展示用汇率：cny_per_usd 即 pricing.cny_to_usd_rate（1 USD ≈ 几 CNY；1¥=1$ 余额模型下默认为 1）。 */
 export interface FXRate {
   cny_per_usd: number
   last_updated: string | null

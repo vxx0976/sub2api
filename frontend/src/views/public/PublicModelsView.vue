@@ -219,10 +219,10 @@
                       <td colspan="4" class="px-3 py-2.5 text-right font-mono text-xs text-gray-400 dark:text-dark-500">—</td>
                     </template>
                     <template v-else>
-                      <td class="px-3 py-2.5 text-right font-mono text-sm" :class="priceCellTone">{{ formatPrice(basePrice(model, 'input'), group.rate_multiplier) }}</td>
-                      <td class="px-3 py-2.5 text-right font-mono text-sm" :class="priceCellTone">{{ formatPrice(basePrice(model, 'output'), group.rate_multiplier) }}</td>
-                      <td class="px-3 py-2.5 text-right font-mono text-sm" :class="priceCellTone">{{ formatPrice(basePrice(model, 'cache_write'), group.rate_multiplier) }}</td>
-                      <td class="px-3 py-2.5 text-right font-mono text-sm" :class="priceCellTone">{{ formatPrice(basePrice(model, 'cache_read'), group.rate_multiplier) }}</td>
+                      <td class="px-3 py-2.5 text-right font-mono text-sm" :class="priceCellTone">{{ formatPrice(basePrice(model, 'input'), group.rate_multiplier, model.price_currency) }}</td>
+                      <td class="px-3 py-2.5 text-right font-mono text-sm" :class="priceCellTone">{{ formatPrice(basePrice(model, 'output'), group.rate_multiplier, model.price_currency) }}</td>
+                      <td class="px-3 py-2.5 text-right font-mono text-sm" :class="priceCellTone">{{ formatPrice(basePrice(model, 'cache_write'), group.rate_multiplier, model.price_currency) }}</td>
+                      <td class="px-3 py-2.5 text-right font-mono text-sm" :class="priceCellTone">{{ formatPrice(basePrice(model, 'cache_read'), group.rate_multiplier, model.price_currency) }}</td>
                     </template>
                   </tr>
                   <tr v-if="hasTierBlock(model)" class="border-t border-gray-50 bg-gray-50/30 dark:border-dark-800 dark:bg-dark-900/40">
@@ -249,7 +249,7 @@
                               :key="col"
                               class="px-3 py-1.5 text-right font-mono"
                               :class="priceCellTone"
-                            >{{ formatPerItem(tierMatrix(model)!.cells[row]?.[col], group.rate_multiplier) }}</td>
+                            >{{ formatPerItem(tierMatrix(model)!.cells[row]?.[col], group.rate_multiplier, model.price_currency) }}</td>
                           </tr>
                         </tbody>
                       </table>
@@ -267,7 +267,7 @@
                             class="even:bg-white odd:bg-gray-50 dark:even:bg-dark-900/40 dark:odd:bg-dark-800/40"
                           >
                             <td class="px-3 py-1.5 text-left text-gray-700 dark:text-gray-200">{{ iv.tier_label || '-' }}</td>
-                            <td class="px-3 py-1.5 text-right font-mono" :class="priceCellTone">{{ formatPerItem(iv.per_request_price, group.rate_multiplier) }}</td>
+                            <td class="px-3 py-1.5 text-right font-mono" :class="priceCellTone">{{ formatPerItem(iv.per_request_price, group.rate_multiplier, model.price_currency) }}</td>
                           </tr>
                         </tbody>
                       </table>
@@ -305,6 +305,7 @@ import userChannelsAPI, { type UserPricingGroup, type UserPricingModel } from '@
 import { useAppStore } from '@/stores'
 import { useClipboard } from '@/composables/useClipboard'
 import { DEFAULT_CNY_PER_USD } from '@/utils/pricing'
+import { costSymbol } from '@/utils/usagePricing'
 import type { GroupPlatform } from '@/types'
 
 const { t } = useI18n()
@@ -426,18 +427,22 @@ function basePrice(
 }
 
 /**
- * 价格格式化（per-token 美元价 → $/M token）：
+ * 价格格式化（per-token 单价 → 每 M token）：
  *   - official 模式：直接 × 1M
  *   - site     模式：(group.rate / cny_per_usd) × 1M
+ *
+ * 货币符号按 price_currency 显示：国产人民币计价模型 '¥'，其余 '$'
+ * （与用量页 costSymbol 同口径，依赖部署 cny_to_usd_rate=1.0）。
  */
-function formatPrice(perTokenUSD: number | null | undefined, groupRate: number): string {
-  if (perTokenUSD == null) return '-'
-  const officialPerM = perTokenUSD * 1_000_000
+function formatPrice(perToken: number | null | undefined, groupRate: number, currency?: string): string {
+  if (perToken == null) return '-'
+  const sym = costSymbol(currency)
+  const officialPerM = perToken * 1_000_000
   if (priceMode.value === 'official') {
-    return `$${trimNum(officialPerM)}/M`
+    return `${sym}${trimNum(officialPerM)}/M`
   }
   const sitePerM = (groupRate / fxRate.value) * officialPerM
-  return `$${trimNum(sitePerM)}/M`
+  return `${sym}${trimNum(sitePerM)}/M`
 }
 
 const TIER_SEP = '-'
@@ -484,12 +489,13 @@ function tierMatrix(model: UserPricingModel): TierMatrixData | null {
   return { rows, cols, cells }
 }
 
-function formatPerItem(perItemUSD: number | null | undefined, groupRate: number): string {
-  if (perItemUSD == null) return '-'
+function formatPerItem(perItem: number | null | undefined, groupRate: number, currency?: string): string {
+  if (perItem == null) return '-'
+  const sym = costSymbol(currency)
   if (priceMode.value === 'official') {
-    return '$' + trimNum(perItemUSD)
+    return sym + trimNum(perItem)
   }
-  return '$' + trimNum((groupRate / fxRate.value) * perItemUSD)
+  return sym + trimNum((groupRate / fxRate.value) * perItem)
 }
 
 function trimNum(n: number): string {

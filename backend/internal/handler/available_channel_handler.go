@@ -317,6 +317,9 @@ type userPricingModel struct {
 	OfficialOutputPrice     *float64                 `json:"official_output_price,omitempty"`
 	OfficialCacheWritePrice *float64                 `json:"official_cache_write_price,omitempty"`
 	OfficialCacheReadPrice  *float64                 `json:"official_cache_read_price,omitempty"`
+	// PriceCurrency 价格币种口径："CNY" 表示国产官方人民币计价模型（前端显示 ¥），
+	// 其余为 "USD"。与用量页 price_currency 同源（service.ModelPriceCurrency）。
+	PriceCurrency string `json:"price_currency,omitempty"`
 }
 
 // userPricingGroup 模型广场展示页的端点 = 一个 group。折扣由 rate_multiplier 决定。
@@ -430,7 +433,7 @@ func (h *AvailableChannelHandler) PricingGroupList(c *gin.Context) {
 }
 
 // GetFXRate 返回展示用汇率 cny_per_usd，供模型广场「本站价 vs 官方价」换算。
-// 值由 pricing.cny_to_usd_rate 派生（cny_per_usd = 1 / cny_to_usd_rate）；
+// 值即 pricing.cny_to_usd_rate（语义 = 1 USD ≈ 几 CNY，计费侧 CNY价/rate=USD）；
 // 1¥=1$ 余额模型下默认为 1.0。公开无需认证。
 //
 // GET /api/v1/pricing/public/fx-rate
@@ -453,7 +456,7 @@ func (h *AvailableChannelHandler) buildPricingModel(
 	name string,
 	lookupOfficial func(string) *service.ModelPricing,
 ) userPricingModel {
-	m := userPricingModel{Name: name}
+	m := userPricingModel{Name: name, PriceCurrency: service.ModelPriceCurrency(name)}
 	if p := lookupOfficial(name); p != nil {
 		m.OfficialInputPrice = positiveFloatPtr(p.InputPricePerToken)
 		m.OfficialOutputPrice = positiveFloatPtr(p.OutputPricePerToken)
@@ -488,12 +491,13 @@ func (h *AvailableChannelHandler) buildPricingModel(
 	return m
 }
 
-// resolveGroupModelsByAccount 按"account 交集 + LiteLLM 兜底"算法计算 group 的模型列表。
+// resolveGroupModelsByAccount 按"account 并集 + LiteLLM 兜底"算法计算 group 的模型列表。
 //
 //   - 拉该 group 下所有 active account（accountService.ListByGroup）
-//   - 对每个 account 取 GetModelMapping()：空 mapping 或全通配符 → 透传，不参与交集；
+//   - 对每个 account 取 GetModelMapping()：空 mapping 或全通配符 → 透传，不参与并集；
 //     含非通配符 from → 这些 from 就是该 account 显式支持的模型
-//   - 所有参与的 account 之间取交集
+//   - 所有参与的 account 之间取**并集**（与 /v1/models 的 GetAvailableModels 口径一致：
+//     组内任一账号支持的模型都可能被调度命中，展示上应全部列出）
 //   - 无参与 / 无 account → LiteLLM 按 platform 兜底
 func (h *AvailableChannelHandler) resolveGroupModelsByAccount(
 	ctx context.Context,
@@ -501,7 +505,7 @@ func (h *AvailableChannelHandler) resolveGroupModelsByAccount(
 	platform string,
 	getLiteLLMModels func(platform string) []string,
 ) []string {
-	var intersect map[string]struct{} // nil 表示还没遇到任何"显式列模型"的账号
+	var union map[string]struct{} // nil 表示还没遇到任何"显式列模型"的账号
 
 	if h.accountService != nil {
 		accounts, err := h.accountService.ListByGroup(ctx, groupID)
@@ -517,40 +521,27 @@ func (h *AvailableChannelHandler) resolveGroupModelsByAccount(
 				}
 				mapping := acc.GetModelMapping()
 				if len(mapping) == 0 {
-					// 透传，不参与交集
+					// 透传，不参与并集
 					continue
 				}
-				cur := map[string]struct{}{}
 				for from := range mapping {
 					if strings.HasSuffix(from, "*") {
 						continue // 通配符 from 不算具体模型
 					}
-					cur[from] = struct{}{}
-				}
-				if len(cur) == 0 {
-					// 只有通配符 → 视为透传，不参与交集
-					continue
-				}
-				if intersect == nil {
-					intersect = cur
-					continue
-				}
-				next := map[string]struct{}{}
-				for k := range intersect {
-					if _, ok := cur[k]; ok {
-						next[k] = struct{}{}
+					if union == nil {
+						union = map[string]struct{}{}
 					}
+					union[from] = struct{}{}
 				}
-				intersect = next
 			}
 		}
 	}
 
-	if intersect == nil {
+	if union == nil {
 		return append([]string(nil), getLiteLLMModels(platform)...)
 	}
-	out := make([]string, 0, len(intersect))
-	for k := range intersect {
+	out := make([]string, 0, len(union))
+	for k := range union {
 		out = append(out, k)
 	}
 	sort.Strings(out)

@@ -229,16 +229,16 @@
                       </template>
                       <template v-else>
                         <td class="px-3 py-3 text-right font-mono text-sm" :class="priceCellTone">
-                          {{ formatPrice(basePrice(model, 'input')) }}
+                          {{ formatPrice(basePrice(model, 'input'), model.price_currency) }}
                         </td>
                         <td class="px-3 py-3 text-right font-mono text-sm" :class="priceCellTone">
-                          {{ formatPrice(basePrice(model, 'output')) }}
+                          {{ formatPrice(basePrice(model, 'output'), model.price_currency) }}
                         </td>
                         <td class="px-3 py-3 text-right font-mono text-sm" :class="priceCellTone">
-                          {{ formatPrice(basePrice(model, 'cache_write')) }}
+                          {{ formatPrice(basePrice(model, 'cache_write'), model.price_currency) }}
                         </td>
                         <td class="px-3 py-3 text-right font-mono text-sm" :class="priceCellTone">
-                          {{ formatPrice(basePrice(model, 'cache_read')) }}
+                          {{ formatPrice(basePrice(model, 'cache_read'), model.price_currency) }}
                         </td>
                       </template>
                     </tr>
@@ -276,7 +276,7 @@
                                 class="px-3 py-1.5 text-right font-mono"
                                 :class="priceCellTone"
                               >
-                                {{ formatPerImage(tierMatrix(model)!.cells[row]?.[col]) }}
+                                {{ formatPerImage(tierMatrix(model)!.cells[row]?.[col], model.price_currency) }}
                               </td>
                             </tr>
                           </tbody>
@@ -299,7 +299,7 @@
                                 {{ iv.tier_label || '-' }}
                               </td>
                               <td class="px-3 py-1.5 text-right font-mono" :class="priceCellTone">
-                                {{ formatPerImage(iv.per_request_price) }}
+                                {{ formatPerImage(iv.per_request_price, model.price_currency) }}
                               </td>
                             </tr>
                           </tbody>
@@ -336,6 +336,7 @@ import userChannelsAPI, { type UserPricingGroup, type UserPricingModel } from '@
 import { useAppStore } from '@/stores/app'
 import { extractApiErrorMessage } from '@/utils/apiError'
 import { DEFAULT_CNY_PER_USD } from '@/utils/pricing'
+import { costSymbol } from '@/utils/usagePricing'
 
 const { t } = useI18n()
 const appStore = useAppStore()
@@ -431,18 +432,22 @@ function basePrice(
 
 /**
  * 价格格式化：
- *   - "official" 模式：直接 × 1M = 官方对外 $/M token
- *   - "site"     模式：(group.rate / cny_per_usd) × v × 1M = 等效美元 $/M token
+ *   - "official" 模式：直接 × 1M = 官方对外每 M token 单价
+ *   - "site"     模式：(group.rate / cny_per_usd) × v × 1M
+ *
+ * 货币符号按 price_currency 显示：国产人民币计价模型 '¥'，其余 '$'
+ * （与用量页 costSymbol 同口径，依赖部署 cny_to_usd_rate=1.0）。
  */
-function formatPrice(perTokenUSD: number | null | undefined): string {
-  if (perTokenUSD == null) return '-'
-  const officialPerM = perTokenUSD * 1_000_000
+function formatPrice(perToken: number | null | undefined, currency?: string): string {
+  if (perToken == null) return '-'
+  const sym = costSymbol(currency)
+  const officialPerM = perToken * 1_000_000
   if (priceMode.value === 'official') {
-    return `$${trimNum(officialPerM)}/M`
+    return `${sym}${trimNum(officialPerM)}/M`
   }
   const rate = selectedGroup.value?.rate_multiplier ?? 1
   const sitePerM = (rate / fxRate.value) * officialPerM
-  return `$${trimNum(sitePerM)}/M`
+  return `${sym}${trimNum(sitePerM)}/M`
 }
 
 const TIER_SEP = '-'
@@ -489,13 +494,14 @@ function tierMatrix(model: UserPricingModel): TierMatrixData | null {
   return { rows, cols, cells }
 }
 
-function formatPerImage(perItemUSD: number | null | undefined): string {
-  if (perItemUSD == null) return '-'
+function formatPerImage(perItem: number | null | undefined, currency?: string): string {
+  if (perItem == null) return '-'
+  const sym = costSymbol(currency)
   if (priceMode.value === 'official') {
-    return '$' + trimNum(perItemUSD)
+    return sym + trimNum(perItem)
   }
   const rate = selectedGroup.value?.rate_multiplier ?? 1
-  return '$' + trimNum((rate / fxRate.value) * perItemUSD)
+  return sym + trimNum((rate / fxRate.value) * perItem)
 }
 
 function trimNum(n: number): string {
