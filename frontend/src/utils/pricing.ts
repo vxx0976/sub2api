@@ -1,3 +1,5 @@
+import { trimTrailingZeros } from './formatters'
+
 /**
  * formatScaled formats a per-token (or per-request) USD price scaled by `scale`.
  *
@@ -9,7 +11,7 @@
  */
 export function formatScaled(value: number | null, scale: number): string {
   if (value == null) return '-'
-  return `$${(value * scale).toPrecision(10).replace(/\.?0+$/, '')}`
+  return `$${trimTrailingZeros((value * scale).toPrecision(10))}`
 }
 
 /**

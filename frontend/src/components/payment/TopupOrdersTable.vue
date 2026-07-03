@@ -82,6 +82,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { formatDateTime } from '@/utils/format'
+import { trimTrailingZeros } from '@/utils/formatters'
 import type { MergedTopupOrder } from '@/api/topupOrders'
 
 withDefaults(defineProps<{ items: MergedTopupOrder[]; admin?: boolean }>(), { admin: false })
@@ -132,7 +133,7 @@ function methodBadgeClass(item: MergedTopupOrder): string {
 function displayAmount(item: MergedTopupOrder): string {
   if (item.channel === 'manual') return '—'
   if (item.channel === 'usdt') {
-    return item.usdt_amount_str ? `${item.usdt_amount_str} USDT` : `${item.amount} USDT`
+    return `${trimTrailingZeros(item.usdt_amount_str || item.amount)} USDT`
   }
   if (item.channel === 'alimpay' && item.payment_amount) {
     return `¥${item.payment_amount}`

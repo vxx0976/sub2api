@@ -1,3 +1,5 @@
+import { trimTrailingZeros } from './formatters'
+
 export const TOKENS_PER_MILLION = 1_000_000
 
 interface TokenPriceFormatOptions {
@@ -56,7 +58,7 @@ export function formatTokenPricePerMillion(
   }
 
   const fractionDigits = options.fractionDigits ?? 4
-  const formatted = pricePerMillion.toFixed(fractionDigits)
+  const formatted = trimTrailingZeros(pricePerMillion.toFixed(fractionDigits))
   const symbol = options.currencySymbol ?? '$'
   return options.withCurrencySymbol == false ? formatted : `${symbol}${formatted}`
 }

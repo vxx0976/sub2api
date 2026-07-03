@@ -160,6 +160,7 @@
  * 由统一充值页 RechargeView 在「USDT」标签下渲染。config 由父组件传入。
  */
 import { ref, computed, watch, onUnmounted } from 'vue'
+import { trimTrailingZeros } from '@/utils/formatters'
 import { useI18n } from 'vue-i18n'
 import QRCode from 'qrcode'
 import { useAuthStore } from '@/stores/auth'
@@ -184,7 +185,7 @@ const chainLabel = (c: string) => CHAIN_LABELS[c] || c.toUpperCase()
 // 去掉金额尾部多余的 0（1.500000 → 1.5；1.000000 → 1；1.55 → 1.55）
 const trimUsdt = (s: string) => {
   if (!s || s.indexOf('.') < 0) return s || ''
-  return s.replace(/0+$/, '').replace(/\.$/, '')
+  return trimTrailingZeros(s)
 }
 
 let pollTimer: ReturnType<typeof setInterval> | null = null

@@ -3583,6 +3583,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
+import { trimTrailingZeros } from '@/utils/formatters'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
 import { useOnboardingStore } from '@/stores/onboarding'
@@ -4527,7 +4528,7 @@ const formatImagePricePreview = (value: number | string | null | undefined) => {
   if (!Number.isFinite(price) || price < 0) {
     return t("admin.groups.imagePricing.notConfigured");
   }
-  return `$${price.toFixed(6).replace(/0+$/, "").replace(/\.$/, "")}`;
+  return `$${trimTrailingZeros(price.toFixed(6))}`;
 };
 
 const buildImageFinalPricePreview = (form: ImagePricingFormState) => {

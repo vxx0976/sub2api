@@ -26,6 +26,7 @@
 
 <script setup lang="ts">
 import { reactive, ref, watch } from 'vue'
+import { trimTrailingZeros } from '@/utils/formatters'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
 import { adminAPI } from '@/api/admin'
@@ -46,7 +47,7 @@ watch(() => props.show, (v) => { if(v) { form.amount = 0; form.notes = '' } })
 const formatBalance = (value: number) => {
   if (value === 0) return '0.00'
   // 最多保留8位小数，去除尾部的0
-  const formatted = value.toFixed(8).replace(/\.?0+$/, '')
+  const formatted = trimTrailingZeros(value.toFixed(8))
   // 确保至少有2位小数
   const parts = formatted.split('.')
   if (parts.length === 1) return formatted + '.00'

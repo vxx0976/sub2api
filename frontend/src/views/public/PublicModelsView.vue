@@ -297,6 +297,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { trimTrailingZeros } from '@/utils/formatters'
 import { useI18n } from 'vue-i18n'
 import PublicHeader from '@/components/layout/PublicHeader.vue'
 import Icon from '@/components/icons/Icon.vue'
@@ -502,7 +503,7 @@ function trimNum(n: number): string {
   if (n === 0) return '0'
   const digits = n >= 100 ? 0 : n >= 10 ? 2 : 4
   const fixed = n.toFixed(digits)
-  return fixed.replace(/\.?0+$/, '') || '0'
+  return trimTrailingZeros(fixed) || '0'
 }
 
 async function reload() {

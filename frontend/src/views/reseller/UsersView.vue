@@ -380,6 +380,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
+import { trimTrailingZeros } from '@/utils/formatters'
 import { useI18n } from 'vue-i18n'
 import { resellerAPI } from '@/api'
 import type { ResellerBalanceHistoryItem } from '@/api/reseller/users'
@@ -490,7 +491,7 @@ watch(() => showBalanceModal.value, (v) => {
 
 const formatBalance = (value: number) => {
   if (value === 0) return '0.00'
-  const formatted = value.toFixed(8).replace(/\.?0+$/, '')
+  const formatted = trimTrailingZeros(value.toFixed(8))
   const parts = formatted.split('.')
   if (parts.length === 1) return formatted + '.00'
   if (parts[1].length === 1) return formatted + '0'

@@ -319,7 +319,7 @@
           </template>
           <template #cell-rate_multiplier="{ row }">
             <span class="text-sm font-mono text-gray-700 dark:text-gray-300">
-              {{ (row.rate_multiplier ?? 1).toFixed(2) }}x
+              {{ formatMultiplier(row.rate_multiplier ?? 1) }}x
             </span>
           </template>
           <template #cell-priority="{ value }">
@@ -407,6 +407,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, onUnmounted, toRaw, watch } from 'vue'
+import { formatMultiplier } from '@/utils/formatters'
 import { useIntervalFn } from '@vueuse/core'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'

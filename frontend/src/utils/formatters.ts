@@ -8,11 +8,23 @@ export function formatCacheTokens(tokens: number): string {
 }
 
 /**
- * 自适应精度格式化倍率（确保小数值如 0.001 不被截断）
+ * 去掉定点小数字符串末尾多余的 0："1.500000"→"1.5"，"100.000000"→"100"。
+ * 仅在含小数点时裁剪，避免整数字符串被误删末尾 0（如 "100"→"1"）。
+ * 全站成本/价格/倍率展示统一用它裁掉无意义的尾随 0（后端仍下发精确定点串，前端按需裁剪）。
+ */
+export function trimTrailingZeros(s: string): string {
+  // 无小数点、或科学计数法（含 e/E）时原样返回：避免把整数末尾的 0（"100"→"1"）
+  // 或指数里的 0（"1.0e+10"→"1.0e+1"）也误删。
+  if (!s.includes('.') || s.includes('e') || s.includes('E')) return s
+  return s.replace(/0+$/, '').replace(/\.$/, '')
+}
+
+/**
+ * 自适应精度格式化倍率（确保小数值如 0.001 不被截断），并裁掉无意义的尾随 0（1.00→1，2.50→2.5）
  */
 export function formatMultiplier(val: number): string {
-  if (val >= 0.01) return val.toFixed(2)
-  if (val >= 0.001) return val.toFixed(3)
-  if (val >= 0.0001) return val.toFixed(4)
-  return val.toPrecision(2)
+  if (val >= 0.01) return trimTrailingZeros(val.toFixed(2))
+  if (val >= 0.001) return trimTrailingZeros(val.toFixed(3))
+  if (val >= 0.0001) return trimTrailingZeros(val.toFixed(4))
+  return trimTrailingZeros(val.toPrecision(2))
 }
