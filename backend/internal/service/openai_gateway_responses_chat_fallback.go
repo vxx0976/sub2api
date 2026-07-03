@@ -196,7 +196,7 @@ func (s *OpenAIGatewayService) forwardResponsesViaRawChatCompletions(
 	}
 
 	if clientStream {
-		return s.streamChatCompletionsAsResponses(c, resp, originalModel, billingModel, upstreamModel, reasoningEffort, serviceTier, startTime)
+		return s.streamChatCompletionsAsResponses(c, resp, account, originalModel, billingModel, upstreamModel, reasoningEffort, serviceTier, startTime)
 	}
 	return s.bufferChatCompletionsAsResponses(c, resp, originalModel, billingModel, upstreamModel, reasoningEffort, serviceTier, startTime)
 }
@@ -263,6 +263,7 @@ func (s *OpenAIGatewayService) bufferChatCompletionsAsResponses(
 func (s *OpenAIGatewayService) streamChatCompletionsAsResponses(
 	c *gin.Context,
 	resp *http.Response,
+	account *Account,
 	originalModel string,
 	billingModel string,
 	upstreamModel string,
@@ -361,11 +362,34 @@ func (s *OpenAIGatewayService) streamChatCompletionsAsResponses(
 	}
 
 	if err := scanner.Err(); err != nil {
-		if !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded) {
-			logger.L().Warn("openai responses chat fallback: stream read error",
-				zap.Error(err),
-				zap.String("request_id", requestID),
-			)
+		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			// 客户端取消：携带已收集 usage 返回。
+			return &OpenAIForwardResult{
+				RequestID:       requestID,
+				Usage:           usage,
+				Model:           originalModel,
+				BillingModel:    billingModel,
+				UpstreamModel:   upstreamModel,
+				ReasoningEffort: reasoningEffort,
+				ServiceTier:     serviceTier,
+				Stream:          true,
+				Duration:        time.Since(startTime),
+				FirstTokenMs:    firstTokenMs,
+			}, fmt.Errorf("stream usage incomplete: %w", err)
+		}
+		logger.L().Warn("openai responses chat fallback: stream read error",
+			zap.Error(err),
+			zap.String("request_id", requestID),
+		)
+		// 上游中途断流（connection reset / unexpected EOF 等）：尚未向客户端写出任何
+		// 字节时包成 failover 错误，让 handler 换健康账号重试——主流式路径
+		// （handleScanErr）就是这么处理的，此前这条回退路径直接把硬错误抛给了客户端。
+		if !openAIStreamClientOutputStarted(c, headersWritten) {
+			msg := "OpenAI chat completions fallback stream disconnected before completion"
+			if errText := strings.TrimSpace(err.Error()); errText != "" {
+				msg += ": " + errText
+			}
+			return nil, s.newOpenAIStreamFailoverError(c, account, false, requestID, nil, msg)
 		}
 		return &OpenAIForwardResult{
 			RequestID:       requestID,
@@ -379,6 +403,13 @@ func (s *OpenAIGatewayService) streamChatCompletionsAsResponses(
 			Duration:        time.Since(startTime),
 			FirstTokenMs:    firstTokenMs,
 		}, fmt.Errorf("stream usage incomplete: %w", err)
+	}
+
+	// 上游 200 后一个事件都没产出就干净收流（连 [DONE] 都没有）：等同断连，
+	// 换号重试，避免用 Finalize 给客户端合成一个空的 completed 响应。
+	if !sawDone && !openAIStreamClientOutputStarted(c, headersWritten) {
+		return nil, s.newOpenAIStreamFailoverError(c, account, false, requestID, nil,
+			"OpenAI chat completions fallback stream ended before any event")
 	}
 
 	writeEvents(apicompat.FinalizeChatCompletionsResponsesStream(state))

@@ -452,21 +452,6 @@ func (s *GatewayService) handleResponsesStreamingResponse(
 		return false
 	}
 
-	finalizeStream := func() (*ForwardResult, error) {
-		if finalEvents := apicompat.FinalizeAnthropicResponsesStream(state); len(finalEvents) > 0 {
-			for _, evt := range finalEvents {
-				sse, err := apicompat.ResponsesEventToSSE(evt)
-				if err != nil {
-					continue
-				}
-				out := string(reverseToolNamesIfPresent(c, []byte(sse)))
-				fmt.Fprint(c.Writer, out) //nolint:errcheck
-			}
-			c.Writer.Flush()
-		}
-		return resultWithUsage(), nil
-	}
-
 	// Read Anthropic SSE events
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -500,16 +485,59 @@ func (s *GatewayService) handleResponsesStreamingResponse(
 		}
 	}
 
-	if err := scanner.Err(); err != nil {
-		if !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded) {
-			logger.L().Warn("forward_as_responses stream: read error",
-				zap.Error(err),
-				zap.String("request_id", requestID),
-			)
+	scanErr := scanner.Err()
+
+	// message_stop 已正常转换为 response.completed（state.CompletedSent）：干净收尾。
+	if state.CompletedSent {
+		return resultWithUsage(), nil
+	}
+
+	// 以下均为缺终止事件的异常收尾（上游断流/截断），与 /v1/messages 主路径同口径。
+	// 此前这里会用 FinalizeAnthropicResponsesStream 合成 response.completed，把截断的流
+	// 当成功交付并计费；严格 SDK（Codex CLI）也会因缺真实终止语义出现不一致。
+
+	// 客户端取消：携带已收集 usage 返回，交上层按部分交付计费。
+	if scanErr != nil && (errors.Is(scanErr, context.Canceled) || errors.Is(scanErr, context.DeadlineExceeded)) {
+		result := resultWithUsage()
+		result.ClientDisconnect = true
+		result.PartialError = firstTokenMs != nil
+		return result, fmt.Errorf("stream usage incomplete: %w", scanErr)
+	}
+
+	if scanErr != nil {
+		logger.L().Warn("forward_as_responses stream: read error",
+			zap.Error(scanErr),
+			zap.String("request_id", requestID),
+		)
+	}
+
+	// 尚未向客户端写出任何字节：包成 failover 错误让 handler 换号重试。
+	// （SSE 头仅 Set 未 flush，gin 尚未固化 200，重试仍可写新响应。）
+	if !c.Writer.Written() {
+		logger.L().Warn("forward_as_responses stream: upstream ended before any client output, failing over",
+			zap.String("request_id", requestID),
+		)
+		body, _ := json.Marshal(gin.H{
+			"error": gin.H{
+				"code":    "upstream_disconnected",
+				"message": "Upstream stream ended before a terminal event",
+			},
+		})
+		return nil, &UpstreamFailoverError{
+			StatusCode:             http.StatusBadGateway,
+			ResponseBody:           body,
+			RetryableOnSameAccount: true,
 		}
 	}
 
-	return finalizeStream()
+	// 已部分交付：返回 PartialError 让 handler 对已交付 token 计费，
+	// 并由 handler 的 ensureForwardErrorResponse 补协议合规的 response.failed 终止事件。
+	result := resultWithUsage()
+	result.PartialError = firstTokenMs != nil
+	if scanErr != nil {
+		return result, fmt.Errorf("stream read error: %w", scanErr)
+	}
+	return result, fmt.Errorf("stream usage incomplete: missing terminal event")
 }
 
 // appendRawJSON appends a JSON fragment string to existing raw JSON.

@@ -96,3 +96,61 @@ func TestHandleResponsesStreamingResponse_PreservesMessageStartCacheUsage(t *tes
 	require.Equal(t, 4, result.Usage.CacheCreationInputTokens)
 	require.Contains(t, rec.Body.String(), `response.completed`)
 }
+
+// 上游 200 后未写出任何字节即断流：必须包成 UpstreamFailoverError 让 handler 换号重试，
+// 而不是把截断的流合成 response.completed 当成功交付。
+func TestHandleResponsesStreamingResponse_FailsOverWhenUpstreamEndsBeforeOutput(t *testing.T) {
+	t.Parallel()
+	gin.SetMode(gin.TestMode)
+
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+
+	resp := &http.Response{
+		Header: http.Header{"x-request-id": []string{"rid_stream_empty"}},
+		Body:   io.NopCloser(strings.NewReader("")),
+	}
+
+	svc := &GatewayService{}
+	result, err := svc.handleResponsesStreamingResponse(resp, c, "claude-sonnet-4.5", "claude-sonnet-4.5", nil, time.Now())
+	require.Error(t, err)
+	var failoverErr *UpstreamFailoverError
+	require.ErrorAs(t, err, &failoverErr)
+	require.True(t, failoverErr.RetryableOnSameAccount)
+	require.Nil(t, result)
+	require.Empty(t, rec.Body.String())
+}
+
+// 已部分交付后上游截断（缺 message_stop）：返回 PartialError 让 handler 对已交付 token
+// 计费，且不得向客户端合成 response.completed。
+func TestHandleResponsesStreamingResponse_TruncatedStreamReturnsPartialError(t *testing.T) {
+	t.Parallel()
+	gin.SetMode(gin.TestMode)
+
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+
+	resp := &http.Response{
+		Header: http.Header{"x-request-id": []string{"rid_stream_truncated"}},
+		Body: io.NopCloser(strings.NewReader(strings.Join([]string{
+			`event: message_start`,
+			`data: {"type":"message_start","message":{"id":"msg_3","type":"message","role":"assistant","content":[],"model":"claude-sonnet-4.5","stop_reason":"","usage":{"input_tokens":20,"cache_read_input_tokens":11,"cache_creation_input_tokens":4}}}`,
+			``,
+			`event: content_block_start`,
+			`data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}`,
+			``,
+			`event: content_block_delta`,
+			`data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"partial"}}`,
+			``,
+		}, "\n"))),
+	}
+
+	svc := &GatewayService{}
+	result, err := svc.handleResponsesStreamingResponse(resp, c, "claude-sonnet-4.5", "claude-sonnet-4.5", nil, time.Now())
+	require.Error(t, err)
+	require.NotNil(t, result)
+	require.True(t, result.PartialError)
+	require.Equal(t, 20, result.Usage.InputTokens)
+	require.Contains(t, rec.Body.String(), `response.created`)
+	require.NotContains(t, rec.Body.String(), `response.completed`)
+}
