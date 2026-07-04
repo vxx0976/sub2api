@@ -14,12 +14,12 @@ describe('costSymbol', () => {
 describe('formatTokenPricePerMillion currencySymbol', () => {
   it('默认 $，可传 ¥', () => {
     // 6.5 / 1M tokens * 1M = 6.5 单价
-    expect(formatTokenPricePerMillion(6.5, 1_000_000, { currencySymbol: '¥' })).toBe('¥6.5000')
-    expect(formatTokenPricePerMillion(3, 1_000_000)).toBe('$3.0000')
+    expect(formatTokenPricePerMillion(6.5, 1_000_000, { currencySymbol: '¥' })).toBe('¥6.5')
+    expect(formatTokenPricePerMillion(3, 1_000_000)).toBe('$3')
   })
 
   it('withCurrencySymbol=false 时不带符号', () => {
-    expect(formatTokenPricePerMillion(3, 1_000_000, { withCurrencySymbol: false })).toBe('3.0000')
+    expect(formatTokenPricePerMillion(3, 1_000_000, { withCurrencySymbol: false })).toBe('3')
   })
 
   it('无效输入返回 emptyValue', () => {
