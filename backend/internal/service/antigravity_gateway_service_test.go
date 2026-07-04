@@ -230,6 +230,118 @@ func (s *antigravitySettingRepoStub) Delete(ctx context.Context, key string) err
 	panic("unexpected Delete call")
 }
 
+// antigravityModelFallbackSettingRepo 让 IsModelFallbackEnabled=true 且
+// GetFallbackModel(antigravity)=gemini-2.5-pro，用于模型兜底路径测试。
+type antigravityModelFallbackSettingRepo struct{}
+
+func (s *antigravityModelFallbackSettingRepo) Get(context.Context, string) (*Setting, error) {
+	return nil, ErrSettingNotFound
+}
+
+func (s *antigravityModelFallbackSettingRepo) GetValue(_ context.Context, key string) (string, error) {
+	switch key {
+	case SettingKeyEnableModelFallback:
+		return "true", nil
+	case SettingKeyFallbackModelAntigravity:
+		return "gemini-2.5-pro", nil
+	default:
+		return "", ErrSettingNotFound
+	}
+}
+
+func (s *antigravityModelFallbackSettingRepo) Set(context.Context, string, string) error {
+	panic("unexpected Set call")
+}
+
+func (s *antigravityModelFallbackSettingRepo) GetMultiple(context.Context, []string) (map[string]string, error) {
+	panic("unexpected GetMultiple call")
+}
+
+func (s *antigravityModelFallbackSettingRepo) SetMultiple(context.Context, map[string]string) error {
+	panic("unexpected SetMultiple call")
+}
+
+func (s *antigravityModelFallbackSettingRepo) GetAll(context.Context) (map[string]string, error) {
+	panic("unexpected GetAll call")
+}
+
+func (s *antigravityModelFallbackSettingRepo) Delete(context.Context, string) error {
+	panic("unexpected Delete call")
+}
+
+// 模型兜底重试必须走 antigravityRetryLoop（而非直打 httpUpstream.Do）：
+// 主模型 404 model-not-found 后用 fallback 模型经重试循环重发，成功则正常返回，
+// 且第二次出站请求的 wrapped.model 应为 fallback 模型。
+func TestAntigravityGatewayService_ForwardGemini_ModelFallbackRoutesThroughRetryLoop(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	oldBaseURLs := append([]string(nil), antigravity.BaseURLs...)
+	oldAvailability := antigravity.DefaultURLAvailability
+	defer func() {
+		antigravity.BaseURLs = oldBaseURLs
+		antigravity.DefaultURLAvailability = oldAvailability
+	}()
+	antigravity.BaseURLs = []string{"https://ag-1.test"}
+	antigravity.DefaultURLAvailability = antigravity.NewURLAvailability(time.Minute)
+
+	writer := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(writer)
+	body, err := json.Marshal(map[string]any{
+		"contents": []map[string]any{
+			{"role": "user", "parts": []map[string]any{{"text": "hello"}}},
+		},
+	})
+	require.NoError(t, err)
+	c.Request = httptest.NewRequest(http.MethodPost, "/antigravity/v1beta/models/gemini-2.5-flash:streamGenerateContent", bytes.NewReader(body))
+
+	successStream := []byte("data: {\"response\":{\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"ok\"}]},\"finishReason\":\"STOP\"}],\"usageMetadata\":{\"promptTokenCount\":1,\"candidatesTokenCount\":1}}}\n\n")
+	upstream := &queuedHTTPUpstreamStub{
+		responses: []*http.Response{
+			{
+				StatusCode: http.StatusNotFound,
+				Header:     http.Header{"Content-Type": []string{"application/json"}},
+				Body:       io.NopCloser(strings.NewReader(`{"error":{"code":404,"message":"model not found"}}`)),
+			},
+			{
+				StatusCode: http.StatusOK,
+				Header:     http.Header{"Content-Type": []string{"text/event-stream"}},
+				Body:       io.NopCloser(bytes.NewReader(successStream)),
+			},
+		},
+		errors: []error{nil, nil},
+	}
+	svc := &AntigravityGatewayService{
+		settingService: NewSettingService(&antigravityModelFallbackSettingRepo{}, &config.Config{Gateway: config.GatewayConfig{MaxLineSize: defaultMaxLineSize}}),
+		tokenProvider:  &AntigravityTokenProvider{},
+		httpUpstream:   upstream,
+	}
+
+	account := &Account{
+		ID:          105,
+		Name:        "acc-model-fallback",
+		Platform:    PlatformAntigravity,
+		Type:        AccountTypeOAuth,
+		Status:      StatusActive,
+		Concurrency: 1,
+		Credentials: map[string]any{
+			"access_token": "token",
+			antigravityProjectIDFallbackCredentialKey: "configured-project",
+			"model_mapping": map[string]any{
+				"gemini-2.5-flash": "gemini-2.5-flash",
+			},
+		},
+	}
+
+	result, err := svc.ForwardGemini(context.Background(), c, account, "gemini-2.5-flash", "streamGenerateContent", true, body, false)
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	require.Len(t, upstream.requestBodies, 2, "fallback 必须经上游重发一次")
+
+	var fallbackWrapped map[string]any
+	require.NoError(t, json.Unmarshal(upstream.requestBodies[1], &fallbackWrapped))
+	require.Equal(t, "gemini-2.5-pro", fallbackWrapped["model"], "第二次请求应使用 fallback 模型")
+}
+
 func TestResolveAntigravityProjectID(t *testing.T) {
 	tests := []struct {
 		name    string

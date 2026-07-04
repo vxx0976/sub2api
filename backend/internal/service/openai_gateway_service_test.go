@@ -2958,6 +2958,82 @@ func TestHandleErrorResponseCyberPolicyPassthrough(t *testing.T) {
 	require.Equal(t, http.StatusBadRequest, mark.UpstreamStatus)
 }
 
+// 不在自定义错误码列表的上游错误：只跳过账号健康处理，客户端必须仍看到状态语义
+// （429 保持 429），不得一律改写成 500 "Upstream gateway error"。
+func TestHandleErrorResponseUnlistedCustomCodeKeepsStatusSemantics(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	svc := &OpenAIGatewayService{cfg: &config.Config{}}
+	account := &Account{
+		ID: 1, Platform: PlatformOpenAI, Name: "a", Type: AccountTypeAPIKey,
+		Credentials: map[string]any{
+			"custom_error_codes_enabled": true,
+			"custom_error_codes":         []any{float64(529)},
+		},
+	}
+
+	t.Run("429_stays_rate_limited", func(t *testing.T) {
+		rec := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(rec)
+		c.Request = httptest.NewRequest(http.MethodPost, "/", nil)
+		resp := &http.Response{
+			StatusCode: http.StatusTooManyRequests,
+			Header:     http.Header{"Content-Type": []string{"application/json"}},
+			Body:       io.NopCloser(strings.NewReader(`{"error":{"message":"upstream secret detail"}}`)),
+		}
+		_, err := svc.handleErrorResponse(context.Background(), resp, c, account, nil)
+		require.Error(t, err)
+		require.Equal(t, http.StatusTooManyRequests, rec.Code)
+		require.Contains(t, rec.Body.String(), "rate_limit_error")
+		require.NotContains(t, rec.Body.String(), "Upstream gateway error")
+		require.NotContains(t, rec.Body.String(), "upstream secret detail", "仍不透传上游细节")
+	})
+
+	t.Run("400_maps_to_502_not_500", func(t *testing.T) {
+		rec := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(rec)
+		c.Request = httptest.NewRequest(http.MethodPost, "/", nil)
+		resp := &http.Response{
+			StatusCode: http.StatusBadRequest,
+			Header:     http.Header{"Content-Type": []string{"application/json"}},
+			Body:       io.NopCloser(strings.NewReader(`{"error":{"message":"bad thing"}}`)),
+		}
+		_, err := svc.handleErrorResponse(context.Background(), resp, c, account, nil)
+		require.Error(t, err)
+		require.Equal(t, http.StatusBadGateway, rec.Code)
+		require.NotContains(t, rec.Body.String(), "Upstream gateway error")
+	})
+}
+
+func TestHandleCompatErrorResponseUnlistedCustomCodeKeepsStatusSemantics(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	svc := &OpenAIGatewayService{cfg: &config.Config{}}
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(http.MethodPost, "/", nil)
+	resp := &http.Response{
+		StatusCode: http.StatusTooManyRequests,
+		Header:     http.Header{"Content-Type": []string{"application/json"}},
+		Body:       io.NopCloser(strings.NewReader(`{"error":{"message":"upstream secret detail"}}`)),
+	}
+	account := &Account{
+		ID: 1, Platform: PlatformOpenAI, Name: "a", Type: AccountTypeAPIKey,
+		Credentials: map[string]any{
+			"custom_error_codes_enabled": true,
+			"custom_error_codes":         []any{float64(529)},
+		},
+	}
+	var gotStatus int
+	var gotType, gotMsg string
+	writeError := func(_ *gin.Context, statusCode int, errType, message string) {
+		gotStatus, gotType, gotMsg = statusCode, errType, message
+	}
+	_, err := svc.handleCompatErrorResponse(resp, c, account, writeError)
+	require.Error(t, err)
+	require.Equal(t, http.StatusTooManyRequests, gotStatus)
+	require.Equal(t, "rate_limit_error", gotType)
+	require.NotContains(t, gotMsg, "upstream secret detail")
+}
+
 func TestHandleCompatErrorResponseCyberPolicyEarlyReturn(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	svc := &OpenAIGatewayService{cfg: &config.Config{}}

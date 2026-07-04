@@ -2299,25 +2299,80 @@ func (s *AntigravityGatewayService) ForwardGemini(ctx context.Context, c *gin.Co
 		_ = resp.Body.Close()
 		resp.Body = io.NopCloser(bytes.NewReader(respBody))
 
-		// 模型兜底：模型不存在且开启 fallback 时，自动用 fallback 模型重试一次
+		// 模型兜底：模型不存在且开启 fallback 时，自动用 fallback 模型重试一次。
+		// 必须走 antigravityRetryLoop（同下方 signature retry）而非直打 httpUpstream.Do：
+		// 直打时 fallback 模型遇到瞬时 429/5xx 既不重试也不标记限流，最终把陈旧的
+		// "model not found" 原样吐给客户端，真实原因（可重试的瞬时错误）被吞掉。
 		if s.settingService != nil && s.settingService.IsModelFallbackEnabled(ctx) &&
 			isModelNotFoundError(resp.StatusCode, respBody) {
 			fallbackModel := s.settingService.GetFallbackModel(ctx, PlatformAntigravity)
 			if fallbackModel != "" && fallbackModel != mappedModel {
 				logger.LegacyPrintf("service.antigravity_gateway", "[Antigravity] Model not found (%s), retrying with fallback model %s (account: %s)", mappedModel, fallbackModel, account.Name)
 
-				fallbackWrapped, err := s.wrapV1InternalRequest(projectID, fallbackModel, injectedBody)
-				if err == nil {
-					fallbackReq, err := antigravity.NewAPIRequest(ctx, upstreamAction, accessToken, fallbackWrapped)
-					if err == nil {
-						fallbackResp, err := s.httpUpstream.Do(fallbackReq, proxyURL, account.ID, account.Concurrency)
-						if err == nil && fallbackResp.StatusCode < 400 {
+				fallbackWrapped, fbWrapErr := s.wrapV1InternalRequest(projectID, fallbackModel, injectedBody)
+				if fbWrapErr == nil {
+					fallbackResult, fallbackErr := s.antigravityRetryLoop(antigravityRetryLoopParams{
+						ctx:             ctx,
+						prefix:          prefix,
+						account:         account,
+						proxyURL:        proxyURL,
+						accessToken:     accessToken,
+						action:          upstreamAction,
+						body:            fallbackWrapped,
+						c:               c,
+						httpUpstream:    s.httpUpstream,
+						settingService:  s.settingService,
+						accountRepo:     s.accountRepo,
+						handleError:     s.handleUpstreamError,
+						requestedModel:  originalModel,
+						isStickySession: isStickySession,
+						groupID:         forwardOpts.groupID,
+						sessionHash:     forwardOpts.sessionHash,
+					})
+					if fallbackErr == nil {
+						fallbackResp := fallbackResult.resp
+						if fallbackResp.StatusCode < 400 {
 							_ = resp.Body.Close()
 							resp = fallbackResp
-						} else if fallbackResp != nil {
+						} else {
+							// fallback 模型重试后仍真失败：保留原 model-not-found 语义
+							//（客户端请求的是原模型），仅记 ops 事件供排障。
+							fbBody := s.readUpstreamErrorBody(fallbackResp)
 							_ = fallbackResp.Body.Close()
+							fbOpsBody := fbBody
+							if fbUnwrapped, fbUnwrapErr := s.unwrapV1InternalResponse(fbBody); fbUnwrapErr == nil && len(fbUnwrapped) > 0 {
+								fbOpsBody = fbUnwrapped
+							}
+							appendOpsUpstreamError(c, OpsUpstreamErrorEvent{
+								Platform:           account.Platform,
+								AccountID:          account.ID,
+								AccountName:        account.Name,
+								UpstreamStatusCode: fallbackResp.StatusCode,
+								UpstreamRequestID:  fallbackResp.Header.Get("x-request-id"),
+								Kind:               "model_fallback_error",
+								Message:            sanitizeUpstreamErrorMessage(strings.TrimSpace(extractAntigravityErrorMessage(fbOpsBody))),
+								Detail:             s.getUpstreamErrorDetail(fbOpsBody),
+							})
 						}
+					} else {
+						if switchErr, ok := IsAntigravityAccountSwitchError(fallbackErr); ok {
+							appendOpsUpstreamError(c, OpsUpstreamErrorEvent{
+								Platform:           account.Platform,
+								AccountID:          account.ID,
+								AccountName:        account.Name,
+								UpstreamStatusCode: http.StatusServiceUnavailable,
+								Kind:               "failover",
+								Message:            sanitizeUpstreamErrorMessage(fallbackErr.Error()),
+							})
+							return nil, &UpstreamFailoverError{
+								StatusCode:        http.StatusServiceUnavailable,
+								ForceCacheBilling: switchErr.IsStickySession,
+							}
+						}
+						logger.LegacyPrintf("service.antigravity_gateway", "Antigravity account %d: model fallback retry request failed: %v", account.ID, fallbackErr)
 					}
+				} else {
+					logger.LegacyPrintf("service.antigravity_gateway", "Antigravity account %d: model fallback wrap failed: %v", account.ID, fbWrapErr)
 				}
 			}
 		}

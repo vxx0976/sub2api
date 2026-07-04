@@ -4755,10 +4755,14 @@ func (s *OpenAIGatewayService) handleErrorResponse(
 			Detail:             upstreamDetail,
 		})
 		MarkResponseCommitted(c)
-		c.JSON(http.StatusInternalServerError, gin.H{
+		// 不在自定义错误码列表：只跳过账号健康处理（冷却/禁用），面向客户端仍按
+		// 真实状态语义映射（消息保持通用化）。此前固定改写 500 "Upstream gateway error"，
+		// 把上游 429/401 等语义全部吞掉，客户端无法正确退避/排障。
+		statusCode, errType, errMsg := mapOpenAIUpstreamErrorForClient(resp.StatusCode, upstreamMsg, body)
+		c.JSON(statusCode, gin.H{
 			"error": gin.H{
-				"type":    "upstream_error",
-				"message": "Upstream gateway error",
+				"type":    errType,
+				"message": errMsg,
 			},
 		})
 		if upstreamMsg == "" {
@@ -4801,10 +4805,30 @@ func (s *OpenAIGatewayService) handleErrorResponse(
 	MarkResponseCommitted(c)
 
 	// Return appropriate error response
+	statusCode, errType, errMsg := mapOpenAIUpstreamErrorForClient(resp.StatusCode, upstreamMsg, body)
+
+	c.JSON(statusCode, gin.H{
+		"error": gin.H{
+			"type":    errType,
+			"message": errMsg,
+		},
+	})
+
+	if upstreamMsg == "" {
+		return nil, fmt.Errorf("upstream error: %d", resp.StatusCode)
+	}
+	return nil, fmt.Errorf("upstream error: %d message=%s", resp.StatusCode, upstreamMsg)
+}
+
+// mapOpenAIUpstreamErrorForClient 把上游错误状态映射为面向客户端的 (status, errType, errMsg)。
+// 消息保持通用化（不透传上游 body 细节），但保留状态语义：429 保持 429 让客户端正确退避，
+// 其余归 502 upstream_error（而非 500，500 会被误读为本网关自身故障）；
+// 仅上下文窗口超限透传上游原文，客户端需要它来自行截断重试。
+func mapOpenAIUpstreamErrorForClient(upstreamStatus int, upstreamMsg string, body []byte) (int, string, string) {
 	var errType, errMsg string
 	var statusCode int
 
-	switch resp.StatusCode {
+	switch upstreamStatus {
 	case 401:
 		statusCode = http.StatusBadGateway
 		errType = "upstream_error"
@@ -4829,18 +4853,7 @@ func (s *OpenAIGatewayService) handleErrorResponse(
 	if isOpenAIContextWindowError(upstreamMsg, body) && upstreamMsg != "" {
 		errMsg = upstreamMsg
 	}
-
-	c.JSON(statusCode, gin.H{
-		"error": gin.H{
-			"type":    errType,
-			"message": errMsg,
-		},
-	})
-
-	if upstreamMsg == "" {
-		return nil, fmt.Errorf("upstream error: %d", resp.StatusCode)
-	}
-	return nil, fmt.Errorf("upstream error: %d message=%s", resp.StatusCode, upstreamMsg)
+	return statusCode, errType, errMsg
 }
 
 // compatErrorWriter is the signature for format-specific error writers used by
@@ -4930,7 +4943,14 @@ func (s *OpenAIGatewayService) handleCompatErrorResponse(
 			Detail:             upstreamDetail,
 		})
 		MarkResponseCommitted(c)
-		writeError(c, http.StatusInternalServerError, "api_error", "Upstream gateway error")
+		// 同 handleErrorResponse：只跳过账号健康处理，客户端错误保留状态语义
+		// （429 保持 429），消息通用化不透传上游细节；errType 收敛为兼容格式
+		// 均合法的 api_error / rate_limit_error。
+		statusCode, errType, errMsg := mapOpenAIUpstreamErrorForClient(resp.StatusCode, upstreamMsg, body)
+		if errType != "rate_limit_error" {
+			errType = "api_error"
+		}
+		writeError(c, statusCode, errType, errMsg)
 		if upstreamMsg == "" {
 			return nil, fmt.Errorf("upstream error: %d (not in custom error codes)", resp.StatusCode)
 		}

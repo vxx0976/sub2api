@@ -37,7 +37,10 @@ func (h *OpenAIGatewayHandler) CountTokens(c *gin.Context) {
 		zap.Any("group_id", apiKey.GroupID),
 	)
 
-	if apiKey.Group != nil && !apiKey.Group.AllowMessagesDispatch {
+	// 与 /v1/messages 派发主路径同一判定（openai_gateway_handler.go:674）：Grok 分组的
+	// AllowMessagesDispatch 会被 sanitizeGroupMessagesDispatchFields 强制清 false，
+	// 直接读字段会把派发本身可用的 Grok 分组在 count_tokens 上误拒 403。
+	if !allowOpenAICompatibleMessagesDispatch(apiKey) {
 		h.anthropicErrorResponse(c, http.StatusForbidden, "permission_error",
 			"This group does not allow /v1/messages dispatch")
 		return
