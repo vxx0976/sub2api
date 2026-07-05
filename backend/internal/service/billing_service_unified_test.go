@@ -251,6 +251,79 @@ func TestCalculateCostUnified_UsesPreResolvedPricing(t *testing.T) {
 	require.Equal(t, string(BillingModePerRequest), cost.BillingMode)
 }
 
+// 渠道按次/图片计费：SizeBreakdown 非空时按每档张数分别计价，
+// 不再整批按最高档（SizeTier）单价收费；缺档余量按 SizeTier 保守计。
+func TestCalculateCostUnified_PerRequestSizeBreakdownBillsPerTier(t *testing.T) {
+	bs := newTestBillingService()
+	resolver := NewModelPricingResolver(nil, bs)
+
+	price1K := 0.10
+	price4K := 0.40
+	preResolved := &ResolvedPricing{
+		Mode:                   BillingModePerRequest,
+		DefaultPerRequestPrice: 0.07,
+		RequestTiers: []PricingInterval{
+			{TierLabel: "1K", PerRequestPrice: &price1K},
+			{TierLabel: "4K", PerRequestPrice: &price4K},
+		},
+	}
+
+	// 3 张：2×1K + 1×4K；此前按 3×4K=1.20 收，现应 2×0.10+0.40=0.60
+	cost, err := bs.CalculateCostUnified(CostInput{
+		Ctx:            context.Background(),
+		Model:          "gemini-3-pro-image",
+		RequestCount:   3,
+		SizeTier:       "4K",
+		SizeBreakdown:  map[string]int{"1K": 2, "4K": 1},
+		RateMultiplier: 1.0,
+		Resolver:       resolver,
+		Resolved:       preResolved,
+	})
+	require.NoError(t, err)
+	require.InDelta(t, 0.60, cost.TotalCost, 1e-10)
+
+	// 余量：3 张只归类 1 张 1K，剩 2 张按 SizeTier=4K 计 → 0.10+2×0.40=0.90
+	cost, err = bs.CalculateCostUnified(CostInput{
+		Ctx:            context.Background(),
+		Model:          "gemini-3-pro-image",
+		RequestCount:   3,
+		SizeTier:       "4K",
+		SizeBreakdown:  map[string]int{"1K": 1},
+		RateMultiplier: 1.0,
+		Resolver:       resolver,
+		Resolved:       preResolved,
+	})
+	require.NoError(t, err)
+	require.InDelta(t, 0.90, cost.TotalCost, 1e-10)
+
+	// 无 breakdown：保持原行为 3×4K=1.20
+	cost, err = bs.CalculateCostUnified(CostInput{
+		Ctx:            context.Background(),
+		Model:          "gemini-3-pro-image",
+		RequestCount:   3,
+		SizeTier:       "4K",
+		RateMultiplier: 1.0,
+		Resolver:       resolver,
+		Resolved:       preResolved,
+	})
+	require.NoError(t, err)
+	require.InDelta(t, 1.20, cost.TotalCost, 1e-10)
+
+	// breakdown 中某档无层级价：回退默认按次价 → 2×0.07+0.40=0.54
+	cost, err = bs.CalculateCostUnified(CostInput{
+		Ctx:            context.Background(),
+		Model:          "gemini-3-pro-image",
+		RequestCount:   3,
+		SizeTier:       "4K",
+		SizeBreakdown:  map[string]int{"2K": 2, "4K": 1},
+		RateMultiplier: 1.0,
+		Resolver:       resolver,
+		Resolved:       preResolved,
+	})
+	require.NoError(t, err)
+	require.InDelta(t, 0.54, cost.TotalCost, 1e-10)
+}
+
 // ---------------------------------------------------------------------------
 // helpers
 // ---------------------------------------------------------------------------

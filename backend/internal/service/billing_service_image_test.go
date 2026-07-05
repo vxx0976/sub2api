@@ -152,6 +152,39 @@ func TestGetImageUnitPrice_PartialGroupConfig(t *testing.T) {
 	require.InDelta(t, 0.268, cost.TotalCost, 0.0001)
 }
 
+// TestCalculateImageCostWithBreakdown_MixedTiers 混合尺寸批量按每档张数分别计价，
+// 不再整批按最高档收费（一批 1K+1K+4K 此前会被按 3×4K 收）。
+func TestCalculateImageCostWithBreakdown_MixedTiers(t *testing.T) {
+	svc := &BillingService{}
+
+	price1K := 0.10
+	price4K := 0.40
+	groupConfig := &ImagePriceConfig{Price1K: &price1K, Price4K: &price4K}
+
+	// 3 张：2×1K + 1×4K，最高档 4K
+	breakdown := map[string]int{"1K": 2, "4K": 1}
+	cost := svc.CalculateImageCostWithBreakdown("gemini-3-pro-image", "4K", 3, breakdown, groupConfig, 1.0)
+	require.InDelta(t, 2*0.10+0.40, cost.TotalCost, 0.0001)
+
+	// 旧包装函数（无 breakdown）保持原行为：3×4K
+	cost = svc.CalculateImageCost("gemini-3-pro-image", "4K", 3, groupConfig, 1.0)
+	require.InDelta(t, 3*0.40, cost.TotalCost, 0.0001)
+}
+
+// TestCalculateImageCostWithBreakdown_RemainderAtTopTier 无法归类尺寸的余量按最高档保守计费
+func TestCalculateImageCostWithBreakdown_RemainderAtTopTier(t *testing.T) {
+	svc := &BillingService{}
+
+	price1K := 0.10
+	price4K := 0.40
+	groupConfig := &ImagePriceConfig{Price1K: &price1K, Price4K: &price4K}
+
+	// 3 张但只有 1 张归到 1K 档，余量 2 张按 4K 计
+	breakdown := map[string]int{"1K": 1}
+	cost := svc.CalculateImageCostWithBreakdown("gemini-3-pro-image", "4K", 3, breakdown, groupConfig, 1.0)
+	require.InDelta(t, 0.10+2*0.40, cost.TotalCost, 0.0001)
+}
+
 // TestGetDefaultImagePrice_FallbackHardcoded 测试 PricingService 无数据时使用硬编码默认值
 func TestGetDefaultImagePrice_FallbackHardcoded(t *testing.T) {
 	svc := &BillingService{} // pricingService 为 nil

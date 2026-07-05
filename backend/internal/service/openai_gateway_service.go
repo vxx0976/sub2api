@@ -6765,6 +6765,7 @@ func (s *OpenAIGatewayService) calculateOpenAIImageCost(
 			GroupID:        &gid,
 			RequestCount:   result.ImageCount,
 			SizeTier:       sizeTier,
+			SizeBreakdown:  result.ImageSizeBreakdown,
 			RateMultiplier: multiplier,
 			Resolver:       s.resolver,
 			Resolved:       resolved,
@@ -6783,7 +6784,7 @@ func (s *OpenAIGatewayService) calculateOpenAIImageCost(
 			Price4K: apiKey.Group.ImagePrice4K,
 		}
 	}
-	return s.billingService.CalculateImageCost(billingModel, sizeTier, result.ImageCount, groupConfig, multiplier)
+	return s.billingService.CalculateImageCostWithBreakdown(billingModel, sizeTier, result.ImageCount, result.ImageSizeBreakdown, groupConfig, multiplier)
 }
 
 func (s *OpenAIGatewayService) resolveOpenAIChannelPricing(ctx context.Context, billingModel string, apiKey *APIKey) *ResolvedPricing {

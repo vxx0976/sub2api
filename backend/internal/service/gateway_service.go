@@ -10330,6 +10330,7 @@ func (s *GatewayService) calculateImageCost(
 			Tokens:         tokens,
 			RequestCount:   result.ImageCount,
 			SizeTier:       sizeTier,
+			SizeBreakdown:  result.ImageSizeBreakdown,
 			RateMultiplier: multiplier,
 			Resolver:       s.resolver,
 			Resolved:       resolved,
@@ -10349,7 +10350,7 @@ func (s *GatewayService) calculateImageCost(
 			Price4K: apiKey.Group.ImagePrice4K,
 		}
 	}
-	return s.billingService.CalculateImageCost(billingModel, sizeTier, result.ImageCount, groupConfig, multiplier)
+	return s.billingService.CalculateImageCostWithBreakdown(billingModel, sizeTier, result.ImageCount, result.ImageSizeBreakdown, groupConfig, multiplier)
 }
 
 // calculateTokenCost 计算 Token 计费：根据 opts 决定走普通/长上下文/渠道统一计费。

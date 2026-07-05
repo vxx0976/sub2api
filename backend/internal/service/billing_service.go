@@ -786,8 +786,9 @@ type CostInput struct {
 	Model          string
 	GroupID        *int64 // 用于渠道定价查找
 	Tokens         UsageTokens
-	RequestCount   int    // 按次计费时使用
-	SizeTier       string // 按次/图片模式的层级标签（"1K","2K","4K","HD" 等）
+	RequestCount   int            // 按次计费时使用
+	SizeTier       string         // 按次/图片模式的层级标签（"1K","2K","4K","HD" 等）
+	SizeBreakdown  map[string]int // 图片模式下每档张数（来自 ImageSizeBreakdown）；非空时按档计费，缺档余量按 SizeTier 计
 	RateMultiplier float64
 	ServiceTier    string                // "priority","flex","" 等
 	Resolver       *ModelPricingResolver // 定价解析器
@@ -971,23 +972,38 @@ func (s *BillingService) calculatePerRequestCost(resolved *ResolvedPricing, inpu
 		count = 1
 	}
 
-	var unitPrice float64
-
-	if input.SizeTier != "" {
-		unitPrice = input.Resolver.GetRequestTierPrice(resolved, input.SizeTier)
+	// 单价解析链：层级价 → 按上下文区间价 → 默认按次价
+	resolveUnit := func(tier string) float64 {
+		var unit float64
+		if tier != "" {
+			unit = input.Resolver.GetRequestTierPrice(resolved, tier)
+		}
+		if unit == 0 {
+			totalContext := input.Tokens.InputTokens + input.Tokens.CacheReadTokens
+			unit = input.Resolver.GetRequestTierPriceByContext(resolved, totalContext)
+		}
+		if unit == 0 {
+			unit = resolved.DefaultPerRequestPrice
+		}
+		return unit
 	}
 
-	if unitPrice == 0 {
-		totalContext := input.Tokens.InputTokens + input.Tokens.CacheReadTokens
-		unitPrice = input.Resolver.GetRequestTierPriceByContext(resolved, totalContext)
+	var totalCost float64
+	// 混合尺寸批量出图按每档张数分别计价；此前按 count × 最高档单价，
+	// 一批 1K+1K+4K 会被整批按 4K 收费。缺档余量（无法归类尺寸的图）仍按 SizeTier 计。
+	billed := 0
+	for _, tier := range SortedImageBillingBreakdownKeys(input.SizeBreakdown) {
+		n := input.SizeBreakdown[tier]
+		if n <= 0 {
+			continue
+		}
+		totalCost += resolveUnit(tier) * float64(n)
+		billed += n
+	}
+	if remainder := count - billed; remainder > 0 {
+		totalCost += resolveUnit(input.SizeTier) * float64(remainder)
 	}
 
-	// 回退到默认按次价格
-	if unitPrice == 0 {
-		unitPrice = resolved.DefaultPerRequestPrice
-	}
-
-	totalCost := unitPrice * float64(count)
 	actualCost := totalCost * input.RateMultiplier
 
 	return &CostBreakdown{
@@ -1233,16 +1249,31 @@ type ImagePriceConfig struct {
 // groupConfig: 分组配置的价格（可能为 nil，表示使用默认值）
 // rateMultiplier: 费率倍数
 func (s *BillingService) CalculateImageCost(model string, imageSize string, imageCount int, groupConfig *ImagePriceConfig, rateMultiplier float64) *CostBreakdown {
+	return s.CalculateImageCostWithBreakdown(model, imageSize, imageCount, nil, groupConfig, rateMultiplier)
+}
+
+// CalculateImageCostWithBreakdown 按每档张数计算图片费用。
+// breakdown 非空时按档分别计价（此前整批按最高档单价，一批 1K+1K+4K 会被按 3×4K 收费）；
+// 无法归类尺寸的余量（imageCount − Σbreakdown）仍按 imageSize（最高档）计，保持保守口径。
+func (s *BillingService) CalculateImageCostWithBreakdown(model string, imageSize string, imageCount int, breakdown map[string]int, groupConfig *ImagePriceConfig, rateMultiplier float64) *CostBreakdown {
 	if imageCount <= 0 {
 		return &CostBreakdown{}
 	}
 	imageSize = NormalizeImageBillingTierOrDefault(imageSize)
 
-	// 获取单价
-	unitPrice := s.getImageUnitPrice(model, imageSize, groupConfig)
-
-	// 计算总费用
-	totalCost := unitPrice * float64(imageCount)
+	var totalCost float64
+	billed := 0
+	for _, tier := range SortedImageBillingBreakdownKeys(breakdown) {
+		n := breakdown[tier]
+		if n <= 0 {
+			continue
+		}
+		totalCost += s.getImageUnitPrice(model, tier, groupConfig) * float64(n)
+		billed += n
+	}
+	if remainder := imageCount - billed; remainder > 0 {
+		totalCost += s.getImageUnitPrice(model, imageSize, groupConfig) * float64(remainder)
+	}
 
 	// 应用倍率（保存时强制 > 0；负数按 0 处理避免按 1x 误扣）
 	if rateMultiplier < 0 {
