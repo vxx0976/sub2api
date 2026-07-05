@@ -17,6 +17,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// 审核/渠道测试普遍指向 httptest 环回服务器，默认关闭外部 SaaS 出站的私网拦截；
+// 需断言拦截的用例（如 TestRequestBalance_BlocksLoopbackSSRF）自行局部开启。
+func init() { SetOutboundSaaSSSRFGuard(false) }
+
 type contentModerationTestSettingRepo struct {
 	values map[string]string
 }

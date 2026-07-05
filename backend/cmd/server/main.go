@@ -20,6 +20,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/handler"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
 	"github.com/Wei-Shaw/sub2api/internal/server/middleware"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/Wei-Shaw/sub2api/internal/setup"
 	"github.com/Wei-Shaw/sub2api/internal/web"
 
@@ -142,6 +143,10 @@ func runMainServer() {
 	if cfg.RunMode == config.RunModeSimple {
 		log.Println("⚠️  WARNING: Running in SIMPLE mode - billing and quota checks are DISABLED")
 	}
+
+	// 外部 SaaS 出站（渠道 balance_url、内容审核 base_url）的私网拦截与主机白名单解耦，
+	// 默认拦私网 IP；仅当显式放行私网时关闭。须在 wire 构建服务（读取该开关）之前设置。
+	service.SetOutboundSaaSSSRFGuard(!cfg.Security.URLAllowlist.AllowPrivateHosts)
 
 	buildInfo := handler.BuildInfo{
 		Version:   Version,

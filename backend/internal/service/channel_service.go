@@ -1049,7 +1049,10 @@ func requestBalance(ctx context.Context, url, method string, headers map[string]
 		req.Header.Set("Content-Type", "application/json")
 	}
 
-	client := &http.Client{Timeout: 30 * time.Second}
+	// balance_url 是 admin 配置的外部渠道余额 API（外部 SaaS），不应指向内网。
+	// 走带解析后 IP 校验的共享客户端，阻断 SSRF（127.0.0.1/169.254 元数据/私网），
+	// 且 DNS rebinding 安全。
+	client := outboundSaaSHTTPClient(30 * time.Second)
 	resp, err := client.Do(req)
 	if err != nil {
 		return 0, nil, fmt.Errorf("http request: %w", err)

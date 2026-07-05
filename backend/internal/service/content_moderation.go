@@ -21,6 +21,7 @@ import (
 	"time"
 
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/httpclient"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
 )
 
@@ -544,6 +545,36 @@ type contentModerationKeyHealth struct {
 	SyncLatencyMS  int64
 }
 
+// outboundSaaSSSRFGuard 控制 admin 配置的外部 SaaS 出站（渠道 balance_url、内容审核 base_url）
+// 是否做解析后 IP 校验以阻断私网/环回（SSRF，DNS rebinding 安全）。这类端点是外部 API，
+// 不应指向内网，故生产默认开启；测试需命中 httptest 环回服务器时通过下方 setter 关闭。
+var outboundSaaSSSRFGuard atomic.Bool
+
+func init() { outboundSaaSSSRFGuard.Store(true) }
+
+// SetOutboundSaaSSSRFGuard 开关外部 SaaS 出站的私网拦截。app 启动时按
+// Security.URLAllowlist.AllowPrivateHosts 派生调用（放行私网时关闭）；测试亦用它命中环回。
+func SetOutboundSaaSSSRFGuard(enabled bool) { outboundSaaSSSRFGuard.Store(enabled) }
+
+// outboundSaaSHTTPClient 返回外部 SaaS 出站 HTTP 客户端；guard 开启时带解析后 IP 校验。
+// timeout<=0 表示不设客户端级超时（由调用方 context 控制）。GetClient 失败时回退裸客户端。
+func outboundSaaSHTTPClient(timeout time.Duration) *http.Client {
+	if !outboundSaaSSSRFGuard.Load() {
+		return &http.Client{Timeout: timeout}
+	}
+	client, err := httpclient.GetClient(httpclient.Options{Timeout: timeout, ValidateResolvedIP: true})
+	if err != nil || client == nil {
+		return &http.Client{Timeout: timeout}
+	}
+	return client
+}
+
+// newModerationHTTPClient 构造审核 HTTP 客户端。审核 base_url 是 admin 配置的外部审核 API
+// （如 OpenAI moderations），不应指向内网。单请求超时由调用方 context 控制，故 Timeout 置 0。
+func newModerationHTTPClient() *http.Client {
+	return outboundSaaSHTTPClient(0)
+}
+
 func NewContentModerationService(
 	settingRepo SettingRepository,
 	repo ContentModerationRepository,
@@ -561,7 +592,7 @@ func NewContentModerationService(
 		userRepo:             userRepo,
 		authCacheInvalidator: authCacheInvalidator,
 		emailService:         emailService,
-		httpClient:           &http.Client{},
+		httpClient:           newModerationHTTPClient(),
 		workerCount:          maxContentModerationWorkerCount,
 		asyncQueue:           make(chan contentModerationTask, maxContentModerationQueueSize),
 		keyHealth:            make(map[string]*contentModerationKeyHealth),

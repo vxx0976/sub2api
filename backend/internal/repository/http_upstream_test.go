@@ -43,6 +43,35 @@ func (s *HTTPUpstreamSuite) newService() *httpUpstreamService {
 	return svc
 }
 
+// TestShouldValidateResolvedIP_DecoupledFromAllowlistEnabled 验证解析后 IP 校验与主机
+// 白名单 opt-in 解耦：只要未放行私网即启用，无需开 url_allowlist.enabled。
+func (s *HTTPUpstreamSuite) TestShouldValidateResolvedIP_DecoupledFromAllowlistEnabled() {
+	cases := []struct {
+		name         string
+		enabled      bool
+		allowPrivate bool
+		want         bool
+	}{
+		{"private_allowed_no_validation", false, true, false},
+		{"private_blocked_without_allowlist", false, false, true},
+		{"private_blocked_with_allowlist", true, false, true},
+		{"private_allowed_with_allowlist", true, true, false},
+	}
+	for _, tc := range cases {
+		s.Run(tc.name, func() {
+			svc := &httpUpstreamService{cfg: &config.Config{
+				Security: config.SecurityConfig{
+					URLAllowlist: config.URLAllowlistConfig{
+						Enabled:           tc.enabled,
+						AllowPrivateHosts: tc.allowPrivate,
+					},
+				},
+			}}
+			require.Equal(s.T(), tc.want, svc.shouldValidateResolvedIP())
+		})
+	}
+}
+
 // TestDefaultResponseHeaderTimeout 测试默认响应头超时配置
 // 验证显式 0 会禁用等待响应头超时
 func (s *HTTPUpstreamSuite) TestDefaultResponseHeaderTimeout() {

@@ -127,7 +127,13 @@ type httpUpstreamService struct {
 	clients map[string]*upstreamClientEntry // 客户端缓存池，key 由隔离策略决定
 	// OpenAI 走 HTTP/HTTPS 代理时的 H2->H1 回退状态（key=标准化 proxyKey）
 	openAIHTTP2Fallbacks sync.Map
+	// 解析后 IP 校验通过的 host 缓存（key=host，value=过期时间 time.Time），
+	// 避免默认开启 SSRF 校验后每请求同步 DNS 解析拖慢热路径。
+	validatedHosts sync.Map
 }
+
+// validatedHostTTL 解析后 IP 校验缓存 TTL，与 httpclient.validatedTransport 一致。
+const validatedHostTTL = 30 * time.Second
 
 // NewHTTPUpstream 创建通用 HTTP 上游服务
 // 使用配置中的连接池参数构建 Transport
@@ -350,9 +356,9 @@ func (s *httpUpstreamService) shouldValidateResolvedIP() bool {
 	if s.cfg == nil {
 		return false
 	}
-	if !s.cfg.Security.URLAllowlist.Enabled {
-		return false
-	}
+	// 解析后 IP 校验（阻断私网/环回/link-local，防 SSRF + DNS rebinding）与主机白名单解耦：
+	// 只要未显式放行私网即启用，无需开 url_allowlist.enabled（后者会用 upstream_hosts 白名单
+	// 拦截未列入的自定义公网中继）。这样默认即拦私网 IP、放行任意公网主机。
 	return !s.cfg.Security.URLAllowlist.AllowPrivateHosts
 }
 
@@ -367,9 +373,20 @@ func (s *httpUpstreamService) validateRequestHost(req *http.Request) error {
 	if host == "" {
 		return errors.New("request host is empty")
 	}
+	// 命中缓存的 host 在 TTL 内跳过同步 DNS 解析（默认开启校验后避免每请求解析拖慢热路径）。
+	now := time.Now()
+	if raw, ok := s.validatedHosts.Load(host); ok {
+		if expireAt, ok := raw.(time.Time); ok {
+			if now.Before(expireAt) {
+				return nil
+			}
+			s.validatedHosts.Delete(host)
+		}
+	}
 	if err := urlvalidator.ValidateResolvedIP(host); err != nil {
 		return err
 	}
+	s.validatedHosts.Store(host, now.Add(validatedHostTTL))
 	return nil
 }
 

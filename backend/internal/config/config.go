@@ -1663,7 +1663,10 @@ func setDefaults() {
 		"raw.githubusercontent.com",
 	})
 	viper.SetDefault("security.url_allowlist.crs_hosts", []string{})
-	viper.SetDefault("security.url_allowlist.allow_private_hosts", true)
+	// 默认阻断上游解析到私网/环回/link-local IP（SSRF 防护）。仅拦私网 IP，不做主机白名单
+	// （upstream_hosts 白名单仍由 url_allowlist.enabled 单独 opt-in），故自定义公网中继不受影响；
+	// 只有把 base_url 指向 127.0.0.1/169.254/10.x 等私网地址的部署需显式设为 true 才能放行。
+	viper.SetDefault("security.url_allowlist.allow_private_hosts", false)
 	viper.SetDefault("security.url_allowlist.allow_insecure_http", true)
 	viper.SetDefault("security.response_headers.enabled", true)
 	viper.SetDefault("security.response_headers.additional_allowed", []string{})

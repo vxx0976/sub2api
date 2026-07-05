@@ -25,6 +25,9 @@ import (
 	"github.com/tidwall/sjson"
 )
 
+// 审核测试指向 httptest 环回服务器，关闭外部 SaaS 出站的私网拦截以免被 SSRF 校验拦截。
+func init() { service.SetOutboundSaaSSSRFGuard(false) }
+
 func TestOpenAIHandleStreamingAwareError_JSONEscaping(t *testing.T) {
 	tests := []struct {
 		name    string

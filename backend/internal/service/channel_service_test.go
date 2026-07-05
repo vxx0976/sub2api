@@ -2444,3 +2444,15 @@ func TestUpdate_MappingConflict(t *testing.T) {
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "MAPPING_PATTERN_CONFLICT")
 }
+
+// balance_url 指向环回地址时必须被解析后 IP 校验拦截（SSRF 防护）。
+// 127.0.0.1 无需 DNS，离线可测；端口 9（discard）确保不会真正建连成功。
+// 显式开启 guard（测试全局默认关闭以命中 httptest 环回），结束后恢复。
+func TestRequestBalance_BlocksLoopbackSSRF(t *testing.T) {
+	SetOutboundSaaSSSRFGuard(true)
+	t.Cleanup(func() { SetOutboundSaaSSSRFGuard(false) })
+
+	_, _, err := requestBalance(context.Background(), "http://127.0.0.1:9/balance", "GET", nil, "")
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "not allowed")
+}
