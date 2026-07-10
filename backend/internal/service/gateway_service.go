@@ -20,7 +20,6 @@ import (
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/claude"
-	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/timezone"
 	"github.com/Wei-Shaw/sub2api/internal/util/responseheaders"
@@ -537,13 +536,6 @@ type AccountSelectionResult struct {
 	Acquired    bool
 	ReleaseFunc func()
 	WaitPlan    *AccountWaitPlan // nil means no wait allowed
-
-	// 智能路由归因：请求命中虚拟分组时，RequestedGroupID 为虚拟分组 id、
-	// ResolvedGroupID 为实际承接的成员分组 id；非智能路由流量两者均为 nil。
-	// 由 handler 透传进 RecordUsageInput 写 usage_logs——记账跑在 worker 池的
-	// background ctx 上，选择期注入的 ctx key 到不了那里，必须按值携带。
-	RequestedGroupID *int64
-	ResolvedGroupID  *int64
 }
 
 // ClaudeUsage 表示Claude API返回的usage信息
@@ -1094,84 +1086,6 @@ func extractCacheableTextFromMessagesRaw(raw []byte) string {
 func (s *GatewayService) hashContent(content string) string {
 	h := xxhash.Sum64String(content)
 	return strconv.FormatUint(h, 36)
-}
-
-// withFailoverRouteContext 把虚拟分组 id 与实际承接的成员分组 id 注入 ctx。
-// 下游使用这两个 key 写入 usage_logs.requested_group_id / group_id，让成员维度的用量统计正确归因。
-func withFailoverRouteContext(ctx context.Context, virtualGroupID *int64, resolvedGroupID *int64) context.Context {
-	if virtualGroupID != nil && *virtualGroupID > 0 {
-		if existing, ok := ctx.Value(ctxkey.RequestedGroupID).(int64); !ok || existing != *virtualGroupID {
-			ctx = context.WithValue(ctx, ctxkey.RequestedGroupID, *virtualGroupID)
-		}
-		if resolvedGroupID != nil && *resolvedGroupID > 0 {
-			if existing, ok := ctx.Value(ctxkey.ResolvedGroupID).(int64); !ok || existing != *resolvedGroupID {
-				ctx = context.WithValue(ctx, ctxkey.ResolvedGroupID, *resolvedGroupID)
-			}
-		}
-	}
-	return ctx
-}
-
-// failoverRouteAttributionFromContext 从选择期富化过的 ctx 提取智能路由归因。
-// 该 ctx 只在账号选择函数内部存活，提取结果必须按值放进 AccountSelectionResult
-// 才能穿过 handler 与异步记账边界（worker 池会重建 ctx）。
-func failoverRouteAttributionFromContext(ctx context.Context) (requestedGroupID, resolvedGroupID *int64) {
-	if v, ok := ctx.Value(ctxkey.RequestedGroupID).(int64); ok && v > 0 {
-		requested := v
-		requestedGroupID = &requested
-	}
-	if v, ok := ctx.Value(ctxkey.ResolvedGroupID).(int64); ok && v > 0 {
-		resolved := v
-		resolvedGroupID = &resolved
-	}
-	return requestedGroupID, resolvedGroupID
-}
-
-// resolveGatewayGroupWithVirtual 解析网关分组，并额外返回请求最初命中的"虚拟分组"（智能路由）ID。
-// 当请求没有经过智能路由时返回 nil；非 nil 的 virtualGroupID 表示发生了透明重定向。
-func (s *GatewayService) resolveGatewayGroupWithVirtual(ctx context.Context, groupID *int64) (*Group, *int64, *int64, error) {
-	if groupID == nil {
-		return nil, nil, nil, nil
-	}
-
-	var virtualGroupID *int64
-	currentID := *groupID
-	visited := map[int64]struct{}{}
-	for {
-		if _, seen := visited[currentID]; seen {
-			return nil, nil, nil, fmt.Errorf("fallback group cycle detected")
-		}
-		visited[currentID] = struct{}{}
-
-		group, err := s.resolveGroupByID(ctx, currentID)
-		if err != nil {
-			return nil, nil, nil, err
-		}
-
-		// 智能路由：透明重定向到当前激活成员。
-		if group.IsFailoverGroup {
-			now := time.Now()
-			activePtr := group.EffectiveFailoverActiveMemberID(now)
-			if activePtr == nil {
-				return nil, nil, nil, fmt.Errorf("failover group %d has no active member", group.ID)
-			}
-			if virtualGroupID == nil {
-				vid := group.ID
-				virtualGroupID = &vid
-			}
-			currentID = *activePtr
-			continue
-		}
-
-		if !group.ClaudeCodeOnly || IsClaudeCodeClient(ctx) {
-			return group, &currentID, virtualGroupID, nil
-		}
-
-		if group.FallbackGroupID == nil {
-			return nil, nil, nil, ErrClaudeCodeOnly
-		}
-		currentID = *group.FallbackGroupID
-	}
 }
 
 // ========== 每日费用预取与调度检查 ==========

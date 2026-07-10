@@ -58,13 +58,6 @@ type AdminService interface {
 	BatchSetGroupRPMOverrides(ctx context.Context, groupID int64, entries []GroupRPMOverrideInput) error
 	UpdateGroupSortOrders(ctx context.Context, updates []GroupSortOrderUpdate) error
 
-	// Smart router (failover group) management
-	GetFailoverStatus(ctx context.Context, virtualGroupID int64) (*FailoverStatus, error)
-	SetFailoverPin(ctx context.Context, virtualGroupID int64, memberID int64, ttlSeconds int, adminUserID int64) error
-	ClearFailoverPin(ctx context.Context, virtualGroupID int64, adminUserID int64) error
-	TriggerFailoverMemberProbe(ctx context.Context, virtualGroupID int64, memberID int64) (bool, error)
-	GetFailoverUsage(ctx context.Context, virtualGroupID int64, sinceDays int) ([]FailoverMemberUsage, error)
-
 	// API Key management (admin)
 	AdminUpdateAPIKeyGroupID(ctx context.Context, keyID int64, groupID *int64) (*AdminUpdateAPIKeyGroupIDResult, error)
 	AdminResetAPIKeyRateLimitUsage(ctx context.Context, keyID int64) (*APIKey, error)
@@ -270,10 +263,6 @@ type CreateGroupInput struct {
 	SortOrder           int
 	IsRecommended       bool
 	ExternalBuyURL      *string
-
-	// 智能路由（虚拟故障转移分组）
-	IsFailoverGroup   bool
-	FailoverMemberIDs []int64
 }
 
 type UpdateGroupInput struct {
@@ -341,10 +330,6 @@ type UpdateGroupInput struct {
 	SortOrder           *int
 	IsRecommended       *bool
 	ExternalBuyURL      *string
-
-	// 智能路由（虚拟故障转移分组）
-	IsFailoverGroup   *bool
-	FailoverMemberIDs *[]int64
 }
 
 type CreateAccountInput struct {
@@ -643,30 +628,7 @@ type adminServiceImpl struct {
 	defaultSubAssigner   DefaultSubscriptionAssigner
 	userSubRepo          UserSubscriptionRepository
 	privacyClientFactory PrivacyClientFactory
-	failoverGroupSvc     *FailoverGroupService
-	failoverEventRepo    FailoverEventRepository
-	usageLogRepo         UsageLogRepository
 	runtimeBlocker       AccountRuntimeBlocker
-}
-
-// SetFailoverGroupService allows wiring the failover group service after
-// construction to avoid a circular dependency: adminService is built before
-// the failover service (which itself may depend on adminService in the future).
-func (s *adminServiceImpl) SetFailoverGroupService(svc *FailoverGroupService) {
-	if s == nil {
-		return
-	}
-	s.failoverGroupSvc = svc
-}
-
-// SetFailoverExtras 注入智能路由详情页所需的只读仓储（事件 + 用量日志）。
-// 与 SetFailoverGroupService 一样，为避免扩宽构造函数而采用延迟注入。
-func (s *adminServiceImpl) SetFailoverExtras(eventRepo FailoverEventRepository, usageLogRepo UsageLogRepository) {
-	if s == nil {
-		return
-	}
-	s.failoverEventRepo = eventRepo
-	s.usageLogRepo = usageLogRepo
 }
 
 type userGroupRateBatchReader interface {
@@ -773,173 +735,4 @@ func (s *adminServiceImpl) RefundUserBalance(ctx context.Context, userID int64, 
 // is what the merged-order list needs before its in-memory cross-channel merge.
 func (s *adminServiceImpl) ListAdminBalanceAdjustments(ctx context.Context, userID *int64, limit int) ([]RedeemCode, int64, error) {
 	return s.redeemCodeRepo.ListManualBalanceAdjustments(ctx, userID, limit)
-}
-
-// validateFailoverMembers 校验智能路由（虚拟故障转移分组）的成员配置。
-// currentGroupID: 当前分组 ID（新建时为 0）
-// platform: 虚拟分组的平台
-// memberIDs: 有序成员 id 列表
-func (s *adminServiceImpl) validateFailoverMembers(ctx context.Context, currentGroupID int64, platform string, memberIDs []int64) error {
-	if len(memberIDs) == 0 {
-		return fmt.Errorf("failover group must have at least one member")
-	}
-	if len(memberIDs) > 10 {
-		return fmt.Errorf("failover group supports at most 10 members")
-	}
-	seen := make(map[int64]struct{}, len(memberIDs))
-	for _, id := range memberIDs {
-		if id <= 0 {
-			return fmt.Errorf("invalid member id: %d", id)
-		}
-		if _, dup := seen[id]; dup {
-			return fmt.Errorf("duplicate member id: %d", id)
-		}
-		seen[id] = struct{}{}
-		if currentGroupID > 0 && id == currentGroupID {
-			return fmt.Errorf("failover group cannot reference itself")
-		}
-		member, err := s.groupRepo.GetByIDLite(ctx, id)
-		if err != nil {
-			return fmt.Errorf("member group %d not found: %w", id, err)
-		}
-		if member.Status != StatusActive {
-			return fmt.Errorf("member group %d is not active", id)
-		}
-		if member.IsFailoverGroup {
-			return fmt.Errorf("member group %d is itself a failover group (nesting is not allowed)", id)
-		}
-		if member.Platform != platform {
-			return fmt.Errorf("member group %d platform mismatch: expected %s, got %s", id, platform, member.Platform)
-		}
-	}
-	return nil
-}
-
-// GetFailoverStatus 汇总智能路由的成员健康、pin 状态和最近事件，供详情页使用。
-func (s *adminServiceImpl) GetFailoverStatus(ctx context.Context, virtualGroupID int64) (*FailoverStatus, error) {
-	g, err := s.groupRepo.GetByID(ctx, virtualGroupID)
-	if err != nil {
-		return nil, err
-	}
-	if g == nil || !g.IsFailoverGroup {
-		return nil, fmt.Errorf("group %d is not a failover group", virtualGroupID)
-	}
-	members := make([]FailoverMemberSnapshot, 0, len(g.FailoverMemberIDs))
-	for _, mid := range g.FailoverMemberIDs {
-		m, err := s.groupRepo.GetByIDLite(ctx, mid)
-		if err != nil || m == nil {
-			members = append(members, FailoverMemberSnapshot{GroupID: mid})
-			continue
-		}
-		count, _ := s.groupRepo.CountSchedulableAccountsByGroup(ctx, mid)
-		members = append(members, FailoverMemberSnapshot{
-			GroupID:              m.ID,
-			Name:                 m.Name,
-			Platform:             m.Platform,
-			HealthStatus:         m.HealthStatus,
-			SchedulableAccounts:  count,
-			LastHealthCheckAt:    m.LastHealthCheckAt,
-			HealthyAccounts:      m.HealthyAccounts,
-			TotalCheckedAccounts: m.TotalCheckedAccounts,
-		})
-	}
-	var events []*FailoverGroupEvent
-	if s.failoverEventRepo != nil {
-		events, _ = s.failoverEventRepo.ListByGroupID(ctx, virtualGroupID, 50)
-	}
-	return &FailoverStatus{
-		VirtualGroupID: g.ID,
-		Name:           g.Name,
-		Platform:       g.Platform,
-		ActiveMemberID: g.FailoverActiveMemberID,
-		PinMemberID:    g.FailoverPinMemberID,
-		PinExpiresAt:   g.FailoverPinExpiresAt,
-		Members:        members,
-		RecentEvents:   events,
-	}, nil
-}
-
-func (s *adminServiceImpl) SetFailoverPin(ctx context.Context, virtualGroupID int64, memberID int64, ttlSeconds int, adminUserID int64) error {
-	if s.failoverGroupSvc == nil {
-		return fmt.Errorf("failover service not available")
-	}
-	var ttl time.Duration
-	if ttlSeconds > 0 {
-		ttl = time.Duration(ttlSeconds) * time.Second
-	}
-	return s.failoverGroupSvc.SetManualPin(ctx, virtualGroupID, memberID, ttl, adminUserID)
-}
-
-func (s *adminServiceImpl) ClearFailoverPin(ctx context.Context, virtualGroupID int64, adminUserID int64) error {
-	if s.failoverGroupSvc == nil {
-		return fmt.Errorf("failover service not available")
-	}
-	return s.failoverGroupSvc.ClearManualPin(ctx, virtualGroupID, adminUserID)
-}
-
-func (s *adminServiceImpl) TriggerFailoverMemberProbe(ctx context.Context, virtualGroupID int64, memberID int64) (bool, error) {
-	if s.failoverGroupSvc == nil {
-		return false, fmt.Errorf("failover service not available")
-	}
-	return s.failoverGroupSvc.TriggerMemberProbe(ctx, virtualGroupID, memberID)
-}
-
-func (s *adminServiceImpl) GetFailoverUsage(ctx context.Context, virtualGroupID int64, sinceDays int) ([]FailoverMemberUsage, error) {
-	if s.usageLogRepo == nil {
-		return nil, fmt.Errorf("usage log repo not available")
-	}
-	g, err := s.groupRepo.GetByID(ctx, virtualGroupID)
-	if err != nil {
-		return nil, err
-	}
-	if g == nil || !g.IsFailoverGroup {
-		return nil, fmt.Errorf("group %d is not a failover group", virtualGroupID)
-	}
-	if sinceDays <= 0 {
-		sinceDays = 7
-	}
-	since := time.Now().Add(-time.Duration(sinceDays) * 24 * time.Hour)
-	rows, err := s.usageLogRepo.GetFailoverMemberUsage(ctx, virtualGroupID, since)
-	if err != nil {
-		return nil, err
-	}
-	byID := make(map[int64]FailoverMemberUsageRow, len(rows))
-	for _, row := range rows {
-		byID[row.GroupID] = row
-	}
-	out := make([]FailoverMemberUsage, 0, len(g.FailoverMemberIDs))
-	for _, mid := range g.FailoverMemberIDs {
-		name := ""
-		if m, err := s.groupRepo.GetByIDLite(ctx, mid); err == nil && m != nil {
-			name = m.Name
-		}
-		row := byID[mid]
-		out = append(out, FailoverMemberUsage{
-			GroupID:  mid,
-			Name:     name,
-			Requests: row.Requests,
-			Tokens:   row.Tokens,
-			Cost:     row.Cost,
-		})
-	}
-	return out, nil
-}
-
-func (s *adminServiceImpl) validateBindableGroupIDs(ctx context.Context, groupIDs []int64) error {
-	if err := s.validateGroupIDsExist(ctx, groupIDs); err != nil {
-		return err
-	}
-	for _, groupID := range groupIDs {
-		if groupID <= 0 {
-			continue
-		}
-		group, err := s.groupRepo.GetByIDLite(ctx, groupID)
-		if err != nil {
-			return fmt.Errorf("get group: %w", err)
-		}
-		if group != nil && group.IsFailoverGroup {
-			return fmt.Errorf("group %d is a failover group and cannot bind accounts", groupID)
-		}
-	}
-	return nil
 }

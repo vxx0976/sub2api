@@ -366,39 +366,6 @@ func (r *usageLogRepository) SumTodayCostByUserIDs(ctx context.Context, userIDs 
 
 // BackfillMerchantRateSnapshot fills in NULL merchant_rate_snapshot and platform_cost_snapshot values
 // for users with a parent reseller that has valid price_multiplier and platform_cost settings.
-// GetFailoverMemberUsage 聚合某虚拟分组（requested_group_id）的承接成员用量。
-func (r *usageLogRepository) GetFailoverMemberUsage(ctx context.Context, virtualGroupID int64, since time.Time) ([]service.FailoverMemberUsageRow, error) {
-	query := `
-		SELECT group_id,
-		       COUNT(*)::bigint AS requests,
-		       COALESCE(SUM(total_tokens), 0)::bigint AS tokens,
-		       COALESCE(SUM(total_cost), 0)::float8 AS cost
-		FROM usage_logs
-		WHERE requested_group_id = $1
-		  AND created_at >= $2
-		  AND group_id IS NOT NULL
-		GROUP BY group_id
-		ORDER BY cost DESC
-	`
-	rows, err := r.sql.QueryContext(ctx, query, virtualGroupID, since)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = rows.Close() }()
-	out := make([]service.FailoverMemberUsageRow, 0)
-	for rows.Next() {
-		var row service.FailoverMemberUsageRow
-		if err := rows.Scan(&row.GroupID, &row.Requests, &row.Tokens, &row.Cost); err != nil {
-			return nil, err
-		}
-		out = append(out, row)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (r *usageLogRepository) BackfillMerchantRateSnapshot(ctx context.Context) (int64, error) {
 	query := `
 		UPDATE usage_logs ul

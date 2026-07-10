@@ -78,7 +78,6 @@ var ProviderSet = wire.NewSet(
 	NewChatConversationRepository,
 	NewChatMessageRepository,
 	NewUsageLogRepository,
-	NewFailoverEventRepository,
 	NewUsageBillingRepository,
 	NewBatchImageRepository,
 	NewIdempotencyRepository,

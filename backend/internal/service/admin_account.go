@@ -77,7 +77,7 @@ func (s *adminServiceImpl) CreateAccount(ctx context.Context, input *CreateAccou
 		groups, err := s.groupRepo.ListActiveByPlatform(ctx, input.Platform)
 		if err == nil {
 			for _, g := range groups {
-				if g.Name == defaultGroupName && !g.IsFailoverGroup {
+				if g.Name == defaultGroupName {
 					groupIDs = []int64{g.ID}
 					break
 				}
@@ -85,8 +85,12 @@ func (s *adminServiceImpl) CreateAccount(ctx context.Context, input *CreateAccou
 		}
 	}
 
-	if err := s.validateBindableGroupIDs(ctx, groupIDs); err != nil {
-		return nil, err
+	// 分组存在性前置校验：与 UpdateAccount/BulkUpdateAccounts 同口径，
+	// 否则坏 group_id 会在 Create 落库后才撞 BindGroups 外键，留下零绑定的孤儿账号。
+	if len(groupIDs) > 0 {
+		if err := s.validateGroupIDsExist(ctx, groupIDs); err != nil {
+			return nil, err
+		}
 	}
 
 	// 检查混合渠道风险（除非用户已确认）
@@ -337,7 +341,7 @@ func (s *adminServiceImpl) UpdateAccount(ctx context.Context, id int64, input *U
 
 	// 先验证分组是否存在（在任何写操作之前）
 	if input.GroupIDs != nil {
-		if err := s.validateBindableGroupIDs(ctx, *input.GroupIDs); err != nil {
+		if err := s.validateGroupIDsExist(ctx, *input.GroupIDs); err != nil {
 			return nil, err
 		}
 
@@ -406,7 +410,7 @@ func (s *adminServiceImpl) BulkUpdateAccounts(ctx context.Context, input *BulkUp
 		return result, nil
 	}
 	if input.GroupIDs != nil {
-		if err := s.validateBindableGroupIDs(ctx, *input.GroupIDs); err != nil {
+		if err := s.validateGroupIDsExist(ctx, *input.GroupIDs); err != nil {
 			return nil, err
 		}
 	}

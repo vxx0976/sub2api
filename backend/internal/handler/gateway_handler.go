@@ -451,7 +451,7 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 				if result != nil && result.PartialError {
 					h.submitForwardUsageRecord(c, result, apiKey, subscription, account,
 						body, parsedReq.OutputEffort, parsedReq.ThinkingEnabled, channelMapping, reqModel,
-						fs.ForceCacheBilling, subject.UserID, selection.RequestedGroupID, selection.ResolvedGroupID)
+						fs.ForceCacheBilling, subject.UserID)
 				}
 				var failoverErr *service.UpstreamFailoverError
 				if errors.As(err, &failoverErr) {
@@ -516,7 +516,7 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 			// 使用量记录走与部分交付错误分支同一个 helper，避免两处口径漂移。
 			h.submitForwardUsageRecord(c, result, apiKey, subscription, account,
 				body, parsedReq.OutputEffort, parsedReq.ThinkingEnabled, channelMapping, reqModel,
-				fs.ForceCacheBilling, subject.UserID, selection.RequestedGroupID, selection.ResolvedGroupID)
+				fs.ForceCacheBilling, subject.UserID)
 			return
 		}
 	}
@@ -783,7 +783,7 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 				if result != nil && result.PartialError {
 					h.submitForwardUsageRecord(c, result, currentAPIKey, currentSubscription, account,
 						attemptParsedReq.Body.Bytes(), attemptParsedReq.OutputEffort, attemptParsedReq.ThinkingEnabled, channelMapping, reqModel,
-						fs.ForceCacheBilling, subject.UserID, selection.RequestedGroupID, selection.ResolvedGroupID)
+						fs.ForceCacheBilling, subject.UserID)
 				}
 				// Beta policy block: return 400 immediately, no failover
 				var betaBlockedErr *service.BetaBlockedError
@@ -918,7 +918,7 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 			// Forward 内部可能继续改写 body，usage 去重指纹必须使用最终上游接受的当前 body。
 			h.submitForwardUsageRecord(c, result, currentAPIKey, currentSubscription, account,
 				attemptParsedReq.Body.Bytes(), attemptParsedReq.OutputEffort, attemptParsedReq.ThinkingEnabled, channelMapping, reqModel,
-				fs.ForceCacheBilling, subject.UserID, selection.RequestedGroupID, selection.ResolvedGroupID)
+				fs.ForceCacheBilling, subject.UserID)
 			return
 		}
 		if !retryWithFallback {
@@ -2158,8 +2158,6 @@ func (h *GatewayHandler) submitForwardUsageRecord(
 	reqModel string,
 	forceCacheBilling bool,
 	logUserID int64,
-	requestedGroupID *int64,
-	resolvedGroupID *int64,
 ) {
 	userAgent := c.GetHeader("User-Agent")
 	clientIP := ip.GetClientIP(c)
@@ -2195,8 +2193,6 @@ func (h *GatewayHandler) submitForwardUsageRecord(
 			RequestPayloadHash: requestPayloadHash,
 			ForceCacheBilling:  forceCacheBilling,
 			APIKeyService:      h.apiKeyService,
-			RequestedGroupID:   requestedGroupID,
-			ResolvedGroupID:    resolvedGroupID,
 			ChannelUsageFields: channelMapping.ToUsageFields(reqModel, result.UpstreamModel),
 		}); err != nil {
 			logger.L().With(

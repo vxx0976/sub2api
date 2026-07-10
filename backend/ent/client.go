@@ -33,7 +33,6 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/chatconversation"
 	"github.com/Wei-Shaw/sub2api/ent/chatmessage"
 	"github.com/Wei-Shaw/sub2api/ent/errorpassthroughrule"
-	"github.com/Wei-Shaw/sub2api/ent/failovergroupevent"
 	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/idempotencyrecord"
 	"github.com/Wei-Shaw/sub2api/ent/identityadoptiondecision"
@@ -110,8 +109,6 @@ type Client struct {
 	ChatMessage *ChatMessageClient
 	// ErrorPassthroughRule is the client for interacting with the ErrorPassthroughRule builders.
 	ErrorPassthroughRule *ErrorPassthroughRuleClient
-	// FailoverGroupEvent is the client for interacting with the FailoverGroupEvent builders.
-	FailoverGroupEvent *FailoverGroupEventClient
 	// Group is the client for interacting with the Group builders.
 	Group *GroupClient
 	// IdempotencyRecord is the client for interacting with the IdempotencyRecord builders.
@@ -203,7 +200,6 @@ func (c *Client) init() {
 	c.ChatConversation = NewChatConversationClient(c.config)
 	c.ChatMessage = NewChatMessageClient(c.config)
 	c.ErrorPassthroughRule = NewErrorPassthroughRuleClient(c.config)
-	c.FailoverGroupEvent = NewFailoverGroupEventClient(c.config)
 	c.Group = NewGroupClient(c.config)
 	c.IdempotencyRecord = NewIdempotencyRecordClient(c.config)
 	c.IdentityAdoptionDecision = NewIdentityAdoptionDecisionClient(c.config)
@@ -345,7 +341,6 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		ChatConversation:              NewChatConversationClient(cfg),
 		ChatMessage:                   NewChatMessageClient(cfg),
 		ErrorPassthroughRule:          NewErrorPassthroughRuleClient(cfg),
-		FailoverGroupEvent:            NewFailoverGroupEventClient(cfg),
 		Group:                         NewGroupClient(cfg),
 		IdempotencyRecord:             NewIdempotencyRecordClient(cfg),
 		IdentityAdoptionDecision:      NewIdentityAdoptionDecisionClient(cfg),
@@ -414,7 +409,6 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		ChatConversation:              NewChatConversationClient(cfg),
 		ChatMessage:                   NewChatMessageClient(cfg),
 		ErrorPassthroughRule:          NewErrorPassthroughRuleClient(cfg),
-		FailoverGroupEvent:            NewFailoverGroupEventClient(cfg),
 		Group:                         NewGroupClient(cfg),
 		IdempotencyRecord:             NewIdempotencyRecordClient(cfg),
 		IdentityAdoptionDecision:      NewIdentityAdoptionDecisionClient(cfg),
@@ -479,15 +473,14 @@ func (c *Client) Use(hooks ...Hook) {
 		c.AuthIdentity, c.AuthIdentityChannel, c.BatchImageEvent, c.BatchImageItem,
 		c.BatchImageJob, c.Channel, c.ChannelMonitor, c.ChannelMonitorDailyRollup,
 		c.ChannelMonitorHistory, c.ChannelMonitorRequestTemplate, c.ChatConversation,
-		c.ChatMessage, c.ErrorPassthroughRule, c.FailoverGroupEvent, c.Group,
-		c.IdempotencyRecord, c.IdentityAdoptionDecision, c.Order, c.PaymentAuditLog,
-		c.PaymentOrder, c.PaymentProviderInstance, c.PendingAuthSession, c.PromoCode,
-		c.PromoCodeUsage, c.Proxy, c.RechargeOrder, c.RedeemCode, c.ReferralReward,
-		c.ResellerAPIToken, c.ResellerDomain, c.ResellerSetting, c.ResellerWithdrawal,
-		c.SecuritySecret, c.Setting, c.SubscriptionPlan, c.TLSFingerprintProfile,
-		c.UsageCleanupTask, c.UsageLog, c.UsdtOrder, c.User, c.UserAllowedGroup,
-		c.UserAttributeDefinition, c.UserAttributeValue, c.UserPlatformQuota,
-		c.UserSubscription,
+		c.ChatMessage, c.ErrorPassthroughRule, c.Group, c.IdempotencyRecord,
+		c.IdentityAdoptionDecision, c.Order, c.PaymentAuditLog, c.PaymentOrder,
+		c.PaymentProviderInstance, c.PendingAuthSession, c.PromoCode, c.PromoCodeUsage,
+		c.Proxy, c.RechargeOrder, c.RedeemCode, c.ReferralReward, c.ResellerAPIToken,
+		c.ResellerDomain, c.ResellerSetting, c.ResellerWithdrawal, c.SecuritySecret,
+		c.Setting, c.SubscriptionPlan, c.TLSFingerprintProfile, c.UsageCleanupTask,
+		c.UsageLog, c.UsdtOrder, c.User, c.UserAllowedGroup, c.UserAttributeDefinition,
+		c.UserAttributeValue, c.UserPlatformQuota, c.UserSubscription,
 	} {
 		n.Use(hooks...)
 	}
@@ -501,15 +494,14 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.AuthIdentity, c.AuthIdentityChannel, c.BatchImageEvent, c.BatchImageItem,
 		c.BatchImageJob, c.Channel, c.ChannelMonitor, c.ChannelMonitorDailyRollup,
 		c.ChannelMonitorHistory, c.ChannelMonitorRequestTemplate, c.ChatConversation,
-		c.ChatMessage, c.ErrorPassthroughRule, c.FailoverGroupEvent, c.Group,
-		c.IdempotencyRecord, c.IdentityAdoptionDecision, c.Order, c.PaymentAuditLog,
-		c.PaymentOrder, c.PaymentProviderInstance, c.PendingAuthSession, c.PromoCode,
-		c.PromoCodeUsage, c.Proxy, c.RechargeOrder, c.RedeemCode, c.ReferralReward,
-		c.ResellerAPIToken, c.ResellerDomain, c.ResellerSetting, c.ResellerWithdrawal,
-		c.SecuritySecret, c.Setting, c.SubscriptionPlan, c.TLSFingerprintProfile,
-		c.UsageCleanupTask, c.UsageLog, c.UsdtOrder, c.User, c.UserAllowedGroup,
-		c.UserAttributeDefinition, c.UserAttributeValue, c.UserPlatformQuota,
-		c.UserSubscription,
+		c.ChatMessage, c.ErrorPassthroughRule, c.Group, c.IdempotencyRecord,
+		c.IdentityAdoptionDecision, c.Order, c.PaymentAuditLog, c.PaymentOrder,
+		c.PaymentProviderInstance, c.PendingAuthSession, c.PromoCode, c.PromoCodeUsage,
+		c.Proxy, c.RechargeOrder, c.RedeemCode, c.ReferralReward, c.ResellerAPIToken,
+		c.ResellerDomain, c.ResellerSetting, c.ResellerWithdrawal, c.SecuritySecret,
+		c.Setting, c.SubscriptionPlan, c.TLSFingerprintProfile, c.UsageCleanupTask,
+		c.UsageLog, c.UsdtOrder, c.User, c.UserAllowedGroup, c.UserAttributeDefinition,
+		c.UserAttributeValue, c.UserPlatformQuota, c.UserSubscription,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -554,8 +546,6 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.ChatMessage.mutate(ctx, m)
 	case *ErrorPassthroughRuleMutation:
 		return c.ErrorPassthroughRule.mutate(ctx, m)
-	case *FailoverGroupEventMutation:
-		return c.FailoverGroupEvent.mutate(ctx, m)
 	case *GroupMutation:
 		return c.Group.mutate(ctx, m)
 	case *IdempotencyRecordMutation:
@@ -3387,139 +3377,6 @@ func (c *ErrorPassthroughRuleClient) mutate(ctx context.Context, m *ErrorPassthr
 		return (&ErrorPassthroughRuleDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown ErrorPassthroughRule mutation op: %q", m.Op())
-	}
-}
-
-// FailoverGroupEventClient is a client for the FailoverGroupEvent schema.
-type FailoverGroupEventClient struct {
-	config
-}
-
-// NewFailoverGroupEventClient returns a client for the FailoverGroupEvent from the given config.
-func NewFailoverGroupEventClient(c config) *FailoverGroupEventClient {
-	return &FailoverGroupEventClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `failovergroupevent.Hooks(f(g(h())))`.
-func (c *FailoverGroupEventClient) Use(hooks ...Hook) {
-	c.hooks.FailoverGroupEvent = append(c.hooks.FailoverGroupEvent, hooks...)
-}
-
-// Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `failovergroupevent.Intercept(f(g(h())))`.
-func (c *FailoverGroupEventClient) Intercept(interceptors ...Interceptor) {
-	c.inters.FailoverGroupEvent = append(c.inters.FailoverGroupEvent, interceptors...)
-}
-
-// Create returns a builder for creating a FailoverGroupEvent entity.
-func (c *FailoverGroupEventClient) Create() *FailoverGroupEventCreate {
-	mutation := newFailoverGroupEventMutation(c.config, OpCreate)
-	return &FailoverGroupEventCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of FailoverGroupEvent entities.
-func (c *FailoverGroupEventClient) CreateBulk(builders ...*FailoverGroupEventCreate) *FailoverGroupEventCreateBulk {
-	return &FailoverGroupEventCreateBulk{config: c.config, builders: builders}
-}
-
-// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
-// a builder and applies setFunc on it.
-func (c *FailoverGroupEventClient) MapCreateBulk(slice any, setFunc func(*FailoverGroupEventCreate, int)) *FailoverGroupEventCreateBulk {
-	rv := reflect.ValueOf(slice)
-	if rv.Kind() != reflect.Slice {
-		return &FailoverGroupEventCreateBulk{err: fmt.Errorf("calling to FailoverGroupEventClient.MapCreateBulk with wrong type %T, need slice", slice)}
-	}
-	builders := make([]*FailoverGroupEventCreate, rv.Len())
-	for i := 0; i < rv.Len(); i++ {
-		builders[i] = c.Create()
-		setFunc(builders[i], i)
-	}
-	return &FailoverGroupEventCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for FailoverGroupEvent.
-func (c *FailoverGroupEventClient) Update() *FailoverGroupEventUpdate {
-	mutation := newFailoverGroupEventMutation(c.config, OpUpdate)
-	return &FailoverGroupEventUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *FailoverGroupEventClient) UpdateOne(_m *FailoverGroupEvent) *FailoverGroupEventUpdateOne {
-	mutation := newFailoverGroupEventMutation(c.config, OpUpdateOne, withFailoverGroupEvent(_m))
-	return &FailoverGroupEventUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *FailoverGroupEventClient) UpdateOneID(id int64) *FailoverGroupEventUpdateOne {
-	mutation := newFailoverGroupEventMutation(c.config, OpUpdateOne, withFailoverGroupEventID(id))
-	return &FailoverGroupEventUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for FailoverGroupEvent.
-func (c *FailoverGroupEventClient) Delete() *FailoverGroupEventDelete {
-	mutation := newFailoverGroupEventMutation(c.config, OpDelete)
-	return &FailoverGroupEventDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *FailoverGroupEventClient) DeleteOne(_m *FailoverGroupEvent) *FailoverGroupEventDeleteOne {
-	return c.DeleteOneID(_m.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *FailoverGroupEventClient) DeleteOneID(id int64) *FailoverGroupEventDeleteOne {
-	builder := c.Delete().Where(failovergroupevent.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &FailoverGroupEventDeleteOne{builder}
-}
-
-// Query returns a query builder for FailoverGroupEvent.
-func (c *FailoverGroupEventClient) Query() *FailoverGroupEventQuery {
-	return &FailoverGroupEventQuery{
-		config: c.config,
-		ctx:    &QueryContext{Type: TypeFailoverGroupEvent},
-		inters: c.Interceptors(),
-	}
-}
-
-// Get returns a FailoverGroupEvent entity by its id.
-func (c *FailoverGroupEventClient) Get(ctx context.Context, id int64) (*FailoverGroupEvent, error) {
-	return c.Query().Where(failovergroupevent.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *FailoverGroupEventClient) GetX(ctx context.Context, id int64) *FailoverGroupEvent {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// Hooks returns the client hooks.
-func (c *FailoverGroupEventClient) Hooks() []Hook {
-	return c.hooks.FailoverGroupEvent
-}
-
-// Interceptors returns the client interceptors.
-func (c *FailoverGroupEventClient) Interceptors() []Interceptor {
-	return c.inters.FailoverGroupEvent
-}
-
-func (c *FailoverGroupEventClient) mutate(ctx context.Context, m *FailoverGroupEventMutation) (Value, error) {
-	switch m.Op() {
-	case OpCreate:
-		return (&FailoverGroupEventCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdate:
-		return (&FailoverGroupEventUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdateOne:
-		return (&FailoverGroupEventUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpDelete, OpDeleteOne:
-		return (&FailoverGroupEventDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
-	default:
-		return nil, fmt.Errorf("ent: unknown FailoverGroupEvent mutation op: %q", m.Op())
 	}
 }
 
@@ -8658,11 +8515,11 @@ type (
 		AuthIdentityChannel, BatchImageEvent, BatchImageItem, BatchImageJob, Channel,
 		ChannelMonitor, ChannelMonitorDailyRollup, ChannelMonitorHistory,
 		ChannelMonitorRequestTemplate, ChatConversation, ChatMessage,
-		ErrorPassthroughRule, FailoverGroupEvent, Group, IdempotencyRecord,
-		IdentityAdoptionDecision, Order, PaymentAuditLog, PaymentOrder,
-		PaymentProviderInstance, PendingAuthSession, PromoCode, PromoCodeUsage, Proxy,
-		RechargeOrder, RedeemCode, ReferralReward, ResellerAPIToken, ResellerDomain,
-		ResellerSetting, ResellerWithdrawal, SecuritySecret, Setting, SubscriptionPlan,
+		ErrorPassthroughRule, Group, IdempotencyRecord, IdentityAdoptionDecision,
+		Order, PaymentAuditLog, PaymentOrder, PaymentProviderInstance,
+		PendingAuthSession, PromoCode, PromoCodeUsage, Proxy, RechargeOrder,
+		RedeemCode, ReferralReward, ResellerAPIToken, ResellerDomain, ResellerSetting,
+		ResellerWithdrawal, SecuritySecret, Setting, SubscriptionPlan,
 		TLSFingerprintProfile, UsageCleanupTask, UsageLog, UsdtOrder, User,
 		UserAllowedGroup, UserAttributeDefinition, UserAttributeValue,
 		UserPlatformQuota, UserSubscription []ent.Hook
@@ -8672,11 +8529,11 @@ type (
 		AuthIdentityChannel, BatchImageEvent, BatchImageItem, BatchImageJob, Channel,
 		ChannelMonitor, ChannelMonitorDailyRollup, ChannelMonitorHistory,
 		ChannelMonitorRequestTemplate, ChatConversation, ChatMessage,
-		ErrorPassthroughRule, FailoverGroupEvent, Group, IdempotencyRecord,
-		IdentityAdoptionDecision, Order, PaymentAuditLog, PaymentOrder,
-		PaymentProviderInstance, PendingAuthSession, PromoCode, PromoCodeUsage, Proxy,
-		RechargeOrder, RedeemCode, ReferralReward, ResellerAPIToken, ResellerDomain,
-		ResellerSetting, ResellerWithdrawal, SecuritySecret, Setting, SubscriptionPlan,
+		ErrorPassthroughRule, Group, IdempotencyRecord, IdentityAdoptionDecision,
+		Order, PaymentAuditLog, PaymentOrder, PaymentProviderInstance,
+		PendingAuthSession, PromoCode, PromoCodeUsage, Proxy, RechargeOrder,
+		RedeemCode, ReferralReward, ResellerAPIToken, ResellerDomain, ResellerSetting,
+		ResellerWithdrawal, SecuritySecret, Setting, SubscriptionPlan,
 		TLSFingerprintProfile, UsageCleanupTask, UsageLog, UsdtOrder, User,
 		UserAllowedGroup, UserAttributeDefinition, UserAttributeValue,
 		UserPlatformQuota, UserSubscription []ent.Interceptor

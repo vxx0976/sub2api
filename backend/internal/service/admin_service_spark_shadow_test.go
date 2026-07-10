@@ -737,14 +737,6 @@ func (s *sparkShadowValidatingGroupRepoStub) ExistsByIDs(_ context.Context, ids 
 	return out, nil
 }
 
-// validateBindableGroupIDs 会逐个 GetByIDLite 校验 failover 分组，返回普通分组即可
-func (s *sparkShadowValidatingGroupRepoStub) GetByIDLite(_ context.Context, id int64) (*Group, error) {
-	if s.existing[id] {
-		return &Group{ID: id}, nil
-	}
-	return nil, ErrGroupNotFound
-}
-
 // TestCreateShadow_DefaultsNameFromParent 验证外审 E/P2:空 name 不应 500,
 // 而是默认 "<母账号名> (Spark)"。
 func TestCreateShadow_DefaultsNameFromParent(t *testing.T) {

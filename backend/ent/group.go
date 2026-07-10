@@ -137,18 +137,6 @@ type Group struct {
 	TotalCheckedAccounts int `json:"total_checked_accounts,omitempty"`
 	// 最近一次健康检查时间
 	LastHealthCheckAt *time.Time `json:"last_health_check_at,omitempty"`
-	// 是否为智能路由（虚拟故障转移分组）
-	IsFailoverGroup bool `json:"is_failover_group,omitempty"`
-	// 故障转移成员分组 ID 有序列表（仅 is_failover_group=true 时生效）
-	FailoverMemberIds []int64 `json:"failover_member_ids,omitempty"`
-	// 当前激活成员 ID；为空表示尚未 reconcile
-	FailoverActiveMemberID *int64 `json:"failover_active_member_id,omitempty"`
-	// active_member_id 的乐观锁版本号（CAS）
-	FailoverActiveVersion int64 `json:"failover_active_version,omitempty"`
-	// 手动锁定的成员 ID；非空时自动 reconcile 被短路
-	FailoverPinMemberID *int64 `json:"failover_pin_member_id,omitempty"`
-	// 手动锁定过期时间；到期后自动清除
-	FailoverPinExpiresAt *time.Time `json:"failover_pin_expires_at,omitempty"`
 	// OpenAI Messages 调度模型配置：按 Claude 系列/精确模型映射到目标 GPT 模型
 	MessagesDispatchModelConfig domain.OpenAIMessagesDispatchModelConfig `json:"messages_dispatch_model_config,omitempty"`
 	// 自定义 /v1/models 展示列表配置；仅影响模型列表响应，不影响调度
@@ -272,17 +260,17 @@ func (*Group) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case group.FieldNameI18n, group.FieldDescriptionI18n, group.FieldModelRouting, group.FieldSupportedModelScopes, group.FieldFailoverMemberIds, group.FieldMessagesDispatchModelConfig, group.FieldModelsListConfig:
+		case group.FieldNameI18n, group.FieldDescriptionI18n, group.FieldModelRouting, group.FieldSupportedModelScopes, group.FieldMessagesDispatchModelConfig, group.FieldModelsListConfig:
 			values[i] = new([]byte)
-		case group.FieldPeakRateEnabled, group.FieldIsExclusive, group.FieldAllowImageGeneration, group.FieldAllowBatchImageGeneration, group.FieldImageRateIndependent, group.FieldVideoRateIndependent, group.FieldClaudeCodeOnly, group.FieldModelRoutingEnabled, group.FieldMcpXMLInject, group.FieldIsPurchasable, group.FieldIsRecommended, group.FieldResellerTemplate, group.FieldRequireOauthOnly, group.FieldRequirePrivacySet, group.FieldAllowMessagesDispatch, group.FieldIsFailoverGroup:
+		case group.FieldPeakRateEnabled, group.FieldIsExclusive, group.FieldAllowImageGeneration, group.FieldAllowBatchImageGeneration, group.FieldImageRateIndependent, group.FieldVideoRateIndependent, group.FieldClaudeCodeOnly, group.FieldModelRoutingEnabled, group.FieldMcpXMLInject, group.FieldIsPurchasable, group.FieldIsRecommended, group.FieldResellerTemplate, group.FieldRequireOauthOnly, group.FieldRequirePrivacySet, group.FieldAllowMessagesDispatch:
 			values[i] = new(sql.NullBool)
 		case group.FieldRateMultiplier, group.FieldPeakRateMultiplier, group.FieldDailyLimitUsd, group.FieldWeeklyLimitUsd, group.FieldMonthlyLimitUsd, group.FieldImageRateMultiplier, group.FieldImagePrice1k, group.FieldImagePrice2k, group.FieldImagePrice4k, group.FieldBatchImageDiscountMultiplier, group.FieldBatchImageHoldMultiplier, group.FieldVideoRateMultiplier, group.FieldVideoPrice480p, group.FieldVideoPrice720p, group.FieldVideoPrice1080p, group.FieldPrice:
 			values[i] = new(sql.NullFloat64)
-		case group.FieldID, group.FieldDefaultValidityDays, group.FieldFallbackGroupID, group.FieldFallbackGroupIDOnInvalidRequest, group.FieldSortOrder, group.FieldOwnerID, group.FieldSourceGroupID, group.FieldHealthCheckIntervalMin, group.FieldHealthyAccounts, group.FieldTotalCheckedAccounts, group.FieldFailoverActiveMemberID, group.FieldFailoverActiveVersion, group.FieldFailoverPinMemberID, group.FieldRpmLimit:
+		case group.FieldID, group.FieldDefaultValidityDays, group.FieldFallbackGroupID, group.FieldFallbackGroupIDOnInvalidRequest, group.FieldSortOrder, group.FieldOwnerID, group.FieldSourceGroupID, group.FieldHealthCheckIntervalMin, group.FieldHealthyAccounts, group.FieldTotalCheckedAccounts, group.FieldRpmLimit:
 			values[i] = new(sql.NullInt64)
 		case group.FieldName, group.FieldDescription, group.FieldPeakStart, group.FieldPeakEnd, group.FieldStatus, group.FieldPlatform, group.FieldSubscriptionType, group.FieldExternalBuyURL, group.FieldDefaultMappedModel, group.FieldHealthCheckTestModel, group.FieldHealthStatus:
 			values[i] = new(sql.NullString)
-		case group.FieldCreatedAt, group.FieldUpdatedAt, group.FieldDeletedAt, group.FieldLastHealthCheckAt, group.FieldFailoverPinExpiresAt:
+		case group.FieldCreatedAt, group.FieldUpdatedAt, group.FieldDeletedAt, group.FieldLastHealthCheckAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -685,47 +673,6 @@ func (_m *Group) assignValues(columns []string, values []any) error {
 				_m.LastHealthCheckAt = new(time.Time)
 				*_m.LastHealthCheckAt = value.Time
 			}
-		case group.FieldIsFailoverGroup:
-			if value, ok := values[i].(*sql.NullBool); !ok {
-				return fmt.Errorf("unexpected type %T for field is_failover_group", values[i])
-			} else if value.Valid {
-				_m.IsFailoverGroup = value.Bool
-			}
-		case group.FieldFailoverMemberIds:
-			if value, ok := values[i].(*[]byte); !ok {
-				return fmt.Errorf("unexpected type %T for field failover_member_ids", values[i])
-			} else if value != nil && len(*value) > 0 {
-				if err := json.Unmarshal(*value, &_m.FailoverMemberIds); err != nil {
-					return fmt.Errorf("unmarshal field failover_member_ids: %w", err)
-				}
-			}
-		case group.FieldFailoverActiveMemberID:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field failover_active_member_id", values[i])
-			} else if value.Valid {
-				_m.FailoverActiveMemberID = new(int64)
-				*_m.FailoverActiveMemberID = value.Int64
-			}
-		case group.FieldFailoverActiveVersion:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field failover_active_version", values[i])
-			} else if value.Valid {
-				_m.FailoverActiveVersion = value.Int64
-			}
-		case group.FieldFailoverPinMemberID:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field failover_pin_member_id", values[i])
-			} else if value.Valid {
-				_m.FailoverPinMemberID = new(int64)
-				*_m.FailoverPinMemberID = value.Int64
-			}
-		case group.FieldFailoverPinExpiresAt:
-			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field failover_pin_expires_at", values[i])
-			} else if value.Valid {
-				_m.FailoverPinExpiresAt = new(time.Time)
-				*_m.FailoverPinExpiresAt = value.Time
-			}
 		case group.FieldMessagesDispatchModelConfig:
 			if value, ok := values[i].(*[]byte); !ok {
 				return fmt.Errorf("unexpected type %T for field messages_dispatch_model_config", values[i])
@@ -1039,30 +986,6 @@ func (_m *Group) String() string {
 	builder.WriteString(", ")
 	if v := _m.LastHealthCheckAt; v != nil {
 		builder.WriteString("last_health_check_at=")
-		builder.WriteString(v.Format(time.ANSIC))
-	}
-	builder.WriteString(", ")
-	builder.WriteString("is_failover_group=")
-	builder.WriteString(fmt.Sprintf("%v", _m.IsFailoverGroup))
-	builder.WriteString(", ")
-	builder.WriteString("failover_member_ids=")
-	builder.WriteString(fmt.Sprintf("%v", _m.FailoverMemberIds))
-	builder.WriteString(", ")
-	if v := _m.FailoverActiveMemberID; v != nil {
-		builder.WriteString("failover_active_member_id=")
-		builder.WriteString(fmt.Sprintf("%v", *v))
-	}
-	builder.WriteString(", ")
-	builder.WriteString("failover_active_version=")
-	builder.WriteString(fmt.Sprintf("%v", _m.FailoverActiveVersion))
-	builder.WriteString(", ")
-	if v := _m.FailoverPinMemberID; v != nil {
-		builder.WriteString("failover_pin_member_id=")
-		builder.WriteString(fmt.Sprintf("%v", *v))
-	}
-	builder.WriteString(", ")
-	if v := _m.FailoverPinExpiresAt; v != nil {
-		builder.WriteString("failover_pin_expires_at=")
 		builder.WriteString(v.Format(time.ANSIC))
 	}
 	builder.WriteString(", ")

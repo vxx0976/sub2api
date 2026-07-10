@@ -279,10 +279,6 @@ func (s *groupRepoStub) UpdateSortOrders(ctx context.Context, updates []GroupSor
 	return nil
 }
 
-func (s *groupRepoStub) ListFailoverGroupsReferencing(ctx context.Context, memberID int64) ([]*Group, error) {
-	return nil, nil
-}
-
 type deleteGroupAPIKeyRepoStub struct {
 	apiKeyRepoStubForGroupUpdate
 	keys         []string

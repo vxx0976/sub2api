@@ -30,7 +30,6 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/chatconversation"
 	"github.com/Wei-Shaw/sub2api/ent/chatmessage"
 	"github.com/Wei-Shaw/sub2api/ent/errorpassthroughrule"
-	"github.com/Wei-Shaw/sub2api/ent/failovergroupevent"
 	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/idempotencyrecord"
 	"github.com/Wei-Shaw/sub2api/ent/identityadoptiondecision"
@@ -140,7 +139,6 @@ func checkColumn(t, c string) error {
 			chatconversation.Table:              chatconversation.ValidColumn,
 			chatmessage.Table:                   chatmessage.ValidColumn,
 			errorpassthroughrule.Table:          errorpassthroughrule.ValidColumn,
-			failovergroupevent.Table:            failovergroupevent.ValidColumn,
 			group.Table:                         group.ValidColumn,
 			idempotencyrecord.Table:             idempotencyrecord.ValidColumn,
 			identityadoptiondecision.Table:      identityadoptiondecision.ValidColumn,

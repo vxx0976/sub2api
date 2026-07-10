@@ -50,8 +50,6 @@ type Tx struct {
 	ChatMessage *ChatMessageClient
 	// ErrorPassthroughRule is the client for interacting with the ErrorPassthroughRule builders.
 	ErrorPassthroughRule *ErrorPassthroughRuleClient
-	// FailoverGroupEvent is the client for interacting with the FailoverGroupEvent builders.
-	FailoverGroupEvent *FailoverGroupEventClient
 	// Group is the client for interacting with the Group builders.
 	Group *GroupClient
 	// IdempotencyRecord is the client for interacting with the IdempotencyRecord builders.
@@ -263,7 +261,6 @@ func (tx *Tx) init() {
 	tx.ChatConversation = NewChatConversationClient(tx.config)
 	tx.ChatMessage = NewChatMessageClient(tx.config)
 	tx.ErrorPassthroughRule = NewErrorPassthroughRuleClient(tx.config)
-	tx.FailoverGroupEvent = NewFailoverGroupEventClient(tx.config)
 	tx.Group = NewGroupClient(tx.config)
 	tx.IdempotencyRecord = NewIdempotencyRecordClient(tx.config)
 	tx.IdentityAdoptionDecision = NewIdentityAdoptionDecisionClient(tx.config)

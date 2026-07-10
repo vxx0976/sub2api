@@ -10,9 +10,7 @@ import type {
   GroupPlatform,
   CreateGroupRequest,
   UpdateGroupRequest,
-  PaginatedResponse,
-  SmartRouterStatus,
-  SmartRouterUsageResponse
+  PaginatedResponse
 } from '@/types'
 
 /**
@@ -343,53 +341,6 @@ export async function checkHealth(id: number): Promise<any> {
   return data
 }
 
-/**
- * 智能路由（虚拟故障转移分组）相关 API
- */
-export async function getFailoverStatus(id: number): Promise<SmartRouterStatus> {
-  const { data } = await apiClient.get<SmartRouterStatus>(`/admin/groups/${id}/failover/status`)
-  return data
-}
-
-export async function setFailoverPin(
-  id: number,
-  memberId: number,
-  ttlSeconds: number
-): Promise<{ message: string }> {
-  const { data } = await apiClient.post<{ message: string }>(
-    `/admin/groups/${id}/failover/pin`,
-    { member_id: memberId, ttl_seconds: ttlSeconds }
-  )
-  return data
-}
-
-export async function clearFailoverPin(id: number): Promise<{ message: string }> {
-  const { data } = await apiClient.delete<{ message: string }>(`/admin/groups/${id}/failover/pin`)
-  return data
-}
-
-export async function triggerFailoverProbe(
-  id: number,
-  memberId: number
-): Promise<{ success: boolean }> {
-  const { data } = await apiClient.post<{ success: boolean }>(
-    `/admin/groups/${id}/failover/probe`,
-    { member_id: memberId }
-  )
-  return data
-}
-
-export async function getFailoverUsage(
-  id: number,
-  days: number = 7
-): Promise<SmartRouterUsageResponse> {
-  const { data } = await apiClient.get<SmartRouterUsageResponse>(
-    `/admin/groups/${id}/failover/usage`,
-    { params: { days } }
-  )
-  return data
-}
-
 export const groupsAPI = {
   list,
   getAll,
@@ -412,12 +363,7 @@ export const groupsAPI = {
   updateSortOrder,
   getUsageSummary,
   getCapacitySummary,
-  checkHealth,
-  getFailoverStatus,
-  setFailoverPin,
-  clearFailoverPin,
-  triggerFailoverProbe,
-  getFailoverUsage
+  checkHealth
 }
 
 export default groupsAPI

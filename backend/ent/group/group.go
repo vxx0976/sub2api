@@ -134,18 +134,6 @@ const (
 	FieldTotalCheckedAccounts = "total_checked_accounts"
 	// FieldLastHealthCheckAt holds the string denoting the last_health_check_at field in the database.
 	FieldLastHealthCheckAt = "last_health_check_at"
-	// FieldIsFailoverGroup holds the string denoting the is_failover_group field in the database.
-	FieldIsFailoverGroup = "is_failover_group"
-	// FieldFailoverMemberIds holds the string denoting the failover_member_ids field in the database.
-	FieldFailoverMemberIds = "failover_member_ids"
-	// FieldFailoverActiveMemberID holds the string denoting the failover_active_member_id field in the database.
-	FieldFailoverActiveMemberID = "failover_active_member_id"
-	// FieldFailoverActiveVersion holds the string denoting the failover_active_version field in the database.
-	FieldFailoverActiveVersion = "failover_active_version"
-	// FieldFailoverPinMemberID holds the string denoting the failover_pin_member_id field in the database.
-	FieldFailoverPinMemberID = "failover_pin_member_id"
-	// FieldFailoverPinExpiresAt holds the string denoting the failover_pin_expires_at field in the database.
-	FieldFailoverPinExpiresAt = "failover_pin_expires_at"
 	// FieldMessagesDispatchModelConfig holds the string denoting the messages_dispatch_model_config field in the database.
 	FieldMessagesDispatchModelConfig = "messages_dispatch_model_config"
 	// FieldModelsListConfig holds the string denoting the models_list_config field in the database.
@@ -295,12 +283,6 @@ var Columns = []string{
 	FieldHealthyAccounts,
 	FieldTotalCheckedAccounts,
 	FieldLastHealthCheckAt,
-	FieldIsFailoverGroup,
-	FieldFailoverMemberIds,
-	FieldFailoverActiveMemberID,
-	FieldFailoverActiveVersion,
-	FieldFailoverPinMemberID,
-	FieldFailoverPinExpiresAt,
 	FieldMessagesDispatchModelConfig,
 	FieldModelsListConfig,
 	FieldRpmLimit,
@@ -427,10 +409,6 @@ var (
 	DefaultHealthyAccounts int
 	// DefaultTotalCheckedAccounts holds the default value on creation for the "total_checked_accounts" field.
 	DefaultTotalCheckedAccounts int
-	// DefaultIsFailoverGroup holds the default value on creation for the "is_failover_group" field.
-	DefaultIsFailoverGroup bool
-	// DefaultFailoverActiveVersion holds the default value on creation for the "failover_active_version" field.
-	DefaultFailoverActiveVersion int64
 	// DefaultMessagesDispatchModelConfig holds the default value on creation for the "messages_dispatch_model_config" field.
 	DefaultMessagesDispatchModelConfig domain.OpenAIMessagesDispatchModelConfig
 	// DefaultModelsListConfig holds the default value on creation for the "models_list_config" field.
@@ -720,31 +698,6 @@ func ByTotalCheckedAccounts(opts ...sql.OrderTermOption) OrderOption {
 // ByLastHealthCheckAt orders the results by the last_health_check_at field.
 func ByLastHealthCheckAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldLastHealthCheckAt, opts...).ToFunc()
-}
-
-// ByIsFailoverGroup orders the results by the is_failover_group field.
-func ByIsFailoverGroup(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldIsFailoverGroup, opts...).ToFunc()
-}
-
-// ByFailoverActiveMemberID orders the results by the failover_active_member_id field.
-func ByFailoverActiveMemberID(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldFailoverActiveMemberID, opts...).ToFunc()
-}
-
-// ByFailoverActiveVersion orders the results by the failover_active_version field.
-func ByFailoverActiveVersion(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldFailoverActiveVersion, opts...).ToFunc()
-}
-
-// ByFailoverPinMemberID orders the results by the failover_pin_member_id field.
-func ByFailoverPinMemberID(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldFailoverPinMemberID, opts...).ToFunc()
-}
-
-// ByFailoverPinExpiresAt orders the results by the failover_pin_expires_at field.
-func ByFailoverPinExpiresAt(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldFailoverPinExpiresAt, opts...).ToFunc()
 }
 
 // ByRpmLimit orders the results by the rpm_limit field.

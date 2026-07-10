@@ -26,7 +26,6 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/chatconversation"
 	"github.com/Wei-Shaw/sub2api/ent/chatmessage"
 	"github.com/Wei-Shaw/sub2api/ent/errorpassthroughrule"
-	"github.com/Wei-Shaw/sub2api/ent/failovergroupevent"
 	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/idempotencyrecord"
 	"github.com/Wei-Shaw/sub2api/ent/identityadoptiondecision"
@@ -601,33 +600,6 @@ func (f TraverseErrorPassthroughRule) Traverse(ctx context.Context, q ent.Query)
 		return f(ctx, q)
 	}
 	return fmt.Errorf("unexpected query type %T. expect *ent.ErrorPassthroughRuleQuery", q)
-}
-
-// The FailoverGroupEventFunc type is an adapter to allow the use of ordinary function as a Querier.
-type FailoverGroupEventFunc func(context.Context, *ent.FailoverGroupEventQuery) (ent.Value, error)
-
-// Query calls f(ctx, q).
-func (f FailoverGroupEventFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
-	if q, ok := q.(*ent.FailoverGroupEventQuery); ok {
-		return f(ctx, q)
-	}
-	return nil, fmt.Errorf("unexpected query type %T. expect *ent.FailoverGroupEventQuery", q)
-}
-
-// The TraverseFailoverGroupEvent type is an adapter to allow the use of ordinary function as Traverser.
-type TraverseFailoverGroupEvent func(context.Context, *ent.FailoverGroupEventQuery) error
-
-// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
-func (f TraverseFailoverGroupEvent) Intercept(next ent.Querier) ent.Querier {
-	return next
-}
-
-// Traverse calls f(ctx, q).
-func (f TraverseFailoverGroupEvent) Traverse(ctx context.Context, q ent.Query) error {
-	if q, ok := q.(*ent.FailoverGroupEventQuery); ok {
-		return f(ctx, q)
-	}
-	return fmt.Errorf("unexpected query type %T. expect *ent.FailoverGroupEventQuery", q)
 }
 
 // The GroupFunc type is an adapter to allow the use of ordinary function as a Querier.
@@ -1506,8 +1478,6 @@ func NewQuery(q ent.Query) (Query, error) {
 		return &query[*ent.ChatMessageQuery, predicate.ChatMessage, chatmessage.OrderOption]{typ: ent.TypeChatMessage, tq: q}, nil
 	case *ent.ErrorPassthroughRuleQuery:
 		return &query[*ent.ErrorPassthroughRuleQuery, predicate.ErrorPassthroughRule, errorpassthroughrule.OrderOption]{typ: ent.TypeErrorPassthroughRule, tq: q}, nil
-	case *ent.FailoverGroupEventQuery:
-		return &query[*ent.FailoverGroupEventQuery, predicate.FailoverGroupEvent, failovergroupevent.OrderOption]{typ: ent.TypeFailoverGroupEvent, tq: q}, nil
 	case *ent.GroupQuery:
 		return &query[*ent.GroupQuery, predicate.Group, group.OrderOption]{typ: ent.TypeGroup, tq: q}, nil
 	case *ent.IdempotencyRecordQuery:

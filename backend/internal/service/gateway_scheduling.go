@@ -38,12 +38,11 @@ func (s *GatewayService) SelectAccountForModelWithExclusions(ctx context.Context
 	if hasForcePlatform && forcePlatform != "" {
 		platform = forcePlatform
 	} else if groupID != nil {
-		group, resolvedGroupID, virtualID, err := s.resolveGatewayGroupWithVirtual(ctx, groupID)
+		group, resolvedGroupID, err := s.resolveGatewayGroup(ctx, groupID)
 		if err != nil {
 			return nil, err
 		}
 		groupID = resolvedGroupID
-		ctx = withFailoverRouteContext(ctx, virtualID, resolvedGroupID)
 		ctx = s.withGroupContext(ctx, group)
 		platform = group.Platform
 	} else {
@@ -96,11 +95,8 @@ func (s *GatewayService) SelectAccountWithLoadAwareness(ctx context.Context, gro
 
 	cfg := s.schedulingConfig()
 
-	// 检查 Claude Code 客户端限制（可能会替换 groupID 为降级分组；
-	// 若原请求走智能路由则 ctx 会附带 ctxkey.RequestedGroupID）
-	var group *Group
-	var err error
-	ctx, group, groupID, err = s.checkClaudeCodeRestriction(ctx, groupID)
+	// 检查 Claude Code 客户端限制（可能会替换 groupID 为降级分组）
+	group, groupID, err := s.checkClaudeCodeRestriction(ctx, groupID)
 	if err != nil {
 		return nil, err
 	}
@@ -867,29 +863,55 @@ func (s *GatewayService) routingAccountIDsForRequest(ctx context.Context, groupI
 	return ids
 }
 
+func (s *GatewayService) resolveGatewayGroup(ctx context.Context, groupID *int64) (*Group, *int64, error) {
+	if groupID == nil {
+		return nil, nil, nil
+	}
+
+	currentID := *groupID
+	visited := map[int64]struct{}{}
+	for {
+		if _, seen := visited[currentID]; seen {
+			return nil, nil, fmt.Errorf("fallback group cycle detected")
+		}
+		visited[currentID] = struct{}{}
+
+		group, err := s.resolveGroupByID(ctx, currentID)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		if !group.ClaudeCodeOnly || IsClaudeCodeClient(ctx) {
+			return group, &currentID, nil
+		}
+
+		if group.FallbackGroupID == nil {
+			return nil, nil, ErrClaudeCodeOnly
+		}
+		currentID = *group.FallbackGroupID
+	}
+}
+
 // checkClaudeCodeRestriction 检查分组的 Claude Code 客户端限制
 // 如果分组启用了 claude_code_only 且请求不是来自 Claude Code 客户端：
 //   - 有降级分组：返回降级分组的 ID
 //   - 无降级分组：返回 ErrClaudeCodeOnly 错误
-//
-// 返回的 ctx 可能附带 ctxkey.RequestedGroupID（当原请求经过智能路由透明转发时）。
-func (s *GatewayService) checkClaudeCodeRestriction(ctx context.Context, groupID *int64) (context.Context, *Group, *int64, error) {
+func (s *GatewayService) checkClaudeCodeRestriction(ctx context.Context, groupID *int64) (*Group, *int64, error) {
 	if groupID == nil {
-		return ctx, nil, groupID, nil
+		return nil, groupID, nil
 	}
 
 	// 强制平台模式不检查 Claude Code 限制
 	if forcePlatform, hasForcePlatform := ctx.Value(ctxkey.ForcePlatform).(string); hasForcePlatform && forcePlatform != "" {
-		return ctx, nil, groupID, nil
+		return nil, groupID, nil
 	}
 
-	group, resolvedID, virtualID, err := s.resolveGatewayGroupWithVirtual(ctx, groupID)
+	group, resolvedID, err := s.resolveGatewayGroup(ctx, groupID)
 	if err != nil {
-		return ctx, nil, nil, err
+		return nil, nil, err
 	}
 
-	ctx = withFailoverRouteContext(ctx, virtualID, resolvedID)
-	return ctx, group, resolvedID, nil
+	return group, resolvedID, nil
 }
 
 func (s *GatewayService) resolvePlatform(ctx context.Context, groupID *int64, group *Group) (string, bool, error) {
@@ -1406,14 +1428,11 @@ func (s *GatewayService) newSelectionResult(ctx context.Context, account *Accoun
 	if err != nil {
 		return nil, err
 	}
-	requestedGroupID, resolvedGroupID := failoverRouteAttributionFromContext(ctx)
 	return &AccountSelectionResult{
-		Account:          hydrated,
-		Acquired:         acquired,
-		ReleaseFunc:      release,
-		WaitPlan:         waitPlan,
-		RequestedGroupID: requestedGroupID,
-		ResolvedGroupID:  resolvedGroupID,
+		Account:     hydrated,
+		Acquired:    acquired,
+		ReleaseFunc: release,
+		WaitPlan:    waitPlan,
 	}, nil
 }
 
