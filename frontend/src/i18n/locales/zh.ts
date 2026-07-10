@@ -8339,6 +8339,12 @@ export default {
 
   publicModels: {
     pageTitle: '模型广场',
+    seo: {
+      description:
+        '{siteName} 模型广场：公开分组与模型列表、透明定价，覆盖 Claude、GPT、Gemini、GLM、Qwen 等主流大模型，无需登录即可浏览。',
+      keywords:
+        'Claude API, GPT API, Gemini API, 大模型API, 模型价格, API定价, 模型广场, AI模型列表'
+    },
     badge: '公开模型',
     title: '模型广场',
     subtitle: '所有公开分组及其支持的模型，无需登录即可浏览。',

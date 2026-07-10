@@ -12,11 +12,8 @@
       content="Claude Code, Claude API, AI编程助手, Opus 4.5, Sonnet 4.5, API直连, 编程助手, Vibe Coding, Codex CLI, Gemini CLI, Cursor"
     />
     <meta name="robots" content="index,follow" />
-    <link rel="canonical" href="https://mayi.one/" />
-    <link rel="alternate" hreflang="zh" href="https://mayi.one/" />
-    <link rel="alternate" hreflang="en" href="https://mayi.one/?lang=en" />
-    <link rel="alternate" hreflang="ru" href="https://mayi.one/?lang=ru" />
-    <link rel="alternate" hreflang="x-default" href="https://mayi.one/" />
+    <!-- canonical/hreflang 不能静态写死首页：SPA 所有路由共用本文件，写死会让子页面
+         (如 /models)在原始 HTML 里被判为首页的备用网页而不被收录，由 utils/seo.ts 按路由注入 -->
     <link rel="preconnect" href="https://mayi.one" />
     <link rel="dns-prefetch" href="https://mayi.one" />
 

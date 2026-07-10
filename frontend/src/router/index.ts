@@ -187,7 +187,9 @@ const routes: RouteRecordRaw[] = [
     meta: {
       requiresAuth: false,
       title: 'Models',
-      titleKey: 'publicModels.pageTitle'
+      titleKey: 'publicModels.pageTitle',
+      descriptionKey: 'publicModels.seo.description',
+      keywordsKey: 'publicModels.seo.keywords'
     }
   },
 

@@ -8360,6 +8360,12 @@ export default {
 
   publicModels: {
     pageTitle: 'Models',
+    seo: {
+      description:
+        '{siteName} model marketplace: public groups, model catalog and transparent pricing across Claude, GPT, Gemini, GLM, Qwen and more — no login required.',
+      keywords:
+        'Claude API, GPT API, Gemini API, LLM API, model pricing, API pricing, model marketplace, AI model list'
+    },
     badge: 'Public Models',
     title: 'Model Marketplace',
     subtitle: 'Browse every public group and its supported models — no login required.',

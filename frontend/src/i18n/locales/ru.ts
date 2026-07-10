@@ -9081,6 +9081,12 @@ export default {
 
   publicModels: {
     pageTitle: 'Модели',
+    seo: {
+      description:
+        'Каталог моделей {siteName}: публичные группы, список моделей и прозрачные цены — Claude, GPT, Gemini, GLM, Qwen и другие. Без входа в систему.',
+      keywords:
+        'Claude API, GPT API, Gemini API, LLM API, цены на модели, тарифы API, каталог моделей, список AI-моделей'
+    },
     badge: 'Публичные модели',
     title: 'Каталог моделей',
     subtitle: 'Просматривайте все публичные группы и поддерживаемые ими модели — без входа в систему.',
