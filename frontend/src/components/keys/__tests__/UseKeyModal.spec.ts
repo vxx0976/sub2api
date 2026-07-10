@@ -122,4 +122,46 @@ describe('UseKeyModal', () => {
     expect(codeBlock.text()).toContain('"name": "GPT-5.4 Mini"')
     expect(codeBlock.text()).not.toContain('"name": "GPT-5.4 Nano"')
   })
+
+  it('renders GPT-5.6 alias and max variants in OpenCode config', async () => {
+    const wrapper = mount(UseKeyModal, {
+      props: {
+        show: true,
+        apiKey: 'sk-test',
+        baseUrl: 'https://example.com/v1',
+        platform: 'openai'
+      },
+      global: {
+        stubs: {
+          BaseDialog: {
+            template: '<div><slot /><slot name="footer" /></div>'
+          },
+          Icon: {
+            template: '<span />'
+          }
+        }
+      }
+    })
+
+    const opencodeTab = wrapper.findAll('button').find((button) =>
+      button.text().includes('keys.useKeyModal.cliTabs.opencode')
+    )
+    expect(opencodeTab).toBeDefined()
+    await opencodeTab!.trigger('click')
+    await nextTick()
+
+    const parsed = JSON.parse(wrapper.find('pre code').text())
+    const models = parsed.provider.openai.models
+    for (const model of ['gpt-5.6', 'gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna']) {
+      expect(models[model]).toBeDefined()
+      expect(models[model].variants).toHaveProperty('max')
+      expect(models[model].variants).toHaveProperty('xhigh')
+    }
+    expect(models['gpt-5.6'].name).toBe('GPT-5.6 (Sol)')
+  })
+
+  // NOTE(fork): upstream has a "renders Claude Fable 5 OpenCode config with adaptive thinking"
+  // test here, but this fork intentionally removed the OpenCode tab for the antigravity
+  // platform (commit 13b3776de "feat 优化用户页"), so that UI is unreachable and the test
+  // was dropped during the origin/main merge.
 })

@@ -7406,7 +7406,13 @@ export default {
         quickPresets: '快捷预设',
         presetOpusOnly: '仅 Opus 允许 1M',
         presetOpusOnlyDesc: 'Opus 透传，其他模型过滤',
-        commonPatterns: '常用模式'
+        commonPatterns: '常用模式',
+        userIds: '指定用户 ID',
+        userIdsHint:
+          '留空表示对全部 Sub2API 用户生效。指定后仅匹配这些用户的 API Key 请求，且优先于全局规则。',
+        userIdPlaceholder: '例如: 1001',
+        addUserId: '添加用户 ID',
+        removeUserId: '移除用户 ID'
       },
       openaiFastPolicy: {
         title: 'OpenAI Fast/Flex 策略',

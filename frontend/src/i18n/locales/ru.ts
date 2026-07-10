@@ -7182,6 +7182,12 @@ export default {
         scopeOAuth: 'Только OAuth',
         scopeAPIKey: 'Только API Key',
         scopeBedrock: 'Только Bedrock',
+        userIds: 'Конкретные ID пользователей',
+        userIdsHint:
+          'Оставьте пустым, чтобы применить ко всем пользователям Sub2API. Для указанных пользователей правило сопоставляется с запросами их API-ключей и имеет приоритет над глобальными правилами.',
+        userIdPlaceholder: 'Например: 1001',
+        addUserId: 'Добавить ID пользователя',
+        removeUserId: 'Удалить ID пользователя',
         errorMessage: 'Сообщение об ошибке',
         errorMessagePlaceholder: 'Пользовательское сообщение об ошибке при блокировке',
         errorMessageHint: 'Оставьте пустым для сообщения по умолчанию',
