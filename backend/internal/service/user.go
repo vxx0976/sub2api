@@ -19,6 +19,7 @@ type User struct {
 	PasswordHash   string  `json:"-"` // Never expose password hash
 	Role           string  `json:"role"`
 	Balance        float64 `json:"balance"`
+	FrozenBalance  float64 `json:"frozen_balance"`
 	Concurrency    int     `json:"concurrency"`
 	Status         string  `json:"status"`
 	AllowedGroups  []int64 `json:"allowed_groups,omitempty"`

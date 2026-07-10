@@ -7,6 +7,7 @@ import (
 	"crypto/tls"
 	"encoding/hex"
 	"fmt"
+	"html"
 	"log/slog"
 	"math/big"
 	"net"
@@ -468,7 +469,7 @@ func (s *EmailService) buildVerifyCodeEmailBody(code, siteName string, t emailTe
     </div>
 </body>
 </html>
-`, siteName, t.VerifyTitle, code, t.VerifyExpiry, t.VerifyIgnore, t.AutoEmail)
+`, html.EscapeString(siteName), t.VerifyTitle, code, t.VerifyExpiry, t.VerifyIgnore, t.AutoEmail)
 }
 
 // TestSMTPConnectionWithConfig 使用指定配置测试SMTP连接
@@ -689,6 +690,6 @@ func (s *EmailService) buildPasswordResetEmailBody(resetURL, siteName string, t 
     </div>
 </body>
 </html>
-`, siteName, t.ResetHeading, t.ResetDescription, resetURL, t.ResetButton,
-		t.ResetExpiry, t.ResetIgnore, t.ResetLinkFallback, resetURL, t.AutoEmail)
+`, html.EscapeString(siteName), t.ResetHeading, t.ResetDescription, html.EscapeString(resetURL), t.ResetButton,
+		t.ResetExpiry, t.ResetIgnore, t.ResetLinkFallback, html.EscapeString(resetURL), t.AutoEmail)
 }

@@ -7,7 +7,7 @@ import (
 	"context"
 	"embed"
 	"encoding/json"
-	"html"
+	htmlpkg "html"
 	"io"
 	"io/fs"
 	"net/http"
@@ -458,7 +458,7 @@ var (
 // replaceTagContent rewrites the content attribute matched by re with value,
 // escaping it for the double-quoted HTML attribute context.
 func replaceTagContent(htmlBytes []byte, re *regexp.Regexp, value string) []byte {
-	escaped := strings.ReplaceAll(html.EscapeString(value), "$", "$$")
+	escaped := strings.ReplaceAll(htmlpkg.EscapeString(value), "$", "$$")
 	return re.ReplaceAll(htmlBytes, []byte("${1}"+escaped+"${2}"))
 }
 
@@ -531,7 +531,7 @@ func replaceTitleTag(htmlBytes []byte, title string) []byte {
 	var buf bytes.Buffer
 	buf.Write(htmlBytes[:start])
 	buf.WriteString("<title>")
-	buf.WriteString(html.EscapeString(title))
+	buf.WriteString(htmlpkg.EscapeString(title))
 	buf.Write(htmlBytes[end:])
 	return buf.Bytes()
 }
@@ -553,7 +553,7 @@ func injectSiteTitle(html, settingsJSON []byte) []byte {
 		return html
 	}
 
-	newTitle := []byte("<title>" + cfg.SiteName + " - AI API Gateway</title>")
+	newTitle := []byte("<title>" + htmlpkg.EscapeString(cfg.SiteName) + " - AI API Gateway</title>")
 	var buf bytes.Buffer
 	buf.Write(html[:titleStart])
 	buf.Write(newTitle)

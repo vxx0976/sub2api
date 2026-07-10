@@ -7,3 +7,8 @@ import { getConfiguredTableDefaultPageSize, normalizeTablePageSize } from '@/uti
 export function getPersistedPageSize(fallback = getConfiguredTableDefaultPageSize()): number {
   return normalizeTablePageSize(getConfiguredTableDefaultPageSize() || fallback)
 }
+
+/**
+ * 本 fork 不做每页条数的本地持久化（见上），保留此导出仅为兼容上游调用方。
+ */
+export function setPersistedPageSize(_size: number): void {}

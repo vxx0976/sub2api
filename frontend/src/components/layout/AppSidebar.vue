@@ -9,20 +9,28 @@
     <!-- Logo/Brand -->
     <div class="sidebar-header" :class="{ 'sidebar-header-collapsed': sidebarCollapsed }">
       <!-- Custom Logo or Default Logo -->
-      <div class="sidebar-logo flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl shadow-glow">
+      <router-link
+        :to="homePath"
+        class="sidebar-logo flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl shadow-glow transition-opacity hover:opacity-80"
+        @click="handleMenuItemClick(homePath)"
+      >
         <img v-if="settingsLoaded" :src="siteLogo || '/logo.svg?v=2'" alt="Logo" class="h-full w-full object-contain" />
-      </div>
+      </router-link>
       <div class="sidebar-brand" :class="{ 'sidebar-brand-collapsed': sidebarCollapsed }" :aria-hidden="sidebarCollapsed ? 'true' : 'false'">
-        <span class="sidebar-brand-title text-lg font-bold text-gray-900 dark:text-white">
+        <router-link
+          :to="homePath"
+          class="sidebar-brand-title text-lg font-bold text-gray-900 transition-colors hover:text-primary-600 dark:text-white dark:hover:text-primary-400"
+          @click="handleMenuItemClick(homePath)"
+        >
           {{ siteName }}
-        </span>
+        </router-link>
         <!-- Version Badge -->
         <VersionBadge :version="siteVersion" />
       </div>
     </div>
 
     <!-- Navigation -->
-    <nav class="sidebar-nav scrollbar-hide">
+    <nav ref="sidebarNavRef" class="sidebar-nav scrollbar-hide">
       <!-- Reseller View -->
       <template v-if="isReseller">
         <div class="sidebar-section">
@@ -212,7 +220,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, h, onMounted, ref, watch } from 'vue'
+import { computed, h, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAdminSettingsStore, useAppStore, useAuthStore, useOnboardingStore, useResellerSettingsStore } from '@/stores'
@@ -220,7 +228,9 @@ import { useAdminChatStore } from '@/stores/adminChat'
 import { getMySubscriptions } from '@/api/subscriptions'
 import VersionBadge from '@/components/common/VersionBadge.vue'
 import { sanitizeSvg } from '@/utils/sanitize'
+import { sanitizeUrl } from '@/utils/url'
 import { FeatureFlags, makeSidebarFlag } from '@/utils/featureFlags'
+import { useBatchImageAccess } from '@/composables/useBatchImageAccess'
 
 interface NavItem {
   path: string
@@ -267,6 +277,7 @@ const authStore = useAuthStore()
 const onboardingStore = useOnboardingStore()
 const adminSettingsStore = useAdminSettingsStore()
 const resellerSettingsStore = useResellerSettingsStore()
+const { canUseBatchImage, refreshBatchImageAccess } = useBatchImageAccess()
 
 const sidebarCollapsed = computed(() => appStore.sidebarCollapsed)
 const mobileOpen = computed(() => appStore.mobileOpen)
@@ -277,15 +288,18 @@ const isReseller = computed(() => authStore.isReseller)
 const adminChatStore = useAdminChatStore()
 const chatUnread = computed(() => adminChatStore.unreadCount)
 const chatBadge = computed(() => (chatUnread.value > 99 ? '99+' : String(chatUnread.value)))
+const sidebarNavRef = ref<HTMLElement | null>(null)
 const isDark = ref(document.documentElement.classList.contains('dark'))
 const hasSubscriptions = ref(false)
+
+const homePath = computed(() => (isAdmin.value ? '/admin/dashboard' : '/dashboard'))
 
 // Track which parent nav groups are expanded
 const expandedGroups = ref<Set<string>>(new Set())
 
 // Site settings from appStore (cached, no flicker)
 const siteName = computed(() => appStore.siteName)
-const siteLogo = computed(() => appStore.siteLogo)
+const siteLogo = computed(() => sanitizeUrl(appStore.siteLogo || '', { allowRelative: true, allowDataUrl: true }))
 const siteVersion = computed(() => appStore.siteVersion)
 const settingsLoaded = computed(() => appStore.publicSettingsLoaded)
 
@@ -345,6 +359,26 @@ const CodeIcon = {
           'stroke-linecap': 'round',
           'stroke-linejoin': 'round',
           d: 'M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5'
+        })
+      ]
+    )
+}
+
+const BatchImageIcon = {
+  render: () =>
+    h(
+      'svg',
+      { fill: 'none', viewBox: '0 0 24 24', stroke: 'currentColor', 'stroke-width': '1.5' },
+      [
+        h('path', {
+          'stroke-linecap': 'round',
+          'stroke-linejoin': 'round',
+          d: 'M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.25 2.25 0 00-1.906-1.059H9.554a2.25 2.25 0 00-1.906 1.059l-.821 1.316z'
+        }),
+        h('path', {
+          'stroke-linecap': 'round',
+          'stroke-linejoin': 'round',
+          d: 'M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z'
         })
       ]
     )
@@ -721,6 +755,7 @@ const flagAffiliate = makeSidebarFlag(FeatureFlags.affiliate)
 const flagRiskControl = makeSidebarFlag(FeatureFlags.riskControl)
 const flagOpsMonitoring = () => adminSettingsStore.opsMonitoringEnabled
 const flagAdminPayment = () => adminSettingsStore.paymentEnabled
+const flagBatchImageAccess = () => canUseBatchImage.value
 
 // User navigation items (for regular users)
 const userNavItems = computed((): NavItem[] => {
@@ -728,6 +763,7 @@ const userNavItems = computed((): NavItem[] => {
     { path: '/console-home', label: t('nav.consoleHome'), icon: HomeIcon },
     { path: '/dashboard', label: t('nav.dashboard'), icon: DashboardIcon },
     { path: '/keys', label: t('nav.apiKeys'), icon: KeyIcon },
+    { path: '/batch-image', label: t('nav.batchImage'), icon: BatchImageIcon, hideInSimpleMode: true, featureFlag: flagBatchImageAccess },
     { path: '/usage', label: t('nav.usage'), icon: ChartIcon, hideInSimpleMode: true },
     { path: '/available-channels', label: t('nav.availableChannels'), icon: ChannelIcon, hideInSimpleMode: true, featureFlag: flagAvailableChannels },
     { path: '/model-pricing', label: t('nav.modelPricing'), icon: WalletIcon, hideInSimpleMode: true },
@@ -1026,11 +1062,20 @@ watch(
 )
 
 onMounted(async () => {
+  void refreshBatchImageAccess()
   if (isAdmin.value) {
     adminSettingsStore.fetch()
   }
   if (isReseller.value) {
     resellerSettingsStore.load()
+  }
+  // Restore sidebar scroll position after route change re-mounts the component
+  if (appStore.sidebarScrollTop > 0 && sidebarNavRef.value) {
+    void nextTick(() => {
+      if (sidebarNavRef.value) {
+        sidebarNavRef.value.scrollTop = appStore.sidebarScrollTop
+      }
+    })
   }
   // Check if regular user has active subscriptions
   if (!isAdmin.value && !isReseller.value && authStore.isAuthenticated) {
@@ -1040,6 +1085,12 @@ onMounted(async () => {
     } catch {
       // Silently ignore - default to hidden
     }
+  }
+})
+
+onBeforeUnmount(() => {
+  if (sidebarNavRef.value) {
+    appStore.sidebarScrollTop = sidebarNavRef.value.scrollTop
   }
 })
 </script>

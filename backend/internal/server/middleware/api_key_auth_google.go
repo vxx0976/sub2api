@@ -57,7 +57,7 @@ func APIKeyAuthWithSubscriptionGoogle(apiKeyService *service.APIKeyService, subs
 			return
 		}
 
-		// IP 限制（白名单/黑名单），与 api_key_auth.go 一致。
+		// IP 限制（白名单/黑名单），与 api_key_auth.go 一致，避免 Gemini 端点绕过 Key 的 IP ACL。
 		// 错误信息故意模糊，避免暴露具体的 IP 限制机制。
 		if len(apiKey.IPWhitelist) > 0 || len(apiKey.IPBlacklist) > 0 {
 			clientIP := ip.GetTrustedClientIP(c)
@@ -110,6 +110,7 @@ func APIKeyAuthWithSubscriptionGoogle(apiKeyService *service.APIKeyService, subs
 
 		// ── 计费执行：Key 状态/过期/配额检查 ─────────────────────────
 		// 与 api_key_auth.go 对齐，返回语义正确的状态码（403/429）而非 401。
+		// （状态字段可能因后台异步刷新而滞后，故显式拦截。）
 		switch apiKey.Status {
 		case service.StatusAPIKeyQuotaExhausted:
 			abortWithGoogleError(c, 429, "API key quota exhausted")
@@ -159,7 +160,7 @@ func APIKeyAuthWithSubscriptionGoogle(apiKeyService *service.APIKeyService, subs
 				subscriptionService.DoWindowMaintenance(&maintenanceCopy)
 			}
 		} else {
-			if apiKey.User.Balance <= 0 {
+			if apiKeyBalanceBelowAuthThreshold(apiKey.User.Balance, cfg) {
 				abortWithGoogleError(c, 403, "Insufficient account balance")
 				return
 			}

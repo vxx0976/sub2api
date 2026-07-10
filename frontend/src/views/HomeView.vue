@@ -18,8 +18,8 @@
     <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(120,119,198,0.25),transparent)]"></div>
     <PublicHeader class="relative z-10" />
     <main class="relative z-10 flex flex-1 flex-col items-center justify-center px-6 py-20 text-center">
-      <div v-if="appStore.siteLogo" class="mb-8 flex justify-center">
-        <img :src="appStore.siteLogo" :alt="siteName" class="h-20 w-20 rounded-2xl object-contain shadow-2xl ring-1 ring-white/10" />
+      <div v-if="siteLogo" class="mb-8 flex justify-center">
+        <img :src="siteLogo" :alt="siteName" class="h-20 w-20 rounded-2xl object-contain shadow-2xl ring-1 ring-white/10" />
       </div>
       <h1 class="mx-auto max-w-3xl text-4xl font-bold tracking-tight text-white sm:text-6xl">
         {{ siteName }}
@@ -63,8 +63,8 @@
     <PublicHeader class="relative z-10" />
     <main class="flex flex-1 flex-col items-center justify-center px-6 py-20">
       <div class="mx-auto w-full max-w-md text-center">
-        <div v-if="appStore.siteLogo" class="mb-8 flex justify-center">
-          <img :src="appStore.siteLogo" :alt="siteName" class="h-24 w-24 rounded-3xl object-contain shadow-xl" />
+        <div v-if="siteLogo" class="mb-8 flex justify-center">
+          <img :src="siteLogo" :alt="siteName" class="h-24 w-24 rounded-3xl object-contain shadow-xl" />
         </div>
         <div v-else class="mb-8 flex justify-center">
           <div class="flex h-24 w-24 items-center justify-center rounded-3xl bg-primary-600 shadow-xl">
@@ -106,8 +106,8 @@
     <PublicHeader />
     <main class="relative z-10 flex flex-1 items-center justify-center">
       <div class="mx-auto max-w-lg px-6 py-16 text-center">
-        <div v-if="appStore.siteLogo" class="mb-6 flex justify-center">
-          <img :src="appStore.siteLogo" :alt="siteName" class="h-16 w-16 rounded-2xl object-contain" />
+        <div v-if="siteLogo" class="mb-6 flex justify-center">
+          <img :src="siteLogo" :alt="siteName" class="h-16 w-16 rounded-2xl object-contain" />
         </div>
         <h1 class="text-3xl font-semibold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
           {{ siteName }}
@@ -758,6 +758,7 @@ import { useAuthStore, useAppStore } from '@/stores'
 import TypewriterTerminal, { type TerminalLine } from '@/components/common/TypewriterTerminal.vue'
 import PublicHeader from '@/components/layout/PublicHeader.vue'
 import Icon from '@/components/icons/Icon.vue'
+import { sanitizeUrl } from '@/utils/url'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -772,7 +773,8 @@ const loginPath = computed(() => refCode.value ? `/login?redirect=${encodeURICom
 
 // Site settings - directly from appStore (already initialized from injected config)
 const siteName = computed(() => appStore.cachedPublicSettings?.site_name || appStore.siteName || '码驿站')
-const docUrl = computed(() => appStore.cachedPublicSettings?.doc_url || appStore.docUrl || '')
+const siteLogo = computed(() => sanitizeUrl(appStore.cachedPublicSettings?.site_logo || appStore.siteLogo || '', { allowRelative: true, allowDataUrl: true }))
+const docUrl = computed(() => sanitizeUrl(appStore.cachedPublicSettings?.doc_url || appStore.docUrl || ''))
 const homeContent = computed(() => appStore.cachedPublicSettings?.home_content || '')
 const homeTemplate = computed(() => appStore.cachedPublicSettings?.home_template || 'default')
 const apiBaseRoot = computed(() => {

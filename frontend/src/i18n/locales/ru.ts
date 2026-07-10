@@ -310,8 +310,15 @@ export default {
       timeout: 'Перезапуск сервиса занимает больше времени, чем ожидалось. Пожалуйста, обновите страницу вручную.'
     }
   },
+  batchImageGuide: {
+    title: 'Пакетная генерация изображений',
+    description: 'Отправьте несколько промптов одной задачей и скачайте готовые изображения после её завершения'
+  },
   common: {
     login: 'Вход',
+    availableBalance: 'Доступный баланс',
+    frozenBalance: 'Замороженная сумма',
+    totalBalance: 'Общий баланс',
     loading: 'Загрузка...',
     submitting: 'Отправка...',
     justNow: 'только что',
@@ -459,6 +466,7 @@ export default {
     apiKeys: 'API Keys',
     usage: 'Использование',
     redeem: 'Активация',
+    batchImage: 'Пакетная генерация изображений',
     affiliate: 'Реферальные вознаграждения',
     affiliateManagement: 'Реферальные вознаграждения',
     affiliateInviteRecords: 'Записи приглашений',
@@ -797,7 +805,9 @@ export default {
     viewUsage: 'Просмотреть использование',
     checkDetailedLogs: 'Проверить детальные журналы использования',
     redeemCode: 'Активировать код',
-    addBalanceWithCode: 'Пополнить баланс кодом'
+    addBalanceWithCode: 'Пополнить баланс кодом',
+    batchImageAgent: 'Помощник пакетной генерации изображений',
+    batchImageAgentDesc: 'Скопировать инструкции для агента'
   },
   groups: {
     subscription: 'Подписка'
@@ -862,6 +872,8 @@ export default {
     total: 'Всего',
     quota: 'Квота',
     lastUsedAt: 'Последнее использование',
+    currentConcurrency: 'Текущая конкурентность',
+    lastUsedIP: 'IP последнего использования',
     useKey: 'Использовать ключ',
     useKeyModal: {
       title: 'Использование API Key',
@@ -1000,6 +1012,9 @@ export default {
     resetPending: 'Ожидает обновления',
     accountMultiplier: 'Множитель аккаунта',
     avgDuration: 'Средняя длительность',
+    latency: 'Задержка',
+    latencyFirstToken: 'Первый токен',
+    latencyDuration: 'Всего',
     inSelectedRange: 'в выбранном диапазоне',
     perRequest: 'на запрос',
     apiKeyFilter: 'API Key',
@@ -1087,7 +1102,8 @@ export default {
     userAgent: 'User-Agent',
     tabs: {
       usage: 'Использование',
-      errors: 'Ошибочные запросы'
+      errors: 'Ошибочные запросы',
+      ranking: 'Рейтинг пользователей'
     },
     errors: {
       time: 'Время',
@@ -1219,6 +1235,7 @@ export default {
       billingModeToken: 'За токен',
       billingModePerRequest: 'За запрос',
       billingModeImage: 'За изображение',
+      billingModeVideo: 'За видео',
       inputPrice: 'Вход',
       outputPrice: 'Выход',
       cacheWritePrice: 'Запись в кэш',
@@ -1793,6 +1810,10 @@ export default {
       configureAiAccounts: 'Настройка аккаунтов AI-платформ',
       systemSettings: 'Системные настройки',
       configureSystem: 'Настройка параметров системы',
+      batchImage: 'Пакетная генерация изображений',
+      batchImageDesc: 'Отправка задач и копирование инструкций для агента',
+      groupPricing: 'Ценообразование групп',
+      groupPricingDesc: 'Настройка пакетной скидки и коэффициента заморозки',
       failedToLoad: 'Не удалось загрузить статистику панели управления'
     },
     backup: {
@@ -2637,6 +2658,21 @@ export default {
         imageMultiplier: 'Множитель изображений',
         modeHint: 'По умолчанию стоимость изображения = цена изображения × текущий эффективный множитель группы. В режиме отдельного множителя — цена изображения × множитель изображений.',
         finalPricePreview: 'Предпросмотр итоговой цены за изображение',
+        notConfigured: 'Не настроено',
+        allowBatchImageGeneration: 'Разрешить пакетную генерацию изображений для этой группы',
+        batchDiscountMultiplier: 'Скидка на пакетную генерацию',
+        batchHoldMultiplier: 'Коэффициент заморозки цены пакета',
+        batchSectionHint: 'Настройки пакетной генерации действуют только для пакетных задач: при расчёте применяется пакетная скидка, а сумма предварительной заморозки = обычная цена изображения × коэффициент заморозки цены пакета. Референсные изображения также создают расход входных токенов у вышестоящего сервиса, поэтому рекомендуется скидка на пакетную генерацию выше 0.5.',
+        batchDisabledHint: 'Сначала включите генерацию изображений для этой группы, затем можно включить пакетную генерацию.',
+        batchGeminiOnlyHint: 'Пакетная генерация изображений пока доступна только для групп Gemini.'
+      },
+      videoPricing: {
+        title: 'Ценообразование генерации видео',
+        description: 'Настройка цен генерации видео Grok в USD за секунду итогового видео. Оставьте пустым для использования ставок по умолчанию (grok-imagine-video: $0.05/с 480p, $0.07/с 720p; video-1.5: $0.08/с 480p, $0.14/с 720p, $0.25/с 1080p).',
+        independentMultiplier: 'Отдельный множитель для видео',
+        videoMultiplier: 'Множитель видео',
+        modeHint: 'Видео тарифицируется посекундно: цена за секунду × длительность (1-15 с, по умолчанию 8 с). По умолчанию применяется текущий эффективный множитель группы; в режиме отдельного множителя используется множитель видео.',
+        finalPricePreview: 'Предпросмотр итоговой цены за секунду',
         notConfigured: 'Не настроено'
       },
       modelsList: {
@@ -2855,6 +2891,7 @@ export default {
         billingModeToken: 'По токенам',
         billingModePerRequest: 'За запрос',
         billingModeImage: 'За изображение',
+        billingModeVideo: 'За видео',
         inputPrice: 'Ввод',
         outputPrice: 'Вывод',
         cacheWritePrice: 'Запись в кеш',
@@ -3615,7 +3652,7 @@ export default {
           resetQuota: 'Сбросить квоту',
           resetQuotaDesc: 'Обнулить дневное/недельное/месячное использование и начать отсчёт заново',
           revoke: 'Отозвать',
-          revokeDesc: 'Немедленно прекратить подписку пользователя (необратимо)'
+          revokeDesc: 'Немедленно прекратить подписку пользователя (можно восстановить из списка отозванных)'
         },
         tip: 'Подсказка: в выпадающем списке групп подписки отображаются только группы с типом тарификации «Подписка» и статусом «Активна». Если вариантов нет, сначала создайте группу в управлении группами.'
       }
@@ -3701,6 +3738,7 @@ export default {
         priority: 'Приоритет',
         billingRateMultiplier: 'Множитель тарификации',
         weight: 'Вес',
+        schedulerScore: 'Оценка планировщика',
         status: 'Статус',
         schedulable: 'Планируемый',
         todayStats: 'Статистика сегодня',
@@ -3711,6 +3749,30 @@ export default {
         createdAt: 'Создано',
         expiresAt: 'Истекает',
         actions: 'Действия'
+      },
+      schedulerScore: {
+        baseShort: 'База',
+        stickyShort: 'Липкость',
+        ungrouped: 'Без группы',
+        hint: 'Отображается как «группа / базовая оценка / липкий бонус». Базовая оценка вычисляется внутри текущего отфильтрованного набора кандидатов и учитывает приоритет, нагрузку, глубину очереди, частоту ошибок, задержку первого токена, окно сброса, запас квоты и другие факторы. Липкий бонус применяется только при включённом липком взвешивании для previous_response_id или session_hash. Чем выше оценка, тем выше приоритет.'
+      },
+      headerOverride: {
+        title: 'Переопределение заголовков',
+        hint: 'При пересылке переопределяет одноимённые заголовки запроса (без учёта регистра)',
+        info: 'Действует только для исходящих запросов этого аккаунта: настроенные заголовки перед пересылкой переопределяют одноимённые заголовки, сгенерированные клиентом/шлюзом. Заголовки аутентификации (authorization, x-api-key) и заголовки управления соединением переопределить нельзя.',
+        namePlaceholder: 'Имя заголовка (напр. user-agent)',
+        valuePlaceholder: 'Значение переопределения (оставьте пустым, чтобы пропустить)',
+        addRow: 'Добавить заголовок',
+        fillTemplate: 'Заполнить шаблон',
+        emptyValueHint: 'Строки с пустым значением являются заполнителями и ничего не переопределяют.',
+        bulkDisableHint: 'После сохранения переопределение заголовков будет отключено, а существующая конфигурация выбранных аккаунтов очищена.',
+        bulkReplaceHint: 'После сохранения существующая конфигурация переопределения заголовков всех выбранных аккаунтов будет заменена строками ниже.',
+        bulkEmptyRows: 'Добавьте хотя бы одну строку заголовка перед сохранением или выключите переключатель, чтобы очистить существующую конфигурацию.',
+        invalidName: 'Недопустимое имя заголовка (разрешены только буквы, цифры и символы !#$%&\'*+-.^_`|~)',
+        blockedName: 'Этот заголовок нельзя переопределить (заголовки аутентификации и управления соединением управляются системой)',
+        duplicateName: 'Повторяющееся имя заголовка (сопоставление без учёта регистра)',
+        invalidValue: 'Недопустимое значение заголовка (управляющие символы запрещены; макс. длина 8192)',
+        tooManyEntries: 'Слишком много записей переопределения заголовков (макс. 64)'
       },
       usageWindowsHint: '«5h / 7d» — это официальные скользящие окна использования аккаунта апстрима (например, OpenAI ChatGPT, Claude). Они устанавливаются самим апстрим-провайдером для аккаунта, не настраиваются в sub2api и не зависят от моделей, которые вы сопоставляете. После завершения окна использование сбрасывается автоматически, и снять этот лимит со стороны sub2api нельзя.',
       allPrivacyModes: 'Все статусы Privacy',
@@ -4075,6 +4137,9 @@ export default {
       dataImportSuccess: 'Импорт завершён: успешно {success}',
       dataImportCompletedWithErrors: 'Импорт завершён: успешно {success}, ошибки {failed}',
       dataImportParseFailed: 'Не удалось разобрать файл. Проверьте формат.',
+      dataImportParseFailedFile: 'Не удалось разобрать файл {name}',
+      dataImportInvalidFile: 'Файл {name} не является поддерживаемым файлом экспорта данных',
+      dataImportIgnoredFiles: 'Пропущено файлов не в формате JSON: {count}',
       dataImportFailed: 'Ошибка импорта данных',
       platform: 'Платформа',
       accountName: 'Имя аккаунта',
@@ -4522,7 +4587,16 @@ export default {
           missingExchangeParams: 'Отсутствует код авторизации, state или сессия OAuth',
           failedToExchangeCode: 'Не удалось обменять код авторизации Grok',
           failedToValidateRT: 'Не удалось проверить xAI Refresh Token',
-          oauthOnlyHint: 'Первая версия поддержки Grok включает только пересылку текста и рассуждений через Responses API на основе OAuth-подписки.'
+          oauthOnlyHint: 'Первая версия поддержки Grok включает только пересылку текста и рассуждений через Responses API на основе OAuth-подписки.',
+          errors: {
+            GROK_OAUTH_SESSION_NOT_FOUND: 'Сессия Grok OAuth не найдена или истекла. Сгенерируйте новый URL авторизации и вставьте самый свежий URL обратного вызова.',
+            GROK_OAUTH_INVALID_STATE: 'State Grok OAuth не соответствует этой сессии. Вставьте URL обратного вызова из той же сгенерированной ссылки авторизации.',
+            GROK_OAUTH_STATE_REQUIRED: 'В URL обратного вызова отсутствует OAuth state. Вставьте полный callback URL, а не только code.',
+            GROK_OAUTH_CODE_REQUIRED: 'Отсутствует код авторизации Grok. Вставьте полный callback URL, строку запроса или значение code.',
+            GROK_OAUTH_NO_REFRESH_TOKEN: 'Ответ Grok не содержит refresh token. Сгенерируйте новый URL авторизации и снова подтвердите доступ offline access.',
+            GROK_OAUTH_PROXY_NOT_AVAILABLE: 'Не удалось получить конфигурацию прокси для Grok OAuth. Проверьте выбранный прокси и повторите попытку.',
+            GROK_OAUTH_PROXY_NOT_FOUND: 'Выбранный прокси не найден. Выберите доступный прокси и повторите попытку.'
+          }
         },
         gemini: {
           title: 'Авторизация аккаунта Gemini',
@@ -5311,11 +5385,26 @@ export default {
       billingModeToken: 'По токенам',
       billingModePerRequest: 'За запрос',
       billingModeImage: 'За запрос (изображение)',
+      billingModeVideo: 'За запрос (видео)',
       allBillingModes: 'Все режимы тарификации',
       ipAddress: 'IP',
       clickToViewBalance: 'Нажмите, чтобы посмотреть историю баланса',
       failedToLoadUser: 'Не удалось загрузить данные пользователя',
       userDeletedBadge: 'Удалён',
+      tokenRanking: {
+        subtitle: 'Использование токенов по пользователям для текущих фильтров и временного диапазона',
+        rowHint: 'Нажмите, чтобы просмотреть детали использования этого пользователя',
+        userCount: 'Пользователей: {count}',
+        columns: {
+          user: 'Пользователь',
+          requests: 'Запросы',
+          inputTokens: 'Токены ввода',
+          outputTokens: 'Токены вывода',
+          cacheTokens: 'Токены кэша',
+          totalTokens: 'Всего токенов',
+          cost: 'Стоимость'
+        }
+      },
       cleanup: {
         button: 'Очистка',
         title: 'Очистка записей использования',
@@ -6773,6 +6862,21 @@ export default {
         validationNameRequired: 'Название провайдера обязательно',
         validationTypesRequired: 'Выберите хотя бы один поддерживаемый способ оплаты',
         validationFieldRequired: '{field} не может быть пустым',
+        subscriptionUsdToCnyRate: 'Курс USD→CNY для подписок',
+        subscriptionUsdToCnyRateHint: 'Сколько CNY взимается за 1 USD цены тарифа на CNY-каналах (напр. 7.15). 0 или пусто = отключено, цена тарифа взимается как есть. При включении все цены тарифов должны быть заданы в USD',
+        subscriptionUsdToCnyRateDisabled: 'Отключено (цена взимается как есть)',
+        validationEasyPayCustomMethodRequired: 'Для каждого пользовательского способа EasyPay необходимо указать способ оплаты и тип upstream',
+        validationEasyPayCustomMethodTypeInvalid: 'Пользовательские способы оплаты EasyPay могут содержать только строчные буквы, цифры, подчёркивания и дефисы',
+        validationEasyPayCustomMethodUpstreamTypeInvalid: 'Типы upstream EasyPay могут содержать только строчные буквы, цифры, подчёркивания и дефисы',
+        validationEasyPayCustomMethodReserved: 'Пользовательские способы оплаты EasyPay не могут использовать встроенные alipay или wxpay',
+        validationEasyPayCustomMethodPrefixReserved: 'Пользовательские способы оплаты EasyPay не могут начинаться с alipay или wxpay',
+        validationEasyPayCustomMethodDuplicate: 'Пользовательские способы оплаты EasyPay не должны повторяться',
+        easypayCustomMethods: 'Пользовательские способы EasyPay',
+        easypayCustomMethodsHint: 'Добавьте способы оплаты, дополнительно поддерживаемые этим провайдером EasyPay. Способ оплаты сохраняется в заказах Sub2API; тип upstream отправляется как параметр type EasyPay.',
+        addCustomMethod: 'Добавить способ',
+        customMethodType: 'Способ оплаты',
+        customMethodUpstreamType: 'Тип upstream',
+        customMethodDisplayName: 'Отображаемое имя',
         field_apiBase: 'Базовый URL API',
         field_notifyUrl: 'URL уведомлений',
         field_returnUrl: 'URL возврата',
@@ -7112,6 +7216,7 @@ export default {
         actionPass: 'Пропускать (сохранить service_tier)',
         actionFilter: 'Фильтровать (удалить service_tier)',
         actionBlock: 'Блокировать (отклонять запрос)',
+        actionForcePriority: 'Принудительно установить priority (fast)',
         scope: 'Область действия',
         scopeAll: 'Все аккаунты',
         scopeOAuth: 'Только OAuth',
@@ -7194,7 +7299,24 @@ export default {
       },
       openaiExperimentalScheduler: {
         title: 'Экспериментальная политика планирования OpenAI',
-        description: 'По умолчанию отключено. Если включено, изменяется только экспериментальная логика выбора аккаунта шлюза для трафика OpenAI; это не означает наличие возможности на стороне OpenAI.'
+        description: 'По умолчанию отключено. Если включено, изменяется только экспериментальная логика выбора аккаунта шлюза для трафика OpenAI; это не означает наличие возможности на стороне OpenAI.',
+        stickyWeightedTitle: 'Липкое взвешивание',
+        stickyWeightedDescription: 'Если включено, привязка по previous_response_id и session_hash оценивается продвинутым планировщиком. Если выключено, липкие аккаунты сохраняют прежнее поведение жёсткого попадания.',
+        subscriptionPriorityTitle: 'Приоритет подписки',
+        subscriptionPriorityDescription: 'Если включено, планировщик сначала выбирает аккаунты с подпиской ChatGPT и переходит к аккаунтам без подписки, только если не удалось занять слот подписки.',
+        weightsTitle: 'Переопределение весов планировщика',
+        weightsDescription: 'Пустые значения используют значения конфигурации/окружения; если конфигурация не задана, применяются встроенные значения по умолчанию. Непустые настройки страницы имеют приоритет.',
+        defaultPlaceholder: 'конфигурация/по умолчанию: {value}',
+        topKLabel: 'TopK',
+        priorityWeight: 'Приоритет',
+        loadWeight: 'Нагрузка',
+        queueWeight: 'Очередь',
+        errorRateWeight: 'Частота ошибок',
+        ttftWeight: 'TTFT',
+        resetWeight: 'Окно сброса',
+        quotaHeadroomWeight: 'Запас квоты',
+        previousResponseWeight: 'Липкость previous_response',
+        sessionStickyWeight: 'Липкость session_hash'
       },
       usageRecords: {
         title: 'Записи использования',
@@ -7501,7 +7623,24 @@ export default {
     restartRequired: 'Пожалуйста, перезапустите сервис для применения обновления',
     restartNow: 'Перезапустить сейчас',
     restarting: 'Перезапуск...',
-    retry: 'Повторить'
+    retry: 'Повторить',
+    rollback: 'Откат версии',
+    rollbackSelectVersion: 'Выберите версию для отката (последние 3 версии)',
+    rollbackConfirm: 'Откатиться до {version}',
+    rollbackWarning: 'Откат загрузит выбранную версию и заменит текущий бинарный файл. После завершения потребуется перезапуск сервиса.',
+    rollingBack: 'Выполняется откат...',
+    rollbackComplete: 'Откат завершён',
+    rollbackFailed: 'Ошибка отката',
+    manualRollbackCommand: 'Ручной откат',
+    copyCommand: 'Копировать',
+    copied: 'Скопировано',
+    noRollbackVersions: 'Нет версий, доступных для отката',
+    loadVersionsFailed: 'Не удалось загрузить список версий',
+    rollbackSourceHint: 'Онлайн-откат недоступен для сборок из исходников',
+    deployScript: 'Скрипт',
+    deployDocker: 'Docker',
+    dockerEditCompose: 'Измените тег образа в docker-compose.yml',
+    dockerRecreate: 'Пересоздайте контейнер'
   },
   purchase: {
     title: 'Купить подписку',
@@ -7967,6 +8106,8 @@ export default {
       completedAt: 'Время завершения',
       expiresAt: 'Истекает',
       feeRate: 'Ставка комиссии',
+      subscriptionCnyPayPreview: 'Предпросмотр списания по CNY-каналу: {amount}',
+      subscriptionCnyPayPreviewWithFee: '(с учётом комиссии {feeRate}%: {total})',
       refund: 'Возврат',
       refundOrder: 'Заказ на возврат',
       refundAmount: 'Сумма возврата',

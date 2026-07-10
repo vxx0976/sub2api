@@ -40,12 +40,20 @@ type Group struct {
 	DefaultValidityDays int      `json:"default_validity_days"`
 
 	// 图片生成计费配置（antigravity 和 gemini 平台使用）
-	AllowImageGeneration bool     `json:"allow_image_generation"`
-	ImageRateIndependent bool     `json:"image_rate_independent"`
-	ImageRateMultiplier  float64  `json:"image_rate_multiplier"`
-	ImagePrice1K         *float64 `json:"image_price_1k"`
-	ImagePrice2K         *float64 `json:"image_price_2k"`
-	ImagePrice4K         *float64 `json:"image_price_4k"`
+	AllowImageGeneration         bool     `json:"allow_image_generation"`
+	AllowBatchImageGeneration    bool     `json:"allow_batch_image_generation"`
+	ImageRateIndependent         bool     `json:"image_rate_independent"`
+	ImageRateMultiplier          float64  `json:"image_rate_multiplier"`
+	ImagePrice1K                 *float64 `json:"image_price_1k"`
+	ImagePrice2K                 *float64 `json:"image_price_2k"`
+	ImagePrice4K                 *float64 `json:"image_price_4k"`
+	BatchImageDiscountMultiplier float64  `json:"batch_image_discount_multiplier"`
+	BatchImageHoldMultiplier     float64  `json:"batch_image_hold_multiplier"`
+	VideoRateIndependent         bool     `json:"video_rate_independent"`
+	VideoRateMultiplier          float64  `json:"video_rate_multiplier"`
+	VideoPrice480P               *float64 `json:"video_price_480p"`
+	VideoPrice720P               *float64 `json:"video_price_720p"`
+	VideoPrice1080P              *float64 `json:"video_price_1080p"`
 
 	// Claude Code 客户端限制
 	ClaudeCodeOnly  bool   `json:"claude_code_only"`
@@ -180,6 +188,21 @@ func (g *Group) GetImagePrice(imageSize string) *float64 {
 	default:
 		// 未知尺寸默认按 2K 计费
 		return g.ImagePrice2K
+	}
+}
+
+// GetVideoPrice 根据 resolution 返回对应的视频生成价格。
+// 如果分组未配置价格，返回 nil（调用方应使用默认值）。
+func (g *Group) GetVideoPrice(resolution string) *float64 {
+	switch NormalizeVideoBillingResolutionOrDefault(resolution) {
+	case VideoBillingResolution480P:
+		return g.VideoPrice480P
+	case VideoBillingResolution720P:
+		return g.VideoPrice720P
+	case VideoBillingResolution1080P:
+		return g.VideoPrice1080P
+	default:
+		return g.VideoPrice480P
 	}
 }
 

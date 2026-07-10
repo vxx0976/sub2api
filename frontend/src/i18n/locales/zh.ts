@@ -315,6 +315,11 @@ export default {
   },
 
   // Common
+  batchImageGuide: {
+    title: '图片批量生成',
+    description: '一次提交多条提示词，任务完成后可统一下载图片结果',
+  },
+
   common: {
     login: '登录',
     loading: '加载中...',
@@ -368,6 +373,9 @@ export default {
     days: '天',
     balance: '余额',
     available: '可用',
+    availableBalance: '可用余额',
+    frozenBalance: '冻结金额',
+    totalBalance: '总余额',
     copiedToClipboard: '已复制到剪贴板',
     copied: '已复制',
     copyFailed: '复制失败',
@@ -540,6 +548,7 @@ export default {
     channelStatus: '渠道状态',
     riskControl: '风控中心',
     chat: '在线客服',
+    batchImage: '批量生图',
   },
 
   // Auth
@@ -821,7 +830,9 @@ export default {
     viewUsage: '查看使用记录',
     checkDetailedLogs: '查看详细的使用日志',
     redeemCode: '兑换码',
-    addBalanceWithCode: '使用兑换码充值'
+    addBalanceWithCode: '使用兑换码充值',
+    batchImageAgent: '批量生图助手',
+    batchImageAgentDesc: '复制给 Agent 的任务说明'
   },
 
   // Groups (shared)
@@ -892,6 +903,8 @@ export default {
     total: '近30天',
     quota: '额度',
     lastUsedAt: '上次使用时间',
+    currentConcurrency: '当前并发',
+    lastUsedIP: '最近使用 IP',
     useKey: '使用密钥',
     useKeyModal: {
       title: '使用 API 密钥',
@@ -1021,7 +1034,7 @@ export default {
   usage: {
     title: '使用记录',
     description: '查看和分析您的 API 使用历史',
-    costDetails: '成本明细',
+    costDetails: '费用明细',
     tokenDetails: 'Token 明细',
     cacheTtlOverriddenHint: '缓存 TTL Override 已启用',
     cacheTtlOverriddenLabel: 'TTL 替换',
@@ -1074,6 +1087,9 @@ export default {
     cost: '费用',
     firstToken: '首 Token',
     duration: '耗时',
+    latency: '延迟',
+    latencyFirstToken: '首字',
+    latencyDuration: '总耗时',
     time: '时间',
     ws: 'WS',
     stream: '流式',
@@ -1099,7 +1115,7 @@ export default {
     imageOutputSize: '输出尺寸',
     imageOutputTokens: '图片输出 Token',
     imageOutputTokenPrice: '图片输出单价',
-    imageOutputCost: '图片输出成本',
+    imageOutputCost: '图片输出费用',
     imageSizeSource: '尺寸来源',
     imageSizeBreakdown: '尺寸明细',
     imageSizeSourceOutput: '上游输出',
@@ -1143,7 +1159,7 @@ export default {
       detailAccuracy: '定位精度',
       detailCoordinates: '坐标',
     },
-    tabs: { usage: '用量明细', errors: '错误请求' },
+    tabs: { usage: '用量明细', errors: '错误请求', ranking: '用户排行' },
     errors: {
       time: '时间', model: '模型', endpoint: '端点', status: '状态码',
       category: '分类', platform: '平台', message: '错误信息',
@@ -1265,6 +1281,7 @@ export default {
       billingModeToken: '按 Token',
       billingModePerRequest: '按次',
       billingModeImage: '按图片',
+      billingModeVideo: '按视频',
       inputPrice: '输入',
       outputPrice: '输出',
       cacheWritePrice: '缓存写入',
@@ -1809,6 +1826,10 @@ export default {
       configureAiAccounts: '配置 AI 平台账号',
       systemSettings: '系统设置',
       configureSystem: '配置系统设置',
+      batchImage: '批量生图',
+      batchImageDesc: '提交任务、复制 Agent 调用说明',
+      groupPricing: '分组定价',
+      groupPricingDesc: '设置批量折扣和冻结比例',
       failedToLoad: '加载仪表盘数据失败'
     },
 
@@ -2678,6 +2699,21 @@ export default {
         imageMultiplier: '生图独立倍率',
         modeHint: '默认关闭独立倍率时，图片费用 = 图片价格 × 当前分组有效倍率；开启独立倍率后，图片费用 = 图片价格 × 生图独立倍率。',
         finalPricePreview: '最终单张价格预览',
+        notConfigured: '未配置',
+        allowBatchImageGeneration: '允许当前分组批量生图',
+        batchDiscountMultiplier: '批量生图折扣倍率',
+        batchHoldMultiplier: '批量冻结价格比例',
+        batchSectionHint: '批量生图仅影响批量任务：结算价格会叠加批量折扣倍率，提交时冻结金额按普通生图原价 × 批量冻结价格比例计算。参考图也会产生上游输入 token 消耗，建议批量生图折扣倍率设置大于 0.5。',
+        batchDisabledHint: '请先开启当前分组生图，才能开启批量生图。',
+        batchGeminiOnlyHint: '批量生图当前仅支持 Gemini 分组。'
+      },
+      videoPricing: {
+        title: '视频生成计费',
+        description: '配置 Grok 视频生成的每秒单价（USD/秒），留空则使用默认每秒价（grok-imagine-video：480p $0.05/s、720p $0.07/s；video-1.5：480p $0.08/s、720p $0.14/s、1080p $0.25/s）',
+        independentMultiplier: '视频倍率独立',
+        videoMultiplier: '视频独立倍率',
+        modeHint: '视频按秒计费：费用 = 每秒价格 × 时长（1-15 秒，未指定默认 8 秒）。默认叠加当前分组有效倍率；开启独立倍率后改用视频独立倍率。',
+        finalPricePreview: '最终每秒价格预览',
         notConfigured: '未配置'
       },
       peakRate: {
@@ -2893,6 +2929,7 @@ export default {
         billingModeToken: '按 Token',
         billingModePerRequest: '按次',
         billingModeImage: '按图片',
+        billingModeVideo: '按视频',
         inputPrice: '输入',
         outputPrice: '输出',
         cacheWritePrice: '缓存写入',
@@ -3637,7 +3674,7 @@ export default {
           resetQuota: '重置配额',
           resetQuotaDesc: '将日/周/月用量归零，重新开始计算',
           revoke: '撤销',
-          revokeDesc: '立即终止该用户的订阅，不可恢复'
+          revokeDesc: '立即终止该用户的订阅，可在已撤销列表中恢复'
         },
         tip: '提示：订阅分组下拉列表中只会显示计费类型为「订阅」且状态为「正常」的分组。如果没有可选项，请先到分组管理中创建。'
       }
@@ -3738,7 +3775,32 @@ export default {
         lastUsed: '最近使用',
         createdAt: '创建时间',
         expiresAt: '过期时间',
+        schedulerScore: '调度权值',
         actions: '操作'
+      },
+      schedulerScore: {
+        baseShort: '普通',
+        stickyShort: '粘性',
+        ungrouped: '未分组',
+        hint: '显示格式为“分组名 / 基础分 / 粘性加分”。基础分按当前筛选条件限定的候选账号计算，包含优先级、负载、排队、错误率、首包延迟、重置窗口、额度余量等因子；粘性加分只在开启粘性加权时用于 previous_response_id 或 session_hash。分数越大越优先。'
+      },
+      headerOverride: {
+        title: '请求头覆写',
+        hint: '转发时用配置值覆盖同名请求头（不区分大小写）',
+        info: '仅对本账号的出站请求生效：配置的请求头会在转发前覆盖客户端/网关生成的同名头。认证头（authorization、x-api-key）与连接控制头不允许覆写。',
+        namePlaceholder: '请求头名称（如 user-agent）',
+        valuePlaceholder: '覆写值（留空表示不覆写）',
+        addRow: '添加请求头',
+        fillTemplate: '填入模板',
+        emptyValueHint: '值留空的行不会参与覆盖，仅作为待填写的占位。',
+        bulkDisableHint: '保存后将关闭所选账号的请求头覆写并清空已有配置。',
+        bulkReplaceHint: '保存后将用下方配置整体替换所选账号已有的请求头覆写配置。',
+        bulkEmptyRows: '请至少添加一行请求头再保存；如需清空已有配置，请关闭上方开关。',
+        invalidName: "请求头名称格式不正确（仅允许字母、数字和 !#$%&'*+-.^_`|~ 字符）",
+        blockedName: '该请求头不允许覆写（认证头与连接控制头由系统管理）',
+        duplicateName: '存在重复的请求头名称（匹配不区分大小写）',
+        invalidValue: '请求头值不合法（不允许控制字符，长度不超过 8192）',
+        tooManyEntries: '请求头覆写条目过多（最多 64 条）'
       },
       usageWindowsHint: '“5h / 7d”是上游账号（如 OpenAI ChatGPT、Claude）官方的滚动用量窗口限制，由上游对账号设定，并非 sub2api 配置，也与你映射的模型无关。窗口滚动到期后用量会自动重置，无法在 sub2api 端解除该限制。',
       allPrivacyModes: '全部Privacy状态',
@@ -4122,6 +4184,9 @@ export default {
       dataImportSuccess: '导入完成：成功 {success} 个',
       dataImportCompletedWithErrors: '导入完成：成功 {success} 个，失败 {failed} 个',
       dataImportParseFailed: '文件解析失败，请检查格式',
+      dataImportParseFailedFile: '文件 {name} 解析失败',
+      dataImportInvalidFile: '文件 {name} 不是受支持的导出数据文件',
+      dataImportIgnoredFiles: '已忽略 {count} 个非 JSON 文件',
       dataImportFailed: '数据导入失败',
       // Create/Edit Account Modal
       platform: '平台',
@@ -4618,7 +4683,16 @@ export default {
           missingExchangeParams: '缺少授权码、state 或 OAuth 会话',
           failedToExchangeCode: 'Grok 授权码兑换失败',
           failedToValidateRT: '验证 Grok refresh token 失败',
-          oauthOnlyHint: '首版 Grok 支持仅包含 OAuth 订阅的 Responses API 文本/推理转发。'
+          oauthOnlyHint: '首版 Grok 支持仅包含 OAuth 订阅的 Responses API 文本/推理转发。',
+          errors: {
+            GROK_OAUTH_SESSION_NOT_FOUND: 'Grok OAuth 会话不存在或已过期。请重新生成授权链接，并粘贴最新的回调链接。',
+            GROK_OAUTH_INVALID_STATE: 'Grok OAuth state 与当前会话不匹配。请粘贴同一次生成的授权链接返回的回调 URL。',
+            GROK_OAUTH_STATE_REQUIRED: '回调链接缺少 OAuth state。请粘贴完整 callback URL，不要只粘贴 code。',
+            GROK_OAUTH_CODE_REQUIRED: '缺少 Grok 授权码。请粘贴完整 callback URL、查询字符串或 code 值。',
+            GROK_OAUTH_NO_REFRESH_TOKEN: 'Grok 响应未返回 refresh token。请重新生成授权链接，并再次确认 offline access 授权。',
+            GROK_OAUTH_PROXY_NOT_AVAILABLE: '无法查询 Grok OAuth 代理配置。请检查选择的代理后重试。',
+            GROK_OAUTH_PROXY_NOT_FOUND: '找不到所选代理。请选择可用代理后重试。'
+          }
         },
         // Gemini specific
         gemini: {
@@ -5435,10 +5509,10 @@ export default {
       allAccounts: '全部账户',
       allGroups: '全部分组',
       allTypes: '全部类型',
-      inputCost: '输入成本',
-      outputCost: '输出成本',
-      cacheCreationCost: '缓存创建成本',
-      cacheReadCost: '缓存读取成本',
+      inputCost: '输入费用',
+      outputCost: '输出费用',
+      cacheCreationCost: '缓存创建费用',
+      cacheReadCost: '缓存读取费用',
       inputTokens: '输入 Token',
       outputTokens: '输出 Token',
       cacheCreationTokens: '缓存创建 Token',
@@ -5454,11 +5528,26 @@ export default {
       billingModeToken: '按量',
       billingModePerRequest: '按次',
       billingModeImage: '按次(图片)',
+      billingModeVideo: '按次(视频)',
       allBillingModes: '全部计费模式',
       ipAddress: 'IP',
       clickToViewBalance: '点击查看充值记录',
       failedToLoadUser: '加载用户信息失败',
       userDeletedBadge: '已删除',
+      tokenRanking: {
+        subtitle: '按当前筛选与时间范围统计每个用户的 Token 用量',
+        rowHint: '点击查看该用户的用量明细',
+        userCount: '共 {count} 位用户',
+        columns: {
+          user: '用户',
+          requests: '请求数',
+          inputTokens: '输入 Token',
+          outputTokens: '输出 Token',
+          cacheTokens: '缓存 Token',
+          totalTokens: '总 Token',
+          cost: '费用'
+        }
+      },
       cleanup: {
         button: '清理',
         title: '清理使用记录',
@@ -6937,6 +7026,9 @@ export default {
         rechargeFeeRate: '充值手续费率',
         rechargeFeeRateHint: '用户充值时额外收取的手续费百分比，0 表示不收取手续费',
         rechargeFeePreview: '预览：充值 100 元，手续费 {fee} 元',
+        subscriptionUsdToCnyRate: '订阅 CNY 换算汇率',
+        subscriptionUsdToCnyRateHint: 'CNY 支付通道下，套餐每 1 USD 价格收取多少 CNY（如 7.15）。0 或留空 = 不换算，订阅按 price 数值直接收款。启用后所有套餐 price 必须按 USD 定价',
+        subscriptionUsdToCnyRateDisabled: '未启用（按 price 直付）',
         orderTimeout: '订单超时时间',
         orderTimeoutHint: '单位：分钟，至少 1 分钟',
         maxPendingOrders: '最大待支付订单数',
@@ -6972,6 +7064,12 @@ export default {
         typeDisabled: '类型已禁用',
         enableTypesFirst: '请先在上方启用至少一种服务商',
         easypayRedirect: '跳转',
+        easypayCustomMethods: '易支付自定义支付方式',
+        easypayCustomMethodsHint: '添加当前易支付服务商额外支持的支付方式。支付方式会记录到 Sub2API 订单中，上游 type 会作为易支付 type 参数提交。',
+        addCustomMethod: '添加方式',
+        customMethodType: '支付方式',
+        customMethodUpstreamType: '上游 type',
+        customMethodDisplayName: '显示名称',
         paymentMode: '支付模式',
         modeRedirect: '跳转',
         modeQRCode: '二维码',
@@ -6979,6 +7077,12 @@ export default {
         validationNameRequired: '服务商名称不能为空',
         validationTypesRequired: '请至少选择一种支持的支付方式',
         validationFieldRequired: '{field} 不能为空',
+        validationEasyPayCustomMethodRequired: '每个易支付自定义方式都必须填写支付方式和上游 type',
+        validationEasyPayCustomMethodTypeInvalid: '易支付自定义支付方式只能包含小写字母、数字、下划线和短横线',
+        validationEasyPayCustomMethodUpstreamTypeInvalid: '易支付上游 type 只能包含小写字母、数字、下划线和短横线',
+        validationEasyPayCustomMethodReserved: '易支付自定义支付方式不能使用内置的 alipay 或 wxpay',
+        validationEasyPayCustomMethodPrefixReserved: '易支付自定义支付方式不能以 alipay 或 wxpay 开头',
+        validationEasyPayCustomMethodDuplicate: '易支付自定义支付方式不能重复',
         field_apiBase: 'API 基础地址',
         field_notifyUrl: '异步通知地址',
         field_returnUrl: '同步跳转地址',
@@ -7320,6 +7424,7 @@ export default {
         actionPass: '透传（保留 service_tier）',
         actionFilter: '过滤（移除 service_tier）',
         actionBlock: '拦截（拒绝请求）',
+        actionForcePriority: '强制设置 priority（fast）',
         scope: '生效范围',
         scopeAll: '全部账号',
         scopeOAuth: '仅 OAuth 账号',
@@ -7402,7 +7507,24 @@ export default {
       },
       openaiExperimentalScheduler: {
         title: 'OpenAI 实验调度策略',
-        description: '默认关闭。开启后仅影响本网关在 OpenAI 账号间的实验性调度选择逻辑，不代表上游 OpenAI 官方能力。'
+        description: '默认关闭。开启后仅影响本网关在 OpenAI 账号间的实验性调度选择逻辑，不代表上游 OpenAI 官方能力。',
+        stickyWeightedTitle: '粘性加权',
+        stickyWeightedDescription: '开启后 previous_response_id 和 session_hash 粘性进入高级调度打分；关闭时仍按旧逻辑硬命中粘性账号。',
+        subscriptionPriorityTitle: '订阅优先',
+        subscriptionPriorityDescription: '开启后先在 ChatGPT 订阅账号池中按权值选取；订阅池拿不到席位时再回退到非订阅账号池。',
+        weightsTitle: '调度权值覆盖',
+        weightsDescription: '留空时使用配置/环境变量值；配置未设置时使用内置默认值。页面非空设置优先。',
+        defaultPlaceholder: '配置/默认：{value}',
+        topKLabel: 'TopK',
+        priorityWeight: '优先级',
+        loadWeight: '负载',
+        queueWeight: '排队',
+        errorRateWeight: '错误率',
+        ttftWeight: '首包延迟',
+        resetWeight: '重置窗口',
+        quotaHeadroomWeight: '额度余量',
+        previousResponseWeight: 'previous_response 粘性',
+        sessionStickyWeight: 'session_hash 粘性'
       },
       usageRecords: {
         title: '使用记录',
@@ -7601,7 +7723,24 @@ export default {
     restartRequired: '请重启服务以应用更新',
     restartNow: '立即重启',
     restarting: '正在重启...',
-    retry: '重试'
+    retry: '重试',
+    rollback: '版本回退',
+    rollbackSelectVersion: '选择要回退到的版本（近 3 个版本）',
+    rollbackConfirm: '回退到 {version}',
+    rollbackWarning: '回退将下载所选版本并替换当前程序，完成后需重启服务',
+    rollingBack: '正在回退...',
+    rollbackComplete: '回退完成',
+    rollbackFailed: '回退失败',
+    manualRollbackCommand: '手动回退方式',
+    copyCommand: '复制',
+    copied: '已复制',
+    noRollbackVersions: '暂无可回退的版本',
+    loadVersionsFailed: '获取版本列表失败',
+    rollbackSourceHint: '源码构建不支持在线回退',
+    deployScript: '脚本部署',
+    deployDocker: 'Docker',
+    dockerEditCompose: '修改 docker-compose.yml 中的镜像版本',
+    dockerRecreate: '重新创建容器'
   },
 
   // Recharge / Subscription Page
@@ -8112,6 +8251,8 @@ export default {
       orders: '订单',
       balanceOrder: '余额充值',
       subscriptionOrder: '订阅',
+      subscriptionCnyPayPreview: 'CNY 通道实扣预览：{amount}',
+      subscriptionCnyPayPreviewWithFee: '（含 {feeRate}% 手续费：{total}）',
       paidAt: '支付时间',
       completedAt: '完成时间',
       expiresAt: '过期时间',
