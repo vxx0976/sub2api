@@ -122,8 +122,10 @@ func RegisterGatewayRoutes(
 		// Codex CLI / Codex app refresh their model picker from the provider's
 		// /models endpoint with a client_version query and expect the ChatGPT
 		// Codex manifest format; other clients keep the OpenAI-style list.
+		// 门必须与 CodexModels handler 一致收窄到 openai 平台：OpenAI 兼容的国产
+		// 平台(deepseek/glm/qwen 等)走宽谓词会被 handler 404，而它们本该拿到模型列表。
 		gateway.GET("/models", func(c *gin.Context) {
-			if isOpenAIGatewayPlatform(c) && c.Query("client_version") != "" {
+			if getGroupPlatform(c) == service.PlatformOpenAI && c.Query("client_version") != "" {
 				h.OpenAIGateway.CodexModels(c)
 				return
 			}
