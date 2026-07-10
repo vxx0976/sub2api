@@ -172,7 +172,7 @@ func createTestPayload(modelID string) (map[string]any, error) {
 
 // TestAccountConnection tests an account's connection by sending a test request
 // All account types use full Claude Code client characteristics, only auth header differs
-// modelID is optional - if empty, defaults to claude.DefaultTestModel
+// modelID is optional - if empty, defaults to getDefaultTestModel(platform)
 // mode is optional - "compact" routes OpenAI accounts to the /responses/compact probe path
 func (s *AccountTestService) TestAccountConnection(c *gin.Context, accountID int64, modelID string, prompt string, mode string) error {
 	ctx := c.Request.Context()
@@ -269,10 +269,14 @@ func (s *AccountTestService) testOpenAICompatPlatformConnection(c *gin.Context, 
 func (s *AccountTestService) testClaudeAccountConnection(c *gin.Context, account *Account, modelID string) error {
 	ctx := c.Request.Context()
 
-	// Determine the model to use
+	// Determine the model to use. Fall back to the same current, lightweight
+	// default the group health check uses (getDefaultTestModel) rather than a
+	// hard-coded dated snapshot — a stale default (e.g. claude-sonnet-4-5-20250929)
+	// is often price-restricted or unserved by relay upstreams and 503s the test,
+	// falsely flagging a healthy account as down.
 	testModelID := modelID
 	if testModelID == "" {
-		testModelID = claude.DefaultTestModel
+		testModelID = getDefaultTestModel(account.Platform)
 	}
 
 	// API Key 账号测试连接时也需要应用通配符模型映射。
