@@ -510,6 +510,8 @@ func (h *GatewayHandler) GeminiV1BetaModels(c *gin.Context) {
 					LongContextMultiplier: 2.0,    // 超出部分双倍计费
 					ForceCacheBilling:     forceCacheBilling,
 					APIKeyService:         h.apiKeyService,
+					RequestedGroupID:      selection.RequestedGroupID,
+					ResolvedGroupID:       selection.ResolvedGroupID,
 					ChannelUsageFields:    channelMapping.ToUsageFields(reqModel, result.UpstreamModel),
 				}); err != nil {
 					logger.L().With(

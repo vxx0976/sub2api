@@ -1406,11 +1406,14 @@ func (s *GatewayService) newSelectionResult(ctx context.Context, account *Accoun
 	if err != nil {
 		return nil, err
 	}
+	requestedGroupID, resolvedGroupID := failoverRouteAttributionFromContext(ctx)
 	return &AccountSelectionResult{
-		Account:     hydrated,
-		Acquired:    acquired,
-		ReleaseFunc: release,
-		WaitPlan:    waitPlan,
+		Account:          hydrated,
+		Acquired:         acquired,
+		ReleaseFunc:      release,
+		WaitPlan:         waitPlan,
+		RequestedGroupID: requestedGroupID,
+		ResolvedGroupID:  resolvedGroupID,
 	}, nil
 }
 

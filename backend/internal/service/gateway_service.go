@@ -537,6 +537,13 @@ type AccountSelectionResult struct {
 	Acquired    bool
 	ReleaseFunc func()
 	WaitPlan    *AccountWaitPlan // nil means no wait allowed
+
+	// 智能路由归因：请求命中虚拟分组时，RequestedGroupID 为虚拟分组 id、
+	// ResolvedGroupID 为实际承接的成员分组 id；非智能路由流量两者均为 nil。
+	// 由 handler 透传进 RecordUsageInput 写 usage_logs——记账跑在 worker 池的
+	// background ctx 上，选择期注入的 ctx key 到不了那里，必须按值携带。
+	RequestedGroupID *int64
+	ResolvedGroupID  *int64
 }
 
 // ClaudeUsage 表示Claude API返回的usage信息
@@ -1103,6 +1110,21 @@ func withFailoverRouteContext(ctx context.Context, virtualGroupID *int64, resolv
 		}
 	}
 	return ctx
+}
+
+// failoverRouteAttributionFromContext 从选择期富化过的 ctx 提取智能路由归因。
+// 该 ctx 只在账号选择函数内部存活，提取结果必须按值放进 AccountSelectionResult
+// 才能穿过 handler 与异步记账边界（worker 池会重建 ctx）。
+func failoverRouteAttributionFromContext(ctx context.Context) (requestedGroupID, resolvedGroupID *int64) {
+	if v, ok := ctx.Value(ctxkey.RequestedGroupID).(int64); ok && v > 0 {
+		requested := v
+		requestedGroupID = &requested
+	}
+	if v, ok := ctx.Value(ctxkey.ResolvedGroupID).(int64); ok && v > 0 {
+		resolved := v
+		resolvedGroupID = &resolved
+	}
+	return requestedGroupID, resolvedGroupID
 }
 
 // resolveGatewayGroupWithVirtual 解析网关分组，并额外返回请求最初命中的"虚拟分组"（智能路由）ID。

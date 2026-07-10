@@ -252,7 +252,7 @@ func (h *GatewayHandler) ChatCompletions(c *gin.Context) {
 			// 避免上游已产出、客户端已收到内容却整段零计费。随后继续正常失败处理
 			// （内容已写出，writer-size 检查已禁止 failover）。
 			if result != nil && result.PartialError {
-				h.submitChatCompletionsUsageRecord(c, reqLog, result, apiKey, subscription, account, body, channelMapping, reqModel)
+				h.submitChatCompletionsUsageRecord(c, reqLog, result, apiKey, subscription, account, body, channelMapping, reqModel, selection.RequestedGroupID, selection.ResolvedGroupID)
 			}
 			var failoverErr *service.UpstreamFailoverError
 			if errors.As(err, &failoverErr) {
@@ -286,7 +286,7 @@ func (h *GatewayHandler) ChatCompletions(c *gin.Context) {
 		}
 
 		// 6. Record usage
-		h.submitChatCompletionsUsageRecord(c, reqLog, result, apiKey, subscription, account, body, channelMapping, reqModel)
+		h.submitChatCompletionsUsageRecord(c, reqLog, result, apiKey, subscription, account, body, channelMapping, reqModel, selection.RequestedGroupID, selection.ResolvedGroupID)
 		return
 	}
 }
@@ -304,6 +304,8 @@ func (h *GatewayHandler) submitChatCompletionsUsageRecord(
 	body []byte,
 	channelMapping service.ChannelMappingResult,
 	reqModel string,
+	requestedGroupID *int64,
+	resolvedGroupID *int64,
 ) {
 	userAgent := c.GetHeader("User-Agent")
 	clientIP := ip.GetClientIP(c)
@@ -326,6 +328,8 @@ func (h *GatewayHandler) submitChatCompletionsUsageRecord(
 			IPAddress:          clientIP,
 			RequestPayloadHash: requestPayloadHash,
 			APIKeyService:      h.apiKeyService,
+			RequestedGroupID:   requestedGroupID,
+			ResolvedGroupID:    resolvedGroupID,
 			ChannelUsageFields: channelMapping.ToUsageFields(reqModel, result.UpstreamModel),
 		}); err != nil {
 			reqLog.Error("gateway.cc.record_usage_failed",

@@ -47,6 +47,11 @@ type RecordUsageInput struct {
 	APIKeyService      APIKeyQuotaUpdater // 可选：用于更新API Key配额
 	QuotaPlatform      string             // user×platform 配额计量平台：handler 在请求 ctx 内经 QuotaPlatform() 算定后传入（后扣运行在 worker 池 background ctx 上，取不到 ForcePlatform）
 
+	// 智能路由归因（同 QuotaPlatform 的传递理由：worker 池 ctx 取不到选择期注入的 key）。
+	// 来自 AccountSelectionResult：RequestedGroupID=虚拟分组、ResolvedGroupID=承接成员分组。
+	RequestedGroupID *int64
+	ResolvedGroupID  *int64
+
 	ChannelUsageFields // 渠道映射信息（由 handler 在 Forward 前解析）
 }
 
@@ -563,6 +568,8 @@ func (s *GatewayService) RecordUsage(ctx context.Context, input *RecordUsageInpu
 		ForceCacheBilling:  input.ForceCacheBilling,
 		APIKeyService:      input.APIKeyService,
 		QuotaPlatform:      input.QuotaPlatform,
+		RequestedGroupID:   input.RequestedGroupID,
+		ResolvedGroupID:    input.ResolvedGroupID,
 		ChannelUsageFields: input.ChannelUsageFields,
 	}, &recordUsageOpts{})
 }
@@ -585,6 +592,10 @@ type RecordUsageLongContextInput struct {
 	APIKeyService         APIKeyQuotaUpdater // API Key 配额服务（可选）
 	QuotaPlatform         string             // user×platform 配额计量平台：handler 在请求 ctx 内经 QuotaPlatform() 算定后传入（后扣运行在 worker 池 background ctx 上，取不到 ForcePlatform）
 
+	// 智能路由归因，见 RecordUsageInput 同名字段。
+	RequestedGroupID *int64
+	ResolvedGroupID  *int64
+
 	ChannelUsageFields // 渠道映射信息（由 handler 在 Forward 前解析）
 }
 
@@ -604,6 +615,8 @@ func (s *GatewayService) RecordUsageWithLongContext(ctx context.Context, input *
 		ForceCacheBilling:  input.ForceCacheBilling,
 		APIKeyService:      input.APIKeyService,
 		QuotaPlatform:      input.QuotaPlatform,
+		RequestedGroupID:   input.RequestedGroupID,
+		ResolvedGroupID:    input.ResolvedGroupID,
 		ChannelUsageFields: input.ChannelUsageFields,
 	}, &recordUsageOpts{
 		LongContextThreshold:  input.LongContextThreshold,
@@ -626,6 +639,8 @@ type recordUsageCoreInput struct {
 	ForceCacheBilling  bool
 	APIKeyService      APIKeyQuotaUpdater
 	QuotaPlatform      string
+	RequestedGroupID   *int64
+	ResolvedGroupID    *int64
 	ChannelUsageFields
 }
 
@@ -942,6 +957,16 @@ func (s *GatewayService) buildRecordUsageLog(
 		GroupID:               apiKey.GroupID,
 		SubscriptionID:        optionalSubscriptionID(subscription),
 		CreatedAt:             time.Now(),
+	}
+	// 智能路由透明重定向时优先记实际承接的成员分组，虚拟分组写入 requested_group_id，
+	// 成员维度的用量统计才不会被虚拟路由吞掉。归因值由账号选择期算出后随
+	// AccountSelectionResult → RecordUsageInput 按值传到这里（记账在 worker 池的
+	// background ctx 上执行，选择期注入的 ctx key 传不进来）。
+	if input.ResolvedGroupID != nil && *input.ResolvedGroupID > 0 {
+		usageLog.GroupID = input.ResolvedGroupID
+	}
+	if input.RequestedGroupID != nil && *input.RequestedGroupID > 0 {
+		usageLog.RequestedGroupID = input.RequestedGroupID
 	}
 	if result.ImageCount > 0 && (cost == nil || cost.BillingMode != string(BillingModeToken)) {
 		usageLog.RateMultiplier = imageMultiplier
