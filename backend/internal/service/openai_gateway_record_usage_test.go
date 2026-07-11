@@ -200,6 +200,19 @@ func i64p(v int64) *int64 {
 	return &v
 }
 
+type openAIResellerSettingRepoStub struct {
+	ResellerSettingRepository
+
+	values map[string]string
+}
+
+func (s *openAIResellerSettingRepoStub) Get(ctx context.Context, resellerID int64, key string) (string, error) {
+	if s.values == nil {
+		return "", nil
+	}
+	return s.values[key], nil
+}
+
 func newOpenAIRecordUsageServiceForTest(usageRepo UsageLogRepository, userRepo UserRepository, subRepo UserSubscriptionRepository, rateRepo UserGroupRateRepository) *OpenAIGatewayService {
 	cfg := &config.Config{}
 	cfg.Default.RateMultiplier = 1.1
@@ -226,6 +239,7 @@ func newOpenAIRecordUsageServiceForTest(usageRepo UsageLogRepository, userRepo U
 		nil,
 		nil,
 		nil, // userPlatformQuotaRepo
+		nil, // resellerSettingRepo
 	)
 	svc.userGroupRateResolver = newUserGroupRateResolver(
 		rateRepo,
@@ -2457,4 +2471,71 @@ func TestGatewayServiceCalculateRecordUsageCost_ChannelImageBillingNormalizesMis
 	require.Equal(t, string(BillingModeImage), cost.BillingMode)
 	require.InDelta(t, 0.44, cost.TotalCost, 1e-12)
 	require.InDelta(t, 0.44, cost.ActualCost, 1e-12)
+}
+
+// #12：OpenAI 网关对 reseller 子用户（user.ParentID != nil）须写入商户定价倍率 /
+// 平台进价快照，与 anthropic 路径口径一致，否则商户对账缺列。
+func TestOpenAIGatewayServiceRecordUsage_ResellerSubUserWritesMerchantSnapshots(t *testing.T) {
+	usageRepo := &openAIRecordUsageLogRepoStub{inserted: true}
+	billingRepo := &openAIRecordUsageBillingRepoStub{result: &UsageBillingApplyResult{Applied: true}}
+	userRepo := &openAIRecordUsageUserRepoStub{}
+	subRepo := &openAIRecordUsageSubRepoStub{}
+	quotaSvc := &openAIRecordUsageAPIKeyQuotaStub{}
+	svc := newOpenAIRecordUsageServiceWithBillingRepoForTest(usageRepo, billingRepo, userRepo, subRepo, nil)
+	svc.resellerSettingRepo = &openAIResellerSettingRepoStub{values: map[string]string{
+		"price_multiplier": "1.5",
+		"platform_cost":    "0.8",
+	}}
+
+	parentID := int64(9000)
+	err := svc.RecordUsage(context.Background(), &OpenAIRecordUsageInput{
+		Result: &OpenAIForwardResult{
+			RequestID: "resp_reseller",
+			Usage:     OpenAIUsage{InputTokens: 100, OutputTokens: 50},
+			Model:     "gpt-5.1",
+			Duration:  time.Second,
+		},
+		APIKey:        &APIKey{ID: 1000, Quota: 100, Group: &Group{RateMultiplier: 1}},
+		User:          &User{ID: 2000, ParentID: &parentID},
+		Account:       &Account{ID: 3000, Type: AccountTypeAPIKey},
+		APIKeyService: quotaSvc,
+	})
+	require.NoError(t, err)
+
+	require.NotNil(t, usageRepo.lastLog)
+	require.NotNil(t, usageRepo.lastLog.MerchantRateSnapshot, "reseller 子用户应写倍率快照")
+	require.InDelta(t, 1.5, *usageRepo.lastLog.MerchantRateSnapshot, 1e-9)
+	require.NotNil(t, usageRepo.lastLog.PlatformCostSnapshot, "reseller 子用户应写平台进价快照")
+	require.InDelta(t, 0.8, *usageRepo.lastLog.PlatformCostSnapshot, 1e-9)
+}
+
+// 非 reseller 用户（无 parent）不应写商户快照。
+func TestOpenAIGatewayServiceRecordUsage_NonResellerUserNoSnapshots(t *testing.T) {
+	usageRepo := &openAIRecordUsageLogRepoStub{inserted: true}
+	billingRepo := &openAIRecordUsageBillingRepoStub{result: &UsageBillingApplyResult{Applied: true}}
+	userRepo := &openAIRecordUsageUserRepoStub{}
+	subRepo := &openAIRecordUsageSubRepoStub{}
+	quotaSvc := &openAIRecordUsageAPIKeyQuotaStub{}
+	svc := newOpenAIRecordUsageServiceWithBillingRepoForTest(usageRepo, billingRepo, userRepo, subRepo, nil)
+	svc.resellerSettingRepo = &openAIResellerSettingRepoStub{values: map[string]string{
+		"price_multiplier": "1.5",
+	}}
+
+	err := svc.RecordUsage(context.Background(), &OpenAIRecordUsageInput{
+		Result: &OpenAIForwardResult{
+			RequestID: "resp_non_reseller",
+			Usage:     OpenAIUsage{InputTokens: 100, OutputTokens: 50},
+			Model:     "gpt-5.1",
+			Duration:  time.Second,
+		},
+		APIKey:        &APIKey{ID: 1000, Quota: 100, Group: &Group{RateMultiplier: 1}},
+		User:          &User{ID: 2000},
+		Account:       &Account{ID: 3000, Type: AccountTypeAPIKey},
+		APIKeyService: quotaSvc,
+	})
+	require.NoError(t, err)
+
+	require.NotNil(t, usageRepo.lastLog)
+	require.Nil(t, usageRepo.lastLog.MerchantRateSnapshot)
+	require.Nil(t, usageRepo.lastLog.PlatformCostSnapshot)
 }

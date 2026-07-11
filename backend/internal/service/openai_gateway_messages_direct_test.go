@@ -42,6 +42,77 @@ func TestNormalizeAnthropicDirectInputUsage(t *testing.T) {
 		normalizeAnthropicDirectInputUsage(PlatformDeepSeek, &u)
 		require.Equal(t, 100, u.InputTokens)
 	})
+
+	t.Run("DeepSeek 一并加回 cache_creation", func(t *testing.T) {
+		u := OpenAIUsage{InputTokens: 71, CacheReadInputTokens: 2944, CacheCreationInputTokens: 500}
+		normalizeAnthropicDirectInputUsage(PlatformDeepSeek, &u)
+		require.Equal(t, 71+2944+500, u.InputTokens)
+	})
+
+	t.Run("首笔缓存写入 creation>input 也加回(修双减)", func(t *testing.T) {
+		// 首次写缓存：cache_read=0、cache_creation 很大、input 很小。旧逻辑
+		// 条件 (input < cache_read) = (50 < 0) 为假 → 不加回 → 下游多减一次
+		// cache_creation → 新输入被夹成 0。现按 input < read+creation 加回。
+		u := OpenAIUsage{InputTokens: 50, CacheReadInputTokens: 0, CacheCreationInputTokens: 3000}
+		normalizeAnthropicDirectInputUsage(PlatformMoonshot, &u)
+		require.Equal(t, 3050, u.InputTokens)
+	})
+
+	t.Run("Moonshot 总量口径含 creation 不双计", func(t *testing.T) {
+		// 总量口径下 input 恒 >= read+creation，不应再加回。
+		u := OpenAIUsage{InputTokens: 3515, CacheReadInputTokens: 2944, CacheCreationInputTokens: 500}
+		normalizeAnthropicDirectInputUsage(PlatformMoonshot, &u)
+		require.Equal(t, 3515, u.InputTokens)
+	})
+}
+
+// TestNormalizeAnthropicDirectInputUsage_BucketMath 验证归一后 InputTokens 经下游
+// 三桶互斥拆分（actualInput = InputTokens - cache_read - cache_creation，见
+// openai_gateway_service.go RecordUsage）后，三桶最终量各自等于真实量。
+func TestNormalizeAnthropicDirectInputUsage_BucketMath(t *testing.T) {
+	// 下游拆分口径（与 RecordUsage line ~6916 一致）。
+	actualInput := func(u OpenAIUsage) int {
+		v := u.InputTokens - u.CacheReadInputTokens - u.CacheCreationInputTokens
+		if v < 0 {
+			v = 0
+		}
+		return v
+	}
+
+	cases := []struct {
+		name       string
+		platform   string
+		raw        OpenAIUsage // 上游原始上报（Anthropic 未命中口径）
+		wantInput  int         // 期望真实新输入
+		wantCreate int
+		wantRead   int
+	}{
+		{
+			name:       "DeepSeek 读+写缓存",
+			platform:   PlatformDeepSeek,
+			raw:        OpenAIUsage{InputTokens: 71, CacheReadInputTokens: 2944, CacheCreationInputTokens: 500},
+			wantInput:  71,
+			wantCreate: 500,
+			wantRead:   2944,
+		},
+		{
+			name:       "首笔缓存写入 creation>input 不再夹成 0",
+			platform:   PlatformMoonshot,
+			raw:        OpenAIUsage{InputTokens: 50, CacheReadInputTokens: 0, CacheCreationInputTokens: 3000},
+			wantInput:  50,
+			wantCreate: 3000,
+			wantRead:   0,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			u := tc.raw
+			normalizeAnthropicDirectInputUsage(tc.platform, &u)
+			require.Equal(t, tc.wantInput, actualInput(u), "新输入桶")
+			require.Equal(t, tc.wantCreate, u.CacheCreationInputTokens, "cache_creation 桶")
+			require.Equal(t, tc.wantRead, u.CacheReadInputTokens, "cache_read 桶")
+		})
+	}
 }
 
 // buildAnthropicDirectMessagesURL 的逐平台 URL 约定契约。

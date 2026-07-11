@@ -73,14 +73,20 @@ func buildAnthropicDirectMessagesURL(account *Account) string {
 // （input_tokens 含 cache_read，下游 actualInput = input_tokens - cache_read）。
 //
 //   - DeepSeek（已实测 api.deepseek.com：input=71、cache_read=2944 对应 3015 token
-//     prompt）：input_tokens 永远只报缓存未命中数，必须无条件加回 cache_read；
-//     条件判断 (input < cache_read) 会在新增内容超过缓存前缀时漏计。
+//     prompt）：input_tokens 永远只报缓存未命中数，必须无条件加回缓存桶；
+//     条件判断会在新增内容超过缓存前缀时漏计。
 //   - 其他平台（Kimi 等）：usage 语义未实测（仓库内 Kimi fixture 显示 input_tokens
-//     疑似总量口径），仅在 input_tokens < cache_read（明显为未命中口径）时加回，
-//     避免总量口径上游把缓存前缀按全价+缓存价双重计费。
+//     疑似总量口径），仅在 input_tokens < cache_read+cache_creation（明显为未命中
+//     口径，总量口径下 input 恒 >= 两缓存桶之和）时加回，避免总量口径上游把缓存
+//     前缀按全价+缓存价双重计费。
+//
+// cache_read 与 cache_creation 必须同款条件一起加回：下游计费按互斥三桶拆分
+// （actualInput = InputTokens - cache_read - cache_creation，见 openai_gateway_service.go
+// RecordUsage），因此归一后的 InputTokens 必须是含全部桶的总量。只加回 cache_read
+// 会让下游多减一次 cache_creation，creation>input 时把真实新输入夹成 0（漏计新输入费）。
 func normalizeAnthropicDirectInputUsage(platform string, usage *OpenAIUsage) {
-	if platform == PlatformDeepSeek || usage.InputTokens < usage.CacheReadInputTokens {
-		usage.InputTokens += usage.CacheReadInputTokens
+	if platform == PlatformDeepSeek || usage.InputTokens < usage.CacheReadInputTokens+usage.CacheCreationInputTokens {
+		usage.InputTokens += usage.CacheReadInputTokens + usage.CacheCreationInputTokens
 	}
 }
 
@@ -178,6 +184,11 @@ func (s *OpenAIGatewayService) forwardAnthropicDirect(
 	if resp.StatusCode >= 400 {
 		respBody := s.readUpstreamErrorBody(resp)
 		_ = resp.Body.Close()
+		// 回卷 Body：非 failover 分支下方的 handleAnthropicErrorResponse 会再次
+		// readUpstreamErrorBody，若不回卷则读到空 body，applyErrorPassthroughRule /
+		// cyber 检测 / extractUpstreamErrorMessage 全部拿不到真实上游错误。
+		// 对齐 readOpenAIUpstreamError 的读-关-回卷模式。
+		resp.Body = io.NopCloser(bytes.NewReader(respBody))
 
 		upstreamMsg := strings.TrimSpace(string(respBody))
 		upstreamMsg = sanitizeUpstreamErrorMessage(upstreamMsg)
@@ -206,7 +217,7 @@ func (s *OpenAIGatewayService) forwardAnthropicDirect(
 	if clientStream {
 		return s.handleAnthropicDirectStreamingResponse(resp, c, account.Platform, originalModel, billingModel, upstreamModel, startTime)
 	}
-	return s.handleAnthropicDirectBufferedResponse(resp, c, account.Platform, originalModel, billingModel, upstreamModel, startTime)
+	return s.handleAnthropicDirectBufferedResponse(resp, c, account, originalModel, billingModel, upstreamModel, startTime)
 }
 
 // handleAnthropicDirectStreamingResponse pipes an upstream Anthropic SSE stream
@@ -330,15 +341,16 @@ func (s *OpenAIGatewayService) handleAnthropicDirectStreamingResponse(
 func (s *OpenAIGatewayService) handleAnthropicDirectBufferedResponse(
 	resp *http.Response,
 	c *gin.Context,
-	platform string,
+	account *Account,
 	originalModel, billingModel, upstreamModel string,
 	startTime time.Time,
 ) (*OpenAIForwardResult, error) {
+	platform := account.Platform
 	// Even when stream=false, some Anthropic-compatible upstreams may still
 	// return SSE. Detect by Content-Type and delegate to the streaming handler.
 	ct := resp.Header.Get("Content-Type")
 	if strings.Contains(ct, "text/event-stream") {
-		return s.handleAnthropicDirectBufferedSSE(resp, c, platform, originalModel, billingModel, upstreamModel, startTime)
+		return s.handleAnthropicDirectBufferedSSE(resp, c, account, originalModel, billingModel, upstreamModel, startTime)
 	}
 
 	respBody, err := io.ReadAll(resp.Body)
@@ -383,14 +395,16 @@ func (s *OpenAIGatewayService) handleAnthropicDirectBufferedResponse(
 func (s *OpenAIGatewayService) handleAnthropicDirectBufferedSSE(
 	resp *http.Response,
 	c *gin.Context,
-	platform string,
+	account *Account,
 	originalModel, billingModel, upstreamModel string,
 	startTime time.Time,
 ) (*OpenAIForwardResult, error) {
+	platform := account.Platform
 	var usage OpenAIUsage
 	var lastMessageData []byte
 	var responseID, requestID string
 	var stopReason string
+	var errorEventData string
 
 	// 累积各 content block 的文本/思考增量，用于在非流式响应里重建 content 数组。
 	type sseContentBlock struct {
@@ -465,10 +479,44 @@ func (s *OpenAIGatewayService) handleAnthropicDirectBufferedSSE(
 			if sr := gjson.Get(data, "delta.stop_reason").String(); sr != "" {
 				stopReason = sr
 			}
+
+		case "error":
+			// 上游在 SSE 中下发 error 事件（overloaded_error 等）。buffered 路径此时
+			// 尚未向客户端写入任何字节，记录后在循环外按错误处理（failover / 透传），
+			// 不能当成功返回。保留最后一个 error 事件。
+			errorEventData = data
 		}
 	}
 
 	requestID = resp.Header.Get("x-request-id")
+
+	// 断流 / 错误检测：buffered 路径的所有客户端写入都发生在下方（此刻尚未写出任何
+	// 字节），因此返回 error 可安全触发上层 failover（对照流式路径 296 的 scanner.Err
+	// 检查）。否则截断内容会被当成功返回、message_start 前断连会返回空 200。
+	if errorEventData != "" {
+		message := sanitizeUpstreamErrorMessage(strings.TrimSpace(gjson.Get(errorEventData, "error.message").String()))
+		if openAIStreamFailedEventShouldFailover([]byte(errorEventData), message) {
+			return nil, s.newOpenAIStreamFailoverError(c, account, false, requestID, []byte(errorEventData), message)
+		}
+		// 非可 failover 错误（invalid_request / policy 等）：以 Anthropic 错误格式回写客户端。
+		message = s.recordOpenAIStreamUpstreamError(c, account, false, requestID, "http_error", []byte(errorEventData), message)
+		if message == "" {
+			message = "Upstream returned an error event"
+		}
+		writeAnthropicError(c, http.StatusBadGateway, "api_error", message)
+		return nil, fmt.Errorf("anthropic direct sse error event: %s", message)
+	}
+	if err := scanner.Err(); err != nil {
+		// 上游 SSE 读取中断（连接被截断）：截断内容不能当成功，触发 failover。
+		return nil, s.newOpenAIStreamFailoverError(c, account, false, requestID, nil,
+			"anthropic direct stream read error: "+sanitizeUpstreamErrorMessage(err.Error()))
+	}
+	if lastMessageData == nil {
+		// 一字节 message_start 都没收到（message_start 前断连）：空 200 不能当成功，
+		// 触发 failover。
+		return nil, s.newOpenAIStreamFailoverError(c, account, false, requestID, nil,
+			"anthropic direct stream closed before message_start")
+	}
 
 	// Build a minimal but correct JSON response.
 	// Reconstruct from the message_start base + accumulated content.

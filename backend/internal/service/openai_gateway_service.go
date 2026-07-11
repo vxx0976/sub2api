@@ -373,6 +373,7 @@ type OpenAIGatewayService struct {
 	balanceNotifyService  *BalanceNotifyService
 	settingService        *SettingService
 	userPlatformQuotaRepo UserPlatformQuotaRepository
+	resellerSettingRepo   ResellerSettingRepository
 
 	openaiWSPoolOnce              sync.Once
 	openaiWSStateStoreOnce        sync.Once
@@ -419,6 +420,7 @@ func NewOpenAIGatewayService(
 	balanceNotifyService *BalanceNotifyService,
 	settingService *SettingService,
 	userPlatformQuotaRepo UserPlatformQuotaRepository,
+	resellerSettingRepo ResellerSettingRepository,
 ) *OpenAIGatewayService {
 	svc := &OpenAIGatewayService{
 		accountRepo:         accountRepo,
@@ -452,6 +454,7 @@ func NewOpenAIGatewayService(
 		balanceNotifyService:  balanceNotifyService,
 		settingService:        settingService,
 		userPlatformQuotaRepo: userPlatformQuotaRepo,
+		resellerSettingRepo:   resellerSettingRepo,
 		responseHeaderFilter:  compileResponseHeaderFilter(cfg),
 		codexSnapshotThrottle: newAccountWriteThrottle(openAICodexSnapshotPersistMinInterval),
 	}
@@ -7104,6 +7107,12 @@ func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRec
 		usageLog.SubscriptionID = &subscription.ID
 	}
 
+	// 商户（reseller）子用户写入定价倍率 / 平台进价快照，与 anthropic 路径
+	// （gateway_usage_billing.go 的 getMerchantSnapshots）口径一致，避免商户对账缺列。
+	merchantRateSnapshot, platformCostSnapshot := s.getMerchantSnapshots(ctx, user.ParentID)
+	usageLog.MerchantRateSnapshot = merchantRateSnapshot
+	usageLog.PlatformCostSnapshot = platformCostSnapshot
+
 	// 计算账号统计定价费用（使用最终上游模型匹配自定义规则）
 	if apiKey.GroupID != nil {
 		applyAccountStatsCost(ctx, usageLog, s.channelService, s.billingService,
@@ -7148,6 +7157,33 @@ func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRec
 	writeUsageLogBestEffort(ctx, s.usageLogRepo, usageLog, "service.openai_gateway")
 
 	return nil
+}
+
+// getMerchantSnapshots 返回该用户所属商户（reseller）的定价倍率与平台进价快照，
+// 与 GatewayService.getMerchantSnapshots 口径一致（anthropic 路径复用同一份 reseller
+// 设置）。用户无 parent、未配置或配置非法时返回 nil。resellerSettingRepo 未注入
+// （如测试构造）时安全返回 nil,nil。
+func (s *OpenAIGatewayService) getMerchantSnapshots(ctx context.Context, parentID *int64) (multiplier *float64, platformCost *float64) {
+	if parentID == nil || s.resellerSettingRepo == nil {
+		return nil, nil
+	}
+	val, err := s.resellerSettingRepo.Get(ctx, *parentID, "price_multiplier")
+	if err != nil || val == "" {
+		return nil, nil
+	}
+	mult, err := strconv.ParseFloat(val, 64)
+	if err != nil || mult <= 0 {
+		return nil, nil
+	}
+	pcVal, err := s.resellerSettingRepo.Get(ctx, *parentID, "platform_cost")
+	if err != nil || pcVal == "" {
+		return &mult, nil
+	}
+	pc, err := strconv.ParseFloat(pcVal, 64)
+	if err != nil || pc <= 0 {
+		return &mult, nil
+	}
+	return &mult, &pc
 }
 
 func (s *OpenAIGatewayService) calculateOpenAIRecordUsageCost(
