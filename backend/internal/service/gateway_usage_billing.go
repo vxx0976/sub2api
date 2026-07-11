@@ -750,6 +750,11 @@ func (s *GatewayService) recordUsageCore(ctx context.Context, input *recordUsage
 	}, s.billingDeps(), s.usageBillingRepo)
 
 	if billingErr != nil {
+		// 计费失败（余额/配额事务未提交，未扣费）仍尽力落一条 usage_log，避免
+		// “请求发生但日志无痕”的对账缺口——未计费行可由缺失对应
+		// usage_billing_dedup(request_id, api_key_id) 记录识别并补录。
+		// usage_log 写入与计费 dedup 分属两张表，此处补写不会造成重复扣费。
+		writeUsageLogBestEffort(ctx, s.usageLogRepo, usageLog, "service.gateway.billing_failed")
 		return billingErr
 	}
 	writeUsageLogBestEffort(ctx, s.usageLogRepo, usageLog, "service.gateway")

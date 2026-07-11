@@ -481,6 +481,11 @@ func aggregateChatCompletionsSSEToJSON(body []byte, fallbackModel string) ([]byt
 	var created int64
 	sawChunk := false
 
+	// tool_calls 分片按 index 累积（id/name 取首个非空、arguments 逐片拼接），
+	// 收尾还原为完整 tool_calls 数组，避免 finish_reason=tool_calls 却无 tool_calls。
+	toolCalls := make(map[int]*apicompat.ChatToolCall)
+	var toolCallOrder []int
+
 	scanner := bufio.NewScanner(bytes.NewReader(body))
 	scanner.Buffer(make([]byte, 0, 64*1024), defaultMaxLineSize)
 	for scanner.Scan() {
@@ -509,6 +514,28 @@ func aggregateChatCompletionsSSEToJSON(body []byte, fallbackModel string) ([]byt
 			if ch.Delta.ReasoningContent != nil {
 				_, _ = reasoningSB.WriteString(*ch.Delta.ReasoningContent)
 			}
+			for _, tc := range ch.Delta.ToolCalls {
+				idx := 0
+				if tc.Index != nil {
+					idx = *tc.Index
+				}
+				stored, ok := toolCalls[idx]
+				if !ok {
+					stored = &apicompat.ChatToolCall{Type: "function"}
+					toolCalls[idx] = stored
+					toolCallOrder = append(toolCallOrder, idx)
+				}
+				if tc.ID != "" {
+					stored.ID = tc.ID
+				}
+				if tc.Type != "" {
+					stored.Type = tc.Type
+				}
+				if tc.Function.Name != "" {
+					stored.Function.Name = tc.Function.Name
+				}
+				stored.Function.Arguments += tc.Function.Arguments
+			}
 			if ch.FinishReason != nil && *ch.FinishReason != "" {
 				finishReason = *ch.FinishReason
 			}
@@ -531,6 +558,16 @@ func aggregateChatCompletionsSSEToJSON(body []byte, fallbackModel string) ([]byt
 	if err != nil {
 		return nil, false
 	}
+	// 还原完整 tool_calls 数组（非流式响应不含 index 字段，清零后再序列化）。
+	var assembledToolCalls []apicompat.ChatToolCall
+	if len(toolCallOrder) > 0 {
+		assembledToolCalls = make([]apicompat.ChatToolCall, 0, len(toolCallOrder))
+		for _, idx := range toolCallOrder {
+			tc := *toolCalls[idx]
+			tc.Index = nil
+			assembledToolCalls = append(assembledToolCalls, tc)
+		}
+	}
 	out := apicompat.ChatCompletionsResponse{
 		ID:      id,
 		Object:  "chat.completion",
@@ -542,6 +579,7 @@ func aggregateChatCompletionsSSEToJSON(body []byte, fallbackModel string) ([]byt
 				Role:             "assistant",
 				Content:          json.RawMessage(contentJSON),
 				ReasoningContent: reasoningSB.String(),
+				ToolCalls:        assembledToolCalls,
 			},
 			FinishReason: finishReason,
 		}},

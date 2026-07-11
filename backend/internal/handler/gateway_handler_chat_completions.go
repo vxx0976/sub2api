@@ -252,7 +252,7 @@ func (h *GatewayHandler) ChatCompletions(c *gin.Context) {
 			// 避免上游已产出、客户端已收到内容却整段零计费。随后继续正常失败处理
 			// （内容已写出，writer-size 检查已禁止 failover）。
 			if result != nil && result.PartialError {
-				h.submitChatCompletionsUsageRecord(c, reqLog, result, apiKey, subscription, account, body, channelMapping, reqModel)
+				h.submitChatCompletionsUsageRecord(c, reqLog, result, apiKey, subscription, account, body, channelMapping, reqModel, fs.ForceCacheBilling)
 			}
 			var failoverErr *service.UpstreamFailoverError
 			if errors.As(err, &failoverErr) {
@@ -286,7 +286,7 @@ func (h *GatewayHandler) ChatCompletions(c *gin.Context) {
 		}
 
 		// 6. Record usage
-		h.submitChatCompletionsUsageRecord(c, reqLog, result, apiKey, subscription, account, body, channelMapping, reqModel)
+		h.submitChatCompletionsUsageRecord(c, reqLog, result, apiKey, subscription, account, body, channelMapping, reqModel, fs.ForceCacheBilling)
 		return
 	}
 }
@@ -304,6 +304,7 @@ func (h *GatewayHandler) submitChatCompletionsUsageRecord(
 	body []byte,
 	channelMapping service.ChannelMappingResult,
 	reqModel string,
+	forceCacheBilling bool,
 ) {
 	userAgent := c.GetHeader("User-Agent")
 	clientIP := ip.GetClientIP(c)
@@ -325,6 +326,7 @@ func (h *GatewayHandler) submitChatCompletionsUsageRecord(
 			UserAgent:          userAgent,
 			IPAddress:          clientIP,
 			RequestPayloadHash: requestPayloadHash,
+			ForceCacheBilling:  forceCacheBilling,
 			APIKeyService:      h.apiKeyService,
 			ChannelUsageFields: channelMapping.ToUsageFields(reqModel, result.UpstreamModel),
 		}); err != nil {
