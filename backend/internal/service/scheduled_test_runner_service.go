@@ -108,7 +108,9 @@ func (s *ScheduledTestRunnerService) runScheduled() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 
-	release, ok := tryAcquireSingletonLeaderLock(ctx, s.lockCache, s.db, "leader:scheduled_test_runner", s.instanceID, 2*time.Minute)
+	// TTL must exceed the ctx timeout above (worst-case runtime) so the lock does
+	// not expire mid-run and let a second instance re-execute the same due plans.
+	release, ok := tryAcquireSingletonLeaderLock(ctx, s.lockCache, s.db, "leader:scheduled_test_runner", s.instanceID, 6*time.Minute)
 	if !ok {
 		return
 	}
