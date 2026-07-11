@@ -337,11 +337,13 @@ func (s *GatewayService) SelectAccountWithLoadAwareness(ctx context.Context, gro
 							(requestedModel == "" || s.isModelSupportedByAccountWithContext(ctx, stickyAccount, requestedModel)) &&
 							s.isAccountSchedulableForModelSelection(ctx, stickyAccount, requestedModel) &&
 							s.isAccountSchedulableForQuota(stickyAccount) &&
-							s.isAccountSchedulableForWindowCost(ctx, stickyAccount, true)
+							s.isAccountSchedulableForWindowCost(ctx, stickyAccount, true) &&
+							s.isAccountSchedulableForDailyCost(ctx, stickyAccount) &&
+							s.isAccountSchedulableForWeeklyCost(ctx, stickyAccount)
 
 						rpmPass := gatePass && s.isAccountSchedulableForRPM(ctx, stickyAccount, true)
 
-						if rpmPass { // 粘性会话窗口费用+RPM 检查
+						if rpmPass { // 粘性会话窗口费用+每日/周费用+RPM 检查
 							result, err := s.tryAcquireAccountSlot(ctx, stickyAccountID, stickyAccount.Concurrency)
 							if err == nil && result.Acquired {
 								// 会话数量限制检查
@@ -528,6 +530,8 @@ func (s *GatewayService) SelectAccountWithLoadAwareness(ctx context.Context, gro
 				modelSchedulable := s.isAccountSchedulableForModelSelection(ctx, account, requestedModel)
 				quotaOK := s.isAccountSchedulableForQuota(account)
 				windowCostOK := s.isAccountSchedulableForWindowCost(ctx, account, true)
+				dailyCostOK := s.isAccountSchedulableForDailyCost(ctx, account)
+				weeklyCostOK := s.isAccountSchedulableForWeeklyCost(ctx, account)
 				rpmOK := s.isAccountSchedulableForRPM(ctx, account, true)
 				schedulable := s.isAccountSchedulableForSelection(account)
 
@@ -541,10 +545,12 @@ func (s *GatewayService) SelectAccountWithLoadAwareness(ctx context.Context, gro
 					"model_schedulable", modelSchedulable,
 					"quota_ok", quotaOK,
 					"window_cost_ok", windowCostOK,
+					"daily_cost_ok", dailyCostOK,
+					"weekly_cost_ok", weeklyCostOK,
 					"rpm_ok", rpmOK,
 				)
 
-				if !clearSticky && platformOK && modelSupported && modelSchedulable && quotaOK && windowCostOK && rpmOK && schedulable {
+				if !clearSticky && platformOK && modelSupported && modelSchedulable && quotaOK && windowCostOK && dailyCostOK && weeklyCostOK && rpmOK && schedulable {
 					result, err := s.tryAcquireAccountSlot(ctx, accountID, account.Concurrency)
 					if err == nil && result.Acquired {
 						// 会话数量限制检查
@@ -1839,6 +1845,12 @@ func (s *GatewayService) selectAccountForModelWithPlatform(ctx context.Context, 
 			if !s.isAccountSchedulableForWindowCost(ctx, acc, false) {
 				continue
 			}
+			if !s.isAccountSchedulableForDailyCost(ctx, acc) {
+				continue
+			}
+			if !s.isAccountSchedulableForWeeklyCost(ctx, acc) {
+				continue
+			}
 			if !s.isAccountSchedulableForRPM(ctx, acc, false) {
 				continue
 			}
@@ -2105,6 +2117,12 @@ func (s *GatewayService) selectAccountWithMixedScheduling(ctx context.Context, g
 				continue
 			}
 			if !s.isAccountSchedulableForWindowCost(ctx, acc, false) {
+				continue
+			}
+			if !s.isAccountSchedulableForDailyCost(ctx, acc) {
+				continue
+			}
+			if !s.isAccountSchedulableForWeeklyCost(ctx, acc) {
 				continue
 			}
 			if !s.isAccountSchedulableForRPM(ctx, acc, false) {
