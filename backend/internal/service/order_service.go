@@ -517,6 +517,19 @@ func (s *OrderService) ConfirmOrderPaid(ctx context.Context, orderNo, tradeNo, p
 		return fmt.Errorf("order status is %s, cannot pay", o.Status)
 	}
 
+	// 二次入账兜底：若该账单号已被其它 paid 订单占用（内存去重在多实例/重启后失效），
+	// 拒绝再次入账。幂等返回 nil，避免上层反复重试。
+	if tradeNo != "" {
+		used, err := s.orderRepo.TradeNoUsedByPaidOrder(ctx, tradeNo, orderNo)
+		if err != nil {
+			return fmt.Errorf("check trade_no reuse: %w", err)
+		}
+		if used {
+			logger.LegacyPrintf("service.order", "alimpay skip: trade_no=%s already credited by another paid order, order=%s", tradeNo, orderNo)
+			return nil
+		}
+	}
+
 	now := time.Now()
 	fromStatus := o.Status
 	if err := s.orderRepo.UpdateStatus(ctx, orderNo, fromStatus, "paid", &tradeNo, &now); err != nil {

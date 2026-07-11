@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"strings"
 	"time"
 
@@ -564,9 +565,10 @@ func (r *redeemCodeRepository) SumPositiveValueByDayForTypes(ctx context.Context
 }
 
 // SumManualAdminBalanceByDay 按时区分桶汇总管理员"真实"手工加余额（type='admin_balance' / value>0）。
-// 由于 adminService.UpdateUserBalance 会在每笔充值订单成功时也写一条 type='admin_balance' 的审计
-// 影子记录（notes 固定以 'AliMPay order ' / 'Recharge order ' 开头），这里通过 notes 前缀
-// 过滤掉这些 audit shadow，仅保留管理员从后台直接调整的真实记录。
+// 由于 adminService.UpdateUserBalance / RefundUserBalance 会在每笔充值/退款订单成功时也写一条
+// type='admin_balance' 的审计影子记录（notes 以 manualBalanceShadowPrefixes 中的前缀开头，含
+// AliMPay / Recharge / USDT 及各自 Refund），这里通过 notes 前缀过滤掉这些 audit shadow，
+// 仅保留管理员从后台直接调整的真实记录。
 func (r *redeemCodeRepository) SumManualAdminBalanceByDay(ctx context.Context, startTime, endTime time.Time, tzName string) (map[string]float64, error) {
 	if r.sql == nil {
 		return map[string]float64{}, nil
@@ -574,7 +576,16 @@ func (r *redeemCodeRepository) SumManualAdminBalanceByDay(ctx context.Context, s
 	if tzName == "" {
 		tzName = "UTC"
 	}
-	query := `
+	// 排除 audit shadow：每笔充值/退款订单成功时都会写一条 type='admin_balance' 的影子记录，
+	// notes 以 manualBalanceShadowPrefixes 中某个前缀开头。这里用共享前缀表动态拼 NOT LIKE，
+	// 与 ListManualBalanceAdjustments 保持同源，避免新增支付通道时再漏（历史漏了 'USDT order '）。
+	args := []interface{}{startTime, endTime, tzName}
+	var notLike strings.Builder
+	for _, prefix := range manualBalanceShadowPrefixes {
+		args = append(args, prefix+"%")
+		fmt.Fprintf(&notLike, "\n\t\t  AND COALESCE(notes, '') NOT LIKE $%d", len(args))
+	}
+	query := fmt.Sprintf(`
 		SELECT
 			TO_CHAR(used_at AT TIME ZONE $3, 'YYYY-MM-DD') AS day,
 			COALESCE(SUM(value), 0) AS total
@@ -584,13 +595,11 @@ func (r *redeemCodeRepository) SumManualAdminBalanceByDay(ctx context.Context, s
 		  AND used_at IS NOT NULL
 		  AND used_at >= $1
 		  AND used_at < $2
-		  AND value > 0
-		  AND COALESCE(notes, '') NOT LIKE 'AliMPay order %'
-		  AND COALESCE(notes, '') NOT LIKE 'Recharge order %'
+		  AND value > 0%s
 		GROUP BY 1
 		ORDER BY 1
-	`
-	rows, err := r.sql.QueryContext(ctx, query, startTime, endTime, tzName)
+	`, notLike.String())
+	rows, err := r.sql.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}

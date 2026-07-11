@@ -98,3 +98,53 @@ func TestOrderRepoCreateWithUniquePaymentAmountSkipsActiveAndRecentExpired(t *te
 	require.NoError(t, repo.CreateWithUniquePaymentAmount(ctx, third, 20, 0.01, 2*time.Hour))
 	require.Equal(t, 20.01, third.PaymentAmount)
 }
+
+// 二次入账防护：reuseWindow 内刚入账（paid）的订单，其应付金额不可立即复用给新订单，
+// 否则账单轮询的回溯窗口内同一笔账单可能被错配二次入账。
+func TestOrderRepoCreateWithUniquePaymentAmountSkipsRecentPaid(t *testing.T) {
+	repo, _, userID := newOrderEntRepo(t)
+	ctx := context.Background()
+	expiresAt := time.Now().Add(5 * time.Minute)
+
+	paid := &service.Order{
+		OrderNo:       "A20260424000000000101",
+		UserID:        userID,
+		Amount:        30,
+		PaymentAmount: 30,
+		CreditAmount:  1,
+		Multiplier:    1,
+		Status:        "pending",
+		PayType:       "alipay",
+		ExpiredAt:     &expiresAt,
+	}
+	require.NoError(t, repo.Create(ctx, paid))
+	paidAt := time.Now().Add(-10 * time.Minute)
+	tradeNo := "BILL-30-A"
+	require.NoError(t, repo.UpdateStatus(ctx, paid.OrderNo, "pending", "paid", &tradeNo, &paidAt))
+
+	next := &service.Order{
+		OrderNo:      "A20260424000000000102",
+		UserID:       userID,
+		Amount:       30,
+		CreditAmount: 1,
+		Multiplier:   1,
+		Status:       "pending",
+		PayType:      "alipay",
+		ExpiredAt:    &expiresAt,
+	}
+	require.NoError(t, repo.CreateWithUniquePaymentAmount(ctx, next, 30, 0.01, 2*time.Hour))
+	require.Equal(t, 30.01, next.PaymentAmount)
+
+	// TradeNoUsedByPaidOrder 兜底：已被 paid 订单占用的 trade_no 命中，自身与未占用的返回 false。
+	used, err := repo.TradeNoUsedByPaidOrder(ctx, tradeNo, "A20260424000000000102")
+	require.NoError(t, err)
+	require.True(t, used)
+
+	self, err := repo.TradeNoUsedByPaidOrder(ctx, tradeNo, paid.OrderNo)
+	require.NoError(t, err)
+	require.False(t, self)
+
+	none, err := repo.TradeNoUsedByPaidOrder(ctx, "BILL-UNKNOWN", "A20260424000000000102")
+	require.NoError(t, err)
+	require.False(t, none)
+}

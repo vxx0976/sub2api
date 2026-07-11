@@ -78,6 +78,13 @@ func createWithUniquePaymentAmountTx(ctx context.Context, client *ent.Client, o 
 					order.StatusEQ("expired"),
 					order.ExpiredAtGT(cutoff),
 				),
+				// reuseWindow 内已支付订单的金额也不可复用：账单轮询有回溯窗口，
+				// 若刚入账就把同一金额分配给新订单，同一笔账单可能被错配二次入账。
+				// 与 expired 同窗口口径（ConfirmOrderPaid 恒写 paid_at，故不存在 NULL 漏网）。
+				order.And(
+					order.StatusEQ("paid"),
+					order.PaidAtGT(cutoff),
+				),
 			),
 		).
 		All(ctx)
@@ -359,6 +366,19 @@ func (r *orderRepo) SumPaidCreditByDay(ctx context.Context, startTime, endTime t
 		return nil, err
 	}
 	return result, nil
+}
+
+func (r *orderRepo) TradeNoUsedByPaidOrder(ctx context.Context, tradeNo, excludeOrderNo string) (bool, error) {
+	if tradeNo == "" {
+		return false, nil
+	}
+	return r.client.Order.Query().
+		Where(
+			order.StatusEQ("paid"),
+			order.TradeNoEQ(tradeNo),
+			order.OrderNoNEQ(excludeOrderNo),
+		).
+		Exist(ctx)
 }
 
 func toServiceOrder(row *ent.Order) *service.Order {

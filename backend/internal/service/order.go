@@ -55,6 +55,10 @@ type OrderRepository interface {
 	// SumPaidCreditByDay 汇总指定时区下每日 status='paid' 订单的 credit_amount（USD）。
 	// 返回 map key 为 "YYYY-MM-DD"，value 为当日到账余额合计。
 	SumPaidCreditByDay(ctx context.Context, startTime, endTime time.Time, tzName string) (map[string]float64, error)
+	// TradeNoUsedByPaidOrder 判断某支付平台账单号（trade_no）是否已被其它 paid 订单占用。
+	// 用于入账前的二次入账兜底校验：内存去重（AlipayMonitor.matchedBills）在多实例/重启后失效，
+	// 这里从 DB 侧兜底，防止同一笔账单被两个订单先后入账。excludeOrderNo 为当前订单自身。
+	TradeNoUsedByPaidOrder(ctx context.Context, tradeNo, excludeOrderNo string) (bool, error)
 }
 
 var ErrOrderStatusConflict = errors.New("order status conflict")
