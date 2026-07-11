@@ -3048,6 +3048,8 @@ export default {
         output: '输出价(每百万)',
         cache: '缓存读取价(每百万)',
         hasCache: '支持缓存',
+        cacheWrite: '缓存写入价(每百万)',
+        hasCacheWrite: '支持缓存写入',
         enabled: '启用',
         actions: '操作'
       },

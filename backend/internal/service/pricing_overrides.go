@@ -23,7 +23,12 @@ type modelPricingOverride struct {
 	OutputPerM float64 `json:"output"`
 	CachePerM  float64 `json:"cache"`
 	HasCache   bool    `json:"has_cache"`
-	Enabled    bool    `json:"enabled"`
+	// CacheWritePerM 为缓存写入(cache_creation)价，每百万 token。可选：
+	// HasCacheWrite=false 时保持历史语义 cache_creation 计 $0（国产模型内置 fallback
+	// 本就 0，勿破坏）；覆盖 Anthropic/OpenAI 等真收 cache-write 的模型时须显式配置。
+	CacheWritePerM float64 `json:"cache_write"`
+	HasCacheWrite  bool    `json:"has_cache_write"`
+	Enabled        bool    `json:"enabled"`
 }
 
 // ModelPricingOverridesDTO 是 admin GET/PUT 的载荷（整张表覆盖式读写）。
@@ -173,6 +178,10 @@ func (s *PricingService) overrideToLiteLLM(ov modelPricingOverride) *LiteLLMMode
 	p.OutputCostPerToken = ov.OutputPerM / rate * perToken
 	if ov.HasCache {
 		p.CacheReadInputTokenCost = ov.CachePerM / rate * perToken
+		p.SupportsPromptCaching = true
+	}
+	if ov.HasCacheWrite {
+		p.CacheCreationInputTokenCost = ov.CacheWritePerM / rate * perToken
 		p.SupportsPromptCaching = true
 	}
 	return p

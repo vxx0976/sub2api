@@ -13,6 +13,11 @@ export interface ModelPricingEntry {
   output: number
   cache: number
   has_cache: boolean
+  // 缓存写入(cache_creation)价，每百万 token。可选：has_cache_write=false 时后端保持
+  // cache_creation 计 $0（国产模型内置 fallback 本就 0）；覆盖 Anthropic/OpenAI 等真收
+  // cache-write 的模型时须启用并配置，否则其 cache_creation token 少计费。
+  cache_write: number
+  has_cache_write: boolean
   enabled: boolean
 }
 

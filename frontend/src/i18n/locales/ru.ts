@@ -3057,6 +3057,8 @@ export default {
         output: 'Выход (за 1 млн)',
         cache: 'Чтение кэша (за 1 млн)',
         hasCache: 'Кэш',
+        cacheWrite: 'Запись кэша (за 1 млн)',
+        hasCacheWrite: 'Запись кэша',
         enabled: 'Вкл.',
         actions: 'Действия'
       },

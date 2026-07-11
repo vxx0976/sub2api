@@ -3055,6 +3055,8 @@ export default {
         output: 'Output (per 1M)',
         cache: 'Cache read (per 1M)',
         hasCache: 'Cache',
+        cacheWrite: 'Cache write (per 1M)',
+        hasCacheWrite: 'Cache write',
         enabled: 'Enabled',
         actions: 'Actions'
       },

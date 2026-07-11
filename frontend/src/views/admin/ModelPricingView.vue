@@ -40,6 +40,8 @@
                   <th class="px-3 py-2 font-medium">{{ t('admin.modelPricing.columns.output') }}</th>
                   <th class="px-3 py-2 font-medium">{{ t('admin.modelPricing.columns.cache') }}</th>
                   <th class="px-3 py-2 font-medium">{{ t('admin.modelPricing.columns.hasCache') }}</th>
+                  <th class="px-3 py-2 font-medium">{{ t('admin.modelPricing.columns.cacheWrite') }}</th>
+                  <th class="px-3 py-2 font-medium">{{ t('admin.modelPricing.columns.hasCacheWrite') }}</th>
                   <th class="px-3 py-2 font-medium">{{ t('admin.modelPricing.columns.enabled') }}</th>
                   <th class="px-3 py-2 font-medium">{{ t('admin.modelPricing.columns.actions') }}</th>
                 </tr>
@@ -65,6 +67,12 @@
                     <Toggle v-model="row.has_cache" />
                   </td>
                   <td class="px-3 py-2">
+                    <input v-model.number="row.cache_write" type="number" min="0" step="0.01" class="input w-28" :disabled="!row.has_cache_write" />
+                  </td>
+                  <td class="px-3 py-2">
+                    <Toggle v-model="row.has_cache_write" />
+                  </td>
+                  <td class="px-3 py-2">
                     <Toggle v-model="row.enabled" />
                   </td>
                   <td class="px-3 py-2">
@@ -74,7 +82,7 @@
                   </td>
                 </tr>
                 <tr v-if="rows.length === 0">
-                  <td colspan="8" class="px-3 py-10 text-center text-sm text-gray-400">{{ t('admin.modelPricing.empty') }}</td>
+                  <td colspan="10" class="px-3 py-10 text-center text-sm text-gray-400">{{ t('admin.modelPricing.empty') }}</td>
                 </tr>
               </tbody>
             </table>
@@ -375,7 +383,7 @@ async function loadConfig() {
 }
 
 function addRow() {
-  rows.value.push({ model: '', currency: 'CNY', input: 0, output: 0, cache: 0, has_cache: false, enabled: true })
+  rows.value.push({ model: '', currency: 'CNY', input: 0, output: 0, cache: 0, has_cache: false, cache_write: 0, has_cache_write: false, enabled: true })
 }
 
 function removeRow(i: number) {
@@ -391,6 +399,8 @@ function overrideBuiltin(entry: BuiltinPricingEntry) {
     output: entry.output,
     cache: entry.cache,
     has_cache: entry.has_cache,
+    cache_write: 0,
+    has_cache_write: false,
     enabled: true
   })
   appStore.showInfo(t('admin.modelPricing.overrideAdded', { model: entry.model }))
@@ -404,7 +414,8 @@ async function handleSave() {
       ...r,
       input: Number(r.input) || 0,
       output: Number(r.output) || 0,
-      cache: Number(r.cache) || 0
+      cache: Number(r.cache) || 0,
+      cache_write: Number(r.cache_write) || 0
     }))
     const cfg = await adminAPI.modelPricing.updateModelPricing({ entries })
     rows.value = cfg.entries ?? []
