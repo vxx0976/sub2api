@@ -1,15 +1,15 @@
 <template>
   <!-- External URL: iframe mode -->
-  <div v-if="homeTemplate === 'external_url' && homeContent" class="min-h-screen">
+  <div v-if="homeTemplate === 'external_url' && homeContentUrl" class="min-h-screen">
     <iframe
-      :src="homeContent.trim()"
+      :src="homeContentUrl"
       class="h-screen w-full border-0"
       allowfullscreen
     ></iframe>
   </div>
 
-  <!-- Custom HTML mode - SECURITY: homeContent is admin-only setting, XSS risk is acceptable -->
-  <div v-else-if="homeTemplate === 'custom_html' && homeContent" class="min-h-screen" v-html="homeContent"></div>
+  <!-- Custom HTML mode - SECURITY: home_content is reseller-settable (untrusted), sanitized via DOMPurify to prevent stored XSS -->
+  <div v-else-if="homeTemplate === 'custom_html' && homeContentSafe" class="min-h-screen" v-html="homeContentSafe"></div>
 
   <!-- Hero template: gradient hero + features + CTA -->
   <div v-else-if="homeTemplate === 'hero'" class="relative flex min-h-screen flex-col overflow-hidden">
@@ -759,6 +759,7 @@ import TypewriterTerminal, { type TerminalLine } from '@/components/common/Typew
 import PublicHeader from '@/components/layout/PublicHeader.vue'
 import Icon from '@/components/icons/Icon.vue'
 import { sanitizeUrl } from '@/utils/url'
+import DOMPurify from 'dompurify'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -777,6 +778,18 @@ const siteLogo = computed(() => sanitizeUrl(appStore.cachedPublicSettings?.site_
 const docUrl = computed(() => sanitizeUrl(appStore.cachedPublicSettings?.doc_url || appStore.docUrl || ''))
 const homeContent = computed(() => appStore.cachedPublicSettings?.home_content || '')
 const homeTemplate = computed(() => appStore.cachedPublicSettings?.home_template || 'default')
+// home_content is settable per-domain by resellers (non-admin merchants), so it
+// is untrusted. Sanitize before use to prevent stored XSS.
+// - custom_html mode: strip scripts / event handlers via DOMPurify (iframe kept
+//   for legitimate embeds, matching CustomPageView).
+// - external_url mode: only allow http/https URLs as the iframe src.
+const homeContentSafe = computed(() =>
+  DOMPurify.sanitize(homeContent.value, {
+    ADD_TAGS: ['iframe'],
+    ADD_ATTR: ['allowfullscreen', 'frameborder', 'src', 'target'],
+  })
+)
+const homeContentUrl = computed(() => sanitizeUrl(homeContent.value.trim()))
 const apiBaseRoot = computed(() => {
   const fallback = typeof window !== 'undefined' ? window.location.origin : 'https://YOUR_HOST'
   const raw = (appStore.cachedPublicSettings?.api_base_url || fallback).trim()

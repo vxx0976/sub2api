@@ -103,6 +103,15 @@ export async function loadLocaleMessages(locale: LocaleCode): Promise<void> {
 
   i18n.global.setLocaleMessage(locale, messages)
   loadedLocales.add(locale)
+
+  // Ensure the fallback locale (en) is also registered so that keys missing
+  // from a non-en locale (e.g. ru) resolve to English instead of rendering the
+  // raw key path. vue-i18n's fallbackLocale only takes effect when the fallback
+  // locale's messages have actually been loaded. loadedLocales guards against
+  // infinite recursion (en short-circuits on the has() check above).
+  if (locale !== DEFAULT_LOCALE) {
+    await loadLocaleMessages(DEFAULT_LOCALE)
+  }
 }
 
 export async function initI18n(): Promise<void> {
