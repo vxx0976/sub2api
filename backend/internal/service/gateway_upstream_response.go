@@ -1366,6 +1366,17 @@ func (s *GatewayService) handleNonStreamingResponse(ctx context.Context, resp *h
 			if newBody, err := sjson.SetBytes(body, "usage.cache_read_input_tokens", cachedTokens); err == nil {
 				body = newBody
 			}
+			// Kimi 的 input_tokens 含 cached 段（OpenAI 口径）；Anthropic 计费口径下
+			// input_tokens 与 cache_read_input_tokens 分别相加计价，需从 input_tokens
+			// 扣除 cached 段，否则缓存命中 token 被“全价 input + cache_read”双重计费。
+			remaining := response.Usage.InputTokens - int(cachedTokens)
+			if remaining < 0 {
+				remaining = 0
+			}
+			response.Usage.InputTokens = remaining
+			if newBody, err := sjson.SetBytes(body, "usage.input_tokens", remaining); err == nil {
+				body = newBody
+			}
 		}
 	}
 
@@ -1433,5 +1444,16 @@ func reconcileCachedTokens(usage map[string]any) bool {
 		return false
 	}
 	usage["cache_read_input_tokens"] = cached
+	// Kimi 的 input_tokens 采用 OpenAI 口径（prompt_tokens 含 cached 段）；而 Anthropic
+	// 计费口径下 input_tokens 与 cache_read_input_tokens 分别计价、相加。若不从
+	// input_tokens 扣除已计入 cache_read 的 cached 段，缓存命中 token 会被“全价 input +
+	// cache_read”双重计费。此处把 input_tokens 归一到 Anthropic 口径（不含 cache_read）。
+	if input, ok := usage["input_tokens"].(float64); ok {
+		if remaining := input - cached; remaining > 0 {
+			usage["input_tokens"] = remaining
+		} else {
+			usage["input_tokens"] = float64(0)
+		}
+	}
 	return true
 }

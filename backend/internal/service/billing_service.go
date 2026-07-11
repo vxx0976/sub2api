@@ -139,6 +139,16 @@ func serviceTierCostMultiplier(serviceTier string) float64 {
 	}
 }
 
+// serviceTierEligibleModel 判断某模型是否可让 service_tier(flex/priority)影响计费。
+// service_tier 是 OpenAI 官方分层概念，只有「真 OpenAI 上游模型」才有 flex 五折 /
+// priority 加价语义；国产/其他平台若原样透传 service_tier，会被 serviceTierCostMultiplier
+// 误打五折(flex)或误收 2x(priority)。这里复用包内权威的 OpenAI 型号识别
+// (normalizeKnownOpenAICodexModel，非空即已知 OpenAI/Codex 型号)作为平台门。
+// 中转渠道价的排除在调用方按定价来源(PricingSourceChannel)单独处理。
+func serviceTierEligibleModel(model string) bool {
+	return normalizeKnownOpenAICodexModel(model) != ""
+}
+
 // UsageTokens 使用的token数量
 type UsageTokens struct {
 	InputTokens           int
@@ -922,7 +932,14 @@ func (s *BillingService) calculateTokenCost(resolved *ResolvedPricing, input Cos
 	// 长上下文定价仅在无区间定价时应用（区间定价已包含上下文分层）
 	applyLongCtx := len(resolved.Intervals) == 0
 
-	return s.computeTokenBreakdown(pricing, input.Tokens, input.RateMultiplier, input.ServiceTier, applyLongCtx), nil
+	// service_tier 准入门（见 #3）：仅「真 OpenAI 型号 + 非中转渠道价」才允许 flex/priority
+	// 影响计费；其余平台/渠道定价一律置空 → 按标准档(乘数 1.0)。
+	serviceTier := input.ServiceTier
+	if resolved.Source == PricingSourceChannel || !serviceTierEligibleModel(input.Model) {
+		serviceTier = ""
+	}
+
+	return s.computeTokenBreakdown(pricing, input.Tokens, input.RateMultiplier, serviceTier, applyLongCtx), nil
 }
 
 // computeTokenBreakdown 是 token 计费的核心逻辑，由 calculateTokenCost 和 calculateCostInternal 共用。
@@ -944,6 +961,9 @@ func (s *BillingService) computeTokenBreakdown(
 	cacheCreationMultiplier := 1.0
 	tierMultiplier := 1.0
 
+	// 注意：service_tier 的平台/渠道准入门在调用方（calculateTokenCost /
+	// calculateCostInternal）完成——非真 OpenAI 或中转渠道价时 serviceTier 已被置空，
+	// 故此处对空档天然回落到标准档（见 #3）。
 	if usePriorityServiceTierPricing(serviceTier, pricing) {
 		if pricing.InputPricePerTokenPriority > 0 {
 			inputPrice = pricing.InputPricePerTokenPriority
@@ -1109,6 +1129,12 @@ func (s *BillingService) calculateCostInternal(model string, tokens UsageTokens,
 	}
 	if err != nil {
 		return nil, err
+	}
+
+	// service_tier 准入门（见 #3）：仅「真 OpenAI 型号 + 非中转渠道价」才允许 flex/priority
+	// 影响计费；其余平台/渠道定价一律置空 → 按标准档(乘数 1.0)。
+	if channelPricing != nil || !serviceTierEligibleModel(model) {
+		serviceTier = ""
 	}
 
 	// 旧路径始终检查长上下文定价（无区间定价概念）

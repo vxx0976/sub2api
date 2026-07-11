@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"log/slog"
+	"strings"
 )
 
 // PricingSource 定价来源标识
@@ -235,14 +236,21 @@ func (r *ModelPricingResolver) GetIntervalPricing(resolved *ResolvedPricing, tot
 		return resolved.BasePricing
 	}
 
-	return intervalToModelPricing(iv, resolved.SupportsCacheBreakdown, resolved.channelPricing)
+	return intervalToModelPricing(iv, resolved.BasePricing, resolved.SupportsCacheBreakdown, resolved.channelPricing)
 }
 
-// intervalToModelPricing 将区间定价转换为 ModelPricing
-func intervalToModelPricing(iv *PricingInterval, supportsCacheBreakdown bool, chPricing *ChannelModelPricing) *ModelPricing {
-	pricing := &ModelPricing{
-		SupportsCacheBreakdown: supportsCacheBreakdown,
+// intervalToModelPricing 将区间定价转换为 ModelPricing。
+// 以 base（BasePricing）为底：区间未显式设置的价格字段回退到基础价对应字段，
+// 对齐 flat applyTokenOverrides 的「仅显式覆盖、nil 保留基础价」语义，
+// 避免未填字段被零值构造归 0（见 #14）。
+func intervalToModelPricing(iv *PricingInterval, base *ModelPricing, supportsCacheBreakdown bool, chPricing *ChannelModelPricing) *ModelPricing {
+	pricing := &ModelPricing{}
+	if base != nil {
+		// 防止修改共享指针
+		cloned := *base
+		pricing = &cloned
 	}
+	pricing.SupportsCacheBreakdown = supportsCacheBreakdown
 	if iv.InputPrice != nil {
 		pricing.InputPricePerToken = *iv.InputPrice
 		pricing.InputPricePerTokenPriority = *iv.InputPrice
@@ -262,11 +270,14 @@ func intervalToModelPricing(iv *PricingInterval, supportsCacheBreakdown bool, ch
 		pricing.CacheReadPricePerToken = *iv.CacheReadPrice
 		pricing.CacheReadPricePerTokenPriority = *iv.CacheReadPrice
 	}
-	// 渠道定价存在时，ImageOutputPrice 显式覆盖
+	// 渠道定价存在时，ImageOutputPrice 显式覆盖：配置则用配置值，未配置则归零
+	// （渠道覆盖一切，不回退到 base 的图片输出价，与 applyTokenOverrides 一致）。
 	if chPricing != nil {
 		pricing.ImageOutputPriceExplicit = true
 		if chPricing.ImageOutputPrice != nil {
 			pricing.ImageOutputPricePerToken = *chPricing.ImageOutputPrice
+		} else {
+			pricing.ImageOutputPricePerToken = 0
 		}
 	}
 	return pricing
@@ -275,7 +286,9 @@ func intervalToModelPricing(iv *PricingInterval, supportsCacheBreakdown bool, ch
 // GetRequestTierPrice 根据层级标签获取按次价格
 func (r *ModelPricingResolver) GetRequestTierPrice(resolved *ResolvedPricing, tierLabel string) float64 {
 	for _, tier := range resolved.RequestTiers {
-		if tier.TierLabel == tierLabel && tier.PerRequestPrice != nil {
+		// 大小写不敏感比较：SizeBreakdown 键恒大写("1K/2K/4K")而 tier_label 为
+		// admin 自由文本，与 GetTierByLabel 对齐避免漏配（见 #15）。
+		if strings.EqualFold(tier.TierLabel, tierLabel) && tier.PerRequestPrice != nil {
 			return *tier.PerRequestPrice
 		}
 	}

@@ -36,6 +36,20 @@ func TestReconcileCachedTokens_KimiStyle(t *testing.T) {
 	}
 	assert.True(t, reconcileCachedTokens(usage))
 	assert.Equal(t, float64(23), usage["cache_read_input_tokens"])
+	// input_tokens 归一到 Anthropic 口径：扣除已计入 cache_read 的 cached 段，避免双重计费。
+	assert.Equal(t, float64(0), usage["input_tokens"])
+}
+
+func TestReconcileCachedTokens_KimiStyle_PartialCache(t *testing.T) {
+	// input_tokens 部分命中缓存：cached < input_tokens
+	usage := map[string]any{
+		"input_tokens":            float64(100),
+		"cache_read_input_tokens": float64(0),
+		"cached_tokens":           float64(30),
+	}
+	assert.True(t, reconcileCachedTokens(usage))
+	assert.Equal(t, float64(30), usage["cache_read_input_tokens"])
+	assert.Equal(t, float64(70), usage["input_tokens"]) // 100 - 30 缓存段
 }
 
 func TestReconcileCachedTokens_NoCachedTokens(t *testing.T) {
@@ -215,7 +229,7 @@ func TestNonStreamingReconcile_KimiResponse(t *testing.T) {
 	}
 	require.NoError(t, json.Unmarshal(body, &response))
 
-	// reconcile
+	// reconcile（与 handleNonStreamingResponse 保持一致：cached 段计入 cache_read 后从 input_tokens 扣除）
 	if response.Usage.CacheReadInputTokens == 0 {
 		cachedTokens := gjson.GetBytes(body, "usage.cached_tokens").Int()
 		if cachedTokens > 0 {
@@ -223,16 +237,25 @@ func TestNonStreamingReconcile_KimiResponse(t *testing.T) {
 			if newBody, err := sjson.SetBytes(body, "usage.cache_read_input_tokens", cachedTokens); err == nil {
 				body = newBody
 			}
+			remaining := response.Usage.InputTokens - int(cachedTokens)
+			if remaining < 0 {
+				remaining = 0
+			}
+			response.Usage.InputTokens = remaining
+			if newBody, err := sjson.SetBytes(body, "usage.input_tokens", remaining); err == nil {
+				body = newBody
+			}
 		}
 	}
 
-	// 验证内部 usage（计费用）
+	// 验证内部 usage（计费用）：input_tokens 已扣除 cached 段，避免双重计费
 	assert.Equal(t, 23, response.Usage.CacheReadInputTokens)
-	assert.Equal(t, 23, response.Usage.InputTokens)
+	assert.Equal(t, 0, response.Usage.InputTokens)
 	assert.Equal(t, 7, response.Usage.OutputTokens)
 
 	// 验证返回给客户端的 JSON body
 	assert.Equal(t, int64(23), gjson.GetBytes(body, "usage.cache_read_input_tokens").Int())
+	assert.Equal(t, int64(0), gjson.GetBytes(body, "usage.input_tokens").Int())
 }
 
 func TestNonStreamingReconcile_NativeClaude(t *testing.T) {
