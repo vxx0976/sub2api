@@ -369,7 +369,10 @@ func (r *orderRepo) SumPaidCreditByDay(ctx context.Context, startTime, endTime t
 }
 
 func (r *orderRepo) TradeNoUsedByPaidOrder(ctx context.Context, tradeNo, excludeOrderNo string) (bool, error) {
-	if tradeNo == "" {
+	// 占位/哨兵 trade_no（空串、管理员手工确认订单共用的 'manual'）不是第三方支付账单号，
+	// 多条合法订单会共用它——绝不能据此判「二次入账」，否则第二个手工确认单会被误挡不入账。
+	// 与迁移 174 的部分唯一索引口径一致：只对真实第三方账单号去重。
+	if tradeNo == "" || tradeNo == "manual" {
 		return false, nil
 	}
 	return r.client.Order.Query().
