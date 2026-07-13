@@ -2814,6 +2814,14 @@ export default {
         selectAccounts: '选择账号',
         noAccounts: '此分组暂无账号',
         loadingAccounts: '加载账号中...',
+        claudeMaxSimulation: {
+          title: 'Claude Max 用量模拟',
+          tooltip:
+            '启用后，对于没有上游缓存写入用量的 Claude 模型，系统会确定性地将 token 映射为少量输入加 1h 缓存创建，同时保持总 token 不变。',
+          enabled: '已启用（模拟 1h 缓存）',
+          disabled: '已禁用',
+          hint: '仅调整用量计费日志中的 token 类别。不会持久化每个请求的映射状态。'
+        },
         removeRule: '删除规则',
         noRules: '暂无路由规则',
         noRulesHint: '添加路由规则以将特定模型请求优先路由到指定账号',
@@ -4227,6 +4235,9 @@ export default {
         responsesStatusAutoUnknown: '自动探测：未探测',
         responsesStatusForcedResponses: '已强制 Responses',
         responsesStatusForcedChatCompletions: '已强制 Chat Completions',
+        planType: '订阅档位（手动覆盖）',
+        planTypeDesc: '手动纠正本账号的 ChatGPT 订阅档位（Plus / Pro / Free）。注意：令牌临期刷新或命中 429 限流时，会用真实档位自动覆盖此处设置。',
+        planTypeClear: '清空（自动识别）',
         codexCLIOnly: '仅允许 Codex 官方客户端',
         codexCLIOnlyDesc: '仅对 OpenAI OAuth 生效。开启后仅允许 Codex 官方客户端家族访问；关闭后完全绕过并保持原逻辑。',
         codexCLIOnlyAppServer: '允许 Codex app-server 客户端',

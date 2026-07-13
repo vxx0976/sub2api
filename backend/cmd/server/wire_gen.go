@@ -314,7 +314,7 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	usdtHandler := handler.NewUsdtHandler(usdtOrderService, adminService)
 	mergedOrderService := service.NewMergedOrderService(rechargeService, orderService, usdtOrderService, adminService)
 	mergedOrderHandler := handler.NewMergedOrderHandler(mergedOrderService)
-	handlerPaymentHandler := handler.NewPaymentHandler(paymentService, paymentConfigService, channelService)
+	handlerPaymentHandler := handler.NewPaymentHandler(paymentService, paymentConfigService)
 	paymentWebhookHandler := handler.NewPaymentWebhookHandler(paymentService, registry)
 	accountService := service.NewAccountService(accountRepository, groupRepository)
 	availableChannelHandler := handler.NewAvailableChannelHandler(channelService, apiKeyService, settingService, billingService, accountService)
