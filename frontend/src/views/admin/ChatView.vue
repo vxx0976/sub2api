@@ -168,11 +168,14 @@ function connectAdminWS() {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
   const host = window.location.host
   const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api/v1'
-  const token = localStorage.getItem('auth_token') || ''
   const wsUrl = `${protocol}//${host}${baseUrl}/admin/chat/ws`
 
   connect(wsUrl, {
-    protocols: ['sub2api-admin', `jwt.${token}`],
+    // 函数形式:每次自动重连都现取 localStorage,避免用连接时冻结的过期 token
+    protocols: () => {
+      const token = localStorage.getItem('auth_token') || ''
+      return ['sub2api-admin', `jwt.${token}`]
+    },
     onMessage: (data: any) => {
       if (data.type === 'new_message' && data.data?.message) {
         const msg = data.data.message as ChatMessage

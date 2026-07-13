@@ -59,13 +59,19 @@ function connectWS() {
   const convId = chatStore.conversation.id
 
   let wsUrl: string
+  let protocols: (() => string[] | undefined) | undefined
   if (authStore.isAuthenticated) {
     wsUrl = `${protocol}//${host}${baseUrl}/chat/ws?conversation_id=${convId}`
+    protocols = () => {
+      const token = localStorage.getItem('auth_token')
+      return token ? ['sub2api-chat', `jwt.${token}`] : undefined
+    }
   } else {
     wsUrl = `${protocol}//${host}${baseUrl}/chat/ws?conversation_id=${convId}&guest_token=${chatStore.guestToken}`
   }
 
   connect(wsUrl, {
+    protocols,
     onMessage: (data: any) => {
       if (data.type === 'new_message' && data.data?.message) {
         chatStore.receiveMessage(data.data.message)
@@ -80,12 +86,23 @@ function connectWS() {
 }
 
 watch(
-  () => chatStore.conversation,
-  (conv) => {
-    if (conv && chatStore.isOpen) {
+  () => [chatStore.isOpen, chatStore.conversation?.id] as const,
+  ([isOpen, conversationId]) => {
+    if (isOpen && conversationId) {
       connectWS()
       scrollToBottom()
     }
+  }
+)
+
+watch(
+  () => [authStore.isAuthenticated, authStore.user?.id ?? null] as const,
+  ([isAuthenticated, userId], [wasAuthenticated, previousUserId]) => {
+    if (isAuthenticated === wasAuthenticated && userId === previousUserId) return
+    disconnect()
+    chatStore.reset()
+    // SPA 内登录/登出不刷新页面,重置后立即探查新身份的既有会话,恢复未读红点
+    void chatStore.restoreConversation()
   }
 )
 

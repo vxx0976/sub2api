@@ -25,10 +25,15 @@ func RegisterChatRoutes(
 	}
 }
 
-// optionalJWTAuth applies JWT auth only when an Authorization header is present.
-// If valid, the user subject is set in context. If absent, the request proceeds anonymously.
+// optionalJWTAuth applies JWT auth when an Authorization header or browser
+// WebSocket jwt.* subprotocol token is present. Otherwise the request proceeds anonymously.
 func optionalJWTAuth(jwtAuth middleware.JWTAuthMiddleware) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if c.GetHeader("Authorization") == "" && middleware.IsWebSocketUpgradeRequest(c) {
+			if token := middleware.ExtractJWTFromWebSocketSubprotocol(c); token != "" {
+				c.Request.Header.Set("Authorization", "Bearer "+token)
+			}
+		}
 		if c.GetHeader("Authorization") != "" {
 			gin.HandlerFunc(jwtAuth)(c)
 			return

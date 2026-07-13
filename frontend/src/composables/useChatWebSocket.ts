@@ -4,7 +4,7 @@ export interface ChatWSOptions {
   onMessage: (data: any) => void
   onOpen?: () => void
   onClose?: () => void
-  protocols?: string[]
+  protocols?: string[] | (() => string[] | undefined)
 }
 
 export function useChatWebSocket() {
@@ -31,7 +31,11 @@ export function useChatWebSocket() {
       ws.close()
     }
 
-    ws = new WebSocket(currentUrl, currentOptions?.protocols)
+    const configuredProtocols = currentOptions?.protocols
+    const protocols = typeof configuredProtocols === 'function'
+      ? configuredProtocols()
+      : configuredProtocols
+    ws = new WebSocket(currentUrl, protocols)
 
     ws.onopen = () => {
       isConnected.value = true

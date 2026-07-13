@@ -34,8 +34,8 @@ func adminAuth(
 		// For admin WebSocket endpoints (e.g. Ops realtime), allow passing the JWT via
 		// Sec-WebSocket-Protocol (subprotocol list) using a prefixed token item:
 		//   Sec-WebSocket-Protocol: sub2api-admin, jwt.<token>
-		if isWebSocketUpgradeRequest(c) {
-			if token := extractJWTFromWebSocketSubprotocol(c); token != "" {
+		if IsWebSocketUpgradeRequest(c) {
+			if token := ExtractJWTFromWebSocketSubprotocol(c); token != "" {
 				if !validateJWTForAdmin(c, token, authService, userService) {
 					return
 				}
@@ -77,7 +77,8 @@ func adminAuth(
 	}
 }
 
-func isWebSocketUpgradeRequest(c *gin.Context) bool {
+// IsWebSocketUpgradeRequest reports whether the request is a WebSocket handshake.
+func IsWebSocketUpgradeRequest(c *gin.Context) bool {
 	if c == nil || c.Request == nil {
 		return false
 	}
@@ -92,7 +93,10 @@ func isWebSocketUpgradeRequest(c *gin.Context) bool {
 	return strings.Contains(connection, "upgrade")
 }
 
-func extractJWTFromWebSocketSubprotocol(c *gin.Context) string {
+// ExtractJWTFromWebSocketSubprotocol pulls the JWT carried in the reserved
+// "jwt.<token>" item of the Sec-WebSocket-Protocol list (browser WebSocket
+// clients cannot set an Authorization header).
+func ExtractJWTFromWebSocketSubprotocol(c *gin.Context) string {
 	if c == nil {
 		return ""
 	}

@@ -230,10 +230,12 @@ var visitorUpgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
 		return true
 	},
+	Subprotocols: []string{"sub2api-chat"},
 }
 
 // VisitorWebSocket handles WebSocket connections for visitors.
 // GET /api/v1/chat/ws?conversation_id=X&guest_token=Y
+// Logged-in browser clients carry their JWT in the jwt.* WebSocket subprotocol.
 func (h *ChatHandler) VisitorWebSocket(c *gin.Context) {
 	convIDStr := c.Query("conversation_id")
 	convID, err := strconv.ParseInt(convIDStr, 10, 64)
