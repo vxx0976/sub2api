@@ -1174,7 +1174,8 @@ export default {
     providers: {
       openai: 'OpenAI',
       anthropic: 'Anthropic',
-      gemini: 'Gemini'
+      gemini: 'Gemini',
+      grok: 'Grok'
     },
     extraModelsHeader: 'Доп. модели',
     extraModelsEmpty: 'Нет доп. моделей',
