@@ -69,6 +69,7 @@ func SetupRouter(
 		}
 		return nil
 	}))
+	r.Use(middleware2.ServerTiming(cfg.Server.EnableServerTiming))
 
 	// Domain detection middleware — must run before frontend server
 	// so reseller branding can be injected into the HTML
