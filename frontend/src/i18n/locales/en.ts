@@ -1799,6 +1799,7 @@ export default {
       rangeTotal: 'Range Total',
       srcAlipay: 'Alipay',
       srcWxpay: 'WeChat Pay',
+      srcUsdt: 'USDT',
       srcRedeem: 'Redeem Code',
       srcAdminManual: 'Admin Manual',
       last7Days: 'Last 7 Days',

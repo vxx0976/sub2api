@@ -47,6 +47,7 @@ type DashboardService struct {
 	userRepo       UserRepository
 	rechargeRepo   RechargeOrderRepository
 	orderRepo      OrderRepository
+	usdtRepo       UsdtOrderRepository
 	redeemRepo     RedeemCodeRepository
 	channelRepo    ChannelRepository
 	cache          DashboardStatsCache
@@ -60,7 +61,7 @@ type DashboardService struct {
 	aggUsageDays   int
 }
 
-func NewDashboardService(usageRepo UsageLogRepository, aggRepo DashboardAggregationRepository, userRepo UserRepository, rechargeRepo RechargeOrderRepository, orderRepo OrderRepository, redeemRepo RedeemCodeRepository, channelRepo ChannelRepository, cache DashboardStatsCache, cfg *config.Config) *DashboardService {
+func NewDashboardService(usageRepo UsageLogRepository, aggRepo DashboardAggregationRepository, userRepo UserRepository, rechargeRepo RechargeOrderRepository, orderRepo OrderRepository, usdtRepo UsdtOrderRepository, redeemRepo RedeemCodeRepository, channelRepo ChannelRepository, cache DashboardStatsCache, cfg *config.Config) *DashboardService {
 	freshTTL := defaultDashboardStatsFreshTTL
 	cacheTTL := defaultDashboardStatsCacheTTL
 	refreshTimeout := defaultDashboardStatsRefreshTimeout
@@ -101,6 +102,7 @@ func NewDashboardService(usageRepo UsageLogRepository, aggRepo DashboardAggregat
 		userRepo:       userRepo,
 		rechargeRepo:   rechargeRepo,
 		orderRepo:      orderRepo,
+		usdtRepo:       usdtRepo,
 		redeemRepo:     redeemRepo,
 		channelRepo:    channelRepo,
 		cache:          cache,
@@ -209,8 +211,8 @@ func (s *DashboardService) GetFinanceTrend(ctx context.Context, startTime, endTi
 		}
 	}
 
-	// 充值合并：把 4 类来源按天累加到 rechargeByDay，便于趋势线绘制。
-	// 4 类来源对应 RechargeBreakdown 的 4 个 key。
+	// 充值合并：把 5 类来源按天累加到 rechargeByDay，便于趋势线绘制。
+	// 5 类来源对应 RechargeBreakdown 的 5 个 key（alipay/wxpay/usdt/redeem_code/admin_manual）。
 	rechargeByDay := map[string]float64{}
 
 	// (a) 微信通道：recharge_orders 表 status='paid' 的 credit_amount。
@@ -234,6 +236,20 @@ func (s *DashboardService) GetFinanceTrend(ctx context.Context, startTime, endTi
 		}
 	}
 	for d, v := range alipayByDay {
+		rechargeByDay[d] += v
+	}
+
+	// (b2) USDT 通道：usdt_orders 表 status='paid' 的 credit_amount（credit_amount 即 CNY 等值余额，1:1）。
+	// USDT 入账只写 usdt_orders + admin_balance 影子行，而影子行被 admin_manual 汇总显式排除，
+	// 故必须在此单独并入，否则仪表盘财务口径整体漏计 USDT。
+	usdtByDay := map[string]float64{}
+	if s.usdtRepo != nil {
+		usdtByDay, err = s.usdtRepo.SumPaidCreditByDay(ctx, startTime, endTime, tzName)
+		if err != nil {
+			return nil, fmt.Errorf("sum usdt_orders by day: %w", err)
+		}
+	}
+	for d, v := range usdtByDay {
 		rechargeByDay[d] += v
 	}
 
@@ -273,6 +289,7 @@ func (s *DashboardService) GetFinanceTrend(ctx context.Context, startTime, endTi
 	rechargeBreakdown := map[string]float64{
 		"alipay":       sumMap(alipayByDay),
 		"wxpay":        sumMap(wxpayByDay),
+		"usdt":         sumMap(usdtByDay),
 		"redeem_code":  sumMap(redeemBalanceByDay),
 		"admin_manual": sumMap(adminManualByDay),
 	}
@@ -322,7 +339,7 @@ func (s *DashboardService) GetFinanceTrend(ctx context.Context, startTime, endTi
 	}
 
 	// 今日充值 / 毛利：独立于顶部 [startTime, endTime) 过滤范围，
-	// 按用户时区取今日 [00:00, 次日 00:00) 重新聚合 4 类来源 + usage account_cost。
+	// 按用户时区取今日 [00:00, 次日 00:00) 重新聚合 5 类来源 + usage account_cost。
 	loc, err := time.LoadLocation(tzName)
 	if err != nil || loc == nil {
 		loc = time.UTC
@@ -351,6 +368,13 @@ func (s *DashboardService) GetFinanceTrend(ctx context.Context, startTime, endTi
 		m, err := s.orderRepo.SumPaidCreditByDay(ctx, todayStart, todayEnd, tzName)
 		if err != nil {
 			return nil, fmt.Errorf("sum today orders: %w", err)
+		}
+		todayRecharge += sumMapValues(m)
+	}
+	if s.usdtRepo != nil {
+		m, err := s.usdtRepo.SumPaidCreditByDay(ctx, todayStart, todayEnd, tzName)
+		if err != nil {
+			return nil, fmt.Errorf("sum today usdt_orders: %w", err)
 		}
 		todayRecharge += sumMapValues(m)
 	}

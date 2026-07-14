@@ -72,12 +72,13 @@ const props = defineProps<{
   loading?: boolean
 }>()
 
-// 固定四个 slice 的顺序与配色（绿色调=金钱，蓝色调=积分/调整）
-const colors = ['#3b82f6', '#10b981', '#f59e0b', '#a855f7']
+// 固定 slice 的顺序与配色（支付宝蓝 / 微信绿 / USDT 青 / 兑换码橙 / 手工紫）
+const colors = ['#3b82f6', '#10b981', '#14b8a6', '#f59e0b', '#a855f7']
 
 const slices = computed(() => [
   { key: 'alipay', value: props.breakdown?.alipay ?? 0, label: t('admin.dashboard.srcAlipay') },
   { key: 'wxpay', value: props.breakdown?.wxpay ?? 0, label: t('admin.dashboard.srcWxpay') },
+  { key: 'usdt', value: props.breakdown?.usdt ?? 0, label: t('admin.dashboard.srcUsdt') },
   { key: 'redeem_code', value: props.breakdown?.redeem_code ?? 0, label: t('admin.dashboard.srcRedeem') },
   { key: 'admin_manual', value: props.breakdown?.admin_manual ?? 0, label: t('admin.dashboard.srcAdminManual') }
 ])

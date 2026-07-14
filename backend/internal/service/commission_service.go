@@ -109,6 +109,7 @@ type CommissionService struct {
 	domainRepo        ResellerDomainRepository
 	rechargeOrderRepo RechargeOrderRepository
 	orderRepo         OrderRepository
+	usdtRepo          UsdtOrderRepository
 }
 
 func NewCommissionService(
@@ -119,6 +120,7 @@ func NewCommissionService(
 	domainRepo ResellerDomainRepository,
 	rechargeOrderRepo RechargeOrderRepository,
 	orderRepo OrderRepository,
+	usdtRepo UsdtOrderRepository,
 ) *CommissionService {
 	return &CommissionService{
 		withdrawalRepo:    withdrawalRepo,
@@ -128,6 +130,7 @@ func NewCommissionService(
 		domainRepo:        domainRepo,
 		rechargeOrderRepo: rechargeOrderRepo,
 		orderRepo:         orderRepo,
+		usdtRepo:          usdtRepo,
 	}
 }
 
@@ -206,6 +209,14 @@ func (s *CommissionService) GetSummary(ctx context.Context, resellerID int64) (*
 			return nil, err
 		}
 		totalRecharge += alimpayTotal
+	}
+	// USDT 通道：usdt_orders status='paid' 的 credit_amount（credit 即 CNY 等值余额，计佣一致口径）。
+	if s.usdtRepo != nil && len(userIDs) > 0 {
+		usdtTotal, err := s.usdtRepo.SumPaidCreditByUserIDs(ctx, userIDs)
+		if err != nil {
+			return nil, err
+		}
+		totalRecharge += usdtTotal
 	}
 
 	// 分成 = 充值总额 × 分成比例
@@ -426,6 +437,35 @@ func (s *CommissionService) ListRechargeDetail(ctx context.Context, resellerID i
 				}
 			}
 			if orders, _, err := s.orderRepo.ListPaidByUserIDs(ctx, userIDs, 10000, 0); err == nil {
+				for _, o := range orders {
+					rec := &RechargeDetailRecord{
+						UserID:       o.UserID,
+						UserEmail:    emailMap[o.UserID],
+						OrderNo:      o.OrderNo,
+						CreditAmount: o.CreditAmount,
+					}
+					if o.PaidAt != nil {
+						rec.PaidAt = *o.PaidAt
+					} else {
+						rec.PaidAt = o.CreatedAt
+					}
+					allRecords = append(allRecords, rec)
+				}
+			}
+		}
+	}
+
+	// USDT recharges from usdt_orders table
+	if s.usdtRepo != nil {
+		userIDs, err := s.getSubUserIDs(ctx, resellerID)
+		if err == nil && len(userIDs) > 0 {
+			emailMap := make(map[int64]string)
+			for _, uid := range userIDs {
+				if u, err := s.userRepo.GetByID(ctx, uid); err == nil && u != nil {
+					emailMap[uid] = u.Email
+				}
+			}
+			if orders, _, err := s.usdtRepo.ListPaidByUserIDs(ctx, userIDs, 10000, 0); err == nil {
 				for _, o := range orders {
 					rec := &RechargeDetailRecord{
 						UserID:       o.UserID,

@@ -1808,6 +1808,7 @@ export default {
       rangeTotal: '区间合计',
       srcAlipay: '支付宝',
       srcWxpay: '微信支付',
+      srcUsdt: 'USDT',
       srcRedeem: '兑换码',
       srcAdminManual: '管理员手工',
       viewModelDistribution: '模型分布',

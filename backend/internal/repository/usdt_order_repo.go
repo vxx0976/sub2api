@@ -307,6 +307,91 @@ func (r *usdtOrderRepo) ListMatchable(ctx context.Context, graceCutoff time.Time
 	return out, nil
 }
 
+// SumPaidCreditByUserIDs 汇总指定用户集合 status='paid' 的 credit_amount（供经销商佣金基数）。
+func (r *usdtOrderRepo) SumPaidCreditByUserIDs(ctx context.Context, userIDs []int64) (float64, error) {
+	if len(userIDs) == 0 {
+		return 0, nil
+	}
+	var result []struct {
+		Sum float64 `json:"sum"`
+	}
+	err := r.client.UsdtOrder.Query().
+		Where(usdtorder.StatusEQ("paid"), usdtorder.UserIDIn(userIDs...)).
+		Aggregate(ent.As(ent.Sum(usdtorder.FieldCreditAmount), "sum")).
+		Scan(ctx, &result)
+	if err != nil {
+		return 0, err
+	}
+	if len(result) == 0 {
+		return 0, nil
+	}
+	return result[0].Sum, nil
+}
+
+// ListPaidByUserIDs 分页列出指定用户集合 status='paid' 的订单（供佣金充值明细）。
+func (r *usdtOrderRepo) ListPaidByUserIDs(ctx context.Context, userIDs []int64, limit, offset int) ([]*service.UsdtOrder, int, error) {
+	if len(userIDs) == 0 {
+		return nil, 0, nil
+	}
+	query := r.client.UsdtOrder.Query().
+		Where(usdtorder.StatusEQ("paid"), usdtorder.UserIDIn(userIDs...)).
+		Order(ent.Desc(usdtorder.FieldCreatedAt))
+	total, err := query.Clone().Count(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	rows, err := query.Limit(limit).Offset(offset).All(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	out := make([]*service.UsdtOrder, len(rows))
+	for i, row := range rows {
+		out[i] = toServiceUsdtOrder(row)
+	}
+	return out, total, nil
+}
+
+// SumPaidCreditByDay 汇总指定时区下每日 status='paid' 的 credit_amount（供仪表盘财务趋势）。
+// 与 orders/recharge_orders 的同名方法口径一致：按 paid_at 分桶，缺 paid_at 的不计。
+func (r *usdtOrderRepo) SumPaidCreditByDay(ctx context.Context, startTime, endTime time.Time, tzName string) (map[string]float64, error) {
+	if r.sql == nil {
+		return map[string]float64{}, nil
+	}
+	if tzName == "" {
+		tzName = "UTC"
+	}
+	query := `
+		SELECT
+			TO_CHAR(paid_at AT TIME ZONE $3, 'YYYY-MM-DD') AS day,
+			COALESCE(SUM(credit_amount), 0) AS total
+		FROM usdt_orders
+		WHERE status = 'paid'
+		  AND paid_at IS NOT NULL
+		  AND paid_at >= $1
+		  AND paid_at < $2
+		GROUP BY 1
+		ORDER BY 1
+	`
+	rows, err := r.sql.QueryContext(ctx, query, startTime, endTime, tzName)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+	result := make(map[string]float64)
+	for rows.Next() {
+		var day string
+		var total float64
+		if err := rows.Scan(&day, &total); err != nil {
+			return nil, err
+		}
+		result[day] = total
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
 func toServiceUsdtOrder(row *ent.UsdtOrder) *service.UsdtOrder {
 	o := &service.UsdtOrder{
 		ID:               row.ID,

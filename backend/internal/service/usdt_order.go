@@ -67,6 +67,12 @@ type UsdtOrderRepository interface {
 	ListPending(ctx context.Context) ([]*UsdtOrder, error)
 	// ListMatchable 返回 pending + 宽限期内刚过期的订单，供 watcher 匹配（防过期后到账孤儿单）。
 	ListMatchable(ctx context.Context, graceCutoff time.Time) ([]*UsdtOrder, error)
+	// SumPaidCreditByUserIDs 汇总指定用户集合 status='paid' 的 credit_amount（经销商佣金基数）。
+	SumPaidCreditByUserIDs(ctx context.Context, userIDs []int64) (float64, error)
+	// ListPaidByUserIDs 分页列出指定用户集合 status='paid' 的订单（佣金充值明细）。
+	ListPaidByUserIDs(ctx context.Context, userIDs []int64, limit, offset int) ([]*UsdtOrder, int, error)
+	// SumPaidCreditByDay 汇总指定时区下每日 status='paid' 的 credit_amount（仪表盘财务趋势）。
+	SumPaidCreditByDay(ctx context.Context, startTime, endTime time.Time, tzName string) (map[string]float64, error)
 }
 
 // SettingKeyUsdtEnabled USDT 运行时开关 key（与 payment.SettingKeyUsdtEnabled 同值，

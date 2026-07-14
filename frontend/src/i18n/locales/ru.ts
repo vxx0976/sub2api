@@ -1809,6 +1809,7 @@ export default {
       rangeTotal: 'Итог за период',
       srcAlipay: 'Alipay',
       srcWxpay: 'WeChat Pay',
+      srcUsdt: 'USDT',
       srcRedeem: 'Код активации',
       srcAdminManual: 'Вручную администратором',
       viewModelDistribution: 'Распределение по моделям',

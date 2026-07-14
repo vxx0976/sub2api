@@ -175,8 +175,9 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	dashboardAggregationRepository := repository.NewDashboardAggregationRepository(db)
 	rechargeOrderRepository := repository.NewRechargeOrderRepo(client, db)
 	orderRepository := repository.NewOrderRepo(client, db)
+	usdtOrderRepository := repository.NewUsdtOrderRepo(client, db)
 	dashboardStatsCache := repository.NewDashboardCache(redisClient, configConfig)
-	dashboardService := service.NewDashboardService(usageLogRepository, dashboardAggregationRepository, userRepository, rechargeOrderRepository, orderRepository, redeemCodeRepository, channelRepository, dashboardStatsCache, configConfig)
+	dashboardService := service.NewDashboardService(usageLogRepository, dashboardAggregationRepository, userRepository, rechargeOrderRepository, orderRepository, usdtOrderRepository, redeemCodeRepository, channelRepository, dashboardStatsCache, configConfig)
 	leaderLockCache := repository.NewLeaderLockCache(redisClient)
 	dashboardAggregationService := service.ProvideDashboardAggregationService(dashboardAggregationRepository, timingWheelService, leaderLockCache, db, configConfig)
 	dashboardHandler := admin.NewDashboardHandler(dashboardService, dashboardAggregationService)
@@ -252,7 +253,7 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	scheduledTestService := service.ProvideScheduledTestService(scheduledTestPlanRepository, scheduledTestResultRepository)
 	scheduledTestHandler := admin.NewScheduledTestHandler(scheduledTestService)
 	resellerWithdrawalRepo := repository.NewResellerWithdrawalRepo(client)
-	commissionService := service.NewCommissionService(resellerWithdrawalRepo, usageLogRepository, userRepository, resellerSettingRepository, resellerDomainRepository, rechargeOrderRepository, orderRepository)
+	commissionService := service.NewCommissionService(resellerWithdrawalRepo, usageLogRepository, userRepository, resellerSettingRepository, resellerDomainRepository, rechargeOrderRepository, orderRepository, usdtOrderRepository)
 	merchantHandler := admin.NewMerchantHandler(commissionService, adminService)
 	adminWithdrawalHandler := admin.NewAdminWithdrawalHandler(commissionService)
 	contentModerationRepository := repository.NewContentModerationRepository(db)
@@ -305,7 +306,6 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	}
 	orderService := service.NewOrderService(orderRepository, settingRepository, adminService, settingService, alipayPayment, leaderLockCache, db)
 	orderHandler := handler.NewOrderHandler(orderService, adminService)
-	usdtOrderRepository := repository.NewUsdtOrderRepo(client, db)
 	usdtPayment, err := payment2.ProvideUsdtPayment(configConfig, settingGetter)
 	if err != nil {
 		return nil, err
