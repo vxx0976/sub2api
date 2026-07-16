@@ -941,6 +941,8 @@ const adminNavItems = computed((): NavItem[] => {
         { path: '/admin/orders/plans', label: t('nav.paymentPlans'), icon: CreditCardIcon },
       ],
     },
+    // 注：/admin/usage 在 fork 中已上移至 promo-codes 之后，此处不再重复
+    { path: '/admin/audit-logs', label: t('nav.auditLogs'), icon: ShieldIcon, hideInSimpleMode: true },
   ]
 
   const visible = applyFeatureFlags(baseItems)

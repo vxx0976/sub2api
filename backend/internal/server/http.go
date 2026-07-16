@@ -36,6 +36,8 @@ func ProvideRouter(
 	apiKeyAuth middleware2.APIKeyAuthMiddleware,
 	resellerAuth middleware2.ResellerAuthMiddleware,
 	resellerServiceTokenAuth middleware2.ResellerServiceTokenAuthMiddleware,
+	auditLog middleware2.AuditLogMiddleware,
+	stepUpAuth middleware2.StepUpAuthMiddleware,
 	apiKeyService *service.APIKeyService,
 	subscriptionService *service.SubscriptionService,
 	opsService *service.OpsService,
@@ -102,7 +104,7 @@ func ProvideRouter(
 		service.SetWebSearchManager(websearch.NewManager(configs, redisClient))
 	})
 
-	return SetupRouter(r, handlers, jwtAuth, adminAuth, apiKeyAuth, resellerAuth, resellerServiceTokenAuth, apiKeyService, subscriptionService, opsService, settingService, domainRepo, settingRepo, cfg, redisClient, db, groupService, groupStatusCache)
+	return SetupRouter(r, handlers, jwtAuth, adminAuth, apiKeyAuth, resellerAuth, resellerServiceTokenAuth, auditLog, stepUpAuth, apiKeyService, subscriptionService, opsService, settingService, domainRepo, settingRepo, cfg, redisClient, db, groupService, groupStatusCache)
 }
 
 // ProvideHTTPServer 提供 HTTP 服务器

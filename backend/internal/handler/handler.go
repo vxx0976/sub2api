@@ -45,6 +45,7 @@ type AdminHandlers struct {
 	Translation            *admin.TranslationHandler
 	Chat                   *admin.ChatHandler
 	Compliance             *admin.ComplianceHandler
+	AuditLog               *admin.AuditLogHandler
 }
 
 // ResellerHandlers contains all reseller-related HTTP handlers
@@ -87,6 +88,7 @@ type Handlers struct {
 	PaymentWebhook   *PaymentWebhookHandler
 	AvailableChannel *AvailableChannelHandler
 	Chat             *ChatHandler
+	AsyncImage       *AsyncImageHandler
 	BatchImage       *BatchImageHandler
 }
 

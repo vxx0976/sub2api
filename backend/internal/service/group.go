@@ -27,6 +27,9 @@ type Group struct {
 	PeakRateMultiplier float64 `json:"peak_rate_multiplier"`
 	IsExclusive        bool    `json:"is_exclusive"`
 	Status             string  `json:"status"`
+	// DuplicateOperationID is internal persistence metadata used only to recover
+	// an already committed one-click copy. It must never be mapped to API DTOs.
+	DuplicateOperationID string `json:"-"`
 
 	// 多语言名称/描述（可选，前端根据当前语言自动选择）
 	NameI18n        map[string]string `json:"name_i18n,omitempty"`
