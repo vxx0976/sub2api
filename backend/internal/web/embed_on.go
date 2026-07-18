@@ -424,8 +424,9 @@ func (s *FrontendServer) injectSettings(settingsJSON []byte, resellerHost string
 		result = bytes.ReplaceAll(result, []byte(SEOImagePlaceholder), []byte(seoImage))
 	}
 
-	// Replace <title> with custom site name so the browser tab shows it immediately
+	// Apply custom branding before the browser paints the static defaults.
 	result = injectSiteTitle(result, settingsJSON)
+	result = injectSiteFavicon(result, settingsJSON)
 
 	// 商户域名：index.html 构建产物里写死了主站的 canonical/hreflang/og/twitter/JSON-LD。
 	// 链接预览与搜索爬虫大多不执行 JS，运行时 applySeoMeta 救不了原始 HTML，
@@ -535,6 +536,57 @@ func replaceTitleTag(htmlBytes []byte, title string) []byte {
 	buf.WriteString(htmlpkg.EscapeString(title))
 	buf.Write(htmlBytes[end:])
 	return buf.Bytes()
+}
+
+// injectSiteFavicon replaces the static favicon with a configured, browser-safe image URL.
+func injectSiteFavicon(html, settingsJSON []byte) []byte {
+	var cfg struct {
+		SiteLogo string `json:"site_logo"`
+	}
+	if err := json.Unmarshal(settingsJSON, &cfg); err != nil {
+		return html
+	}
+
+	logoURL := safeImageURL(cfg.SiteLogo)
+	if logoURL == "" {
+		return html
+	}
+
+	linkStart := bytes.Index(html, []byte(`<link rel="icon"`))
+	if linkStart == -1 {
+		return html
+	}
+	linkEndOffset := bytes.IndexByte(html[linkStart:], '>')
+	if linkEndOffset == -1 {
+		return html
+	}
+	linkEnd := linkStart + linkEndOffset + 1
+	replacement := []byte(`<link rel="icon" href="` + htmlpkg.EscapeString(logoURL) + `" />`)
+
+	var buf bytes.Buffer
+	buf.Write(html[:linkStart])
+	buf.Write(replacement)
+	buf.Write(html[linkEnd:])
+	return buf.Bytes()
+}
+
+func safeImageURL(value string) string {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return ""
+	}
+	if strings.HasPrefix(trimmed, "/") && !strings.HasPrefix(trimmed, "//") {
+		return trimmed
+	}
+	if strings.HasPrefix(strings.ToLower(trimmed), "data:image/") {
+		return trimmed
+	}
+
+	parsed, err := url.Parse(trimmed)
+	if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.Host == "" {
+		return ""
+	}
+	return trimmed
 }
 
 // injectSiteTitle replaces the static <title> in HTML with the configured site name.

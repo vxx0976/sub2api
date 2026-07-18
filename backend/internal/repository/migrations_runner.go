@@ -157,9 +157,11 @@ func applyMigrationsFS(ctx context.Context, db *sql.DB, fsys fs.FS) error {
 	defer func() {
 		// 无论迁移是否成功，都要释放锁并归还连接（仅在真正持锁后才解锁，
 		// 避免加锁失败时在未持锁连接上解锁产生告警噪音）。
-		// 使用 context.Background() 确保即使原 ctx 已取消也能释放锁。
+		// 独立超时确保原 ctx 取消后仍会尝试释放，但数据库链路异常不会无限阻塞进程退出。
 		if locked {
-			if err := pgAdvisoryUnlock(context.Background(), lockConn); err != nil {
+			unlockCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			if err := pgAdvisoryUnlock(unlockCtx, lockConn); err != nil {
 				log.Printf("[migrations] release advisory lock failed: %v", err)
 			}
 		}
@@ -172,12 +174,12 @@ func applyMigrationsFS(ctx context.Context, db *sql.DB, fsys fs.FS) error {
 
 	// 创建迁移记录表（如果不存在）。
 	// 该表记录所有已应用的迁移及其校验和。
-	if _, err := db.ExecContext(ctx, schemaMigrationsTableDDL); err != nil {
+	if _, err := lockConn.ExecContext(ctx, schemaMigrationsTableDDL); err != nil {
 		return fmt.Errorf("create schema_migrations: %w", err)
 	}
 
 	// 自动对齐 Atlas 基线（如果检测到 legacy schema_migrations 且缺失 atlas_schema_revisions）。
-	if err := ensureAtlasBaselineAligned(ctx, db, fsys); err != nil {
+	if err := ensureAtlasBaselineAligned(ctx, lockConn, fsys); err != nil {
 		return err
 	}
 
@@ -208,7 +210,7 @@ func applyMigrationsFS(ctx context.Context, db *sql.DB, fsys fs.FS) error {
 
 		// 检查该迁移是否已经应用
 		var existing string
-		rowErr := db.QueryRowContext(ctx, "SELECT checksum FROM schema_migrations WHERE filename = $1", name).Scan(&existing)
+		rowErr := lockConn.QueryRowContext(ctx, "SELECT checksum FROM schema_migrations WHERE filename = $1", name).Scan(&existing)
 		if rowErr == nil {
 			// 迁移已应用，验证校验和是否匹配
 			if existing != checksum {
@@ -240,7 +242,7 @@ func applyMigrationsFS(ctx context.Context, db *sql.DB, fsys fs.FS) error {
 		}
 
 		if nonTx {
-			if err := prepareNonTransactionalMigration(ctx, db, name); err != nil {
+			if err := prepareNonTransactionalMigration(ctx, lockConn, name); err != nil {
 				return fmt.Errorf("prepare migration %s: %w", name, err)
 			}
 
@@ -255,18 +257,18 @@ func applyMigrationsFS(ctx context.Context, db *sql.DB, fsys fs.FS) error {
 				if stripSQLLineComment(trimmed) == "" {
 					continue
 				}
-				if _, err := db.ExecContext(ctx, trimmed); err != nil {
+				if _, err := lockConn.ExecContext(ctx, trimmed); err != nil {
 					return fmt.Errorf("apply migration %s (non-tx statement %d): %w", name, i+1, err)
 				}
 			}
-			if _, err := db.ExecContext(ctx, "INSERT INTO schema_migrations (filename, checksum) VALUES ($1, $2)", name, checksum); err != nil {
+			if _, err := lockConn.ExecContext(ctx, "INSERT INTO schema_migrations (filename, checksum) VALUES ($1, $2)", name, checksum); err != nil {
 				return fmt.Errorf("record migration %s (non-tx): %w", name, err)
 			}
 			continue
 		}
 
 		// 默认迁移在事务中执行，确保原子性：要么完全成功，要么完全回滚。
-		tx, err := db.BeginTx(ctx, nil)
+		tx, err := lockConn.BeginTx(ctx, nil)
 		if err != nil {
 			return fmt.Errorf("begin migration %s: %w", name, err)
 		}
@@ -301,7 +303,14 @@ func applyMigrationsFS(ctx context.Context, db *sql.DB, fsys fs.FS) error {
 	return nil
 }
 
-func prepareNonTransactionalMigration(ctx context.Context, db *sql.DB, name string) error {
+type migrationConnection interface {
+	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
+	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
+	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
+	BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, error)
+}
+
+func prepareNonTransactionalMigration(ctx context.Context, db migrationConnection, name string) error {
 	switch name {
 	case paymentOrdersOutTradeNoUniqueMigration:
 		return preparePaymentOrdersOutTradeNoUniqueMigration(ctx, db)
@@ -314,7 +323,7 @@ func prepareNonTransactionalMigration(ctx context.Context, db *sql.DB, name stri
 	}
 }
 
-func preparePaymentOrdersOutTradeNoUniqueMigration(ctx context.Context, db *sql.DB) error {
+func preparePaymentOrdersOutTradeNoUniqueMigration(ctx context.Context, db migrationConnection) error {
 	duplicates, err := findDuplicatePaymentOrderOutTradeNos(ctx, db)
 	if err != nil {
 		return fmt.Errorf("precheck duplicate out_trade_no: %w", err)
@@ -330,7 +339,7 @@ func preparePaymentOrdersOutTradeNoUniqueMigration(ctx context.Context, db *sql.
 	return dropInvalidIndexIfPresent(ctx, db, paymentOrdersOutTradeNoUniqueIndex)
 }
 
-func dropInvalidIndexIfPresent(ctx context.Context, db *sql.DB, indexName string) error {
+func dropInvalidIndexIfPresent(ctx context.Context, db migrationConnection, indexName string) error {
 	invalid, err := indexIsInvalid(ctx, db, indexName)
 	if err != nil {
 		return fmt.Errorf("check invalid index %s: %w", indexName, err)
@@ -345,7 +354,7 @@ func dropInvalidIndexIfPresent(ctx context.Context, db *sql.DB, indexName string
 	return nil
 }
 
-func findDuplicatePaymentOrderOutTradeNos(ctx context.Context, db *sql.DB) ([]string, error) {
+func findDuplicatePaymentOrderOutTradeNos(ctx context.Context, db migrationConnection) ([]string, error) {
 	rows, err := db.QueryContext(ctx, `
 		SELECT out_trade_no, COUNT(*) AS duplicate_count
 		FROM payment_orders
@@ -377,7 +386,7 @@ func findDuplicatePaymentOrderOutTradeNos(ctx context.Context, db *sql.DB) ([]st
 	return duplicates, nil
 }
 
-func indexIsInvalid(ctx context.Context, db *sql.DB, indexName string) (bool, error) {
+func indexIsInvalid(ctx context.Context, db migrationConnection, indexName string) (bool, error) {
 	var invalid bool
 	err := db.QueryRowContext(ctx, `
 		SELECT EXISTS (
@@ -393,7 +402,7 @@ func indexIsInvalid(ctx context.Context, db *sql.DB, indexName string) (bool, er
 	return invalid, err
 }
 
-func ensureAtlasBaselineAligned(ctx context.Context, db *sql.DB, fsys fs.FS) error {
+func ensureAtlasBaselineAligned(ctx context.Context, db migrationConnection, fsys fs.FS) error {
 	hasLegacy, err := tableExists(ctx, db, "schema_migrations")
 	if err != nil {
 		return fmt.Errorf("check schema_migrations: %w", err)
@@ -434,7 +443,7 @@ func ensureAtlasBaselineAligned(ctx context.Context, db *sql.DB, fsys fs.FS) err
 	return nil
 }
 
-func tableExists(ctx context.Context, db *sql.DB, tableName string) (bool, error) {
+func tableExists(ctx context.Context, db migrationConnection, tableName string) (bool, error) {
 	var exists bool
 	err := db.QueryRowContext(ctx, `
 		SELECT EXISTS (

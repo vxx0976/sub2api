@@ -1314,6 +1314,7 @@ export interface CreateAccountRequest {
   auto_pause_on_expired?: boolean
   active_start_time?: string
   active_end_time?: string
+  upstream_billing_probe_enabled?: boolean
   confirm_mixed_channel_risk?: boolean
 }
 
