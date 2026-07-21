@@ -39,6 +39,19 @@ func RegisterGatewayRoutes(
 	isOpenAIGatewayPlatform := func(c *gin.Context) bool {
 		return isOpenAICompatPlatform(getGroupPlatform(c))
 	}
+	// count_tokens 路由：所有 OpenAI 兼容平台(openai/deepseek/glm/qwen/moonshot 等)
+	// 走 Anthropic-compat 桥接(count_tokens -> responses input_tokens)；Grok 本地估算；
+	// 其余 Anthropic 兼容平台保留原生路径。
+	countTokensHandler := func(c *gin.Context) {
+		switch {
+		case isOpenAIGatewayPlatform(c):
+			h.OpenAIGateway.CountTokens(c)
+		case getGroupPlatform(c) == service.PlatformGrok:
+			h.OpenAIGateway.GrokCountTokens(c)
+		default:
+			h.Gateway.CountTokens(c)
+		}
+	}
 	// 门必须与 CodexModels handler 一致收窄到 openai 平台：OpenAI 兼容的国产
 	// 平台(deepseek/glm/qwen 等)走宽谓词会被 handler 404，而它们本该拿到模型列表。
 	modelsHandler := func(c *gin.Context) {
@@ -138,27 +151,9 @@ func RegisterGatewayRoutes(
 			}
 			h.Gateway.Messages(c)
 		})
-		// /v1/messages/count_tokens: OpenAI-compat platforms use the Anthropic-compat
-		// bridge (count_tokens -> responses input_tokens); Grok keeps the prior
-		// unsupported (404) response.
-		gateway.POST("/messages/count_tokens", func(c *gin.Context) {
-			if isOpenAIGatewayPlatform(c) {
-				h.OpenAIGateway.CountTokens(c)
-				return
-			}
-			if isOpenAIResponsesCompatibleGatewayPlatform(c) {
-				service.MarkOpsClientBusinessLimited(c, service.OpsClientBusinessLimitedReasonLocalFeatureGate)
-				c.JSON(http.StatusNotFound, gin.H{
-					"type": "error",
-					"error": gin.H{
-						"type":    "not_found_error",
-						"message": "Token counting is not supported for this platform",
-					},
-				})
-				return
-			}
-			h.Gateway.CountTokens(c)
-		})
+		// /v1/messages/count_tokens: OpenAI-compat platforms bridge upstream, Grok
+		// estimates locally, and Anthropic-compatible platforms retain their path.
+		gateway.POST("/messages/count_tokens", countTokensHandler)
 		// Codex CLI / Codex app refresh their model picker from the provider's
 		// /models endpoint with a client_version query and expect the ChatGPT
 		// Codex manifest format; other clients keep the OpenAI-style list.
@@ -256,6 +251,7 @@ func RegisterGatewayRoutes(
 		h.OpenAIGateway.ResponsesWebSocket(c)
 	})
 	r.GET("/models", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), requireGroupAnthropic, modelsHandler)
+	r.POST("/messages/count_tokens", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), requireGroupAnthropic, countTokensHandler)
 	codexDirect := r.Group("/backend-api/codex")
 	codexDirect.Use(bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), requireGroupAnthropic)
 	{

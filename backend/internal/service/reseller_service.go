@@ -482,8 +482,8 @@ func (s *ResellerService) UpdateKey(ctx context.Context, resellerID, keyID int64
 		Status:      input.Status,
 		Quota:       input.Quota,
 		ExpiresAt:   input.ExpiresAt,
-		IPWhitelist: input.IPWhitelist,
-		IPBlacklist: input.IPBlacklist,
+		IPWhitelist: &input.IPWhitelist,
+		IPBlacklist: &input.IPBlacklist,
 	}
 
 	if input.GroupID != nil {

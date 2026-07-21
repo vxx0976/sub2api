@@ -29,17 +29,19 @@
       <!-- Logo/Brand -->
       <div class="mb-8 text-center">
         <!-- Custom Logo or Default Logo -->
-        <div
-          class="mb-4 inline-flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl shadow-lg shadow-primary-500/30"
-        >
-          <img :src="siteLogo || '/logo.svg?v=2'" alt="Logo" class="h-full w-full object-contain" />
-        </div>
-        <h1 class="text-gradient mb-2 text-3xl font-bold">
-          {{ siteName }}
-        </h1>
-        <p class="text-sm text-gray-500 dark:text-dark-400">
-          {{ siteSubtitle }}
-        </p>
+        <template v-if="settingsLoaded">
+          <div
+            class="mb-4 inline-flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl shadow-lg shadow-primary-500/30"
+          >
+            <img :src="siteLogo || '/logo.svg?v=2'" alt="Logo" class="h-full w-full object-contain" />
+          </div>
+          <h1 class="text-gradient mb-2 text-3xl font-bold">
+            {{ siteName }}
+          </h1>
+          <p class="text-sm text-gray-500 dark:text-dark-400">
+            {{ siteSubtitle }}
+          </p>
+        </template>
       </div>
 
       <!-- Card Container -->
@@ -69,6 +71,7 @@ const appStore = useAppStore()
 const siteName = computed(() => appStore.cachedPublicSettings?.site_name || appStore.siteName || '码驿站')
 const siteLogo = computed(() => appStore.cachedPublicSettings?.site_logo || appStore.siteLogo || '')
 const siteSubtitle = computed(() => appStore.cachedPublicSettings?.site_subtitle || 'Subscription to API Conversion Platform')
+const settingsLoaded = computed(() => appStore.publicSettingsLoaded)
 
 const currentYear = computed(() => new Date().getFullYear())
 </script>

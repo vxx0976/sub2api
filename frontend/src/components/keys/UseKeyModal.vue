@@ -816,10 +816,7 @@ windows_wsl_setup_acknowledged = true
 name = "OpenAI"
 base_url = "${baseUrl}"
 wire_api = "responses"
-${generateCodexProviderAuthConfig()}
-
-[features]
-goals = true`
+${generateCodexProviderAuthConfig()}`
 
   // auth.json content
   const authContent = `{
@@ -929,8 +926,7 @@ supports_websockets = true
 ${generateCodexProviderAuthConfig()}
 
 [features]
-responses_websockets_v2 = true
-goals = true`
+responses_websockets_v2 = true`
 
   // auth.json content
   const authContent = `{
