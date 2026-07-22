@@ -44,6 +44,13 @@ type chainRuntime struct {
 	BaseURL string
 }
 
+// SettingStore 在 SettingGetter(只读)基础上增加写能力，
+// 供 USDT 链上扫描游标(usdt_<chain>_scan_block)持久化到 settings 表。
+type SettingStore interface {
+	SettingGetter
+	Set(ctx context.Context, key, value string) error
+}
+
 // UsdtPayment 是多链 USDT 自建收款的「配置持有者」。
 // 共享配置优先级：settings 表（动态）> config.yaml（fallback）；
 // per-chain 配置（地址/api key/启用）只来自 settings（在后台配置）。
@@ -51,7 +58,7 @@ type UsdtPayment struct {
 	mu          sync.Mutex
 	cfg         config.UsdtPaymentConfig // 共享字段
 	fallbackCfg config.UsdtPaymentConfig
-	settings    SettingGetter
+	settings    SettingStore
 	chains      map[string]*chainRuntime // chain -> 运行时配置
 
 	adapters map[string]ChainAdapter
@@ -64,7 +71,7 @@ type UsdtPayment struct {
 }
 
 // NewUsdtPayment 创建 UsdtPayment。
-func NewUsdtPayment(fallback config.UsdtPaymentConfig, settings SettingGetter) (*UsdtPayment, error) {
+func NewUsdtPayment(fallback config.UsdtPaymentConfig, settings SettingStore) (*UsdtPayment, error) {
 	up := &UsdtPayment{
 		cfg:         fallback,
 		fallbackCfg: fallback,
@@ -431,7 +438,17 @@ func (u *UsdtPayment) GeneratePaymentInfo(chain string, usdtAmount, rate float64
 	}
 }
 
-// QueryIncoming 拉取某条链收款地址在 minTimestampMs 之后收到的 USDT 转账。
+// cursoredAdapter 是支持「持久化区块游标」扫描的链适配器（目前仅 BSC/EVM）。
+// 相比时间窗口的 QueryIncoming，游标扫描从上次已扫块续扫，不受出块提速/重启影响、绝不漏块。
+type cursoredAdapter interface {
+	// QueryIncomingCursor 从 fromCursor+1 扫到「已确认链头」，返回转账 + 新游标(已成功扫完的最高块)。
+	// confirmDur 用于换算确认滞后；matchWindow(订单可匹配最长时长)用于给冷启动/追赶回补定下限，
+	// 确保绝不把仍可入账的历史块跳过/钳掉。
+	QueryIncomingCursor(ctx context.Context, address, apiKey, baseURL string, fromCursor uint64, confirmDur, matchWindow time.Duration) (transfers []IncomingTransfer, newCursor uint64, err error)
+}
+
+// QueryIncoming 拉取某条链收款地址收到的 USDT 转账。
+// 支持游标的链(BSC)走持久化区块游标路径（不漏块）；其余链走时间窗口路径。
 func (u *UsdtPayment) QueryIncoming(ctx context.Context, chain string, minTimestampMs int64) ([]IncomingTransfer, error) {
 	adapter, ok := u.adapters[chain]
 	if !ok {
@@ -441,5 +458,42 @@ func (u *UsdtPayment) QueryIncoming(ctx context.Context, chain string, minTimest
 	if cr.Address == "" {
 		return nil, fmt.Errorf("chain %s receiving address not configured", chain)
 	}
+	if ca, ok := adapter.(cursoredAdapter); ok && u.settings != nil {
+		return u.queryIncomingCursored(ctx, chain, ca, cr)
+	}
 	return adapter.QueryIncoming(ctx, cr.Address, cr.APIKey, cr.BaseURL, minTimestampMs)
+}
+
+// queryIncomingCursored 用持久化区块游标扫描一条支持游标的链，并把新游标写回 settings。
+// 出错时不推进游标（下轮整体重扫，幂等由 usdt_orders.trade_no 唯一索引兜底），保证绝不漏块。
+func (u *UsdtPayment) queryIncomingCursored(ctx context.Context, chain string, ca cursoredAdapter, cr chainRuntime) ([]IncomingTransfer, error) {
+	key := UsdtChainSettingKey(chain, "scan_block")
+	cursor := u.readScanCursor(ctx, key)
+	// matchWindow = 一笔到账最长仍可被匹配入账的时长(订单超时 + 宽限)，随 OrderTimeout 配置自适应，
+	// 供适配器给冷启动/追赶回补定下限，确保绝不跳过/钳掉仍可入账的历史块。
+	matchWindow := time.Duration(u.OrderTimeoutSeconds())*time.Second + u.GraceWindow()
+	transfers, newCursor, err := ca.QueryIncomingCursor(ctx, cr.Address, cr.APIKey, cr.BaseURL, cursor, u.ConfirmDuration(), matchWindow)
+	if err != nil {
+		return nil, err
+	}
+	if newCursor > cursor {
+		if setErr := u.settings.Set(ctx, key, strconv.FormatUint(newCursor, 10)); setErr != nil {
+			// 游标写失败：本轮结果照常返回入账（幂等安全），下轮从旧游标重扫补回，不丢块。
+			log.Printf("[UsdtPayment] persist scan cursor %s=%d failed: %v", key, newCursor, setErr)
+		}
+	}
+	return transfers, nil
+}
+
+// readScanCursor 读取某链持久化的扫描游标（块高）；缺失/非法一律回 0（触发有界冷启动回补）。
+func (u *UsdtPayment) readScanCursor(ctx context.Context, key string) uint64 {
+	v, err := u.settings.GetValue(ctx, key)
+	if err != nil || v == "" {
+		return 0
+	}
+	n, err := strconv.ParseUint(v, 10, 64)
+	if err != nil {
+		return 0
+	}
+	return n
 }

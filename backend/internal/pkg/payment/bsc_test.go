@@ -69,6 +69,58 @@ func NowMinus(minutes int64) int64 {
 	return time.Now().UnixMilli() - minutes*60*1000
 }
 
+func TestBscScanRange(t *testing.T) {
+	safeHead := uint64(49_999_826)
+	maxSpan := uint64(bscMaxScanPagesPerCycle * bscGetLogsMaxRange) // 单轮页数上限 = 1200 块
+	coldStart := uint64(8000)                                       // 冷启动回补块数
+	maxStale := uint64(48000)                                       // 极旧游标钳制块数
+
+	// 稳态：游标紧跟，from=游标+1、小范围续扫
+	if from, to, ok := bscScanRange(safeHead, safeHead-30, coldStart, maxStale); !ok || from != safeHead-29 || to != safeHead {
+		t.Errorf("steady: from=%d to=%d ok=%v, want %d..%d", from, to, ok, safeHead-29, safeHead)
+	}
+
+	// ★ 真实游标停滞很久(但未超 maxStale)：仍 from=游标+1(绝不跳块，review 找到的坑)，受页数上限分页续扫
+	if from, to, ok := bscScanRange(safeHead, safeHead-5000, coldStart, maxStale); !ok || from != safeHead-4999 || to != from+maxSpan-1 {
+		t.Errorf("stalled-real-cursor: from=%d to=%d, want from=%d span<=%d (不跳块)", from, to, safeHead-4999, maxSpan)
+	}
+
+	// 冷启动(游标0)：从 safeHead-coldStart 起有界回补，受页数上限
+	if from, to, ok := bscScanRange(safeHead, 0, coldStart, maxStale); !ok || from != safeHead-coldStart || to != from+maxSpan-1 {
+		t.Errorf("coldstart: from=%d to=%d, want from=%d", from, to, safeHead-coldStart)
+	}
+
+	// 极旧真实游标(超 maxStale)：有界钳制到 safeHead-maxStale（被钳块早已无单可对）
+	if from, _, ok := bscScanRange(safeHead, safeHead-100000, coldStart, maxStale); !ok || from != safeHead-maxStale {
+		t.Errorf("ancient cursor: from=%d, want floor %d", from, safeHead-maxStale)
+	}
+
+	// 无新确认块 / safeHead=0
+	if _, _, ok := bscScanRange(safeHead, safeHead, coldStart, maxStale); ok {
+		t.Errorf("no-new: want hasWork=false")
+	}
+	if _, _, ok := bscScanRange(0, 0, coldStart, maxStale); ok {
+		t.Errorf("safeHead=0: want hasWork=false")
+	}
+
+	// 不变量：scanTo 绝不越过 safeHead；单轮跨度不超上限；真实游标(未超 maxStale)必须 from=游标+1(不跳块)
+	for _, fc := range []uint64{0, safeHead - 60000, safeHead - 5000, safeHead - 100, safeHead - 1, safeHead} {
+		f, s, ok := bscScanRange(safeHead, fc, coldStart, maxStale)
+		if !ok {
+			continue
+		}
+		if s > safeHead {
+			t.Errorf("fc=%d: scanTo %d > safeHead %d (越过未确认块!)", fc, s, safeHead)
+		}
+		if s-f+1 > maxSpan {
+			t.Errorf("fc=%d: span %d > maxSpan %d", fc, s-f+1, maxSpan)
+		}
+		if fc != 0 && fc+1 >= safeHead-maxStale && f != fc+1 {
+			t.Errorf("fc=%d: from %d != cursor+1 %d (跳块!)", fc, f, fc+1)
+		}
+	}
+}
+
 func TestBscEndpoints(t *testing.T) {
 	eps := bscEndpoints("https://custom.rpc/")
 	if eps[0] != "https://custom.rpc" {

@@ -327,7 +327,8 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	}
 	orderService := service.NewOrderService(orderRepository, settingRepository, adminService, settingService, alipayPayment, leaderLockCache, db)
 	orderHandler := handler.NewOrderHandler(orderService, adminService)
-	usdtPayment, err := payment2.ProvideUsdtPayment(configConfig, settingGetter)
+	settingStore := service.ProvidePaymentSettingStore(settingRepository)
+	usdtPayment, err := payment2.ProvideUsdtPayment(configConfig, settingStore)
 	if err != nil {
 		return nil, err
 	}

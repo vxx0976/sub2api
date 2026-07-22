@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 	"math/big"
 	"strings"
 	"time"
@@ -35,9 +36,34 @@ const (
 	// bscGetLogsMaxRange 是单次 eth_getLogs 的区块跨度（公共免费节点普遍限制 getLogs 跨度 <=50 块，
 	// 故取 50 分页查询：跨度=50、首尾差 49，安全低于"0-50"上限，杜绝 -32602）。
 	bscGetLogsMaxRange = 50
-	// bscLookbackCapBlocks 是 fromBlock 回看的区块上限（~7.5 分钟=150 块）。
-	// 远大于确认窗(60s)，足够不漏；每轮仅 ~3 次分页查询，降低免费节点 -32005 限流（失败自动故障转移）。
+	// bscLookbackCapBlocks 是【时间窗口路径】fromBlock 回看的区块上限。
+	// ⚠️ BSC 2025 Maxwell 硬分叉后出块降到亚秒级(~0.45s)，150 块只覆盖 ~1 分钟、小于确认窗(60s)，
+	// 会漏收到账。生产走下面的【游标扫描路径】(QueryIncomingCursor)，此常量仅在无 settings 写能力时兜底。
 	bscLookbackCapBlocks = 150
+)
+
+// 游标扫描（cursoredAdapter）相关常量：按实测出块速度换算确认滞后 + 持久化游标续扫，抗出块提速与重启。
+const (
+	// bscConfirmSafetyBlocks 在"确认滞后块数"上额外多留的安全余量(块)，确保游标绝不越过未确认块。
+	bscConfirmSafetyBlocks = 40
+	// bscFallbackBlockSeconds 测量出块时间失败时的保守回退(秒/块)。
+	// 取偏小值(块更快)→确认滞后块数偏大→游标更靠后→只会多回扫、不会漏。
+	bscFallbackBlockSeconds = 0.4
+	// bscMaxScanPagesPerCycle 单轮最多扫的页数(每页 bscGetLogsMaxRange 块)，防免费节点限流风暴；
+	// 追赶超出则本轮扫一段、游标推进、下轮继续(不跳块)。
+	bscMaxScanPagesPerCycle = 24
+	// bscBlockTimeSampleBlocks 测量出块时间的采样跨度(块)。
+	bscBlockTimeSampleBlocks = 1000
+)
+
+// 冷启动/追赶回补的「覆盖时长」——实际取 max(可匹配窗口 + 余量, bscMinCatchupCover)，
+// 随 OrderTimeout 配置自适应，再按实测出块速度换算成块数（时间基准、抗未来出块再提速）。
+// 保证绝不把"仍可入账"的历史块跳过/钳掉：被钳/跳的块必然已超过订单可匹配窗口、无单可对。
+const (
+	// bscCatchupSafetyMargin 在"可匹配窗口"上额外多留的余量(应对确认滞后/出块波动)。
+	bscCatchupSafetyMargin = 15 * time.Minute
+	// bscMinCatchupCover 回补覆盖的时长下限(即便可匹配窗口配得很小也至少覆盖这么久)。
+	bscMinCatchupCover = 45 * time.Minute
 )
 
 // bscFallbackRPCs 是按顺序尝试的免费 keyless 公共 BSC RPC（均支持 eth_getLogs）。
@@ -136,6 +162,193 @@ func (a *bscAdapter) QueryIncoming(ctx context.Context, address, apiKey, baseURL
 		}
 	}
 	return out, nil
+}
+
+// bscScanRange 计算本轮游标扫描应覆盖的区块区间 [from, scanTo]（含端点，纯函数、便于单测）。
+//
+//	safeHead：已用墙钟校正过的「已确认链头」(见 bscConfirmedSafeHead)，游标绝不越过它。
+//	有真实游标(fromCursor>0)：一律 from=游标+1 连续续扫，绝不跳块；仅当旧到超 maxStaleBlocks 才有界钳制
+//	  (被钳掉的块都已远超订单可匹配窗口、无单可对，跳过无害)。
+//	冷启动(fromCursor==0)：从 safeHead-coldStartBlocks 起有界回补(覆盖订单最长可匹配窗口)。
+//	scanTo=safeHead，但单轮跨度不超 bscMaxScanPagesPerCycle*bscGetLogsMaxRange(下轮续扫、不跳块)。
+//	hasWork=false 表示当前无新确认块可扫。
+func bscScanRange(safeHead, fromCursor, coldStartBlocks, maxStaleBlocks uint64) (from, scanTo uint64, hasWork bool) {
+	if safeHead == 0 {
+		return 0, 0, false
+	}
+	if fromCursor == 0 {
+		// 冷启动：有界回补，避免扫全链。
+		if safeHead > coldStartBlocks {
+			from = safeHead - coldStartBlocks
+		} else {
+			from = 0
+		}
+	} else {
+		// 有真实游标：从游标+1 连续续扫(绝不跳块)；仅极旧时按 maxStale 有界钳制。
+		from = fromCursor + 1
+		var floor uint64
+		if safeHead > maxStaleBlocks {
+			floor = safeHead - maxStaleBlocks
+		}
+		if from < floor {
+			from = floor
+		}
+	}
+	if from > safeHead {
+		return 0, 0, false
+	}
+	scanTo = safeHead
+	if maxSpan := uint64(bscMaxScanPagesPerCycle) * uint64(bscGetLogsMaxRange); scanTo-from+1 > maxSpan {
+		scanTo = from + maxSpan - 1
+	}
+	return from, scanTo, true
+}
+
+// blocksFor 按出块速度把时长换算成块数(至少 1)。
+func blocksFor(d time.Duration, blockSec float64) uint64 {
+	if blockSec <= 0 {
+		blockSec = bscFallbackBlockSeconds
+	}
+	n := uint64(math.Ceil(d.Seconds() / blockSec))
+	if n == 0 {
+		n = 1
+	}
+	return n
+}
+
+// measureBlockTime 用 head 与 head-sample 的时间戳估算当前出块间隔(秒/块)，并返回 head 的时间戳(ms)。
+func (a *bscAdapter) measureBlockTime(ctx context.Context, endpoints []string, head uint64) (blockSec float64, headTsMs int64, err error) {
+	if head <= bscBlockTimeSampleBlocks {
+		return 0, 0, fmt.Errorf("chain too short to sample block time")
+	}
+	c := map[string]int64{}
+	hiMs, err := a.blockTimeMs(ctx, endpoints, fmt.Sprintf("0x%x", head), c)
+	if err != nil {
+		return 0, 0, err
+	}
+	loMs, err := a.blockTimeMs(ctx, endpoints, fmt.Sprintf("0x%x", head-bscBlockTimeSampleBlocks), c)
+	if err != nil {
+		return 0, hiMs, err
+	}
+	sec := float64(hiMs-loMs) / 1000.0
+	if sec <= 0 {
+		return 0, hiMs, fmt.Errorf("non-positive block time span")
+	}
+	return sec / float64(bscBlockTimeSampleBlocks), hiMs, nil
+}
+
+// bscConfirmedSafeHead 返回「墙钟已确认」(时间戳 <= headTs - confirmDur)的最高块。
+// 先用测得出块速度估个候选，再用候选真实时间戳按 head↔候选的实际(近期)速率校正一次——
+// 应对「1000 块平均出块时间」高于当前 tip 速率导致按块数算的 safeHead 偏新、被 watcher 判太新而丢的情形。
+// 全程用链上时钟(headTs)算年龄，避免服务器-链时钟偏差。返回 0 表示当前无已确认块。
+func (a *bscAdapter) bscConfirmedSafeHead(ctx context.Context, endpoints []string, head uint64, headTsMs int64, blockSec float64, confirmDur time.Duration) (uint64, error) {
+	estLag := uint64(math.Ceil(confirmDur.Seconds()/blockSec)) + bscConfirmSafetyBlocks
+	if head <= estLag {
+		return 0, nil
+	}
+	cand := head - estLag
+	candTsMs, err := a.blockTimeMs(ctx, endpoints, fmt.Sprintf("0x%x", cand), map[string]int64{})
+	if err != nil {
+		return 0, err
+	}
+	ageSec := float64(headTsMs-candTsMs) / 1000.0
+	if ageSec < confirmDur.Seconds() {
+		// 候选太新：用 head↔cand 的真实近期速率重估，多退到够老。
+		realRate := (float64(headTsMs-candTsMs) / 1000.0) / float64(head-cand)
+		if realRate <= 0 {
+			realRate = bscFallbackBlockSeconds
+		}
+		extra := uint64(math.Ceil((confirmDur.Seconds()-ageSec)/realRate)) + bscConfirmSafetyBlocks
+		if cand <= extra {
+			return 0, nil
+		}
+		cand -= extra
+	}
+	return cand, nil
+}
+
+// QueryIncomingCursor 用持久化区块游标扫描 BSC 上流入 address 的 USDT 转账（实现 cursoredAdapter）。
+//
+// 只扫「已确认」块 [from, head-确认滞后块]：返回的转账都够老，watcher 不会因太新而丢弃；
+// 游标只推进到已成功扫完的最高块。任一分页/取时间戳出错都不推进游标(返回原 fromCursor)、丢弃本轮结果，
+// 下轮整体重扫（幂等由 usdt_orders.trade_no 唯一索引兜底）。绝不漏块、抗 BSC 出块提速与进程重启。
+func (a *bscAdapter) QueryIncomingCursor(ctx context.Context, address, apiKey, baseURL string, fromCursor uint64, confirmDur, matchWindow time.Duration) ([]IncomingTransfer, uint64, error) {
+	_ = apiKey
+	endpoints := bscEndpoints(baseURL)
+
+	head, used, err := a.blockNumber(ctx, endpoints)
+	if err != nil {
+		return nil, fromCursor, fmt.Errorf("bsc eth_blockNumber: %w", err)
+	}
+	endpoints = pinEndpointFirst(endpoints, used)
+
+	blockSec, headTsMs, err := a.measureBlockTime(ctx, endpoints, head)
+	if err != nil || blockSec <= 0 {
+		blockSec = bscFallbackBlockSeconds
+	}
+	if headTsMs <= 0 {
+		// 拿不到 head 时间戳：无法做墙钟确认校正，本轮跳过(不冒进推进游标)。
+		return nil, fromCursor, nil
+	}
+	// safeHead 用墙钟(head 链上时钟)校正，确保返回的块都够老、watcher 不会判太新而丢。
+	safeHead, err := a.bscConfirmedSafeHead(ctx, endpoints, head, headTsMs, blockSec, confirmDur)
+	if err != nil {
+		return nil, fromCursor, fmt.Errorf("bsc confirmed head: %w", err)
+	}
+	// 回补/钳制下限 = max(可匹配窗口 + 余量, 最小覆盖)，据实测出块速度换算成块。
+	// 冷启动与"极旧游标钳制"都用它：随 OrderTimeout 自适应，绝不跳过/钳掉仍可入账的历史块。
+	cover := matchWindow + bscCatchupSafetyMargin
+	if cover < bscMinCatchupCover {
+		cover = bscMinCatchupCover
+	}
+	coverBlocks := blocksFor(cover, blockSec)
+	from, scanTo, hasWork := bscScanRange(safeHead, fromCursor, coverBlocks, coverBlocks)
+	if !hasWork {
+		return nil, fromCursor, nil
+	}
+
+	padded := padTopicAddress(address)
+	addrLower := strings.ToLower(strings.TrimSpace(address))
+	tsCache := make(map[string]int64)
+	out := make([]IncomingTransfer, 0, 8)
+
+	for lo := from; lo <= scanTo; lo += bscGetLogsMaxRange {
+		hi := lo + bscGetLogsMaxRange - 1
+		if hi > scanTo {
+			hi = scanTo
+		}
+		logs, err := a.getLogs(ctx, endpoints, lo, hi, padded)
+		if err != nil {
+			return nil, fromCursor, fmt.Errorf("bsc eth_getLogs [%d-%d]: %w", lo, hi, err)
+		}
+		for _, lg := range logs {
+			if len(lg.Topics) < 3 || len(lg.Topics[1]) < 40 || len(lg.Topics[2]) < 40 {
+				continue
+			}
+			to := "0x" + strings.ToLower(lg.Topics[2][len(lg.Topics[2])-40:])
+			if to != addrLower {
+				continue
+			}
+			fromAddr := "0x" + strings.ToLower(lg.Topics[1][len(lg.Topics[1])-40:])
+			human, ok := humanFromAtomic(hexToDecString(lg.Data), UsdtBEP20Decimals)
+			if !ok || human <= 0 {
+				continue
+			}
+			blockMs, err := a.blockTimeMs(ctx, endpoints, lg.BlockNumber, tsCache)
+			if err != nil {
+				// 拿不到时间戳：不推进游标，本轮丢弃、下轮重扫（避免 BlockTimeMs=0 绕过 finality 保护）。
+				return nil, fromCursor, fmt.Errorf("bsc block time %s: %w", lg.BlockNumber, err)
+			}
+			out = append(out, IncomingTransfer{
+				TxID:        lg.TxHash,
+				From:        fromAddr,
+				To:          to,
+				AmountHuman: human,
+				BlockTimeMs: blockMs,
+			})
+		}
+	}
+	return out, scanTo, nil
 }
 
 // ----- JSON-RPC -----

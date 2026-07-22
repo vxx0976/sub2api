@@ -24,7 +24,7 @@ func ProvideAlipayMonitor(alipay *AlipayPayment, orderMatcher OrderMatcher) *Ali
 
 // ProvideUsdtPayment 创建 USDT(TRC20) 收款配置持有者
 // config.yaml 作为 fallback，settings 表优先（运行时可改）
-func ProvideUsdtPayment(cfg *config.Config, settings SettingGetter) (*UsdtPayment, error) {
+func ProvideUsdtPayment(cfg *config.Config, settings SettingStore) (*UsdtPayment, error) {
 	return NewUsdtPayment(cfg.Payment.Usdt, settings)
 }
 

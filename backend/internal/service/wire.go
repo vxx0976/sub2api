@@ -823,6 +823,7 @@ var ProviderSet = wire.NewSet(
 	wire.Bind(new(pkgpayment.UsdtOrderMatcher), new(*UsdtOrderService)),
 	NewMergedOrderService,
 	ProvidePaymentSettingGetter,
+	ProvidePaymentSettingStore,
 	NewModelPricingResolver,
 	NewContentModerationService,
 	NewTranslationService,
@@ -853,6 +854,12 @@ func ProvidePaymentConfigService(entClient *dbent.Client, settingRepo SettingRep
 // ProvidePaymentSettingGetter 将 SettingRepository 作为 pkgpayment.SettingGetter 提供给 AliMPay SDK
 // 允许 AliMPay 配置在 settings 表里动态覆盖 config.yaml
 func ProvidePaymentSettingGetter(repo SettingRepository) pkgpayment.SettingGetter {
+	return repo
+}
+
+// ProvidePaymentSettingStore 将 SettingRepository 作为 pkgpayment.SettingStore(读写)提供给 USDT 收款，
+// 用于持久化链上扫描游标(usdt_<chain>_scan_block)。
+func ProvidePaymentSettingStore(repo SettingRepository) pkgpayment.SettingStore {
 	return repo
 }
 
