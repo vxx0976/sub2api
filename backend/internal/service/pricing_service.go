@@ -135,6 +135,9 @@ type cnyModelPricing struct {
 // kimiMoonshotPricingTable 官方定价表（人民币/每百万 token）。
 // kimi-for-coding 自动跟随最新模型（目前等价 k2.6）。
 var kimiMoonshotPricingTable = map[string]cnyModelPricing{
+	// 旗舰 kimi-k3：1M 上下文全长统一价，无长度分档（docs/pricing/chat-k3）。
+	"kimi-k3":          {inputCNY: 20.0, cacheReadCNY: 2.0, outputCNY: 100.0, hasCache: true},
+	"kimi-k2.7-code":   {inputCNY: 6.5, cacheReadCNY: 1.3, outputCNY: 27.0, hasCache: true},
 	"kimi-k2.6":        {inputCNY: 6.5, cacheReadCNY: 1.1, outputCNY: 27.0, hasCache: true},
 	"kimi-for-coding":  {inputCNY: 6.5, cacheReadCNY: 1.1, outputCNY: 27.0, hasCache: true},
 	"kimi-k2.5":        {inputCNY: 4.0, cacheReadCNY: 0.7, outputCNY: 21.0, hasCache: true},
@@ -738,6 +741,14 @@ func matchKimiMoonshotCNY(modelLower string) (cnyModelPricing, bool) {
 
 	if cny, found := kimiMoonshotPricingTable[m]; found {
 		return cny, true
+	}
+	// kimi-k3 variants: kimi-k3-xxx（旗舰全系按 k3 价，不得回落到 k2.6 少计）
+	if strings.HasPrefix(m, "kimi-k3") {
+		return kimiMoonshotPricingTable["kimi-k3"], true
+	}
+	// kimi-k2.7 variants: kimi-k2.7 / kimi-k2-7 / kimi-k27（官方仅公布 code 版价）
+	if strings.Contains(m, "kimi-k2.7") || strings.Contains(m, "kimi-k2-7") || strings.Contains(m, "kimi-k27") {
+		return kimiMoonshotPricingTable["kimi-k2.7-code"], true
 	}
 	// kimi-k2.6 variants: kimi-k2-6 / kimi-k26
 	if strings.Contains(m, "kimi-k2-6") || strings.Contains(m, "kimi-k26") {

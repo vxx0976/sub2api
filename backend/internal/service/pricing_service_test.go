@@ -46,6 +46,11 @@ func TestGetModelPricing_KimiMoonshotAllModels(t *testing.T) {
 		outputCNY float64
 		cacheCNY  float64 // 0 = 无缓存
 	}{
+		{"kimi-k3", 20.0, 100.0, 2.0},
+		{"kimi-k3-preview", 20.0, 100.0, 2.0}, // k3 变体不得回落到 k2.6 少计
+		{"moonshotai/kimi-k3", 20.0, 100.0, 2.0},
+		{"kimi-k2.7-code", 6.5, 27.0, 1.3},
+		{"kimi-k2.7", 6.5, 27.0, 1.3},
 		{"kimi-k2.6", 6.5, 27.0, 1.1},
 		{"kimi-k2.5", 4.0, 21.0, 0.7},
 		{"kimi-for-coding", 6.5, 27.0, 1.1},
