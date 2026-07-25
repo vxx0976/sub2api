@@ -29,6 +29,7 @@ const (
 	PlatformQwen        = "qwen"
 	PlatformSeedance    = "seedance"
 	PlatformGrok        = "grok"
+	PlatformComposite   = "composite"
 )
 
 // Account type constants

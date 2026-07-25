@@ -38,6 +38,7 @@ func SetupRouter(
 	settingService *service.SettingService,
 	domainRepo service.ResellerDomainRepository,
 	settingRepo service.ResellerSettingRepository,
+	compositeResolver *service.CompositeRouteResolver,
 	cfg *config.Config,
 	redisClient *redis.Client,
 	db *sql.DB,
@@ -105,7 +106,7 @@ func SetupRouter(
 	}
 
 	// 注册路由
-	registerRoutes(r, handlers, jwtAuth, adminAuth, apiKeyAuth, resellerAuth, resellerServiceTokenAuth, auditLog, stepUpAuth, apiKeyService, subscriptionService, opsService, settingService, domainRepo, settingRepo, cfg, redisClient, db, groupService, groupStatusCache)
+	registerRoutes(r, handlers, jwtAuth, adminAuth, apiKeyAuth, resellerAuth, resellerServiceTokenAuth, auditLog, stepUpAuth, apiKeyService, subscriptionService, opsService, settingService, domainRepo, settingRepo, compositeResolver, cfg, redisClient, db, groupService, groupStatusCache)
 
 	return r
 }
@@ -127,6 +128,7 @@ func registerRoutes(
 	settingService *service.SettingService,
 	domainRepo service.ResellerDomainRepository,
 	settingRepo service.ResellerSettingRepository,
+	compositeResolver *service.CompositeRouteResolver,
 	cfg *config.Config,
 	redisClient *redis.Client,
 	db *sql.DB,
@@ -159,7 +161,7 @@ func registerRoutes(
 	routes.RegisterTopupRoutes(v1, h, jwtAuth, settingService)
 	routes.RegisterResellerRoutes(v1, h, resellerAuth)
 	routes.RegisterResellerServiceTokenAPIRoutes(v1, h, resellerServiceTokenAuth, redisClient)
-	routes.RegisterGatewayRoutes(r, h, apiKeyAuth, apiKeyService, subscriptionService, opsService, settingService, cfg)
+	routes.RegisterGatewayRoutes(r, h, apiKeyAuth, apiKeyService, subscriptionService, opsService, settingService, compositeResolver, cfg)
 	routes.RegisterPaymentRoutes(v1, h.Payment, h.PaymentWebhook, h.Admin.Payment, jwtAuth, adminAuth, auditLog, settingService)
 	routes.RegisterChatRoutes(v1, h, jwtAuth)
 

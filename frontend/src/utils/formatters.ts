@@ -20,11 +20,11 @@ export function trimTrailingZeros(s: string): string {
 }
 
 /**
- * 自适应精度格式化倍率（确保小数值如 0.001 不被截断），并裁掉无意义的尾随 0（1.00→1，2.50→2.5）
+ * 自适应精度格式化倍率：保留至多 4 位有效小数，避免 0.035 被 toFixed(2) 四舍五入成 0.04
+ * （上游 fix(usage): keep significant decimals in cost tooltip rate multiplier），
+ * 再按本仓库的展示约定裁掉无意义的尾随 0（1.0000→1，2.5000→2.5，0.0350→0.035）。
  */
 export function formatMultiplier(val: number): string {
-  if (val >= 0.01) return trimTrailingZeros(val.toFixed(2))
-  if (val >= 0.001) return trimTrailingZeros(val.toFixed(3))
   if (val >= 0.0001) return trimTrailingZeros(val.toFixed(4))
   return trimTrailingZeros(val.toPrecision(2))
 }
