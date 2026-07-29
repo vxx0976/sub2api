@@ -94,6 +94,7 @@ type Group struct {
 
 	// OpenAI Messages 调度配置（仅 openai 平台使用）
 	AllowMessagesDispatch       bool                              `json:"allow_messages_dispatch"`
+	AllowLive                   bool                              `json:"allow_live"`          // 允许 OpenAI Live（Realtime）会话
 	RequireOAuthOnly            bool                              `json:"require_oauth_only"`  // 仅允许非 apikey 类型账号关联（OpenAI/Antigravity/Anthropic/Gemini）
 	RequirePrivacySet           bool                              `json:"require_privacy_set"` // 调度时仅允许 privacy 已成功设置的账号（OpenAI/Antigravity/Anthropic/Gemini）
 	DefaultMappedModel          string                            `json:"default_mapped_model"`

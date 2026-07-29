@@ -193,8 +193,8 @@ func (s *AuthService) RegisterWithVerification(ctx context.Context, email, passw
 		}
 	}
 
-	// 检查邮箱是否已存在
-	existsEmail, err := s.userRepo.ExistsByEmail(ctx, email)
+	// 检查邮箱是否已存在（含 +别名 / Gmail 点号变体归一化，防止单个收件箱批量派生注册）
+	existsEmail, err := s.existsByEmailOrAlias(ctx, email)
 	if err != nil {
 		logger.LegacyPrintf("service.auth", "[Auth] Database error checking email exists: %v", err)
 		return "", nil, ErrServiceUnavailable
@@ -267,7 +267,7 @@ func (s *AuthService) RegisterWithVerification(ctx context.Context, email, passw
 		RegisterDomain: registerDomain,
 	}
 
-	if err := s.userRepo.Create(ctx, user); err != nil {
+	if err := s.userRepo.CreateWithEmailAliasGuard(ctx, user); err != nil {
 		// 优先检查邮箱冲突错误（竞态条件下可能发生）
 		if errors.Is(err, ErrEmailExists) {
 			return "", nil, ErrEmailExists
@@ -339,8 +339,8 @@ func (s *AuthService) SendVerifyCode(ctx context.Context, email string, opts Ema
 		return err
 	}
 
-	// 检查邮箱是否已存在
-	existsEmail, err := s.userRepo.ExistsByEmail(ctx, email)
+	// 检查邮箱是否已存在（含 +别名 / Gmail 点号变体归一化，防止单个收件箱批量派生注册）
+	existsEmail, err := s.existsByEmailOrAlias(ctx, email)
 	if err != nil {
 		logger.LegacyPrintf("service.auth", "[Auth] Database error checking email exists: %v", err)
 		return ErrServiceUnavailable
@@ -379,8 +379,8 @@ func (s *AuthService) SendVerifyCodeAsync(ctx context.Context, email string, opt
 		return nil, err
 	}
 
-	// 检查邮箱是否已存在
-	existsEmail, err := s.userRepo.ExistsByEmail(ctx, email)
+	// 检查邮箱是否已存在（含 +别名 / Gmail 点号变体归一化；在发信前拦截，避免批量脚本消耗发信配额）
+	existsEmail, err := s.existsByEmailOrAlias(ctx, email)
 	if err != nil {
 		logger.LegacyPrintf("service.auth", "[Auth] Database error checking email exists: %v", err)
 		return nil, ErrServiceUnavailable
@@ -605,6 +605,7 @@ func (s *AuthService) LoginOrRegisterOAuth(ctx context.Context, email, username,
 	if user.Username == "" && username != "" {
 		user.Username = username
 		// 仅更新 username 列，避免用旧快照整行覆盖并发字段（balance/token_version 等）。
+		// 与 upstream 的 Update(..., UserUpdateFields{Username: true}) 语义一致，走单列 UPDATE。
 		if updErr := s.updateUsernameOnly(ctx, user.ID, username); updErr != nil {
 			logger.LegacyPrintf("service.auth", "[Auth] Failed to update username after oauth login: %v", updErr)
 		}
@@ -804,6 +805,7 @@ func (s *AuthService) loginOrRegisterOAuthWithTokenPair(ctx context.Context, ema
 	if user.Username == "" && username != "" {
 		user.Username = username
 		// 仅更新 username 列，避免用旧快照整行覆盖并发字段（balance/token_version 等）。
+		// 与 upstream 的 Update(..., UserUpdateFields{Username: true}) 语义一致，走单列 UPDATE。
 		if updErr := s.updateUsernameOnly(ctx, user.ID, username); updErr != nil {
 			logger.LegacyPrintf("service.auth", "[Auth] Failed to update username after oauth login: %v", updErr)
 		}
@@ -1496,6 +1498,10 @@ func (s *AuthService) ResetPassword(ctx context.Context, email, token, newPasswo
 
 	// Update password and atomically bump TokenVersion to invalidate existing tokens.
 	// 仅更新 password_hash 并原子自增 token_version，避免用旧快照整行覆盖并发的 balance 等字段。
+	// 注意：dev 的 users 表有真实的 token_version 列（见 ent/schema/user.go 与
+	// resolvedTokenVersion 的 TokenVersionResolved 分支），因此这里不能退回 upstream 的
+	// Update(..., UserUpdateFields{PasswordHash: true})——那样 token_version 不落库，
+	// 旧访问令牌会继续通过校验。
 	if err := s.userRepo.UpdatePasswordAndBumpTokenVersion(ctx, user.ID, hashedPassword); err != nil {
 		logger.LegacyPrintf("service.auth", "[Auth] Database error updating password for user %d: %v", user.ID, err)
 		return ErrServiceUnavailable
@@ -1737,11 +1743,15 @@ func (s *AuthService) RevokeAllUserSessions(ctx context.Context, userID int64) e
 }
 
 // RevokeAllUserTokens invalidates both stateless access tokens and refresh sessions.
-// Access/refresh token verification both depend on TokenVersion, so bumping it provides
-// immediate revocation even if refresh-token cache cleanup later fails.
+//
+// dev 的 users 表带有真实的 token_version 列，因此这里以原子自增让所有既有
+// access/refresh token 立即失效（resolvedTokenVersion 会优先使用库里的值）。
+// 绝不能退回 upstream 的"只 GetByID 不写库"版本：那样本函数对无状态访问令牌
+// 完全无效，只剩下面的 refresh session 清理。
 func (s *AuthService) RevokeAllUserTokens(ctx context.Context, userID int64) error {
 	// 原子自增 token_version 即可失效所有访问/刷新令牌，无需读取-整行覆盖，
 	// 避免覆盖并发的 balance 等字段，并消除 token_version 自身的 lost-update。
+	// 用户不存在时仓储返回 ErrUserNotFound，保留了 upstream GetByID 的存在性校验。
 	if err := s.userRepo.BumpTokenVersion(ctx, userID); err != nil {
 		return fmt.Errorf("bump token version: %w", err)
 	}

@@ -222,6 +222,7 @@ func groupFromServiceBase(g *service.Group) Group {
 		IsRecommended:                   g.IsRecommended,
 		ExternalBuyURL:                  g.ExternalBuyURL,
 		AllowMessagesDispatch:           g.AllowMessagesDispatch,
+		AllowLive:                       g.AllowLive,
 		RequireOAuthOnly:                g.RequireOAuthOnly,
 		RequirePrivacySet:               g.RequirePrivacySet,
 		HealthStatus:                    g.HealthStatus,
@@ -703,6 +704,7 @@ func usageLogFromServiceUser(l *service.UsageLog) UsageLog {
 		MediaType:                 l.MediaType,
 		UserAgent:                 l.UserAgent,
 		IPAddress:                 l.IPAddress,
+		SessionID:                 l.SessionID,
 		CacheTTLOverridden:        l.CacheTTLOverridden,
 		BillingMode:               l.BillingMode,
 		// 计价币种按实际计费模型判定（默认计费模型即 l.Model）：国产官方人民币价模型→CNY，其余→USD。

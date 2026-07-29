@@ -1089,6 +1089,7 @@ var (
 		{Name: "require_oauth_only", Type: field.TypeBool, Default: false},
 		{Name: "require_privacy_set", Type: field.TypeBool, Default: false},
 		{Name: "allow_messages_dispatch", Type: field.TypeBool, Default: false},
+		{Name: "allow_live", Type: field.TypeBool, Default: false},
 		{Name: "default_mapped_model", Type: field.TypeString, Size: 100, Default: ""},
 		{Name: "health_check_interval_min", Type: field.TypeInt, Default: 30},
 		{Name: "health_check_test_model", Type: field.TypeString, Size: 128, Default: ""},

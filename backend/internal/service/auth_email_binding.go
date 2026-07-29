@@ -77,7 +77,9 @@ func (s *AuthService) BindEmailIdentity(
 		return currentUser, nil
 	}
 
-	// 仅更新 email + password_hash（含邮箱身份同步），避免用旧快照整行覆盖并发字段。
+	// 仅更新 email + password_hash（含邮箱唯一性加锁与邮箱身份同步），避免用旧快照整行覆盖并发字段。
+	// 等价于 upstream 的 Update(..., UserUpdateFields{Email: true, PasswordHash: true})，
+	// 但额外复用 replaceEmailAuthIdentity，保证 user_auth_identities 与新邮箱同步。
 	if err := s.userRepo.UpdateEmailAndPassword(ctx, currentUser.ID, normalizedEmail, hashedPassword); err != nil {
 		if errors.Is(err, ErrEmailExists) {
 			return nil, ErrEmailExists

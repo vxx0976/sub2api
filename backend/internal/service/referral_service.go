@@ -172,9 +172,11 @@ func (s *ReferralService) GetUserReferralCode(ctx context.Context, userID int64)
 		return "", err
 	}
 
-	// Update user with the new code
+	// Update user with the new code.
+	// 空掩码：referral_code 是 fork 专属列，UserUpdateFields 没有对应位，
+	// 仓储层对它按"非空即回写"处理（见 user_repo.Update 注释）。
 	user.ReferralCode = &code
-	if err := s.userRepo.Update(ctx, user); err != nil {
+	if err := s.userRepo.Update(ctx, user, UserUpdateFields{}); err != nil {
 		// If update fails due to duplicate, try again with a new code
 		log.Printf("[Referral] Failed to save referral code for user %d: %v, retrying...", userID, err)
 		code, err = s.GenerateReferralCode()
@@ -182,7 +184,7 @@ func (s *ReferralService) GetUserReferralCode(ctx context.Context, userID int64)
 			return "", err
 		}
 		user.ReferralCode = &code
-		if err := s.userRepo.Update(ctx, user); err != nil {
+		if err := s.userRepo.Update(ctx, user, UserUpdateFields{}); err != nil {
 			return "", err
 		}
 	}

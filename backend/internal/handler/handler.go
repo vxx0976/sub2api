@@ -81,6 +81,7 @@ type Handlers struct {
 	Setting          *SettingHandler
 	Referral         *ReferralHandler
 	Totp             *TotpHandler
+	Passkey          *PasskeyHandler
 	KeyQuery         *KeyQueryHandler
 	Recharge         *RechargeHandler
 	Order            *OrderHandler
@@ -89,6 +90,7 @@ type Handlers struct {
 	Payment          *PaymentHandler
 	PaymentWebhook   *PaymentWebhookHandler
 	AvailableChannel *AvailableChannelHandler
+	ModelPlaza       *ModelPlazaHandler
 	Chat             *ChatHandler
 	AsyncImage       *AsyncImageHandler
 	BatchImage       *BatchImageHandler

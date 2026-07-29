@@ -135,6 +135,7 @@ func (s *AuthService) loginOrRegisterVerifiedEmailOAuth(
 	if user.Username == "" && strings.TrimSpace(input.Username) != "" {
 		user.Username = strings.TrimSpace(input.Username)
 		// 仅更新 username 列，避免全行 Update 用旧快照覆盖并发字段。
+		// 与 upstream 的 Update(..., UserUpdateFields{Username: true}) 语义一致。
 		if err := s.userRepo.UpdateUsername(ctx, user.ID, user.Username); err != nil {
 			logger.LegacyPrintf("service.auth", "[Auth] Failed to update username after %s oauth login: %v", providerType, err)
 		}

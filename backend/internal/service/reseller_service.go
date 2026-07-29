@@ -463,10 +463,12 @@ func (s *ResellerService) CreateKey(ctx context.Context, resellerID int64, input
 		return nil, err
 	}
 
-	// Update notes if provided
+	// Update notes if provided.
+	// 空掩码：notes 是 fork 专属列，APIKeyUpdateFields 没有对应位，
+	// 仓储层对它无条件回写（见 api_key_repo.Update 注释）。
 	if input.Notes != "" {
 		key.Notes = input.Notes
-		if err := s.apiKeyRepo.Update(ctx, key); err != nil {
+		if err := s.apiKeyRepo.Update(ctx, key, APIKeyUpdateFields{}); err != nil {
 			return nil, fmt.Errorf("update notes: %w", err)
 		}
 	}
@@ -503,10 +505,11 @@ func (s *ResellerService) UpdateKey(ctx context.Context, resellerID, keyID int64
 		return nil, err
 	}
 
-	// Update notes if provided
+	// Update notes if provided.
+	// 空掩码：notes 是 fork 专属列，仓储层无条件回写。
 	if input.Notes != nil {
 		key.Notes = *input.Notes
-		if err := s.apiKeyRepo.Update(ctx, key); err != nil {
+		if err := s.apiKeyRepo.Update(ctx, key, APIKeyUpdateFields{}); err != nil {
 			return nil, fmt.Errorf("update notes: %w", err)
 		}
 	}

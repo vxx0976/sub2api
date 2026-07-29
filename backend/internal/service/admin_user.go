@@ -220,24 +220,33 @@ func (s *adminServiceImpl) UpdateUser(ctx context.Context, id int64, input *Upda
 	oldRPMLimit := user.RPMLimit
 	oldAllowedGroups := append([]int64(nil), user.AllowedGroups...)
 
+	// fields 与下面的 input.X 判空条件一一对应：管理员没提交的列不写回，
+	// 避免这份快照回滚并发的扣费、状态变更或批量限额调整。
+	var fields UserUpdateFields
+
 	if input.Email != "" {
 		user.Email = input.Email
+		fields.Email = true
 	}
 	if input.Password != "" {
 		if err := user.SetPassword(input.Password); err != nil {
 			return nil, err
 		}
+		fields.PasswordHash = true
 	}
 
 	if input.Username != nil {
 		user.Username = *input.Username
+		fields.Username = true
 	}
 	if input.Notes != nil {
 		user.Notes = *input.Notes
+		fields.Notes = true
 	}
 
 	if input.Status != "" {
 		user.Status = input.Status
+		fields.Status = true
 	}
 
 	// 角色变更(admin/user/reseller);空字符串表示不修改。
@@ -258,24 +267,37 @@ func (s *adminServiceImpl) UpdateUser(ctx context.Context, id int64, input *Upda
 			// Increment RoleVersion to invalidate all existing JWT tokens（来自 dev）
 			user.RoleVersion++
 		}
+		fields.Role = true
 	}
 
 	if input.Concurrency != nil {
 		user.Concurrency = *input.Concurrency
+		fields.Concurrency = true
 	}
 
 	if input.RPMLimit != nil {
 		user.RPMLimit = *input.RPMLimit
+		fields.RPMLimit = true
 	}
 
 	if input.AllowedGroups != nil {
 		user.AllowedGroups = *input.AllowedGroups
+		fields.AllowedGroups = true
 	}
 
 	// 仅更新管理员意图修改的资料类字段；不走全行 Update，避免用 GetByID 旧快照
 	// 覆盖并发写入的 balance / token_version / total_recharged。
-	if err := s.userRepo.UpdateProfile(ctx, user); err != nil {
-		return nil, err
+	//
+	// 这里刻意保留 dev 的 UpdateProfile 而不是 upstream 的 Update(ctx, user, fields)：
+	// UserUpdateFields 里没有 role_version，仓储的掩码 Update 也不写 role_version 列，
+	// 换过去会让角色降级后的旧 JWT / refresh token 继续通过 RoleVersion 校验（见
+	// auth_service.go 的 claims.RoleVersion != user.RoleVersion 分支）。
+	// fields 仍按 upstream 的语义充当"本次到底有没有列要写"的掩码：管理员一列都没提交时
+	// 不产生用户行写入（后面的分组倍率同步 / 缓存失效仍照常执行）。
+	if !fields.IsEmpty() {
+		if err := s.userRepo.UpdateProfile(ctx, user); err != nil {
+			return nil, err
+		}
 	}
 
 	// 角色变更属权限敏感操作，落审计日志（含操作者），便于事后追溯。
@@ -500,73 +522,38 @@ func (s *adminServiceImpl) BatchUpdateLimits(ctx context.Context, userIDs []int6
 }
 
 func (s *adminServiceImpl) UpdateUserBalance(ctx context.Context, userID int64, balance float64, operation string, notes string) (*User, error) {
+	// 余额调整必须走原子接口：先读后整行写回会把并发的计费扣款覆盖掉。
+	// SetBalance / AdjustBalance 都是单条 RETURNING 语句，只写 balance 列——
+	// 与 dev 原来的 SetBalanceAbsolute / AddBalanceOnly / DeductBalanceIfSufficient
+	// 语义一致：管理员手工加款不是真实充值，不会 AddTotalRecharged 推高百分比提醒阈值基数；
+	// 扣款在 SQL 里带 `balance + delta >= 0` 条件，并发下也不会把余额扣成负数。
+	var (
+		change BalanceChange
+		err    error
+	)
+	switch operation {
+	case "set":
+		change, err = s.userRepo.SetBalance(ctx, userID, balance)
+	case "add":
+		change, err = s.userRepo.AdjustBalance(ctx, userID, balance)
+	case "subtract":
+		change, err = s.userRepo.AdjustBalance(ctx, userID, -balance)
+	default:
+		return nil, fmt.Errorf("unsupported balance operation: %q", operation)
+	}
+	if errors.Is(err, ErrBalanceNegative) {
+		return nil, fmt.Errorf("balance cannot be negative, current balance: %.2f, requested operation would result in: %.2f", change.Old, change.New)
+	}
+	if err != nil {
+		return nil, err
+	}
+
 	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	oldBalance := user.Balance
-
-	// 计算意图后的目标余额仅用于负值校验；实际写入走原子 SQL（increment / 绝对 set），
-	// 避免用 GetByID 读到的旧快照整行覆盖网关并发原子扣减的结果（lost-update）。
-	var projected float64
-	switch operation {
-	case "set":
-		projected = balance
-	case "add":
-		projected = oldBalance + balance
-	case "subtract":
-		projected = oldBalance - balance
-	default:
-		return nil, fmt.Errorf("invalid balance operation: %q", operation)
-	}
-
-	if projected < 0 {
-		return nil, fmt.Errorf("balance cannot be negative, current balance: %.2f, requested operation would result in: %.2f", oldBalance, projected)
-	}
-
-	switch operation {
-	case "set":
-		if err := s.userRepo.SetBalanceAbsolute(ctx, userID, balance); err != nil {
-			return nil, err
-		}
-	case "add":
-		// 原子自增（balance = balance + amount）；管理员手工加款不是真实充值，
-		// 不走 UpdateBalance（它会同时 AddTotalRecharged 推高百分比提醒阈值基数）。
-		if err := s.userRepo.AddBalanceOnly(ctx, userID, balance); err != nil {
-			return nil, err
-		}
-	case "subtract":
-		// 条件原子自减：仅当余额充足时扣减，避免与并发网关扣费叠加把余额扣成负数
-		// （前面基于快照的 projected 预检在并发下不可靠，这里以 DB 条件为准）。
-		if err := s.userRepo.DeductBalanceIfSufficient(ctx, userID, balance); err != nil {
-			if errors.Is(err, ErrInsufficientBalance) {
-				return nil, fmt.Errorf("balance cannot be negative, current balance: %.2f, requested operation would result in: %.2f", oldBalance, projected)
-			}
-			return nil, err
-		}
-	}
-
-	// 写后回读一次以拿到真实余额（并发下可能与 projected 不同），用于缓存失效与返回值。
-	if refreshed, err := s.userRepo.GetByID(ctx, userID); err == nil {
-		user = refreshed
-	} else {
-		// 回读失败时退化为投影值，不阻断主流程。
-		user.Balance = projected
-	}
-
-	// 本次调整的意图增量：add/subtract 固定为 ±balance（与并发无关，用于审计记账与缓存门控）；
-	// set 模式按"目标值 - 旧值"近似（set 本身无法表达并发增量）。
-	var balanceDiff float64
-	switch operation {
-	case "add":
-		balanceDiff = balance
-	case "subtract":
-		balanceDiff = -balance
-	default: // set
-		balanceDiff = projected - oldBalance
-	}
-
+	balanceDiff := change.New - change.Old
 	if s.authCacheInvalidator != nil && balanceDiff != 0 {
 		s.authCacheInvalidator.InvalidateAuthCacheByUserID(ctx, userID)
 	}
