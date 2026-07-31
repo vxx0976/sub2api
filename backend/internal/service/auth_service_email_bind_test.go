@@ -918,7 +918,7 @@ func (s *emailBindUserRepoStub) Update(_ context.Context, user *service.User, _ 
 }
 
 func (s *emailBindUserRepoStub) UpdateProfile(ctx context.Context, user *service.User) error {
-	return s.Update(ctx, user)
+	return s.Update(ctx, user, service.UserUpdateFields{})
 }
 
 func (s *emailBindUserRepoStub) UpdateEmailAndPassword(ctx context.Context, userID int64, email, passwordHash string) error {

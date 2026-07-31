@@ -25,7 +25,7 @@ func (s *ipPreserveRepoStub) GetByID(_ context.Context, _ int64) (*APIKey, error
 	return &cp, nil
 }
 
-func (s *ipPreserveRepoStub) Update(_ context.Context, k *APIKey) error {
+func (s *ipPreserveRepoStub) Update(_ context.Context, k *APIKey, _ APIKeyUpdateFields) error {
 	cp := *k
 	s.saved = &cp
 	return nil
@@ -77,7 +77,7 @@ func TestAPIKeyService_Update_ExplicitEmptyClearsIPRules(t *testing.T) {
 	svc := &APIKeyService{apiKeyRepo: repo, cache: &quotaStateCacheStub{}}
 
 	empty := []string{}
-	_, err := svc.Update(context.Background(), 7, 42, UpdateAPIKeyRequest{IPWhitelist: empty})
+	_, err := svc.Update(context.Background(), 7, 42, UpdateAPIKeyRequest{IPWhitelist: &empty})
 	require.NoError(t, err)
 	require.NotNil(t, repo.saved)
 	require.Empty(t, repo.saved.IPWhitelist, "explicit empty slice must clear the whitelist")

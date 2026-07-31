@@ -143,6 +143,7 @@ type SystemSettings struct {
 	ContactInfo          string           `json:"contact_info"`
 	DocURL               string           `json:"doc_url"`
 	HomeContent          string           `json:"home_content"`
+	CompactHomeEnabled   bool             `json:"compact_home_enabled"`
 	HideCcsImportButton  bool             `json:"hide_ccs_import_button"`
 	TableDefaultPageSize int              `json:"table_default_page_size"`
 	TablePageSizeOptions []int            `json:"table_page_size_options"`
@@ -373,6 +374,7 @@ type PublicSettings struct {
 	DocURL                           string                   `json:"doc_url"`
 	HomeContent                      string                   `json:"home_content"`
 	HomeTemplate                     string                   `json:"home_template,omitempty"`
+	CompactHomeEnabled               bool                     `json:"compact_home_enabled"`
 	HideCcsImportButton              bool                     `json:"hide_ccs_import_button"`
 	PurchaseEnabled                  bool                     `json:"purchase_enabled,omitempty"`
 	PurchaseURL                      string                   `json:"purchase_url,omitempty"`

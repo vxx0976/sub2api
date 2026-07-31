@@ -143,6 +143,7 @@ type UpdateSettingsRequest struct {
 	ContactInfo          string                `json:"contact_info"`
 	DocURL               string                `json:"doc_url"`
 	HomeContent          string                `json:"home_content"`
+	CompactHomeEnabled   bool                  `json:"compact_home_enabled"`
 	HideCcsImportButton  bool                  `json:"hide_ccs_import_button"`
 	ContactWechat        string                `json:"contact_wechat"`
 	ContactTelegram      string                `json:"contact_telegram"`
@@ -1434,6 +1435,7 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		ContactInfo:                            req.ContactInfo,
 		DocURL:                                 req.DocURL,
 		HomeContent:                            req.HomeContent,
+		CompactHomeEnabled:                     req.CompactHomeEnabled,
 		HideCcsImportButton:                    req.HideCcsImportButton,
 		ContactWechat:                          req.ContactWechat,
 		ContactTelegram:                        req.ContactTelegram,
@@ -2039,6 +2041,7 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		ContactInfo:                                            updatedSettings.ContactInfo,
 		DocURL:                                                 updatedSettings.DocURL,
 		HomeContent:                                            updatedSettings.HomeContent,
+		CompactHomeEnabled:                                     updatedSettings.CompactHomeEnabled,
 		HideCcsImportButton:                                    updatedSettings.HideCcsImportButton,
 		ContactWechat:                                          updatedSettings.ContactWechat,
 		ContactTelegram:                                        updatedSettings.ContactTelegram,

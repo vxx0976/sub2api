@@ -1,6 +1,6 @@
 <template>
-  <!-- External URL: iframe mode -->
-  <div v-if="homeTemplate === 'external_url' && homeContentUrl" class="min-h-screen">
+  <!-- External URL: iframe mode (explicit external_url template, or legacy home_content holding a URL) -->
+  <div v-if="showHomeIframe" class="min-h-screen">
     <iframe
       :src="homeContentUrl"
       class="h-screen w-full border-0"
@@ -9,7 +9,7 @@
   </div>
 
   <!-- Custom HTML mode - SECURITY: home_content is reseller-settable (untrusted), sanitized via DOMPurify to prevent stored XSS -->
-  <div v-else-if="homeTemplate === 'custom_html' && homeContentSafe" class="min-h-screen" v-html="homeContentSafe"></div>
+  <div v-else-if="showHomeHtml" class="min-h-screen" v-html="homeContentSafe"></div>
 
   <!-- Hero template: gradient hero + features + CTA -->
   <div v-else-if="homeTemplate === 'hero'" class="relative flex min-h-screen flex-col overflow-hidden">
@@ -149,6 +149,75 @@
       <p class="text-center text-sm text-gray-500 dark:text-dark-400">
         &copy; {{ currentYear }} {{ siteName }}
       </p>
+    </footer>
+  </div>
+
+  <!-- Compact Home Page -->
+  <div
+    v-else-if="compactHomeEnabled"
+    data-testid="compact-home"
+    class="flex min-h-screen flex-col bg-gray-50 text-gray-900 dark:bg-dark-950 dark:text-white"
+  >
+    <header class="border-b border-gray-200 px-4 py-4 sm:px-6 dark:border-dark-800">
+      <nav class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 sm:gap-4">
+        <div class="flex min-w-0 flex-1 items-center gap-3">
+          <img
+            :src="siteLogo || '/logo.svg'"
+            alt="Logo"
+            class="h-9 w-9 shrink-0 rounded-lg object-contain"
+          />
+          <span class="min-w-0 truncate text-base font-semibold">{{ siteName }}</span>
+        </div>
+        <div class="flex max-w-full shrink-0 flex-wrap items-center justify-end gap-2">
+          <LocaleSwitcher />
+          <a
+            v-if="docUrl"
+            :href="docUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 dark:text-dark-400 dark:hover:bg-dark-800"
+            :title="t('home.viewDocs')"
+          >
+            <Icon name="book" size="md" />
+          </a>
+          <button
+            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 dark:text-dark-400 dark:hover:bg-dark-800"
+            :title="isDark ? t('home.switchToLight') : t('home.switchToDark')"
+            @click="toggleTheme"
+          >
+            <Icon v-if="isDark" name="sun" size="md" />
+            <Icon v-else name="moon" size="md" />
+          </button>
+          <router-link
+            :to="isAuthenticated ? dashboardPath : '/login'"
+            class="inline-flex min-h-10 shrink-0 items-center justify-center rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200"
+          >
+            {{ isAuthenticated ? t('home.dashboard') : t('home.login') }}
+          </router-link>
+        </div>
+      </nav>
+    </header>
+
+    <main class="flex min-w-0 flex-1 items-center justify-center px-4 py-16 sm:px-6">
+      <div class="min-w-0 max-w-2xl text-center">
+        <img
+          :src="siteLogo || '/logo.svg'"
+          alt="Logo"
+          class="mx-auto mb-6 h-20 w-20 rounded-2xl object-contain"
+        />
+        <h1 class="[overflow-wrap:anywhere] text-3xl font-bold md:text-4xl">{{ siteName }}</h1>
+        <p class="mt-4 whitespace-pre-wrap [overflow-wrap:anywhere] text-base text-gray-600 dark:text-dark-300">{{ siteSubtitle }}</p>
+        <router-link
+          :to="isAuthenticated ? dashboardPath : '/login'"
+          class="mt-8 inline-flex min-h-10 items-center justify-center rounded-lg bg-primary-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-primary-700"
+        >
+          {{ isAuthenticated ? t('home.goToDashboard') : t('home.login') }}
+        </router-link>
+      </div>
+    </main>
+
+    <footer class="min-w-0 border-t border-gray-200 px-4 py-5 text-center text-sm text-gray-500 [overflow-wrap:anywhere] sm:px-6 dark:border-dark-800 dark:text-dark-400">
+      &copy; {{ currentYear }} {{ siteName }}
     </footer>
   </div>
 
@@ -751,33 +820,46 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import { useAuthStore, useAppStore } from '@/stores'
 import TypewriterTerminal, { type TerminalLine } from '@/components/common/TypewriterTerminal.vue'
 import PublicHeader from '@/components/layout/PublicHeader.vue'
+import LocaleSwitcher from '@/components/common/LocaleSwitcher.vue'
 import Icon from '@/components/icons/Icon.vue'
 import { sanitizeUrl } from '@/utils/url'
 import DOMPurify from 'dompurify'
 
 const { t } = useI18n()
+// The compact home page is rendered standalone (no router installed in some unit
+// tests), so read the route defensively.
 const route = useRoute()
 
 const authStore = useAuthStore()
 const appStore = useAppStore()
 
 // Get referral code from URL if present
-const refCode = computed(() => route.query.ref as string | undefined)
+const refCode = computed(() => route?.query?.ref as string | undefined)
 const registerPath = computed(() => refCode.value ? `/register?ref=${refCode.value}` : '/register')
 const loginPath = computed(() => refCode.value ? `/login?redirect=${encodeURIComponent(registerPath.value)}` : '/login')
 
 // Site settings - directly from appStore (already initialized from injected config)
 const siteName = computed(() => appStore.cachedPublicSettings?.site_name || appStore.siteName || '码驿站')
 const siteLogo = computed(() => sanitizeUrl(appStore.cachedPublicSettings?.site_logo || appStore.siteLogo || '', { allowRelative: true, allowDataUrl: true }))
+const siteSubtitle = computed(() => appStore.cachedPublicSettings?.site_subtitle || 'AI API Gateway Platform')
 const docUrl = computed(() => sanitizeUrl(appStore.cachedPublicSettings?.doc_url || appStore.docUrl || ''))
 const homeContent = computed(() => appStore.cachedPublicSettings?.home_content || '')
 const homeTemplate = computed(() => appStore.cachedPublicSettings?.home_template || 'default')
+const hasHomeContent = computed(() => homeContent.value.trim().length > 0)
+const compactHomeEnabled = computed(() => appStore.cachedPublicSettings?.compact_home_enabled === true)
+
+// Check if homeContent is a URL (for iframe display)
+const isHomeContentUrl = computed(() => {
+  const content = homeContent.value.trim()
+  return content.startsWith('http://') || content.startsWith('https://')
+})
+
 // home_content is settable per-domain by resellers (non-admin merchants), so it
 // is untrusted. Sanitize before use to prevent stored XSS.
 // - custom_html mode: strip scripts / event handlers via DOMPurify (iframe kept
@@ -790,6 +872,7 @@ const homeContentSafe = computed(() =>
   })
 )
 const homeContentUrl = computed(() => sanitizeUrl(homeContent.value.trim()))
+
 const apiBaseRoot = computed(() => {
   const fallback = typeof window !== 'undefined' ? window.location.origin : 'https://YOUR_HOST'
   const raw = (appStore.cachedPublicSettings?.api_base_url || fallback).trim()
@@ -799,6 +882,29 @@ const apiBaseRoot = computed(() => {
 
 // Reseller domain detection
 const isResellerDomain = computed(() => !!appStore.cachedPublicSettings?.reseller_id)
+
+// Home page selection.
+// - Reseller domains pick an explicit `home_template` (default/hero/brand/minimal/
+//   custom_html/external_url); stale `home_content` from a previous template must
+//   NOT hijack the page, so only the explicit template counts there.
+// - The main site has no template selector, so it keeps the upstream behaviour:
+//   any custom home content takes over the whole page (URL => iframe, otherwise
+//   sanitized HTML), and whitespace-only content counts as empty.
+const usesLegacyHomeContent = computed(
+  () => !isResellerDomain.value && homeTemplate.value === 'default' && hasHomeContent.value
+)
+const showHomeIframe = computed(
+  () =>
+    (homeTemplate.value === 'external_url' ||
+      (usesLegacyHomeContent.value && isHomeContentUrl.value)) &&
+    !!homeContentUrl.value
+)
+const showHomeHtml = computed(
+  () =>
+    (homeTemplate.value === 'custom_html' ||
+      (usesLegacyHomeContent.value && !isHomeContentUrl.value)) &&
+    !!homeContentSafe.value
+)
 // 商户站点访问控制：未登录时，商户关闭登录则隐藏"立即开始"入口（指向 /login）
 const loginDisabled = computed(() => !!appStore.cachedPublicSettings?.reseller_login_disabled)
 
@@ -811,6 +917,18 @@ const showPrimaryCta = computed(() => isAuthenticated.value || !loginDisabled.va
 
 // Current year for footer
 const currentYear = computed(() => new Date().getFullYear())
+
+// Theme (compact home renders its own header, so it needs a local toggle;
+// the other templates use <PublicHeader />, which owns its own switch)
+const isDark = ref(
+  typeof document !== 'undefined' && document.documentElement.classList.contains('dark')
+)
+
+function toggleTheme() {
+  isDark.value = !isDark.value
+  document.documentElement.classList.toggle('dark', isDark.value)
+  localStorage.setItem('theme', isDark.value ? 'dark' : 'light')
+}
 
 function buildTerminalLines(baseUrl: string): TerminalLine[] {
   const token = 'sk-xxx'
@@ -833,6 +951,7 @@ function initTheme() {
     savedTheme === 'dark' ||
     (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)
   ) {
+    isDark.value = true
     document.documentElement.classList.add('dark')
   }
 }

@@ -223,6 +223,7 @@ export interface PublicSettings {
   doc_url: string
   home_content: string
   home_template?: string
+  compact_home_enabled: boolean
   hide_ccs_import_button: boolean
   payment_enabled: boolean
   risk_control_enabled: boolean

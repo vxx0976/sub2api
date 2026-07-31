@@ -3653,6 +3653,8 @@ export default {
       timeoutMs: 'HTTP 超时 (ms)',
       retryCount: '失败重试次数',
       sampleRate: '采样率',
+      proxy: '代理服务器',
+      proxyHint: '审计请求经指定代理（IP管理-代理服务器）发出，适用于出口 IP 不受 OpenAI 支持的部署；默认直连。',
       recordNonHits: '记录未命中输入',
       recordNonHitsHint: '开启后会记录抽样但未命中的请求摘要，摘要会先脱敏再入库。',
       preHashCheck: '启用前置哈希比对',
@@ -3990,7 +3992,9 @@ export default {
       quotaEndsInMinutes: '额度将在 {minutes} 分钟后结束',
       quotaEndsInHoursMinutes: '额度将在 {hours} 小时 {minutes} 分钟后结束',
       quotaEndsInDaysHours: '额度将在 {days} 天 {hours} 小时后结束',
-      daysRemaining: '天剩余',
+      daysRemaining: '剩余 {days} 天',
+      hoursMinutesRemaining: '剩余 {hours} 小时 {minutes} 分钟',
+      minutesRemaining: '剩余 {minutes} 分钟',
       noExpiration: '无过期时间',
       status: {
         active: '生效中',
@@ -4733,6 +4737,9 @@ export default {
         oauthPassthrough: '自动透传（仅替换认证）',
         oauthPassthroughDesc:
           '开启后，该 OpenAI 账号将自动透传请求与响应，仅替换认证并保留计费/并发/审计及必要安全过滤；如遇兼容性问题可随时关闭回滚。',
+        flattenNamespaces: '摊平 Codex namespace 工具（兼容）',
+        flattenNamespacesDesc:
+          '默认关闭：/responses 上的 namespace 工具声明原样转发，这正是 ChatGPT Codex 后端期望的形态。仅当该 OAuth 账号指向不认识 namespace 的兼容上游时才开启——摊平会把工具改名为 namespace__tool，使按 functions.<命名空间>.<工具> 寻址的模型（如 gpt-5.6 多智能体）无法调用。压缩（compact）请求不受该开关影响，始终摊平。',
         longContextBilling: 'API 长上下文计费',
         longContextBillingDesc: '默认关闭。仅当该账号的上游会按模型阈值收取 OpenAI API 长上下文费率时开启。',
         responsesWebsocketsV2: 'Responses WebSocket v2',
@@ -7101,6 +7108,7 @@ export default {
         passkeyRPID: 'RP ID',
         passkeyOrigins: '允许的 HTTPS 来源',
         passkeyValueNotConfigured: '未配置',
+        passkeyDeploymentHint: '请由服务器运维在部署配置中将 webauthn.enabled 设为 true，填写 webauthn.rp_id（仅域名）与 webauthn.rp_origins（完整 HTTPS 来源），然后重启服务。',
         stepUp: '敏感操作二次验证 (step-up 2FA)',
         stepUpHint: '开启后，账号/代理导出、备份创建与下载、S3 配置修改、提升管理员等敏感操作需要先完成 TOTP 二次验证（15 分钟内有效）。开启前需本人已启用 2FA；关闭该开关本身也需要二次验证。',
         stepUpEnableRequiresTotp: '开启敏感操作二次验证前，请先在个人资料中为当前账号启用 2FA (TOTP)。',
@@ -7507,6 +7515,8 @@ export default {
           '自定义首页内容，支持 Markdown/HTML。如果输入的是链接（以 http:// 或 https:// 开头），则会使用该链接作为 iframe 的 src 属性，这允许你设置任意网页作为首页。设置后首页的状态信息将不再显示。',
         homeContentIframeWarning:
           '⚠️ iframe 模式提示：部分网站设置了 X-Frame-Options 或 CSP 安全策略，禁止被嵌入到 iframe 中。如果页面显示空白或报错，请确认目标网站允许被嵌入，或考虑使用 HTML 模式自行构建页面内容。',
+        compactHome: '简洁首页',
+        compactHomeHint: '未设置自定义首页内容时，展示简洁的站点信息页面。',
         hideCcsImportButton: '隐藏 CCS 导入按钮',
         hideCcsImportButtonHint: '启用后将在 API Keys 页面隐藏"导入 CCS"按钮',
       },
@@ -8426,7 +8436,7 @@ export default {
         searchGroups: '搜索分组', noGroups: '没有匹配分组', missingGroups: '配置中包含已删除的分组 ID', selectedCount: '已选择 {count} 个分组',
         scanners: 'Qwen3Guard 输入风险分类', workerCount: 'Worker 数量', queueCapacity: '持久队列容量', strategy: '节点策略', strategyHint: '按配置顺序优先尝试，必要时故障切换。',
       },
-      saveBar: { enabled: '启用提示词审计', blocking: '同步阻止', storePass: '保存安全事件', dirty: '有未保存的更改', synced: '配置已同步' },
+      saveBar: { enabled: '启用提示词审计', blocking: '同步阻止', blockingLatestTurnOnly: '仅审最新输入和上一轮输出', storePass: '保存安全事件', dirty: '有未保存的更改', synced: '配置已同步' },
       blockingConfirm: {
         title: '开启同步阻止？',
         message: '适用请求会在账号选择、计费和访问上游之前等待 Guard。命中 Block、Guard 不可用或响应非法时，请求都不会访问上游。',

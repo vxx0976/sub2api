@@ -140,6 +140,7 @@ type SystemSettings struct {
 	ContactInfo          string
 	DocURL               string
 	HomeContent          string
+	CompactHomeEnabled   bool
 	HideCcsImportButton  bool
 	TableDefaultPageSize int
 	TablePageSizeOptions []int
@@ -339,6 +340,7 @@ type PublicSettings struct {
 	ContactInfo                      string
 	DocURL                           string
 	HomeContent                      string
+	CompactHomeEnabled               bool
 	HideCcsImportButton              bool
 
 	TableDefaultPageSize int
