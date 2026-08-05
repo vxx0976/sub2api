@@ -47,11 +47,12 @@ func TestAuthHandlerRevokeAllSessionsInvalidatesAccessTokens(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, recorder.Code)
 	require.Equal(t, []int64{29}, refreshTokenCache.revokedUserIDs)
-	// users 表没有 token_version 列（见 resolvedTokenVersion：JWT 里的值由
-	// email+password_hash 指纹推导），所以自增 TokenVersion 只停留在内存里。
-	// 此前紧跟其后的整行 Update 不写任何有效数据，却会用旧快照覆盖并发写入的列，
-	// 已移除。会话撤销由上面的 refresh session 清理承担。
-	require.Equal(t, int64(7), repo.user.TokenVersion)
+	// dev 的 users 表有真实的 token_version 列（ent/schema/user.go，生产库为 bigint），
+	// 撤销会话必须把它原子自增落库：resolvedTokenVersion 走 TokenVersionResolved 分支
+	// 直接读该列，版本号不变则已签发的访问令牌仍能通过校验。
+	// 走的是专用的 BumpTokenVersion 语句而非整行 Update —— 后者会用旧快照覆盖并发
+	// 写入的 balance 等列，且 token_version 自身还会有 lost-update。
+	require.Equal(t, int64(8), repo.user.TokenVersion, "撤销会话必须自增 token_version，否则旧访问令牌不失效")
 
 	var resp struct {
 		Code int `json:"code"`

@@ -678,11 +678,12 @@ func TestUserHandlerUnbindIdentityRevokesAllUserSessionsWhenAuthServiceConfigure
 
 	require.Equal(t, http.StatusOK, recorder.Code)
 	require.Equal(t, []int64{23}, refreshTokenCache.revokedUserIDs)
-	// 撤销依赖的是 refresh session 清理，而不是 token_version：users 表没有这一列
-	// （见 resolvedTokenVersion，实际值由 email+password_hash 指纹推导），
-	// 所以此前"自增 TokenVersion 再整行写回"不持久化任何东西，
-	// 却会用旧快照覆盖并发写入的列。这里断言用户行未被改写。
-	require.Equal(t, int64(4), repo.user.TokenVersion)
+	// 解绑第三方身份要连带失效已签发的访问令牌，光清 refresh session 不够。
+	// dev 的 users 表有真实的 token_version 列（ent/schema/user.go，生产库为 bigint），
+	// resolvedTokenVersion 走 TokenVersionResolved 分支直接读它，所以必须原子自增落库。
+	// 用的是专用 BumpTokenVersion 语句，不走整行 Update（后者会用旧快照覆盖并发
+	// 写入的列，token_version 自身也会 lost-update）。
+	require.Equal(t, int64(5), repo.user.TokenVersion, "解绑后必须自增 token_version，否则旧访问令牌不失效")
 }
 
 func TestUserHandlerUnbindIdentityDoesNotRevokeSessionsWhenNothingWasUnbound(t *testing.T) {

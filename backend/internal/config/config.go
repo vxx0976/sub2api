@@ -2561,6 +2561,39 @@ func setEnvReachableDefaults() {
 	viper.SetDefault("dingtalk_connect.sync_corp_email", false)
 	viper.SetDefault("dingtalk_connect.sync_corp_email_attr_key", "")
 	viper.SetDefault("dingtalk_connect.sync_corp_email_attr_name", "")
+
+	// 自建收款（AliMPay 个人免签 / USDT 多链）。这层是 fallback：
+	// NewAlipayPayment / NewUsdtPayment 拿它当兜底，Reload 再用 settings 表的值覆盖。
+	// 私钥这类恰恰是运维最想用环境变量注入的，而这些键此前一个都没注册，
+	// 于是 PAYMENT_ALIPAY_PRIVATE_KEY 之类被 viper 静默丢弃（AutomaticEnv 只能覆盖
+	// AllKeys() 里已有的键，不能凭空引入）。零值不改变行为——键缺失本来也是零值。
+	viper.SetDefault("payment.enabled", false)
+
+	viper.SetDefault("payment.alipay.app_id", "")
+	viper.SetDefault("payment.alipay.private_key", "")
+	viper.SetDefault("payment.alipay.alipay_public_key", "")
+	viper.SetDefault("payment.alipay.server_url", "")
+	viper.SetDefault("payment.alipay.transfer_user_id", "")
+	viper.SetDefault("payment.alipay.mode", "")
+	viper.SetDefault("payment.alipay.business_qr_url", "")
+	viper.SetDefault("payment.alipay.business_qr_path", "")
+	viper.SetDefault("payment.alipay.amount_offset", 0.0)
+	viper.SetDefault("payment.alipay.match_tolerance_seconds", 0)
+	viper.SetDefault("payment.alipay.monitor_interval_seconds", 0)
+	viper.SetDefault("payment.alipay.query_minutes_back", 0)
+	viper.SetDefault("payment.alipay.order_timeout_seconds", 0)
+
+	viper.SetDefault("payment.usdt.min_amount", 0.0)
+	viper.SetDefault("payment.usdt.max_amount", 0.0)
+	viper.SetDefault("payment.usdt.manual_rate", 0.0)
+	viper.SetDefault("payment.usdt.rate_auto_fetch", false)
+	viper.SetDefault("payment.usdt.rate_markup", 0.0)
+	viper.SetDefault("payment.usdt.amount_offset", 0.0)
+	viper.SetDefault("payment.usdt.amount_tolerance", 0.0)
+	viper.SetDefault("payment.usdt.confirm_seconds", 0)
+	viper.SetDefault("payment.usdt.monitor_interval_seconds", 0)
+	viper.SetDefault("payment.usdt.query_minutes_back", 0)
+	viper.SetDefault("payment.usdt.order_timeout_seconds", 0)
 }
 
 func (c *Config) Validate() error {

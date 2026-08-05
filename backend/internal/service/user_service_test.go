@@ -44,6 +44,8 @@ type mockUserRepo struct {
 	deleteAvatarFn           func(ctx context.Context, userID int64) error
 	deleteAvatarIDs          []int64
 	getAvatarFn              func(ctx context.Context, userID int64) (*UserAvatar, error)
+	passwordBumps            []mockPasswordBump
+	statusWrites             []mockStatusWrite
 	txCalls                  int
 }
 
@@ -119,6 +121,33 @@ func (m *mockUserRepo) Update(ctx context.Context, user *User, fields UserUpdate
 	}
 	return nil
 }
+
+// mockPasswordBump 记录一次 UpdatePasswordAndBumpTokenVersion 调用。
+// dev 的 users 表有真实 token_version 列，改密走这条专用语句（只写 password_hash
+// 并原子自增 token_version），不走上游的整行 Update —— 见 UserService.ChangePassword。
+type mockPasswordBump struct {
+	userID       int64
+	passwordHash string
+}
+
+func (m *mockUserRepo) UpdatePasswordAndBumpTokenVersion(_ context.Context, id int64, passwordHash string) error {
+	m.passwordBumps = append(m.passwordBumps, mockPasswordBump{userID: id, passwordHash: passwordHash})
+	return nil
+}
+
+// mockStatusWrite 记录一次 UpdateStatus 调用。dev 的改状态走这条只写 status 列的
+// 专用语句（比上游的 Update(..., UserUpdateFields{Status: true}) 还少一次 GetByID），
+// 因此断言落在这里而不是 updateFields —— 见 UserService.UpdateStatus。
+type mockStatusWrite struct {
+	userID int64
+	status string
+}
+
+func (m *mockUserRepo) UpdateStatus(_ context.Context, id int64, status string) error {
+	m.statusWrites = append(m.statusWrites, mockStatusWrite{userID: id, status: status})
+	return nil
+}
+
 func (m *mockUserRepo) Delete(context.Context, int64) error { return nil }
 func (m *mockUserRepo) GetUserAvatar(ctx context.Context, userID int64) (*UserAvatar, error) {
 	if m.getAvatarFn != nil {

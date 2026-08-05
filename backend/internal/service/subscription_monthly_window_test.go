@@ -169,7 +169,17 @@ func TestValidateAndCheckLimitsKeepsLegacyMonthlyUsageBeforeExpiry(t *testing.T)
 	require.Equal(t, 12.0, sub.MonthlyUsageUSD)
 }
 
-func TestValidateAndCheckLimitsResetsMonthlyUsageWithPartialFinalPeriod(t *testing.T) {
+// 月窗口过期时，ValidateAndCheckLimits 只在**本地副本**上修正用量，绝不原地改 sub。
+//
+// 上游在这里是原地清零的；dev 不能那样做，有两个原因（见 ValidateAndCheckLimits 注释）：
+//   - 调用方（中间件）会把同一个 sub 接着交给 EnsureWindowMaintenance →
+//     CheckAndResetWindows → DeductAndResetMonthlyUsage。这里先减一次，维护路径再减一次，
+//     多周期订阅每翻一次窗口就凭空多出一个周期额度。
+//   - sub 可能来自共享缓存，原地改会被并发请求重复叠加。
+//
+// 另外月限额是动态有效额度（单周期额度 × 剩余周期数），修正是「减去一个周期额度」
+// 而不是清零，否则窗口刚过期那一刻会按全新额度放行、造成超发。
+func TestValidateAndCheckLimitsCorrectsExpiredMonthlyWindowOnCopyOnly(t *testing.T) {
 	startsAt := time.Date(2026, 7, 1, 23, 30, 0, 0, time.UTC)
 	windowStart := startsAt.Add(-23*time.Hour - 30*time.Minute)
 	now := startsAt.Add(30 * 24 * time.Hour)
@@ -186,9 +196,14 @@ func TestValidateAndCheckLimitsResetsMonthlyUsageWithPartialFinalPeriod(t *testi
 
 	needsMaintenance, err := svc.ValidateAndCheckLimits(sub, &Group{MonthlyLimitUSD: &limit})
 
-	require.NoError(t, err)
-	require.True(t, needsMaintenance)
-	require.Zero(t, sub.MonthlyUsageUSD)
+	// 放行本身就是「副本已被修正」的证据：未修正的话 12 ≥ 10 会直接 ErrMonthlyLimitExceeded。
+	require.NoError(t, err, "窗口已过期，预检查不得按陈旧用量误拒用户")
+	require.True(t, needsMaintenance, "必须回报需要维护，由 DB 侧推进窗口")
+
+	// 关键不变量：调用方的对象一个字节都不能动，扣减只发生在维护路径。
+	require.Equal(t, 12.0, sub.MonthlyUsageUSD,
+		"不得原地修改 sub，否则维护路径会二次扣减（多周期订阅额度超发）")
+	require.Equal(t, windowStart, *sub.MonthlyWindowStart, "窗口推进同样只属于维护路径")
 }
 
 func TestValidateAndCheckLimitsRejectsExactExpiry(t *testing.T) {
