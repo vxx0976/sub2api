@@ -50,8 +50,13 @@ const (
 	openaiStickySessionTTL          = time.Hour // 粘性会话TTL
 	// 与真实 Codex CLI 的 User-Agent 结构对齐：
 	// {originator}/{version} ({OS} {OS_version}; {arch}) {terminal}
-	// 旧值 "codex_cli_rs/0.125.0" 缺少 OS/架构/终端后缀，易被上游指纹识别为非官方客户端。
-	codexCLIUserAgent = "codex_cli_rs/0.144.1 (Ubuntu 22.4.0; x86_64) xterm-256color"
+	// 缺少 OS/架构/终端后缀的形态易被上游指纹识别为非官方客户端。
+	// 该后缀是 UA 形态的唯一定义处，buildCodexCLIUserAgent 按运行时版本号复用它。
+	codexCLIUserAgentSuffix = " (Ubuntu 22.4.0; x86_64) xterm-256color"
+	// codexCLIUserAgent 是编译期兜底 UA；运行时优先使用由后台版本号拼出的规范 UA。
+	// 版本段必须来自 codexCLIVersion：UA 与 version 头是同一个版本声明的两个出口，
+	// 各自硬编码会漂移成互相矛盾的身份。
+	codexCLIUserAgent = "codex_cli_rs/" + codexCLIVersion + codexCLIUserAgentSuffix
 	// codex_cli_only 拒绝时单个请求头日志长度上限（字符）
 	codexCLIOnlyHeaderValueMaxBytes = 256
 
@@ -73,7 +78,12 @@ const (
 	openAIWSRetryJitterRatioDefault    = 0.2
 	openAICompactSessionSeedKey        = "openai_compact_session_seed"
 	openAIUpstreamEndpointContextKey   = "openai_actual_upstream_endpoint"
-	codexCLIVersion                    = "0.144.1"
+	// codexCLIVersion 是网关对上游声明的 Codex 客户端版本，同时供 codexCLIUserAgent
+	// 与 version 头使用。上游 /backend-api/codex 在容量紧张时按客户端身份分优先级降载，
+	// 陈旧版本会被优先丢弃（HTTP 200 + 流内 server_is_overloaded）；非官方客户端配不出
+	// 官方身份时整体回退到本常量，因此它必须跟随官方 CLI 的当前发布版本，
+	// 落后多个版本会让这些请求稳定落在被优先丢弃的一侧。
+	codexCLIVersion = "0.146.0"
 	// Codex 限额快照仅用于后台展示/诊断，不需要每个成功请求都立即落库。
 	openAICodexSnapshotPersistMinInterval = 30 * time.Second
 	// 配额自动暂停时，超过该时长仍未刷新的 used% 快照视为陈旧，不再据此暂停账号。
@@ -495,6 +505,11 @@ func NewOpenAIGatewayService(
 	userPlatformQuotaRepo UserPlatformQuotaRepository,
 	resellerSettingRepo ResellerSettingRepository,
 ) *OpenAIGatewayService {
+	// enforceCodexIdentityHeaders 是 HTTP / 透传 / WS / 探针 等出站路径共用的纯函数收口点，
+	// 拿不到配置，故在此发布进程级开关快照。配置取反义，零值即「强制统一出口开启」。
+	if cfg != nil {
+		SetCodexIdentityEnforcementEnabled(!cfg.Gateway.DisableCodexIdentityEnforcement)
+	}
 	svc := &OpenAIGatewayService{
 		accountRepo:         accountRepo,
 		usageLogRepo:        usageLogRepo,
@@ -1624,6 +1639,11 @@ func isOpenAICompatibleAccountEligibleForRequest(ctx context.Context, account *A
 	if requireCompact && openAICompactSupportTier(account) == 0 {
 		return false
 	}
+	// 分组利润控制：legacy 引擎的粘性/候选循环与 DB recheck 共用
+	// 本判定，任何 fallback 都不能把利润不合格账号重新放回候选。
+	if vetoed, _ := openAIProfitControlVetoReason(ctx, account); vetoed {
+		return false
+	}
 	return true
 }
 
@@ -1989,9 +2009,10 @@ func (s *OpenAIGatewayService) selectAccountForModelWithExclusions(ctx context.C
 		return nil, err
 	}
 
-	// 4. 设置粘性会话绑定
-	// Set sticky session binding
-	if sessionHash != "" {
+	// 4. 设置粘性会话绑定（利润门下推迟到 handler 终检通过后再绑定，
+	// 终检否决的账号不得成为新的粘性目标；无门保持既有 eager 绑定与 TTL）
+	// Set sticky session binding (deferred until terminal admission under a profit gate)
+	if sessionHash != "" && !gatewayProfitControlGateActive(ctx) {
 		_ = s.setStickySessionAccountID(ctx, groupID, sessionHash, selected.ID, openaiStickySessionTTL)
 	}
 
@@ -2166,7 +2187,11 @@ func (s *OpenAIGatewayService) isBetterAccount(candidate, current *Account) bool
 
 // SelectAccountWithLoadAwareness selects an account with load-awareness and wait plan.
 func (s *OpenAIGatewayService) SelectAccountWithLoadAwareness(ctx context.Context, groupID *int64, sessionHash string, requestedModel string, excludedIDs map[int64]struct{}) (*AccountSelectionResult, error) {
-	return s.selectAccountWithLoadAwareness(s.withOpenAIQuotaAutoPauseContext(ctx), groupID, PlatformOpenAI, sessionHash, requestedModel, excludedIDs, false, "", true)
+	ctx = s.withOpenAIQuotaAutoPauseContext(ctx)
+	// 分组利润控制：legacy 公共入口同样装门，保证不经
+	// selectAccountWithScheduler 的调用方也无法绕过利润准入。
+	ctx = s.withOpenAIProfitControlGate(ctx, groupID)
+	return s.selectAccountWithLoadAwareness(ctx, groupID, PlatformOpenAI, sessionHash, requestedModel, excludedIDs, false, "", true)
 }
 
 func (s *OpenAIGatewayService) selectAccountWithLoadAwareness(ctx context.Context, groupID *int64, platform string, sessionHash string, requestedModel string, excludedIDs map[int64]struct{}, requireCompact bool, requiredCapability OpenAIEndpointCapability, useUpstreamTokenCost bool) (*AccountSelectionResult, error) {
@@ -2418,7 +2443,7 @@ func (s *OpenAIGatewayService) selectAccountWithLoadAwareness(ctx context.Contex
 				if selectErr != nil {
 					return nil, true, selectErr
 				}
-				if sessionHash != "" {
+				if sessionHash != "" && !gatewayProfitControlGateActive(ctx) {
 					_ = s.setStickySessionAccountID(ctx, groupID, sessionHash, fresh.ID, openaiStickySessionTTL)
 				}
 				return selection, true, nil
@@ -2457,7 +2482,7 @@ func (s *OpenAIGatewayService) selectAccountWithLoadAwareness(ctx context.Contex
 				if selectErr != nil {
 					return nil, selectErr
 				}
-				if sessionHash != "" {
+				if sessionHash != "" && !gatewayProfitControlGateActive(ctx) {
 					_ = s.setStickySessionAccountID(ctx, groupID, sessionHash, fresh.ID, openaiStickySessionTTL)
 				}
 				return selection, nil
@@ -2689,12 +2714,12 @@ func (s *OpenAIGatewayService) newSelectionResult(ctx context.Context, account *
 	if err != nil {
 		return nil, err
 	}
-	return &AccountSelectionResult{
+	return attachSelectionProfitGate(ctx, &AccountSelectionResult{
 		Account:     hydrated,
 		Acquired:    acquired,
 		ReleaseFunc: release,
 		WaitPlan:    waitPlan,
-	}, nil
+	}), nil
 }
 
 func (s *OpenAIGatewayService) newAcquiredSelectionResult(ctx context.Context, account *Account, release func()) (*AccountSelectionResult, error) {
@@ -4319,15 +4344,10 @@ func (s *OpenAIGatewayService) buildUpstreamRequestOpenAIPassthrough(
 	if s.cfg != nil && s.cfg.Gateway.ForceCodexCLI {
 		req.Header.Set("user-agent", codexCLIUserAgent)
 	}
-	// 浏览器型 UA 兜底：仅 OAuth（ChatGPT 内部接口）账号生效，若最终 user-agent 仍为浏览器
-	// （Chrome/Firefox/Safari/Edge 等），替换为后台配置的 Codex UA，避免 Cloudflare 触发 JS 质询。
-	s.overrideBrowserUserAgent(ctx, account, req)
-
-	// 终态收口：originator 必须与最终 User-Agent 首段配套且为官方身份，非官方 UA 整体回退为
-	// 默认 Codex CLI 身份（承接原「非 Codex UA 安全兜底」，并修复其把 codex-tui 等官方 UA 改写为
-	// codex_cli_rs 造成的 originator 错配 404），详见 issue #3901。
+	// 终态收口：透传路径的 OAuth 与非透传完全一致，同样强制统一出站身份
+	// （User-Agent / originator / version 同源自洽），客户端自报身份不会到达上游。
 	if account.Type == AccountTypeOAuth {
-		enforceCodexIdentityHeaders(req.Header)
+		enforceCodexIdentityHeadersWithUA(req.Header, s.codexIdentityOverrideUA(account))
 	}
 
 	if req.Header.Get("content-type") == "" {
@@ -4615,7 +4635,13 @@ func openAIStreamClientOutputStarted(c *gin.Context, localStarted bool) bool {
 	if localStarted {
 		return true
 	}
-	return c != nil && c.Writer != nil && c.Writer.Written()
+	if c == nil || c.Writer == nil {
+		return false
+	}
+	// compact keepalive comments commit the HTTP response as 200, but they are
+	// not semantic model output and therefore must not block a safe retry.
+	// Without a compact keepalive this is equivalent to checking Writer.Size().
+	return OpenAICompactKeepaliveAdjustedWrittenSize(c) >= 0
 }
 
 func openAIStreamEventIsPreamble(eventType string) bool {
@@ -4638,25 +4664,44 @@ func openAIStreamDataStartsClientOutput(data, eventType string) bool {
 	return !openAIStreamEventIsPreamble(eventType)
 }
 
+// openAIStreamFailedEventErrorCode 提取流内 failed 事件的错误码（小写），
+// 兼容 response.failed 的嵌套形态与裸 error 形态。
+func openAIStreamFailedEventErrorCode(payload []byte) string {
+	code := strings.ToLower(strings.TrimSpace(gjson.GetBytes(payload, "response.error.code").String()))
+	if code == "" {
+		code = strings.ToLower(strings.TrimSpace(gjson.GetBytes(payload, "error.code").String()))
+	}
+	return code
+}
+
+// isOpenAIUpstreamCapacityShedEvent 判断流内 failed 事件是否为上游容量降载信号。
+// 上游在容量紧张时会把请求丢进降载路径：HTTP 200 之后立刻推 event: error
+// （code=server_is_overloaded / slow_down）并以 response.failed 收尾。
+func isOpenAIUpstreamCapacityShedEvent(payload []byte) bool {
+	switch openAIStreamFailedEventErrorCode(payload) {
+	case "server_is_overloaded", "slow_down":
+		return true
+	default:
+		return false
+	}
+}
+
 func openAIStreamFailedEventSemanticStatus(payload []byte, message string) int {
 	if isOpenAIContextWindowError(message, payload) {
 		return http.StatusBadRequest
 	}
 
-	code := strings.ToLower(strings.TrimSpace(gjson.GetBytes(payload, "response.error.code").String()))
-	if code == "" {
-		code = strings.ToLower(strings.TrimSpace(gjson.GetBytes(payload, "error.code").String()))
-	}
+	code := openAIStreamFailedEventErrorCode(payload)
 	errType := strings.ToLower(strings.TrimSpace(gjson.GetBytes(payload, "response.error.type").String()))
 	if errType == "" {
 		errType = strings.ToLower(strings.TrimSpace(gjson.GetBytes(payload, "error.type").String()))
 	}
 	combined := strings.TrimSpace(errType + " " + code + " " + strings.ToLower(strings.TrimSpace(message)))
 	switch {
-	case strings.Contains(errType, "invalid_request"):
-		return http.StatusBadRequest
 	case strings.Contains(combined, "rate_limit"):
 		return http.StatusTooManyRequests
+	case strings.Contains(errType, "invalid_request"):
+		return http.StatusBadRequest
 	case strings.Contains(combined, "authentication") || strings.Contains(combined, "unauthorized") || strings.Contains(combined, "invalid_api_key"):
 		return http.StatusUnauthorized
 	case strings.Contains(combined, "permission") || strings.Contains(combined, "forbidden") || strings.Contains(combined, "access denied"):
@@ -4666,6 +4711,19 @@ func openAIStreamFailedEventSemanticStatus(payload []byte, message string) int {
 	default:
 		return http.StatusBadGateway
 	}
+}
+
+func openAIStreamFailureStatus(payload []byte, message string) int {
+	if len(bytes.TrimSpace(payload)) == 0 || !gjson.ValidBytes(payload) {
+		return http.StatusBadGateway
+	}
+	// Keep the existing 502 failover behavior for other response.failed events.
+	// Only rate limits need promotion because they participate in the account's
+	// configurable 429 same-account retry policy.
+	if openAIStreamFailedEventSemanticStatus(payload, message) == http.StatusTooManyRequests {
+		return http.StatusTooManyRequests
+	}
+	return http.StatusBadGateway
 }
 
 func openAIStreamFailedEventPassthroughBody(payload []byte, failedMessage string) []byte {
@@ -4744,6 +4802,12 @@ func openAIStreamFailedEventShouldFailover(payload []byte, message string) bool 
 	if isOpenAIContextWindowError(message, payload) {
 		return false
 	}
+	// A response.failed event is transported over HTTP 200. Prefer its semantic
+	// rate-limit status over a generic/invalid_request error type so it can enter
+	// the same 429 retry policy as a regular upstream HTTP response.
+	if openAIStreamFailureStatus(payload, message) == http.StatusTooManyRequests {
+		return true
+	}
 	if isOpenAITransientProcessingError(http.StatusBadRequest, message, payload) {
 		return true
 	}
@@ -4777,7 +4841,17 @@ func openAIStreamFailedEventShouldFailover(payload []byte, message string) bool 
 }
 
 func openAIStreamFailedEventRetryableOnSameAccount(account *Account, payload []byte, message string) bool {
-	if account == nil || !account.IsPoolMode() {
+	if account == nil {
+		return false
+	}
+	// 容量降载是请求级信号，不是账号级故障：上游只是让本次请求稍后再试。
+	// 换账号并不改变被降载的因素（客户端身份、模型容量都与账号无关），
+	// 只会让单个请求把整池账号逐个消耗掉，最终仍以同一个错误告终。
+	// 因此先在同一账号上做有界重试，用尽后才按常规流程切号。
+	if isOpenAIUpstreamCapacityShedEvent(payload) {
+		return true
+	}
+	if !account.IsPoolMode() {
 		return false
 	}
 	semanticStatus := openAIStreamFailedEventSemanticStatus(payload, message)
@@ -4798,6 +4872,7 @@ func (s *OpenAIGatewayService) recordOpenAIStreamUpstreamError(
 	if message == "" {
 		message = "OpenAI upstream response failed"
 	}
+	statusCode := openAIStreamFailureStatus(payload, message)
 	detail := ""
 	if len(payload) > 0 && s != nil && s.cfg != nil && s.cfg.Gateway.LogUpstreamErrorBody {
 		maxBytes := s.cfg.Gateway.LogUpstreamErrorBodyMaxBytes
@@ -4807,10 +4882,10 @@ func (s *OpenAIGatewayService) recordOpenAIStreamUpstreamError(
 		detail = truncateString(string(payload), maxBytes)
 	}
 	if c != nil {
-		setOpsUpstreamError(c, http.StatusBadGateway, message, detail)
+		setOpsUpstreamError(c, statusCode, message, detail)
 		event := OpsUpstreamErrorEvent{
 			Platform:           PlatformOpenAI,
-			UpstreamStatusCode: http.StatusBadGateway,
+			UpstreamStatusCode: statusCode,
 			UpstreamRequestID:  strings.TrimSpace(upstreamRequestID),
 			Passthrough:        passthrough,
 			Kind:               kind,
@@ -4834,22 +4909,37 @@ func (s *OpenAIGatewayService) newOpenAIStreamFailoverError(
 	upstreamRequestID string,
 	payload []byte,
 	message string,
+	responseHeaders ...http.Header,
 ) *UpstreamFailoverError {
 	message = sanitizeUpstreamErrorMessage(strings.TrimSpace(message))
 	if message == "" {
 		message = "OpenAI stream disconnected before completion"
 	}
+	statusCode := openAIStreamFailureStatus(payload, message)
+	var headers http.Header
+	if len(responseHeaders) > 0 && responseHeaders[0] != nil {
+		headers = responseHeaders[0].Clone()
+	}
+	// 流内 failed 事件承载于 HTTP 200，响应头是正常配额快照而非限流信号，
+	// 不写账号级限流/封禁状态；重试与切号由 failover 引擎按
+	// StatusCode/RetryableOnSameAccount 决定。
 	message = s.recordOpenAIStreamUpstreamError(c, account, passthrough, upstreamRequestID, "failover", payload, message)
+	errType := "upstream_error"
+	if statusCode == http.StatusTooManyRequests {
+		errType = "rate_limit_error"
+	}
 	body, _ := json.Marshal(gin.H{
 		"error": gin.H{
-			"type":    "upstream_error",
+			"type":    errType,
 			"message": message,
 		},
 	})
 	return &UpstreamFailoverError{
-		StatusCode:             http.StatusBadGateway,
+		StatusCode:             statusCode,
 		ResponseBody:           body,
+		ResponseHeaders:        headers,
 		RetryableOnSameAccount: openAIStreamFailedEventRetryableOnSameAccount(account, payload, message),
+		RequestScopedTransient: isOpenAIUpstreamCapacityShedEvent(payload),
 	}
 }
 
@@ -5004,7 +5094,7 @@ func (s *OpenAIGatewayService) handleStreamingResponsePassthrough(
 					}
 					if openAIStreamFailedEventShouldFailover(dataBytes, failedMessage) {
 						return resultWithUsage(),
-							s.newOpenAIStreamFailoverError(c, account, true, upstreamRequestID, dataBytes, failedMessage)
+							s.newOpenAIStreamFailoverError(c, account, true, upstreamRequestID, dataBytes, failedMessage, resp.Header)
 					}
 				}
 				forceFlushFailedEvent = true
@@ -5413,13 +5503,10 @@ func (s *OpenAIGatewayService) buildUpstreamRequest(ctx context.Context, c *gin.
 		req.Header.Set("user-agent", codexCLIUserAgent)
 	}
 
-	// 浏览器型 UA 兜底：仅 OAuth（ChatGPT 内部接口）账号生效，若最终 user-agent 仍为浏览器
-	// （Chrome/Firefox/Safari/Edge 等），替换为后台配置的 Codex UA，避免 Cloudflare 触发 JS 质询。
-	s.overrideBrowserUserAgent(ctx, account, req)
-
-	// 终态收口：originator 必须与最终 User-Agent 首段配套且为官方身份，否则上游 404（issue #3901）。
+	// 终态收口：强制统一 OAuth 出站身份（User-Agent / originator / version 同源自洽）。
+	// 客户端自报身份不参与构造，浏览器型 UA 也因此不会再到达上游（原浏览器 UA 兜底已被吸收）。
 	if account.Type == AccountTypeOAuth {
-		enforceCodexIdentityHeaders(req.Header)
+		enforceCodexIdentityHeadersWithUA(req.Header, s.codexIdentityOverrideUA(account))
 	}
 
 	// Ensure required headers exist
@@ -5433,28 +5520,14 @@ func (s *OpenAIGatewayService) buildUpstreamRequest(ctx context.Context, c *gin.
 	return req, nil
 }
 
-// overrideBrowserUserAgent 检查请求的最终 user-agent，若为浏览器 UA 则替换为后台配置的 Codex UA。
-// 用于规避 Cloudflare 对浏览器型 UA 在 ChatGPT 内部接口上的访问质询。
-// 影响范围严格限定：仅 OAuth（Codex/ChatGPT 内部接口）账号生效；API Key 等其他账号原样透传。
-// 仅在识别为浏览器（Mozilla/...）时改写，其他 CLI/工具 UA 不动。
-func (s *OpenAIGatewayService) overrideBrowserUserAgent(ctx context.Context, account *Account, req *http.Request) {
-	if req == nil || account == nil {
-		return
+// codexIdentityOverrideUA 返回账号级显式配置的出站 User-Agent，供强制统一身份时作为覆写来源。
+// ForceCodexCLI 语义是「强制使用 Codex CLI 身份」，等价于使用网关规范身份，故返回空串；
+// 该优先级与历史行为一致（ForceCodexCLI 在账号自定义 UA 之后生效）。
+func (s *OpenAIGatewayService) codexIdentityOverrideUA(account *Account) string {
+	if s != nil && s.cfg != nil && s.cfg.Gateway.ForceCodexCLI {
+		return ""
 	}
-	if account.Type != AccountTypeOAuth {
-		return
-	}
-	currentUA := req.Header.Get("user-agent")
-	if !openai.IsBrowserUserAgent(currentUA) {
-		return
-	}
-	codexUA := DefaultOpenAICodexUserAgent
-	if s != nil && s.settingService != nil {
-		if v := strings.TrimSpace(s.settingService.GetOpenAICodexUserAgent(ctx)); v != "" {
-			codexUA = v
-		}
-	}
-	req.Header.Set("user-agent", codexUA)
+	return account.GetOpenAIUserAgent()
 }
 
 func (s *OpenAIGatewayService) handleErrorResponse(
@@ -6275,7 +6348,7 @@ func (s *OpenAIGatewayService) handleStreamingResponseWithReasoning(ctx context.
 					}
 					if openAIStreamFailedEventShouldFailover(dataBytes, failedMessage) {
 						sawFailedEvent = true
-						streamEarlyErr = s.newOpenAIStreamFailoverError(c, account, false, upstreamRequestID, dataBytes, failedMessage)
+						streamEarlyErr = s.newOpenAIStreamFailoverError(c, account, false, upstreamRequestID, dataBytes, failedMessage, resp.Header)
 						return
 					}
 				}
@@ -7995,6 +8068,10 @@ type OpenAIRecordUsageInput struct {
 	RequestPayloadHash string
 	APIKeyService      APIKeyQuotaUpdater
 	QuotaPlatform      string // user×platform quota platform resolved by the handler before async billing.
+	// PricingAt 是请求级定价时刻（请求开始捕获，与利润门的 D 同源）：高峰因子
+	// 按该时刻计算，保证同一请求从准入到扣费不中途变价。零值回退记录时刻
+	//（既有行为），供未装配的路径（图片/异步/cyber 等）沿用。
+	PricingAt time.Time
 	// CyberBlocked 为 true 时把该用量行标记为 cyber（request_type=cyber），计费逻辑不变。
 	CyberBlocked bool
 	ChannelUsageFields
@@ -8075,6 +8152,15 @@ func (s *OpenAIGatewayService) ResolveUserGroupRateMultiplier(ctx context.Contex
 	return resolver.Resolve(ctx, userID, groupID, groupDefaultMultiplier)
 }
 
+// openAIUsagePricingAt 返回本次用量记录使用的定价时刻：优先请求级 PricingAt
+// （与利润门 D 同源同刻），未装配时回退记录时刻（既有行为）。
+func openAIUsagePricingAt(input *OpenAIRecordUsageInput) time.Time {
+	if input != nil && !input.PricingAt.IsZero() {
+		return input.PricingAt
+	}
+	return timezone.Now()
+}
+
 // RecordUsage records usage and deducts balance
 func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRecordUsageInput) error {
 	if input == nil {
@@ -8121,10 +8207,12 @@ func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRec
 	if apiKey.GroupID != nil && apiKey.Group != nil {
 		multiplier = s.ResolveUserGroupRateMultiplier(ctx, user.ID, *apiKey.GroupID, apiKey.Group.RateMultiplier)
 	}
-	// token 倍率叠加高峰因子（token 计费含图片 token，图片按次倍率不受影响）。高峰因子按请求时刻现算，
-	// 不并入上面的 Resolve，以免污染 user:group 倍率缓存。
+	// token 倍率叠加高峰因子（token 计费含图片 token，图片按次倍率不受影响）。
+	// 高峰因子按请求级 PricingAt 现算（与利润门 D 同源同刻，跨峰谷请求不中途
+	// 变价）；未装配 PricingAt 的路径回退记录时刻，保持既有行为。不并入上面的
+	// Resolve，以免污染 user:group 倍率缓存。
 	baseMultiplier := multiplier
-	multiplier, imageMultiplier := computePeakAwareMultipliers(apiKey, baseMultiplier, timezone.Now())
+	multiplier, imageMultiplier := computePeakAwareMultipliers(apiKey, baseMultiplier, openAIUsagePricingAt(input))
 	videoMultiplier := resolveVideoRateMultiplier(apiKey, baseMultiplier)
 
 	var cost *CostBreakdown
@@ -8356,6 +8444,8 @@ func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRec
 	}()
 
 	if billingErr != nil {
+		usageLog.ActualCost = 0
+		writeUsageLogBestEffort(ctx, s.usageLogRepo, usageLog, "service.openai_gateway")
 		return billingErr
 	}
 	writeUsageLogBestEffort(ctx, s.usageLogRepo, usageLog, "service.openai_gateway")

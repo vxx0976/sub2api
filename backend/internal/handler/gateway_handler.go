@@ -200,6 +200,8 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 
 	setOpsRequestContext(c, reqModel, reqStream)
 	setOpsEndpointContext(c, "", int16(service.RequestTypeFromLegacy(reqStream, false)))
+	pricingCtx, pricingAt := service.WithGatewayTokenRequestPricing(c.Request.Context())
+	c.Request = c.Request.WithContext(pricingCtx)
 
 	// 验证 model 必填
 	if reqModel == "" {
@@ -425,8 +427,30 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 				}
 				// Slot acquired: no longer waiting in queue.
 				releaseWait()
-				if err := h.gatewayService.BindStickySession(c.Request.Context(), apiKey.GroupID, sessionKey, account.ID); err != nil {
-					reqLog.Warn("gateway.bind_sticky_session_failed", zap.Int64("account_id", account.ID), zap.Error(err))
+			}
+			// 终检与准入后绑定使用选号结果携带的门（见 responses 同名注释）。
+			admissionCtx := service.ContextWithSelectionProfitGate(c.Request.Context(), selection)
+			latest, vetoed, reason := h.gatewayService.GatewayProfitControlVetoLatest(admissionCtx, account)
+			if vetoed {
+				if accountReleaseFunc != nil {
+					accountReleaseFunc()
+				}
+				reqLog.Debug("gateway.account_slot_profit_vetoed", zap.Int64("account_id", account.ID), zap.String("reason", reason))
+				if fs.RecordProfitVeto(account.ID) == FailoverExhausted {
+					reqLog.Warn("gateway.profit_veto_attempts_exhausted", zap.Int("profit_veto_count", fs.ProfitVetoCount()))
+					markOpsRoutingCapacityLimited(c)
+					h.handleStreamingAwareError(c, http.StatusServiceUnavailable, "api_error", profitVetoExhaustedMessage, streamStarted)
+					return
+				}
+				continue
+			}
+			account = latest
+			selection.Account = latest
+			// 等待路径保持既有 eager 绑定（无门时 helper 直接绑定）；调度器已
+			// 抢槽的直达路径无门时由选号内部绑定，这里只在门下补准入后绑定。
+			if selection.ProfitGateActive() || !selection.Acquired {
+				if err := h.gatewayService.BindStickySessionAfterProfitAdmission(admissionCtx, apiKey.GroupID, sessionKey, account.ID); err != nil {
+					reqLog.Warn("gateway.bind_sticky_session_after_profit_admission_failed", zap.Int64("account_id", account.ID), zap.Error(err))
 				}
 			}
 			// 账号槽位/等待计数需要在超时或断开时安全回收
@@ -465,7 +489,7 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 				if result != nil && result.PartialError {
 					h.submitForwardUsageRecord(c, result, apiKey, subscription, account,
 						body, parsedReq.OutputEffort, parsedReq.ThinkingEnabled, channelMapping, reqModel,
-						fs.ForceCacheBilling, subject.UserID)
+						fs.ForceCacheBilling, pricingAt, subject.UserID)
 				}
 				var failoverErr *service.UpstreamFailoverError
 				if errors.As(err, &failoverErr) {
@@ -531,7 +555,7 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 			// 使用量记录走与部分交付错误分支同一个 helper，避免两处口径漂移。
 			h.submitForwardUsageRecord(c, result, apiKey, subscription, account,
 				body, parsedReq.OutputEffort, parsedReq.ThinkingEnabled, channelMapping, reqModel,
-				fs.ForceCacheBilling, subject.UserID)
+				fs.ForceCacheBilling, pricingAt, subject.UserID)
 			return
 		}
 	}
@@ -689,12 +713,30 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 				}
 				// Slot acquired: no longer waiting in queue.
 				releaseWait()
-				reqLog.Info("sticky.bind_after_wait",
-					zap.String("session_key", sessionKey),
-					zap.Int64("account_id", account.ID),
-				)
-				if err := h.gatewayService.BindStickySession(c.Request.Context(), currentAPIKey.GroupID, sessionKey, account.ID); err != nil {
-					reqLog.Warn("gateway.bind_sticky_session_failed", zap.Int64("account_id", account.ID), zap.Error(err))
+			}
+			// 终检与准入后绑定使用选号结果携带的门（见 responses 同名注释）。
+			admissionCtx := service.ContextWithSelectionProfitGate(c.Request.Context(), selection)
+			latest, vetoed, reason := h.gatewayService.GatewayProfitControlVetoLatest(admissionCtx, account)
+			if vetoed {
+				if accountReleaseFunc != nil {
+					accountReleaseFunc()
+				}
+				reqLog.Debug("gateway.account_slot_profit_vetoed", zap.Int64("account_id", account.ID), zap.String("reason", reason))
+				if fs.RecordProfitVeto(account.ID) == FailoverExhausted {
+					reqLog.Warn("gateway.profit_veto_attempts_exhausted", zap.Int("profit_veto_count", fs.ProfitVetoCount()))
+					markOpsRoutingCapacityLimited(c)
+					h.handleStreamingAwareError(c, http.StatusServiceUnavailable, "api_error", profitVetoExhaustedMessage, streamStarted)
+					return
+				}
+				continue
+			}
+			account = latest
+			selection.Account = latest
+			// 等待路径保持既有 eager 绑定（无门时 helper 直接绑定）；调度器已
+			// 抢槽的直达路径无门时由选号内部绑定，这里只在门下补准入后绑定。
+			if selection.ProfitGateActive() || !selection.Acquired {
+				if err := h.gatewayService.BindStickySessionAfterProfitAdmission(admissionCtx, currentAPIKey.GroupID, sessionKey, account.ID); err != nil {
+					reqLog.Warn("gateway.bind_sticky_session_after_profit_admission_failed", zap.Int64("account_id", account.ID), zap.Error(err))
 				}
 			}
 			// 账号槽位/等待计数需要在超时或断开时安全回收
@@ -795,6 +837,7 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 			if accountReleaseFunc != nil {
 				accountReleaseFunc()
 			}
+
 			if err != nil {
 				// 流式部分交付后出错：对上游已产出/已交付的 token 计费（与成功分支同口径），
 				// 避免上游已产出、客户端已收到内容却整段零计费。随后继续正常失败处理
@@ -802,7 +845,7 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 				if result != nil && result.PartialError {
 					h.submitForwardUsageRecord(c, result, currentAPIKey, currentSubscription, account,
 						attemptParsedReq.Body.Bytes(), attemptParsedReq.OutputEffort, attemptParsedReq.ThinkingEnabled, channelMapping, reqModel,
-						fs.ForceCacheBilling, subject.UserID)
+						fs.ForceCacheBilling, pricingAt, subject.UserID)
 				}
 				// Beta policy block: return 400 immediately, no failover
 				var betaBlockedErr *service.BetaBlockedError
@@ -938,7 +981,7 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 			// Forward 内部可能继续改写 body，usage 去重指纹必须使用最终上游接受的当前 body。
 			h.submitForwardUsageRecord(c, result, currentAPIKey, currentSubscription, account,
 				attemptParsedReq.Body.Bytes(), attemptParsedReq.OutputEffort, attemptParsedReq.ThinkingEnabled, channelMapping, reqModel,
-				fs.ForceCacheBilling, subject.UserID)
+				fs.ForceCacheBilling, pricingAt, subject.UserID)
 			return
 		}
 		if !retryWithFallback {
@@ -2308,6 +2351,7 @@ func (h *GatewayHandler) submitForwardUsageRecord(
 	channelMapping service.ChannelMappingResult,
 	reqModel string,
 	forceCacheBilling bool,
+	pricingAt time.Time,
 	logUserID int64,
 ) {
 	userAgent := c.GetHeader("User-Agent")
@@ -2338,6 +2382,7 @@ func (h *GatewayHandler) submitForwardUsageRecord(
 			User:               apiKey.User,
 			Account:            account,
 			Subscription:       subscription,
+			PricingAt:          pricingAt,
 			InboundEndpoint:    inboundEndpoint,
 			UpstreamEndpoint:   upstreamEndpoint,
 			UserAgent:          userAgent,
@@ -2366,10 +2411,16 @@ func (h *GatewayHandler) submitUsageRecordTask(parent context.Context, task serv
 	}
 	task = wrapUsageRecordTaskContext(parent, task)
 	if h.usageRecordWorkerPool != nil {
-		h.usageRecordWorkerPool.Submit(task)
-		return
+		if mode := h.usageRecordWorkerPool.Submit(task); mode != service.UsageRecordSubmitModeDroppedStopped {
+			return
+		}
+		// 池已停止（进程关停窗口）：计费任务不能静默丢失，降级为内联同步执行。
+		// 显式配置的 drop/sample 溢出丢弃仍按配置语义保留。
+		logger.L().With(
+			zap.String("component", "handler.gateway.messages"),
+		).Warn("gateway.usage_record_task_stopped_sync_fallback")
 	}
-	// 回退路径：worker 池未注入时同步执行，避免退回到无界 goroutine 模式。
+	// 回退路径：worker 池未注入或已停止时同步执行，避免退回到无界 goroutine 模式。
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	defer func() {
