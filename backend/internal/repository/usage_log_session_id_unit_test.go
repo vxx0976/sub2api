@@ -32,8 +32,10 @@ func newSessionIDUsageLog(sessionID *string) *service.UsageLog {
 // arg slice / arg-type table so the five INSERT column lists stay in sync. session_id
 // is the penultimate arg (created_at is always last).
 func TestPrepareUsageLogInsert_SessionIDArgWiring(t *testing.T) {
-	require.Len(t, usageLogInsertArgTypes, 57, "arg-type table must include session_id")
-
+	// 不写死总列数：dev 比上游多若干 fork 列（cache_ttl_overridden / merchant_rate_snapshot /
+	// platform_cost_snapshot / long_context_billing_applied / image_input_* / country_code 等），
+	// 上游的 57 在 fork 上恒不成立。真正要钉的是「session_id 在倒数第二位且参数表与实参对齐」，
+	// 这一点由下面的关系式断言覆盖。
 	sessionID := "sess-persisted-123"
 	prepared := prepareUsageLogInsert(newSessionIDUsageLog(&sessionID))
 
