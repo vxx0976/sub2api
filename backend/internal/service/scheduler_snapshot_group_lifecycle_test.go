@@ -343,8 +343,9 @@ func expectedGroupLifecycleBuckets(groupID int64) []SchedulerBucket {
 
 // 这两个基数由生产侧平台集派生，勿写死：上游 5 平台时分别是 12 / 7，
 // dev 10 平台时是 22 / 12。写死会让整批调度器用例在平台增减后集体漂移。
-//   bucket 数 = 平台数×(single+forced) + anthropic/gemini 各一个 mixed
-//   平台加载数 = 平台数 + anthropic/gemini 的 mixed 各一次
+//
+//	bucket 数 = 平台数×(single+forced) + anthropic/gemini 各一个 mixed
+//	平台加载数 = 平台数 + anthropic/gemini 的 mixed 各一次
 var groupLifecycleBucketCount = len(expectedGroupLifecycleBuckets(0))
 var groupLifecyclePlatformLoadCount = len(schedulerSnapshotPlatforms()) + 2
 

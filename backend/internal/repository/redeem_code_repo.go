@@ -579,7 +579,7 @@ func (r *redeemCodeRepository) SumManualAdminBalanceByDay(ctx context.Context, s
 	// 排除 audit shadow：每笔充值/退款订单成功时都会写一条 type='admin_balance' 的影子记录，
 	// notes 以 manualBalanceShadowPrefixes 中某个前缀开头。这里用共享前缀表动态拼 NOT LIKE，
 	// 与 ListManualBalanceAdjustments 保持同源，避免新增支付通道时再漏（历史漏了 'USDT order '）。
-	args := []interface{}{startTime, endTime, tzName}
+	args := []any{startTime, endTime, tzName}
 	var notLike strings.Builder
 	for _, prefix := range manualBalanceShadowPrefixes {
 		args = append(args, prefix+"%")
