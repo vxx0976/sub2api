@@ -52,6 +52,31 @@ func (r *grokCredentialHandlerRepo) ListSchedulableByPlatform(_ context.Context,
 	return out, nil
 }
 
+// ListSchedulableByPlatforms 是调度器实际走的多平台查询（openai_gateway_service.go
+// 的 listSchedulableAccounts）。本桩内嵌 service.AccountRepository 接口，缺方法编译期
+// 发现不了，只会在运行时对 nil 接口解引用 —— 而 Responses 的 recoverResponsesPanic
+// 会把这个 panic 吞成 502，表面上像"上游挂了"。所以新增仓储方法必须同步补到这里。
+// 语义与单平台版一致，只是平台判定换成集合成员；selectionCalls 每次调用只加一次。
+func (r *grokCredentialHandlerRepo) ListSchedulableByPlatforms(_ context.Context, platforms []string) ([]service.Account, error) {
+	if len(platforms) == 0 {
+		return nil, nil
+	}
+	wanted := make(map[string]struct{}, len(platforms))
+	for _, p := range platforms {
+		wanted[p] = struct{}{}
+	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.selectionCalls++
+	out := make([]service.Account, 0, len(r.accounts))
+	for _, account := range r.accounts {
+		if _, ok := wanted[account.Platform]; ok && account.IsSchedulable() {
+			out = append(out, account)
+		}
+	}
+	return out, nil
+}
+
 func (r *grokCredentialHandlerRepo) ListSchedulableByGroupIDAndPlatform(ctx context.Context, _ int64, platform string) ([]service.Account, error) {
 	return r.ListSchedulableByPlatform(ctx, platform)
 }
