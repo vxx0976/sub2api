@@ -85,10 +85,10 @@
                   class="whitespace-nowrap text-xs leading-5"
                 >
                   <span class="mr-1 font-sans font-normal text-gray-400 dark:text-dark-500">{{ tierLabel(iv) }}</span>
-                  {{ paidPerMillion(iv.input_price) }}
+                  {{ paidPerMillion(m, iv.input_price) }}
                 </div>
               </template>
-              <template v-else>{{ paidPerMillion(m.pricing?.input_price) }}</template>
+              <template v-else>{{ paidPerMillion(m, m.pricing?.input_price) }}</template>
             </td>
             <td class="pz-cell px-3 py-2.5 align-middle font-mono font-semibold text-gray-900 dark:text-gray-50">
               <template v-if="tokenIntervals(m).length">
@@ -98,10 +98,10 @@
                   class="whitespace-nowrap text-xs leading-5"
                 >
                   <span class="mr-1 font-sans font-normal text-gray-400 dark:text-dark-500">{{ tierLabel(iv) }}</span>
-                  {{ paidPerMillion(iv.output_price) }}
+                  {{ paidPerMillion(m, iv.output_price) }}
                 </div>
               </template>
-              <template v-else>{{ paidPerMillion(m.pricing?.output_price) }}</template>
+              <template v-else>{{ paidPerMillion(m, m.pricing?.output_price) }}</template>
             </td>
             <td class="pz-cell px-3 py-2.5 align-middle">
               <div
@@ -110,11 +110,11 @@
               >
                 <div>
                   <span class="mr-1 font-sans font-normal text-gray-400 dark:text-dark-500">{{ t('modelPlaza.table.cacheWrite') }}</span>
-                  {{ paidPerMillion(m.pricing?.cache_write_price) }}
+                  {{ paidPerMillion(m, m.pricing?.cache_write_price) }}
                 </div>
                 <div>
                   <span class="mr-1 font-sans font-normal text-gray-400 dark:text-dark-500">{{ t('modelPlaza.table.cacheRead') }}</span>
-                  {{ paidPerMillion(m.pricing?.cache_read_price) }}
+                  {{ paidPerMillion(m, m.pricing?.cache_read_price) }}
                 </div>
               </div>
               <span v-else class="text-gray-400 dark:text-dark-500">-</span>
@@ -152,10 +152,10 @@
           <td
             class="border-l border-gray-100 px-3 py-2.5 align-middle font-mono text-xs text-gray-500 dark:border-dark-700/60 dark:text-dark-400"
           >
-            {{ official(m.official_pricing?.input_price) }}
+            {{ official(m, m.official_pricing?.input_price) }}
           </td>
           <td class="px-3 py-2.5 align-middle font-mono text-xs text-gray-500 dark:text-dark-400">
-            {{ official(m.official_pricing?.output_price) }}
+            {{ official(m, m.official_pricing?.output_price) }}
           </td>
           <td class="px-3 py-2.5 align-middle">
             <div
@@ -164,15 +164,15 @@
             >
               <div>
                 <span class="mr-1 font-sans font-normal text-gray-400 dark:text-dark-500">{{ t('modelPlaza.table.cacheWrite') }}</span>
-                {{ official(m.official_pricing.cache_write_price)
+                {{ official(m, m.official_pricing.cache_write_price)
                 }}<template v-if="m.official_pricing.cache_write_1h_price != null"
-                  ><span class="font-sans text-gray-400 dark:text-dark-500"> (1h </span>{{ official(m.official_pricing.cache_write_1h_price)
+                  ><span class="font-sans text-gray-400 dark:text-dark-500"> (1h </span>{{ official(m, m.official_pricing.cache_write_1h_price)
                   }}<span class="font-sans text-gray-400 dark:text-dark-500">)</span></template
                 >
               </div>
               <div>
                 <span class="mr-1 font-sans font-normal text-gray-400 dark:text-dark-500">{{ t('modelPlaza.table.cacheRead') }}</span>
-                {{ official(m.official_pricing.cache_read_price) }}
+                {{ official(m, m.official_pricing.cache_read_price) }}
               </div>
             </div>
             <span v-else class="text-gray-400 dark:text-dark-500">-</span>
@@ -203,6 +203,7 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { formatScaled } from '@/utils/pricing'
+import { costSymbol } from '@/utils/usagePricing'
 import { platformAccentColor } from '@/utils/platformColors'
 import {
   BILLING_MODE_TOKEN,
@@ -270,10 +271,19 @@ function billingModeLabel(m: PlazaModel): string {
 /** 价格统一保底 2 位小数,更长的有效小数原样保留。 */
 const MIN_DECIMALS = 2
 
-/** 实付价 = 渠道单价 × 生效倍率,按 $/1M token 展示。 */
-function paidPerMillion(value: number | null | undefined): string {
+/**
+ * 该行的货币符号。deepseek / moonshot / qwen 等国产模型按人民币官方计价,
+ * 后端 price_currency 下发 'CNY',这里显示 ¥;其余为 $。1¥=1 余额单位,
+ * 只换符号不换算数值(与用量页 / 可用渠道页同一约定)。
+ */
+function symbolOf(m: PlazaModel): string {
+  return costSymbol(m.price_currency)
+}
+
+/** 实付价 = 渠道单价 × 生效倍率,按 <币种>/1M token 展示。 */
+function paidPerMillion(m: PlazaModel, value: number | null | undefined): string {
   if (value == null) return '-'
-  return formatScaled(value * effectiveRate.value, PER_MILLION, MIN_DECIMALS)
+  return formatScaled(value * effectiveRate.value, PER_MILLION, MIN_DECIMALS, symbolOf(m))
 }
 
 /** 图片计费模型且分组开启生图独立倍率:实付倍率取独立倍率,与计费口径一致。 */
@@ -289,13 +299,13 @@ function requestRate(m: PlazaModel): number {
 /** 按次 / 按图片单价(乘该行生效倍率,不换算 1M)。 */
 function paidRequestPrice(m: PlazaModel, value: number | null | undefined): string {
   if (value == null) return '-'
-  return formatScaled(value * requestRate(m), 1, MIN_DECIMALS)
+  return formatScaled(value * requestRate(m), 1, MIN_DECIMALS, symbolOf(m))
 }
 
 /** 官方参考价不乘倍率。 */
-function official(value: number | null | undefined): string {
+function official(m: PlazaModel, value: number | null | undefined): string {
   if (value == null) return '-'
-  return formatScaled(value, PER_MILLION, MIN_DECIMALS)
+  return formatScaled(value, PER_MILLION, MIN_DECIMALS, symbolOf(m))
 }
 
 /** 非 token 计费的单位后缀:按图片 → “/ 张”,按次 → “/ 次”。 */

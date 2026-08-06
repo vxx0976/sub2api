@@ -383,4 +383,36 @@ describe('PlazaModelPricingTable', () => {
     // 旧 bug:image_output_price × 0.1 = 0.000003 被当按次价
     expect(text).not.toContain('$0.000003')
   })
+  // ---- fork：币种符号 ----
+  // 上游只有 5 个全美元计价的平台，广场原本把 $ 写死在格式化器和表头单位里。
+  // fork 多出 deepseek / moonshot / qwen 等按人民币官方计价的平台，后端
+  // price_currency 下发 'CNY'，实付价与官方参考价都必须显示 ¥ 而不是 $。
+  it('price_currency=CNY 时实付价与官方价都用 ¥,不掺 $', () => {
+    const cny = tokenModel({
+      name: 'deepseek-chat',
+      platform: 'deepseek',
+      price_currency: 'CNY'
+    })
+    const text = mountTable([cny], 1).text()
+    expect(text).toContain('¥3.00')
+    expect(text).toContain('¥15.00')
+    expect(text).toContain('¥3.75')
+    expect(text).toContain('¥0.30')
+    expect(text).not.toContain('$')
+  })
+
+  it('price_currency 缺省/USD 仍为 $,且同表混合币种各行独立取符号', () => {
+    const usd = tokenModel({ name: 'claude-sonnet' })
+    const cny = tokenModel({
+      name: 'qwen-max',
+      platform: 'qwen',
+      price_currency: 'CNY',
+      pricing: { ...tokenModel().pricing!, input_price: 2e-6 },
+      official_pricing: { ...tokenModel().official_pricing!, input_price: 2e-6 }
+    })
+    const text = mountTable([usd, cny], 1).text()
+    // 同一张表里两种符号共存，说明符号是逐行取的而非整表一个
+    expect(text).toContain('$3.00')
+    expect(text).toContain('¥2.00')
+  })
 })

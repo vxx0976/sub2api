@@ -1560,6 +1560,12 @@ export default {
 
   // Model Plaza (public group/model pricing showcase)
   modelPlaza: {
+    seo: {
+      description:
+        '{siteName} 模型广场：公开分组与模型列表、透明定价，覆盖 Claude、GPT、Gemini、GLM、Qwen 等主流大模型，无需登录即可浏览。',
+      keywords:
+        'Claude API, GPT API, Gemini API, 大模型API, 模型价格, API定价, 模型广场, AI模型列表'
+    },
     title: '模型广场',
     description: '按分组浏览可用模型与价格',
     loading: '加载中...',
@@ -1594,7 +1600,7 @@ export default {
       paidPrice: '实付价格(折后)',
       officialPrice: '官方价格',
       rate: '折扣倍率',
-      unitPerMillion: '$ / 1M token',
+      unitPerMillion: '/ 1M token',
       perUnitRequest: '/ 次',
       perUnitImage: '/ 张',
       perRequest: '按次计费',
@@ -9286,52 +9292,4 @@ export default {
     }
   },
 
-  publicModels: {
-    pageTitle: '模型广场',
-    seo: {
-      description:
-        '{siteName} 模型广场：公开分组与模型列表、透明定价，覆盖 Claude、GPT、Gemini、GLM、Qwen 等主流大模型，无需登录即可浏览。',
-      keywords:
-        'Claude API, GPT API, Gemini API, 大模型API, 模型价格, API定价, 模型广场, AI模型列表'
-    },
-    badge: '公开模型',
-    title: '模型广场',
-    subtitle: '所有公开分组及其支持的模型，无需登录即可浏览。',
-    statGroups: '分组',
-    statModels: '模型',
-    statPlatforms: '平台',
-    filterAll: '全部',
-    searchPlaceholder: '搜索分组、平台或模型名称…',
-    searchEmpty: '没有匹配的分组或模型。',
-    empty: '当前暂无公开分组。',
-    loadErrorTitle: '加载失败',
-    loadErrorDescription: '请稍后刷新页面再试。',
-    refresh: '刷新',
-    footnote: '专属/订阅型分组不在此页展示；最终可用模型、价格与权限以控制台为准。',
-    apiBaseTitle: 'API 接入地址',
-    apiBaseHint: '在客户端 Base URL 填入此地址，鉴权使用控制台创建的密钥。',
-    copyApiBase: '复制',
-    copyModelHint: '点击复制模型名称',
-    modelCount: '共 {count} 个模型',
-    noModels: '该分组暂无模型。',
-    officialPrice: '官方价',
-    sitePrice: '本站价',
-    fxNote: '1 USD ≈ {rate} CNY',
-    showMore: '展开其余 {count} 个模型',
-    columns: {
-      model: '模型',
-      input: '输入',
-      output: '输出',
-      cacheWrite: '缓存写入',
-      cacheRead: '缓存读取',
-    },
-    tier: {
-      label: '档位',
-      price: '价格',
-    },
-    modeBadge: {
-      perRequest: '按次',
-      image: '按图',
-    },
-  },
 }

@@ -27,9 +27,9 @@
           >{{ t('home.nav.home') }}</router-link>
           <!-- Model Plaza: public, shown on all domains -->
           <router-link
-            to="/models"
+            to="/model-plaza"
             class="transition-colors"
-            :class="isActive('/models') ? 'text-gray-900 dark:text-white' : 'text-gray-600 hover:text-gray-900 dark:text-dark-300 dark:hover:text-white'"
+            :class="isActive('/model-plaza') ? 'text-gray-900 dark:text-white' : 'text-gray-600 hover:text-gray-900 dark:text-dark-300 dark:hover:text-white'"
           >{{ t('home.nav.models') }}</router-link>
           <!-- Key Query: shown on reseller domains -->
           <router-link
