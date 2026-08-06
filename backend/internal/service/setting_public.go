@@ -370,7 +370,7 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 
 		AvailableChannelsEnabled: settings[SettingKeyAvailableChannelsEnabled] == "true",
 
-		ModelPlazaEnabled:     modelPlazaEnabledFrom(settings),
+		ModelPlazaEnabled:     settings[SettingKeyModelPlazaEnabled] == "true",
 		ModelPlazaRequireAuth: settings[SettingKeyModelPlazaRequireAuth] == "true",
 
 		AffiliateEnabled: settings[SettingKeyAffiliateEnabled] == "true",
@@ -476,27 +476,10 @@ func (s *SettingService) GetModelPlazaRuntime(ctx context.Context) ModelPlazaRun
 		return ModelPlazaRuntime{Enabled: false}
 	}
 	return ModelPlazaRuntime{
-		Enabled:     modelPlazaEnabledFrom(vals),
+		Enabled:     vals[SettingKeyModelPlazaEnabled] == "true",
 		RequireAuth: vals[SettingKeyModelPlazaRequireAuth] == "true",
 		Description: vals[SettingKeyModelPlazaDescription],
 	}
-}
-
-// modelPlazaEnabledFrom 判定模型广场是否开启，区分「键缺失」与「显式关闭」。
-//
-// 上游把广场当作新增的 opt-in 功能，默认关；本 fork 里它取代了原来的 /models，
-// 是唯一的公开定价页，因此默认必须是开。
-// 只改 InitializeDefaultSettings 的默认值表不够：那个函数在 registration_enabled
-// 已存在时整体早退，所以任何存量部署都不会被补写这条记录，键会一直缺失。
-//
-// 缺失 → 开启；显式写入的值按字面判定（管理员在后台关掉仍然生效）。
-// 注意读取失败的调用方仍应 fail-closed —— 那是「读不到」而非「没配过」。
-func modelPlazaEnabledFrom(settings map[string]string) bool {
-	raw, ok := settings[SettingKeyModelPlazaEnabled]
-	if !ok {
-		return true
-	}
-	return raw == "true"
 }
 
 // IsUserErrorViewAllowed reads the user-facing error-requests visibility switch

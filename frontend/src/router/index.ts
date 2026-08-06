@@ -181,14 +181,16 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
-    // 原 fork 自建的公开定价页,已由上游模型广场取代(功能重复,广场覆盖更全:
-    // 阶梯价/官方参考价/缓存价/按图计费/专属分组与专属倍率)。
-    //
-    // 只对 SPA 内部导航有效:后端 shouldBypassEmbeddedFrontend 把 /models 归给了
-    // OpenAI 兼容的模型列表接口,直接访问该路径根本进不了前端(线上返回 401 JSON)。
-    // 保留这条重定向只是兜住残留的站内链接/书签,SEO 入口一律用 /model-plaza。
     path: '/models',
-    redirect: '/model-plaza'
+    name: 'PublicModels',
+    component: () => import('@/views/public/PublicModelsView.vue'),
+    meta: {
+      requiresAuth: false,
+      title: 'Models',
+      titleKey: 'publicModels.pageTitle',
+      descriptionKey: 'publicModels.seo.description',
+      keywordsKey: 'publicModels.seo.keywords'
+    }
   },
   {
     path: '/model-plaza',
@@ -197,11 +199,7 @@ const routes: RouteRecordRaw[] = [
     meta: {
       requiresAuth: false,
       title: 'Model Plaza',
-      titleKey: 'modelPlaza.title',
-      // SEO 描述/关键词沿用原 /models 页写好的文案;sitemap 也已改指本页
-      // (原来投的 /models 对爬虫是 401 JSON,等于一直没有可收录的定价页)。
-      descriptionKey: 'modelPlaza.seo.description',
-      keywordsKey: 'modelPlaza.seo.keywords'
+      titleKey: 'modelPlaza.title'
     }
   },
 

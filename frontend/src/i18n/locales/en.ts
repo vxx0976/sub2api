@@ -1555,12 +1555,6 @@ export default {
 
   // Model Plaza (public group/model pricing showcase)
   modelPlaza: {
-    seo: {
-      description:
-        '{siteName} model marketplace: public groups, model catalog and transparent pricing across Claude, GPT, Gemini, GLM, Qwen and more — no login required.',
-      keywords:
-        'Claude API, GPT API, Gemini API, LLM API, model pricing, API pricing, model marketplace, AI model list'
-    },
     title: 'Model Plaza',
     description: 'Browse available models and pricing by group',
     loading: 'Loading...',
@@ -1595,7 +1589,7 @@ export default {
       paidPrice: 'Your Price (Discounted)',
       officialPrice: 'Official Price',
       rate: 'Rate',
-      unitPerMillion: '/ 1M tokens',
+      unitPerMillion: '$ / 1M tokens',
       perUnitRequest: '/ request',
       perUnitImage: '/ image',
       perRequest: 'Per request',
@@ -9308,5 +9302,53 @@ export default {
     }
   },
 
+  publicModels: {
+    pageTitle: 'Models',
+    seo: {
+      description:
+        '{siteName} model marketplace: public groups, model catalog and transparent pricing across Claude, GPT, Gemini, GLM, Qwen and more — no login required.',
+      keywords:
+        'Claude API, GPT API, Gemini API, LLM API, model pricing, API pricing, model marketplace, AI model list'
+    },
+    badge: 'Public Models',
+    title: 'Model Marketplace',
+    subtitle: 'Browse every public group and its supported models — no login required.',
+    statGroups: 'Groups',
+    statModels: 'Models',
+    statPlatforms: 'Platforms',
+    filterAll: 'All',
+    searchPlaceholder: 'Search groups, platforms or model names…',
+    searchEmpty: 'No matching groups or models.',
+    empty: 'No public groups available yet.',
+    loadErrorTitle: 'Failed to load',
+    loadErrorDescription: 'Please refresh the page and try again later.',
+    refresh: 'Refresh',
+    footnote: 'Exclusive / subscription groups are not shown here. Final availability, pricing and permissions are subject to the console.',
+    apiBaseTitle: 'API Base URL',
+    apiBaseHint: 'Set this as the Base URL in your client; authenticate with a key created in the console.',
+    copyApiBase: 'Copy',
+    copyModelHint: 'Click to copy model name',
+    modelCount: '{count} models',
+    noModels: 'No models in this group yet.',
+    officialPrice: 'Official',
+    sitePrice: 'Site price',
+    fxNote: '1 USD ≈ {rate} CNY',
+    showMore: 'Show {count} more models',
+    columns: {
+      model: 'Model',
+      input: 'Input',
+      output: 'Output',
+      cacheWrite: 'Cache write',
+      cacheRead: 'Cache read',
+    },
+    tier: {
+      label: 'Tier',
+      price: 'Price',
+    },
+    modeBadge: {
+      perRequest: 'Per request',
+      image: 'Per image',
+    },
+  },
 
 }

@@ -1530,12 +1530,6 @@ export default {
   },
   // Model Plaza (публичная витрина групп, моделей и цен)
   modelPlaza: {
-    seo: {
-      description:
-        'Каталог моделей {siteName}: публичные группы, список моделей и прозрачные цены — Claude, GPT, Gemini, GLM, Qwen и другие. Без входа в систему.',
-      keywords:
-        'Claude API, GPT API, Gemini API, LLM API, цены на модели, тарифы API, каталог моделей, список AI-моделей'
-    },
     title: 'Витрина моделей',
     description: 'Просматривайте доступные модели и цены по группам',
     loading: 'Загрузка...',
@@ -1570,7 +1564,7 @@ export default {
       paidPrice: 'Ваша цена (со скидкой)',
       officialPrice: 'Официальная цена',
       rate: 'Коэффициент',
-      unitPerMillion: '/ 1M токенов',
+      unitPerMillion: '$ / 1M токенов',
       perUnitRequest: '/ запрос',
       perUnitImage: '/ изображение',
       perRequest: 'За запрос',
@@ -10048,4 +10042,52 @@ export default {
     }
   },
 
+  publicModels: {
+    pageTitle: 'Модели',
+    seo: {
+      description:
+        'Каталог моделей {siteName}: публичные группы, список моделей и прозрачные цены — Claude, GPT, Gemini, GLM, Qwen и другие. Без входа в систему.',
+      keywords:
+        'Claude API, GPT API, Gemini API, LLM API, цены на модели, тарифы API, каталог моделей, список AI-моделей'
+    },
+    badge: 'Публичные модели',
+    title: 'Каталог моделей',
+    subtitle: 'Просматривайте все публичные группы и поддерживаемые ими модели — без входа в систему.',
+    statGroups: 'Группы',
+    statModels: 'Модели',
+    statPlatforms: 'Платформы',
+    filterAll: 'Все',
+    searchPlaceholder: 'Поиск по группам, платформам или названиям моделей…',
+    searchEmpty: 'Нет подходящих групп или моделей.',
+    empty: 'Пока нет публичных групп.',
+    loadErrorTitle: 'Не удалось загрузить',
+    loadErrorDescription: 'Пожалуйста, обновите страницу и попробуйте позже.',
+    refresh: 'Обновить',
+    footnote: 'Эксклюзивные / подписочные группы здесь не отображаются. Итоговая доступность, цены и права определяются консолью.',
+    apiBaseTitle: 'Базовый URL API',
+    apiBaseHint: 'Укажите этот адрес как Base URL в вашем клиенте; для авторизации используйте ключ, созданный в консоли.',
+    copyApiBase: 'Копировать',
+    copyModelHint: 'Нажмите, чтобы скопировать название модели',
+    modelCount: 'Моделей: {count}',
+    noModels: 'В этой группе пока нет моделей.',
+    officialPrice: 'Оф. цена',
+    sitePrice: 'Цена сайта',
+    fxNote: '1 USD ≈ {rate} CNY',
+    showMore: 'Показать ещё {count} моделей',
+    columns: {
+      model: 'Модель',
+      input: 'Ввод',
+      output: 'Вывод',
+      cacheWrite: 'Запись кэша',
+      cacheRead: 'Чтение кэша',
+    },
+    tier: {
+      label: 'Уровень',
+      price: 'Цена',
+    },
+    modeBadge: {
+      perRequest: 'За запрос',
+      image: 'За изображение',
+    },
+  }
 }

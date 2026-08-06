@@ -194,11 +194,8 @@ func (s *SettingService) InitializeDefaultSettings(ctx context.Context) error {
 		// Available channels feature (default disabled; opt-in)
 		SettingKeyAvailableChannelsEnabled: "false",
 
-		// Model plaza feature（fork 改为默认开启，public unless require_auth）。
-		// 上游默认关是因为广场对它是新增的 opt-in 功能；在本 fork 它是唯一的公开定价页
-		// （取代了原来的 /models），沿用 default-off 会让任何未显式写过该设置的部署
-		// ——包括全新部署——根本没有公开定价页（后端 404 + 前端跳 /home）。
-		SettingKeyModelPlazaEnabled:     "true",
+		// Model plaza feature (default disabled; opt-in, public unless require_auth)
+		SettingKeyModelPlazaEnabled:     "false",
 		SettingKeyModelPlazaRequireAuth: "false",
 		SettingKeyModelPlazaDescription: "",
 
@@ -805,9 +802,8 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 	// Available channels feature (default: disabled; strict true)
 	result.AvailableChannelsEnabled = settings[SettingKeyAvailableChannelsEnabled] == "true"
 
-	// Model plaza feature（fork 默认开启；键缺失=开，显式值按字面判定）。
-	// 与 modelPlazaEnabledFrom 同口径，否则后台开关会显示「关」而广场实际开着。
-	result.ModelPlazaEnabled = modelPlazaEnabledFrom(settings)
+	// Model plaza feature (default: disabled; strict true)
+	result.ModelPlazaEnabled = settings[SettingKeyModelPlazaEnabled] == "true"
 	result.ModelPlazaRequireAuth = settings[SettingKeyModelPlazaRequireAuth] == "true"
 	result.ModelPlazaDescription = settings[SettingKeyModelPlazaDescription]
 

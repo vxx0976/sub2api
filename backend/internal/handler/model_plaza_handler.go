@@ -46,12 +46,8 @@ type modelPlazaOfficialPricing struct {
 
 // modelPlazaModel 广场模型条目：渠道定价（白名单形态）+ 官方参考价。
 type modelPlazaModel struct {
-	Name     string `json:"name"`
-	Platform string `json:"platform"`
-	// PriceCurrency 是该模型价格数值的币种（"CNY" / "USD"），前端据此选 ¥ / $ 符号。
-	// fork 比上游多 deepseek/moonshot/qwen 等按人民币官方计价的平台，缺了这个字段
-	// 它们的 ¥ 价会被当成美元展示。与用量页 / 可用渠道页同源（service.ModelPriceCurrency）。
-	PriceCurrency   string                     `json:"price_currency"`
+	Name            string                     `json:"name"`
+	Platform        string                     `json:"platform"`
 	Pricing         *userSupportedModelPricing `json:"pricing"`
 	OfficialPricing *modelPlazaOfficialPricing `json:"official_pricing"`
 }
@@ -167,7 +163,6 @@ func toModelPlazaGroupDTO(g *service.PlazaGroup, userRates map[int64]float64) mo
 		models = append(models, modelPlazaModel{
 			Name:            m.Name,
 			Platform:        m.Platform,
-			PriceCurrency:   service.ModelPriceCurrency(m.Name),
 			Pricing:         toUserPricing(m.Pricing),
 			OfficialPricing: toModelPlazaOfficialPricing(m.OfficialPricing),
 		})
