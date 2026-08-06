@@ -148,6 +148,12 @@ func (s *ChannelService) ListPlazaGroups(ctx context.Context) ([]PlazaGroup, err
 	for _, gid := range order {
 		pg := byGroup[gid]
 		if len(pg.Models) == 0 {
+			// fork：渠道侧零模型时回落到账号池推导模型目录。本 fork 的模型目录挂在
+			// 账号上而非渠道上，不回落的话每个分组都是 0 模型、整个广场页全空。
+			// 详见 channel_plaza_account_fallback.go。
+			pg.Models = s.plazaAccountFallbackModels(ctx, gid, pg.Platform)
+		}
+		if len(pg.Models) == 0 {
 			continue
 		}
 		sort.SliceStable(pg.Models, func(i, j int) bool { return pg.Models[i].Name < pg.Models[j].Name })
