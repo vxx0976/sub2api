@@ -4048,6 +4048,17 @@ func (s *OpenAIGatewayService) forwardOpenAIPassthrough(
 		})
 		return nil, errors.New("image generation disabled for group")
 	}
+	// 与 native /responses 入口对齐计费口径：image-only model 的顶层 size/quality/...
+	// 补进 image_generation 工具。上游只认工具里的字段，不补的话客户要的尺寸拿不到，
+	// 计费也会因为「尺寸没透传、不能封顶」落到更贵的实际出图档。
+	// Responses Lite 协议不收顶层的 image_generation 工具（见 openai_responses_lite_tools.go），
+	// 往里补等于自造 400，和 WS 入口一样整体豁免。
+	if imageIntent && !isOpenAIResponsesCompactPath(c) && !isOpenAIResponsesLiteRequest(c) {
+		if liftedBody, lifted := liftOpenAIResponsesImageParamsIntoToolBody(body); lifted {
+			body = liftedBody
+			logger.LegacyPrintf("service.openai_gateway", "[OpenAI 自动透传] Lifted /responses image params into image_generation tool")
+		}
+	}
 	imageBillingModel := ""
 	imageSizeTier := ""
 	imageInputSize := ""

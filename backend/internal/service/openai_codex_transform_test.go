@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"github.com/tidwall/gjson"
 )
 
 func TestApplyCodexOAuthTransform_ToolContinuationPreservesInput(t *testing.T) {
@@ -1218,6 +1219,130 @@ func TestNormalizeOpenAIResponsesImageOnlyModel_PreservesExistingImageTool(t *te
 	tool, ok := tools[0].(map[string]any)
 	require.True(t, ok)
 	require.Equal(t, "gpt-image-1.5", tool["model"])
+}
+
+// 透传 / WS 入口只做「补齐」：把顶层出图参数补进 image_generation 工具，
+// 其余（model / prompt / tool_choice / 顶层字段）一律不动。
+func TestLiftOpenAIResponsesImageParamsIntoToolBody(t *testing.T) {
+	body := []byte(`{"model":"gpt-image-2","prompt":"a <b>bold</b> cat & dog","size":"1024x1024","quality":"low"}`)
+
+	out, lifted := liftOpenAIResponsesImageParamsIntoToolBody(body)
+	require.True(t, lifted)
+	require.Equal(t, "1024x1024", gjson.GetBytes(out, "tools.0.size").String())
+	require.Equal(t, "low", gjson.GetBytes(out, "tools.0.quality").String())
+	require.Equal(t, "gpt-image-2", gjson.GetBytes(out, "tools.0.model").String())
+	require.Equal(t, "image_generation", gjson.GetBytes(out, "tools.0.type").String())
+
+	// 不改写 model、不搬 prompt、不设 tool_choice、不删顶层字段——透传语义保持不变。
+	require.Equal(t, "gpt-image-2", gjson.GetBytes(out, "model").String())
+	require.Equal(t, "a <b>bold</b> cat & dog", gjson.GetBytes(out, "prompt").String())
+	require.Equal(t, "1024x1024", gjson.GetBytes(out, "size").String())
+	require.False(t, gjson.GetBytes(out, "tool_choice").Exists())
+	require.False(t, gjson.GetBytes(out, "input").Exists())
+	// sjson 原地改写不会转义 HTML 字符。
+	require.Contains(t, string(out), "a <b>bold</b> cat & dog")
+	require.NotContains(t, string(out), "\\u003c")
+
+	cfg, err := resolveOpenAIResponsesImageBillingConfigDetailedFromBody(out, "gpt-image-2")
+	require.NoError(t, err)
+	require.Equal(t, "1K", cfg.SizeTier)
+	require.Equal(t, "1024x1024", cfg.InputSize, "补进工具的尺寸会透传给上游，可作为封顶依据")
+}
+
+func TestLiftOpenAIResponsesImageParamsIntoToolBody_KeepsExistingToolFields(t *testing.T) {
+	body := []byte(`{"model":"gpt-image-2","size":"3840x2160","tools":[{"type":"function"},{"type":"image_generation","model":"gpt-image-1.5","size":"1024x1024"}]}`)
+
+	out, lifted := liftOpenAIResponsesImageParamsIntoToolBody(body)
+	require.False(t, lifted, "工具里已经有尺寸和模型，无需补齐")
+	require.Equal(t, body, out)
+
+	// 顶层写 4K、工具里写 1K 时，计费只认工具里那份（顶层不透传，不能当封顶依据）。
+	cfg, err := resolveOpenAIResponsesImageBillingConfigDetailedFromBody(out, "gpt-image-2")
+	require.NoError(t, err)
+	require.Equal(t, "1K", cfg.SizeTier)
+	require.Equal(t, "1024x1024", cfg.InputSize)
+}
+
+func TestLiftOpenAIResponsesImageParamsIntoToolBody_LiftsIntoExistingTool(t *testing.T) {
+	body := []byte(`{"model":"gpt-image-2","size":"1024x1024","tools":[{"type":"function","name":"f"},{"type":"image_generation"}]}`)
+
+	out, lifted := liftOpenAIResponsesImageParamsIntoToolBody(body)
+	require.True(t, lifted)
+	require.Equal(t, "1024x1024", gjson.GetBytes(out, "tools.1.size").String())
+	require.Equal(t, "gpt-image-2", gjson.GetBytes(out, "tools.1.model").String())
+	require.Equal(t, "f", gjson.GetBytes(out, "tools.0.name").String(), "其它工具不受影响")
+}
+
+func TestLiftOpenAIResponsesImageParamsIntoToolBody_AppendsToNonEmptyTools(t *testing.T) {
+	body := []byte(`{"model":"gpt-image-2","size":"1024x1024","tools":[{"type":"function","name":"f"}]}`)
+
+	out, lifted := liftOpenAIResponsesImageParamsIntoToolBody(body)
+	require.True(t, lifted)
+	require.Equal(t, 2, int(gjson.GetBytes(out, "tools.#").Int()))
+	require.Equal(t, "f", gjson.GetBytes(out, "tools.0.name").String())
+	require.Equal(t, "image_generation", gjson.GetBytes(out, "tools.1.type").String())
+	require.Equal(t, "1024x1024", gjson.GetBytes(out, "tools.1.size").String())
+	require.Equal(t, "gpt-image-2", gjson.GetBytes(out, "tools.1.model").String())
+}
+
+// 顶层的 null 上游本来就不看，补进工具里反而会撞上枚举字段的类型校验。
+func TestLiftOpenAIResponsesImageParamsIntoToolBody_SkipsNullParams(t *testing.T) {
+	body := []byte(`{"model":"gpt-image-2","prompt":"p","size":null,"quality":null}`)
+
+	out, lifted := liftOpenAIResponsesImageParamsIntoToolBody(body)
+	require.False(t, lifted, "全是 null 时不该凭空追加工具")
+	require.Equal(t, string(body), string(out))
+
+	mixed := []byte(`{"model":"gpt-image-2","size":"1024x1024","quality":null}`)
+	out, lifted = liftOpenAIResponsesImageParamsIntoToolBody(mixed)
+	require.True(t, lifted)
+	require.Equal(t, "1024x1024", gjson.GetBytes(out, "tools.0.size").String())
+	require.False(t, gjson.GetBytes(out, "tools.0.quality").Exists())
+}
+
+func TestLiftOpenAIResponsesImageParamsIntoToolBody_LeavesOtherPayloadsAlone(t *testing.T) {
+	tests := []struct {
+		name string
+		body string
+	}{
+		{
+			name: "text model",
+			body: `{"model":"gpt-5.4","size":"1024x1024","tools":[{"type":"image_generation"}]}`,
+		},
+		{
+			// Grok 出图模型在 /responses 上是另一套形态，原生路径直接拒绝，不能被改成 OpenAI 形态。
+			name: "grok image model",
+			body: `{"model":"grok-imagine","prompt":"draw a cat","size":"1024x1024"}`,
+		},
+		{
+			name: "tools is null",
+			body: `{"model":"gpt-image-2","size":"1024x1024","tools":null}`,
+		},
+		{
+			name: "tools is object",
+			body: `{"model":"gpt-image-2","size":"1024x1024","tools":{"type":"image_generation"}}`,
+		},
+		{
+			name: "no image params to lift",
+			body: `{"model":"gpt-image-2","prompt":"draw a cat","tools":[{"type":"image_generation","model":"gpt-image-2"}]}`,
+		},
+		{
+			name: "not json",
+			body: `not-json`,
+		},
+		{
+			name: "empty",
+			body: ``,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			out, lifted := liftOpenAIResponsesImageParamsIntoToolBody([]byte(tt.body))
+			require.False(t, lifted)
+			require.Equal(t, tt.body, string(out))
+		})
+	}
 }
 
 func TestValidateOpenAIResponsesImageModel_RejectsImageOnlyModel(t *testing.T) {

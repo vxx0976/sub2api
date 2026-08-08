@@ -3,6 +3,7 @@ package service
 import (
 	"strings"
 
+	"github.com/gin-gonic/gin"
 	"github.com/tidwall/gjson"
 )
 
@@ -17,6 +18,14 @@ const (
 
 func isOpenAIResponsesLiteHeader(value string) bool {
 	return strings.EqualFold(strings.TrimSpace(value), "true")
+}
+
+// isOpenAIResponsesLiteRequest 判定 HTTP 请求是否走 Responses Lite 协议。
+func isOpenAIResponsesLiteRequest(c *gin.Context) bool {
+	if c == nil || c.Request == nil {
+		return false
+	}
+	return isOpenAIResponsesLiteHeader(c.GetHeader(responsesLiteHeader))
 }
 
 func isOpenAIResponsesLiteWebSocketPayload(body []byte) bool {

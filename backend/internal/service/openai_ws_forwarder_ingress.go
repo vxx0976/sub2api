@@ -344,6 +344,14 @@ func (s *OpenAIGatewayService) ProxyResponsesWebSocketFromClient(
 		if imageIntent && !imageGenerationAllowed {
 			return openAIWSClientPayload{}, NewOpenAIWSClientCloseError(coderws.StatusPolicyViolation, ImageGenerationPermissionMessage(), nil)
 		}
+		// 与 native /responses 入口对齐计费口径：image-only model 的顶层 size/quality/...
+		// 补进 image_generation 工具，否则上游收不到尺寸、计费也无法按请求档封顶。
+		if imageIntent && !isOpenAIResponsesLiteWebSocketPayload(normalized) {
+			if lifted, changed := liftOpenAIResponsesImageParamsIntoToolBody(normalized); changed {
+				normalized = lifted
+				logOpenAIWSModeInfo("ingress_ws_image_params_lifted_into_tool account_id=%d", account.ID)
+			}
+		}
 		imageBillingModel := ""
 		imageSizeTier := ""
 		imageInputSize := ""

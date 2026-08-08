@@ -8,6 +8,8 @@ import (
 	"strings"
 
 	"github.com/Wei-Shaw/sub2api/internal/pkg/openai"
+	"github.com/tidwall/gjson"
+	"github.com/tidwall/sjson"
 )
 
 var codexModelMap = map[string]string{
@@ -985,6 +987,124 @@ func validateOpenAIResponsesImageModel(reqBody map[string]any, model string) err
 		return nil
 	}
 	return fmt.Errorf("/v1/responses image_generation requests require a Responses-capable text model; image-only model %q is not allowed", model)
+}
+
+// openAIResponsesImageToolParamKeys 是 image_generation 工具认的出图参数。
+// 不含 partial_images：它在顶层只是被忽略，补进工具后却会激活「必须 stream」的前置
+// 条件，把一个静默无效的字段变成上游硬报错。
+var openAIResponsesImageToolParamKeys = []string{
+	"size",
+	"quality",
+	"background",
+	"output_format",
+	"output_compression",
+	"moderation",
+}
+
+// liftOpenAIResponsesImageParamsIntoToolBody 把 image-only model 请求体顶层的出图参数
+// 补进 image_generation 工具，供透传 / WS 这两个「尽量不改客户端报文」的入口使用。
+// 上游只认工具里的字段，顶层那份既不会被遵守，也因此不能当计费封顶依据
+// （见 ResolveImageBillingSize）——不补的话同一个请求在这两条路上会按更贵的
+// 实际出图档计费，与 native 入口不一致。
+//
+// 与 native 的 normalizeOpenAIResponsesImageOnlyModel 不同，这里只做「补齐」：
+// 不改写 model、不搬 prompt→input、不设 tool_choice、也不删顶层字段。那套完整改写会
+// 把顶层 model 换成合成的 Responses 模型，进而牵动下游模型回写、账号冷却记账口径、
+// OAuth 的 input 形态等一连串依赖，不适合放在透传语义的入口上。
+//
+// 全程用 sjson 原地改写，请求体其余部分保持字节不变（不重排 key、不转义 HTML、
+// 不把数字过一遍 float64）；只认 gpt-image-*，Grok 出图模型在 /responses 上是另一套
+// 形态（原生路径直接拒绝），不能被改成 OpenAI 形态。
+func liftOpenAIResponsesImageParamsIntoToolBody(body []byte) ([]byte, bool) {
+	if len(body) == 0 || !gjson.ValidBytes(body) {
+		return body, false
+	}
+	model := strings.TrimSpace(gjson.GetBytes(body, "model").String())
+	if !IsGPTImageGenerationModel(model) {
+		return body, false
+	}
+
+	// 顶层没有任何可补的出图参数就别动报文：追加一个空工具既不产生计费收益，
+	// 又在「尽量不改客户端报文」的入口上凭空多一条上游能力声明。
+	// 显式 null 一律跳过（与 native 的 `exists && value != nil` 同口径）：
+	// 顶层的 null 上游本来就不看，补进工具里反而会撞上枚举字段的类型校验。
+	if !hasOpenAIResponsesImageToolParam(body) {
+		return body, false
+	}
+
+	tools := gjson.GetBytes(body, "tools")
+	if tools.Exists() && !tools.IsArray() {
+		// tools 不是数组的畸形报文：交给上游报错，别在这里越俎代庖改结构。
+		return body, false
+	}
+
+	toolIndex := -1
+	index := 0
+	tools.ForEach(func(_, tool gjson.Result) bool {
+		if strings.TrimSpace(tool.Get("type").String()) == "image_generation" {
+			toolIndex = index
+			return false
+		}
+		index++
+		return true
+	})
+
+	out := body
+	changed := false
+	if toolIndex < 0 {
+		next, err := sjson.SetRawBytes(out, "tools.-1", []byte(`{"type":"image_generation"}`))
+		if err != nil {
+			return body, false
+		}
+		out = next
+		toolIndex = int(gjson.GetBytes(out, "tools.#").Int()) - 1
+		if toolIndex < 0 {
+			return body, false
+		}
+		changed = true
+	}
+
+	setToolField := func(key string, raw []byte) bool {
+		next, err := sjson.SetRawBytes(out, fmt.Sprintf("tools.%d.%s", toolIndex, key), raw)
+		if err != nil {
+			return false
+		}
+		out = next
+		changed = true
+		return true
+	}
+
+	if strings.TrimSpace(gjson.GetBytes(out, fmt.Sprintf("tools.%d.model", toolIndex)).String()) == "" {
+		encodedModel, err := json.Marshal(model)
+		if err != nil || !setToolField("model", encodedModel) {
+			return body, false
+		}
+	}
+	for _, key := range openAIResponsesImageToolParamKeys {
+		value := gjson.GetBytes(out, key)
+		if !value.Exists() || value.Type == gjson.Null {
+			continue
+		}
+		if gjson.GetBytes(out, fmt.Sprintf("tools.%d.%s", toolIndex, key)).Exists() {
+			continue
+		}
+		if !setToolField(key, []byte(value.Raw)) {
+			return body, false
+		}
+	}
+	if !changed {
+		return body, false
+	}
+	return out, true
+}
+
+func hasOpenAIResponsesImageToolParam(body []byte) bool {
+	for _, key := range openAIResponsesImageToolParamKeys {
+		if value := gjson.GetBytes(body, key); value.Exists() && value.Type != gjson.Null {
+			return true
+		}
+	}
+	return false
 }
 
 func normalizeOpenAIResponsesImageOnlyModel(reqBody map[string]any) bool {
