@@ -1388,6 +1388,7 @@ export default {
     imageSizeSourceOutput: '上游输出',
     imageSizeSourceInput: '请求输入',
     imageSizeSourceDefault: '默认计费档位',
+    imageSizeSourceCapped: '按请求档封顶',
     imageSizeSourceLegacy: '历史记录',
     imageSizeSourceMissing: '未记录',
     imageSizeNotRecorded: '未记录',

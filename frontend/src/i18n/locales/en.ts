@@ -1383,6 +1383,7 @@ export default {
     imageSizeSourceOutput: 'Upstream output',
     imageSizeSourceInput: 'Request input',
     imageSizeSourceDefault: 'Default billing tier',
+    imageSizeSourceCapped: 'Capped at requested tier',
     imageSizeSourceLegacy: 'Legacy record',
     imageSizeSourceMissing: 'Not recorded',
     imageSizeNotRecorded: 'not recorded',

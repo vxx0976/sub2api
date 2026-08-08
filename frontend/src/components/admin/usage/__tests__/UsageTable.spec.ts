@@ -41,6 +41,7 @@ const messages: Record<string, string> = {
   'usage.imageSizeSourceOutput': 'Upstream output',
   'usage.imageSizeSourceInput': 'Request input',
   'usage.imageSizeSourceDefault': 'Default billing tier',
+  'usage.imageSizeSourceCapped': 'Capped at requested tier',
   'usage.imageSizeSourceLegacy': 'Legacy record',
   'usage.imageSizeSourceMissing': 'Not recorded',
   'usage.imageSizeNotRecorded': 'not recorded',
@@ -315,6 +316,19 @@ describe('admin UsageTable tooltip', () => {
         image_size_breakdown: { '4K': 1 },
       },
       expected: ['4K', 'Upstream output', '1024x1024', '3840x2160', '4K x 1'],
+    },
+    {
+      name: 'capped row',
+      row: {
+        ...baseImageRow,
+        request_id: 'req-admin-capped-image',
+        image_size: '1K',
+        image_input_size: '1024x1024',
+        image_output_size: '1254x1254',
+        image_size_source: 'capped',
+        image_size_breakdown: { '1K': 1 },
+      },
+      expected: ['1K', 'Capped at requested tier', '1024x1024', '1254x1254', '1K x 1'],
     },
     {
       name: 'input-sourced row',

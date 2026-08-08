@@ -1361,6 +1361,7 @@ export default {
     imageSizeSourceOutput: 'Вывод вышестоящего сервиса',
     imageSizeSourceInput: 'Входные данные запроса',
     imageSizeSourceDefault: 'Тариф по умолчанию',
+    imageSizeSourceCapped: 'Ограничено запрошенным тарифом',
     imageSizeSourceLegacy: 'Архивная запись',
     imageSizeSourceMissing: 'Не записано',
     imageSizeNotRecorded: 'не записано',

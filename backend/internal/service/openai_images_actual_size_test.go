@@ -54,6 +54,27 @@ func TestOpenAIGatewayServiceForwardImages_OAuthUsesDecodedOutputDimensions(t *t
 	require.Equal(t, ImageSizeSourceOutput, run.result.ImageSizeSource)
 }
 
+// 站长关心的主场景：客户在 /v1/images/generations 传 size=1024x1024，ChatGPT OAuth 后端把
+// size 归一成 auto 并恒定出 ~1.57MP 的图（这里用 1254x1254），计费必须按请求的 1K 封顶。
+func TestOpenAIGatewayServiceForwardImages_OAuthCapsBillingAtRequested1K(t *testing.T) {
+	run := runOpenAIOAuthImageSizeTest(t, false, "1024x1024", 1254, 1254)
+
+	require.Equal(t, "1024x1024", gjson.GetBytes(run.upstream.lastBody, "tools.0.size").String())
+	require.Equal(t, []string{"1254x1254"}, run.result.ImageOutputSizes)
+
+	ApplyOpenAIImageBillingResolution(run.result)
+	require.Equal(t, ImageBillingSize1K, run.result.ImageSize)
+	require.Equal(t, "1024x1024", run.result.ImageInputSize)
+	require.Equal(t, "1254x1254", run.result.ImageOutputSize)
+	require.Equal(t, ImageSizeSourceCapped, run.result.ImageSizeSource)
+	require.Equal(t, map[string]int{ImageBillingSize1K: 1}, run.result.ImageSizeBreakdown)
+
+	// 重复结算不得越算越便宜。
+	ApplyOpenAIImageBillingResolution(run.result)
+	require.Equal(t, ImageBillingSize1K, run.result.ImageSize)
+	require.Equal(t, ImageSizeSourceCapped, run.result.ImageSizeSource)
+}
+
 func TestOpenAIGatewayServiceForwardImages_OAuthStreamingUsesDecodedOutputDimensions(t *testing.T) {
 	run := runOpenAIOAuthImageActualSizeTest(t, true)
 
@@ -73,8 +94,13 @@ type openAIOAuthImageActualSizeTestRun struct {
 
 func runOpenAIOAuthImageActualSizeTest(t *testing.T, stream bool) openAIOAuthImageActualSizeTestRun {
 	t.Helper()
+	return runOpenAIOAuthImageSizeTest(t, stream, "3840x2160", 1672, 941)
+}
+
+func runOpenAIOAuthImageSizeTest(t *testing.T, stream bool, requestSize string, outputWidth, outputHeight int) openAIOAuthImageActualSizeTestRun {
+	t.Helper()
 	gin.SetMode(gin.TestMode)
-	body := []byte(fmt.Sprintf(`{"model":"gpt-image-2","prompt":"draw a test chart","size":"3840x2160","quality":"low","output_format":"png","stream":%t}`, stream))
+	body := []byte(fmt.Sprintf(`{"model":"gpt-image-2","prompt":"draw a test chart","size":%q,"quality":"low","output_format":"png","stream":%t}`, requestSize, stream))
 	req := httptest.NewRequest(http.MethodPost, "/v1/images/generations", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
@@ -82,7 +108,7 @@ func runOpenAIOAuthImageActualSizeTest(t *testing.T, stream bool) openAIOAuthIma
 	c.Request = req
 	c.Set("api_key", &APIKey{ID: 42})
 
-	encoded := encodeOpenAIImageTestPNG(t, 1672, 941)
+	encoded := encodeOpenAIImageTestPNG(t, outputWidth, outputHeight)
 	upstreamBody := fmt.Sprintf(
 		"data: {\"type\":\"response.created\",\"response\":{\"created_at\":1710000000,\"tools\":[{\"type\":\"image_generation\",\"model\":\"gpt-image-2\",\"size\":\"auto\",\"quality\":\"auto\",\"output_format\":\"png\"}]}}\n\n"+
 			"data: {\"type\":\"response.completed\",\"response\":{\"created_at\":1710000000,\"tools\":[{\"type\":\"image_generation\",\"model\":\"gpt-image-2\",\"size\":\"auto\",\"quality\":\"auto\",\"output_format\":\"png\"}],\"output\":[{\"id\":\"ig_actual_size\",\"type\":\"image_generation_call\",\"result\":%q}]}}\n\n"+

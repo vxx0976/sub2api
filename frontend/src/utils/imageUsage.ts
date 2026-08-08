@@ -44,7 +44,7 @@ export const hasImageInputCost = (row: ImageInputCostRow | null | undefined): bo
 
 // --- Image size / billing helpers ---
 
-const knownImageSizeSources = new Set(['output', 'input', 'default', 'legacy'])
+const knownImageSizeSources = new Set(['output', 'input', 'default', 'legacy', 'capped'])
 const knownImageBillingSizes = new Set(['1K', '2K', '4K', 'mixed'])
 
 type ImageUsageRow = Pick<

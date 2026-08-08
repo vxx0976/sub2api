@@ -1,6 +1,7 @@
 package service
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
 
@@ -293,6 +294,35 @@ func TestResolveOpenAIResponsesImageBillingConfigFromBodyIgnoresUnrelatedLargeIn
 	require.Equal(t, "gpt-image-2", cfg.Model)
 	require.Equal(t, "2K", cfg.SizeTier)
 	require.Equal(t, "2048x1152", cfg.InputSize)
+}
+
+// 请求体顶层的 size 不是 /responses 协议字段，透传后上游不会遵守：它可以兜底选档，
+// 但不能记进 InputSize（否则会成为按请求档封顶计费的依据，客户加一行就能少付钱）。
+func TestResolveOpenAIResponsesImageBillingConfigBodySizeIsNotBillingCapSource(t *testing.T) {
+	body := []byte(`{"model":"gpt-image-2","size":"1024x1024","tools":[{"type":"image_generation"}]}`)
+
+	cfg, err := resolveOpenAIResponsesImageBillingConfigDetailedFromBody(body, "requested-model")
+	require.NoError(t, err)
+	require.Equal(t, "1K", cfg.SizeTier)
+	require.Empty(t, cfg.InputSize)
+
+	var decoded map[string]any
+	require.NoError(t, json.Unmarshal(body, &decoded))
+	mapCfg, err := resolveOpenAIResponsesImageBillingConfigDetailed(decoded, "requested-model")
+	require.NoError(t, err)
+	require.Equal(t, "1K", mapCfg.SizeTier)
+	require.Empty(t, mapCfg.InputSize)
+}
+
+// 工具里的 size 会原样转发给上游，可以作为封顶依据。
+func TestResolveOpenAIResponsesImageBillingConfigToolSizeIsBillingCapSource(t *testing.T) {
+	cfg, err := resolveOpenAIResponsesImageBillingConfigDetailedFromBody(
+		[]byte(`{"model":"gpt-5.4","size":"3840x2160","tools":[{"type":"image_generation","size":"1024x1024"}]}`),
+		"requested-model",
+	)
+	require.NoError(t, err)
+	require.Equal(t, "1K", cfg.SizeTier)
+	require.Equal(t, "1024x1024", cfg.InputSize)
 }
 
 func TestResolveOpenAIResponsesImageBillingConfigSupportsOfficialAndCustomSizes(t *testing.T) {

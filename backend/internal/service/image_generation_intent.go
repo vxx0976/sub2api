@@ -422,6 +422,7 @@ type OpenAIResponsesImageBillingConfig struct {
 func resolveOpenAIResponsesImageBillingConfigDetailed(reqBody map[string]any, fallbackModel string) (OpenAIResponsesImageBillingConfig, error) {
 	imageModel := ""
 	imageSize := ""
+	bodySize := ""
 	hasImageTool := false
 	if reqBody != nil {
 		rawTools, _ := reqBody["tools"].([]any)
@@ -436,7 +437,9 @@ func resolveOpenAIResponsesImageBillingConfigDetailed(reqBody map[string]any, fa
 			break
 		}
 		if imageSize == "" {
-			imageSize = strings.TrimSpace(firstNonEmptyString(reqBody["size"]))
+			// 请求体顶层的 size 不是 /responses 协议字段，透传给上游后不会被遵守，
+			// 只能拿来兜底选档（InputSize 留空 ⇒ 不参与按请求档封顶计费）。
+			bodySize = strings.TrimSpace(firstNonEmptyString(reqBody["size"]))
 		}
 	}
 	if imageModel == "" && reqBody != nil {
@@ -451,12 +454,22 @@ func resolveOpenAIResponsesImageBillingConfigDetailed(reqBody map[string]any, fa
 	if imageModel == "" {
 		imageModel = strings.TrimSpace(fallbackModel)
 	}
-	sizeTier := normalizeOpenAIImageSizeTier(imageSize)
+	sizeTier := normalizeOpenAIImageSizeTier(firstNonEmptyImageSize(imageSize, bodySize))
 	return OpenAIResponsesImageBillingConfig{
 		Model:     imageModel,
 		SizeTier:  sizeTier,
 		InputSize: imageSize,
 	}, nil
+}
+
+// firstNonEmptyImageSize 返回第一个非空尺寸串。
+func firstNonEmptyImageSize(sizes ...string) string {
+	for _, size := range sizes {
+		if trimmed := strings.TrimSpace(size); trimmed != "" {
+			return trimmed
+		}
+	}
+	return ""
 }
 
 func resolveOpenAIResponsesImageBillingConfigFromBody(body []byte, fallbackModel string) (string, string, error) {
@@ -470,6 +483,7 @@ func resolveOpenAIResponsesImageBillingConfigFromBody(body []byte, fallbackModel
 func resolveOpenAIResponsesImageBillingConfigDetailedFromBody(body []byte, fallbackModel string) (OpenAIResponsesImageBillingConfig, error) {
 	imageModel := ""
 	imageSize := ""
+	bodySize := ""
 	hasImageTool := false
 	if len(body) > 0 && gjson.ValidBytes(body) {
 		tools := gjson.GetBytes(body, "tools")
@@ -485,7 +499,8 @@ func resolveOpenAIResponsesImageBillingConfigDetailedFromBody(body []byte, fallb
 			})
 		}
 		if imageSize == "" {
-			imageSize = openAIJSONString(gjson.GetBytes(body, "size"))
+			// 同上：顶层 size 不透传，只兜底选档，不参与封顶。
+			bodySize = openAIJSONString(gjson.GetBytes(body, "size"))
 		}
 		if imageModel == "" {
 			bodyModel := openAIJSONString(gjson.GetBytes(body, "model"))
@@ -502,7 +517,7 @@ func resolveOpenAIResponsesImageBillingConfigDetailedFromBody(body []byte, fallb
 	}
 	return OpenAIResponsesImageBillingConfig{
 		Model:     imageModel,
-		SizeTier:  normalizeOpenAIImageSizeTier(imageSize),
+		SizeTier:  normalizeOpenAIImageSizeTier(firstNonEmptyImageSize(imageSize, bodySize)),
 		InputSize: imageSize,
 	}, nil
 }

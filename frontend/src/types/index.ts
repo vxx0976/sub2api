@@ -1680,7 +1680,7 @@ export interface CodexSessionImportResult {
 
 export type RedeemCodeType = 'balance' | 'concurrency' | 'subscription' | 'invitation'
 export type UsageRequestType = 'unknown' | 'sync' | 'stream' | 'ws_v2' | 'cyber' | 'live'
-export type ImageSizeSource = 'output' | 'input' | 'default' | 'legacy'
+export type ImageSizeSource = 'output' | 'input' | 'default' | 'legacy' | 'capped'
 export type ImageSizeBreakdown = Record<string, number>
 
 export interface UsageLog {

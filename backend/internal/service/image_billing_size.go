@@ -15,6 +15,10 @@ const (
 	ImageSizeSourceInput   = "input"
 	ImageSizeSourceDefault = "default"
 	ImageSizeSourceLegacy  = "legacy"
+	// ImageSizeSourceCapped 表示实际出图档位高于请求里显式指定的尺寸档，已按请求档封顶计费。
+	// 典型场景：ChatGPT OAuth 后端把 size 归一成 auto，无论请求 1024x1024 与否都恒定出
+	// ~1.57MP 的图（1254x1254 / 1122x1402 …），最长边永远 >1024 会被判成 2K。
+	ImageSizeSourceCapped = "capped"
 )
 
 type ImageBillingSizeResolution struct {
@@ -68,29 +72,47 @@ func NormalizeImageBillingTierOrDefault(size string) string {
 	return ImageBillingSize2K
 }
 
-func ResolveImageBillingSize(inputSize string, outputSizes []string) ImageBillingSizeResolution {
+// ResolveImageBillingSize 决定这次出图按哪一档计费。
+// capFromRequest 表示 inputSize 是「确实会被转发给上游的请求字段」（如 /v1/images 的 size、
+// /v1/responses 里 tools[].image_generation.size）。只有这种尺寸才允许对实际出图档位封顶——
+// 不透传的字段（如 /v1/responses 请求体顶层的 size）上游根本看不到，拿它封顶等于让客户
+// 随手加一行就把大图按小图收费。
+func ResolveImageBillingSize(inputSize string, outputSizes []string, capFromRequest bool) ImageBillingSizeResolution {
 	inputSize = strings.TrimSpace(inputSize)
 	outputSizes = compactTrimmedStrings(outputSizes)
 
+	requestTier, hasRequestTier := ClassifyImageBillingTier(inputSize)
+	hasRequestTier = hasRequestTier && capFromRequest
+
 	breakdown := map[string]int{}
 	outputSize := firstDisplayImageOutputSize(outputSizes)
-	outputTier := ""
+	billedTier := ""
+	capped := false
 	for _, output := range outputSizes {
 		tier, ok := ClassifyImageBillingTier(output)
 		if !ok {
 			continue
 		}
+		// 上游忽略请求里的显式尺寸时不加价：单张按 min(实际出图档, 请求档) 计费。
+		if hasRequestTier && imageTierRank(tier) > imageTierRank(requestTier) {
+			tier = requestTier
+			capped = true
+		}
 		breakdown[tier]++
-		if imageTierRank(tier) > imageTierRank(outputTier) {
-			outputTier = tier
+		if imageTierRank(tier) > imageTierRank(billedTier) {
+			billedTier = tier
 		}
 	}
-	if outputTier != "" {
+	if billedTier != "" {
+		source := ImageSizeSourceOutput
+		if capped {
+			source = ImageSizeSourceCapped
+		}
 		return ImageBillingSizeResolution{
-			BillingSize: outputTier,
+			BillingSize: billedTier,
 			InputSize:   inputSize,
 			OutputSize:  outputSize,
-			Source:      ImageSizeSourceOutput,
+			Source:      source,
 			Breakdown:   normalizeImageSizeBreakdown(breakdown),
 		}
 	}
@@ -116,7 +138,8 @@ func ApplyOpenAIImageBillingResolution(result *OpenAIForwardResult) {
 	if result == nil || result.ImageCount <= 0 {
 		return
 	}
-	inputSize := strings.TrimSpace(result.ImageInputSize)
+	requestSize := strings.TrimSpace(result.ImageInputSize)
+	inputSize := requestSize
 	if inputSize == "" && strings.TrimSpace(result.ImageSize) != ImageBillingSize2K {
 		inputSize = strings.TrimSpace(result.ImageSize)
 	}
@@ -124,7 +147,11 @@ func ApplyOpenAIImageBillingResolution(result *OpenAIForwardResult) {
 	if len(outputSizes) == 0 && strings.TrimSpace(result.ImageOutputSize) != "" {
 		outputSizes = []string{result.ImageOutputSize}
 	}
-	resolved := ResolveImageBillingSize(inputSize, outputSizes)
+	// 只有请求里原样记下来的尺寸能封顶；上面那条回退拿的是 ImageSize（可能是响应侧推导出的
+	// 档位），只用于兜底选档，不能当客户的报价依据。
+	resolved := ResolveImageBillingSize(inputSize, outputSizes, requestSize != "")
+	// 回写请求原值而非兜底值，避免重复调用时把兜底档位当成「客户请求档」而越算越便宜。
+	resolved.InputSize = requestSize
 	applyImageBillingResolution(
 		&result.ImageSize,
 		&result.ImageInputSize,
@@ -139,7 +166,8 @@ func ApplyForwardImageBillingResolution(result *ForwardResult) {
 	if result == nil || result.ImageCount <= 0 {
 		return
 	}
-	inputSize := strings.TrimSpace(result.ImageInputSize)
+	requestSize := strings.TrimSpace(result.ImageInputSize)
+	inputSize := requestSize
 	if inputSize == "" && strings.TrimSpace(result.ImageSize) != ImageBillingSize2K {
 		inputSize = strings.TrimSpace(result.ImageSize)
 	}
@@ -147,7 +175,9 @@ func ApplyForwardImageBillingResolution(result *ForwardResult) {
 	if len(outputSizes) == 0 && strings.TrimSpace(result.ImageOutputSize) != "" {
 		outputSizes = []string{result.ImageOutputSize}
 	}
-	resolved := ResolveImageBillingSize(inputSize, outputSizes)
+	// 同 ApplyOpenAIImageBillingResolution：兜底值只用于选档，不能当封顶依据，也不回写。
+	resolved := ResolveImageBillingSize(inputSize, outputSizes, requestSize != "")
+	resolved.InputSize = requestSize
 	applyImageBillingResolution(
 		&result.ImageSize,
 		&result.ImageInputSize,

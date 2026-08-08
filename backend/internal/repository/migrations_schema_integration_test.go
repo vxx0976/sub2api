@@ -104,6 +104,7 @@ WHERE ns.nspname = 'public'
 		"'input'",
 		"'default'",
 		"'legacy'",
+		"'capped'",
 	)
 	requireConstraintDefinitionContains(
 		t,
