@@ -368,9 +368,11 @@ func isPlatformPricingMatch(groupPlatform, pricingPlatform string) bool {
 // matchingPlatforms 返回分组平台对应的可匹配平台列表。
 // Concrete platforms return themselves; composite is a configuration-time
 // fallback used before a request target has been resolved.
+// 复合分组的集合走 compositeRequestPlatforms 这一真源（原先此处另抄了一份，
+// 两份会各自漂移）；为何是 5 个而非全部 10 个见该函数注释。
 func matchingPlatforms(groupPlatform string) []string {
 	if groupPlatform == PlatformComposite {
-		return []string{PlatformAnthropic, PlatformGemini, PlatformOpenAI, PlatformAntigravity, PlatformGrok}
+		return compositeRequestPlatforms()
 	}
 	return []string{groupPlatform}
 }
