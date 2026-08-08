@@ -415,4 +415,25 @@ describe('PlazaModelPricingTable', () => {
     expect(text).toContain('$3.00')
     expect(text).toContain('¥2.00')
   })
+
+  it('Composite 分组中相同模型名按具体平台分别展示徽章', () => {
+    const anthropic = tokenModel({ name: 'shared-model', platform: 'anthropic' })
+    const openai = tokenModel({ name: 'shared-model', platform: 'openai' })
+    const wrapper = mount(PlazaModelPricingTable, {
+      props: {
+        models: [anthropic, openai],
+        platform: 'composite',
+        rateMultiplier: 1
+      }
+    })
+
+    const rows = wrapper.findAll('tbody tr')
+    expect(rows).toHaveLength(2)
+    expect(rows.map((row) => row.find('td').text())).toEqual([
+      'shared-modelAnthropic',
+      'shared-modelOpenAI'
+    ])
+    expect(wrapper.text()).toContain('Anthropic')
+    expect(wrapper.text()).toContain('OpenAI')
+  })
 })

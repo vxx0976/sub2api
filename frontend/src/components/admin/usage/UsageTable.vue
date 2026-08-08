@@ -53,7 +53,28 @@
         </template>
 
         <template #cell-model="{ row }">
-          <span class="break-all font-medium text-gray-900 dark:text-white">{{ row.upstream_model || row.model }}</span>
+          <div class="space-y-0.5 text-xs">
+            <!-- fork（713206b86）：模型列只展示实际上游模型，不铺开 model_mapping_chain。
+                 上游那套多级映射链在本站信息量低、还把行高撑开。 -->
+            <span class="break-all font-medium text-gray-900 dark:text-white">{{ row.upstream_model || row.model }}</span>
+            <!-- 上游新增的响应模型审计：上游实际回的模型与发出去的不一致时标出来。 -->
+            <div
+              v-if="row.upstream_model_mismatch === true && row.upstream_response_model"
+              class="break-all pl-3 text-[11px]"
+              :class="isLikelyModelVariant(row) ? 'text-amber-600 dark:text-amber-400' : 'text-orange-600 dark:text-orange-400'"
+              :title="modelAuditTitle(row)"
+            >
+              <span class="mr-1">↳ {{ t('usage.upstreamResponseModel') }}:</span>{{ row.upstream_response_model }}
+              <span
+                class="ml-1 inline-flex rounded px-1 py-px text-[10px] font-medium ring-1 ring-inset"
+                :class="isLikelyModelVariant(row)
+                  ? 'bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-300 dark:ring-amber-500/30'
+                  : 'bg-orange-50 text-orange-700 ring-orange-200 dark:bg-orange-500/10 dark:text-orange-300 dark:ring-orange-500/30'"
+              >
+                {{ isLikelyModelVariant(row) ? t('usage.modelVariant') : t('usage.modelMismatch') }}
+              </span>
+            </div>
+          </div>
         </template>
 
         <template #cell-reasoning_effort="{ row }">
@@ -531,6 +552,27 @@ const showUpstreamEndpoint = props.showUpstreamEndpoint
 const ipGeoBatchLoading = ref(false)
 
 const showIpGeoToolbar = computed(() => props.columns.some((col) => col.key === 'ip_address'))
+
+const sentUpstreamModel = (row: AdminUsageLog): string => row.upstream_model?.trim() || row.model?.trim() || ''
+
+const normalizeModelVariant = (model: string): string => model
+  .trim()
+  .toLowerCase()
+  .replace(/-latest$/, '')
+  .replace(/-\d{4}-\d{2}-\d{2}$/, '')
+  .replace(/-\d{8}$/, '')
+
+const isLikelyModelVariant = (row: AdminUsageLog): boolean => {
+  const sent = sentUpstreamModel(row)
+  const response = row.upstream_response_model?.trim() || ''
+  return sent !== '' && response !== '' && normalizeModelVariant(sent) === normalizeModelVariant(response)
+}
+
+const modelAuditTitle = (row: AdminUsageLog): string => [
+  `${t('usage.requestedModel')}: ${row.model || '-'}`,
+  `${t('usage.sentUpstreamModel')}: ${sentUpstreamModel(row) || '-'}`,
+  `${t('usage.upstreamResponseModel')}: ${row.upstream_response_model || '-'}`,
+].join('\n')
 
 const currentPageIps = computed(() =>
   Array.from(new Set(props.data.map((row) => row.ip_address).filter((ip): ip is string => Boolean(ip))))

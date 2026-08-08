@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"unicode/utf8"
 
 	"github.com/Wei-Shaw/sub2api/internal/payment"
 )
@@ -176,6 +177,20 @@ func TestEasyPayRefundResponseErrors(t *testing.T) {
 				t.Fatalf("Refund error = %q, want substring %q", err.Error(), tt.want)
 			}
 		})
+	}
+}
+
+func TestSummarizeEasyPayResponsePreservesUTF8(t *testing.T) {
+	t.Parallel()
+
+	summary := summarizeEasyPayResponse([]byte(strings.Repeat("错", 171)))
+	if !utf8.ValidString(summary) {
+		t.Fatalf("summarizeEasyPayResponse returned invalid UTF-8: %q", summary)
+	}
+	// fork 走共享的 httputil.TruncateBody（按 rune 边界截断），截断标记是
+	// "...(truncated)"，不是上游内联版的 "..."。用例意图不变：UTF-8 有效 + 确实被截断。
+	if !strings.HasSuffix(summary, "...(truncated)") {
+		t.Fatalf("summarizeEasyPayResponse() = %q, want truncated suffix", summary)
 	}
 }
 
