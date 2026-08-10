@@ -8,6 +8,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// selectChatGPTPlanType 是 selectChatGPTAccount 的双返回值形态，仅本测试使用。
+// 放在测试文件而非生产代码里：生产侧无人调用它，留在那儿会被 golangci-lint 的
+// unused 判为死码（lint 不带 unit tag，看不到这里的调用）。
+func selectChatGPTPlanType(accounts map[string]any, orgID string) (planType, expiresAt string) {
+	planType, expiresAt, _ = selectChatGPTAccount(accounts, orgID)
+	return planType, expiresAt
+}
+
 func acct(planType, expiresAt string, isDefault bool) map[string]any {
 	account := map[string]any{}
 	if planType != "" {

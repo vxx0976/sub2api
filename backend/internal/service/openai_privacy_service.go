@@ -288,12 +288,6 @@ func selectChatGPTAccount(accounts map[string]any, orgID string) (planType, expi
 	return best.planType, best.expiresAt, best.accountID
 }
 
-// selectChatGPTPlanType 是 selectChatGPTAccount 的双返回值形态，仅返回计划与到期日。
-func selectChatGPTPlanType(accounts map[string]any, orgID string) (planType, expiresAt string) {
-	planType, expiresAt, _ = selectChatGPTAccount(accounts, orgID)
-	return planType, expiresAt
-}
-
 // planTypePriority 给计划类型打分用于多账号选号：
 // 个人订阅(pro/plus/team)=3 > business/企业/未知=2 > free=1 > 空=0。
 func planTypePriority(planType string) int {
