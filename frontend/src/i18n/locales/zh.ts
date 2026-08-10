@@ -618,6 +618,13 @@ export default {
     view: '查看',
     settings: '设置',
     chooseFile: '选择文件',
+    upload: '上传',
+    remove: '移除',
+    noFileSelected: '未选择文件',
+    selectedFile: '已选：{name}',
+    fileReadFailed: '读取文件失败',
+    selectImageFile: '请选择图片文件',
+    fileTooLargeKb: '文件过大（{size} KB），上限 {max} KB',
     copy: '复制',
     notAvailable: '不可用',
     now: '现在',
@@ -806,6 +813,8 @@ export default {
       USER_NOT_ACTIVE: '账号已被禁用',
     },
     registrationFailed: '注册失败，请重试。',
+    emailDomainRegistrationLimit:
+      '该邮箱域名无法注册新账户。请使用主流邮箱注册；如需使用企业邮箱，请联系客服添加域名白名单。',
     emailSuffixNotAllowed: '该邮箱域名不在允许注册范围内。',
     emailSuffixNotAllowedWithAllowed: '该邮箱域名不被允许。可用域名：{suffixes}',
     emailSuffixAllowedMore: '等 {count} 项',
@@ -1191,16 +1200,24 @@ export default {
         note: '这些环境变量将在当前终端会话中生效。如需永久配置，请将其添加到 ~/.bashrc、~/.zshrc 或相应的配置文件中。'
       },
       grok: {
-        description: '配置 Grok Build、Claude Code、Codex 或 OpenCode，让请求通过当前 Sub2API Grok 分组发送。',
+        description:
+          '配置 Grok CLI、Claude Code、Codex 或 OpenCode，让请求通过当前 Sub2API Grok 分组发送。文本模型走 Responses；图片/视频使用 Imagine 模型 ID 与媒体端点。',
         claudeDescription: '配置 Claude Code，让 Messages API 请求通过当前 Sub2API Grok 分组发送。',
         codexDescription: '配置 Codex，让 Responses API 请求通过当前 Sub2API Grok 分组发送。',
-        configTomlHint: '如已有 config.toml，请先备份再合并此模型配置。保存后运行 grok inspect 验证生效配置。',
-        codexConfigTomlHint: '如已有 config.toml，请先备份再合并此服务商配置。',
-        note: '保存为 ~/.grok/config.toml，然后运行 grok inspect，并在 /model 中选择 grok。',
-        noteWindows: '保存为 %USERPROFILE%\\.grok\\config.toml，然后运行 grok inspect，并在 /model 中选择 grok。',
-        claudeNote: '二选一即可：终端命令仅在当前会话生效；保存 settings.json 可作为用户级持久配置。',
-        codexNote: '将 config.toml 保存到 ~/.codex，并在启动 Codex 前设置 SUB2API_API_KEY。',
-        codexNoteWindows: '将 config.toml 保存到 %USERPROFILE%\\.codex，并在 PowerShell 中设置 SUB2API_API_KEY 后启动 Codex。'
+        configTomlHint:
+          '官方路径：~/.grok/config.toml（或 $GROK_HOME）。请填写 [endpoints]（models_base_url / models_list_url / xai_api_base_url / cli_chat_proxy_base_url）、[auth] preferred_method=api_key、[models]、[session]、[features] 图片/视频覆盖。优先 env_key，勿硬编码 api_key；文本模型必须 api_backend=responses。合并前备份，保存后运行 grok inspect。',
+        codexConfigTomlHint:
+          'Codex 官方：wire_api 仅支持 "responses"；优先 env_key，勿与 experimental_bearer_token 混用；非 OpenAI 网关默认 supports_websockets = false（Sub2API 仍可接客户端 WS 并桥接到 HTTP/SSE）。合并前备份 ~/.codex/config.toml。',
+        note:
+          '导出 GROK_MODELS_BASE_URL 与 XAI_API_KEY，将完整 config.toml（endpoints/auth/models/session/features）保存为 ~/.grok/config.toml，运行 grok inspect，再用 /model 选择 grok-4.5（编程场景可用 grok-build-0.1）。',
+        noteWindows:
+          '设置 GROK_MODELS_BASE_URL 与 XAI_API_KEY，将完整 config.toml 保存为 %USERPROFILE%\\.grok\\config.toml，运行 grok inspect，再用 /model 选择 grok-4.5（编程场景可用 grok-build-0.1）。',
+        claudeNote:
+          '二选一：终端环境变量仅当前会话；~/.claude/settings.json 可持久化。请勿把含 API Key 的文件提交到仓库。',
+        codexNote:
+          '导出 SUB2API_API_KEY，将 config.toml 保存到 ~/.codex（可用 mkdir -p ~/.codex）。优先 env_key，勿提交密钥。',
+        codexNoteWindows:
+          '设置 $env:SUB2API_API_KEY，将 config.toml 保存到 %USERPROFILE%\\.codex。优先 env_key，勿提交密钥。'
       },
       opencode: {
         title: 'OpenCode 配置示例',
@@ -1449,6 +1466,145 @@ export default {
   },
 
   // Shared keys for channel monitor (admin + user views)
+  channelMonitorV2: {
+    title: '渠道监控',
+    updating: '正在更新数据',
+    updatedTo: '更新至 {time}',
+    partialCoverage: '部分历史覆盖',
+    bootstrap: {
+      title: '正在补齐历史监控数据',
+      description:
+        '首次启用被动监控时，系统会在后台静默聚合 90 分钟、24 小时、7 天与 30 天窗口；完成后可切换全部时间范围。',
+      progress: '进度 {percent}%',
+      working: '后台聚合中…',
+    },
+    timeRange: '时间范围',
+    clearFilters: '重置',
+    refreshingFilters: '筛选条件已变化，正在刷新矩阵、趋势和明细…',
+    switchingData: '正在切换筛选数据…',
+    summaryAria: '筛选范围整体汇总',
+    loadFailed: '渠道监控加载失败',
+    detailLoadFailed: '渠道监控明细加载失败',
+    otherModels: '其他模型',
+    ignored: '忽略',
+    currentUser: '当前用户',
+    ranges: { '90m': '90m', '24h': '24h', '7d': '7d', '30d': '30d' },
+    filters: {
+      platform: '平台', allPlatforms: '全部', group: '分组', allGroups: '全部', model: '模型', allModels: '全部',
+      empty: '暂无可选项', selectedCount: '{count} 项', labelValue: '{label}：{value}'
+    },
+    groupBy: {
+      label: '展示维度', platform: '平台', platformGroup: '平台 / 分组', platformModel: '平台 / 模型', platformGroupModel: '平台 / 分组 / 模型'
+    },
+    trendView: { label: '趋势视图', pulse: '色块矩阵', line: '折线图' },
+    healthMode: { label: '健康显示', overall: '综合', success: '错误率', ttft: '首 Token', cache: '缓存率' },
+    tabs: { aria: '明细维度', models: '模型', errors: '错误原因', users: '用户排行' },
+    metrics: {
+      rpm: 'RPM',
+      tpm: 'TPM',
+      tps: '每秒 Token',
+      rpmDetail: '每分钟请求数',
+      tpmDetail: '每分钟 Token 数',
+      tpsDetail: '由 TPM ÷ 60 换算',
+      errorRate: '错误率',
+      ttft: '首 Token',
+      ttftP50: '首 Token P50',
+      durationP50: '请求时长 P50',
+      cacheRate: '缓存率',
+      cacheDetail: '读缓存占比',
+      successRate: '成功率',
+      successRateValue: '成功率 {value}',
+      errorRateValue: '错误率 {value}',
+      rpmValue: 'RPM {value}',
+      tpmValue: 'TPM {value}',
+      tpsValue: '每秒 Token {value}',
+      ttftValue: '首 Token {value}',
+      durationValue: '请求时长 {value}',
+      cacheRateValue: '缓存率 {value}',
+    },
+    table: { platformModel: '平台 / 模型', rank: '排名', user: '用户' },
+    empty: { title: '没有可展示的数据', description: '尝试调整时间范围或筛选条件' },
+    bucket: { minutes: '{count} 分钟粒度', hours: '{count} 小时粒度', days: '{count} 天粒度' },
+    matrix: {
+      title: '可用性趋势', description: '每行是一种渠道组合，每个色块代表一个统计区间；悬停查看明细', wheelZoom: '在色块上滚轮放大（区间变窄、色块变宽）', wheelZoomX: '在色块上滚轮放大（区间变窄、色块变宽）', dimension: '渠道维度', emptyTitle: '当前筛选窗口没有矩阵数据', legendAria: '健康分数图例', bad: '差', good: '好', healthyLegend: '健康 (≥80)', warningLegend: '需关注 (50–79)', criticalLegend: '异常 (<50)', unknownLegend: '无流量 / 样本不足', noTraffic: '该区间无流量', noTrafficAt: '{time} · 无流量', scoreLine: '健康分 {score}', resetZoom: '重置缩放'
+    },
+    chart: {
+      title: '可用性趋势', description: '平滑趋势：错误率 · 首 Token P50 · 缓存率', emptyTitle: '当前筛选窗口没有趋势数据', errorLegend: '错误率（左轴 %）', cacheLegend: '缓存率（左轴 %）', ttftLegend: '首 Token P50（右轴）', errorDataset: '错误率趋势 %', cacheDataset: '缓存率趋势 %', ttftDataset: '首 Token 趋势 P50 (ms)', percentAxis: '比率 %', resetZoom: '重置缩放'
+    },
+    errorDetail: { http: 'HTTP {code}', upstream: '上游 {code}', noMessage: '无错误消息', empty: '仅展示分类占比（样本消息仅管理员可见）' },
+    errorCategories: {
+      content_policy: '内容策略', authentication: '认证失败', context_limit: '上下文超限', invalid_request: '请求格式', model_unsupported: '模型不支持', group_access: '分组权限', quota_or_balance: '额度或余额', account_pool_unavailable: '账号池不可用', rate_or_capacity: '限流或容量', timeout: '超时', transport_or_stream: '传输或流', upstream_forbidden: '上游拒绝', not_found: '资源不存在', client_cancelled: '客户端取消', upstream_5xx: '上游 5xx', internal: '内部错误', other: '其他'
+    },
+    rank: {
+      gold: '第 1 名 金',
+      silver: '第 2 名 银',
+      bronze: '第 3 名 铜',
+      place: '第 {n} 名',
+      unranked: '未上榜',
+    },
+    settings: {
+      title: 'V2 数据监控配置',
+      description:
+        '配置被动用量汇总维度（平台 / 模型 / 分组）与刷新频率。健康色与明细在用户端 /monitor 以比例、RPM/TPM 展示，不暴露绝对请求量。',
+      save: '保存',
+      loading: '加载中...',
+      loadFailed: 'V2 配置加载失败',
+      saveSuccess: 'V2 监控配置已保存',
+      saveFailed: 'V2 配置保存失败',
+      modeBanner:
+        '当前系统设置为 {mode}。V2 分钟聚合不会运行；此处配置可预先保存，切换到 {modeV2} 后立即生效。可在系统设置 → 功能开关调整。',
+      modeClosed: '渠道监控已关闭',
+      modeV1: 'V1 主动探测',
+      modeV2: 'V2 被动监控',
+      enableTitle: '启用 V2 汇总',
+      enableHint: '在系统模式为 V2 时生效；关闭后仅停止本配置的汇总，系统模式开关仍在「功能开关」',
+      refreshTitle: '汇总频率',
+      refreshHint: '影响矩阵时间粒度与刷新节奏',
+      refreshAria: '汇总频率',
+      platformsTitle: '平台与模型',
+      platformsHint: '留空 = 展示全部真实模型名；填写后仅名单内单独成行，其余归入「其他」',
+      modelsPlaceholder: '留空=全部真实模型；或填写主流模型名单（其余归其他）',
+      badgeAllModels: '全部模型',
+      badgeOther: '+ 其他',
+      groupsTitle: '监控分组',
+      groupsSelected: '已选择 {count} 个分组',
+      groupsAll: '全部分组',
+      groupsEmpty: '没有可选择的分组',
+      errorsTitle: '错误分类与忽略',
+      errorsHint:
+        '勾选「忽略」的类别不计入错误率与健康分，仍在错误原因列表中以灰色显示并标记忽略。未匹配的错误归入「其他」。',
+      ignoredSummary: '已忽略 {ignored} 类 · 计入错误率 {counted} 类',
+      healthTitle: '健康阈值',
+      healthHint: '控制用户端色块和整体评分。默认阈值较宽松，避免少量错误或低缓存率立即显示异常。',
+      fields: {
+        minimumSample: '最小样本数',
+        warningError: '错误率关注 %',
+        criticalError: '错误率异常 %',
+        targetTtft: 'TTFT 目标 ms',
+        warningTtft: 'TTFT 关注 ms',
+        criticalTtft: 'TTFT 异常 ms',
+        warningCache: '缓存率关注 %',
+        criticalCache: '缓存率异常 %',
+      },
+      namedModelsEmpty: '各平台模型列表为空：将展示全部真实模型名（不归入「其他」）。',
+      namedModelsCount: '将展示 {count} 个命名模型维度；名单外模型归入各平台「其他」。',
+      userContractTitle: '用户端展示约定',
+      userContract: {
+        health: '健康色三指标：错误率 60% + 首 Token P50 20% + 缓存率 20%（阈值可在上方配置）',
+        trend: '趋势可切换色块矩阵 / 折线图（错误率 · 缓存率 · 首 Token）',
+        latency: '延迟展示 AVG · P50 · P90；不展示绝对请求数 / 错误数',
+        models: '模型列表留空时展示真实模型名，不会全部归入「其他」',
+      },
+    },
+    admin: {
+      descriptionV1: '当前系统设置为 V1 主动探测：可管理监控项并立即检测；V2 聚合不会运行。',
+      descriptionV2: '当前系统设置为 V2 被动监控：配置聚合维度；V1 主动探测不会运行。',
+      tabAria: '监控管理',
+      tabV2: 'V2 数据监控配置',
+      tabV1Active: 'V1 主动探测',
+      tabV1History: 'V1 历史（当前模式未启用探测）',
+    },
+  },
   monitorCommon: {
     status: {
       operational: '正常',
@@ -2247,6 +2403,7 @@ export default {
         status: '状态',
         fileName: '文件名',
         size: '大小',
+        parts: '分卷数',
         expiresAt: '过期时间',
         triggeredBy: '触发方式',
         startedAt: '开始时间',
@@ -2271,6 +2428,10 @@ export default {
       empty: '暂无备份记录',
       actions: {
         download: '下载',
+        downloadParts: '下载分卷',
+        downloadPartsHint: '请按顺序下载全部分卷后拼接 gzip 字节流：Linux/macOS 使用 cat payload.part-* > backup.sql.gz；Windows 使用 copy /b payload.part-000001+payload.part-000002 backup.sql.gz。',
+        partLabel: '第 {index} 卷',
+        downloadFailed: '下载地址为空',
         restore: '恢复',
         restoreConfirm: '确定要从此备份恢复吗？这将覆盖当前数据库！',
         restorePasswordPrompt: '请输入管理员密码以确认恢复操作',
@@ -3114,11 +3275,27 @@ export default {
       videoPricing: {
         title: '视频生成计费',
         description: '配置 Grok 视频生成的每秒单价（USD/秒），留空则使用默认每秒价（grok-imagine-video：480p $0.05/s、720p $0.07/s；video-1.5：480p $0.08/s、720p $0.14/s、1080p $0.25/s）',
+        modelOverridesTitle: '按模型覆盖视频价格',
+        modelOverridesDescription: '已填写的单元格会覆盖该模型族的平面分辨率价格。video-1.5 的 preview 与 legacy 别名共用同一模型族；留空则回退到平面分辨率价格。',
         independentMultiplier: '视频倍率独立',
         videoMultiplier: '视频独立倍率',
         modeHint: '视频按秒计费：费用 = 每秒价格 × 时长（1-15 秒，未指定默认 8 秒）。默认叠加当前分组有效倍率；开启独立倍率后改用视频独立倍率。',
         finalPricePreview: '最终每秒价格预览',
         notConfigured: '未配置'
+      },
+      explicitPricing: {
+        title: 'Grok 搜索与 Voice 定价',
+        description: '分组级 web_search（每千次）与 Voice realtime / TTS / STT 单价（USD）。留空表示未配置。',
+        searchPricePer1k: '搜索每千次价格（USD）',
+        pricePlaceholder: '可选'
+      },
+      voicePricing: {
+        title: 'Grok Voice 定价',
+        description: '分组级 Voice realtime / TTS / STT 单价（USD）。留空表示未配置。',
+        audioRealtimePerMin: 'Realtime 每分钟价格（USD）',
+        audioTtsPerMillionChars: 'TTS 每百万字符价格（USD）',
+        audioSttPerHour: 'STT 每小时价格（USD）',
+        pricePlaceholder: '可选'
       },
       webSearchPricing: {
         title: 'Codex 网页搜索计费',
@@ -4482,6 +4659,10 @@ export default {
         rateLimited: '限流中',
         overloaded: '过载中',
         tempUnschedulable: '临时不可调度',
+        accountSchedulingThresholdOverride: '账号自动停调阈值覆盖',
+        accountSchedulingThresholdOverrideHint: '仅对当前账号覆盖平台级自动停调阈值；关闭后使用平台设置。',
+        accountSchedulingThresholdOverrideValue: '账号阈值百分比',
+        accountSchedulingThresholdOverrideDisabledHint: '1-100，达到该用量百分比后临时不可调度；100 表示禁用当前账号自动停调。',
         outsideActiveWindow: '未到上线时间',
         quotaExceeded: '配额超限',
         unschedulable: '不可调度',
@@ -4492,7 +4673,8 @@ export default {
         creditsExhausted: '积分已用尽',
         creditsExhaustedUntil: 'AI Credits 已用尽，预计 {time} 恢复',
         overloadedUntil: '负载过重，重置时间：{time}',
-        viewTempUnschedDetails: '查看临时不可调度详情'
+        viewTempUnschedDetails: '查看临时不可调度详情',
+        tempUnschedulableUntil: '预计 {time} 恢复'
       },
       tempUnschedulable: {
         title: '临时不可调度',
@@ -4501,6 +4683,10 @@ export default {
         notice: '规则按顺序匹配，需同时满足错误码与关键词。',
         addRule: '添加规则',
         ruleOrder: '规则序号',
+        multipleErrorTrigger: '{minutes} 分钟内累计 {count} 次匹配错误，达到触发阈值（{threshold}）。',
+        multipleErrorTriggerNoWindow: '累计 {count} 次匹配错误，达到触发阈值（{threshold}）。',
+        multipleErrorCountInWindow: '{minutes} 分钟内累计发生 {count} 次匹配错误。',
+        multipleErrorCount: '本次不可调度由累计 {count} 次匹配错误触发。',
         ruleIndex: '规则 #{index}',
         errorCode: '错误码',
         errorCodePlaceholder: '例如 429',
@@ -4550,6 +4736,12 @@ export default {
         grokTokens: 'Token',
         grokFreeQuota24hHint: '按 sub2api 近 24 小时本地 Token 用量估算（上限 {limit}）',
         grokWeeklyUsage: '周额度已用 {percent}%',
+        grokUsed: '已用 $',
+        grokBalance: '余额 $',
+        grokPrepaid: '预付余额',
+        grokMonthlyLimit: '月度已用/上限（USD）',
+        grokOverage: '超额 onDemandUsed/onDemandCap',
+        grokOverageShort: '超额 $',
         grokUnknown: 'Grok 配额需等待首次上游响应返回 xAI rate-limit 头后显示。',
         grokRetryAfter: '{time} 后重试',
         grokProbe: '探测',
@@ -4871,7 +5063,54 @@ export default {
       },
       grok: {
         baseUrlHint: 'Grok OAuth 账号会转发到官方 xAI API Base URL。',
-        apiKeyHint: 'Grok 订阅支持使用 OAuth refresh token；API Key 账号不在本次范围内。'
+        apiKeyHint: 'Grok 订阅支持使用 OAuth refresh token；API Key 账号不在本次范围内。',
+        // 账号连通性测试弹窗
+        testMode: '测试模式',
+        testModeHint:
+          '文本 / 图片 / 视频使用所选模型。网页搜索、TTS、STT、Realtime 走独立接口探测（不是对话里的 tools）。',
+        testModeText: '文本（Responses）',
+        testModeImage: '图片（/images/generations）',
+        testModeVideo: '视频（/videos/generations）',
+        testModeSearch: '网页搜索（/web_search）',
+        testModeTTS: '语音合成 TTS（/tts）',
+        testModeSTT: '语音识别 STT（/stt）',
+        testModeRealtime: '实时语音 Realtime（WS /realtime）',
+        textTestMode: '模式：文本（Responses）',
+        searchTestMode: '模式：网页搜索（/web_search）',
+        ttsTestMode: '模式：TTS（/tts）',
+        sttTestMode: '模式：STT（/stt）',
+        realtimeTestMode: '模式：Realtime（WS /realtime）',
+        searchQueryLabel: '搜索关键词',
+        searchQueryPlaceholder: '例如：xAI Grok',
+        searchQueryDefault: 'xAI Grok',
+        searchTestHint:
+          '独立网页搜索探测（与网关 /v1/web_search 语义一致），不是带 tools 的自由对话。',
+        ttsTextLabel: 'TTS 文本',
+        ttsTextPlaceholder: '例如：Hello from Sub2API connectivity test.',
+        ttsTextDefault: 'Hello from Sub2API account connectivity test.',
+        ttsTestHint: '独立调用 /v1/tts（language=en）；成功时显示音频字节数。',
+        sttTestHint: '独立调用 /v1/stt，使用合成静音 WAV；成功表示接口可达。',
+        realtimeTestHint:
+          '独立 WebSocket 拨号 /v1/realtime（model=grok-voice-latest）。握手成功即连通；若有首包服务端事件会一并显示。',
+        sendingSearchRequest: '正在发送独立 web_search 请求...',
+        sendingTTSRequest: '正在发送独立 /tts 请求...',
+        sendingSTTRequest: '正在发送独立 /stt 请求...',
+        sendingRealtimeRequest: '正在拨号独立 /realtime WebSocket...',
+        selectedTestMode: '测试模式：{mode}',
+        imageUploadLabel: '源图片（可选，图生图/编辑）',
+        videoFirstFrameLabel: '首帧 / 参考图（可选）',
+        imageUploadHint:
+          '建议 PNG/JPEG，宽高均 ≥ 8 像素，编辑建议小于约 4MB。上传源图会走 /images/edits（图生图）；不上传则走 /images/generations 文生图。',
+        videoFirstFrameHint:
+          '可选首帧/参考图用于图生视频。建议 PNG/JPEG，宽高均 ≥ 8 像素。',
+        audioUploadLabel: '音频文件（STT 可选）',
+        audioUploadHint: '上传真实音频做转写；不上传则用静音 WAV 仅测连通。',
+        mediaTooLarge: '文件过大（管理端测试上传上限约 6MB）。',
+        chooseImageFile: '选择图片',
+        chooseAudioFile: '选择音频',
+        uploadPreviewAlt: '上传预览',
+        fileReadFailed: '读取所选文件失败',
+        noResponseBody: '服务器未返回响应体'
       },
       anthropic: {
         apiKeyPassthrough: '自动透传（仅替换认证）',
@@ -5262,6 +5501,16 @@ export default {
           ssoCookieLabel: 'Grok Web SSO Key',
           ssoCookiePlaceholder: '每行一个 SSO key\n支持多个，每行一个',
           ssoCookieHint: '每行一个 SSO key；多个 key 会 3 路并发导入，耗时约 90 秒 × 批次数，建议使用对应地区代理。',
+          emailPasswordAuth: '邮箱密码登录',
+          emailPasswordDesc:
+            '使用 Grok 网页邮箱与密码登录。服务端仅用密码换取临时 SSO 再转 Build OAuth；密码与 raw SSO 均不会写入账号凭据。',
+          emailPasswordInputLabel: '邮箱----密码',
+          emailPasswordPlaceholder: "user{'@'}example.com----your-password\n支持多个，每行一组",
+          emailPasswordHint: '格式：email----password（密码可含 -）。需要配置 YesCaptcha 密钥；建议搭配代理。',
+          pleaseEnterPassword: '请输入 email----password（每行一组）',
+          pleaseEnterSSOToken: '请输入 SSO Token',
+          failedToValidateSSO: '校验 Grok SSO 失败',
+          failedToAuthorizePassword: 'Grok 密码授权失败',
           convertingSSO: '转换中...',
           convertSSOAndCreate: '转换并创建账号',
           validating: '验证中...',
@@ -5538,6 +5787,9 @@ export default {
       reAuthorizedSuccess: '账号重新授权成功',
       // Test Modal
       testAccountConnection: '测试账号连接',
+      errorPrefix: '错误：{message}',
+      imagePreviewAlt: '测试图片 {index}',
+      imageLightboxAlt: '图片预览',
       account: '账号',
       readyToTest: '准备测试。点击"开始测试"按钮开始...',
       connectingToApi: '连接 API 中...',
@@ -5559,10 +5811,22 @@ export default {
       imagePromptLabel: '生图提示词',
       imagePromptPlaceholder: '例如：生成一只戴宇航员头盔的橘猫，像素插画风格，纯色背景。',
       imagePromptDefault: 'Generate a cute orange cat astronaut sticker on a clean pastel background.',
-      imageTestHint: '选择图片模型后，这里会直接发起生图测试，并在下方展示返回图片。',
+      imageTestHint:
+        '调用独立 /v1/images/generations 生图，并在下方预览返回图片。',
       imageTestMode: '模式：生图测试',
+      videoPromptLabel: '视频提示词',
+      videoPromptPlaceholder: '例如：一只红球在白地板上弹跳一次，动作简短。',
+      videoPromptDefault: 'A red ball bouncing once on a white floor, short simple motion.',
+      videoTestHint:
+        '调用独立 /v1/videos/generations，轮询至完成后下载成品视频并在页面上预览。',
+      videoTestMode: '模式：视频生成测试',
+      sendingVideoRequest: '正在发送视频生成测试请求...',
       imagePreview: '生成结果：',
       imageReceived: '已收到第 {count} 张测试图片',
+      audioPreview: '生成音频：',
+      audioReceived: '已收到第 {count} 段测试音频',
+      videoPreview: '生成视频：',
+      videoReceived: '已收到第 {count} 段测试视频',
       // Stats Modal
       viewStats: '查看统计',
       usageStatistics: '使用统计',
@@ -7002,12 +7266,21 @@ export default {
       features: {
         channelMonitor: {
           title: '渠道监控',
-          description: '定期对配置的渠道发起健康检查，向用户展示可用性与延迟。关闭后调度器停止扫描，用户端列表为空。',
+          description: '启用后在 V1 主动探测与 V2 被动用量监控中二选一。关闭后两种模式的后台任务均停止，用户端入口隐藏。',
           configureLink: '前往 渠道管理 > 渠道监控 配置监控项',
           enabled: '启用渠道监控',
-          enabledHint: '关闭后后台不再执行定时检测，已有数据保留。',
+          enabledHint: '关闭后 V1 调度器与 V2 聚合均停止；已有配置与历史保留。',
+          mode: '监控模式',
+          modeHint: '默认 V1（主动探测）。仅在需要被动聚合时切换到 V2；同一时间只能启用一种实现。',
+          modeV2: 'V2 被动监控',
+          modeV1: 'V1 主动探测',
+          modeV2Hint: '需主动选择：基于真实网关流量聚合健康指标，不向上游发送探活请求；启用期间 V1 探测停止。',
+          modeV1Hint: '默认模式：按配置的渠道监控项定时发起上游健康检查（产生探测流量）。',
           defaultInterval: '默认检测间隔（秒）',
-          defaultIntervalHint: '新建渠道监控时表单的默认值，可被单个渠道覆盖。范围 15 – 3600 秒。',
+          defaultIntervalHint: '仅 V1 模式使用：新建渠道监控时表单的默认值，可被单个渠道覆盖。范围 15 – 3600 秒。',
+          hideThroughput: '对用户隐藏吞吐速率（RPM / TPM）',
+          hideThroughputHint:
+            '开启后，用户端渠道监控页面与用户 API 不返回 RPM/TPM，避免用「速率 × 时间窗」反推集群规模。管理员仍可见完整指标；错误率、延迟、缓存率照常展示。',
         },
         channelBalanceRefresh: {
           title: '渠道额度自动刷新',
@@ -7131,9 +7404,12 @@ export default {
         emailVerificationHint: '新用户注册时需要验证邮箱',
         emailSuffixWhitelist: '邮箱域名白名单',
         emailSuffixWhitelistHint:
-          "仅允许使用指定域名的邮箱注册账号（例如 {'@'}qq.com, {'@'}gmail.com, *.edu.cn）",
+          "仅允许使用指定域名的邮箱注册账号；留空则不限制（例如 {'@'}qq.com, {'@'}gmail.com, *.edu.cn）",
         emailSuffixWhitelistPlaceholder: "{'@'}example.com, *.edu.cn",
         emailSuffixWhitelistInputHint: '留空则不限制。使用 *.edu.cn 可匹配 edu.cn 及其子域名。',
+        emailDomainQuota: '非白名单域名限量注册',
+        emailDomainQuotaHint:
+          '开启后，白名单非空时，其他可注册主域名各限注册一个账户；关闭时非白名单域名直接拒绝注册。白名单为空时本开关无效果',
         promoCode: '优惠码',
         promoCodeHint: '允许用户在注册时使用优惠码',
         invitationCode: '邀请码注册',
@@ -7414,7 +7690,12 @@ export default {
         title: '网关调度设置',
         description: '控制 API Key 的调度行为',
         allowUngroupedKey: '允许未分组 Key 调度',
-        allowUngroupedKeyHint: '关闭后，未分配到任何分组的 API Key 将无法发起请求（返回 403）。建议保持关闭以确保所有 Key 都归属明确的分组。'
+        allowUngroupedKeyHint: '关闭后，未分配到任何分组的 API Key 将无法发起请求（返回 403）。建议保持关闭以确保所有 Key 都归属明确的分组。',
+        accountSchedulingThresholdsTitle: '平台账号自动停调阈值',
+        accountSchedulingThresholdsDescription: '当账号当前原生用量窗口（OpenAI Codex/Anthropic 会话，或 Grok 请求/Token 利用率）达到该百分比时，Sub2API 会临时将其移出调度，直到窗口重置。填 100 表示禁用。',
+        accountSchedulingThresholdsGlobalHint: '系统级默认值，作用于该平台全部账号。可在账号编辑页对单个账号覆盖。',
+        accountSchedulingThresholdsDisabledHint: '100 表示禁用该平台自动停调；1–99 表示达到该利用率后暂停调度。',
+        accountSchedulingThresholdsRangeHint: '整数 1–100（百分比）。仅 OpenAI / Anthropic / Grok。'
       },
       upstreamBillingProbe: {
         title: '上游倍率自动探测',
@@ -7441,6 +7722,17 @@ export default {
       gatewayForwarding: {
         title: '请求转发行为',
         description: '控制请求转发到上游 OAuth 账号时的行为',
+        grokDefaultTextModel: '默认 Grok 文本模型',
+        grokDefaultTextModelHint: '用于空模型值；仅在右侧开关开启时也用于其他客户端模型命名空间。允许填写自定义 Grok 模型 ID。',
+        grokCrossClientMap: '映射其他客户端模型到 Grok',
+        grokCrossClientMapHint: '默认关闭。开启后，GPT、Codex、o 系列和 Claude 模型 ID 会路由到左侧默认 Grok 文本模型。',
+        grokDefaultBaseURLMode: '默认 Grok 上游',
+        grokDefaultBaseURLModeHint: '仅用于 Grok 账号未配置显式 base URL 的文本请求；媒体和语音仍使用官方 API 主机。',
+        grokBaseURLModeCLI: 'CLI 聊天代理',
+        grokBaseURLModeAPI: '公共 API',
+        grokBaseURLModeUSEast1: '区域 API（us-east-1）',
+        grokBaseURLModeUSWest2: '区域 API（us-west-2）',
+        grokBaseURLModeEUWest1: '区域 API（eu-west-1）',
         fingerprintUnification: '指纹统一化',
         fingerprintUnificationHint: '统一共享同一 OAuth 账号的用户的 X-Stainless-* 请求头。关闭后透传客户端原始请求头。',
         metadataPassthrough: 'Metadata 透传',

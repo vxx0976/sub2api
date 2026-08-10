@@ -88,8 +88,12 @@ func disableOpenAITraining(ctx context.Context, clientFactory PrivacyClientFacto
 
 // ChatGPTAccountInfo 从 chatgpt.com/backend-api/accounts/check 获取的账号信息
 type ChatGPTAccountInfo struct {
-	PlanType              string
-	Email                 string
+	PlanType string
+	Email    string
+	// AccountID 是本条信息所属账号的标识（优先取 account.account_id，否则取 accounts
+	// 的 map key）。accounts/check 是多账号/工作区端点，调用方需要据此判断拿到的
+	// plan_type / expires_at 到底属于个人账号还是某个 workspace。
+	AccountID             string
 	SubscriptionExpiresAt string // entitlement.expires_at (RFC3339)
 }
 
@@ -147,7 +151,9 @@ func fetchChatGPTAccountInfo(ctx context.Context, clientFactory PrivacyClientFac
 	// 在多账号里挑最能代表用户订阅的计划：个人订阅(pro/plus/team)优先于
 	// business 工作区，避免"曾加入过 business 计划"污染计划展示。
 	// 选号时跳过已停用/过期的账号（isUsableChatGPTAccountCandidate）。
-	info.PlanType, info.SubscriptionExpiresAt = selectChatGPTPlanType(accounts, orgID)
+	// AccountID 随选中的那条一起回填（上游新增）：调用方据此判断拿到的
+	// plan_type / expires_at 属于 token 自己的个人账号还是某个 workspace。
+	info.PlanType, info.SubscriptionExpiresAt, info.AccountID = selectChatGPTAccount(accounts, orgID)
 
 	if info.PlanType == "" {
 		slog.Debug("chatgpt_account_check_no_plan_type", "body", truncate(resp.String(), 300))
@@ -214,13 +220,15 @@ func fetchChatGPTSubscriptionExpiresAt(ctx context.Context, clientFactory Privac
 	return activeUntil
 }
 
-// selectChatGPTPlanType 从 accounts/check 的多账号里挑最能代表用户订阅的计划。
+// selectChatGPTAccount 从 accounts/check 的多账号里挑最能代表用户订阅的计划，
+// 并回传选中那条的账号标识（accountID，供调用方判断个人账号还是 workspace）。
 // 选号优先级：计划类型分值(个人订阅 > business/未知 > free) > orgID(poid)命中 > is_default。
 // 个人订阅(pro/plus/team)优先于 business 工作区，避免"曾加入 business"污染计划展示；
 // 个人订阅之间则按 orgID 命中(token 实际作用的 org)决定，保持原有语义。
-func selectChatGPTPlanType(accounts map[string]any, orgID string) (planType, expiresAt string) {
+func selectChatGPTAccount(accounts map[string]any, orgID string) (planType, expiresAt, accountID string) {
 	type candidate struct {
 		id        string
+		accountID string
 		planType  string
 		expiresAt string
 		priority  int
@@ -243,7 +251,10 @@ func selectChatGPTPlanType(accounts map[string]any, orgID string) (planType, exp
 			continue
 		}
 		cur := candidate{
-			id:        id,
+			id: id,
+			// orgMatch 仍按 accounts 的 map key(poid) 判定；accountID 另取
+			// account.account_id（缺失时回落 map key），两者语义不同不可互换。
+			accountID: chatGPTAccountObjectID(acct, id),
 			planType:  pt,
 			expiresAt: extractEntitlementExpiresAt(acct),
 			priority:  planTypePriority(pt),
@@ -272,9 +283,15 @@ func selectChatGPTPlanType(accounts map[string]any, orgID string) (planType, exp
 		}
 	}
 	if best == nil {
-		return "", ""
+		return "", "", ""
 	}
-	return best.planType, best.expiresAt
+	return best.planType, best.expiresAt, best.accountID
+}
+
+// selectChatGPTPlanType 是 selectChatGPTAccount 的双返回值形态，仅返回计划与到期日。
+func selectChatGPTPlanType(accounts map[string]any, orgID string) (planType, expiresAt string) {
+	planType, expiresAt, _ = selectChatGPTAccount(accounts, orgID)
+	return planType, expiresAt
 }
 
 // planTypePriority 给计划类型打分用于多账号选号：
@@ -306,6 +323,17 @@ func isConsumerPlanType(planType string) bool {
 	}
 	p := strings.ToLower(strings.TrimSpace(planType))
 	return strings.Contains(p, "pro") || strings.Contains(p, "plus") || strings.Contains(p, "team")
+}
+
+// chatGPTAccountObjectID 取单个 account 对象的账号标识。
+// accounts 的 map key 有时是 "default" 这类别名，所以优先读 account.account_id。
+func chatGPTAccountObjectID(acct map[string]any, fallbackID string) string {
+	if account, ok := acct["account"].(map[string]any); ok {
+		if id, ok := account["account_id"].(string); ok && strings.TrimSpace(id) != "" {
+			return strings.TrimSpace(id)
+		}
+	}
+	return strings.TrimSpace(fallbackID)
 }
 
 // extractPlanType 从单个 account 对象中提取 plan_type

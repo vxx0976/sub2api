@@ -91,7 +91,7 @@ func (s *AntigravityGatewayService) ForwardGemini(ctx context.Context, c *gin.Co
 		MarkOpsClientBusinessLimited(c, OpsClientBusinessLimitedReasonLocalFeatureGate)
 		return nil, s.writeGoogleError(c, http.StatusForbidden, fmt.Sprintf("model %s not in whitelist", originalModel))
 	}
-	billingModel := mappedModel
+	forwardedModel := mappedModel
 
 	// 获取 access_token
 	if s.tokenProvider == nil {
@@ -224,9 +224,9 @@ func (s *AntigravityGatewayService) ForwardGemini(ctx context.Context, c *gin.Co
 						if fallbackResp.StatusCode < 400 {
 							_ = resp.Body.Close()
 							resp = fallbackResp
-							// 上游本轮补：fallback 成功时按实际使用的模型计费，
+							// fallback 成功时按实际使用（实际转发上游）的模型计费，
 							// 否则会按客户端请求的原模型算钱（两者定价可能不同）。
-							billingModel = fallbackModel
+							forwardedModel = fallbackModel
 						} else if fallbackResp != nil {
 							// fallback 模型重试后仍真失败：保留原 model-not-found 语义
 							//（客户端请求的是原模型），仅记 ops 事件供排障。
@@ -469,7 +469,7 @@ handleSuccess:
 					RequestID:        requestID,
 					Usage:            *streamRes.usage,
 					Model:            originalModel,
-					UpstreamModel:    billingModel,
+					UpstreamModel:    forwardedModel,
 					Stream:           true,
 					Duration:         time.Since(startTime),
 					FirstTokenMs:     streamRes.firstTokenMs,
@@ -508,7 +508,7 @@ handleSuccess:
 		RequestID:                     requestID,
 		Usage:                         *usage,
 		Model:                         originalModel,
-		UpstreamModel:                 billingModel,
+		UpstreamModel:                 forwardedModel,
 		UpstreamResponseModel:         observedUpstreamResponseModel(c),
 		UpstreamResponseModelConflict: observedUpstreamResponseModelConflict(c),
 		Stream:                        stream,

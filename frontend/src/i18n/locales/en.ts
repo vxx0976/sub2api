@@ -617,6 +617,13 @@ export default {
     view: 'View',
     settings: 'Settings',
     chooseFile: 'Choose File',
+    upload: 'Upload',
+    remove: 'Remove',
+    noFileSelected: 'No file selected',
+    selectedFile: 'Selected: {name}',
+    fileReadFailed: 'Failed to read file',
+    selectImageFile: 'Please select an image file',
+    fileTooLargeKb: 'File too large ({size} KB), max {max} KB',
     copy: 'Copy',
     notAvailable: 'N/A',
     now: 'Now',
@@ -805,6 +812,8 @@ export default {
       USER_NOT_ACTIVE: 'Account has been disabled.',
     },
     registrationFailed: 'Registration failed. Please try again.',
+    emailDomainRegistrationLimit:
+      'This email domain cannot register another account. Please use a mainstream email, or contact support to add your enterprise domain to the allowlist.',
     emailSuffixNotAllowed: 'This email domain is not allowed for registration.',
     emailSuffixNotAllowedWithAllowed:
       'This email domain is not allowed. Allowed domains: {suffixes}',
@@ -1187,16 +1196,24 @@ export default {
         note: 'These environment variables will be active in the current terminal session. For permanent configuration, add them to ~/.bashrc, ~/.zshrc, or the appropriate configuration file.',
       },
       grok: {
-        description: 'Configure Grok Build, Claude Code, Codex, or OpenCode to send requests through your Sub2API Grok group.',
+        description:
+          'Configure Grok CLI, Claude Code, Codex, or OpenCode to send requests through your Sub2API Grok group. Text models use Responses; image/video use Imagine model IDs on media endpoints.',
         claudeDescription: 'Configure Claude Code to send Messages API traffic through your Sub2API Grok group.',
         codexDescription: 'Configure Codex to send Responses API traffic through your Sub2API Grok group.',
-        configTomlHint: 'Back up an existing config.toml before merging this model entry. Run grok inspect after saving to verify the effective configuration.',
-        codexConfigTomlHint: 'Back up an existing config.toml before merging this provider configuration.',
-        note: 'Save the file as ~/.grok/config.toml, then run grok inspect and select grok from /model.',
-        noteWindows: 'Save the file as %USERPROFILE%\\.grok\\config.toml, then run grok inspect and select grok from /model.',
-        claudeNote: 'Choose one method: run the terminal commands for the current session, or save settings.json for user-level persistent configuration.',
-        codexNote: 'Save config.toml under ~/.codex and set SUB2API_API_KEY before starting Codex.',
-        codexNoteWindows: 'Save config.toml under %USERPROFILE%\\.codex and set SUB2API_API_KEY in PowerShell before starting Codex.',
+        configTomlHint:
+          'Official path: ~/.grok/config.toml (or $GROK_HOME). Fill [endpoints] (models_base_url / models_list_url / xai_api_base_url / cli_chat_proxy_base_url), [auth] preferred_method=api_key, [models], [session], and [features] image/video overrides. Prefer env_key over api_key; every text model needs api_backend=responses. Back up before merge, then run grok inspect.',
+        codexConfigTomlHint:
+          'Official Codex: wire_api = "responses" only; prefer env_key over experimental_bearer_token; supports_websockets = false for non-OpenAI gateways (Sub2API can still accept client WS and bridge to HTTP/SSE). Back up ~/.codex/config.toml before merge.',
+        note:
+          'Export GROK_MODELS_BASE_URL and XAI_API_KEY, save the full config.toml (endpoints/auth/models/session/features) as ~/.grok/config.toml, run grok inspect, then /model grok-4.5 (or grok-build-0.1 for coding).',
+        noteWindows:
+          'Set GROK_MODELS_BASE_URL and XAI_API_KEY, save the full config.toml as %USERPROFILE%\\.grok\\config.toml, run grok inspect, then /model grok-4.5 (or grok-build-0.1 for coding).',
+        claudeNote:
+          'Choose one method: terminal env for this session, or ~/.claude/settings.json for persistence. Do not commit files that contain your API key.',
+        codexNote:
+          'Export SUB2API_API_KEY, save config.toml under ~/.codex (mkdir -p ~/.codex). Prefer env_key auth; do not commit secrets.',
+        codexNoteWindows:
+          'Set $env:SUB2API_API_KEY, save config.toml under %USERPROFILE%\\.codex. Prefer env_key auth; do not commit secrets.',
       },
       opencode: {
         title: 'OpenCode Example',
@@ -1444,6 +1461,150 @@ export default {
   },
 
   // Shared keys for channel monitor (admin + user views)
+  channelMonitorV2: {
+    title: 'Channel Monitor',
+    updating: 'Updating data',
+    updatedTo: 'Updated to {time}',
+    partialCoverage: 'Partial historical coverage',
+    bootstrap: {
+      title: 'Building historical monitor data',
+      description:
+        'On first enable, passive aggregation silently fills the 90m, 24h, 7d, and 30d windows in the background. All ranges become complete once this finishes.',
+      progress: '{percent}% complete',
+      working: 'Aggregating in the background…',
+    },
+    timeRange: 'Time range',
+    clearFilters: 'Reset',
+    refreshingFilters: 'Filters changed; refreshing matrix, trend, and details…',
+    switchingData: 'Switching filtered data…',
+    summaryAria: 'Selected range summary',
+    loadFailed: 'Failed to load channel monitor',
+    detailLoadFailed: 'Failed to load channel monitor details',
+    otherModels: 'Other models',
+    ignored: 'Ignored',
+    currentUser: 'Current user',
+    ranges: { '90m': '90m', '24h': '24h', '7d': '7d', '30d': '30d' },
+    filters: {
+      platform: 'Platform', allPlatforms: 'All', group: 'Group', allGroups: 'All', model: 'Model', allModels: 'All',
+      empty: 'No options', selectedCount: '{count}', labelValue: '{label}: {value}'
+    },
+    groupBy: {
+      label: 'Group by', platform: 'Platform', platformGroup: 'Platform / Group', platformModel: 'Platform / Model', platformGroupModel: 'Platform / Group / Model'
+    },
+    trendView: { label: 'Trend view', pulse: 'Pulse matrix', line: 'Line chart' },
+    healthMode: { label: 'Health display', overall: 'Overall', success: 'Error rate', ttft: 'First token', cache: 'Cache rate' },
+    tabs: { aria: 'Detail dimension', models: 'Models', errors: 'Error reasons', users: 'User ranking' },
+    metrics: {
+      rpm: 'RPM',
+      tpm: 'TPM',
+      tps: 'Tokens/s',
+      rpmDetail: 'Requests per minute',
+      tpmDetail: 'Tokens per minute',
+      tpsDetail: 'Derived as TPM ÷ 60',
+      errorRate: 'Error rate',
+      ttft: 'First token',
+      ttftP50: 'First token P50',
+      durationP50: 'Duration P50',
+      cacheRate: 'Cache rate',
+      cacheDetail: 'Read cache share',
+      successRate: 'Success rate',
+      successRateValue: 'Success rate {value}',
+      errorRateValue: 'Error rate {value}',
+      rpmValue: 'RPM {value}',
+      tpmValue: 'TPM {value}',
+      tpsValue: 'Tokens/s {value}',
+      ttftValue: 'First token {value}',
+      durationValue: 'Duration {value}',
+      cacheRateValue: 'Cache rate {value}',
+    },
+    table: { platformModel: 'Platform / Model', rank: 'Rank', user: 'User' },
+    empty: { title: 'No data to display', description: 'Try changing the time range or filters' },
+    bucket: { minutes: '{count}-minute buckets', hours: '{count}-hour buckets', days: '{count}-day buckets' },
+    matrix: {
+      title: 'Availability trend', description: 'Each row is a channel dimension and each block is an aggregate interval; hover for details', wheelZoom: 'Scroll over blocks to zoom in (narrower range, wider blocks)', wheelZoomX: 'Scroll over blocks to zoom in (narrower range, wider blocks)', dimension: 'Channel dimension', emptyTitle: 'No matrix data for the selected window', legendAria: 'Health score legend', bad: 'Bad', good: 'Good', healthyLegend: 'Healthy (≥80)', warningLegend: 'Watch (50–79)', criticalLegend: 'Critical (<50)', unknownLegend: 'No traffic / insufficient samples', noTraffic: 'No traffic in this interval', noTrafficAt: '{time} · no traffic', scoreLine: 'Health score {score}', resetZoom: 'Reset zoom'
+    },
+    chart: {
+      title: 'Availability trend', description: 'Smoothed trend: error rate · first token P50 · cache rate', emptyTitle: 'No trend data for the selected window', errorLegend: 'Error rate (left axis %)', cacheLegend: 'Cache rate (left axis %)', ttftLegend: 'First token P50 (right axis)', errorDataset: 'Error rate trend %', cacheDataset: 'Cache rate trend %', ttftDataset: 'First token trend P50 (ms)', percentAxis: 'Rate %', resetZoom: 'Reset zoom'
+    },
+    errorDetail: { http: 'HTTP {code}', upstream: 'Upstream {code}', noMessage: 'No error message', empty: 'Category rates only (sample messages are admin-only)' },
+    errorCategories: {
+      content_policy: 'Content policy', authentication: 'Authentication', context_limit: 'Context limit', invalid_request: 'Invalid request', model_unsupported: 'Unsupported model', group_access: 'Group access', quota_or_balance: 'Quota or balance', account_pool_unavailable: 'Account pool unavailable', rate_or_capacity: 'Rate or capacity', timeout: 'Timeout', transport_or_stream: 'Transport or stream', upstream_forbidden: 'Upstream forbidden', not_found: 'Not found', client_cancelled: 'Client cancelled', upstream_5xx: 'Upstream 5xx', internal: 'Internal', other: 'Other'
+    },
+    rank: {
+      gold: 'Rank 1 gold',
+      silver: 'Rank 2 silver',
+      bronze: 'Rank 3 bronze',
+      place: 'Rank {n}',
+      unranked: 'Unranked',
+    },
+    settings: {
+      title: 'V2 data monitor config',
+      description:
+        'Configure passive usage aggregation dimensions (platform / model / group) and refresh cadence. Health colors and details on the user /monitor page show rates, RPM, and TPM — not absolute request volume.',
+      save: 'Save',
+      loading: 'Loading…',
+      loadFailed: 'Failed to load V2 config',
+      saveSuccess: 'V2 monitor config saved',
+      saveFailed: 'Failed to save V2 config',
+      modeBanner:
+        'System mode is currently {mode}. V2 minute aggregation will not run; this config can be prepared now and takes effect after switching to {modeV2}. Change mode under System Settings → Feature switches.',
+      modeClosed: 'Channel monitor disabled',
+      modeV1: 'V1 active probes',
+      modeV2: 'V2 passive monitoring',
+      enableTitle: 'Enable V2 aggregation',
+      enableHint:
+        'Applies when system mode is V2. Turning this off only stops this config’s aggregation; the system mode switch remains under Feature switches.',
+      refreshTitle: 'Aggregation interval',
+      refreshHint: 'Affects matrix time granularity and refresh cadence',
+      refreshAria: 'Aggregation interval',
+      platformsTitle: 'Platforms and models',
+      platformsHint:
+        'Leave empty = show all real model names; when filled, only listed models get their own rows and the rest roll into “Other”',
+      modelsPlaceholder: 'Empty = all real models; or list popular models (rest → Other)',
+      badgeAllModels: 'All models',
+      badgeOther: '+ Other',
+      groupsTitle: 'Monitored groups',
+      groupsSelected: '{count} groups selected',
+      groupsAll: 'All groups',
+      groupsEmpty: 'No groups available',
+      errorsTitle: 'Error categories and ignores',
+      errorsHint:
+        'Checked “ignore” categories are excluded from error rate and health score, but still appear greyed in the error breakdown. Unmatched errors roll into “Other”.',
+      ignoredSummary: 'Ignored {ignored} categories · counted in error rate {counted} categories',
+      healthTitle: 'Health thresholds',
+      healthHint:
+        'Controls user-facing color bands and overall score. Defaults are tolerant so small error rates or low cache do not immediately show as unhealthy.',
+      fields: {
+        minimumSample: 'Minimum samples',
+        warningError: 'Error rate watch %',
+        criticalError: 'Error rate critical %',
+        targetTtft: 'TTFT target ms',
+        warningTtft: 'TTFT watch ms',
+        criticalTtft: 'TTFT critical ms',
+        warningCache: 'Cache rate watch %',
+        criticalCache: 'Cache rate critical %',
+      },
+      namedModelsEmpty: 'Platform model lists are empty: every real model name will be shown (not folded into “Other”).',
+      namedModelsCount: 'Showing {count} named model dimensions; unlisted models fold into per-platform “Other”.',
+      userContractTitle: 'User-facing display contract',
+      userContract: {
+        health: 'Health color weights: error rate 60% + first-token P50 20% + cache rate 20% (thresholds configurable above)',
+        trend: 'Trend can switch between pulse matrix and line chart (error · cache · first token)',
+        latency: 'Latency shows AVG · P50 · P90; absolute request / error counts are not shown',
+        models: 'Empty model lists show real names and never dump everything into “Other”',
+      },
+    },
+    admin: {
+      descriptionV1:
+        'System mode is V1 active probes: manage probe monitors and run checks now; V2 aggregation does not run.',
+      descriptionV2:
+        'System mode is V2 passive monitoring: configure aggregation dimensions; V1 active probes do not run.',
+      tabAria: 'Monitor management',
+      tabV2: 'V2 data monitor config',
+      tabV1Active: 'V1 active probes',
+      tabV1History: 'V1 history (probes not active in current mode)',
+    },
+  },
   monitorCommon: {
     status: {
       operational: 'Operational',
@@ -2242,6 +2403,7 @@ export default {
         status: 'Status',
         fileName: 'File Name',
         size: 'Size',
+        parts: 'Parts',
         expiresAt: 'Expires At',
         triggeredBy: 'Triggered By',
         startedAt: 'Started At',
@@ -2266,6 +2428,10 @@ export default {
       empty: 'No backup records',
       actions: {
         download: 'Download',
+        downloadParts: 'Download Parts',
+        downloadPartsHint: 'Download every part in order and concatenate the gzip bytes: on Linux/macOS run cat payload.part-* > backup.sql.gz; on Windows run copy /b payload.part-000001+payload.part-000002 backup.sql.gz.',
+        partLabel: 'Part {index}',
+        downloadFailed: 'Download URL is empty',
         restore: 'Restore',
         restoreConfirm: 'Are you sure you want to restore from this backup? This will overwrite the current database!',
         restorePasswordPrompt: 'Please enter your admin password to confirm the restore operation',
@@ -3112,12 +3278,28 @@ export default {
         title: 'Video Generation Pricing',
         description:
           'Configure Grok video generation prices in USD per second of output video. Leave empty to use the default per-second rates (grok-imagine-video: $0.05/s 480p, $0.07/s 720p; video-1.5: $0.08/s 480p, $0.14/s 720p, $0.25/s 1080p).',
+        modelOverridesTitle: 'Per-model video price overrides',
+        modelOverridesDescription: 'Each populated cell overrides the flat resolution price for that model family. Preview and legacy aliases for video-1.5 use the same family; empty cells fall back to the flat resolution price.',
         independentMultiplier: 'Use independent video multiplier',
         videoMultiplier: 'Video multiplier',
         modeHint:
           'Videos are billed per second: per-second price × duration (1-15s, default 8s). By default the current effective group multiplier applies; independent mode uses the video multiplier instead.',
         finalPricePreview: 'Final per-second price preview',
         notConfigured: 'Not configured'
+      },
+      explicitPricing: {
+        title: 'Grok Search & Voice Pricing',
+        description: 'Optional per-group prices for web_search (per 1k calls) and Voice realtime / TTS / STT (USD). Leave empty if unused.',
+        searchPricePer1k: 'Search price per 1k calls (USD)',
+        pricePlaceholder: 'optional'
+      },
+      voicePricing: {
+        title: 'Grok Voice Pricing',
+        description: 'Optional per-group prices for Voice realtime / TTS / STT (USD). Leave empty to leave unpriced.',
+        audioRealtimePerMin: 'Realtime price per minute (USD)',
+        audioTtsPerMillionChars: 'TTS price per million chars (USD)',
+        audioSttPerHour: 'STT price per hour (USD)',
+        pricePlaceholder: 'optional'
       },
       webSearchPricing: {
         title: 'Codex Web Search Pricing',
@@ -4252,6 +4434,10 @@ export default {
         rateLimited: 'Rate Limited',
         overloaded: 'Overloaded',
         tempUnschedulable: 'Temp Unschedulable',
+        accountSchedulingThresholdOverride: 'Account Auto-Pause Threshold Override',
+        accountSchedulingThresholdOverrideHint: 'Override the platform auto-pause threshold for this account only. Disable to use platform settings.',
+        accountSchedulingThresholdOverrideValue: 'Account threshold percent',
+        accountSchedulingThresholdOverrideDisabledHint: 'Use 1-100. The account becomes temporarily unschedulable after reaching this usage percent; 100 disables it for this account.',
         outsideActiveWindow: 'Outside Active Window',
         quotaExceeded: 'Quota Exceeded',
         unschedulable: 'Unschedulable',
@@ -4262,7 +4448,8 @@ export default {
         creditsExhausted: 'Credits Exhausted',
         creditsExhaustedUntil: 'AI Credits exhausted, expected recovery at {time}',
         overloadedUntil: 'Overloaded until {time}',
-        viewTempUnschedDetails: 'View temp unschedulable details'
+        viewTempUnschedDetails: 'View temp unschedulable details',
+        tempUnschedulableUntil: 'Resumes {time}'
       },
       columns: {
         name: 'Name',
@@ -4435,6 +4622,10 @@ export default {
         notice: 'Rules are evaluated in order and require both error code and keyword match.',
         addRule: 'Add Rule',
         ruleOrder: 'Rule Order',
+        multipleErrorTrigger: '{count} matching errors in {minutes} minutes reached the trigger threshold ({threshold}).',
+        multipleErrorTriggerNoWindow: '{count} matching errors reached the trigger threshold ({threshold}).',
+        multipleErrorCountInWindow: '{count} matching errors occurred within {minutes} minutes.',
+        multipleErrorCount: '{count} matching errors contributed to this block.',
         ruleIndex: 'Rule #{index}',
         errorCode: 'Error Code',
         errorCodePlaceholder: 'e.g. 429',
@@ -4781,7 +4972,55 @@ export default {
       },
       grok: {
         baseUrlHint: 'Grok OAuth accounts forward to the official xAI API base URL.',
-        apiKeyHint: 'Grok subscription support uses OAuth refresh tokens; API keys are out of scope for this account type.'
+        apiKeyHint: 'Grok subscription support uses OAuth refresh tokens; API keys are out of scope for this account type.',
+        // Account connectivity test modal
+        testMode: 'Test mode',
+        testModeHint:
+          'Text / image / video use the selected model. Web search, TTS, STT and Realtime hit standalone endpoints (not free-form chat tools).',
+        testModeText: 'Text (Responses)',
+        testModeImage: 'Image (/images/generations)',
+        testModeVideo: 'Video (/videos/generations)',
+        testModeSearch: 'Web search (/web_search)',
+        testModeTTS: 'TTS (/tts)',
+        testModeSTT: 'STT (/stt)',
+        testModeRealtime: 'Realtime (WS /realtime)',
+        textTestMode: 'Mode: Text (Responses)',
+        searchTestMode: 'Mode: Web search (/web_search)',
+        ttsTestMode: 'Mode: TTS (/tts)',
+        sttTestMode: 'Mode: STT (/stt)',
+        realtimeTestMode: 'Mode: Realtime (WS /realtime)',
+        searchQueryLabel: 'Search query',
+        searchQueryPlaceholder: 'Example: xAI Grok',
+        searchQueryDefault: 'xAI Grok',
+        searchTestHint:
+          'Standalone web_search probe (same as gateway /v1/web_search). Not a free-form chat with tools.',
+        ttsTextLabel: 'TTS text',
+        ttsTextPlaceholder: 'Example: Hello from Sub2API connectivity test.',
+        ttsTextDefault: 'Hello from Sub2API account connectivity test.',
+        ttsTestHint: 'Standalone /v1/tts with language=en; success reports audio byte size.',
+        sttTestHint: 'Standalone /v1/stt with a synthetic silent WAV; success means the endpoint is reachable.',
+        realtimeTestHint:
+          'Standalone WebSocket dial to /v1/realtime (model=grok-voice-latest). Handshake success = connectivity OK; may also show the first server event.',
+        sendingSearchRequest: 'Sending standalone web_search request...',
+        sendingTTSRequest: 'Sending standalone /tts request...',
+        sendingSTTRequest: 'Sending standalone /stt request...',
+        sendingRealtimeRequest: 'Dialing standalone /realtime WebSocket...',
+        selectedTestMode: 'Test mode: {mode}',
+        imageUploadLabel: 'Source image (optional, for edits)',
+        videoFirstFrameLabel: 'First-frame / reference image (optional)',
+        imageUploadHint:
+          'PNG/JPEG recommended, both sides ≥ 8 px, under ~4 MB for edits. Uploading a source image switches to /images/edits (image-to-image). Leave empty for text-to-image /images/generations.',
+        videoFirstFrameHint:
+          'Optional first-frame / reference image for image-to-video. PNG/JPEG recommended, both sides ≥ 8 px.',
+        audioUploadLabel: 'Audio file (optional for STT)',
+        audioUploadHint:
+          'Upload a real audio clip to transcribe. Without a file, a silent WAV is used for connectivity only.',
+        mediaTooLarge: 'File is too large (max ~6 MB for admin test uploads).',
+        chooseImageFile: 'Choose image',
+        chooseAudioFile: 'Choose audio',
+        uploadPreviewAlt: 'Upload preview',
+        fileReadFailed: 'Failed to read the selected file',
+        noResponseBody: 'No response body from server'
       },
       anthropic: {
         apiKeyPassthrough: 'Auto passthrough (auth only)',
@@ -5206,6 +5445,17 @@ export default {
           ssoCookieLabel: 'Grok Web SSO Key',
           ssoCookiePlaceholder: 'One SSO key per line\nSupports multiple, one per line',
           ssoCookieHint: 'One SSO key per line. Multiple keys are imported with 3-way concurrency; expect about 90 seconds per batch. Use a matching-region proxy if needed.',
+          emailPasswordAuth: 'Email + password',
+          emailPasswordDesc:
+            'Sign in with a Grok web email and password. The server uses the password only to obtain an ephemeral SSO cookie, then converts it to Build OAuth credentials. Neither the password nor raw SSO is stored on the account.',
+          emailPasswordInputLabel: 'email----password',
+          emailPasswordPlaceholder: "user{'@'}example.com----your-password\nMultiple lines supported",
+          emailPasswordHint:
+            'Format: email----password (password may contain -). Requires YesCaptcha keys; use a matching-region proxy when needed.',
+          pleaseEnterPassword: 'Please enter email----password (one per line)',
+          pleaseEnterSSOToken: 'Please enter an SSO token',
+          failedToValidateSSO: 'Failed to validate Grok SSO',
+          failedToAuthorizePassword: 'Grok password authorization failed',
           convertingSSO: 'Converting...',
           convertSSOAndCreate: 'Convert & Create Account',
           validating: 'Validating...',
@@ -5494,6 +5744,9 @@ export default {
       reAuthorizedSuccess: 'Account re-authorized successfully',
       // Test Modal
       testAccountConnection: 'Test Account Connection',
+      errorPrefix: 'Error: {message}',
+      imagePreviewAlt: 'Test image {index}',
+      imageLightboxAlt: 'Image preview',
       account: 'Account',
       readyToTest: 'Ready to test. Click "Start Test" to begin...',
       connectingToApi: 'Connecting to API...',
@@ -5517,10 +5770,22 @@ export default {
       imagePromptLabel: 'Image prompt',
       imagePromptPlaceholder: 'Example: Generate an orange cat astronaut sticker in pixel-art style on a solid background.',
       imagePromptDefault: 'Generate a cute orange cat astronaut sticker on a clean pastel background.',
-      imageTestHint: 'When an image model is selected, this test sends a real image-generation request and previews the returned image below.',
+      imageTestHint:
+        'Calls standalone /v1/images/generations and shows the returned image below.',
       imageTestMode: 'Mode: Image generation test',
+      videoPromptLabel: 'Video prompt',
+      videoPromptPlaceholder: 'Example: A red ball bouncing once on a white floor, short simple motion.',
+      videoPromptDefault: 'A red ball bouncing once on a white floor, short simple motion.',
+      videoTestHint:
+        'Calls standalone /v1/videos/generations, polls until done, then downloads the finished video for on-page preview.',
+      videoTestMode: 'Mode: Video generation test',
+      sendingVideoRequest: 'Sending video generation request...',
       imagePreview: 'Generated images:',
       imageReceived: 'Received test image #{count}',
+      audioPreview: 'Generated audio:',
+      audioReceived: 'Received test audio #{count}',
+      videoPreview: 'Generated video:',
+      videoReceived: 'Received test video #{count}',
       // Stats Modal
       viewStats: 'View Stats',
       usageStatistics: 'Usage Statistics',
@@ -5568,6 +5833,12 @@ export default {
         grokTokens: 'Tok',
         grokFreeQuota24hHint: 'Estimated from local token usage over the rolling 24-hour window ({limit} limit)',
         grokWeeklyUsage: 'Weekly {percent}%',
+        grokUsed: 'Used $',
+        grokBalance: 'Bal $',
+        grokPrepaid: 'Prepaid balance',
+        grokMonthlyLimit: 'Monthly used / limit (USD)',
+        grokOverage: 'Overage onDemandUsed/onDemandCap',
+        grokOverageShort: 'OD $',
         grokUnknown: 'Grok quota is unknown until the first upstream response includes xAI rate-limit headers.',
         grokRetryAfter: 'Retry after {time}',
         grokProbe: 'Probe',
@@ -7032,12 +7303,21 @@ export default {
       features: {
         channelMonitor: {
           title: 'Channel Monitor',
-          description: 'Periodically probe configured channels and surface availability / latency to users. Turning it off stops the scheduler and returns an empty list on the user page.',
+          description: 'Choose either V1 active probes or V2 passive usage monitoring. When disabled, both background jobs stop and the user entry is hidden.',
           configureLink: 'Configure monitors in Channel Management > Channel Monitor',
           enabled: 'Enable Channel Monitor',
-          enabledHint: 'Disabling stops background checks; existing history is preserved.',
+          enabledHint: 'Disabling stops both the V1 scheduler and V2 aggregation; existing config and history are kept.',
+          mode: 'Monitor mode',
+          modeHint: 'Default is V1 (active probes). Switch to V2 only when you want passive aggregation; only one implementation can be active at a time.',
+          modeV2: 'V2 passive monitoring',
+          modeV1: 'V1 active probes',
+          modeV2Hint: 'Opt-in: aggregates health metrics from real gateway traffic without upstream probe traffic. V1 probes stop while V2 is active.',
+          modeV1Hint: 'Default: runs scheduled upstream health checks for configured channel monitors (probe traffic).',
           defaultInterval: 'Default check interval (seconds)',
-          defaultIntervalHint: 'Pre-fills the interval when creating a new monitor; each monitor can override it. Range 15 – 3600.',
+          defaultIntervalHint: 'V1 only: default interval for new monitors (overridable per monitor). Range 15 – 3600 seconds.',
+          hideThroughput: 'Hide throughput rates from users (RPM / TPM)',
+          hideThroughputHint:
+            'When on, the user Channel Monitor page and user APIs omit RPM and TPM so fleet volume cannot be reverse-estimated from rates × window. Admins still see full metrics. Error rates, latency, and cache rates remain visible.',
         },
         channelBalanceRefresh: {
           title: 'Auto-refresh Channel Balances',
@@ -7161,9 +7441,12 @@ export default {
         emailVerificationHint: 'Require email verification for new registrations',
         emailSuffixWhitelist: 'Email Domain Whitelist',
         emailSuffixWhitelistHint:
-          "Only email addresses from the specified domains can register (for example, {'@'}qq.com, {'@'}gmail.com, *.edu.cn)",
+          "Only email addresses from the specified domains can register; leave empty for no restriction (for example, {'@'}qq.com, {'@'}gmail.com, *.edu.cn)",
         emailSuffixWhitelistPlaceholder: "{'@'}example.com, *.edu.cn",
         emailSuffixWhitelistInputHint: 'Leave empty for no restriction. Use *.edu.cn to match edu.cn and its subdomains.',
+        emailDomainQuota: 'Non-allowlist Domain Quota',
+        emailDomainQuotaHint:
+          'When enabled and the allowlist is not empty, every other registrable domain can register one account. When disabled, non-allowlist domains are rejected. Has no effect while the allowlist is empty',
         promoCode: 'Promo Code',
         promoCodeHint: 'Allow users to use promo codes during registration',
         invitationCode: 'Invitation Code Registration',
@@ -7451,7 +7734,12 @@ export default {
         title: 'Gateway Scheduling Settings',
         description: 'Control API Key scheduling behavior',
         allowUngroupedKey: 'Allow Ungrouped Key Scheduling',
-        allowUngroupedKeyHint: 'When disabled, API Keys not assigned to any group cannot make requests (403 Forbidden). Keep disabled to ensure all Keys belong to a specific group.'
+        allowUngroupedKeyHint: 'When disabled, API Keys not assigned to any group cannot make requests (403 Forbidden). Keep disabled to ensure all Keys belong to a specific group.',
+        accountSchedulingThresholdsTitle: 'Platform Account Auto-Pause Thresholds',
+        accountSchedulingThresholdsDescription: 'When an account\'s current native usage window (OpenAI Codex/Anthropic session, or Grok request/token utilization) reaches this percent, Sub2API temporarily removes it from scheduling until the window resets. Use 100 to disable.',
+        accountSchedulingThresholdsGlobalHint: 'System-wide default for every account on that platform. Individual accounts can still override this in the account editor.',
+        accountSchedulingThresholdsDisabledHint: '100 disables platform auto-pause. Values 1–99 pause scheduling once utilization reaches that percent.',
+        accountSchedulingThresholdsRangeHint: 'Integer 1–100 (percent). OpenAI/Anthropic/Grok only.'
       },
       upstreamBillingProbe: {
         title: 'Upstream Rate Auto Detection',
@@ -7478,6 +7766,17 @@ export default {
       gatewayForwarding: {
         title: 'Request Forwarding',
         description: 'Control how requests are forwarded to upstream OAuth accounts',
+        grokDefaultTextModel: 'Default Grok text model',
+        grokDefaultTextModelHint: 'Used for empty model values and, only when the switch is enabled, requests from other client model namespaces. Custom Grok model IDs are accepted.',
+        grokCrossClientMap: 'Map other clients to Grok',
+        grokCrossClientMapHint: 'Disabled by default. When enabled, GPT, Codex, o-series, and Claude model IDs are routed to the default Grok text model above.',
+        grokDefaultBaseURLMode: 'Default Grok upstream',
+        grokDefaultBaseURLModeHint: 'Used only when a Grok account has no explicit base URL. Media and voice endpoints continue to use their official API hosts.',
+        grokBaseURLModeCLI: 'CLI chat proxy',
+        grokBaseURLModeAPI: 'Public API',
+        grokBaseURLModeUSEast1: 'Regional API (us-east-1)',
+        grokBaseURLModeUSWest2: 'Regional API (us-west-2)',
+        grokBaseURLModeEUWest1: 'Regional API (eu-west-1)',
         fingerprintUnification: 'Fingerprint Unification',
         fingerprintUnificationHint: 'Unify X-Stainless-* headers across users sharing the same OAuth account. Disabling passes through each client\'s original headers.',
         metadataPassthrough: 'Metadata Passthrough',
