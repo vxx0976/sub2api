@@ -218,17 +218,19 @@ type AdminBoundAuthIdentityChannel struct {
 }
 
 type CreateGroupInput struct {
-	Name             string
-	Description      string
-	NameI18n         map[string]string
-	DescriptionI18n  map[string]string
-	Platform         string
-	RateMultiplier   float64
-	IsExclusive      bool
-	SubscriptionType string   // standard/subscription
-	DailyLimitUSD    *float64 // 日限额 (USD)
-	WeeklyLimitUSD   *float64 // 周限额 (USD)
-	MonthlyLimitUSD  *float64 // 月限额 (USD)
+	Name                      string
+	Description               string
+	NameI18n                  map[string]string
+	DescriptionI18n           map[string]string
+	Platform                  string
+	RateMultiplier            float64
+	IsExclusive               bool
+	SubscriptionType          string   // standard/subscription
+	DailyLimitUSD             *float64 // 日限额 (USD)
+	WeeklyLimitUSD            *float64 // 周限额 (USD)
+	MonthlyLimitUSD           *float64 // 月限额 (USD)
+	LongContextPricingEnabled bool
+	ModelPricing              []ChannelModelPricing
 	// 图片生成计费配置（仅 antigravity 平台使用）
 	AllowImageGeneration         bool
 	AllowBatchImageGeneration    bool
@@ -303,18 +305,20 @@ type CreateGroupInput struct {
 }
 
 type UpdateGroupInput struct {
-	Name             string
-	Description      *string           // nil 表示不修改；&"" 表示清空（来自 main 的清空修复）
-	NameI18n         map[string]string // 来自 dev：多语言
-	DescriptionI18n  map[string]string // 来自 dev：多语言
-	Platform         string
-	RateMultiplier   *float64 // 使用指针以支持设置为0
-	IsExclusive      *bool
-	Status           string
-	SubscriptionType string   // standard/subscription
-	DailyLimitUSD    *float64 // 日限额 (USD)
-	WeeklyLimitUSD   *float64 // 周限额 (USD)
-	MonthlyLimitUSD  *float64 // 月限额 (USD)
+	Name                      string
+	Description               *string           // nil 表示不修改；&"" 表示清空（来自 main 的清空修复）
+	NameI18n                  map[string]string // 来自 dev：多语言
+	DescriptionI18n           map[string]string // 来自 dev：多语言
+	Platform                  string
+	RateMultiplier            *float64 // 使用指针以支持设置为0
+	IsExclusive               *bool
+	Status                    string
+	SubscriptionType          string   // standard/subscription
+	DailyLimitUSD             *float64 // 日限额 (USD)
+	WeeklyLimitUSD            *float64 // 周限额 (USD)
+	MonthlyLimitUSD           *float64 // 月限额 (USD)
+	LongContextPricingEnabled *bool
+	ModelPricing              *[]ChannelModelPricing
 	// 图片生成计费配置（仅 antigravity 平台使用）
 	AllowImageGeneration         *bool
 	AllowBatchImageGeneration    *bool
@@ -703,6 +707,14 @@ type adminServiceImpl struct {
 	affiliateService     adminRechargeAffiliateAccruer
 	compositeRouteRepo   CompositeModelRouteRepository
 	compositeResolver    *CompositeRouteResolver
+	// 分组平台变更后用来失效渠道缓存；可为 nil（缓存会在 TTL 到期后自然重建）
+	channelCacheInvalidator ChannelCacheInvalidator
+}
+
+// ChannelCacheInvalidator 失效渠道缓存。
+// 窄接口，避免 admin 服务依赖整个 ChannelService——与 APIKeyAuthCacheInvalidator 同一思路。
+type ChannelCacheInvalidator interface {
+	InvalidateCache()
 }
 
 type adminRechargeAffiliateAccruer interface {
@@ -736,6 +748,7 @@ func NewAdminService(
 	affiliateService *AffiliateService,
 	compositeRouteRepo CompositeModelRouteRepository,
 	compositeResolver *CompositeRouteResolver,
+	channelCacheInvalidator ChannelCacheInvalidator,
 ) AdminService {
 	return &adminServiceImpl{
 		userRepo:             userRepo,
@@ -762,6 +775,8 @@ func NewAdminService(
 		affiliateService:     affiliateService,
 		compositeRouteRepo:   compositeRouteRepo,
 		compositeResolver:    compositeResolver,
+
+		channelCacheInvalidator: channelCacheInvalidator,
 	}
 }
 

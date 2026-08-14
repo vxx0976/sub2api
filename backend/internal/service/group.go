@@ -74,6 +74,11 @@ type Group struct {
 	AudioTTSPricePerMillionChars *float64 `json:"audio_tts_price_per_million_chars"`
 	AudioSTTPricePerHour         *float64 `json:"audio_stt_price_per_hour"`
 
+	// ModelPricing overrides channel and built-in prices for matching models.
+	// Token intervals are selected only when LongContextPricingEnabled is true.
+	LongContextPricingEnabled bool
+	ModelPricing              []ChannelModelPricing
+
 	// Claude Code 客户端限制
 	ClaudeCodeOnly  bool   `json:"claude_code_only"`
 	FallbackGroupID *int64 `json:"fallback_group_id"`

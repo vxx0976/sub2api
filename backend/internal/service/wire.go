@@ -884,6 +884,7 @@ var ProviderSet = wire.NewSet(
 	NewReferralService,
 	NewTotpService,
 	NewChannelService,
+	wire.Bind(new(ChannelCacheInvalidator), new(*ChannelService)),
 	NewErrorPassthroughService,
 	NewResellerService,
 	NewResellerAPITokenService,

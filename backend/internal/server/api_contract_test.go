@@ -372,6 +372,7 @@ func TestAPIContracts(t *testing.T) {
 						"daily_limit_usd": null,
 						"weekly_limit_usd": null,
 						"monthly_limit_usd": null,
+						"long_context_pricing_enabled": false,
 						"image_price_1k": null,
 						"image_price_2k": null,
 						"image_price_4k": null,
@@ -1499,8 +1500,8 @@ func newContractDeps(t *testing.T) *contractDeps {
 	settingRepo := newStubSettingRepo()
 	settingService := service.NewSettingService(settingRepo, cfg)
 
-	// 21 args: upstream 新增 compositeRouteRepo/compositeResolver 两个尾参
-	adminService := service.NewAdminService(userRepo, groupRepo, &accountRepo, proxyRepo, apiKeyRepo, redeemRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	// 22 args: upstream 新增 compositeRouteRepo/compositeResolver/channelCacheInvalidator 三个尾参
+	adminService := service.NewAdminService(userRepo, groupRepo, &accountRepo, proxyRepo, apiKeyRepo, redeemRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	// 9 args: fork 在 promoService 之后插入 referralService
 	authHandler := handler.NewAuthHandler(cfg, nil, userService, settingService, nil, nil, redeemService, nil, nil)
 	apiKeyHandler := handler.NewAPIKeyHandler(apiKeyService)

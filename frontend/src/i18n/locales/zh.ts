@@ -3289,6 +3289,13 @@ export default {
         searchPricePer1k: '搜索每千次价格（USD）',
         pricePlaceholder: '可选'
       },
+      modelPricing: {
+        title: '分组逐模型定价',
+        description: '匹配模型后覆盖渠道和内置价格。长上下文阶梯沿用官方/预设价卡，无需再手填区间。音频可用按次层级配置 realtime、tts、stt。',
+        longContext: '启用长上下文阶梯定价',
+        longContextHint: '勾选后按官方/预设阶梯计费；关闭则始终按第一档基础价。',
+        add: '添加模型价格'
+      },
       voicePricing: {
         title: 'Grok Voice 定价',
         description: '分组级 Voice realtime / TTS / STT 单价（USD）。留空表示未配置。',
@@ -3605,7 +3612,8 @@ export default {
       billingMode: {
         token: 'Token',
         perRequest: '按次',
-        image: '图片（按次）'
+        image: '图片（按次）',
+        video: '视频（按秒）'
       },
       form: {
         name: '名称',
@@ -3639,6 +3647,7 @@ export default {
         addInterval: '添加区间',
         requestTiers: '按次计费层级',
         imageTiers: '图片计费层级（按次）',
+        videoTiers: '视频分辨率层级（按秒）',
         addTier: '添加层级',
         noTiersYet: '暂无层级，点击添加配置按次计费价格',
         noPricingRules: '暂无定价规则，点击"添加"创建',
@@ -3664,6 +3673,7 @@ export default {
         restrictModelsHint: '开启后，仅允许模型定价列表中的模型。不在列表中的模型请求将被拒绝。',
         defaultPerRequestPrice: '默认单次价格（未命中层级时使用）',
         defaultImagePrice: '默认图片价格（未命中层级时使用）',
+        defaultVideoPrice: '默认视频每秒价格（未命中层级时使用）',
         platformConfig: '平台配置',
         webSearchEmulation: 'Web Search 模拟',
         webSearchEmulationHint: '⚠️ 开启后该渠道下所有 Anthropic 分组的账号将自动拦截 web_search 请求，请谨慎操作',
