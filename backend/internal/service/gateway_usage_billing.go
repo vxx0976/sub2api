@@ -602,6 +602,10 @@ type recordUsageOpts struct {
 	// 长上下文计费（仅 Gemini 路径需要）
 	LongContextThreshold  int
 	LongContextMultiplier float64
+	// PricingAt 本次请求冻结的计价时刻，用于官方时段分档（peak/offpeak）。
+	// 刻意挂在 opts 上而不是加尾参：calculateRecordUsageCost 在同一次记账里会被调用
+	// 两次（基线 + response_model 重算），两处共用同一个 opts，接线不会漏第二处。
+	PricingAt time.Time
 }
 
 // RecordUsage 记录使用量并扣费（或更新订阅用量）
@@ -811,6 +815,8 @@ func (s *GatewayService) recordUsageCore(ctx context.Context, input *recordUsage
 		pricingAt = timezone.Now()
 	}
 	multiplier, imageMultiplier := computePeakAwareMultipliers(apiKey, multiplier, pricingAt)
+	// 官方时段分档与分组高峰倍率同源同刻：一张账单只有一个时钟。
+	opts.PricingAt = pricingAt
 
 	// 确定计费模型
 	concreteBillingModel := forwardResultBillingModel(result.Model, result.UpstreamModel)
@@ -893,6 +899,7 @@ func (s *GatewayService) recordUsageCore(ctx context.Context, input *recordUsage
 				ImageOutputTokens:   result.Usage.ImageOutputTokens,
 			},
 			cost.TotalCost,
+			opts.PricingAt,
 		)
 	}
 
@@ -1043,6 +1050,8 @@ func (s *GatewayService) hasResolvableTokenPricing(ctx context.Context, model st
 	if s.billingService == nil {
 		return false
 	}
+	// 刻意用基准价（不传计价时刻）：这是「该模型能否计费」的准入判定，不算金额。
+	// 时段档只影响价格高低、不影响能否定价，接上时刻只会让准入判定平白依赖时间。
 	_, err := s.billingService.GetModelPricing(model)
 	return err == nil
 }
@@ -1070,6 +1079,8 @@ func (s *GatewayService) resolveChannelPricing(ctx context.Context, billingModel
 		return nil
 	}
 	gid := apiKey.Group.ID
+	// 刻意不传 At：本函数只在命中分组/渠道价卡时返回非 nil（见下面的 Source 过滤），
+	// 而价卡路径的底价按设计恒取基准价（最贵档），与 ModelPricingResolver.Resolve 一致。
 	resolved := s.resolver.Resolve(ctx, PricingInput{Model: billingModel, GroupID: &gid, Group: apiKey.Group})
 	if resolved.Source == PricingSourceGroup || resolved.Source == PricingSourceChannel {
 		return resolved
@@ -1168,18 +1179,20 @@ func (s *GatewayService) calculateTokenCost(
 			RateMultiplier: multiplier,
 			Resolver:       s.resolver,
 			Resolved:       resolved,
+			PricingAt:      opts.PricingAt,
 		})
 	} else if opts.LongContextThreshold > 0 && (apiKey.Group == nil || apiKey.Group.LongContextPricingEnabled) {
 		// 长上下文双倍计费（如 Gemini 200K 阈值）
-		cost, err = s.billingService.CalculateCostWithLongContext(billingModel, tokens, multiplier, opts.LongContextThreshold, opts.LongContextMultiplier)
+		cost, err = s.billingService.CalculateCostWithLongContextAt(billingModel, tokens, multiplier, opts.LongContextThreshold, opts.LongContextMultiplier, opts.PricingAt)
 	} else if s.resolver != nil && apiKey.Group != nil {
 		gid := apiKey.Group.ID
 		cost, err = s.billingService.CalculateCostUnified(CostInput{
 			Ctx: ctx, Model: billingModel, GroupID: &gid, Group: apiKey.Group,
 			Tokens: tokens, RequestCount: 1, RateMultiplier: multiplier, Resolver: s.resolver,
+			PricingAt: opts.PricingAt,
 		})
 	} else {
-		cost, err = s.billingService.CalculateCost(billingModel, tokens, multiplier)
+		cost, err = s.billingService.CalculateCostAt(billingModel, tokens, multiplier, opts.PricingAt)
 	}
 	if err != nil {
 		logger.LegacyPrintf("service.gateway", "Calculate cost failed: %v", err)
@@ -1260,6 +1273,8 @@ func (s *GatewayService) buildRecordUsageLog(
 		GroupID:               apiKey.GroupID,
 		SubscriptionID:        optionalSubscriptionID(subscription),
 		CreatedAt:             time.Now(),
+		PricingTimeBand:       optionalTrimmedStringPtr(costPricingTimeBand(cost)),
+		PricedAt:              optionalTimePtr(opts.PricingAt),
 	}
 	if result.ImageCount > 0 && (cost == nil || cost.BillingMode != string(BillingModeToken)) {
 		usageLog.RateMultiplier = imageMultiplier

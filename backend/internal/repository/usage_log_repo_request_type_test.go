@@ -89,6 +89,8 @@ func TestUsageLogRepositoryCreateSyncRequestTypeAndLegacyFields(t *testing.T) {
 			sqlmock.AnyArg(), // video_resolution
 			sqlmock.AnyArg(), // video_duration_seconds
 			sqlmock.AnyArg(), // service_tier
+			sqlmock.AnyArg(), // pricing_time_band
+			sqlmock.AnyArg(), // priced_at
 			sqlmock.AnyArg(), // reasoning_effort
 			sqlmock.AnyArg(), // inbound_endpoint
 			sqlmock.AnyArg(), // upstream_endpoint
@@ -184,6 +186,8 @@ func TestUsageLogRepositoryCreate_PersistsServiceTier(t *testing.T) {
 			sqlmock.AnyArg(), // video_resolution
 			sqlmock.AnyArg(), // video_duration_seconds
 			serviceTier,
+			sqlmock.AnyArg(), // pricing_time_band
+			sqlmock.AnyArg(), // priced_at
 			sqlmock.AnyArg(),
 			sqlmock.AnyArg(),
 			sqlmock.AnyArg(),
@@ -853,6 +857,8 @@ func TestScanUsageLogRequestTypeAndLegacyFallback(t *testing.T) {
 			sql.NullString{}, // video_resolution
 			sql.NullInt64{},  // video_duration_seconds
 			sql.NullString{},
+			sql.NullString{}, // pricing_time_band
+			sql.NullTime{},   // priced_at
 			sql.NullString{},
 			sql.NullString{},
 			sql.NullString{},
@@ -933,6 +939,8 @@ func TestScanUsageLogRequestTypeAndLegacyFallback(t *testing.T) {
 			sql.NullString{}, // video_resolution
 			sql.NullInt64{},  // video_duration_seconds
 			sql.NullString{Valid: true, String: "priority"},
+			sql.NullString{}, // pricing_time_band
+			sql.NullTime{},   // priced_at
 			sql.NullString{},
 			sql.NullString{},
 			sql.NullString{},
@@ -996,6 +1004,8 @@ func TestScanUsageLogRequestTypeAndLegacyFallback(t *testing.T) {
 			sql.NullString{}, // video_resolution
 			sql.NullInt64{},  // video_duration_seconds
 			sql.NullString{Valid: true, String: "flex"},
+			sql.NullString{}, // pricing_time_band
+			sql.NullTime{},   // priced_at
 			sql.NullString{},
 			sql.NullString{},
 			sql.NullString{},
@@ -1059,6 +1069,8 @@ func TestScanUsageLogRequestTypeAndLegacyFallback(t *testing.T) {
 			sql.NullString{}, // video_resolution
 			sql.NullInt64{},  // video_duration_seconds
 			sql.NullString{Valid: true, String: "priority"},
+			sql.NullString{}, // pricing_time_band
+			sql.NullTime{},   // priced_at
 			sql.NullString{},
 			sql.NullString{},
 			sql.NullString{},

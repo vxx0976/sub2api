@@ -1275,6 +1275,8 @@ export default {
     }
   },
   usage: {
+    pricingTimeBandOffPeak: 'Непиковое',
+    pricingTimeBandOffPeakHint: 'Списано по официальному непиковому тарифу поставщика (половина пикового)',
     title: 'Записи использования',
     description: 'Просмотр и анализ истории использования API',
     costDetails: 'Детализация расходов',
@@ -1723,7 +1725,10 @@ export default {
       perUnitRequest: '/ запрос',
       perUnitImage: '/ изображение',
       perRequest: 'За запрос',
-      perImage: 'За изображение'
+      perImage: 'За изображение',
+      bandPeak: 'Пик',
+      bandOffPeak: 'Непиковое',
+      timeTierNote: 'Официальная тарификация по времени: пик {windows} ({tz}); в остальное время — {percent}% от этой ставки'
     },
     nav: {
       login: 'Войти',

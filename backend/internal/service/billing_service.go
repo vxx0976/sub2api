@@ -110,6 +110,9 @@ type ModelPricing struct {
 	LongContextOutputMultiplier        float64 // 长上下文整次会话输出倍率
 	ImageOutputPricePerToken           float64 // 图片输出 token 价格 (USD)
 	ImageOutputPriceExplicit           bool    // 是否由渠道定价显式设定（为 true 时即使 == 0 也不回退）
+	// PricingTimeBand 记录本次取价命中的官方时段档（peak/offpeak）；空串表示无时段分档，
+	// 或本次取的是基准价（未传计价时刻）。仅用于落库对账与展示，不参与任何金额计算。
+	PricingTimeBand string
 }
 
 const (
@@ -175,6 +178,9 @@ type CostBreakdown struct {
 	ActualCost                float64 // 应用倍率后的实际费用
 	BillingMode               string  // 计费模式（"token"/"per_request"/"image"），由 CalculateCostUnified 填充
 	LongContextBillingApplied bool
+	// PricingTimeBand 本次计费命中的官方时段档（peak/offpeak）。仅当价格确实来自内置
+	// 定价表时非空；被渠道价/分组价卡覆盖或按次计费时为空。落库供事后对账。
+	PricingTimeBand string
 }
 
 // ErrModelPricingUnavailable indicates that none of the configured pricing
@@ -396,18 +402,23 @@ func (s *BillingService) initFallbackPricing() {
 	// ============================================================
 
 	// ---- DeepSeek V4 系列 ----
-	// Source: https://api-docs.deepseek.com/quick_start/pricing
+	// Source: https://api-docs.deepseek.com/quick_start/pricing （2026-08-17 官方调价后核对）
 	// （deepseek-chat / deepseek-reasoner 为 deepseek-v4-flash 的兼容别名，2026/07/24 弃用）
+	//
+	// ⚠️ 正常情况下这两条**用不到**：PricingService 的官方 ¥ 表（deepSeekPricingTable）已覆盖
+	// 全部 deepseek-* 型号，只有 pricingService 未装配时才会落到这里。数值按官方 ¥ 价 ×
+	// 默认汇率 1:1 折算，且**取高峰档**（最贵档）——本层拿不到计价时刻，无法分时段，
+	// 宁可多收不少收。真正的峰谷分档在 pricing_service.go 的 ¥ 表路径上。
 	s.fallbackPrices["deepseek-v4-pro"] = &ModelPricing{
-		InputPricePerToken:     4.35e-7,  // $0.435 per MTok (cache miss)
-		OutputPricePerToken:    8.7e-7,   // $0.87 per MTok
-		CacheReadPricePerToken: 3.625e-9, // $0.003625 per MTok (cache hit)
+		InputPricePerToken:     9e-6,   // ¥9.0 per MTok (cache miss, 高峰档)
+		OutputPricePerToken:    2.7e-5, // ¥27.0 per MTok
+		CacheReadPricePerToken: 3e-7,   // ¥0.30 per MTok (cache hit)
 		SupportsCacheBreakdown: false,
 	}
 	s.fallbackPrices["deepseek-v4-flash"] = &ModelPricing{
-		InputPricePerToken:     1.4e-7, // $0.14 per MTok (cache miss)
-		OutputPricePerToken:    2.8e-7, // $0.28 per MTok
-		CacheReadPricePerToken: 2.8e-9, // $0.0028 per MTok (cache hit)
+		InputPricePerToken:     3e-6, // ¥3.0 per MTok (cache miss, 高峰档)
+		OutputPricePerToken:    9e-6, // ¥9.0 per MTok
+		CacheReadPricePerToken: 1e-7, // ¥0.10 per MTok (cache hit)
 		SupportsCacheBreakdown: false,
 	}
 
@@ -928,13 +939,20 @@ func (s *BillingService) HasIdentifiedTokenPricing(model string) bool {
 }
 
 // GetModelPricing 获取模型价格配置
+// GetModelPricing 获取模型定价。返回**基准价（最贵档）**——挂了官方时段分档的模型
+// （如 DeepSeek）恒按高峰价返回。计费路径请用 GetModelPricingAt 传入本次请求的计价时刻。
 func (s *BillingService) GetModelPricing(model string) (*ModelPricing, error) {
+	return s.GetModelPricingAt(model, time.Time{})
+}
+
+// GetModelPricingAt 按计价时刻 at 获取模型定价；at 为零值时等价于 GetModelPricing。
+func (s *BillingService) GetModelPricingAt(model string, at time.Time) (*ModelPricing, error) {
 	// 标准化模型名称（转小写）
 	model = strings.ToLower(model)
 
 	// 1. 优先从动态价格服务获取
 	if s.pricingService != nil {
-		litellmPricing := s.pricingService.GetModelPricing(model)
+		litellmPricing := s.pricingService.GetModelPricingAt(model, at)
 		// 仅有图片价、无 token 价的条目（如 LiteLLM 的 imagen 类模型）不能用于
 		// token 计费：直接返回会把 token 流量按 $0 计费。跳过后走 fallback，
 		// 无 fallback 则 fail-closed（ErrModelPricingUnavailable）。
@@ -967,6 +985,7 @@ func (s *BillingService) GetModelPricing(model string) (*ModelPricing, error) {
 				LongContextOutputMultiplier:        litellmPricing.LongContextOutputCostMultiplier,
 				ImageInputPricePerToken:            litellmPricing.InputCostPerImageToken,
 				ImageOutputPricePerToken:           litellmPricing.OutputCostPerImageToken,
+				PricingTimeBand:                    litellmPricing.PricingTimeBand,
 			}), nil
 		}
 	}
@@ -988,7 +1007,12 @@ func (s *BillingService) GetModelPricing(model string) (*ModelPricing, error) {
 // GetModelPricingWithChannel 获取模型定价，渠道配置的价格覆盖默认值
 // 渠道存在时，未配置的图片输出价格归零（不回退到 LiteLLM）
 func (s *BillingService) GetModelPricingWithChannel(model string, channelPricing *ChannelModelPricing) (*ModelPricing, error) {
-	pricing, err := s.GetModelPricing(model)
+	return s.GetModelPricingWithChannelAt(model, channelPricing, time.Time{})
+}
+
+// GetModelPricingWithChannelAt 同上，但按计价时刻 at 取底价（渠道显式配置的价格不受时段影响）。
+func (s *BillingService) GetModelPricingWithChannelAt(model string, channelPricing *ChannelModelPricing, at time.Time) (*ModelPricing, error) {
+	pricing, err := s.GetModelPricingAt(model, at)
 	if err != nil {
 		return nil, err
 	}
@@ -1045,6 +1069,9 @@ type CostInput struct {
 	Resolver                  *ModelPricingResolver // 定价解析器
 	Resolved                  *ResolvedPricing      // 可选：预解析的定价结果（避免重复 Resolve 调用）
 	LongContextBillingEnabled *bool
+	// PricingAt 本次请求的计价时刻（请求开始冻结的 pricingAt），用于官方时段分档。
+	// 零值 = 按基准价（最贵档）计费，见 PricingInput.At 的说明。
+	PricingAt time.Time
 }
 
 // CalculateCostUnified 统一计费入口，支持三种计费模式。
@@ -1063,16 +1090,20 @@ func (s *BillingService) CalculateCostUnified(input CostInput) (*CostBreakdown, 
 			input.ServiceTier,
 			nil,
 			applyLongContextBilling,
+			input.PricingAt,
 		)
 	}
 
-	// 优先使用预解析结果，避免重复 Resolve 调用
+	// 优先使用预解析结果，避免重复 Resolve 调用。
+	// 注意：预解析结果只在命中价卡时产生，而价卡路径按设计不应用官方时段档，
+	// 因此这里不把 PricingAt 补进已解析的结果里——两者本就该得到同一个基准价底价。
 	resolved := input.Resolved
 	if resolved == nil {
 		resolved = input.Resolver.Resolve(input.Ctx, PricingInput{
 			Model:   input.Model,
 			GroupID: input.GroupID,
 			Group:   input.Group,
+			At:      input.PricingAt,
 		})
 	}
 
@@ -1124,7 +1155,12 @@ func (s *BillingService) calculateTokenCost(resolved *ResolvedPricing, input Cos
 		serviceTier = ""
 	}
 
-	return s.computeTokenBreakdown(pricing, input.Tokens, input.RateMultiplier, serviceTier, applyLongCtx), nil
+	breakdown := s.computeTokenBreakdown(pricing, input.Tokens, input.RateMultiplier, serviceTier, applyLongCtx)
+	if breakdown != nil {
+		// resolved.TimeBand 已在 Resolve 里按 Source 清洗过：只有价格真的来自内置表时才非空。
+		breakdown.PricingTimeBand = resolved.TimeBand
+	}
+	return breakdown, nil
 }
 
 // computeTokenBreakdown 是 token 计费的核心逻辑，由 calculateTokenCost 和 calculateCostInternal 共用。
@@ -1313,13 +1349,23 @@ func (s *BillingService) calculatePerRequestCost(resolved *ResolvedPricing, inpu
 	}, nil
 }
 
-// CalculateCost 计算使用费用
+// CalculateCost 计算使用费用。按**基准价（最贵档）**计价——需要官方时段分档的计费
+// 路径请用 CalculateCostAt 传入请求开始冻结的计价时刻。
 func (s *BillingService) CalculateCost(model string, tokens UsageTokens, rateMultiplier float64) (*CostBreakdown, error) {
-	return s.calculateCostInternal(model, tokens, rateMultiplier, "", nil)
+	return s.CalculateCostAt(model, tokens, rateMultiplier, time.Time{})
+}
+
+// CalculateCostAt 同 CalculateCost，但按计价时刻 at 应用官方时段档。
+func (s *BillingService) CalculateCostAt(model string, tokens UsageTokens, rateMultiplier float64, at time.Time) (*CostBreakdown, error) {
+	return s.calculateCostInternal(model, tokens, rateMultiplier, "", nil, at)
 }
 
 func (s *BillingService) CalculateCostWithServiceTier(model string, tokens UsageTokens, rateMultiplier float64, serviceTier string) (*CostBreakdown, error) {
-	return s.calculateCostInternal(model, tokens, rateMultiplier, serviceTier, nil)
+	return s.CalculateCostWithServiceTierAt(model, tokens, rateMultiplier, serviceTier, time.Time{})
+}
+
+func (s *BillingService) CalculateCostWithServiceTierAt(model string, tokens UsageTokens, rateMultiplier float64, serviceTier string, at time.Time) (*CostBreakdown, error) {
+	return s.calculateCostInternal(model, tokens, rateMultiplier, serviceTier, nil, at)
 }
 
 func (s *BillingService) calculateCostWithServiceTierPolicy(
@@ -1328,12 +1374,13 @@ func (s *BillingService) calculateCostWithServiceTierPolicy(
 	rateMultiplier float64,
 	serviceTier string,
 	longContextBillingEnabled bool,
+	at time.Time,
 ) (*CostBreakdown, error) {
-	return s.calculateCostInternalWithPolicy(model, tokens, rateMultiplier, serviceTier, nil, longContextBillingEnabled)
+	return s.calculateCostInternalWithPolicy(model, tokens, rateMultiplier, serviceTier, nil, longContextBillingEnabled, at)
 }
 
-func (s *BillingService) calculateCostInternal(model string, tokens UsageTokens, rateMultiplier float64, serviceTier string, channelPricing *ChannelModelPricing) (*CostBreakdown, error) {
-	return s.calculateCostInternalWithPolicy(model, tokens, rateMultiplier, serviceTier, channelPricing, true)
+func (s *BillingService) calculateCostInternal(model string, tokens UsageTokens, rateMultiplier float64, serviceTier string, channelPricing *ChannelModelPricing, at time.Time) (*CostBreakdown, error) {
+	return s.calculateCostInternalWithPolicy(model, tokens, rateMultiplier, serviceTier, channelPricing, true, at)
 }
 
 func (s *BillingService) calculateCostInternalWithPolicy(
@@ -1343,13 +1390,14 @@ func (s *BillingService) calculateCostInternalWithPolicy(
 	serviceTier string,
 	channelPricing *ChannelModelPricing,
 	longContextBillingEnabled bool,
+	at time.Time,
 ) (*CostBreakdown, error) {
 	var pricing *ModelPricing
 	var err error
 	if channelPricing != nil {
-		pricing, err = s.GetModelPricingWithChannel(model, channelPricing)
+		pricing, err = s.GetModelPricingWithChannelAt(model, channelPricing, at)
 	} else {
-		pricing, err = s.GetModelPricing(model)
+		pricing, err = s.GetModelPricingAt(model, at)
 	}
 	if err != nil {
 		return nil, err
@@ -1361,7 +1409,12 @@ func (s *BillingService) calculateCostInternalWithPolicy(
 		serviceTier = ""
 	}
 
-	return s.computeTokenBreakdown(pricing, tokens, rateMultiplier, serviceTier, longContextBillingEnabled), nil
+	breakdown := s.computeTokenBreakdown(pricing, tokens, rateMultiplier, serviceTier, longContextBillingEnabled)
+	if breakdown != nil && channelPricing == nil && pricing != nil {
+		// 渠道价覆盖后成交价不再是官方内置价，档位作废（与 ResolvedPricing.TimeBand 同一口径）。
+		breakdown.PricingTimeBand = pricing.PricingTimeBand
+	}
+	return breakdown, nil
 }
 
 func (s *BillingService) applyModelSpecificPricingPolicy(model string, pricing *ModelPricing) *ModelPricing {
@@ -1439,15 +1492,22 @@ func (s *BillingService) CalculateCostWithConfig(model string, tokens UsageToken
 // 拆分为：范围内 (200k, 0) + 范围外 (10k, 10k)
 // 范围内正常计费，范围外 × 2 计费
 func (s *BillingService) CalculateCostWithLongContext(model string, tokens UsageTokens, rateMultiplier float64, threshold int, extraMultiplier float64) (*CostBreakdown, error) {
+	return s.CalculateCostWithLongContextAt(model, tokens, rateMultiplier, threshold, extraMultiplier, time.Time{})
+}
+
+// CalculateCostWithLongContextAt 同上，但按计价时刻 at 应用官方时段档。
+// 长上下文倍率与时段档是**正交相乘**的：谷价 ×0.5 与长上下文输入 ×2.0 叠加后恰好等于
+// 基准价，这正是对账时不能只靠 cost÷tokens 反算档位的原因（须结合 long_context_billing_applied）。
+func (s *BillingService) CalculateCostWithLongContextAt(model string, tokens UsageTokens, rateMultiplier float64, threshold int, extraMultiplier float64, at time.Time) (*CostBreakdown, error) {
 	// 未启用长上下文计费，直接走正常计费
 	if threshold <= 0 || extraMultiplier <= 1 {
-		return s.CalculateCost(model, tokens, rateMultiplier)
+		return s.CalculateCostAt(model, tokens, rateMultiplier, at)
 	}
 
 	// 计算总输入 token（缓存读取 + 新输入）
 	total := tokens.CacheReadTokens + tokens.InputTokens
 	if total <= threshold {
-		return s.CalculateCost(model, tokens, rateMultiplier)
+		return s.CalculateCostAt(model, tokens, rateMultiplier, at)
 	}
 
 	// 拆分成范围内和范围外
@@ -1478,7 +1538,7 @@ func (s *BillingService) CalculateCostWithLongContext(model string, tokens Usage
 		CacheCreation1hTokens: tokens.CacheCreation1hTokens,
 		ImageOutputTokens:     tokens.ImageOutputTokens,
 	}
-	inRangeCost, err := s.CalculateCost(model, inRangeTokens, rateMultiplier)
+	inRangeCost, err := s.CalculateCostAt(model, inRangeTokens, rateMultiplier, at)
 	if err != nil {
 		return nil, err
 	}
@@ -1488,7 +1548,7 @@ func (s *BillingService) CalculateCostWithLongContext(model string, tokens Usage
 		InputTokens:     outRangeInputTokens,
 		CacheReadTokens: outRangeCacheTokens,
 	}
-	outRangeCost, err := s.CalculateCost(model, outRangeTokens, rateMultiplier*extraMultiplier)
+	outRangeCost, err := s.CalculateCostAt(model, outRangeTokens, rateMultiplier*extraMultiplier, at)
 	if err != nil {
 		return inRangeCost, fmt.Errorf("out-range cost: %w", err)
 	}
@@ -1504,6 +1564,7 @@ func (s *BillingService) CalculateCostWithLongContext(model string, tokens Usage
 		TotalCost:                 inRangeCost.TotalCost + outRangeCost.TotalCost,
 		ActualCost:                inRangeCost.ActualCost + outRangeCost.ActualCost,
 		LongContextBillingApplied: outRangeCost.ActualCost > 0,
+		PricingTimeBand:           inRangeCost.PricingTimeBand,
 	}, nil
 }
 
@@ -1859,6 +1920,7 @@ func (s *BillingService) getDefaultImagePrice(model string, imageSize string) fl
 	basePrice := 0.0
 
 	// 从 PricingService 获取 output_cost_per_image
+	// 刻意用基准价：图片按张计价，官方未对图片公布分时段价，不参与 peak/offpeak。
 	if s.pricingService != nil {
 		pricing := s.pricingService.GetModelPricing(model)
 		if pricing != nil && pricing.OutputCostPerImage > 0 {

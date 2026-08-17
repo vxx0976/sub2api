@@ -130,6 +130,12 @@ type UsageLog struct {
 	BillingMode *string
 	// ServiceTier records the OpenAI service tier used for billing, e.g. "priority" / "flex".
 	ServiceTier *string
+	// PricingTimeBand 记录本笔计费命中的官方时段档（"peak"/"offpeak"）。
+	// 仅当价格来自内置定价表时非空；被渠道价/分组价卡覆盖或按次计费时为 nil。
+	PricingTimeBand *string
+	// PricedAt 是定档所用的时刻（请求开始冻结的 pricingAt）。与 PricingTimeBand 成对落库，
+	// 使「按 PricedAt 重算的档位 == PricingTimeBand」成为可机械回放的对账不变量。
+	PricedAt *time.Time
 	// ReasoningEffort is the request's reasoning effort level.
 	// OpenAI: "low" / "medium" / "high" / "xhigh"; Claude: "low" / "medium" / "high" / "max".
 	// Nil means not provided / not applicable.

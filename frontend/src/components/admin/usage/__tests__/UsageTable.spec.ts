@@ -169,6 +169,35 @@ describe('admin UsageTable tooltip', () => {
     expect(wrapper.get('[data-testid="long-context-billing-marker"]').text()).toBe('x2')
   })
 
+  it('marks only usage rows billed at the official off-peak band', () => {
+    const wrapper = mount(UsageTable, {
+      props: {
+        data: [
+          { ...baseImageRow, request_id: 'req-offpeak', pricing_time_band: 'offpeak' },
+          // 高峰是常态，不加徽章以免噪音
+          { ...baseImageRow, request_id: 'req-peak', pricing_time_band: 'peak' },
+          // 未走内置分档价（渠道价/分组价卡/按次计费）
+          { ...baseImageRow, request_id: 'req-no-band', pricing_time_band: null },
+        ],
+        loading: false,
+        columns: [],
+      },
+      global: {
+        stubs: {
+          DataTable: DataTableStub,
+          EmptyState: true,
+          Icon: true,
+          Teleport: true,
+        },
+      },
+    })
+
+    expect(wrapper.findAll('[data-testid="pricing-time-band-marker"]')).toHaveLength(1)
+    expect(wrapper.get('[data-testid="pricing-time-band-marker"]').text()).toBe(
+      'usage.pricingTimeBandOffPeak'
+    )
+  })
+
   it('shows service tier and billing breakdown in cost tooltip', async () => {
     const row = {
       request_id: 'req-admin-1',

@@ -130,6 +130,10 @@ type cnyModelPricing struct {
 	cacheReadCNY float64 // 输入（命中缓存），¥/1M tokens；0 表示不支持缓存
 	outputCNY    float64 // 输出，¥/1M tokens
 	hasCache     bool    // 是否支持 prompt caching
+	// schedule 为官方时段分档规则（如 DeepSeek 高峰/空闲双档）；nil 表示全天单一价。
+	// 挂了 schedule 时，上面三个数字恒为**基准价（最贵档）**，空闲档由 bandAt 折算。
+	// 详见 pricing_time_tier.go。
+	schedule *timeTierSchedule
 }
 
 // kimiMoonshotPricingTable 官方定价表（人民币/每百万 token）。
@@ -173,6 +177,11 @@ type LiteLLMModelPricing struct {
 	// 此类条目只可用于图片计费，token 计费必须回退到 fallback 或 fail-closed，
 	// 否则 token 流量会被按 $0 计费。零值（false）表示条目具备 token 价格。
 	TokenPricingAbsent bool `json:"-"`
+
+	// PricingTimeBand 记录本次取价命中的官方时段档（peak/offpeak），空串表示该模型
+	// 无时段分档、或本次取的是基准价（如未传计价时刻的只读展示路径）。仅内部流转，
+	// 不参与远程定价 JSON 的序列化。详见 pricing_time_tier.go。
+	PricingTimeBand string `json:"-"`
 }
 
 // PricingRemoteClient 远程价格数据获取接口
@@ -772,25 +781,38 @@ func matchKimiMoonshotCNY(modelLower string) (cnyModelPricing, bool) {
 	return cnyModelPricing{}, false
 }
 
-func (s *PricingService) kimiMoonshotPricingOverride(modelLower string) *LiteLLMModelPricing {
-	cny, found := matchKimiMoonshotCNY(modelLower)
-	if !found {
-		return nil
-	}
-
+// cnyPricingToLiteLLMAt 把一行 ¥ 官方价按运行时汇率折算成美元口径的 LiteLLMModelPricing，
+// 并在该行挂了时段规则时按时刻 at 应用档位系数。三张 ¥ 表（Kimi/DeepSeek/Qwen）共用此函数，
+// 新增带档位的表不会漏接时间。
+//
+// 系数折进**共享的 perToken 分母**而非逐字段相乘：输入/输出/缓存三个价共用同一个分母，
+// 结构上不可能漏乘其中某一项。
+//
+// at 为零值 → factor 1.0 → 结果与未引入时段分档时逐字节一致（基准价 = 最贵档）。
+func (s *PricingService) cnyPricingToLiteLLMAt(cny cnyModelPricing, at time.Time, provider string) *LiteLLMModelPricing {
 	rate := s.cnyToUSDRate()
-	const perToken = 1.0 / 1_000_000.0
+	band, factor := cny.schedule.bandAt(at)
+	perToken := factor / 1_000_000.0
 	p := &LiteLLMModelPricing{
 		InputCostPerToken:  cny.inputCNY / rate * perToken,
 		OutputCostPerToken: cny.outputCNY / rate * perToken,
-		LiteLLMProvider:    "moonshot",
+		LiteLLMProvider:    provider,
 		Mode:               "chat",
+		PricingTimeBand:    band,
 	}
 	if cny.hasCache {
 		p.CacheReadInputTokenCost = cny.cacheReadCNY / rate * perToken
 		p.SupportsPromptCaching = true
 	}
 	return p
+}
+
+func (s *PricingService) kimiMoonshotPricingOverrideAt(modelLower string, at time.Time) *LiteLLMModelPricing {
+	cny, found := matchKimiMoonshotCNY(modelLower)
+	if !found {
+		return nil
+	}
+	return s.cnyPricingToLiteLLMAt(cny, at, "moonshot")
 }
 
 // deepSeekPricingOverride returns CNY-based pricing converted to USD for
@@ -806,35 +828,44 @@ func matchDeepSeekCNY(modelLower string) (cnyModelPricing, bool) {
 	if cny, found := deepSeekPricingTable[m]; found {
 		return cny, true
 	}
-	// Pattern match: v4-pro takes precedence over v4 (flash)
+	// 变体匹配：只认**明确点名档位**的写法（如 deepseek-v4-flash-0731 / deepseek-v4-pro-260201）。
+	// ⚠️ 绝不能用宽松的 Contains(m, "v4") 归到 flash：那会让 deepseek-v4.5 / v4-max /
+	// v4.1-pro 这类未知新型号（下一代命名带 v4 的概率极高）一律落到**最便宜**的档位，
+	// 还绕过下面的最贵档兜底与补表告警——正是 kimi-k3 少收 ¥503 的同一形态。
+	// 认不出档位的一律交给兜底：按最贵档收 + 告警提醒补表。
 	switch {
 	case strings.Contains(m, "v4-pro"):
 		return deepSeekPricingTable["deepseek-v4-pro"], true
-	case strings.Contains(m, "v4"):
+	case strings.Contains(m, "v4-flash"):
 		return deepSeekPricingTable["deepseek-v4-flash"], true
 	}
-	return cnyModelPricing{}, false
+	// 兜底：其余所有 deepseek-* 一律按**最贵档**（v4-pro）计费，并告警一次。
+	// 刻意选最贵而非最便宜：Kimi 曾因末尾静默兜底到旧款便宜价，新模型上线三天少收 ¥503
+	// （见 kimi-k3 事故）。这里宁可多收（可发现、可退款）也绝不少收；真实价一旦确认，
+	// 补一行到 deepSeekPricingTable 即可，告警日志就是补表提醒。
+	warnUnpricedDeepSeekModelOnce(m)
+	return deepSeekPricingTable["deepseek-v4-pro"], true
 }
 
-func (s *PricingService) deepSeekPricingOverride(modelLower string) *LiteLLMModelPricing {
+// unpricedDeepSeekModels 记录已告警过的未知 DeepSeek 模型名，保证每个名字只告警一次——
+// matchDeepSeekCNY 位于每请求的计费热路径，不能每次都打日志。
+var unpricedDeepSeekModels sync.Map
+
+func warnUnpricedDeepSeekModelOnce(model string) {
+	if _, loaded := unpricedDeepSeekModels.LoadOrStore(model, struct{}{}); loaded {
+		return
+	}
+	logger.With(zap.String("component", "service.pricing")).
+		Warn(fmt.Sprintf("[Pricing] DeepSeek 模型 %q 不在官方 ¥ 价表中，已按最贵档 deepseek-v4-pro 计费；"+
+			"请核对官方定价后补进 deepSeekPricingTable", model))
+}
+
+func (s *PricingService) deepSeekPricingOverrideAt(modelLower string, at time.Time) *LiteLLMModelPricing {
 	cny, found := matchDeepSeekCNY(modelLower)
 	if !found {
 		return nil
 	}
-
-	rate := s.cnyToUSDRate()
-	const perToken = 1.0 / 1_000_000.0
-	p := &LiteLLMModelPricing{
-		InputCostPerToken:  cny.inputCNY / rate * perToken,
-		OutputCostPerToken: cny.outputCNY / rate * perToken,
-		LiteLLMProvider:    "deepseek",
-		Mode:               "chat",
-	}
-	if cny.hasCache {
-		p.CacheReadInputTokenCost = cny.cacheReadCNY / rate * perToken
-		p.SupportsPromptCaching = true
-	}
-	return p
+	return s.cnyPricingToLiteLLMAt(cny, at, "deepseek")
 }
 
 // matchQwenCNY reports whether modelLower resolves to an official-RMB Qwen
@@ -870,29 +901,26 @@ func matchQwenCNY(modelLower string) (cnyModelPricing, bool) {
 	return qwenPricingTable["qwen-plus"], true
 }
 
-func (s *PricingService) qwenPricingOverride(modelLower string) *LiteLLMModelPricing {
+func (s *PricingService) qwenPricingOverrideAt(modelLower string, at time.Time) *LiteLLMModelPricing {
 	cny, found := matchQwenCNY(modelLower)
 	if !found {
 		return nil
 	}
-
-	rate := s.cnyToUSDRate()
-	const perToken = 1.0 / 1_000_000.0
-	p := &LiteLLMModelPricing{
-		InputCostPerToken:  cny.inputCNY / rate * perToken,
-		OutputCostPerToken: cny.outputCNY / rate * perToken,
-		LiteLLMProvider:    "dashscope",
-		Mode:               "chat",
-	}
-	if cny.hasCache {
-		p.CacheReadInputTokenCost = cny.cacheReadCNY / rate * perToken
-		p.SupportsPromptCaching = true
-	}
-	return p
+	return s.cnyPricingToLiteLLMAt(cny, at, "dashscope")
 }
 
-// GetModelPricing 获取模型价格（带模糊匹配）
+// GetModelPricing 获取模型价格（带模糊匹配）。
+//
+// ⚠️ 返回的是**基准价（最贵档）**：对挂了官方时段分档的模型（如 DeepSeek），本函数
+// 恒返回高峰价。计费路径必须改用 GetModelPricingAt 传入本次请求的计价时刻，只读展示、
+// 渠道价预填、准入判定等「不算钱」的路径继续用本函数即可（拿到贵的一侧是刻意的）。
 func (s *PricingService) GetModelPricing(modelName string) *LiteLLMModelPricing {
+	return s.GetModelPricingAt(modelName, time.Time{})
+}
+
+// GetModelPricingAt 按计价时刻 at 获取模型价格。at 为零值时等价于 GetModelPricing
+// （基准价），非零时对挂了 schedule 的 ¥ 表模型应用官方时段档（peak/offpeak）。
+func (s *PricingService) GetModelPricingAt(modelName string, at time.Time) *LiteLLMModelPricing {
 	if modelName == "" {
 		return nil
 	}
@@ -913,17 +941,17 @@ func (s *PricingService) GetModelPricing(modelName string) *LiteLLMModelPricing 
 
 	// Kimi / Moonshot：官方人民币计价，用官方价 + 可配置汇率折算成美元覆盖，
 	// 确保按官方价计费（汇率见 pricing.cny_to_usd_rate 配置）。
-	if pricing := s.kimiMoonshotPricingOverride(modelLower); pricing != nil {
+	if pricing := s.kimiMoonshotPricingOverrideAt(modelLower, at); pricing != nil {
 		return pricing
 	}
 
-	// DeepSeek V4：同上，人民币官方计价，运行时汇率折算。
-	if pricing := s.deepSeekPricingOverride(modelLower); pricing != nil {
+	// DeepSeek：同上，人民币官方计价，运行时汇率折算；并按官方高峰/空闲时段分档。
+	if pricing := s.deepSeekPricingOverrideAt(modelLower, at); pricing != nil {
 		return pricing
 	}
 
 	// Qwen（通义千问/DashScope）：同上，阿里云百炼官方人民币计价，运行时汇率折算。
-	if pricing := s.qwenPricingOverride(modelLower); pricing != nil {
+	if pricing := s.qwenPricingOverrideAt(modelLower, at); pricing != nil {
 		return pricing
 	}
 
@@ -1342,11 +1370,21 @@ func (s *PricingService) matchOpenAIModel(model string) *LiteLLMModelPricing {
 }
 
 // DeepSeek V4 官方定价（人民币，每 100 万 token），来源：
-// https://api-docs.deepseek.com/quick_start/pricing/
+// https://api-docs.deepseek.com/quick_start/pricing/ （2026-08-17 核对，官方已调价）
 // 用法同 Kimi/Moonshot：CNY 价格通过可配置汇率折算（默认 1:1）。
+// 官方按时段分档：下表数字为【高峰时段价】（北京时间 09:00-12:00、14:00-18:00），
+// 空闲时段为其一半，由 deepSeekOfficialSchedule 折算（见 pricing_time_tier.go）。
+// ⚠️ 表价恒为最贵档，改动数值须同步 pricing_service_test.go 的断言。
+//
+// deepseek-chat / deepseek-reasoner 是官方已下线的旧别名（现行文档已无此二名），
+// 显式列出以并入 ¥ 口径：不列的话它们会掉到 LiteLLM JSON 的陈旧美元价（约 ¥1/¥2），
+// 既低于官方现价也与其余 DeepSeek 模型的币种口径不一致。按 flash 计价与仓库既有约定
+// 一致（matchByPlatformFallback 首选 deepseek-chat、前端 ccswitch 默认型号亦为 flash）。
 var deepSeekPricingTable = map[string]cnyModelPricing{
-	"deepseek-v4-flash": {inputCNY: 1.0, cacheReadCNY: 0.02, outputCNY: 2.0, hasCache: true},
-	"deepseek-v4-pro":   {inputCNY: 3.0, cacheReadCNY: 0.025, outputCNY: 6.0, hasCache: true},
+	"deepseek-v4-flash": {inputCNY: 3.0, cacheReadCNY: 0.10, outputCNY: 9.0, hasCache: true, schedule: deepSeekOfficialSchedule},
+	"deepseek-v4-pro":   {inputCNY: 9.0, cacheReadCNY: 0.30, outputCNY: 27.0, hasCache: true, schedule: deepSeekOfficialSchedule},
+	"deepseek-chat":     {inputCNY: 3.0, cacheReadCNY: 0.10, outputCNY: 9.0, hasCache: true, schedule: deepSeekOfficialSchedule},
+	"deepseek-reasoner": {inputCNY: 3.0, cacheReadCNY: 0.10, outputCNY: 9.0, hasCache: true, schedule: deepSeekOfficialSchedule},
 }
 
 // qwenPricingTable 阿里云百炼(DashScope)通义千问官方价（人民币/每百万 token，
@@ -1377,8 +1415,9 @@ func (s *PricingService) matchByPlatformFallback(model string) *LiteLLMModelPric
 		fallbacks []string // 按优先级尝试的回退模型名
 	}
 
+	// 注：DeepSeek 不在此列——matchDeepSeekCNY 已覆盖全部 deepseek-* 型号（未知型号按最贵档
+	// 兜底并告警），永远走不到这里，再留一条规则只会让人误以为存在第二条 DeepSeek 计价路径。
 	rules := []platformRule{
-		{prefixes: []string{"deepseek"}, fallbacks: []string{"deepseek-chat", "deepseek-reasoner"}},
 		{prefixes: []string{"kimi", "moonshot"}, fallbacks: []string{"kimi-k2.6", "kimi-k2.5"}},
 		{prefixes: []string{"glm"}, fallbacks: []string{"glm-5.1"}},
 	}

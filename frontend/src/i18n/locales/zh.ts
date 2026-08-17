@@ -1307,6 +1307,8 @@ export default {
 
   // Usage
   usage: {
+    pricingTimeBandOffPeak: '空闲档',
+    pricingTimeBandOffPeakHint: '该笔按上游官方空闲时段价计费（高峰价的一半）',
     title: '使用记录',
     description: '查看和分析您的 API 使用历史',
     costDetails: '费用明细',
@@ -1766,7 +1768,10 @@ export default {
       perUnitRequest: '/ 次',
       perUnitImage: '/ 张',
       perRequest: '按次计费',
-      perImage: '按图片计费'
+      perImage: '按图片计费',
+      bandPeak: '高峰',
+      bandOffPeak: '空闲',
+      timeTierNote: '官方分时段计价：高峰 {windows}（{tz}），其余时段按 {percent}% 计价'
     },
     nav: {
       login: '登录',

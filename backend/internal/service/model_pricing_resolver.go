@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"strings"
+	"time"
 )
 
 // PricingSource 定价来源标识
@@ -34,6 +35,11 @@ type ResolvedPricing struct {
 	// 来源标识
 	Source string // "channel", "litellm", "fallback"
 
+	// TimeBand 官方时段档（peak/offpeak），仅当价格确实来自内置表（Source 为
+	// litellm/fallback）时才非空。一旦被渠道价或分组价卡覆盖，成交价与官方档位无关，
+	// 此处必须为空——否则落库的档位会与实际成交单价对不上。
+	TimeBand string
+
 	// 是否支持缓存细分
 	SupportsCacheBreakdown bool
 
@@ -63,6 +69,10 @@ type PricingInput struct {
 	Model   string
 	GroupID *int64 // nil 表示不检查渠道
 	Group   *Group
+	// At 是本次请求的计价时刻（通常为请求开始冻结的 pricingAt），用于官方时段分档。
+	// 零值表示不分档、按基准价（最贵档）解析——刻意不在此处回退到"当前时间"：
+	// 漏接线只应导致多收（可发现），而不是静默按谷价少收。
+	At time.Time
 }
 
 // Resolve 解析模型定价。
@@ -78,6 +88,7 @@ func (r *ModelPricingResolver) Resolve(ctx context.Context, input PricingInput) 
 			stripped.Intervals = nil
 			groupPricing = &stripped
 		}
+		// ⚠️ 刻意不传 input.At：见 resolveConfiguredPricing 的说明（有价卡 ⇒ 全档基准价）。
 		resolved := r.resolveConfiguredPricing(groupPricing, input.Model, PricingSourceGroup)
 		resolved.longContextPricingEnabled = longContextPricingEnabled
 		return resolved
@@ -105,13 +116,30 @@ func (r *ModelPricingResolver) Resolve(ctx context.Context, input PricingInput) 
 	}
 
 	// 1. 获取基础定价
-	basePricing, source := r.resolveBasePricing(input.Model)
+	//
+	// 🔴 有渠道价卡时底价必须取**基准价（最贵档）**，不得应用官方时段折扣。
+	// 价卡只覆盖它显式配置的字段（applyTokenOverrides 对 nil 字段不动），未覆盖的类目
+	// 会继续用这里的底价成交；若底价带了谷价折扣，就会出现「一张只配了 input 的卡在
+	// 空闲时段把 output/cache 悄悄按半价卖出，而 Source=channel 又把 TimeBand 清空」的
+	// 状态——真按谷价收、审计列却记 NULL，无法对账。统一为基准价后，
+	// 「有卡 ⇒ 无时段分档 ⇒ band 为空」成为一条可验证的单一规则，且落在贵的一侧。
+	//
+	// 这也让两条记账链自动收敛：GatewayService 侧的 resolveChannelPricing 预解析不传 At
+	// （它只在有卡时返回非 nil），与这里的取值一致。
+	baseAt := input.At
+	if chPricing != nil {
+		baseAt = time.Time{}
+	}
+	basePricing, source := r.resolveBasePricing(input.Model, baseAt)
 
 	resolved := &ResolvedPricing{
 		Mode:                   BillingModeToken,
 		BasePricing:            basePricing,
 		Source:                 source,
 		SupportsCacheBreakdown: basePricing != nil && basePricing.SupportsCacheBreakdown,
+	}
+	if basePricing != nil {
+		resolved.TimeBand = basePricing.PricingTimeBand
 	}
 	resolved.longContextPricingEnabled = longContextPricingEnabled
 
@@ -130,9 +158,19 @@ func (r *ModelPricingResolver) Resolve(ctx context.Context, input PricingInput) 
 		}
 	}
 
+	// 被渠道价覆盖后成交价不再是官方内置价，档位随之作废（见 TimeBand 字段注释）。
+	if resolved.Source != PricingSourceLiteLLM && resolved.Source != PricingSourceFallback {
+		resolved.TimeBand = ""
+	}
+
 	return resolved
 }
 
+// resolveConfiguredPricing 处理「运营方显式配置的价卡」（分组价卡 / 渠道价卡）。
+//
+// 底价一律取**基准价（最贵档）**：价卡是绝对价，未被卡覆盖的残余字段不应混入上游的
+// 官方时段折扣，否则成交价会变成「一半卡价 + 一半谷价」的混合体，而 TimeBand 又必须
+// 为空（无法用单一档位描述这种混合），结果是按谷价收却无审计痕迹。详见 Resolve 里的说明。
 func (r *ModelPricingResolver) resolveConfiguredPricing(config *ChannelModelPricing, model, source string) *ResolvedPricing {
 	mode := config.BillingMode
 	if mode == "" {
@@ -143,7 +181,7 @@ func (r *ModelPricingResolver) resolveConfiguredPricing(config *ChannelModelPric
 		r.applyRequestTierOverrides(config, resolved)
 		return resolved
 	}
-	resolved.BasePricing, _ = r.resolveBasePricing(model)
+	resolved.BasePricing, _ = r.resolveBasePricing(model, time.Time{})
 	resolved.SupportsCacheBreakdown = resolved.BasePricing != nil && resolved.BasePricing.SupportsCacheBreakdown
 	r.applyTokenOverrides(config, resolved)
 	return resolved
@@ -187,8 +225,8 @@ func (r *ModelPricingResolver) applyFirstTokenTier(resolved *ResolvedPricing, co
 }
 
 // resolveBasePricing 从 LiteLLM 或 Fallback 获取基础定价
-func (r *ModelPricingResolver) resolveBasePricing(model string) (*ModelPricing, string) {
-	pricing, err := r.billingService.GetModelPricing(model)
+func (r *ModelPricingResolver) resolveBasePricing(model string, at time.Time) (*ModelPricing, string) {
+	pricing, err := r.billingService.GetModelPricingAt(model, at)
 	if err != nil {
 		slog.Debug("failed to get model pricing from LiteLLM, using fallback",
 			"model", model, "error", err)

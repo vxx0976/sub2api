@@ -19,6 +19,13 @@ type BuiltinPricingEntry struct {
 	CachePerM  float64 `json:"cache"` // 缓存读取价
 	HasCache   bool    `json:"has_cache"`
 	Source     string  `json:"source"` // cny:<plat> | litellm | <litellm_provider>
+
+	// ---- 官方时段分档（仅挂了 schedule 的 ¥ 表模型才有；其余为零值/省略）----
+	// ⚠️ InputPerM/OutputPerM/CachePerM 恒为**基准价（最贵档=高峰价）**，不随查询时刻变化，
+	// 这样 admin 页「用内置价预填覆盖表」永远不会把半价固化成永久覆盖价。
+	OffPeakFactor float64  `json:"off_peak_factor,omitempty"` // 空闲档系数（如 0.5）
+	PeakWindows   []string `json:"peak_windows,omitempty"`    // 高峰窗口，如 ["09:00-12:00","14:00-18:00"]
+	TimeTierTZ    string   `json:"time_tier_tz,omitempty"`    // 窗口所用时区标签，如 "UTC+08:00"
 }
 
 // ModelPricingViewDTO 是「模型定价」页 List 接口的载荷:
@@ -60,13 +67,16 @@ func (s *PricingService) ListBuiltinPricing() []BuiltinPricingEntry {
 			}
 			seen[key] = struct{}{}
 			out = append(out, BuiltinPricingEntry{
-				Model:      model,
-				Currency:   CurrencyCNY,
-				InputPerM:  p.inputCNY,
-				OutputPerM: p.outputCNY,
-				CachePerM:  p.cacheReadCNY,
-				HasCache:   p.hasCache,
-				Source:     source,
+				Model:         model,
+				Currency:      CurrencyCNY,
+				InputPerM:     p.inputCNY,
+				OutputPerM:    p.outputCNY,
+				CachePerM:     p.cacheReadCNY,
+				HasCache:      p.hasCache,
+				Source:        source,
+				OffPeakFactor: p.schedule.factor(),
+				PeakWindows:   p.schedule.windowLabels(),
+				TimeTierTZ:    p.schedule.timezoneLabel(),
 			})
 		}
 	}

@@ -401,6 +401,91 @@ describe('PlazaModelPricingTable', () => {
     expect(text).not.toContain('$')
   })
 
+  // ---- fork：官方时段分档（DeepSeek 高峰/空闲双档）----
+  it('time_tier 存在时官方价拆成高峰/空闲两档,空闲价按系数折算', () => {
+    const banded = tokenModel({
+      name: 'deepseek-v4-flash',
+      platform: 'deepseek',
+      price_currency: 'CNY',
+      official_pricing: {
+        input_price: 3e-6,
+        output_price: 9e-6,
+        cache_write_price: null,
+        cache_write_1h_price: null,
+        cache_read_price: 1e-7
+      },
+      time_tier: {
+        peak_windows: ['09:00-12:00', '14:00-18:00'],
+        timezone: 'UTC+08:00',
+        off_peak_factor: 0.5,
+        current_band: 'offpeak'
+      }
+    })
+    const wrapper = mountTable([banded], 1)
+    // 🔴 必须逐节点断言「哪个标签配哪个价」：只用 toContain 分别断言两个数字都存在，
+    // 把折算方向写反（高峰 ¥1.50 / 空闲 ¥3.00）照样全绿——实测变异 19/19 通过。
+    const officialInputCell = wrapper.findAll('tbody td')[4]
+    const rows = officialInputCell.findAll('div')
+    expect(rows).toHaveLength(2)
+    expect(rows[0].text()).toContain('modelPlaza.table.bandPeak')
+    expect(rows[0].text()).toContain('¥3.00')
+    expect(rows[1].text()).toContain('modelPlaza.table.bandOffPeak')
+    expect(rows[1].text()).toContain('¥1.50')
+
+    // current_band='offpeak' → 空闲那一行加粗，高峰行不加粗。
+    // active 高亮是 current_band 这个字段存在的唯一理由，写反了必须红。
+    expect(rows[1].classes()).toContain('font-semibold')
+    expect(rows[0].classes()).not.toContain('font-semibold')
+
+    const text = wrapper.text()
+    expect(text).toContain('¥9.00')
+    expect(text).toContain('¥4.50')
+    // 窗口说明（i18n 插值在测试桩里按 key 渲染）
+    expect(text).toContain('modelPlaza.table.timeTierNote')
+  })
+
+  it('current_band=peak 时高亮高峰行而非空闲行', () => {
+    const banded = tokenModel({
+      name: 'deepseek-v4-flash',
+      platform: 'deepseek',
+      price_currency: 'CNY',
+      time_tier: {
+        peak_windows: ['09:00-12:00'],
+        timezone: 'UTC+08:00',
+        off_peak_factor: 0.5,
+        current_band: 'peak'
+      }
+    })
+    const rows = mountTable([banded], 1).findAll('tbody td')[4].findAll('div')
+    expect(rows[0].classes()).toContain('font-semibold')
+    expect(rows[1].classes()).not.toContain('font-semibold')
+  })
+
+  it('无 time_tier 的模型保持单档渲染,不出现档位标签', () => {
+    const text = mountTable([tokenModel()], 1).text()
+    expect(text).not.toContain('modelPlaza.table.bandPeak')
+    expect(text).not.toContain('modelPlaza.table.bandOffPeak')
+    expect(text).not.toContain('modelPlaza.table.timeTierNote')
+  })
+
+  it('off_peak_factor 非法（0 / 1 / 负数）时降级为单档,不渲染出错价', () => {
+    for (const factor of [0, 1, -0.5]) {
+      const bad = tokenModel({
+        name: 'deepseek-v4-flash',
+        platform: 'deepseek',
+        price_currency: 'CNY',
+        time_tier: {
+          peak_windows: ['09:00-12:00'],
+          timezone: 'UTC+08:00',
+          off_peak_factor: factor,
+          current_band: 'peak'
+        }
+      })
+      const text = mountTable([bad], 1).text()
+      expect(text).not.toContain('modelPlaza.table.bandOffPeak')
+    }
+  })
+
   it('price_currency 缺省/USD 仍为 $,且同表混合币种各行独立取符号', () => {
     const usd = tokenModel({ name: 'claude-sonnet' })
     const cny = tokenModel({

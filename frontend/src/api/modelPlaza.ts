@@ -18,6 +18,23 @@ export interface PlazaOfficialPricing {
   cache_read_price: number | null
 }
 
+/**
+ * 上游官方的时段分档（如 DeepSeek 高峰价 + 空闲时段半价）。
+ * ⚠️ 与分组的 peak_rate_*（本站订阅高峰倍率）是两个正交概念，不要混用。
+ * current_band 由后端按官方时区判定 —— 前端**不得**按浏览器本地时区自己算，
+ * 否则不同时区的用户会看到不同档位。
+ */
+export interface ModelTimeTier {
+  /** 高峰窗口，如 ['09:00-12:00', '14:00-18:00']。 */
+  peak_windows: string[]
+  /** 窗口所用时区标签，如 'UTC+08:00'。 */
+  timezone: string
+  /** 空闲档系数（如 0.5 表示半价）。 */
+  off_peak_factor: number
+  /** 当前所处档位：'peak' | 'offpeak'。 */
+  current_band: string
+}
+
 export interface PlazaModel {
   name: string
   platform: string
@@ -28,6 +45,8 @@ export interface PlazaModel {
   price_currency?: string
   pricing: UserSupportedModelPricing | null
   official_pricing: PlazaOfficialPricing | null
+  /** 官方时段分档；无分档的模型不下发该字段。 */
+  time_tier?: ModelTimeTier | null
 }
 
 export interface ModelPlazaGroup {

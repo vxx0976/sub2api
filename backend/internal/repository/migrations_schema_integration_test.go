@@ -72,6 +72,8 @@ func TestMigrationsRunner_IsIdempotent_AndSchemaIsUpToDate(t *testing.T) {
 	requireColumn(t, tx, "usage_logs", "image_input_size", "character varying", 32, true)
 	requireColumn(t, tx, "usage_logs", "image_output_size", "character varying", 32, true)
 	requireColumn(t, tx, "usage_logs", "image_size_source", "character varying", 16, true)
+	requireColumn(t, tx, "usage_logs", "pricing_time_band", "character varying", 16, true)
+	requireColumn(t, tx, "usage_logs", "priced_at", "timestamp with time zone", 0, true)
 	requireColumn(t, tx, "usage_logs", "image_size_breakdown", "jsonb", 0, true)
 	requireColumn(t, tx, "usage_logs", "video_count", "integer", 0, false)
 	requireColumn(t, tx, "usage_logs", "video_resolution", "character varying", 10, true)
@@ -94,6 +96,15 @@ WHERE ns.nspname = 'public'
 	require.Contains(t, mismatchIndexDef, "created_at DESC")
 	require.Contains(t, mismatchIndexDef, "id DESC")
 	require.Contains(t, mismatchIndexDef, "WHERE (upstream_model_mismatch IS TRUE)")
+	requireConstraintDefinitionContains(
+		t,
+		tx,
+		"usage_logs",
+		"usage_logs_pricing_time_band_check",
+		"pricing_time_band",
+		"'peak'",
+		"'offpeak'",
+	)
 	requireConstraintDefinitionContains(
 		t,
 		tx,

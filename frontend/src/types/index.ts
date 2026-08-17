@@ -1770,6 +1770,11 @@ export interface UsageLog {
   image_input_size: string | null
   image_output_size: string | null
   image_size_source: ImageSizeSource | null
+  /**
+   * 官方时段档：'peak' = 高峰价，'offpeak' = 空闲档（半价）。
+   * null 表示该笔未走内置分档价（渠道价 / 分组价卡 / 按次计费）。
+   */
+  pricing_time_band?: string | null
   image_size_breakdown: ImageSizeBreakdown | null
   image_input_tokens: number
   image_input_cost: number

@@ -3,6 +3,7 @@ package service
 import (
 	"strings"
 	"testing"
+	"time"
 )
 
 // TestModelPriceCurrency 锁定计价币种判定：仅走官方人民币定价路径（Kimi/Moonshot/DeepSeek
@@ -45,7 +46,10 @@ func TestModelPriceCurrencyMatchesOverride(t *testing.T) {
 	for _, m := range models {
 		ml := strings.ToLower(strings.TrimSpace(m))
 		isCNY := ModelPriceCurrency(m) == CurrencyCNY
-		hitOverride := s.kimiMoonshotPricingOverride(ml) != nil || s.deepSeekPricingOverride(ml) != nil
+		// 零值时刻 = 基准价路径；档位不影响「是否命中 ¥ 口径」这一membership 判定。
+		hitOverride := s.kimiMoonshotPricingOverrideAt(ml, time.Time{}) != nil ||
+			s.deepSeekPricingOverrideAt(ml, time.Time{}) != nil ||
+			s.qwenPricingOverrideAt(ml, time.Time{}) != nil
 		if isCNY != hitOverride {
 			t.Errorf("model %q: ModelPriceCurrency CNY=%v but override hit=%v (must match)", m, isCNY, hitOverride)
 		}

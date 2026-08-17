@@ -184,6 +184,13 @@
                 data-testid="long-context-billing-marker"
                 class="inline-flex items-center rounded px-1 py-px text-[10px] font-semibold leading-tight bg-amber-100 text-amber-700 ring-1 ring-inset ring-amber-200 dark:bg-amber-500/20 dark:text-amber-300 dark:ring-amber-500/30"
               >x2</span>
+              <!-- 官方空闲档（波谷价）标记；高峰档是常态，不显示徽章以免噪音 -->
+              <span
+                v-if="row.pricing_time_band === 'offpeak'"
+                data-testid="pricing-time-band-marker"
+                :title="t('usage.pricingTimeBandOffPeakHint')"
+                class="inline-flex items-center rounded px-1 py-px text-[10px] font-semibold leading-tight bg-sky-100 text-sky-700 ring-1 ring-inset ring-sky-200 dark:bg-sky-500/20 dark:text-sky-300 dark:ring-sky-500/30"
+              >{{ t('usage.pricingTimeBandOffPeak') }}</span>
               <!-- Cost Detail Tooltip -->
               <div
                 class="group relative"

@@ -82,6 +82,13 @@
                 {{ billingModeLabel(m) }}
               </span>
             </div>
+            <!-- 官方时段分档说明（如 DeepSeek 高峰/空闲双档）。current_band 由后端判定。 -->
+            <div
+              v-if="hasTimeTier(m)"
+              class="mt-1 text-[10px] leading-4 text-gray-400 dark:text-dark-500"
+            >
+              {{ timeTierNote(m) }}
+            </div>
           </td>
 
           <!-- token 计费:输入 / 输出(阶梯内联)/ 缓存(写/读) -->
@@ -161,10 +168,32 @@
           <td
             class="border-l border-gray-100 px-3 py-2.5 align-middle font-mono text-xs text-gray-500 dark:border-dark-700/60 dark:text-dark-400"
           >
-            {{ official(m, m.official_pricing?.input_price) }}
+            <div
+              v-for="(band, idx) in officialBands(m, m.official_pricing?.input_price)"
+              :key="idx"
+              class="whitespace-nowrap leading-5"
+              :class="band.active ? 'font-semibold text-gray-900 dark:text-gray-50' : ''"
+            >
+              <span
+                v-if="band.label"
+                class="mr-1 font-sans font-normal text-gray-400 dark:text-dark-500"
+                >{{ band.label }}</span
+              >{{ band.text }}
+            </div>
           </td>
           <td class="px-3 py-2.5 align-middle font-mono text-xs text-gray-500 dark:text-dark-400">
-            {{ official(m, m.official_pricing?.output_price) }}
+            <div
+              v-for="(band, idx) in officialBands(m, m.official_pricing?.output_price)"
+              :key="idx"
+              class="whitespace-nowrap leading-5"
+              :class="band.active ? 'font-semibold text-gray-900 dark:text-gray-50' : ''"
+            >
+              <span
+                v-if="band.label"
+                class="mr-1 font-sans font-normal text-gray-400 dark:text-dark-500"
+                >{{ band.label }}</span
+              >{{ band.text }}
+            </div>
           </td>
           <td class="px-3 py-2.5 align-middle">
             <div
@@ -181,7 +210,10 @@
               </div>
               <div>
                 <span class="mr-1 font-sans font-normal text-gray-400 dark:text-dark-500">{{ t('modelPlaza.table.cacheRead') }}</span>
-                {{ official(m, m.official_pricing.cache_read_price) }}
+                <template v-for="(band, idx) in officialBands(m, m.official_pricing.cache_read_price)" :key="idx"
+                  ><span v-if="idx > 0" class="font-sans text-gray-400 dark:text-dark-500"> / </span
+                  ><span :class="band.active ? 'font-semibold text-gray-900 dark:text-gray-50' : ''">{{ band.text }}</span></template
+                >
               </div>
             </div>
             <span v-else class="text-gray-400 dark:text-dark-500">-</span>
@@ -311,10 +343,57 @@ function paidRequestPrice(m: PlazaModel, value: number | null | undefined): stri
   return formatScaled(value * requestRate(m), 1, MIN_DECIMALS, symbolOf(m))
 }
 
-/** 官方参考价不乘倍率。 */
+/** 官方参考价不乘倍率。后端下发的官方价恒为**基准价（最贵档=高峰价）**。 */
 function official(m: PlazaModel, value: number | null | undefined): string {
   if (value == null) return '-'
   return formatScaled(value, PER_MILLION, MIN_DECIMALS, symbolOf(m))
+}
+
+/**
+ * 官方按时段分档时（如 DeepSeek），把一格拆成「高峰 / 空闲」两行；否则返回单行。
+ * 后端下发的数值恒为高峰价，空闲价由 off_peak_factor 折算，
+ * 当前档由后端判定（current_band），前端只负责高亮。
+ */
+interface PriceBand {
+  label: string
+  text: string
+  active: boolean
+}
+
+function officialBands(m: PlazaModel, value: number | null | undefined): PriceBand[] {
+  const tier = m.time_tier
+  if (!tier || value == null || !(tier.off_peak_factor > 0 && tier.off_peak_factor < 1)) {
+    return [{ label: '', text: official(m, value), active: false }]
+  }
+  return [
+    {
+      label: t('modelPlaza.table.bandPeak'),
+      text: official(m, value),
+      active: tier.current_band === 'peak',
+    },
+    {
+      label: t('modelPlaza.table.bandOffPeak'),
+      text: official(m, value * tier.off_peak_factor),
+      active: tier.current_band === 'offpeak',
+    },
+  ]
+}
+
+/** 该模型是否有官方时段分档（用于决定是否显示窗口说明）。 */
+function hasTimeTier(m: PlazaModel): boolean {
+  const tier = m.time_tier
+  return !!tier && tier.peak_windows.length > 0 && tier.off_peak_factor > 0 && tier.off_peak_factor < 1
+}
+
+/** 时段说明文案：高峰 09:00-12:00、14:00-18:00 (UTC+08:00)，其余时段半价。 */
+function timeTierNote(m: PlazaModel): string {
+  const tier = m.time_tier
+  if (!tier) return ''
+  return t('modelPlaza.table.timeTierNote', {
+    windows: tier.peak_windows.join('、'),
+    tz: tier.timezone,
+    percent: Math.round(tier.off_peak_factor * 100),
+  })
 }
 
 /** 非 token 计费的单位后缀:按图片 → “/ 张”,按次 → “/ 次”。 */

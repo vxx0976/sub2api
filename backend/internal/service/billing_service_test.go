@@ -8,6 +8,7 @@ import (
 	"math"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/stretchr/testify/require"
@@ -275,6 +276,7 @@ func TestCalculateCost_OpenAIGPT54LongContextMarkerRequiresActualCostIncrease(t 
 		0,
 		"",
 		true,
+		time.Time{},
 	)
 
 	require.NoError(t, err)
@@ -461,33 +463,35 @@ func TestGetFallbackPricing_FamilyMatching(t *testing.T) {
 		{name: "openai legacy gpt5.1 codex falls back to gpt5.3 codex", model: "gpt-5.1-codex", expectedInput: 1.5e-6},
 		{name: "openai legacy codex mini latest falls back to gpt5.3 codex", model: "codex-mini-latest", expectedInput: 1.5e-6},
 		{name: "openai unknown no fallback", model: "gpt-unknown-model", expectNilPricing: true},
+		// DeepSeek 兜底价：官方 ¥ 价 × 默认 1:1 汇率，取高峰档（本层无计价时刻，不分时段）。
+		// 正常流量走 PricingService 的 ¥ 表（含峰谷分档），这里只在 pricingService 未装配时生效。
 		{
 			name:              "deepseek v4 pro",
 			model:             "deepseek-v4-pro",
-			expectedInput:     4.35e-7,
-			expectedOutput:    floatPtr(8.7e-7),
-			expectedCacheRead: floatPtr(3.625e-9),
+			expectedInput:     9e-6,
+			expectedOutput:    floatPtr(2.7e-5),
+			expectedCacheRead: floatPtr(3e-7),
 		},
 		{
 			name:              "deepseek v4 flash",
 			model:             "deepseek-v4-flash",
-			expectedInput:     1.4e-7,
-			expectedOutput:    floatPtr(2.8e-7),
-			expectedCacheRead: floatPtr(2.8e-9),
+			expectedInput:     3e-6,
+			expectedOutput:    floatPtr(9e-6),
+			expectedCacheRead: floatPtr(1e-7),
 		},
 		{
 			name:              "deepseek chat alias → flash",
 			model:             "deepseek-chat",
-			expectedInput:     1.4e-7,
-			expectedOutput:    floatPtr(2.8e-7),
-			expectedCacheRead: floatPtr(2.8e-9),
+			expectedInput:     3e-6,
+			expectedOutput:    floatPtr(9e-6),
+			expectedCacheRead: floatPtr(1e-7),
 		},
 		{
 			name:              "deepseek reasoner alias → flash",
 			model:             "deepseek-reasoner",
-			expectedInput:     1.4e-7,
-			expectedOutput:    floatPtr(2.8e-7),
-			expectedCacheRead: floatPtr(2.8e-9),
+			expectedInput:     3e-6,
+			expectedOutput:    floatPtr(9e-6),
+			expectedCacheRead: floatPtr(1e-7),
 		},
 
 		// ---- 智谱 GLM（z.ai USD 口径）----

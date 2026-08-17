@@ -1302,6 +1302,8 @@ export default {
 
   // Usage
   usage: {
+    pricingTimeBandOffPeak: 'Off-peak',
+    pricingTimeBandOffPeakHint: 'Billed at the upstream official off-peak rate (half of the peak rate)',
     title: 'Usage Records',
     description: 'View and analyze your API usage history',
     costDetails: 'Cost Breakdown',
@@ -1766,7 +1768,10 @@ export default {
       perUnitRequest: '/ request',
       perUnitImage: '/ image',
       perRequest: 'Per request',
-      perImage: 'Per image'
+      perImage: 'Per image',
+      bandPeak: 'Peak',
+      bandOffPeak: 'Off-peak',
+      timeTierNote: 'Official time-based pricing: peak {windows} ({tz}); {percent}% of that rate at all other times'
     },
     nav: {
       login: 'Sign In',

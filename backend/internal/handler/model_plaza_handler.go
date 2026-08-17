@@ -4,6 +4,7 @@ import (
 	"log/slog"
 
 	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/timezone"
 	"github.com/Wei-Shaw/sub2api/internal/server/middleware"
 	"github.com/Wei-Shaw/sub2api/internal/service"
 
@@ -54,6 +55,11 @@ type modelPlazaModel struct {
 	PriceCurrency   string                     `json:"price_currency"`
 	Pricing         *userSupportedModelPricing `json:"pricing"`
 	OfficialPricing *modelPlazaOfficialPricing `json:"official_pricing"`
+	// TimeTier 是上游官方的时段分档说明（如 DeepSeek 高峰/空闲双档）；无分档时省略。
+	// ⚠️ 与分组的 PeakRate* 是**两个正交概念**：那是本站订阅分组的高峰倍率（售价策略），
+	// 这里是上游厂商公布的官方峰谷价（成本口径），二者相乘。不要合并复用。
+	// CurrentBand 由后端按官方时区判定，前端不得自行按浏览器时区推算。
+	TimeTier *service.ModelTimeTierDTO `json:"time_tier,omitempty"`
 }
 
 // modelPlazaGroup 广场分组条目（白名单字段）。
@@ -170,6 +176,7 @@ func toModelPlazaGroupDTO(g *service.PlazaGroup, userRates map[int64]float64) mo
 			PriceCurrency:   service.ModelPriceCurrency(m.Name),
 			Pricing:         toUserPricing(m.Pricing),
 			OfficialPricing: toModelPlazaOfficialPricing(m.OfficialPricing),
+			TimeTier:        service.ModelTimeTierInfo(m.Name, timezone.Now()),
 		})
 	}
 	dto := modelPlazaGroup{

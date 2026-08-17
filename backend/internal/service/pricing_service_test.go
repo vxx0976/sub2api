@@ -11,6 +11,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// bj 按**北京时间**构造时刻，供官方时段分档（peak/offpeak）的用例使用。
+// 刻意用显式时区构造而非本地时间：档位判定硬锚 Asia/Shanghai，用例结果不得随
+// 运行机器/CI 的时区变化。放在无 build tag 的文件里，unit 与默认构建都能用。
+func bj(t *testing.T, hour, min, sec int) time.Time {
+	t.Helper()
+	loc, err := time.LoadLocation("Asia/Shanghai")
+	require.NoError(t, err)
+	return time.Date(2026, 8, 17, hour, min, sec, 0, loc)
+}
+
 func newKimiPricingService(rate float64) *PricingService {
 	return &PricingService{
 		cfg:         &config.Config{Pricing: config.PricingConfig{CNYToUSDRate: rate}},
@@ -109,8 +119,8 @@ func TestGetModelPricing_DeepSeekV4AllModels(t *testing.T) {
 		outputCNY float64
 		cacheCNY  float64
 	}{
-		{"deepseek-v4-flash", 1.0, 2.0, 0.02},
-		{"deepseek-v4-pro", 3.0, 6.0, 0.025},
+		{"deepseek-v4-flash", 3.0, 9.0, 0.10},
+		{"deepseek-v4-pro", 9.0, 27.0, 0.30},
 	}
 	for _, tt := range tests {
 		got := svc.GetModelPricing(tt.model)
@@ -139,16 +149,160 @@ func TestGetModelPricing_DeepSeekV4NameVariants(t *testing.T) {
 	}
 }
 
+// TestGetModelPricingAt_DeepSeekOffPeak 锁定空闲档：表价（高峰价）的一半。
+// ⚠️ 上面几个既有用例走零值时刻（基准价路径），即使峰谷因子整体写反也照样全绿，
+// 真正兜底的是本用例与 TestTimeTierFactorNeverExceedsOne。
+func TestGetModelPricingAt_DeepSeekOffPeak(t *testing.T) {
+	const rate = 1.0
+	svc := newCNYPricingService(rate)
+	offPeak := bj(t, 20, 0, 0) // 北京 20:00 → 空闲档
+
+	tests := []struct {
+		model     string
+		inputCNY  float64
+		outputCNY float64
+		cacheCNY  float64
+	}{
+		{"deepseek-v4-flash", 1.5, 4.5, 0.05},
+		{"deepseek-v4-pro", 4.5, 13.5, 0.15},
+		// 已下线别名并入 ¥ 口径后同样跟随分档（按 flash 计价）
+		{"deepseek-chat", 1.5, 4.5, 0.05},
+		{"deepseek-reasoner", 1.5, 4.5, 0.05},
+	}
+	for _, tt := range tests {
+		got := svc.GetModelPricingAt(tt.model, offPeak)
+		require.NotNilf(t, got, "expected pricing for %q", tt.model)
+		require.InDeltaf(t, tt.inputCNY/rate/1e6, got.InputCostPerToken, 1e-15, "%s input", tt.model)
+		require.InDeltaf(t, tt.outputCNY/rate/1e6, got.OutputCostPerToken, 1e-15, "%s output", tt.model)
+		require.InDeltaf(t, tt.cacheCNY/rate/1e6, got.CacheReadInputTokenCost, 1e-15, "%s cache", tt.model)
+		require.Truef(t, got.SupportsPromptCaching, "%s should still support caching", tt.model)
+		require.Equalf(t, "deepseek", got.LiteLLMProvider, "%s provider", tt.model)
+		require.Equalf(t, PricingBandOffPeak, got.PricingTimeBand, "%s band", tt.model)
+	}
+}
+
+// 高峰时刻必须等于表价，且标注 peak 档。
+func TestGetModelPricingAt_DeepSeekPeakEqualsTablePrice(t *testing.T) {
+	svc := newCNYPricingService(1.0)
+	got := svc.GetModelPricingAt("deepseek-v4-flash", bj(t, 10, 0, 0))
+	require.NotNil(t, got)
+	require.InDelta(t, 3.0/1e6, got.InputCostPerToken, 1e-15)
+	require.InDelta(t, 9.0/1e6, got.OutputCostPerToken, 1e-15)
+	require.InDelta(t, 0.10/1e6, got.CacheReadInputTokenCost, 1e-15)
+	require.Equal(t, PricingBandPeak, got.PricingTimeBand)
+}
+
+// 零值时刻 = 基准价（最贵档）且不标档位：所有未接线路径落在贵的一侧。
+func TestGetModelPricingAt_ZeroTimeIsBaseline(t *testing.T) {
+	svc := newCNYPricingService(1.0)
+	zero := svc.GetModelPricingAt("deepseek-v4-flash", time.Time{})
+	require.NotNil(t, zero)
+	require.InDelta(t, 3.0/1e6, zero.InputCostPerToken, 1e-15)
+	require.Equal(t, "", zero.PricingTimeBand)
+
+	// 旧签名必须与零值时刻逐字节一致
+	legacy := svc.GetModelPricing("deepseek-v4-flash")
+	require.NotNil(t, legacy)
+	require.Equal(t, *zero, *legacy)
+}
+
+// 名字变体（大小写、provider 前缀）在峰谷两侧都要正确分档。
+func TestGetModelPricingAt_DeepSeekNameVariantsBothBands(t *testing.T) {
+	svc := newCNYPricingService(1.0)
+	for _, name := range []string{
+		"deepseek-v4-flash", "DeepSeek-V4-Flash", "deepseek/deepseek-v4-flash",
+	} {
+		peak := svc.GetModelPricingAt(name, bj(t, 15, 0, 0))
+		require.NotNilf(t, peak, "peak %q", name)
+		require.InDeltaf(t, 3.0/1e6, peak.InputCostPerToken, 1e-15, "peak %q", name)
+		require.Equalf(t, PricingBandPeak, peak.PricingTimeBand, "peak %q", name)
+
+		off := svc.GetModelPricingAt(name, bj(t, 3, 0, 0))
+		require.NotNilf(t, off, "offpeak %q", name)
+		require.InDeltaf(t, 1.5/1e6, off.InputCostPerToken, 1e-15, "offpeak %q", name)
+		require.Equalf(t, PricingBandOffPeak, off.PricingTimeBand, "offpeak %q", name)
+	}
+}
+
+// 档位系数必须作用在汇率折算之后的同一侧：谷价 ÷ 汇率，而不是折进汇率。
+func TestGetModelPricingAt_OffPeakRespectsCNYRate(t *testing.T) {
+	got := newCNYPricingService(7.0).GetModelPricingAt("deepseek-v4-flash", bj(t, 22, 0, 0))
+	require.NotNil(t, got)
+	require.InDelta(t, 1.5/7.0/1e6, got.InputCostPerToken, 1e-15)
+}
+
+// 未知 deepseek-* 型号按最贵档（v4-pro）兜底，绝不少收；且同样跟随时段。
+//
+// 🔴 用例必须覆盖**带 v4 的未知型号**：下一代命名极可能是 deepseek-v4.5 / v4-max /
+// v4.1-pro，早期版本用宽松的 Contains(m,"v4") 把这一族全归到最便宜的 flash 档，
+// 还绕过了兜底与告警（kimi-k3 少收 ¥503 的同型）。只测 deepseek-v9-unknown
+// 恰好挑中了唯一走到兜底分支的那类名字，为一条并不成立的不变量背书。
+func TestGetModelPricingAt_UnknownDeepSeekFallsBackToMostExpensive(t *testing.T) {
+	svc := newCNYPricingService(1.0)
+	unknown := []string{
+		"deepseek-v9-unknown",
+		"deepseek-r2",
+		"deepseek-v4.5",     // 带 v4 的未知型号
+		"deepseek-v4-max",   // 同上
+		"deepseek-v4.1-pro", // 含 pro 但不含 "v4-pro" 精确串
+		"deepseek-v4-ultra", // 同上
+		"deepseek-v4",       // 光杆 v4，档位未知
+		"deepseek/deepseek-v4-turbo",
+	}
+	for _, name := range unknown {
+		peak := svc.GetModelPricingAt(name, bj(t, 10, 0, 0))
+		require.NotNilf(t, peak, "%s", name)
+		require.InDeltaf(t, 9.0/1e6, peak.InputCostPerToken, 1e-15,
+			"%s 是未知型号，必须按最贵档 v4-pro 计费（绝不少收）", name)
+		require.InDeltaf(t, 27.0/1e6, peak.OutputCostPerToken, 1e-15, "%s output", name)
+		require.Equalf(t, PricingBandPeak, peak.PricingTimeBand, "%s", name)
+		require.Equalf(t, CurrencyCNY, ModelPriceCurrency(name), "%s 兜底后币种口径必须是 CNY", name)
+	}
+}
+
+// 明确点名档位的变体仍按各自档位计费（不能被上面的兜底一刀切成最贵档）。
+func TestGetModelPricingAt_DeepSeekNamedTierVariants(t *testing.T) {
+	svc := newCNYPricingService(1.0)
+	cases := []struct {
+		model    string
+		inputCNY float64
+	}{
+		{"deepseek-v4-flash-0731", 3.0},
+		{"deepseek-v4-pro-260201", 9.0},
+		{"DeepSeek-V4-Flash-Preview", 3.0},
+	}
+	for _, tt := range cases {
+		got := svc.GetModelPricingAt(tt.model, bj(t, 10, 0, 0))
+		require.NotNilf(t, got, "%s", tt.model)
+		require.InDeltaf(t, tt.inputCNY/1e6, got.InputCostPerToken, 1e-15, "%s", tt.model)
+	}
+}
+
+// Kimi / Qwen 未挂时段规则，任何时刻价格恒定且不标档位。
+func TestGetModelPricingAt_KimiQwenUnaffectedByTimeBand(t *testing.T) {
+	svc := newCNYPricingService(1.0)
+	for _, model := range []string{"kimi-k3", "kimi-k2.6", "qwen3-max", "qwen-plus"} {
+		base := svc.GetModelPricing(model)
+		require.NotNilf(t, base, "%s", model)
+		for _, at := range []time.Time{bj(t, 3, 0, 0), bj(t, 10, 0, 0), bj(t, 20, 0, 0)} {
+			got := svc.GetModelPricingAt(model, at)
+			require.NotNilf(t, got, "%s @%v", model, at)
+			require.Equalf(t, *base, *got, "%s 不应随时刻变价", model)
+			require.Equalf(t, "", got.PricingTimeBand, "%s 不应标注档位", model)
+		}
+	}
+}
+
 func TestGetModelPricing_DeepSeekV4RateConfigurable(t *testing.T) {
 	// 汇率可配置
 	got := newCNYPricingService(7.0).GetModelPricing("deepseek-v4-flash")
 	require.NotNil(t, got)
-	require.InDelta(t, 1.0/7.0/1e6, got.InputCostPerToken, 1e-15)
+	require.InDelta(t, 3.0/7.0/1e6, got.InputCostPerToken, 1e-15)
 
 	// 配置缺失（0）时回退到兜底汇率
 	got2 := newCNYPricingService(0).GetModelPricing("deepseek-v4-flash")
 	require.NotNil(t, got2)
-	require.InDelta(t, 1.0/defaultCNYToUSDRate/1e6, got2.InputCostPerToken, 1e-15)
+	require.InDelta(t, 3.0/defaultCNYToUSDRate/1e6, got2.InputCostPerToken, 1e-15)
 }
 
 func TestGetModelPricing_QwenAllModels(t *testing.T) {

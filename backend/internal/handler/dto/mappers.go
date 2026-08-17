@@ -710,6 +710,7 @@ func usageLogFromServiceUser(l *service.UsageLog) UsageLog {
 		ImageOutputTokens:         l.ImageOutputTokens,
 		ImageOutputCost:           l.ImageOutputCost,
 		ImageSizeSource:           l.ImageSizeSource,
+		PricingTimeBand:           l.PricingTimeBand,
 		ImageSizeBreakdown:        l.ImageSizeBreakdown,
 		MediaType:                 l.MediaType,
 		UserAgent:                 l.UserAgent,
