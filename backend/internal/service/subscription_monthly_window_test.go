@@ -184,8 +184,15 @@ func TestValidateAndCheckLimitsKeepsLegacyMonthlyUsageBeforeExpiry(t *testing.T)
 // 另外月限额是动态有效额度（单周期额度 × 剩余周期数），修正是「减去一个周期额度」
 // 而不是清零，否则窗口刚过期那一刻会按全新额度放行、造成超发。
 func TestValidateAndCheckLimitsCorrectsExpiredMonthlyWindowOnCopyOnly(t *testing.T) {
-	startsAt := time.Date(2026, 7, 1, 23, 30, 0, 0, time.UTC)
-	windowStart := startsAt.Add(-23*time.Hour - 30*time.Minute)
+	// ⚠️ 夹具必须锚定真实当前时间，不能写死日期。
+	// CheckMonthlyLimit → GetEffectiveMonthlyLimit → RemainingCycles → DaysRemaining
+	// 用的是 time.Now()，**绕过** svc.now 注入的时钟。写死 ExpiresAt 的话，等真实时间
+	// 越过那个日期，RemainingCycles 变 0 → 有效额度 0 → CheckMonthlyLimit 恒 false，
+	// 用例会在某天突然变红（本用例即栽于此：写于 2026-08-05、ExpiresAt 定在 08-15，
+	// 08-15 之后开始失败）。
+	// 下面用 now-30d 做起点，使「月窗口已过期」与「订阅本身还有剩余周期」同时成立。
+	startsAt := time.Now().UTC().Add(-30 * 24 * time.Hour)
+	windowStart := startOfDay(startsAt)
 	now := startsAt.Add(30 * 24 * time.Hour)
 	limit := 10.0
 	sub := &UserSubscription{
