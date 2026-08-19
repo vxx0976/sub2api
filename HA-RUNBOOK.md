@@ -1,7 +1,9 @@
 # sub2api 高可用运维手册 (HA-RUNBOOK)
 
-> 最后更新: 2026-05-29 (bwh2接入第5票 + 备份app→R2 + 测试环境隔离hostdzire + admin公网DB收口 + 残留清理 + **solid 已释放**)
+> 最后更新: **2026-08-19** (jp/sg 被甲骨文回收 → 异地备份改推 spartan + 修「不可达即静默」的备份巡检漏报)
+> 上一次: 2026-05-29 (bwh2接入第5票 + 备份app→R2 + 测试环境隔离hostdzire + admin公网DB收口 + 残留清理 + **solid 已释放**)
 > 当前节点(5): main / merchant / admin / hostdzire / bwh2(solid 异地从已退役)
+> 集群外备份收端: **spartan**(172.83.153.98,不入 mesh、不属 HA 集群,只收 pg_dump)
 > 适用: 半夜出状况时照着操作。先看「§2 一键体检」定位故障,再到「§4 故障 SOP」处理。
 > 失效自愈能力速查见「§13 一/两节点失效矩阵」。
 
@@ -203,7 +205,7 @@ ssh hostdzire "cd /opt/sub2api && sed -i 's/DATABASE_HOST=10.88.0.4/DATABASE_HOS
 6. ~~**老容器 sub-sub2api-1(:9000)** 另一套 sub2api 临时栈~~ ✅ **已停 2026-06-19**(`/opt/sub` 整套 `docker compose stop`,容器+数据卷保留,`docker compose start` 可恢复;释放 ~364M,unless-stopped 重启宿主不复活)。停前仅 bwh1 每 ~30-60s 轮询 :9000(dashboard/探活,非真实用户——找出来停掉)。**销毁(`down -v` + 删 /opt/sub)待站长通知**。
 7. ~~异地备份 / WAL→R2 PITR~~ ✅ 已解决,且发现**重复**: sub2api **自带 S3/R2 备份**(后台数据备份页,每日 `0 2`→R2,留14天/3份,UI可下载恢复)早已配好。本次手搭的 solid→jp1/sg1/alice 管道是冗余,**待退役**(见 §14)。PITR 决定**跳过**(每日 R2 + canary 测 migration 已足够,不为分钟级 RPO 加复杂度)
 8. **监控告警** (阶段6): inkmirage Grafana 加 PG lag/Redis/Caddy upstream 面板
-9. ~~etcd/sentinel 第5票迁出 solid~~ ✅ 已完成 (2026-05-29,迁到 bwh2)。**solid 退费时只剩**(备份已不依赖 solid,app→R2 接管): 摘 solid PG/Redis 数据从 + 删 mesh peer(.5)+ check.sh/Prometheus 去掉 solid + 退役 offsite 管道(见 §14)。✅ **2026-06-19 实测确认 solid 已彻底出集群**: Patroni 仅 `admin`+`hostdzire` 两成员;`154.3.224.215` 不再跑 patroni/PG/redis(现为另一台 `Umasou`)。ssh 别名 `solid` + 本条 todo 可清理
+9. ~~etcd/sentinel 第5票迁出 solid~~ ✅ 已完成 (2026-05-29,迁到 bwh2)。**solid 退费时只剩**(备份已不依赖 solid,app→R2 接管): 摘 solid PG/Redis 数据从 + 删 mesh peer(.5)+ check.sh/Prometheus 去掉 solid + 退役 offsite 管道(见 §14)。✅ **2026-06-19 实测确认 solid 已彻底出集群**: Patroni 仅 `admin`+`hostdzire` 两成员;`154.3.224.215` 不再跑 patroni/PG/redis(现为另一台 `Umasou`)。ssh 别名 `solid` + 本条 todo 可清理 → ✅ **2026-08-19 已清**(本机 `~/.ssh/config` 删掉 solid/jp/sg/alice 四个失效别名;注意 `154.3.224.215` 现已被服务商再分配给无关主机 `Umasou`)
 10. ~~解 admin 测试/兜底耦合~~ ✅ 已完成 (2026-05-29,测试环境整体迁到 hostdzire `/opt/sub2api-test`,canary 连独立 test 库;admin 只剩生产兜底,见 §12)
 11. ~~config.yaml 残留公网IP~~ ✅ 已修 (2026-05-29,admin/hostdzire 的 config.yaml db/redis host 改为本机 HAProxy 与 .env 一致)
 12. **ops_system_logs 表膨胀**: ✅ 清理已开启并生效(2026-06-19,后台「系统监控→数据保留」,retention 30天)——autovacuum 健康(死元组 4–10%),活行已降到 ~30天量。但库仍 **8.2G**:30天日志量本身大,且 DELETE 不自动还盘。想再瘦(让备份/恢复/复制更快):retention 降 **7–14 天** + 一次性 `VACUUM FULL ops_system_logs`(+ `ops_error_logs`),**择 CN 夜里**做(会给 flaky hostdzire 灌 WAL,白天别做)。磁盘 158G 用 17%,不急。
@@ -225,7 +227,7 @@ ssh hostdzire "cd /opt/sub2api && sed -i 's/DATABASE_HOST=10.88.0.4/DATABASE_HOS
     - **🔴 发现并已修(低风险项,本轮全做)**: ①**SSH 口令面**: hostdzire(**critical**,公网 root+口令可爆破、无 fail2ban)/jp/sg/bwh2/admin 此前 `PasswordAuthentication`/`KbdInteractive` 未真正关 → 全队改 `PasswordAuthentication no` + `KbdInteractiveAuthentication no` + `ChallengeResponseAuthentication no` + `PermitRootLogin prohibit-password` + `X11Forwarding no`(统一用 sort 最前的 `00-hardening.conf` 压过 cloud-init 的 `50-*.conf`;`sshd -t`+`sshd -T` 双校验、reload、新连接验证均通,纯 key 登录不受影响)。②**密钥/备份 world-readable**: admin `/opt/sub2api/.env`+`/opt/inkmirage/.env`、hostdzire 三份 `.env`+`haproxy.cfg`+预部署 PG dump、jp 整库 dump → 全 `chmod 600`(haproxy 640;jp `/opt/backup/pg` 700);`pg_backup_jp.sh` 落盘加 `umask 077`+`chmod 600` 防回归。③**主机防火墙**: jp/sg 此前主机层全裸(仅靠云安全组)→ 装最小 nft(default drop input,放行 lo/established/icmp/22)+ `systemctl enable nftables`;jp/sg 的 fail2ban 原 iptables 后端在本机无效 → 改 `nftables-multiport`。④**控制面 mesh 收口**: 5 节点 etcd/sentinel `2379/2380/26379` 加 iptables(v4+v6)`lo+mesh ACCEPT / DROP`(原仅靠 bind 隔离);**bwh2 原无开机加载机制** → 新建 enable `iptables-restore.service`。验证:Patroni leader+replica lag=0、etcd health=true、sentinel PONG、备份链路 admin→jp/main→jp 均通。
     - **⏳ 已记待办(需规划/会动 app,未在本轮做)**: ①**密钥轮换**(站长定:先 chmod 止血、稍后安排)——admin/hostdzire 长期 world-readable 的 DB/Redis/JWT/TOTP/ADMIN 口令、R2/BACKUP_R2、MASTER_KEY_V1、各第三方 API key 应轮换。②**etcd RBAC + client/peer TLS + 各 sentinel `requirepass`**(集群级,mesh 内目前免认证可读写 DCS/下发 failover;公网不可达)。③**jp 备份/巡检 key 加 `command=`/`from=`/`restrict`**(现为公网可达的全 shell root;需改造成受限 forced-command,避免破坏现有备份链路才动)。④**admin pg_hba 收敛到 mesh**(现含公网 IP 的 scram 行,被防火墙遮蔽)。⑤main/merchant `/root/cleanup-20260619/` 旧密钥 tar(/root 0700 实际仅 root 可达,确认后 rm)。
 
-19. **2026-06-19 异地备份扩到 3 份 + 备份 key 收敛(关 §7#18待办③)**:
+19. **2026-06-19 异地备份扩到 3 份 + 备份 key 收敛(关 §7#18待办③)** —— ⚠️ **本条已被 §7#21 取代**(jp/sg 于 2026-08-18 被甲骨文回收,现为 R2+spartan 两份;下文保留作历史):
     - **第三份独立备份(sg)**: 站长决定"jp 既然备份了,sg 也来一套"。现 **R2(每日,app→对象存储)+ jp + sg(各每日 pg_dump)** 三份独立;jp 日本、sg 新加坡,两台都是甲骨文可回收免费机 → 任一被回收也不丢。两台 197/199G 盘充裕,保留 14 天。
     - **🔒 备份/巡检 key 全部 forced-command 化(closed §7#18待办③)**: jp + sg 的收端 key 不再是"公网可达全 shell root",改为 `command="/usr/local/bin/pg-backup-recv.sh",restrict,from="45.59.186.84"`(收备份,只读 stdin 落盘+清理)与 `command=".../pg-backup-stat.sh",restrict,from="64.186.225.230"`(巡检,只回最新份的 mtime/size)。**实测传 `rm -rf`/`cat /etc/shadow` 当参数均被忽略、只跑固定脚本**。站长本人的 apple key 仍全权(兜底)。
     - **脚本/巡检**: admin `pg_backup_jp.sh` → **`pg_backup_offsite.sh`**(dump 一次到 `/opt/backup/spool` 600 → 推 jp+sg → trap 清 spool;cron 每日 20:00 UTC),实测各推 360MB、gzip 完整、落盘 600/目录 700。main `check.sh` 改为解析 forced-command 的 stat 输出、**同时监 jp+sg 新鲜度**(>26h 各自告警 `backup_jp`/`backup_sg`,不可达跳过)。
@@ -236,6 +238,16 @@ ssh hostdzire "cd /opt/sub2api && sed -i 's/DATABASE_HOST=10.88.0.4/DATABASE_HOS
     - **② etcd/sentinel 鉴权:评估后【决定不做】**(非偷懒,拓扑使然): ① **TLS 冗余**——mesh 是 WireGuard,传输已加密;② **etcd RBAC 价值≈0**——全 5 节点 main/merchant/admin/hostdzire/bwh2 **本身都是 etcd 成员**,一台被攻陷=一个 etcd 成员被攻陷(本地有 DCS 数据 + 参与 raft),RBAC 只挡"非成员"客户端,挡不住成员;③ **sentinel requirepass 价值低**——app/HAProxy 都走 `HAProxy:6380`(`tcp-check AUTH` 找主)**不连 sentinel**,且被攻陷节点多半本身就是 sentinel 宿主。结论:在"WG 加密 + 全节点皆成员 + 已全面加固 + 端口 mesh 收口"的前提下,这三项是安全表演且要在活集群冒险,**不划算 → 接受当前姿态**。威胁模型变化(如往 mesh 加入不可信节点)再议。
     - **⑤ cleanup tar**: merchant `/root/cleanup-20260619` 已删;main 删配置 tar + .bak,**保留 `sub2apipay.tgz`**(含 4 月订单导出 xlsx,业务数据,待站长定夺删否)。
     - **唯一仍待办**: ①**密钥轮换**(站长定稍后;因 admin/hostdzire 一批密钥曾长期 world-readable)。
+
+21. **2026-08-19 jp/sg 被甲骨文回收 → 异地备份改推 spartan + 修掉「不可达即静默」的漏报**:
+    - **事件**: jp(131.186.35.70)/sg(138.2.85.162) 两台甲骨文免费机被回收。最后一次成功推送 `2026-08-18 20:01/20:03 UTC`;之后从 admin 侧实测两台 **22 端口 timeout**。**机器上的两份 dump 随机器一起没了** → 异地独立备份从 3 份掉到 **1 份(只剩 R2)**。当时"随时可能被回收"是已知风险(节点清单里早写着"50Mbps + 随时被回收,只能当冷备"),这次兑现了。
+    - **🔴 关键教训 —— 备份没了却一条告警都没有**: main `check.sh` 的新鲜度巡检写成 `mt=$(...); if [ -n "$mt" ]; then notify ...; fi`,**主机不可达 → mt 空 → 整段跳过,不发任何通知**,state 文件永远停在最后一次的 `OK`。当初 §7#19 特意设计"不可达则跳过(避免误报)",在"机器永久消失"这个场景下正好是反的。**通用结论: 监控里「取不到数据」必须能告警,不能等同于「没问题」;抑制瞬时抖动要用重试/连续N次,不能用沉默。**
+    - **✅ 已修(check.sh)**: 巡检目标换成 spartan;取不到 mtime 时走 `notify backup_spartan FAIL "巡检失联..."`;瞬时抖动改用**重试一次(间隔 20s)**过滤。备份文件、主机、收端脚本三种失败都会报。旧 `state/backup_jp`、`backup_sg` 已删。备份前基线 `main:/opt/ha-monitor/check.sh.bak-20260819`。
+    - **✅ 新收端(spartan)**: `spartanhost`(172.83.153.98,SpartanHost,与 DMIT 不同服务商 → 故障域仍隔离;代价是同在美西,地理上不如日/新分散)。落盘 `/mnt/backup/sub2api-pg`(700,独立 232G `pgbackup` 分区,与 inkmirage 自己的 `/mnt/backup/postgres` 分开),留 14 天。**spartan 不入 mesh、不属 HA 集群**,只作收端。
+    - **收端 key 仍是 forced-command**(沿用 §7#19 手法): `command="/usr/local/bin/pg-backup-recv.sh",restrict,from="45.59.186.84"`(admin 推)+ `command="/usr/local/bin/pg-backup-stat.sh",restrict,from="64.186.225.230"`(main 巡检)。**实测带 `cat /etc/shadow` 当参数被忽略、只跑固定脚本**。
+    - **收端比 jp/sg 多一道校验**: 落盘后跑 `gzip -t`,大小 <1000B 或 gzip 损坏则**丢弃并回 RECV_FAIL**——堵住"传输截断也照样存下、巡检还报 OK"这个盲区。
+    - **✅ 端到端实测**: admin 手跑 `pg_backup_offsite.sh` → `RECV_OK … size=857023689`、`rc=0`(全程约 2.5min,含 dump+gzip+传输+校验);main 巡检读回 `mtime/size/name` 一致;失败路径用不可达 IP 演练确认会 `notify FAIL`。
+    - **⏳ 遗留**: ① **备份仍只有 2 份**,想回到 3 份需再找一台异地机(地理分散优先,别再用"随时回收"的免费机当唯一异地)。② **恢复演练仍未做**(bk-4 老待办,现在更值得做:全靠 R2+spartan 两条没验证过的恢复路径)。③ admin 上 `jp_backup`/`sg_backup`、main 上 `jp_check`/`sg_check` 四把废 key 未删(无害,目标已不存在)。
 
 ---
 
@@ -383,7 +395,7 @@ ssh hostdzire "cd /opt/sub2api && sed -i 's/DATABASE_HOST=10.88.0.4/DATABASE_HOS
 > 🔙 **回滚** = 三处再发旧 tag:`./update.sh dev-<旧sha12>`(registry 里历史 tag 都在;2026-05-29 前的老 tag 是 7 位)。
 > 不传 tag 的 `./update.sh` 仍可用(用 `.env` 现值,默认浮动 `:dev`),但**正式发布务必带 tag**避免错位。
 
-🔄 **重置 test 库数据**(可选,想用更新的真实数据测时): 重跑 §14 恢复演练(solid 最新 dump → restore 进 sub2api-testdb)。test 库是某次快照,会随时间与生产漂移。
+🔄 **重置 test 库数据**(可选,想用更新的真实数据测时): 重跑 §14 恢复演练(从 **R2 下载**或 **spartan `/mnt/backup/sub2api-pg` 取最新 dump** → restore 进 sub2api-testdb;原文的 solid 早已释放)。test 库是某次快照,会随时间与生产漂移。
 🔧 回滚 admin 兜底拆分: `ssh dmit-admin "cd /opt/sub2api && cp docker-compose.yml.bak.split docker-compose.yml && docker rm -f sub2api-backup && docker compose up -d"`(退回单容器)。
 
 ---
@@ -427,7 +439,9 @@ ssh hostdzire "cd /opt/sub2api && sed -i 's/DATABASE_HOST=10.88.0.4/DATABASE_HOS
 ## §14 备份与异地容灾 (2026-05-29)
 
 > HA(节点挂)≠ 备份(数据坏)。流复制会把误删/逻辑损坏复制到所有从库,只有备份能回滚。本节是数据持久性的底线。
-> 📌 **现状(2026-06-19 更新,以 §7#19/#20 为准)**: 备份已扩到**三份独立** = ① app→**R2**(每日 `0 2`,UI 一键恢复)② admin pg_dump→**jp**(每日 20:00 UTC)③ admin pg_dump→**sg**(每日)。下方 2026-05-29 的"仅 app→R2 一条"段落是历史记录,**已被 §7#19 取代**。jp/sg 恢复路径 = `scp + zcat | psql`(⚠️尚未端到端演练,见审查 bk-4)。
+> 📌 **现状(2026-08-19 更新,以 §7#21 为准)**: **两份独立** = ① app→**R2**(每日 `0 2`,UI 一键恢复)② admin pg_dump→**spartan**(每日 20:00 UTC,`/mnt/backup/sub2api-pg`,留 14 天)。
+> ⚠️ **jp/sg 两份已于 2026-08-18 随机器被甲骨文回收而消失**(不是停更,是副本没了),§7#19/#20 里"三份独立"的说法**已作废**,见 §7#21。
+> spartan 恢复路径 = `scp spartan:/mnt/backup/sub2api-pg/sub2api-*.sql.gz . && zcat 文件 | psql`(PG17,dump 带 `--clean --if-exists`;⚠️尚未端到端演练,见审查 bk-4)。
 
 ### 主备份: sub2api 自带 → Cloudflare R2 (✅ 站长早已配好;2026-05-29 确认)
 - 后台「系统设置 → 数据备份」: S3/R2(`…r2.cloudflarestorage.com`, bucket `sub2api-backups`, 前缀 `backups/`),**定时 `0 2 * * *`**,保留 **14天 / 3份**。产物 `.sql.gz`(~440MB/天),UI 可**下载 + 一键恢复**(应用 BackupService)。R2 durable —— **这是数据持久性的正主**。RPO=24h。
