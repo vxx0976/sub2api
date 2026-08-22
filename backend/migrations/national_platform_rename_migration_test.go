@@ -105,13 +105,13 @@ func TestMigration226DoesNotRewriteModelNames(t *testing.T) {
 // stripSQLLineComments 去掉整行 `--` 注释，只留可执行 SQL。
 // 本迁移不含行内 `--`（字符串字面量里也没有），因此逐行前缀判断即可。
 func stripSQLLineComments(sql string) string {
-	var b strings.Builder
-	for _, line := range strings.Split(sql, "\n") {
+	lines := strings.Split(sql, "\n")
+	kept := make([]string, 0, len(lines))
+	for _, line := range lines {
 		if strings.HasPrefix(strings.TrimSpace(line), "--") {
 			continue
 		}
-		b.WriteString(line)
-		b.WriteString("\n")
+		kept = append(kept, line)
 	}
-	return b.String()
+	return strings.Join(kept, "\n")
 }
