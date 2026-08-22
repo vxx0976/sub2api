@@ -468,6 +468,20 @@ func beginGroupUsageRollupTriggerTestTx(t *testing.T, ctx context.Context, schem
 	tx, err := integrationDB.BeginTx(ctx, nil)
 	require.NoError(t, err)
 	require.NoError(t, setGroupUsageRollupTriggerSearchPath(ctx, tx, pq.QuoteIdentifier(schema)))
+
+	// 会话时区必须显式钉住，否则这些用例只在「UTC 日期恰好等于上海日期」时才通过。
+	//
+	// 触发器（迁移 225）用 current_setting('TimeZone') —— 即**会话时区** —— 计算
+	// affected_date；而本文件多处断言硬编码 (CURRENT_TIMESTAMP AT TIME ZONE
+	// 'Asia/Shanghai')::date。CI runner 的会话时区是 UTC，于是每天上海时间
+	// 00:00–08:00 这个窗口内（此时 UTC 还停在前一天）两者算出不同日期，用例必红。
+	// 实测：08-19 10:54(上海) 推的提交 CI 绿，08-23 03:0x(上海) 推的两次都红，
+	// 失败的正是 SerializesInsertTransactionAcrossMidnight 与 KeepsWatermarkForTodayInsert。
+	//
+	// 需要别的时区的用例（DST、跨时区改配置那几个）在自己的语句里再
+	// SET LOCAL TIME ZONE 覆盖即可——SET LOCAL 作用于本事务，后设的生效。
+	_, err = tx.ExecContext(ctx, "SET LOCAL TIME ZONE 'Asia/Shanghai'")
+	require.NoError(t, err)
 	return tx
 }
 
