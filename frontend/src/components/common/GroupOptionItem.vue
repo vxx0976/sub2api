@@ -141,10 +141,8 @@ const RATE_PILL_COLORS: Record<string, string> = {
   gemini: 'bg-sky-50 text-sky-700 dark:bg-sky-900/20 dark:text-sky-400',
   antigravity: 'bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400',
   deepseek: 'bg-cyan-50 text-cyan-700 dark:bg-cyan-900/20 dark:text-cyan-400',
-  moonshot: 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-400',
-  glm: 'bg-rose-50 text-rose-700 dark:bg-rose-900/20 dark:text-rose-400',
-  qwen: 'bg-violet-50 text-violet-700 dark:bg-violet-900/20 dark:text-violet-400',
-  seedance: 'bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400',
+  kimi: 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-400',
+  zhipu: 'bg-rose-50 text-rose-700 dark:bg-rose-900/20 dark:text-rose-400',
   grok: 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200',
 }
 const ratePillClass = computed(() => {

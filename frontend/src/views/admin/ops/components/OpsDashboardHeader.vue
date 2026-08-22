@@ -115,10 +115,8 @@ const platformOptions = computed(() => [
   { value: 'antigravity', label: 'Antigravity' },
   { value: 'grok', label: 'Grok' },
   { value: 'deepseek', label: 'DeepSeek' },
-  { value: 'moonshot', label: 'Kimi' },
-  { value: 'glm', label: 'GLM' },
-  { value: 'qwen', label: 'Qwen' },
-  { value: 'seedance', label: 'Seedance' }
+  { value: 'kimi', label: 'Kimi' },
+  { value: 'zhipu', label: 'GLM' },
 ])
 
 const timeRangeOptions = computed(() => [

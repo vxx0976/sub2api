@@ -108,7 +108,7 @@
                     </span>
                   </div>
                   <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
-                    <span class="platform-chip">{{ g.platform }}</span>
+                    <span class="platform-chip">{{ platformLabel(g.platform) }}</span>
                     <span
                       v-if="g.is_exclusive"
                       class="platform-chip platform-chip-exclusive"
@@ -137,7 +137,7 @@
               <h2 class="text-base font-semibold text-gray-900 dark:text-gray-100">
                 {{ selectedGroup.name }}
               </h2>
-              <span class="platform-chip">{{ selectedGroup.platform }}</span>
+              <span class="platform-chip">{{ platformLabel(selectedGroup.platform) }}</span>
               <span class="rate-badge rate-badge-good">
                 <Icon name="bolt" size="xs" class="mr-0.5" />
                 {{ formatRate(selectedGroup.rate_multiplier) }}
@@ -326,6 +326,7 @@
 </template>
 
 <script setup lang="ts">
+import { platformLabel } from '@/utils/platformColors'
 import { computed, onMounted, ref, watch } from 'vue'
 import { trimTrailingZeros } from '@/utils/formatters'
 import { useI18n } from 'vue-i18n'

@@ -1681,7 +1681,7 @@ func isOpenAICompatibleAccountEligibleForRequest(ctx context.Context, account *A
 func isOpenAICompatibleAccountEligibleForRequestBeforeProfit(ctx context.Context, account *Account, platform string, requestedModel string, requireCompact bool, requiredCapability OpenAIEndpointCapability) bool {
 	platform = normalizeOpenAICompatiblePlatform(platform)
 	// Compare route families, not raw platforms: dev's OpenAI route fans out over
-	// every OpenAI-compatible platform (DeepSeek/Moonshot/GLM/Qwen/Seedance), all of
+	// every OpenAI-compatible platform (Kimi/Zhipu/Deepseek), all of
 	// which normalize to PlatformOpenAI, while Grok stays on its own dedicated route.
 	if account == nil || normalizeOpenAICompatiblePlatform(account.Platform) != platform || !account.IsOpenAICompatible() || !account.IsSchedulableForModelWithContext(ctx, requestedModel) {
 		return false
@@ -2659,14 +2659,14 @@ func (s *OpenAIGatewayService) selectAccountWithLoadAwareness(ctx context.Contex
 }
 
 // openAICompatPlatforms lists platforms that share the OpenAI-compatible gateway.
-var openAICompatPlatforms = []string{PlatformOpenAI, PlatformDeepSeek, PlatformMoonshot, PlatformGLM, PlatformQwen, PlatformSeedance}
+var openAICompatPlatforms = []string{PlatformOpenAI, PlatformKimi, PlatformZhipu, PlatformDeepseek}
 
 func (s *OpenAIGatewayService) listSchedulableAccounts(ctx context.Context, groupID *int64, platform string) ([]Account, error) {
 	platform = normalizeOpenAICompatiblePlatform(platform)
 
 	// Grok (and any other dedicated platform) is queried directly. The default
 	// OpenAI route fans out across every OpenAI-compatible platform so that
-	// DeepSeek / Moonshot / GLM / Qwen / Seedance accounts are scheduled
+	// Kimi / Zhipu / Deepseek accounts are scheduled
 	// alongside native OpenAI accounts.
 	platforms := []string{platform}
 	if platform == PlatformOpenAI {
@@ -2942,8 +2942,8 @@ func (s *OpenAIGatewayService) schedulingConfig() config.GatewaySchedulingConfig
 }
 
 // GetAccessToken gets the access token for an OpenAI-compatible account.
-// For non-OpenAI platforms (DeepSeek, Moonshot, GLM, Seedance), it delegates to
-// the platform-specific token provider via the generic API Key credential.
+// The CN providers (Kimi, Zhipu, Deepseek) are API-Key-only and read
+// credentials.api_key directly; Grok and OpenAI keep their own OAuth branches.
 func (s *OpenAIGatewayService) GetAccessToken(ctx context.Context, account *Account) (string, string, error) {
 	if account.IsShadow() {
 		credAccount, err := resolveCredentialAccount(ctx, s.accountRepo, account)
@@ -2953,20 +2953,16 @@ func (s *OpenAIGatewayService) GetAccessToken(ctx context.Context, account *Acco
 		account = credAccount
 	}
 
-	// OpenAI-compatible platforms (DeepSeek, Moonshot, GLM, Qwen, Seedance) use API Key only.
+	// OpenAI-compatible platforms (Kimi, Zhipu, Deepseek) use API Key only.
 	// Grok is excluded here: it has its own OAuth/APIKey branches below (with a dedicated
 	// token provider and an access_token credential key), which this block would shadow.
 	if account.IsOpenAICompatible() && !account.IsOpenAI() && !account.IsGrok() {
-		tp := s.resolveTokenProviderForPlatform(account.Platform)
-		if tp != nil {
-			token, err := tp.GetAccessToken(ctx, account)
-			if err != nil {
-				return "", "", err
-			}
-			return token, "apikey", nil
-		}
-		// fallback: read api_key directly from credentials
-		apiKey := account.GetCredential("api_key")
+		// 国产 OpenAI 兼容供应商（kimi/zhipu/deepseek）与其它 api_key 平台统一直接读凭证。
+		// 原先每个平台各有一个 token provider，但它们都只是「取 credentials.api_key、
+		// 拒绝 OAuth」的薄包装，与此处等价；上游也没有这套，删掉可减少今后的合并面。
+		// TrimSpace 沿用原 provider 的严格性：全空白的 key 视为未配置，避免把它发给上游
+		// 换一个更难排查的 401。
+		apiKey := strings.TrimSpace(account.GetCredential("api_key"))
 		if apiKey == "" {
 			return "", "", fmt.Errorf("api_key not found in credentials for platform %s", account.Platform)
 		}
@@ -3021,30 +3017,6 @@ func (s *OpenAIGatewayService) GetAccessToken(ctx context.Context, account *Acco
 		return apiKey, "apikey", nil
 	default:
 		return "", "", fmt.Errorf("unsupported account type: %s", account.Type)
-	}
-}
-
-// platformTokenProvider is a common interface for platform-specific token providers.
-type platformTokenProvider interface {
-	GetAccessToken(ctx context.Context, account *Account) (string, error)
-}
-
-// resolveTokenProviderForPlatform returns the stateless token provider for the
-// given OpenAI-compatible platform.  Returns nil for unknown platforms.
-func (s *OpenAIGatewayService) resolveTokenProviderForPlatform(platform string) platformTokenProvider {
-	switch platform {
-	case PlatformDeepSeek:
-		return NewDeepSeekTokenProvider()
-	case PlatformMoonshot:
-		return NewMoonshotTokenProvider()
-	case PlatformGLM:
-		return NewGLMTokenProvider()
-	case PlatformQwen:
-		return NewQwenTokenProvider()
-	case PlatformSeedance:
-		return NewSeedanceTokenProvider()
-	default:
-		return nil
 	}
 }
 
@@ -5963,8 +5935,8 @@ func (s *OpenAIGatewayService) buildUpstreamRequest(ctx context.Context, c *gin.
 	}
 
 	// Kimi For Coding 对客户端做白名单校验，需为 Coding Agent UA（前缀 claude-cli/）。
-	// 当 Moonshot 平台账号使用 api.kimi.com 端点且未自定义 UA 时，自动设置。
-	if account.Platform == PlatformMoonshot && customUA == "" {
+	// 当 Kimi 平台账号使用 api.kimi.com 端点且未自定义 UA 时，自动设置。
+	if account.Platform == PlatformKimi && customUA == "" {
 		if baseURL := account.GetCredential("base_url"); strings.Contains(baseURL, "api.kimi.com") {
 			req.Header.Set("user-agent", kimiCodingUserAgent)
 		}

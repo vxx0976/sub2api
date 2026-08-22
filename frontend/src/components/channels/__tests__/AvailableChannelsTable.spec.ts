@@ -160,9 +160,34 @@ describe('AvailableChannelsTable responsive surfaces', () => {
     const mobile = wrapper.get('[data-testid="mobile-channels"]')
 
     expect(mobile.text()).toContain('Fallback channel')
-    expect(mobile.text()).toContain('openai')
+    // 平台徽章走 platformLabel()，显示品牌名而不是内部标识：
+    // 内部标识改名时（如 glm → zhipu）用户不该看到 "ZHIPU"。
+    expect(mobile.text()).toContain('OpenAI')
     expect(mobile.text()).toContain('No models')
     expect(mobile.findAll('dd')[0].text()).toBe('-')
+  })
+
+  it('renders the platform brand name, never the internal platform id', () => {
+    // 迁移 226 把内部标识 glm 改成 zhipu。这些徽章原先直插 {{ section.platform }}，
+    // 会把 "ZHIPU" 显示给用户和爬虫；platformLabel('zhipu') 才是品牌名 "GLM"。
+    const wrapper = mountTable({
+      rows: [
+        {
+          name: 'CN channel',
+          description: '',
+          platforms: [
+            { platform: 'zhipu', groups: [], supported_models: [] },
+            { platform: 'kimi', groups: [], supported_models: [] },
+          ],
+        },
+      ],
+    })
+    const text = wrapper.get('[data-testid="mobile-channels"]').text()
+
+    expect(text).toContain('GLM')
+    expect(text).toContain('Kimi')
+    expect(text).not.toContain('zhipu')
+    expect(text).not.toContain('ZHIPU')
   })
 
   it('provides loading and empty states on both responsive surfaces', async () => {

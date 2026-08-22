@@ -30,11 +30,9 @@ func TestGatewayRoutesCodexModelsManifestPathIsRegistered(t *testing.T) {
 // 而不是被 CodexModels 以 404 拒绝。
 func TestGatewayRoutesModelsWithClientVersionFallsBackForCompatPlatforms(t *testing.T) {
 	for _, platform := range []string{
-		service.PlatformDeepSeek,
-		service.PlatformMoonshot,
-		service.PlatformGLM,
-		service.PlatformQwen,
-		service.PlatformSeedance,
+		service.PlatformKimi,
+		service.PlatformZhipu,
+		service.PlatformDeepseek,
 	} {
 		router := newGatewayRoutesTestRouter(platform)
 

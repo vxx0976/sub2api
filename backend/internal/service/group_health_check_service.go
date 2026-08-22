@@ -276,14 +276,10 @@ func getDefaultTestModel(platform string) string {
 		return "claude-haiku-4-5-20251001"
 	case "deepseek":
 		return "deepseek-chat"
-	case "moonshot":
+	case "kimi":
 		return "kimi-k2"
-	case "glm":
+	case "zhipu":
 		return "GLM-5.1"
-	case "seedance":
-		return "doubao-1-5-pro-32k"
-	case "qwen":
-		return "qwen-turbo"
 	case "grok":
 		return "grok-4.3"
 	default:

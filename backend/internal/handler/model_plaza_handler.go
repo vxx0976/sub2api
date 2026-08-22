@@ -50,7 +50,7 @@ type modelPlazaModel struct {
 	Name     string `json:"name"`
 	Platform string `json:"platform"`
 	// PriceCurrency 是该模型价格数值的币种（"CNY" / "USD"），前端据此选 ¥ / $ 符号。
-	// fork 比上游多 deepseek/moonshot/qwen 等按人民币官方计价的平台，缺了这个字段
+	// fork 比上游多 kimi/zhipu/deepseek 等按人民币官方计价的平台，缺了这个字段
 	// 它们的 ¥ 价会被当成美元展示。与用量页 / 可用渠道页同源（service.ModelPriceCurrency）。
 	PriceCurrency   string                     `json:"price_currency"`
 	Pricing         *userSupportedModelPricing `json:"pricing"`

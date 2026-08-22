@@ -1498,7 +1498,9 @@ func (s *PricingService) ListAll(providerFilter string) []LiteLLMModelEntry {
 		if p == nil {
 			continue
 		}
-		if filter != "" && !strings.EqualFold(p.LiteLLMProvider, filter) {
+		// 平台标识与 LiteLLM 的 litellm_provider 不保证同名（如本站 kimi ↔ LiteLLM moonshot），
+		// 走别名表匹配；理由见 litellm_provider_alias.go。
+		if filter != "" && !litellmProviderMatches(p.LiteLLMProvider, filter) {
 			continue
 		}
 		if p.Mode != "" && p.Mode != "chat" {

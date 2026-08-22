@@ -270,10 +270,8 @@ const PLATFORM_LABELS: Record<string, string> = {
   antigravity: 'Antigravity',
   grok: 'Grok',
   deepseek: 'DeepSeek',
-  moonshot: 'Kimi',
-  glm: 'GLM',
-  qwen: 'Qwen',
-  seedance: 'Seedance'
+  kimi: 'Kimi',
+  zhipu: 'GLM'
 }
 
 const platformLabel = (p: string) => PLATFORM_LABELS[p] ?? p
@@ -300,7 +298,7 @@ const platformCards = computed<FusedPlatformCard[]>(() => {
   // 无需显式排除；__other__ 由下方差值补差逻辑单独追加。
   const platforms = new Set<string>([...byPlat.keys(), ...byQuota.keys()])
 
-  const PLATFORM_ORDER = ['anthropic', 'openai', 'gemini', 'antigravity', 'grok', 'deepseek', 'moonshot', 'glm', 'qwen', 'seedance']
+  const PLATFORM_ORDER = ['anthropic', 'openai', 'gemini', 'antigravity', 'grok', 'deepseek', 'kimi', 'zhipu']
   const cards: FusedPlatformCard[] = []
 
   for (const p of platforms) {

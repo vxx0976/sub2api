@@ -313,7 +313,7 @@ function billingModeLabel(m: PlazaModel): string {
 const MIN_DECIMALS = 2
 
 /**
- * 该行的货币符号。deepseek / moonshot / qwen 等国产模型按人民币官方计价,
+ * 该行的货币符号。deepseek / kimi / glm 等国产模型按人民币官方计价,
  * 后端 price_currency 下发 'CNY',这里显示 ¥;其余为 $。1¥=1 余额单位,
  * 只换符号不换算数值(与用量页 / 可用渠道页同一约定)。
  */

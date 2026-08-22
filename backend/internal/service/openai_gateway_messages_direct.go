@@ -22,46 +22,31 @@ import (
 // buildAnthropicDirectMessagesURL returns the upstream Anthropic Messages API
 // endpoint for platforms that natively support the Anthropic protocol.
 //
-//   - DeepSeek: https://api.deepseek.com  →  https://api.deepseek.com/anthropic/v1/messages
-//   - Moonshot: https://api.kimi.com/coding/v1  →  https://api.kimi.com/coding/v1/messages
-//   - GLM 官方: https://open.bigmodel.cn  →  https://open.bigmodel.cn/api/anthropic/v1/messages
-//   - GLM 中转: https://relay.orbitai.cc  →  https://relay.orbitai.cc/v1/messages
-//   - Qwen 官方: https://dashscope.aliyuncs.com/compatible-mode/v1
-//     →  https://dashscope.aliyuncs.com/api/v2/apps/claude-code-proxy/v1/messages
+//   - Deepseek: https://api.deepseek.com  →  https://api.deepseek.com/anthropic/v1/messages
+//   - Kimi: https://api.kimi.com/coding/v1  →  https://api.kimi.com/coding/v1/messages
+//   - Zhipu 官方: https://open.bigmodel.cn  →  https://open.bigmodel.cn/api/anthropic/v1/messages
+//   - Zhipu 中转: https://relay.orbitai.cc  →  https://relay.orbitai.cc/v1/messages
 func buildAnthropicDirectMessagesURL(account *Account) string {
 	switch account.Platform {
-	case PlatformDeepSeek:
-		baseURL := account.GetDeepSeekBaseURL()
+	case PlatformDeepseek:
+		baseURL := account.GetDeepseekBaseURL()
 		// Strip /v1 suffix — the Anthropic-compatible path lives at /anthropic/v1/messages
 		baseURL = strings.TrimSuffix(strings.TrimRight(baseURL, "/"), "/v1")
 		return baseURL + "/anthropic/v1/messages"
-	case PlatformMoonshot:
-		baseURL := account.GetMoonshotBaseURL()
+	case PlatformKimi:
+		baseURL := account.GetKimiBaseURL()
 		return strings.TrimRight(baseURL, "/") + "/messages"
-	case PlatformGLM:
-		// GLM 原生 Anthropic 端点的根因上游而异：
+	case PlatformZhipu:
+		// Zhipu (GLM) 原生 Anthropic 端点的根因上游而异：
 		//   - 智谱官方 open.bigmodel.cn / api.z.ai：端点在 /api/anthropic 下
 		//     （官方 ANTHROPIC_BASE_URL=https://open.bigmodel.cn/api/anthropic）。
 		//   - NewAPI 类中转（如 relay.orbitai.cc）：直接在根暴露 /v1/messages。
-		baseURL := strings.TrimRight(account.GetGLMBaseURL(), "/")
+		baseURL := strings.TrimRight(account.GetZhipuBaseURL(), "/")
 		if u, err := url.Parse(baseURL); err == nil &&
 			(u.Host == "open.bigmodel.cn" || u.Host == "api.z.ai") &&
 			!strings.Contains(u.Path, "/api/anthropic") {
 			return u.Scheme + "://" + u.Host + "/api/anthropic/v1/messages"
 		}
-		baseURL = strings.TrimSuffix(baseURL, "/v1")
-		return baseURL + "/v1/messages"
-	case PlatformQwen:
-		// Qwen(DashScope) 原生 Anthropic 端点与 chat 端点同 host 不同 path：
-		//   chat:      https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions
-		//   anthropic: https://dashscope.aliyuncs.com/api/v2/apps/claude-code-proxy/v1/messages
-		// 默认 base_url 存 compatible-mode/v1，此处按官方 host 派生 claude-code-proxy 路径。
-		baseURL := strings.TrimRight(account.GetQwenBaseURL(), "/")
-		if u, err := url.Parse(baseURL); err == nil && u.Host == "dashscope.aliyuncs.com" {
-			return u.Scheme + "://" + u.Host + "/api/v2/apps/claude-code-proxy/v1/messages"
-		}
-		// 中转/自定义 host：剥 /compatible-mode/v1 或 /v1 尾巴后兜底 {base}/v1/messages。
-		baseURL = strings.TrimSuffix(baseURL, "/compatible-mode/v1")
 		baseURL = strings.TrimSuffix(baseURL, "/v1")
 		return baseURL + "/v1/messages"
 	default:
@@ -72,7 +57,7 @@ func buildAnthropicDirectMessagesURL(account *Account) string {
 // normalizeAnthropicDirectInputUsage 把直连上游的 usage 归一为主路径计费口径
 // （input_tokens 含 cache_read，下游 actualInput = input_tokens - cache_read）。
 //
-//   - DeepSeek（已实测 api.deepseek.com：input=71、cache_read=2944 对应 3015 token
+//   - Deepseek（已实测 api.deepseek.com：input=71、cache_read=2944 对应 3015 token
 //     prompt）：input_tokens 永远只报缓存未命中数，必须无条件加回缓存桶；
 //     条件判断会在新增内容超过缓存前缀时漏计。
 //   - 其他平台（Kimi 等）：usage 语义未实测（仓库内 Kimi fixture 显示 input_tokens
@@ -85,14 +70,14 @@ func buildAnthropicDirectMessagesURL(account *Account) string {
 // RecordUsage），因此归一后的 InputTokens 必须是含全部桶的总量。只加回 cache_read
 // 会让下游多减一次 cache_creation，creation>input 时把真实新输入夹成 0（漏计新输入费）。
 func normalizeAnthropicDirectInputUsage(platform string, usage *OpenAIUsage) {
-	if platform == PlatformDeepSeek || usage.InputTokens < usage.CacheReadInputTokens+usage.CacheCreationInputTokens {
+	if platform == PlatformDeepseek || usage.InputTokens < usage.CacheReadInputTokens+usage.CacheCreationInputTokens {
 		usage.InputTokens += usage.CacheReadInputTokens + usage.CacheCreationInputTokens
 	}
 }
 
 // forwardAnthropicDirect forwards an Anthropic Messages request directly to
 // upstream platforms that expose a native Anthropic-compatible endpoint
-// (DeepSeek /anthropic, Kimi /coding). Unlike the normal ForwardAsAnthropic
+// (Deepseek /anthropic, Kimi /coding). Unlike the normal ForwardAsAnthropic
 // path, this skips the Anthropic→Responses format conversion and pipes the
 // upstream Anthropic SSE/JSON response through unchanged.
 func (s *OpenAIGatewayService) forwardAnthropicDirect(
@@ -125,20 +110,15 @@ func (s *OpenAIGatewayService) forwardAnthropicDirect(
 	if err != nil {
 		return nil, fmt.Errorf("build anthropic direct request: %w", err)
 	}
-	// Qwen(DashScope) 的 claude-code-proxy 端点用 Authorization: Bearer（实测，非 x-api-key）；
-	// DeepSeek / Moonshot / GLM 用标准 Anthropic x-api-key。
-	if account.Platform == PlatformQwen {
-		req.Header.Set("authorization", "Bearer "+token)
-	} else {
-		req.Header.Set("x-api-key", token)
-	}
+	// Deepseek / Kimi / Zhipu 用标准 Anthropic x-api-key。
+	req.Header.Set("x-api-key", token)
 	req.Header.Set("content-type", "application/json")
 	req.Header.Set("anthropic-version", "2023-06-01")
 	req.Header.Set("accept", "application/json")
 
 	// Kimi For Coding 对客户端做白名单校验，需为 Coding Agent UA（前缀 claude-cli/）。
-	if account.Platform == PlatformMoonshot {
-		baseURL := account.GetMoonshotBaseURL()
+	if account.Platform == PlatformKimi {
+		baseURL := account.GetKimiBaseURL()
 		if strings.Contains(baseURL, "api.kimi.com") {
 			req.Header.Set("user-agent", kimiCodingUserAgent)
 		}

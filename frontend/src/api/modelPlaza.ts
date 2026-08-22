@@ -40,7 +40,7 @@ export interface PlazaModel {
   platform: string
   /**
    * 价格数值的币种（'CNY' | 'USD'）。国产按人民币官方计价的模型（deepseek /
-   * moonshot / qwen 等）为 'CNY'，前端据此显示 ¥；缺省按 '$' 处理。
+   * kimi / glm 等）为 'CNY'，前端据此显示 ¥；缺省按 '$' 处理。
    */
   price_currency?: string
   pricing: UserSupportedModelPricing | null

@@ -14,38 +14,38 @@ func TestNormalizeAnthropicDirectInputUsage(t *testing.T) {
 	t.Run("DeepSeek 未命中口径无条件加回", func(t *testing.T) {
 		// 实测样例：3015 token prompt → input=71, cache_read=2944
 		u := OpenAIUsage{InputTokens: 71, CacheReadInputTokens: 2944}
-		normalizeAnthropicDirectInputUsage(PlatformDeepSeek, &u)
+		normalizeAnthropicDirectInputUsage(PlatformDeepseek, &u)
 		require.Equal(t, 3015, u.InputTokens)
 	})
 
 	t.Run("DeepSeek 新增内容超过缓存前缀也加回", func(t *testing.T) {
 		u := OpenAIUsage{InputTokens: 5000, CacheReadInputTokens: 2944}
-		normalizeAnthropicDirectInputUsage(PlatformDeepSeek, &u)
+		normalizeAnthropicDirectInputUsage(PlatformDeepseek, &u)
 		require.Equal(t, 7944, u.InputTokens, "条件判断 (input < cache_read) 会在此漏计")
 	})
 
 	t.Run("Moonshot 总量口径不得双重计费", func(t *testing.T) {
 		// 若 Kimi 按 Anthropic 总量口径上报（input 已含全部输入），不应再加回
 		u := OpenAIUsage{InputTokens: 3015, CacheReadInputTokens: 2944}
-		normalizeAnthropicDirectInputUsage(PlatformMoonshot, &u)
+		normalizeAnthropicDirectInputUsage(PlatformKimi, &u)
 		require.Equal(t, 3015, u.InputTokens)
 	})
 
 	t.Run("Moonshot 明显未命中口径仍加回", func(t *testing.T) {
 		u := OpenAIUsage{InputTokens: 71, CacheReadInputTokens: 2944}
-		normalizeAnthropicDirectInputUsage(PlatformMoonshot, &u)
+		normalizeAnthropicDirectInputUsage(PlatformKimi, &u)
 		require.Equal(t, 3015, u.InputTokens)
 	})
 
 	t.Run("无缓存命中为 no-op", func(t *testing.T) {
 		u := OpenAIUsage{InputTokens: 100}
-		normalizeAnthropicDirectInputUsage(PlatformDeepSeek, &u)
+		normalizeAnthropicDirectInputUsage(PlatformDeepseek, &u)
 		require.Equal(t, 100, u.InputTokens)
 	})
 
 	t.Run("DeepSeek 一并加回 cache_creation", func(t *testing.T) {
 		u := OpenAIUsage{InputTokens: 71, CacheReadInputTokens: 2944, CacheCreationInputTokens: 500}
-		normalizeAnthropicDirectInputUsage(PlatformDeepSeek, &u)
+		normalizeAnthropicDirectInputUsage(PlatformDeepseek, &u)
 		require.Equal(t, 71+2944+500, u.InputTokens)
 	})
 
@@ -54,14 +54,14 @@ func TestNormalizeAnthropicDirectInputUsage(t *testing.T) {
 		// 条件 (input < cache_read) = (50 < 0) 为假 → 不加回 → 下游多减一次
 		// cache_creation → 新输入被夹成 0。现按 input < read+creation 加回。
 		u := OpenAIUsage{InputTokens: 50, CacheReadInputTokens: 0, CacheCreationInputTokens: 3000}
-		normalizeAnthropicDirectInputUsage(PlatformMoonshot, &u)
+		normalizeAnthropicDirectInputUsage(PlatformKimi, &u)
 		require.Equal(t, 3050, u.InputTokens)
 	})
 
 	t.Run("Moonshot 总量口径含 creation 不双计", func(t *testing.T) {
 		// 总量口径下 input 恒 >= read+creation，不应再加回。
 		u := OpenAIUsage{InputTokens: 3515, CacheReadInputTokens: 2944, CacheCreationInputTokens: 500}
-		normalizeAnthropicDirectInputUsage(PlatformMoonshot, &u)
+		normalizeAnthropicDirectInputUsage(PlatformKimi, &u)
 		require.Equal(t, 3515, u.InputTokens)
 	})
 }
@@ -89,7 +89,7 @@ func TestNormalizeAnthropicDirectInputUsage_BucketMath(t *testing.T) {
 	}{
 		{
 			name:       "DeepSeek 读+写缓存",
-			platform:   PlatformDeepSeek,
+			platform:   PlatformDeepseek,
 			raw:        OpenAIUsage{InputTokens: 71, CacheReadInputTokens: 2944, CacheCreationInputTokens: 500},
 			wantInput:  71,
 			wantCreate: 500,
@@ -97,7 +97,7 @@ func TestNormalizeAnthropicDirectInputUsage_BucketMath(t *testing.T) {
 		},
 		{
 			name:       "首笔缓存写入 creation>input 不再夹成 0",
-			platform:   PlatformMoonshot,
+			platform:   PlatformKimi,
 			raw:        OpenAIUsage{InputTokens: 50, CacheReadInputTokens: 0, CacheCreationInputTokens: 3000},
 			wantInput:  50,
 			wantCreate: 3000,
@@ -126,19 +126,15 @@ func TestBuildAnthropicDirectMessagesURL(t *testing.T) {
 		account *Account
 		want    string
 	}{
-		{"DeepSeek 默认", &Account{Platform: PlatformDeepSeek, Type: AccountTypeAPIKey}, "https://api.deepseek.com/anthropic/v1/messages"},
-		{"Moonshot 默认", &Account{Platform: PlatformMoonshot, Type: AccountTypeAPIKey}, "https://api.kimi.com/coding/v1/messages"},
-		{"GLM 官方默认 base 补 /api/anthropic", &Account{Platform: PlatformGLM, Type: AccountTypeAPIKey}, "https://open.bigmodel.cn/api/anthropic/v1/messages"},
-		{"GLM 官方 paas 根也归一到 /api/anthropic", apikey(PlatformGLM, "https://open.bigmodel.cn/api/paas/v4"), "https://open.bigmodel.cn/api/anthropic/v1/messages"},
-		{"GLM 官方已含 /api/anthropic 不重复", apikey(PlatformGLM, "https://open.bigmodel.cn/api/anthropic"), "https://open.bigmodel.cn/api/anthropic/v1/messages"},
-		{"GLM z.ai 补 /api/anthropic", apikey(PlatformGLM, "https://api.z.ai"), "https://api.z.ai/api/anthropic/v1/messages"},
-		{"GLM NewAPI 中转根直挂 /v1/messages", apikey(PlatformGLM, "https://relay.orbitai.cc"), "https://relay.orbitai.cc/v1/messages"},
-		{"GLM 中转 base 带 /v1 归一", apikey(PlatformGLM, "https://relay.orbitai.cc/v1"), "https://relay.orbitai.cc/v1/messages"},
-		{"GLM 中转 base 带末尾斜杠", apikey(PlatformGLM, "https://relay.orbitai.cc/"), "https://relay.orbitai.cc/v1/messages"},
-		{"Qwen 官方默认 base → claude-code-proxy", &Account{Platform: PlatformQwen, Type: AccountTypeAPIKey}, "https://dashscope.aliyuncs.com/api/v2/apps/claude-code-proxy/v1/messages"},
-		{"Qwen 显式 compatible-mode → claude-code-proxy", apikey(PlatformQwen, "https://dashscope.aliyuncs.com/compatible-mode/v1"), "https://dashscope.aliyuncs.com/api/v2/apps/claude-code-proxy/v1/messages"},
-		{"Qwen 中转 host 剥 compatible-mode/v1", apikey(PlatformQwen, "https://relay.example.com/compatible-mode/v1"), "https://relay.example.com/v1/messages"},
-		{"Qwen 中转 host 根直挂", apikey(PlatformQwen, "https://relay.example.com"), "https://relay.example.com/v1/messages"},
+		{"DeepSeek 默认", &Account{Platform: PlatformDeepseek, Type: AccountTypeAPIKey}, "https://api.deepseek.com/anthropic/v1/messages"},
+		{"Kimi 默认", &Account{Platform: PlatformKimi, Type: AccountTypeAPIKey}, "https://api.kimi.com/coding/v1/messages"},
+		{"Zhipu 官方默认 base 补 /api/anthropic", &Account{Platform: PlatformZhipu, Type: AccountTypeAPIKey}, "https://open.bigmodel.cn/api/anthropic/v1/messages"},
+		{"Zhipu 官方 paas 根也归一到 /api/anthropic", apikey(PlatformZhipu, "https://open.bigmodel.cn/api/paas/v4"), "https://open.bigmodel.cn/api/anthropic/v1/messages"},
+		{"Zhipu 官方已含 /api/anthropic 不重复", apikey(PlatformZhipu, "https://open.bigmodel.cn/api/anthropic"), "https://open.bigmodel.cn/api/anthropic/v1/messages"},
+		{"Zhipu z.ai 补 /api/anthropic", apikey(PlatformZhipu, "https://api.z.ai"), "https://api.z.ai/api/anthropic/v1/messages"},
+		{"Zhipu NewAPI 中转根直挂 /v1/messages", apikey(PlatformZhipu, "https://relay.orbitai.cc"), "https://relay.orbitai.cc/v1/messages"},
+		{"Zhipu 中转 base 带 /v1 归一", apikey(PlatformZhipu, "https://relay.orbitai.cc/v1"), "https://relay.orbitai.cc/v1/messages"},
+		{"Zhipu 中转 base 带末尾斜杠", apikey(PlatformZhipu, "https://relay.orbitai.cc/"), "https://relay.orbitai.cc/v1/messages"},
 		{"未支持平台返回空", &Account{Platform: PlatformOpenAI, Type: AccountTypeAPIKey}, ""},
 	}
 	for _, tc := range cases {

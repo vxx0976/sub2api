@@ -824,11 +824,11 @@ func (s *SchedulerSnapshotService) rebuildByAccount(ctx context.Context, account
 	return s.rebuildBuckets(ctx, buckets, reason)
 }
 
-// fork：调度覆盖 10 个平台（上游只有前 5 个），真源见 AllowedQuotaPlatforms。
-func schedulerSnapshotPlatforms() [10]string {
-	return [10]string{
+// fork：调度覆盖 8 个平台（上游只有前 5 个），真源见 AllowedQuotaPlatforms。
+func schedulerSnapshotPlatforms() [8]string {
+	return [8]string{
 		PlatformAnthropic, PlatformGemini, PlatformOpenAI, PlatformAntigravity, PlatformGrok,
-		PlatformDeepSeek, PlatformMoonshot, PlatformGLM, PlatformQwen, PlatformSeedance,
+		PlatformKimi, PlatformZhipu, PlatformDeepseek,
 	}
 }
 
@@ -841,8 +841,8 @@ func schedulerBucketsForGroup(groupID int64) []SchedulerBucket {
 }
 
 func schedulerCanonicalBuckets(groupID int64) []SchedulerBucket {
-	// 10 平台 × (single+forced) + anthropic/gemini 各一个 mixed = 22。
-	buckets := make([]SchedulerBucket, 0, 22)
+	// 8 平台 × (single+forced) + anthropic/gemini 各一个 mixed = 18。
+	buckets := make([]SchedulerBucket, 0, 18)
 	for _, platform := range schedulerSnapshotPlatforms() {
 		buckets = append(buckets,
 			SchedulerBucket{GroupID: groupID, Platform: platform, Mode: SchedulerModeSingle},

@@ -60,7 +60,7 @@ func (r openAIImagesFailoverAccountRepo) accountsForPlatform(platform string) []
 	return out
 }
 
-// 复数平台方法：dev 把 OpenAI 网关账号调度改为多平台（OpenAI 兼容族：DeepSeek/Moonshot/GLM/Seedance），
+// 复数平台方法：dev 把 OpenAI 网关账号调度改为多平台（OpenAI 兼容族：Kimi/Zhipu/Deepseek），
 // listSchedulableAccounts 现走 ListSchedulableByPlatforms。桩须实现，否则落到内嵌 nil 接口触发 panic。
 func (r openAIImagesFailoverAccountRepo) ListSchedulableByPlatforms(_ context.Context, platforms []string) ([]service.Account, error) {
 	return r.accountsForPlatforms(platforms), nil

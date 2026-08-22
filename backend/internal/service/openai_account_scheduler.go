@@ -1407,7 +1407,7 @@ func (s *defaultOpenAIAccountScheduler) selectByLoadBalance(
 			continue
 		}
 		// 平台比较两侧都必须过 normalizeOpenAICompatiblePlatform：fork 的
-		// deepseek/moonshot/glm/qwen/seedance 等 openai-compatible 平台在账号侧
+		// kimi/zhipu/deepseek 等 openai-compatible 平台在账号侧
 		// 保留原始平台名，只比较原始值会把它们全部误判为 platform_mismatch。
 		if normalizeOpenAICompatiblePlatform(account.Platform) != normalizeOpenAICompatiblePlatform(req.Platform) || !account.IsOpenAICompatible() {
 			filterStats.exclude("platform_mismatch")

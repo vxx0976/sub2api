@@ -93,10 +93,8 @@ const platformLabel = computed(() => {
     case 'grok': return 'Grok'
     case 'gemini': return 'Gemini'
     case 'deepseek': return 'DeepSeek'
-    case 'moonshot': return 'Kimi'
-    case 'glm': return 'GLM'
-    case 'qwen': return 'Qwen'
-    case 'seedance': return 'Seedance'
+    case 'kimi': return 'Kimi'
+    case 'zhipu': return 'GLM'
     default: return props.platform || 'API'
   }
 })
@@ -207,10 +205,8 @@ const platformClass = computed(() => {
     case 'grok': return 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300'
     case 'gemini': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
     case 'deepseek': return 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400'
-    case 'moonshot': return 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400'
-    case 'glm': return 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400'
-    case 'qwen': return 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400'
-    case 'seedance': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+    case 'kimi': return 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400'
+    case 'zhipu': return 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400'
     default: return 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400'
   }
 })
@@ -223,10 +219,8 @@ const typeClass = computed(() => {
     case 'grok': return 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300'
     case 'gemini': return 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
     case 'deepseek': return 'bg-cyan-100 text-cyan-600 dark:bg-cyan-900/30 dark:text-cyan-400'
-    case 'moonshot': return 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400'
-    case 'glm': return 'bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400'
-    case 'qwen': return 'bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400'
-    case 'seedance': return 'bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400'
+    case 'kimi': return 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400'
+    case 'zhipu': return 'bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400'
     default: return 'bg-gray-100 text-gray-600 dark:bg-gray-900/30 dark:text-gray-400'
   }
 })

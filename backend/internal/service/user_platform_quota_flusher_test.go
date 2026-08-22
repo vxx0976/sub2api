@@ -509,3 +509,53 @@ func TestScenario_NinetyPercentCompany(t *testing.T) {
 		t.Errorf("90%% company: Readd should not be called, got %d calls", len(cache.readdCalled))
 	}
 }
+
+// ---------------------------------------------------------------------------
+// 场景: RetiredPlatformKeySkipped — 脏集里混入已下线平台的 key
+//
+// 迁移 226 把 moonshot→kimi、glm→zhipu 并下线 qwen/seedance，同时收紧了
+// user_platform_quotas.platform 的 CHECK。脏集成员 "<uid>:<platform>" 带 24h TTL，
+// 改名窗口内必然残留旧平台成员。若让它进批：
+//   - 一条越界行让整条批量 INSERT 被 PG 整语句回滚，同批合法行一起落空；
+//   - CHECK 违规不是 FK 违规，会走「其他错误」分支 readd 回脏集，下一轮 Pop 到同一条
+//     再失败 —— 无限重试，配额镜像从此不再更新。
+//
+// 因此必须在组批前丢弃且不 readd。
+func TestFlusher_RetiredPlatformKeySkipped(t *testing.T) {
+	keys := []UserPlatformQuotaKey{
+		{UserID: 1, Platform: "anthropic"}, // 合法
+		{UserID: 2, Platform: "moonshot"},  // 已改名 → kimi
+		{UserID: 3, Platform: "glm"},       // 已改名 → zhipu
+		{UserID: 4, Platform: "qwen"},      // 已下线
+		{UserID: 5, Platform: "seedance"},  // 已下线
+		{UserID: 6, Platform: "kimi"},      // 新命名，合法
+	}
+	cache := &mockQuotaDirtyCache{
+		popSequence: [][]UserPlatformQuotaKey{keys},
+		getEntries: []*UserPlatformQuotaCacheEntry{
+			makeEntry(1, 1, 1), makeEntry(2, 2, 2), makeEntry(3, 3, 3),
+			makeEntry(4, 4, 4), makeEntry(5, 5, 5), makeEntry(6, 6, 6),
+		},
+	}
+	writer := &mockQuotaSnapshotWriter{}
+	f := newTestFlusher(cache, writer)
+
+	f.flush()
+
+	if len(writer.receivedSnaps) != 2 {
+		t.Fatalf("expected only the 2 allowed-platform snaps to be written, got %d", len(writer.receivedSnaps))
+	}
+	for _, s := range writer.receivedSnaps {
+		if !IsAllowedQuotaPlatform(s.Platform) {
+			t.Errorf("已下线平台 %q 混进了批量 UPSERT——会撞 CHECK 让整批回滚", s.Platform)
+		}
+	}
+
+	// 丢弃的脏 key 绝不能 readd：readd 会让同一批下轮再失败，形成无限重试。
+	if len(cache.readdCalled) != 0 {
+		t.Errorf("已下线平台的脏 key 被 readd 回脏集（%v），会无限重试", cache.readdCalled)
+	}
+	if f.metrics.FlushErrorTotal.Load() != 0 {
+		t.Errorf("FlushErrorTotal = %d, want 0（丢弃下线平台不算错误）", f.metrics.FlushErrorTotal.Load())
+	}
+}

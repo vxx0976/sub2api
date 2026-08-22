@@ -190,28 +190,6 @@ const moonshotModels = [
   'moonshot-v1-8k-vision-preview', 'moonshot-v1-32k-vision-preview', 'moonshot-v1-128k-vision-preview'
 ]
 
-// GLM (Zhipu AI) — 与官方在售列表同步
-const glmModels = [
-  // GLM-5 系列（krill-ai 中转用大写 GLM-5.1）
-  'GLM-5.1', 'glm-5.1', 'glm-5', 'glm-5-turbo',
-  // GLM-4.7 系列
-  'glm-4.7', 'glm-4.7-flashx', 'glm-4.7-flash',
-  // GLM-4.6 / 4.5 系列
-  'glm-4.6', 'glm-4.5-air', 'glm-4.5-airx', 'glm-4.5-flash',
-  // GLM-4 系列
-  'glm-4-long', 'glm-4-flashx-250414', 'glm-4-flash-250414',
-  // 视觉模型
-  'glm-5v-turbo', 'glm-4.6v', 'glm-4.6v-flash',
-  'glm-4.1v-thinking-flashx', 'glm-4.1v-thinking-flash', 'glm-4v-flash',
-  // 专用模型
-  'codegeex-4', 'charglm-4'
-]
-
-// Seedance (ByteDance)
-const seedanceModels = [
-  'seedance-2.0-lite'
-]
-
 // 字节跳动 豆包
 const doubaoModels = [
   'doubao-pro-256k', 'doubao-pro-128k', 'doubao-pro-32k', 'doubao-pro-4k',
@@ -272,8 +250,6 @@ const allModelsList: string[] = [
   ...cohereModels,
   ...yiModels,
   ...moonshotModels,
-  ...glmModels,
-  ...seedanceModels,
   ...doubaoModels,
   ...minimaxModels,
   ...baiduModels,
@@ -340,8 +316,8 @@ const deepseekPresetMappings = [
   { label: 'V4 Pro', from: 'deepseek-v4-pro', to: 'deepseek-v4-pro', color: 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-400' }
 ]
 
-// Moonshot (Kimi) 预设映射
-const moonshotPresetMappings = [
+// Kimi (Moonshot) 预设映射
+const kimiPresetMappings = [
   { label: 'Kimi K2.6', from: 'kimi-k2.6', to: 'kimi-k2.6', color: 'bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-900/30 dark:text-purple-400' },
   { label: 'Kimi K2.5', from: 'kimi-k2.5', to: 'kimi-k2.5', color: 'bg-violet-100 text-violet-700 hover:bg-violet-200 dark:bg-violet-900/30 dark:text-violet-400' },
   { label: 'Kimi for Coding', from: 'kimi-for-coding', to: 'kimi-for-coding', color: 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-400' },
@@ -350,23 +326,11 @@ const moonshotPresetMappings = [
   { label: 'Moonshot V1 128K', from: 'moonshot-v1-128k', to: 'moonshot-v1-128k', color: 'bg-teal-100 text-teal-700 hover:bg-teal-200 dark:bg-teal-900/30 dark:text-teal-400' }
 ]
 
-// GLM (Zhipu AI) 预设映射
-const glmPresetMappings = [
+// Zhipu GLM 预设映射
+const zhipuPresetMappings = [
   { label: 'GLM-5.1', from: 'GLM-5.1', to: 'GLM-5.1', color: 'bg-rose-100 text-rose-700 hover:bg-rose-200 dark:bg-rose-900/30 dark:text-rose-400' },
   { label: 'GLM-5', from: 'glm-5', to: 'glm-5', color: 'bg-rose-100 text-rose-700 hover:bg-rose-200 dark:bg-rose-900/30 dark:text-rose-400' },
   { label: 'GLM-4.7 Flash', from: 'glm-4.7-flash', to: 'glm-4.7-flash', color: 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400' }
-]
-
-// Qwen (通义千问 / Alibaba DashScope) 预设映射
-const qwenPresetMappings = [
-  { label: 'Qwen3 Coder Plus', from: 'qwen3-coder-plus', to: 'qwen3-coder-plus', color: 'bg-violet-100 text-violet-700 hover:bg-violet-200 dark:bg-violet-900/30 dark:text-violet-400' },
-  { label: 'Qwen Plus', from: 'qwen-plus', to: 'qwen-plus', color: 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-400' },
-  { label: 'Qwen Max', from: 'qwen-max', to: 'qwen-max', color: 'bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400' }
-]
-
-// Seedance (ByteDance) 预设映射
-const seedancePresetMappings = [
-  { label: 'Seedance 2.0 Lite', from: 'seedance-2.0-lite', to: 'seedance-2.0-lite', color: 'bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-400' }
 ]
 
 // Grok (xAI) 预设映射
@@ -494,9 +458,8 @@ export function getModelsByPlatform(platform: string): string[] {
     case 'grok': return xaiModels
     case 'cohere': return cohereModels
     case 'yi': return yiModels
-    case 'moonshot': return moonshotModels
-    case 'glm': return glmModels
-    case 'seedance': return seedanceModels
+    case 'moonshot':
+    case 'kimi': return moonshotModels
     case 'doubao': return doubaoModels
     case 'minimax': return minimaxModels
     case 'baidu': return baiduModels
@@ -512,10 +475,8 @@ export function getPresetMappingsByPlatform(platform: string) {
   if (platform === 'openai') return openaiPresetMappings
   if (platform === 'gemini') return geminiPresetMappings
   if (platform === 'deepseek') return deepseekPresetMappings
-  if (platform === 'moonshot') return moonshotPresetMappings
-  if (platform === 'glm') return glmPresetMappings
-  if (platform === 'qwen') return qwenPresetMappings
-  if (platform === 'seedance') return seedancePresetMappings
+  if (platform === 'kimi') return kimiPresetMappings
+  if (platform === 'zhipu') return zhipuPresetMappings
   if (platform === 'grok' || platform === 'xai') return grokPresetMappings
   if (platform === 'antigravity') return antigravityPresetMappings
   if (platform === 'bedrock') return bedrockPresetMappings

@@ -56,7 +56,7 @@ func TestGatewayRecordUsage_PersistsPricingTimeBandAndPricedAt(t *testing.T) {
 				},
 				APIKey:    &APIKey{ID: 811},
 				User:      &User{ID: 611},
-				Account:   &Account{ID: 711, Platform: PlatformDeepSeek},
+				Account:   &Account{ID: 711, Platform: PlatformDeepseek},
 				PricingAt: tt.pricingAt,
 			})
 			require.NoError(t, err)
@@ -104,7 +104,7 @@ func TestOpenAIRecordUsage_PersistsPricingTimeBandAndPricedAt(t *testing.T) {
 				},
 				APIKey:    &APIKey{ID: 812},
 				User:      &User{ID: 612},
-				Account:   &Account{ID: 712, Platform: PlatformDeepSeek},
+				Account:   &Account{ID: 712, Platform: PlatformDeepseek},
 				PricingAt: tt.pricingAt,
 			})
 			require.NoError(t, err)

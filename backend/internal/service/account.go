@@ -318,6 +318,24 @@ func (a *Account) IsGrokOAuth() bool {
 	return a.IsGrok() && a.Type == AccountTypeOAuth
 }
 
+// IsKimi / IsZhipu / IsDeepseek 标识国产 OpenAI 兼容供应商账号。
+func (a *Account) IsKimi() bool {
+	return a.Platform == PlatformKimi
+}
+
+func (a *Account) IsZhipu() bool {
+	return a.Platform == PlatformZhipu
+}
+
+func (a *Account) IsDeepseek() bool {
+	return a.Platform == PlatformDeepseek
+}
+
+// IsCNProvider 报告是否为国产 OpenAI 兼容供应商（kimi/zhipu/deepseek）。
+func (a *Account) IsCNProvider() bool {
+	return a != nil && IsCNProvider(a.Platform)
+}
+
 func (a *Account) GeminiOAuthType() string {
 	if a.Platform != PlatformGemini || a.Type != AccountTypeOAuth {
 		return ""
@@ -1284,15 +1302,15 @@ func (a *Account) IsOpenAI() bool {
 	return a.Platform == PlatformOpenAI
 }
 
-// IsOpenAICompatible returns true if this account uses an OpenAI-compatible API
-// (OpenAI, Grok, DeepSeek, Moonshot, GLM, Qwen, Seedance). Used by the OpenAI gateway
-// scheduler to determine whether an account can serve /v1/chat/completions requests.
+// IsOpenAICompatible 报告账号是否走 OpenAI 网关（OpenAI 协议族）。
+// openai/grok 原生走 OpenAI 网关；kimi/zhipu/deepseek 同为 OpenAI Chat Completions
+// 兼容上游，也经 OpenAI 网关转发。
 func (a *Account) IsOpenAICompatible() bool {
 	if a == nil {
 		return false
 	}
 	switch a.Platform {
-	case PlatformOpenAI, PlatformGrok, PlatformDeepSeek, PlatformMoonshot, PlatformGLM, PlatformQwen, PlatformSeedance:
+	case PlatformOpenAI, PlatformGrok, PlatformKimi, PlatformZhipu, PlatformDeepseek:
 		return true
 	}
 	return false
@@ -1310,23 +1328,19 @@ func (a *Account) IsAnthropic() bool {
 	return a.Platform == PlatformAnthropic
 }
 
-func (a *Account) IsDeepSeek() bool {
-	return a.Platform == PlatformDeepSeek
+func (a *Account) IsDeepseekAPIKey() bool {
+	return a.IsDeepseek() && a.Type == AccountTypeAPIKey
 }
 
-func (a *Account) IsDeepSeekAPIKey() bool {
-	return a.IsDeepSeek() && a.Type == AccountTypeAPIKey
-}
-
-func (a *Account) GetDeepSeekAPIKey() string {
-	if !a.IsDeepSeekAPIKey() {
+func (a *Account) GetDeepseekAPIKey() string {
+	if !a.IsDeepseekAPIKey() {
 		return ""
 	}
 	return a.GetCredential("api_key")
 }
 
-func (a *Account) GetDeepSeekBaseURL() string {
-	if !a.IsDeepSeek() {
+func (a *Account) GetDeepseekBaseURL() string {
+	if !a.IsDeepseek() {
 		return ""
 	}
 	if a.Type == AccountTypeAPIKey {
@@ -1337,23 +1351,19 @@ func (a *Account) GetDeepSeekBaseURL() string {
 	return "https://api.deepseek.com"
 }
 
-func (a *Account) IsMoonshot() bool {
-	return a.Platform == PlatformMoonshot
+func (a *Account) IsKimiAPIKey() bool {
+	return a.IsKimi() && a.Type == AccountTypeAPIKey
 }
 
-func (a *Account) IsMoonshotAPIKey() bool {
-	return a.IsMoonshot() && a.Type == AccountTypeAPIKey
-}
-
-func (a *Account) GetMoonshotAPIKey() string {
-	if !a.IsMoonshotAPIKey() {
+func (a *Account) GetKimiAPIKey() string {
+	if !a.IsKimiAPIKey() {
 		return ""
 	}
 	return a.GetCredential("api_key")
 }
 
-func (a *Account) GetMoonshotBaseURL() string {
-	if !a.IsMoonshot() {
+func (a *Account) GetKimiBaseURL() string {
+	if !a.IsKimi() {
 		return ""
 	}
 	if a.Type == AccountTypeAPIKey {
@@ -1364,12 +1374,8 @@ func (a *Account) GetMoonshotBaseURL() string {
 	return "https://api.kimi.com/coding/v1"
 }
 
-func (a *Account) IsGLM() bool {
-	return a.Platform == PlatformGLM
-}
-
-func (a *Account) GetGLMBaseURL() string {
-	if !a.IsGLM() {
+func (a *Account) GetZhipuBaseURL() string {
+	if !a.IsZhipu() {
 		return ""
 	}
 	if a.Type == AccountTypeAPIKey {
@@ -1378,38 +1384,6 @@ func (a *Account) GetGLMBaseURL() string {
 		}
 	}
 	return "https://open.bigmodel.cn"
-}
-
-func (a *Account) IsQwen() bool {
-	return a.Platform == PlatformQwen
-}
-
-func (a *Account) GetQwenBaseURL() string {
-	if !a.IsQwen() {
-		return ""
-	}
-	if a.Type == AccountTypeAPIKey {
-		if baseURL := a.GetCredential("base_url"); baseURL != "" {
-			return baseURL
-		}
-	}
-	return "https://dashscope.aliyuncs.com/compatible-mode/v1"
-}
-
-func (a *Account) IsSeedance() bool {
-	return a.Platform == PlatformSeedance
-}
-
-func (a *Account) GetSeedanceBaseURL() string {
-	if !a.IsSeedance() {
-		return ""
-	}
-	if a.Type == AccountTypeAPIKey {
-		if baseURL := a.GetCredential("base_url"); baseURL != "" {
-			return baseURL
-		}
-	}
-	return "https://ark.cn-beijing.volces.com"
 }
 
 func (a *Account) IsOpenAIOAuth() bool {
@@ -1452,16 +1426,12 @@ func (a *Account) GetOpenAIBaseURL() string {
 	}
 	// 各平台默认 base URL
 	switch a.Platform {
-	case PlatformDeepSeek:
-		return "https://api.deepseek.com"
-	case PlatformMoonshot:
+	case PlatformKimi:
 		return "https://api.kimi.com/coding/v1"
-	case PlatformGLM:
+	case PlatformZhipu:
 		return "https://open.bigmodel.cn"
-	case PlatformQwen:
-		return "https://dashscope.aliyuncs.com/compatible-mode/v1"
-	case PlatformSeedance:
-		return "https://ark.cn-beijing.volces.com"
+	case PlatformDeepseek:
+		return "https://api.deepseek.com"
 	default:
 		return "https://api.openai.com"
 	}

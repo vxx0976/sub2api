@@ -1940,8 +1940,8 @@ const importToCcswitch = (row: ApiKey) => {
     return
   }
 
-  // For openai/deepseek/moonshot with messages dispatch enabled, show protocol selection dialog
-  if (platform === 'openai' || platform === 'deepseek' || platform === 'moonshot') {
+  // For openai/deepseek/kimi with messages dispatch enabled, show protocol selection dialog
+  if (platform === 'openai' || platform === 'deepseek' || platform === 'kimi') {
     if (row.group?.allow_messages_dispatch) {
       pendingCcsRow.value = row
       showCcsProtocolSelect.value = true

@@ -61,14 +61,12 @@ func claudeMessagesDispatchFamily(model string) string {
 
 func (g *Group) defaultMessagesDispatchModels() (opus, sonnet, haiku string) {
 	switch g.Platform {
-	case PlatformDeepSeek:
+	case PlatformDeepseek:
 		return "deepseek-v4-pro", "deepseek-v4-pro", "deepseek-v4-flash"
-	case PlatformMoonshot:
+	case PlatformKimi:
 		return "kimi-k2.6", "kimi-k2.6", "kimi-k2.6"
-	case PlatformGLM:
+	case PlatformZhipu:
 		return "glm-4.6", "glm-4.6", "glm-4.5-air"
-	case PlatformQwen:
-		return "qwen3-coder-plus", "qwen3-coder-plus", "qwen-plus"
 	default:
 		return defaultOpenAIMessagesDispatchOpusMappedModel,
 			defaultOpenAIMessagesDispatchSonnetMappedModel,
@@ -129,7 +127,7 @@ func sanitizeGroupMessagesDispatchFields(g *Group) {
 		return
 	}
 	switch g.Platform {
-	case PlatformOpenAI, PlatformDeepSeek, PlatformMoonshot, PlatformGLM, PlatformQwen:
+	case PlatformOpenAI, PlatformKimi, PlatformZhipu, PlatformDeepseek:
 		// 这些平台支持 Messages API 调度，保留配置
 		return
 	default:

@@ -385,7 +385,7 @@ describe('PlazaModelPricingTable', () => {
   })
   // ---- fork：币种符号 ----
   // 上游只有 5 个全美元计价的平台，广场原本把 $ 写死在格式化器和表头单位里。
-  // fork 多出 deepseek / moonshot / qwen 等按人民币官方计价的平台，后端
+  // fork 多出 deepseek / kimi / zhipu 等按人民币官方计价的平台，后端
   // price_currency 下发 'CNY'，实付价与官方参考价都必须显示 ¥ 而不是 $。
   it('price_currency=CNY 时实付价与官方价都用 ¥,不掺 $', () => {
     const cny = tokenModel({
@@ -489,8 +489,8 @@ describe('PlazaModelPricingTable', () => {
   it('price_currency 缺省/USD 仍为 $,且同表混合币种各行独立取符号', () => {
     const usd = tokenModel({ name: 'claude-sonnet' })
     const cny = tokenModel({
-      name: 'qwen-max',
-      platform: 'qwen',
+      name: 'kimi-k2.6',
+      platform: 'kimi',
       price_currency: 'CNY',
       pricing: { ...tokenModel().pricing!, input_price: 2e-6 },
       official_pricing: { ...tokenModel().official_pricing!, input_price: 2e-6 }

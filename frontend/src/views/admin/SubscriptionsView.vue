@@ -1049,10 +1049,8 @@ const platformFilterOptions = computed(() => [
   { value: 'gemini', label: 'Gemini' },
   { value: 'antigravity', label: 'Antigravity' },
   { value: 'deepseek', label: 'DeepSeek' },
-  { value: 'moonshot', label: 'Kimi' },
-  { value: 'glm', label: 'GLM' },
-  { value: 'qwen', label: 'Qwen' },
-  { value: 'seedance', label: 'Seedance' }
+  { value: 'kimi', label: 'Kimi' },
+  { value: 'zhipu', label: 'GLM' },
 ])
 
 // Group options for assign (only subscription type groups)

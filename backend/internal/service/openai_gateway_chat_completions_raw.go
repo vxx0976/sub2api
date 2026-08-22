@@ -43,7 +43,7 @@ var openaiCCRawAllowedHeaders = map[string]bool{
 // `{base_url}/v1/chat/completions`，**不**做 CC↔Responses 协议转换。
 //
 // 适用场景：account.platform=openai && account.type=apikey && 上游已被探测确认
-// 不支持 /v1/responses 端点（如 DeepSeek/Kimi/GLM/Qwen 等第三方 OpenAI 兼容上游）。
+// 不支持 /v1/responses 端点（如 Kimi/Zhipu/Deepseek 等第三方 OpenAI 兼容上游）。
 //
 // 与 ForwardAsChatCompletions 的关键差异：
 //
@@ -173,8 +173,8 @@ func (s *OpenAIGatewayService) forwardAsRawChatCompletions(
 		customUA = "sub2api-grok/1.0"
 	}
 	// Kimi For Coding 对客户端做白名单校验，需为 Coding Agent UA（前缀 claude-cli/）。
-	// 当 Moonshot 平台账号使用 api.kimi.com 端点且未自定义 UA 时，自动设置。
-	if account.Platform == PlatformMoonshot && customUA == "" {
+	// 当 Kimi 平台账号使用 api.kimi.com 端点且未自定义 UA 时，自动设置。
+	if account.Platform == PlatformKimi && customUA == "" {
 		if kimiBase := account.GetCredential("base_url"); strings.Contains(kimiBase, "api.kimi.com") {
 			customUA = kimiCodingUserAgent
 		}

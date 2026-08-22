@@ -107,7 +107,7 @@ type CreateGroupRequest struct {
 	Description               string                        `json:"description"`
 	NameI18n                  map[string]string             `json:"name_i18n"`
 	DescriptionI18n           map[string]string             `json:"description_i18n"`
-	Platform                  string                        `json:"platform" binding:"omitempty,oneof=anthropic openai gemini antigravity grok deepseek moonshot glm qwen seedance composite"`
+	Platform                  string                        `json:"platform" binding:"omitempty,oneof=anthropic openai gemini antigravity grok kimi zhipu deepseek composite"`
 	RateMultiplier            float64                       `json:"rate_multiplier"`
 	IsExclusive               bool                          `json:"is_exclusive"`
 	SubscriptionType          string                        `json:"subscription_type" binding:"omitempty,oneof=standard subscription"`
@@ -186,7 +186,7 @@ type UpdateGroupRequest struct {
 	Description               *string                        `json:"description"` // 来自 main：nil 不改，&"" 清空
 	NameI18n                  map[string]string              `json:"name_i18n"`   // 来自 dev：多语言
 	DescriptionI18n           map[string]string              `json:"description_i18n"`
-	Platform                  string                         `json:"platform" binding:"omitempty,oneof=anthropic openai gemini antigravity grok deepseek moonshot glm qwen seedance composite"`
+	Platform                  string                         `json:"platform" binding:"omitempty,oneof=anthropic openai gemini antigravity grok kimi zhipu deepseek composite"`
 	RateMultiplier            *float64                       `json:"rate_multiplier"`
 	IsExclusive               *bool                          `json:"is_exclusive"`
 	Status                    string                         `json:"status" binding:"omitempty,oneof=active inactive"`

@@ -1726,7 +1726,7 @@ export default {
   modelPlaza: {
     seo: {
       description:
-        '{siteName} 模型广场：公开分组与模型列表、透明定价，覆盖 Claude、GPT、Gemini、GLM、Qwen 等主流大模型，无需登录即可浏览。',
+        '{siteName} 模型广场：公开分组与模型列表、透明定价，覆盖 Claude、GPT、Gemini、GLM、DeepSeek 等主流大模型，无需登录即可浏览。',
       keywords:
         'Claude API, GPT API, Gemini API, 大模型API, 模型价格, API定价, 模型广场, AI模型列表'
     },
@@ -3163,10 +3163,8 @@ export default {
         antigravity: 'Antigravity',
         grok: 'Grok',
         deepseek: 'DeepSeek',
-        moonshot: 'Kimi',
-        glm: 'GLM',
-        qwen: 'Qwen',
-        seedance: 'Seedance',
+        kimi: 'Kimi',
+        zhipu: 'GLM',
         ollama: 'Ollama',
         composite: 'Composite',
       },
@@ -3724,7 +3722,7 @@ export default {
       loadFailed: '加载失败',
       saveFailed: '保存失败',
       empty: '暂无覆盖，点「添加模型」开始',
-      hint: '价格单位：每百万 token。精确匹配优先，无则按最长前缀回退（如 qwen-plus 命中 qwen-plus-2025-xx，glm 命中 glm-*）。',
+      hint: '价格单位：每百万 token。精确匹配优先，无则按最长前缀回退（如 kimi-k2.7 命中 kimi-k2.7-code，glm 命中 glm-*）。',
       columns: {
         model: '模型名',
         currency: '币种',
@@ -4643,10 +4641,8 @@ export default {
         antigravity: 'Antigravity',
         grok: 'Grok',
         deepseek: 'DeepSeek',
-        moonshot: 'Kimi',
-        glm: 'GLM',
-        qwen: 'Qwen',
-        seedance: 'Seedance',
+        kimi: 'Kimi',
+        zhipu: 'GLM',
       },
       types: {
         oauth: 'OAuth',
@@ -5779,25 +5775,15 @@ export default {
         baseUrlHint: '留空使用官方 DeepSeek API（api.deepseek.com）',
         apiKeyHint: '您的 DeepSeek API Key'
       },
-      // Moonshot (Kimi) specific
-      moonshot: {
+      // Kimi (Moonshot) specific
+      kimi: {
         baseUrlHint: '留空使用官方 Kimi Code API（api.kimi.com/coding/v1）',
         apiKeyHint: '您的 Kimi Code API Key'
       },
-      // GLM (Zhipu AI) specific
-      glm: {
+      // Zhipu GLM specific
+      zhipu: {
         baseUrlHint: '留空使用官方智谱 API（open.bigmodel.cn）',
         apiKeyHint: '您的智谱 GLM API Key'
-      },
-      // Qwen (通义千问 / Alibaba DashScope) specific
-      qwen: {
-        baseUrlHint: '留空使用官方通义千问 DashScope API（dashscope.aliyuncs.com）',
-        apiKeyHint: '您的通义千问 DashScope API Key（sk-...）'
-      },
-      // Seedance (ByteDance) specific
-      seedance: {
-        baseUrlHint: '留空使用火山方舟 API（ark.cn-beijing.volces.com）',
-        apiKeyHint: '您的火山方舟 API Key'
       },
       // Re-Auth Modal
       reAuthorizeAccount: '重新授权账号',

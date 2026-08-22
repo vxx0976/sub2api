@@ -52,7 +52,7 @@ func RegisterGatewayRoutes(
 	isOpenAIGatewayPlatform := func(c *gin.Context) bool {
 		return isOpenAICompatPlatform(getGroupPlatform(c))
 	}
-	// count_tokens 路由：所有 OpenAI 兼容平台(openai/deepseek/glm/qwen/moonshot 等)
+	// count_tokens 路由：所有 OpenAI 兼容平台(openai/kimi/zhipu/deepseek)
 	// 走 Anthropic-compat 桥接(count_tokens -> responses input_tokens)；Grok 本地估算；
 	// 其余 Anthropic 兼容平台保留原生路径。
 	countTokensHandler := func(c *gin.Context) {
@@ -66,7 +66,7 @@ func RegisterGatewayRoutes(
 		}
 	}
 	// 门必须与 CodexModels handler 一致收窄到 openai 平台：OpenAI 兼容的国产
-	// 平台(deepseek/glm/qwen 等)走宽谓词会被 handler 404，而它们本该拿到模型列表。
+	// 平台(kimi/zhipu/deepseek)走宽谓词会被 handler 404，而它们本该拿到模型列表。
 	modelsHandler := func(c *gin.Context) {
 		if getGroupPlatform(c) == service.PlatformOpenAI && c.Query("client_version") != "" {
 			h.OpenAIGateway.CodexModels(c)
@@ -75,7 +75,7 @@ func RegisterGatewayRoutes(
 		h.Gateway.Models(c)
 	}
 	// fork：embeddings 门比上游宽——上游只放行 openai，fork 放行全部 OpenAI 兼容平台
-	// (openai/deepseek/moonshot/glm/qwen/seedance)，与 isOpenAIGatewayPlatform 同一口径。
+	// (openai/kimi/zhipu/deepseek)，与 isOpenAIGatewayPlatform 同一口径。
 	isEmbeddingsCapableGatewayPlatform := isOpenAIGatewayPlatform
 	imagesHandler := func(c *gin.Context) {
 		platform := getGroupPlatform(c)
@@ -512,16 +512,14 @@ func getGroupPlatform(c *gin.Context) string {
 }
 
 // isOpenAICompatPlatform returns true for platforms that use the OpenAI-compatible
-// gateway (OpenAI, DeepSeek, Moonshot, GLM, Seedance). These platforms share the
+// gateway (OpenAI, Kimi, Zhipu, Deepseek). These platforms share the
 // same /v1/chat/completions and /v1/responses handler.
 func isOpenAICompatPlatform(platform string) bool {
 	switch platform {
 	case service.PlatformOpenAI,
-		service.PlatformDeepSeek,
-		service.PlatformMoonshot,
-		service.PlatformGLM,
-		service.PlatformQwen,
-		service.PlatformSeedance:
+		service.PlatformKimi,
+		service.PlatformZhipu,
+		service.PlatformDeepseek:
 		return true
 	}
 	return false

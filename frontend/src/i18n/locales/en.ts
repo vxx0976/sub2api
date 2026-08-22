@@ -1726,7 +1726,7 @@ export default {
   modelPlaza: {
     seo: {
       description:
-        '{siteName} model marketplace: public groups, model catalog and transparent pricing across Claude, GPT, Gemini, GLM, Qwen and more — no login required.',
+        '{siteName} model marketplace: public groups, model catalog and transparent pricing across Claude, GPT, Gemini, GLM, DeepSeek and more — no login required.',
       keywords:
         'Claude API, GPT API, Gemini API, LLM API, model pricing, API pricing, model marketplace, AI model list'
     },
@@ -3236,10 +3236,8 @@ export default {
         antigravity: 'Antigravity',
         grok: 'Grok',
         deepseek: 'DeepSeek',
-        moonshot: 'Kimi',
-        glm: 'GLM',
-        qwen: 'Qwen',
-        seedance: 'Seedance',
+        kimi: 'Kimi',
+        zhipu: 'GLM',
         composite: 'Composite',
       },
       deleteConfirm:
@@ -3726,7 +3724,7 @@ export default {
       loadFailed: 'Failed to load',
       saveFailed: 'Failed to save',
       empty: 'No overrides yet. Click "Add Model" to start.',
-      hint: 'Prices are per 1M tokens. Exact match first, otherwise longest-prefix fallback (e.g. qwen-plus matches qwen-plus-2025-xx, glm matches glm-*).',
+      hint: 'Prices are per 1M tokens. Exact match first, otherwise longest-prefix fallback (e.g. kimi-k2.7 matches kimi-k2.7-code, glm matches glm-*).',
       columns: {
         model: 'Model',
         currency: 'Currency',
@@ -4420,10 +4418,8 @@ export default {
         antigravity: 'Antigravity',
         grok: 'Grok',
         deepseek: 'DeepSeek',
-        moonshot: 'Kimi',
-        glm: 'GLM',
-        qwen: 'Qwen',
-        seedance: 'Seedance',
+        kimi: 'Kimi',
+        zhipu: 'GLM',
       },
       types: {
         oauth: 'OAuth',
@@ -5736,25 +5732,15 @@ export default {
         baseUrlHint: 'Leave default for official DeepSeek API (api.deepseek.com)',
         apiKeyHint: 'Your DeepSeek API Key'
       },
-      // Moonshot (Kimi) specific
-      moonshot: {
+      // Kimi (Moonshot) specific
+      kimi: {
         baseUrlHint: 'Leave default for official Kimi Code API (api.kimi.com/coding/v1)',
         apiKeyHint: 'Your Kimi Code API Key'
       },
-      // GLM (Zhipu AI) specific
-      glm: {
+      // Zhipu GLM specific
+      zhipu: {
         baseUrlHint: 'Leave default for official Zhipu GLM API (open.bigmodel.cn)',
         apiKeyHint: 'Your Zhipu GLM API Key'
-      },
-      // Qwen (Tongyi Qianwen / Alibaba DashScope) specific
-      qwen: {
-        baseUrlHint: 'Leave default for official Tongyi Qwen DashScope API (dashscope.aliyuncs.com)',
-        apiKeyHint: 'Your Tongyi Qwen DashScope API Key (sk-...)'
-      },
-      // Seedance (ByteDance) specific
-      seedance: {
-        baseUrlHint: 'Leave default for Volcano Ark API (ark.cn-beijing.volces.com)',
-        apiKeyHint: 'Your Volcano Ark API Key'
       },
       // Re-Auth Modal
       reAuthorizeAccount: 'Re-Authorize Account',

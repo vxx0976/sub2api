@@ -143,14 +143,26 @@ func (s *UserPlatformQuotaUsageFlusher) flushOneBatch(parentCtx context.Context)
 		return false
 	}
 
-	// 3. 组装 snapshots（MISS 或任一 WindowStart==nil → 跳过）
+	// 3. 组装 snapshots（MISS、任一 WindowStart==nil、平台已下线 → 跳过）
 	snaps := make([]UserPlatformQuotaSnapshot, 0, len(keys))
+	retired := 0
 	for i, key := range keys {
 		e := entries[i]
 		if e == nil {
 			continue
 		}
 		if e.DailyWindowStart == nil || e.WeeklyWindowStart == nil || e.MonthlyWindowStart == nil {
+			continue
+		}
+		// 已下线平台的脏 key 必须在组批前丢掉，否则会把整批卡死：
+		// user_platform_quotas.platform 有 CHECK 约束，一条越界行让整条批量 INSERT 回滚
+		// （PG 层面整语句失败，同批合法行一并落空）；而 CHECK 违规不是 FK 违规，
+		// 会走下面的「其他错误」分支 readd 回脏集，下一轮 Pop 到同一条再失败——
+		// 无限重试，配额镜像从此不再更新。脏集成员带 24h TTL，平台改名/下线后
+		// （见迁移 226：moonshot→kimi、glm→zhipu，qwen/seedance 下线）窗口期内必然存在这类成员。
+		// 这里直接丢弃且不 readd：已下线平台不会再产生新用量，没有可挽回的数据。
+		if !IsAllowedQuotaPlatform(key.Platform) {
+			retired++
 			continue
 		}
 		snaps = append(snaps, UserPlatformQuotaSnapshot{
@@ -163,6 +175,10 @@ func (s *UserPlatformQuotaUsageFlusher) flushOneBatch(parentCtx context.Context)
 			WeeklyWindowStart:  *e.WeeklyWindowStart,
 			MonthlyWindowStart: *e.MonthlyWindowStart,
 		})
+	}
+
+	if retired > 0 {
+		logger.LegacyPrintf("quota_flusher", "[QuotaFlusher] dropped %d dirty key(s) for retired platform(s)", retired)
 	}
 
 	// 4. 全部 MISS/异常跳过时

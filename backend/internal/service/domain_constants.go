@@ -43,17 +43,26 @@ const (
 	PlatformOpenAI      = domain.PlatformOpenAI
 	PlatformGemini      = domain.PlatformGemini
 	PlatformAntigravity = domain.PlatformAntigravity
-	PlatformDeepSeek    = domain.PlatformDeepSeek
-	PlatformMoonshot    = domain.PlatformMoonshot
-	PlatformGLM         = domain.PlatformGLM
-	PlatformQwen        = domain.PlatformQwen
-	PlatformSeedance    = domain.PlatformSeedance
 	PlatformGrok        = domain.PlatformGrok
-	PlatformComposite   = domain.PlatformComposite
+	// 国产 OpenAI 兼容供应商（与 grok 一样经 OpenAI 网关转发）。
+	PlatformKimi      = domain.PlatformKimi
+	PlatformZhipu     = domain.PlatformZhipu
+	PlatformDeepseek  = domain.PlatformDeepseek
+	PlatformComposite = domain.PlatformComposite
 	// PlatformKiro is retained for unsupported-platform threshold tests and legacy
 	// account rows. Scheduling-threshold evaluation never pauses kiro accounts.
 	PlatformKiro = "kiro"
 )
+
+// IsCNProvider 报告 platform 是否为国产 OpenAI 兼容供应商（kimi/zhipu/deepseek）。
+func IsCNProvider(platform string) bool {
+	switch platform {
+	case PlatformKimi, PlatformZhipu, PlatformDeepseek:
+		return true
+	default:
+		return false
+	}
+}
 
 // AllowedQuotaPlatforms 是允许设置 user × platform quota 的平台列表（单一权威来源）。
 // ent/schema/user_platform_quota.go 的 Validate 函数独立维护（构建期约束），
@@ -63,12 +72,10 @@ var AllowedQuotaPlatforms = []string{
 	PlatformOpenAI,
 	PlatformGemini,
 	PlatformAntigravity,
-	PlatformDeepSeek,
-	PlatformMoonshot,
-	PlatformGLM,
-	PlatformQwen,
-	PlatformSeedance,
 	PlatformGrok,
+	PlatformKimi,
+	PlatformZhipu,
+	PlatformDeepseek,
 }
 
 // AllowedSchedulingThresholdPlatforms 是允许设置账号自动停调阈值的平台列表。

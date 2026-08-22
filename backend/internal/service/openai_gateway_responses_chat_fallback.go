@@ -98,9 +98,9 @@ func (s *OpenAIGatewayService) forwardResponsesViaRawChatCompletions(
 		return nil, err
 	}
 	// Kimi For Coding 对客户端做白名单校验，需为 Coding Agent UA（前缀 claude-cli/）。
-	// 当 Moonshot 平台账号使用 api.kimi.com 端点且未自定义 UA 时，自动设置。
+	// 当 Kimi 平台账号使用 api.kimi.com 端点且未自定义 UA 时，自动设置。
 	customUA := account.GetOpenAIUserAgent()
-	if account.Platform == PlatformMoonshot && customUA == "" {
+	if account.Platform == PlatformKimi && customUA == "" {
 		if kimiBase := account.GetCredential("base_url"); strings.Contains(kimiBase, "api.kimi.com") {
 			customUA = kimiCodingUserAgent
 		}

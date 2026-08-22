@@ -174,10 +174,10 @@
           </button>
           <button
             type="button"
-            @click="form.platform = 'moonshot'"
+            @click="form.platform = 'kimi'"
             :class="[
               'flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all',
-              form.platform === 'moonshot'
+              form.platform === 'kimi'
                 ? 'bg-white text-purple-600 shadow-sm dark:bg-dark-600 dark:text-purple-400'
                 : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'
             ]"
@@ -199,42 +199,16 @@
           </button>
           <button
             type="button"
-            @click="form.platform = 'glm'"
+            @click="form.platform = 'zhipu'"
             :class="[
               'flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all',
-              form.platform === 'glm'
+              form.platform === 'zhipu'
                 ? 'bg-white text-rose-600 shadow-sm dark:bg-dark-600 dark:text-rose-400'
                 : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'
             ]"
           >
             <span class="flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white">G</span>
             GLM
-          </button>
-          <button
-            type="button"
-            @click="form.platform = 'qwen'"
-            :class="[
-              'flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all',
-              form.platform === 'qwen'
-                ? 'bg-white text-violet-600 shadow-sm dark:bg-dark-600 dark:text-violet-400'
-                : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'
-            ]"
-          >
-            <span class="flex h-4 w-4 items-center justify-center rounded-full bg-violet-500 text-[10px] font-bold text-white">Q</span>
-            Qwen
-          </button>
-          <button
-            type="button"
-            @click="form.platform = 'seedance'"
-            :class="[
-              'flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all',
-              form.platform === 'seedance'
-                ? 'bg-white text-amber-600 shadow-sm dark:bg-dark-600 dark:text-amber-400'
-                : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'
-            ]"
-          >
-            <span class="flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white">S</span>
-            Seedance
           </button>
           <button
             type="button"
@@ -1216,17 +1190,13 @@
                   ? 'https://generativelanguage.googleapis.com'
                   : form.platform === 'deepseek'
                     ? 'https://api.deepseek.com'
-                    : form.platform === 'moonshot'
+                    : form.platform === 'kimi'
                       ? 'https://api.kimi.com/coding/v1'
-                      : form.platform === 'glm'
+                      : form.platform === 'zhipu'
                         ? 'https://open.bigmodel.cn'
-                        : form.platform === 'qwen'
-                          ? 'https://dashscope.aliyuncs.com/compatible-mode/v1'
-                          : form.platform === 'seedance'
-                            ? 'https://ark.cn-beijing.volces.com'
-                            : form.platform === 'grok'
-                              ? 'https://api.x.ai/v1'
-                              : 'https://api.anthropic.com'
+                        : form.platform === 'grok'
+                          ? 'https://api.x.ai/v1'
+                          : 'https://api.anthropic.com'
             "
           />
           <p v-if="baseUrlHint" class="input-hint">{{ baseUrlHint }}</p>
@@ -1250,17 +1220,13 @@
                   ? 'AIza...'
                   : form.platform === 'deepseek'
                     ? 'sk-...'
-                    : form.platform === 'moonshot'
+                    : form.platform === 'kimi'
                       ? 'sk-...'
-                      : form.platform === 'glm'
+                      : form.platform === 'zhipu'
                         ? 'sk-...'
-                        : form.platform === 'qwen'
-                          ? 'sk-...'
-                          : form.platform === 'seedance'
-                            ? 'sk-...'
-                            : form.platform === 'grok'
-                              ? 'xai-...'
-                              : 'sk-ant-...'
+                        : form.platform === 'grok'
+                          ? 'xai-...'
+                          : 'sk-ant-...'
             "
           />
           <p v-if="apiKeyHint" class="input-hint">{{ apiKeyHint }}</p>
@@ -3806,10 +3772,8 @@ const baseUrlHint = computed(() => {
   if (form.platform === 'openai') return t('admin.accounts.openai.baseUrlHint')
   if (form.platform === 'gemini') return t('admin.accounts.gemini.baseUrlHint')
   if (form.platform === 'deepseek') return t('admin.accounts.deepseek.baseUrlHint')
-  if (form.platform === 'moonshot') return t('admin.accounts.moonshot.baseUrlHint')
-  if (form.platform === 'glm') return t('admin.accounts.glm.baseUrlHint')
-  if (form.platform === 'qwen') return t('admin.accounts.qwen.baseUrlHint')
-  if (form.platform === 'seedance') return t('admin.accounts.seedance.baseUrlHint')
+  if (form.platform === 'kimi') return t('admin.accounts.kimi.baseUrlHint')
+  if (form.platform === 'zhipu') return t('admin.accounts.zhipu.baseUrlHint')
   if (form.platform === 'grok') return ''
   return t('admin.accounts.baseUrlHint')
 })
@@ -3818,10 +3782,8 @@ const apiKeyHint = computed(() => {
   if (form.platform === 'openai') return t('admin.accounts.openai.apiKeyHint')
   if (form.platform === 'gemini') return t('admin.accounts.gemini.apiKeyHint')
   if (form.platform === 'deepseek') return t('admin.accounts.deepseek.apiKeyHint')
-  if (form.platform === 'moonshot') return t('admin.accounts.moonshot.apiKeyHint')
-  if (form.platform === 'glm') return t('admin.accounts.glm.apiKeyHint')
-  if (form.platform === 'qwen') return t('admin.accounts.qwen.apiKeyHint')
-  if (form.platform === 'seedance') return t('admin.accounts.seedance.apiKeyHint')
+  if (form.platform === 'kimi') return t('admin.accounts.kimi.apiKeyHint')
+  if (form.platform === 'zhipu') return t('admin.accounts.zhipu.apiKeyHint')
   if (form.platform === 'grok') return ''
   return t('admin.accounts.apiKeyHint')
 })
@@ -4311,8 +4273,8 @@ const isOAuthFlow = computed(() => {
   if (form.platform === 'anthropic' && accountCategory.value === 'bedrock') {
     return false
   }
-  // DeepSeek / Moonshot / GLM / Seedance 仅支持 API Key，不需要 OAuth 流程
-  if (form.platform === 'deepseek' || form.platform === 'moonshot' || form.platform === 'glm' || form.platform === 'qwen' || form.platform === 'seedance') {
+  // DeepSeek / Kimi / Zhipu 仅支持 API Key，不需要 OAuth 流程
+  if (form.platform === 'deepseek' || form.platform === 'kimi' || form.platform === 'zhipu') {
     return false
   }
   return accountCategory.value === 'oauth-based'
@@ -4391,8 +4353,8 @@ watch(
       form.type = 'bedrock' as AccountType
       return
     }
-    // DeepSeek / Moonshot / GLM / Seedance 仅支持 API Key
-    if (form.platform === 'deepseek' || form.platform === 'moonshot' || form.platform === 'glm' || form.platform === 'qwen' || form.platform === 'seedance') {
+    // DeepSeek / Kimi / Zhipu 仅支持 API Key
+    if (form.platform === 'deepseek' || form.platform === 'kimi' || form.platform === 'zhipu') {
       form.type = 'apikey'
       return
     }
@@ -4419,17 +4381,13 @@ watch(
           ? 'https://generativelanguage.googleapis.com'
           : newPlatform === 'deepseek'
             ? 'https://api.deepseek.com'
-            : newPlatform === 'moonshot'
+            : newPlatform === 'kimi'
               ? 'https://api.kimi.com/coding/v1'
-              : newPlatform === 'glm'
+              : newPlatform === 'zhipu'
                 ? 'https://open.bigmodel.cn'
-                : newPlatform === 'qwen'
-                  ? 'https://dashscope.aliyuncs.com/compatible-mode/v1'
-                  : newPlatform === 'seedance'
-                    ? 'https://ark.cn-beijing.volces.com'
-                    : newPlatform === 'grok'
-                      ? 'https://api.x.ai/v1'
-                      : 'https://api.anthropic.com'
+                : newPlatform === 'grok'
+                  ? 'https://api.x.ai/v1'
+                  : 'https://api.anthropic.com'
     // Clear model-related settings
     allowedModels.value = []
     modelMappings.value = []
@@ -4449,8 +4407,8 @@ watch(
       antigravityModelMappings.value = []
       antigravityModelRestrictionMode.value = 'mapping'
     }
-    // DeepSeek / Moonshot / GLM / Seedance 仅支持 API Key
-    if (newPlatform === 'deepseek' || newPlatform === 'moonshot' || newPlatform === 'glm' || newPlatform === 'qwen' || newPlatform === 'seedance') {
+    // DeepSeek / Kimi / Zhipu 仅支持 API Key
+    if (newPlatform === 'deepseek' || newPlatform === 'kimi' || newPlatform === 'zhipu') {
       accountCategory.value = 'apikey'
     }
     if (newPlatform === 'grok') {
@@ -5328,17 +5286,13 @@ const handleSubmit = async () => {
         ? 'https://generativelanguage.googleapis.com'
         : form.platform === 'deepseek'
           ? 'https://api.deepseek.com'
-          : form.platform === 'moonshot'
+          : form.platform === 'kimi'
             ? 'https://api.kimi.com/coding/v1'
-            : form.platform === 'glm'
+            : form.platform === 'zhipu'
               ? 'https://open.bigmodel.cn'
-              : form.platform === 'qwen'
-                ? 'https://dashscope.aliyuncs.com/compatible-mode/v1'
-                : form.platform === 'seedance'
-                  ? 'https://ark.cn-beijing.volces.com'
-                  : form.platform === 'grok'
-                    ? 'https://api.x.ai/v1'
-                    : 'https://api.anthropic.com'
+              : form.platform === 'grok'
+                ? 'https://api.x.ai/v1'
+                : 'https://api.anthropic.com'
 
   // Build credentials with optional model mapping
   const credentials: Record<string, unknown> = {

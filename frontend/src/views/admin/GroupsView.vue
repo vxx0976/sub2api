@@ -1755,7 +1755,7 @@
           </p>
         </div>
 
-        <!-- OpenAI Messages 调度配置（openai/deepseek/moonshot/glm 平台） -->
+        <!-- OpenAI Messages 调度配置（openai/deepseek/kimi/zhipu 平台） -->
         <div
           v-if="groupSupportsMessagesDispatch(createForm.platform)"
           class="border-t border-gray-200 dark:border-dark-400 pt-4 mt-4"
@@ -3602,7 +3602,7 @@
           </p>
         </div>
 
-        <!-- OpenAI Messages 调度配置（openai/deepseek/moonshot/glm 平台） -->
+        <!-- OpenAI Messages 调度配置（openai/deepseek/kimi/zhipu 平台） -->
         <div
           v-if="groupSupportsMessagesDispatch(editForm.platform)"
           class="border-t border-gray-200 dark:border-dark-400 pt-4 mt-4"
@@ -5120,10 +5120,8 @@ const PLATFORM_PILL_COLORS: Record<string, string> = {
   grok: 'bg-zinc-200 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-100',
   gemini: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
   deepseek: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400',
-  moonshot: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400',
-  glm: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400',
-  qwen: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400',
-  seedance: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+  kimi: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400',
+  zhipu: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400',
   composite: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400',
 }
 function platformPillClass(p: string): string {
@@ -5137,10 +5135,8 @@ const platformOptions = computed(() => [
   { value: 'antigravity', label: 'Antigravity' },
   { value: 'grok', label: 'Grok' },
   { value: 'deepseek', label: 'DeepSeek' },
-  { value: 'moonshot', label: 'Kimi' },
-  { value: 'glm', label: 'GLM' },
-  { value: 'qwen', label: 'Qwen' },
-  { value: 'seedance', label: 'Seedance' },
+  { value: 'kimi', label: 'Kimi' },
+  { value: 'zhipu', label: 'GLM' },
   { value: 'composite', label: 'Composite' }
 ])
 
@@ -5152,10 +5148,8 @@ const platformFilterOptions = computed(() => [
   { value: 'antigravity', label: 'Antigravity' },
   { value: 'grok', label: 'Grok' },
   { value: 'deepseek', label: 'DeepSeek' },
-  { value: 'moonshot', label: 'Kimi' },
-  { value: 'glm', label: 'GLM' },
-  { value: 'qwen', label: 'Qwen' },
-  { value: 'seedance', label: 'Seedance' },
+  { value: 'kimi', label: 'Kimi' },
+  { value: 'zhipu', label: 'GLM' },
   { value: 'composite', label: 'Composite' }
 ])
 

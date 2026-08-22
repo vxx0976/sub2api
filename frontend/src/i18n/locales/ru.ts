@@ -1683,7 +1683,7 @@ export default {
   modelPlaza: {
     seo: {
       description:
-        'Каталог моделей {siteName}: публичные группы, список моделей и прозрачные цены — Claude, GPT, Gemini, GLM, Qwen и другие. Без входа в систему.',
+        'Каталог моделей {siteName}: публичные группы, список моделей и прозрачные цены — Claude, GPT, Gemini, GLM, DeepSeek и другие. Без входа в систему.',
       keywords:
         'Claude API, GPT API, Gemini API, LLM API, цены на модели, тарифы API, каталог моделей, список AI-моделей'
     },
@@ -3135,10 +3135,8 @@ export default {
         antigravity: 'Antigravity',
         grok: 'Grok',
         deepseek: 'DeepSeek',
-        moonshot: 'Kimi',
-        glm: 'GLM',
-        qwen: 'Qwen',
-        seedance: 'Seedance',
+        kimi: 'Kimi',
+        zhipu: 'GLM',
         ollama: 'Ollama',
         composite: 'Composite'
       },
@@ -3712,7 +3710,7 @@ export default {
       loadFailed: 'Не удалось загрузить',
       saveFailed: 'Не удалось сохранить',
       empty: 'Пока нет переопределений. Нажмите «Добавить модель».',
-      hint: 'Цены за 1 млн токенов. Сначала точное совпадение, иначе откат по самому длинному префиксу (например, qwen-plus → qwen-plus-2025-xx, glm → glm-*).',
+      hint: 'Цены за 1 млн токенов. Сначала точное совпадение, иначе откат по самому длинному префиксу (например, kimi-k2.7 → kimi-k2.7-code, glm → glm-*).',
       columns: {
         model: 'Модель',
         currency: 'Валюта',
@@ -4624,10 +4622,8 @@ export default {
         antigravity: 'Antigravity',
         grok: 'Grok',
         deepseek: 'DeepSeek',
-        moonshot: 'Kimi',
-        glm: 'GLM',
-        qwen: 'Qwen',
-        seedance: 'Seedance'
+        kimi: 'Kimi',
+        zhipu: 'GLM'
       },
       types: {
         oauth: 'OAuth',
@@ -5651,21 +5647,13 @@ export default {
         baseUrlHint: 'Оставьте пустым для официального DeepSeek API (api.deepseek.com)',
         apiKeyHint: 'Ваш DeepSeek API Key'
       },
-      moonshot: {
+      kimi: {
         baseUrlHint: 'Оставьте пустым для официального Kimi Code API (api.kimi.com/coding/v1)',
         apiKeyHint: 'Ваш Kimi Code API Key'
       },
-      glm: {
+      zhipu: {
         baseUrlHint: 'Оставьте пустым для официального Zhipu GLM API (open.bigmodel.cn)',
         apiKeyHint: 'Ваш Zhipu GLM API Key'
-      },
-      qwen: {
-        baseUrlHint: 'Оставьте пустым для официального Tongyi Qwen DashScope API (dashscope.aliyuncs.com)',
-        apiKeyHint: 'Ваш Tongyi Qwen DashScope API Key (sk-...)'
-      },
-      seedance: {
-        baseUrlHint: 'Оставьте пустым для Volcano Ark API (ark.cn-beijing.volces.com)',
-        apiKeyHint: 'Ваш Volcano Ark API Key'
       },
       reAuthorizeAccount: 'Повторная авторизация аккаунта',
       claudeCodeAccount: 'Аккаунт Claude Code',

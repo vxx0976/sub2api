@@ -303,8 +303,8 @@ func (s *AccountTestService) TestAccountConnection(c *gin.Context, accountID int
 		return s.routeAntigravityTest(c, account, modelID, prompt)
 	}
 
-	// OpenAI-compatible platforms: DeepSeek, Moonshot (Kimi), GLM, Qwen, Seedance
-	if account.IsDeepSeek() || account.IsMoonshot() || account.IsGLM() || account.IsQwen() || account.IsSeedance() {
+	// OpenAI-compatible 国产供应商：Kimi / Zhipu / Deepseek
+	if account.IsCNProvider() {
 		return s.testOpenAICompatPlatformConnection(c, account, modelID, prompt)
 	}
 
@@ -312,22 +312,18 @@ func (s *AccountTestService) TestAccountConnection(c *gin.Context, accountID int
 }
 
 // testOpenAICompatPlatformConnection tests connectivity for OpenAI-compatible
-// platforms (DeepSeek, Moonshot/Kimi, GLM, Seedance) via /v1/chat/completions.
+// 国产供应商 (Kimi, Zhipu, Deepseek) via /v1/chat/completions.
 func (s *AccountTestService) testOpenAICompatPlatformConnection(c *gin.Context, account *Account, modelID string, prompt string) error {
 	// Determine default test model per platform
 	testModelID := modelID
 	if testModelID == "" {
 		switch account.Platform {
-		case PlatformDeepSeek:
+		case PlatformDeepseek:
 			testModelID = "deepseek-chat"
-		case PlatformMoonshot:
+		case PlatformKimi:
 			testModelID = "kimi-k2"
-		case PlatformGLM:
+		case PlatformZhipu:
 			testModelID = "GLM-5.1"
-		case PlatformQwen:
-			testModelID = "qwen-plus"
-		case PlatformSeedance:
-			testModelID = "doubao-1-5-pro-32k"
 		default:
 			testModelID = "gpt-4o-mini"
 		}
@@ -345,16 +341,12 @@ func (s *AccountTestService) testOpenAICompatPlatformConnection(c *gin.Context, 
 	// Get base URL per platform
 	var baseURL string
 	switch account.Platform {
-	case PlatformDeepSeek:
-		baseURL = account.GetDeepSeekBaseURL()
-	case PlatformMoonshot:
-		baseURL = account.GetMoonshotBaseURL()
-	case PlatformGLM:
-		baseURL = account.GetGLMBaseURL()
-	case PlatformQwen:
-		baseURL = account.GetQwenBaseURL()
-	case PlatformSeedance:
-		baseURL = account.GetSeedanceBaseURL()
+	case PlatformDeepseek:
+		baseURL = account.GetDeepseekBaseURL()
+	case PlatformKimi:
+		baseURL = account.GetKimiBaseURL()
+	case PlatformZhipu:
+		baseURL = account.GetZhipuBaseURL()
 	}
 	if baseURL == "" {
 		return s.sendErrorAndEnd(c, "No base URL configured")
@@ -2017,7 +2009,7 @@ func (s *AccountTestService) testOpenAIChatCompletionsConnection(
 	req.Header.Set("Authorization", "Bearer "+authToken)
 
 	// Kimi For Coding 对客户端做白名单校验，需为 Coding Agent UA（前缀 claude-cli/）。
-	if account.IsMoonshot() {
+	if account.IsKimi() {
 		req.Header.Set("User-Agent", kimiCodingUserAgent)
 	}
 

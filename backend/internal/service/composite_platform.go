@@ -179,13 +179,13 @@ func (s *GatewayService) resolveCompositeRouteDecision(ctx context.Context, grou
 
 // compositeRequestPlatforms 是复合分组能够真正承载的具体平台集合。
 //
-// ⚠️ 这里**刻意**只有 5 个，不是 AllowedQuotaPlatforms 的 10 个。dev fork 多出的
-// deepseek / moonshot / glm / qwen / seedance 只能作为「单平台分组」使用，复合分组
+// ⚠️ 这里**刻意**只有 5 个，不是 AllowedQuotaPlatforms 的 8 个。dev fork 多出的
+// kimi / zhipu / deepseek 只能作为「单平台分组」使用，复合分组
 // 对它们没有实现端到端支持。放宽这个集合不会让它们跑起来，只会让管理员配出静默
 // 误路由的复合路由（比现在干净地拒绝更糟）。三处运行时缺口，缺一不可：
 //
 //  1. DetectModelPlatform 只认 claude- / gpt- / gemini- / grok- 这几族模型名，
-//     对 deepseek-* / kimi-* / glm-* / qwen-* / seedance-* 一律返回 ok=false，
+//     对 deepseek-* / kimi-* / glm-* 一律返回 ok=false，
 //     自动探测这条路永远解析不到这些平台。
 //  2. openAICompatibleRequestPlatform（handler 侧）把「非 Grok 的已解析平台」一律
 //     压成 PlatformOpenAI。即便管理员显式配了 target_platform=deepseek 的路由，
@@ -197,8 +197,8 @@ func (s *GatewayService) resolveCompositeRouteDecision(ctx context.Context, grou
 // 注意 PlatformAntigravity 在集合内但 DetectModelPlatform 不会产出它——它只经
 // /antigravity 路由的 ForcePlatform 进来，属于正常情况。
 //
-// 另注：schedulerCanonicalBuckets 覆盖全部 10 个平台与此**不矛盾**。那是所有分组
-// 通用的调度快照桶（schedulerBucketsForGroup 对任意 groupID 都调用），10 个平台各自
+// 另注：schedulerCanonicalBuckets 覆盖全部 8 个平台与此**不矛盾**。那是所有分组
+// 通用的调度快照桶（schedulerBucketsForGroup 对任意 groupID 都调用），8 个平台各自
 // 的单平台分组都需要桶，与复合分组是否支持它们无关。
 // ⚠️ 次序有行为意义，勿随手调整：lookupPricingAcrossPlatforms /
 // lookupMappingAcrossPlatforms 按此顺序取**首个命中**，复合分组下同名模型在多个平台

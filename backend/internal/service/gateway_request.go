@@ -567,7 +567,7 @@ func StripEmptyTextBlocks(body []byte) []byte {
 // mappedModel 是「实际发给上游的模型 ID」(after account model mapping)，用于按
 // 协议族分流。仅 anthropic-strict 走原过滤逻辑；passback-required 与 unknown
 // 一律保留全部 thinking block，避免误伤第三方兼容上游
-// (DeepSeek `/anthropic`、Kimi `/coding`、GLM、Moonshot 等)，详见
+// (Deepseek `/anthropic`、Kimi `/coding`、Zhipu 等)，详见
 // .pensieve/short-term/knowledge/thinking-block-filter-third-party-upstream-inversion/。
 //
 // 策略 (anthropic-strict only)：

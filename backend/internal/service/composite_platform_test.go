@@ -49,12 +49,12 @@ func TestQuotaPlatformCompositeUsesResolvedOrForceOnly(t *testing.T) {
 	require.Equal(t, PlatformAntigravity, QuotaPlatform(ctx, apiKey))
 }
 
-// 调度快照桶必须覆盖 AllowedQuotaPlatforms 全部 10 个平台。
+// 调度快照桶必须覆盖 AllowedQuotaPlatforms 全部 8 个平台。
 //
 // 这是所有分组通用的桶集合（schedulerBucketsForGroup 对任意 groupID 都调用），
-// 10 个平台各自的单平台分组都需要桶。⚠️ 它**不是**「复合分组支持 10 个平台」的
+// 8 个平台各自的单平台分组都需要桶。⚠️ 它**不是**「复合分组支持 8 个平台」的
 // 证据——复合分组能承载的平台集是 compositeRequestPlatforms（5 个），两者互不相干。
-// 原用例名与注释把二者混为一谈，曾据此得出「isConcreteRequestPlatform 少列了 5 个
+// 原用例名与注释把二者混为一谈，曾据此得出「isConcreteRequestPlatform 少列了国产
 // 平台」的错误结论。
 func TestSchedulerCanonicalBucketsCoverAllQuotaPlatforms(t *testing.T) {
 	seen := make(map[string]struct{})
@@ -78,9 +78,9 @@ func TestCompositeRequestPlatformsStaysNarrowerThanQuotaPlatforms(t *testing.T) 
 		compositeRequestPlatforms(),
 	)
 
-	// fork 多出的 5 个 openai-compat 平台只能做单平台分组，不能进复合分组。
+	// fork 多出的 3 个国产 openai-compat 平台只能做单平台分组，不能进复合分组。
 	for _, platform := range []string{
-		PlatformDeepSeek, PlatformMoonshot, PlatformGLM, PlatformQwen, PlatformSeedance,
+		PlatformKimi, PlatformZhipu, PlatformDeepseek,
 	} {
 		require.False(t, isConcreteRequestPlatform(platform),
 			"%s 复合路由未实现端到端支持（DetectModelPlatform 不认其模型名、"+
@@ -129,6 +129,6 @@ func TestMatchingPlatformsCompositeSharesSingleSource(t *testing.T) {
 	for _, platform := range matchingPlatforms(PlatformComposite) {
 		require.True(t, isConcreteRequestPlatform(platform))
 	}
-	require.Equal(t, []string{PlatformDeepSeek}, matchingPlatforms(PlatformDeepSeek),
+	require.Equal(t, []string{PlatformDeepseek}, matchingPlatforms(PlatformDeepseek),
 		"具体平台分组只匹配自身")
 }
