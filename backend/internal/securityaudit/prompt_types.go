@@ -113,11 +113,29 @@ type PromptSnapshot struct {
 	Stage              string `json:"stage"`
 
 	ScanText string `json:"-"`
+	// ScanArchiveText holds the complete transcript when ScanText was narrowed
+	// for the guard. It is empty whenever ScanText already covers everything.
+	ScanArchiveText string `json:"-"`
 }
 
 func (s PromptSnapshot) Redacted() PromptSnapshot {
 	s.ScanText = ""
+	s.ScanArchiveText = ""
 	return s
+}
+
+// PayloadText is the transient payload handed to asynchronous workers: the
+// guard input, followed by the complete transcript when the scan scope was
+// narrowed, so the stored audit event still archives the full conversation.
+// The guard half is always sanitized so the only archive separator in the
+// payload is the one written here—otherwise a caller could inject the sentinel
+// and have the worker treat most of its own prompt as unscanned archive.
+func (s PromptSnapshot) PayloadText() string {
+	scanText := stripArchiveSeparator(s.ScanText)
+	if s.ScanArchiveText == "" || s.ScanArchiveText == s.ScanText {
+		return scanText
+	}
+	return scanText + promptAuditArchiveSeparator + s.ScanArchiveText
 }
 
 type NormalizedResult struct {

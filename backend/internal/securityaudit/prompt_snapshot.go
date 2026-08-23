@@ -23,37 +23,81 @@ var (
 
 const promptAuditPrioritySeparator = "\x00SUB2API_PROMPT_AUDIT_PRIORITY_END\x00"
 
+// promptAuditArchiveSeparator delimits the guard scan input from the archived
+// complete transcript inside the transient worker payload. It is only present
+// when asynchronous auditing narrowed the scan scope, so payloads written by
+// earlier builds keep parsing unchanged.
+const promptAuditArchiveSeparator = "\x00SUB2API_PROMPT_AUDIT_ARCHIVE_END\x00"
+
 type promptSegment struct {
 	text string
 	user bool
 	role string
 }
 
-func ExtractPromptSnapshot(req Request) (PromptSnapshot, error) {
-	return extractPromptSnapshot(req, false)
+// snapshotScope selects how much of the extracted transcript reaches the guard
+// and how much is kept as snapshot metadata.
+type snapshotScope int
+
+const (
+	// scopeFullTranscript scans and archives the complete transcript.
+	scopeFullTranscript snapshotScope = iota
+	// scopeBlockingLatestTurn narrows guard input and metadata alike: the
+	// synchronous path deliberately keeps no more than it inspected.
+	scopeBlockingLatestTurn
+	// scopeAuditScanLatestTurn narrows only the guard input. Asynchronous
+	// auditing exists to retain the complete client-controlled transcript for
+	// review, so hash/preview/full prompt/length/message count stay full.
+	scopeAuditScanLatestTurn
+)
+
+// ExtractPromptSnapshot builds the asynchronous audit snapshot. latestTurnOnly
+// shrinks only ScanText (the guard workload); the retained metadata always
+// covers the complete client-controlled transcript so review stays intact.
+func ExtractPromptSnapshot(req Request, latestTurnOnly bool) (PromptSnapshot, error) {
+	scope := scopeFullTranscript
+	if latestTurnOnly {
+		scope = scopeAuditScanLatestTurn
+	}
+	return extractPromptSnapshot(req, scope)
 }
 
 // ExtractBlockingPromptSnapshot builds the narrow, low-latency blocking input
-// when configured. Asynchronous auditing always uses ExtractPromptSnapshot so
-// the complete client-controlled transcript is retained for review.
+// when configured.
 func ExtractBlockingPromptSnapshot(req Request, latestTurnOnly bool) (PromptSnapshot, error) {
-	return extractPromptSnapshot(req, latestTurnOnly)
+	scope := scopeFullTranscript
+	if latestTurnOnly {
+		scope = scopeBlockingLatestTurn
+	}
+	return extractPromptSnapshot(req, scope)
 }
 
-func extractPromptSnapshot(req Request, latestTurnOnly bool) (PromptSnapshot, error) {
+func extractPromptSnapshot(req Request, scope snapshotScope) (PromptSnapshot, error) {
 	var document any
 	if err := json.Unmarshal(req.Body, &document); err != nil {
 		return PromptSnapshot{}, errors.New("prompt audit request JSON is invalid")
 	}
 	extracted := extractProtocolSegments(req.Protocol, document)
 	segments := normalizeSegmentsLatestUserFirst(extracted)
-	if latestTurnOnly {
-		segments = blockingSegmentsLatestUserAndPreviousOutput(extracted)
+	if scope == scopeBlockingLatestTurn {
+		segments = latestTurnSegmentsWithPreviousOutput(extracted)
 	}
 	if len(segments) == 0 {
 		return PromptSnapshot{}, ErrNoPromptText
 	}
 	scanText, metadataText := buildPrioritizedScanText(segments)
+	archiveText := ""
+	if scope == scopeAuditScanLatestTurn {
+		// Keep the full prioritized text as the archive so the worker can still
+		// persist the complete transcript on the audit event, and hand the guard
+		// only the latest turn.
+		if narrowed := latestTurnSegmentsWithPreviousOutput(extracted); len(narrowed) > 0 {
+			narrowedScanText, _ := buildPrioritizedScanText(narrowed)
+			if narrowedScanText != scanText {
+				archiveText, scanText = scanText, narrowedScanText
+			}
+		}
+	}
 	digest := sha256.Sum256([]byte(metadataText))
 	stage := strings.TrimSpace(req.Stage)
 	if stage == "" {
@@ -67,7 +111,7 @@ func extractPromptSnapshot(req Request, latestTurnOnly bool) (PromptSnapshot, er
 		PromptHash: hex.EncodeToString(digest[:]), RedactedPreview: BuildPromptPreview(metadataText, DefaultPromptPreviewMaxRunes),
 		FullPrompt:   BuildFullPrompt(metadataText, DefaultFullPromptMaxRunes),
 		PromptLength: utf8.RuneCountInString(metadataText), MessageCount: len(segments), Stage: stage,
-		ScanText: scanText,
+		ScanText: scanText, ScanArchiveText: archiveText,
 	}, nil
 }
 
@@ -457,11 +501,11 @@ func normalizeSegmentsLatestUserFirst(values []promptSegment) []string {
 	return result
 }
 
-// blockingSegmentsLatestUserAndPreviousOutput limits synchronous guard input to
-// the current user turn and the nearest preceding assistant/model turn. It is
-// deliberately opt-in because full transcript scanning remains stronger at
-// finding client-controlled content placed in older or non-user messages.
-func blockingSegmentsLatestUserAndPreviousOutput(values []promptSegment) []string {
+// latestTurnSegmentsWithPreviousOutput limits guard input to the current user
+// turn and the nearest preceding assistant/model turn. It is deliberately
+// opt-in because full transcript scanning remains stronger at finding
+// client-controlled content placed in older or non-user messages.
+func latestTurnSegmentsWithPreviousOutput(values []promptSegment) []string {
 	normalized := normalizedPromptSegments(values)
 	latestUserStart := latestUserSegmentStart(normalized)
 	if latestUserStart < 0 {
@@ -498,12 +542,43 @@ func blockingSegmentsLatestUserAndPreviousOutput(values []promptSegment) []strin
 func normalizedPromptSegments(values []promptSegment) []promptSegment {
 	normalized := make([]promptSegment, 0, len(values))
 	for _, value := range values {
-		value.text = strings.TrimSpace(value.text)
+		value.text = strings.TrimSpace(stripNUL(value.text))
 		if value.text != "" {
 			normalized = append(normalized, value)
 		}
 	}
 	return normalized
+}
+
+// stripNUL removes NUL bytes from attacker-controlled prompt text in one linear
+// pass. Both internal sentinels (promptAuditPrioritySeparator and
+// promptAuditArchiveSeparator) are NUL-wrapped, so text that cannot contain NUL
+// cannot forge either one. That closes two separate remote DoS / bypass surfaces:
+//
+//   - Priority separator: prompt_scanner.go splits the scan text on it and issues
+//     one guard call per chunk. A client writing N sentinels (JSON \u0000 is
+//     unescaped into a real NUL by json.Unmarshal) amplifies a single request into
+//     N guard calls — a ready-made amplification DoS against an already
+//     capacity-bound guard.
+//   - Archive separator: a forged copy inside the guard half would let a caller
+//     move most of its own prompt into the "already archived, do not scan" half
+//     and skip the audit entirely.
+//
+// NUL carries no meaning in prompt text and is already discarded downstream by
+// BuildFullPrompt, so dropping it here changes nothing for well-formed input.
+// It does change PromptHash for the pathological NUL-bearing case — that is the
+// intended trade: the hash is only used for admin-side search filtering (no
+// dedup / skip logic depends on it).
+func stripNUL(value string) string {
+	if !strings.ContainsRune(value, 0) {
+		return value
+	}
+	return strings.Map(func(r rune) rune {
+		if r == 0 {
+			return -1
+		}
+		return r
+	}, value)
 }
 
 func latestUserSegmentStart(values []promptSegment) int {
@@ -632,6 +707,34 @@ func BuildFullPrompt(value string, maxRunes int) string {
 // metadata joiner yields the original multi-segment text.
 func FullPromptFromScanText(scanText string) string {
 	return BuildFullPrompt(strings.ReplaceAll(scanText, promptAuditPrioritySeparator, "\n\n"), DefaultFullPromptMaxRunes)
+}
+
+// stripArchiveSeparator is defense in depth over stripNUL, which already makes
+// the sentinel unforgeable by removing every NUL from client text before any
+// scan/metadata string is built.
+//
+// ⚠️ Must stay a single linear pass. The original form looped
+// `for strings.Contains(...) { ReplaceAll(...) }` "until stable", which is
+// quadratic against nested sentinels: splitting the sentinel into a prefix A and
+// suffix B and sending A^k + B^k makes each pass remove only the innermost copy,
+// forcing k full-string scans. Measured on a real inbound body: 174k nested
+// sentinels took 708ms, 400k took 4.14s, a 1MB body spent 17.9s inside this
+// function alone — remotely reachable, and it ran even with scan narrowing off.
+// One pass cannot re-form a sentinel here because stripNUL ran first.
+func stripArchiveSeparator(value string) string {
+	return strings.ReplaceAll(value, promptAuditArchiveSeparator, "")
+}
+
+// splitScanPayload separates a transient worker payload into the guard scan
+// input and the transcript archived on the audit event. Payloads produced
+// without scan narrowing carry no archive separator, so both halves are the
+// same text and behavior is unchanged. Only the first separator delimits the
+// halves, and PayloadText guarantees it is the one written by this process.
+func splitScanPayload(payload string) (scanText string, archiveText string) {
+	if index := strings.Index(payload, promptAuditArchiveSeparator); index >= 0 {
+		return payload[:index], payload[index+len(promptAuditArchiveSeparator):]
+	}
+	return payload, payload
 }
 
 func TrimRunes(value string, limit int) string {

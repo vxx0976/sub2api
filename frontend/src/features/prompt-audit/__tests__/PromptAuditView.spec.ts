@@ -19,7 +19,7 @@ vi.mock('vue-i18n', async () => {
 })
 
 const baseConfig = (): PromptAuditConfig => ({
-  enabled: true, blocking_enabled: false, blocking_latest_turn_only: false, store_pass_events: false, effective_mode: 'async_audit', strategy: 'priority',
+  enabled: true, blocking_enabled: false, blocking_latest_turn_only: false, audit_latest_turn_only: false, store_pass_events: false, effective_mode: 'async_audit', strategy: 'priority',
   worker_count: 4, queue_capacity: 100, scanners: SCANNER_CATALOG.map((item) => item.id), all_groups: true, group_ids: [],
   endpoints: [{ id: 'guard-1', name: 'Guard One', protocol: 'openai_compatible', base_url: 'http://127.0.0.1:8000', model: 'guard-model', timeout_ms: 3000, input_limit: 4000, enabled: true, has_token: true, token_status: 'configured' }],
   config_version: 7, updated_at: '2026-07-16T00:00:00Z', updated_by: 1, change_summary: '{}',
@@ -135,6 +135,48 @@ describe('PromptAuditView', () => {
     expect(wrapper.get('[data-test="blocking-latest-turn-only-toggle"]').attributes()).toHaveProperty('disabled')
   })
 
+  it('saves the async audit scan scope and gates it on the asynchronous mode', async () => {
+    const wrapper = mountView()
+    await flushPromises()
+    await wrapper.get('[data-test="tab-config"]').trigger('click')
+
+    const toggle = () => wrapper.get('[data-test="audit-latest-turn-only-toggle"]')
+    expect(toggle().attributes()).not.toHaveProperty('disabled')
+    await toggle().trigger('click')
+    expect(toggle().attributes('aria-checked')).toBe('true')
+
+    // Blocking mode short-circuits the async queue, so the scan-scope switch
+    // has nothing to act on while synchronous blocking is armed. The chosen
+    // value must survive the mode flip instead of being silently dropped.
+    await wrapper.get('[data-test="blocking-toggle"]').trigger('click')
+    await wrapper.get('[data-test="confirm-action"]').trigger('click')
+    expect(toggle().attributes()).toHaveProperty('disabled')
+    expect(toggle().attributes('aria-checked')).toBe('true')
+    await wrapper.get('[data-test="blocking-toggle"]').trigger('click')
+    expect(toggle().attributes()).not.toHaveProperty('disabled')
+
+    // The update endpoint replaces the whole config, so the flag has to travel
+    // with every save or the backend reads it back as off.
+    await wrapper.get('[data-test="save-config"]').trigger('click')
+    await flushPromises()
+    expect(mocks.updateConfig).toHaveBeenCalledWith(expect.objectContaining({ audit_latest_turn_only: true, blocking_latest_turn_only: false }))
+
+    // Turning the whole feature off disables it too.
+    await wrapper.get('[data-test="enabled-toggle"]').trigger('click')
+    expect(toggle().attributes()).toHaveProperty('disabled')
+  })
+
+  it('keeps the two latest-turn switches independent and separately labelled', async () => {
+    const wrapper = mountView()
+    await flushPromises()
+    await wrapper.get('[data-test="tab-config"]').trigger('click')
+    await wrapper.get('[data-test="audit-latest-turn-only-toggle"]').trigger('click')
+    expect(wrapper.get('[data-test="audit-latest-turn-only-toggle"]').attributes('aria-checked')).toBe('true')
+    expect(wrapper.get('[data-test="blocking-latest-turn-only-toggle"]').attributes('aria-checked')).toBe('false')
+    expect(wrapper.get('[data-test="audit-latest-turn-only-toggle"]').attributes('aria-label')).toBe('admin.promptAudit.saveBar.auditLatestTurnOnly')
+    expect(wrapper.get('[data-test="blocking-latest-turn-only-toggle"]').attributes('aria-label')).toBe('admin.promptAudit.saveBar.blockingLatestTurnOnly')
+  })
+
   it('clears plaintext token state after a successful save', async () => {
     const wrapper = mountView()
     await flushPromises()
@@ -178,8 +220,9 @@ describe('PromptAuditView', () => {
     await flushPromises()
     await wrapper.get('[data-test="tab-config"]').trigger('click')
     const switches = wrapper.findAll('[role="switch"]')
-    expect(switches).toHaveLength(4)
+    expect(switches).toHaveLength(5)
     expect(switches.every((item) => Boolean(item.attributes('aria-label')))).toBe(true)
+    expect(new Set(switches.map((item) => item.attributes('aria-label'))).size).toBe(5)
     expect(wrapper.html()).toContain('fixed inset-x-0 bottom-0')
     expect(wrapper.html()).toContain('flex-wrap')
   })

@@ -14,6 +14,7 @@ const config = (): PromptAuditConfig => ({
   enabled: true,
   blocking_enabled: false,
   blocking_latest_turn_only: false,
+  audit_latest_turn_only: false,
   store_pass_events: false,
   effective_mode: 'async_audit',
   strategy: 'priority',
@@ -61,6 +62,28 @@ describe('Prompt Audit view model', () => {
     const draft = configToDraft(config())
     draft.blocking_latest_turn_only = true
     expect(buildUpdateRequest(draft)).toMatchObject({ blocking_latest_turn_only: true })
+  })
+
+  it('carries the async audit scan scope independently of the blocking scope', () => {
+    const draft = configToDraft(config())
+    expect(buildUpdateRequest(draft)).toMatchObject({ audit_latest_turn_only: false, blocking_latest_turn_only: false })
+    draft.audit_latest_turn_only = true
+    expect(buildUpdateRequest(draft)).toMatchObject({ audit_latest_turn_only: true, blocking_latest_turn_only: false })
+  })
+
+  // The update endpoint replaces the whole config, so a payload that omits the
+  // flag would silently switch it back off on every save.
+  it('always sends the async audit scan scope so saving cannot reset it', () => {
+    const draft = configToDraft({ ...config(), audit_latest_turn_only: true })
+    expect(Object.keys(buildUpdateRequest(draft))).toContain('audit_latest_turn_only')
+    expect(JSON.parse(draftFingerprint(draft)).audit_latest_turn_only).toBe(true)
+  })
+
+  it('tracks dirty state when only the async audit scan scope changes', () => {
+    const original = configToDraft(config())
+    const changed = configToDraft(config())
+    changed.audit_latest_turn_only = true
+    expect(draftFingerprint(changed)).not.toBe(draftFingerprint(original))
   })
 
   it('tracks dirty state from the full normalized save payload', () => {

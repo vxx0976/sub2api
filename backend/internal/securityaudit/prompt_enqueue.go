@@ -40,7 +40,7 @@ func (e *Enqueuer) Enqueue(ctx context.Context, req Request) error {
 		LogWarn(EventEnqueueDropped, mergeLogFields(baseFields, map[string]any{"status": "dropped", "error_code": "no_enabled_endpoint"}))
 		return nil
 	}
-	snapshot, err := ExtractPromptSnapshot(req)
+	snapshot, err := ExtractPromptSnapshot(req, cfg.AuditLatestTurnOnly)
 	if errors.Is(err, ErrNoPromptText) {
 		LogInfo(EventEnqueueSkipped, mergeLogFields(baseFields, map[string]any{"status": "skipped", "error_code": "no_user_text"}))
 		return nil
@@ -65,7 +65,7 @@ func (e *Enqueuer) Enqueue(ctx context.Context, req Request) error {
 		e.recordDropped()
 		return err
 	}
-	if err := e.payload.Set(ctx, job.ID, snapshot.ScanText, DefaultPayloadTTL); err != nil {
+	if err := e.payload.Set(ctx, job.ID, snapshot.PayloadText(), DefaultPayloadTTL); err != nil {
 		_ = e.repo.MarkStagingFailed(ctx, job.ID, "payload_store_failed", "payload store unavailable")
 		LogWarn(EventEnqueueDropped, mergeLogFields(baseFields, map[string]any{
 			"job_id": job.ID, "status": "dropped", "error_code": "payload_store_failed",

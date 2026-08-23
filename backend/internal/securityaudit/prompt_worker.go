@@ -136,13 +136,16 @@ func (r *Runner) processSafely(ctx context.Context, workerID int, cfg ActiveConf
 func (r *Runner) processJob(ctx context.Context, workerID int, cfg ActiveConfig, job *Job) error {
 	baseFields := jobLogFields(job)
 	LogInfo(EventAuditStarted, mergeLogFields(baseFields, map[string]any{"worker_id": workerID, "attempts": job.Attempts, "status": "processing"}))
-	scanText, err := r.payload.Get(ctx, job.ID)
+	payload, err := r.payload.Get(ctx, job.ID)
 	if err != nil {
 		return r.finishFailure(ctx, job, &GuardError{Code: "payload_missing", Retryable: false, Cause: err})
 	}
 	// The job row only carries redacted metadata; the full prompt for the audit
-	// event is reconstructed here from the transient scan payload.
-	job.Snapshot.FullPrompt = FullPromptFromScanText(scanText)
+	// event is reconstructed here from the transient payload. When the guard
+	// input was narrowed to the latest turn the payload still carries the
+	// complete transcript, so the archived prompt stays whole.
+	scanText, archiveText := splitScanPayload(payload)
+	job.Snapshot.FullPrompt = FullPromptFromScanText(archiveText)
 	endpoints := cfg.EnabledEndpoints()
 	if len(endpoints) == 0 {
 		return r.finishFailure(ctx, job, &GuardError{Code: "no_enabled_endpoint", Retryable: true})

@@ -161,7 +161,7 @@ func TestPromptAuditDatabasePersistsFullPromptOnEventsOnly(t *testing.T) {
 		Endpoint: "/v1/chat/completions", Protocol: "openai_chat", Model: "gpt-test", Stage: "http",
 		Body: []byte(`{"messages":[{"role":"user","content":"` + promptCanary + `"}]}`),
 	}
-	snapshot, err := ExtractPromptSnapshot(request)
+	snapshot, err := ExtractPromptSnapshot(request, false)
 	require.NoError(t, err)
 	require.NotContains(t, snapshot.RedactedPreview, promptCanary)
 	require.Contains(t, snapshot.FullPrompt, promptCanary)
