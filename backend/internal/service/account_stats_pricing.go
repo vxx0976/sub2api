@@ -70,7 +70,7 @@ func tryModelFilePricing(billingService *BillingService, model string, tokens Us
 		return nil
 	}
 	normalizedTier := normalizeBillingServiceTier(serviceTier)
-	if normalizedTier == "priority" || normalizedTier == "flex" ||
+	if normalizedTier == "priority" || normalizedTier == "fast" || normalizedTier == "flex" ||
 		billingService.shouldApplySessionLongContextPricing(tokens, pricing) {
 		breakdown, err := billingService.CalculateCostWithServiceTierAt(model, tokens, 1, normalizedTier, pricingAt)
 		if err != nil || breakdown == nil || breakdown.TotalCost <= 0 {

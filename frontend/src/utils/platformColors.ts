@@ -3,9 +3,22 @@
  *
  * All components that need platform-specific styling should import from here
  * instead of defining their own color mappings.
+ *
+ * 合并约定（fork）：国产三家 kimi/zhipu/deepseek 的配色沿用 fork 既有取值
+ * （deepseek=cyan、kimi=indigo、zhipu=rose），不采上游的 pink/indigo/teal——
+ * 这三个值已经在生产上跑着，换色是纯视觉回归。上游后续再改这几行按同样口径处理。
  */
 
-export type Platform = 'anthropic' | 'openai' | 'antigravity' | 'gemini' | 'deepseek' | 'kimi' | 'zhipu' | 'grok' | 'composite'
+export type Platform =
+  | 'anthropic'
+  | 'openai'
+  | 'antigravity'
+  | 'gemini'
+  | 'grok'
+  | 'kimi'
+  | 'zhipu'
+  | 'deepseek'
+  | 'composite'
 
 // ── Badge (bg + text + border, for inline badges with border) ───────
 const BADGE: Record<Platform, string> = {
@@ -193,9 +206,17 @@ const GRADIENT_SUBTEXT_DEFAULT = 'text-primary-200'
 // ── Public API ──────────────────────────────────────────────────────
 
 function isPlatform(p: string): p is Platform {
-  return p === 'anthropic' || p === 'openai' || p === 'antigravity' || p === 'gemini' ||
-    p === 'deepseek' || p === 'kimi' || p === 'zhipu' ||
-    p === 'grok' || p === 'composite'
+  return (
+    p === 'anthropic' ||
+    p === 'openai' ||
+    p === 'antigravity' ||
+    p === 'gemini' ||
+    p === 'grok' ||
+    p === 'kimi' ||
+    p === 'zhipu' ||
+    p === 'deepseek' ||
+    p === 'composite'
+  )
 }
 
 export function platformBadgeClass(p: string): string {
@@ -250,6 +271,11 @@ export function platformGradientSubtextClass(p: string): string {
   return isPlatform(p) ? GRADIENT_SUBTEXT[p] : GRADIENT_SUBTEXT_DEFAULT
 }
 
+/**
+ * 平台品牌名映射（模板里一律走它，不要直接渲染内部标识：迁移 226 之后
+ * 内部标识是 zhipu/kimi，直插会把 "ZHIPU" 显示给用户和爬虫）。
+ * zhipu 固定显示 "GLM"（fork 品牌口径），不要跟上游的 "Zhipu GLM" 对齐。
+ */
 export function platformLabel(p: string): string {
   switch (p) {
     case 'anthropic': return 'Anthropic'

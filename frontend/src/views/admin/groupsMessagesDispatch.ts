@@ -13,6 +13,8 @@ export interface MessagesDispatchFormState {
   exact_model_mappings: MessagesDispatchMappingRow[];
 }
 
+// 按平台的默认映射目标。gpt-5.x 是 OpenAI 专属型号，发给国产上游必然 400，
+// 所以国产平台必须各有各的默认值。
 function getDefaultModelsForPlatform(platform?: GroupPlatform | null): {
   opus: string;
   sonnet: string;
@@ -30,13 +32,28 @@ function getDefaultModelsForPlatform(platform?: GroupPlatform | null): {
   }
 }
 
-// 支持 Anthropic Messages API 调度（/v1/messages 派发）的平台白名单。
-// 必须与后端 service.sanitizeGroupMessagesDispatchFields / defaultMessagesDispatchModels
-// 的平台名单一致。
-const MESSAGES_DISPATCH_PLATFORMS: GroupPlatform[] = ["openai", "deepseek", "kimi", "zhipu"];
+// 支持 /v1/messages 派发配置的平台白名单。
+//
+// ⚠️ 上游这里只有 openai + composite，因为上游假定国产账号配 api_protocol=anthropic
+// 原生直通、模型名交给账号级 model_mapping。本站不满足该前提：生产 Deepseek 分组近
+// 30 天约 90% 请求用 claude-* 模型名，全靠这份**分组级**映射翻成 deepseek-v4-pro /
+// deepseek-v4-flash（账号级 model_mapping 是恒等白名单，接不住）。
+// 后端也是这么实现的——sanitizeGroupMessagesDispatchFields 对 CN 分组保留
+// MessagesDispatchModelConfig，ResolveMessagesDispatchModel 对 CN 分组读它。
+// 这里若跟随上游收窄，就会变成「后端在用、管理员却看不到也改不了」，
+// 而且新建 CN 分组必然拿到空配置 → claude-* 原样透传上游 400。
+const MESSAGES_DISPATCH_PLATFORMS: GroupPlatform[] = [
+  "openai",
+  "composite",
+  "deepseek",
+  "kimi",
+  "zhipu",
+];
 
-export function groupSupportsMessagesDispatch(platform?: GroupPlatform | null): boolean {
-  return !!platform && MESSAGES_DISPATCH_PLATFORMS.includes(platform);
+export function supportsMessagesDispatchPlatform(
+  platform?: GroupPlatform | string | null,
+): boolean {
+  return !!platform && MESSAGES_DISPATCH_PLATFORMS.includes(platform as GroupPlatform);
 }
 
 export function createDefaultMessagesDispatchFormState(

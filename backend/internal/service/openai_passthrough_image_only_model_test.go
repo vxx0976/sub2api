@@ -69,7 +69,11 @@ func TestOpenAIGatewayService_Passthrough_ImageOnlyModelNormalizedAndCapped(t *t
 	require.Equal(t, "gpt-image-2", gjson.GetBytes(upstream.lastBody, "tools.0.model").String())
 	require.Equal(t, "gpt-image-2", gjson.GetBytes(upstream.lastBody, "model").String(),
 		"透传入口不改写 model，避免牵动下游模型回写与账号冷却记账口径")
-	require.Equal(t, "draw a cat", gjson.GetBytes(upstream.lastBody, "prompt").String())
+	// 上游合并后 normalizeOpenAIResponsesLegacyIngress 会把顶层字符串 prompt 归一成
+	// Responses 原生的 input（字符串 prompt 不是 Responses 字段，只是遗留别名），
+	// 提示词本身原样保留，不影响本用例要守的出图参数补全与计费封顶。
+	require.Equal(t, "draw a cat", gjson.GetBytes(upstream.lastBody, "input").String())
+	require.False(t, gjson.GetBytes(upstream.lastBody, "prompt").Exists())
 
 	// 计费按客户端请求的 1K 档封顶，而不是实际出图的 1254x1254（2K）。
 	require.Equal(t, 1, result.ImageCount)

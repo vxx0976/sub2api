@@ -324,8 +324,8 @@ func newGroupLifecycleTestService(cache SchedulerCache, accounts AccountReposito
 	return NewSchedulerSnapshotService(cache, nil, accounts, groups, &config.Config{RunMode: runMode})
 }
 
-// fork：平台集合以生产侧 schedulerSnapshotPlatforms() 为准（dev 比上游多 5 个
-// openai-compat 平台）。写死上游的 5 平台会让这批用例在每次平台增减后集体漂移。
+// 平台集合以生产侧 schedulerSnapshotPlatforms() 为准，勿写死平台数量：
+// 写死会让这批用例在每次平台增减后集体漂移。
 func expectedGroupLifecycleBuckets(groupID int64) []SchedulerBucket {
 	platforms := schedulerSnapshotPlatforms()
 	buckets := make([]SchedulerBucket, 0, len(platforms)*3)
@@ -341,8 +341,8 @@ func expectedGroupLifecycleBuckets(groupID int64) []SchedulerBucket {
 	return buckets
 }
 
-// 这两个基数由生产侧平台集派生，勿写死：上游 5 平台时分别是 12 / 7，
-// dev 10 平台时是 22 / 12。写死会让整批调度器用例在平台增减后集体漂移。
+// 这两个基数由生产侧平台集派生，勿写死字面量（当前 8 平台下分别是 18 / 10）：
+// 写死会让整批调度器用例在平台增减后集体漂移。
 //
 //	bucket 数 = 平台数×(single+forced) + anthropic/gemini 各一个 mixed
 //	平台加载数 = 平台数 + anthropic/gemini 的 mixed 各一次

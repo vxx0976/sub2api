@@ -25,6 +25,10 @@ func TestDetectModelPlatform(t *testing.T) {
 		{name: "learnlm", model: "learnlm-2.0-flash-experimental", platform: PlatformGemini, ok: true},
 		{name: "grok", model: "grok-4", platform: PlatformGrok, ok: true},
 		{name: "xai prefix", model: "xai/grok-4", platform: PlatformGrok, ok: true},
+		{name: "kimi", model: "kimi-k2-thinking", platform: PlatformKimi, ok: true},
+		{name: "moonshot prefix", model: "moonshot/moonshot-v1-32k", platform: PlatformKimi, ok: true},
+		{name: "zhipu", model: "glm-5.2", platform: PlatformZhipu, ok: true},
+		{name: "deepseek", model: "deepseek-v4-pro", platform: PlatformDeepseek, ok: true},
 		{name: "unknown", model: "llama-4-maverick", ok: false},
 	}
 
@@ -52,10 +56,9 @@ func TestQuotaPlatformCompositeUsesResolvedOrForceOnly(t *testing.T) {
 // 调度快照桶必须覆盖 AllowedQuotaPlatforms 全部 8 个平台。
 //
 // 这是所有分组通用的桶集合（schedulerBucketsForGroup 对任意 groupID 都调用），
-// 8 个平台各自的单平台分组都需要桶。⚠️ 它**不是**「复合分组支持 8 个平台」的
-// 证据——复合分组能承载的平台集是 compositeRequestPlatforms（5 个），两者互不相干。
-// 原用例名与注释把二者混为一谈，曾据此得出「isConcreteRequestPlatform 少列了国产
-// 平台」的错误结论。
+// 8 个平台各自的单平台分组都需要桶。⚠️ 它与 compositeRequestPlatforms 现在虽然
+// 同为 8 个，但仍是两条**独立不变量**：调度桶对任意分组通用，与「复合分组能承载
+// 什么」无关。别用其中一个去证明另一个——两者恰好相等是巧合，不是契约。
 func TestSchedulerCanonicalBucketsCoverAllQuotaPlatforms(t *testing.T) {
 	seen := make(map[string]struct{})
 	for _, bucket := range schedulerCanonicalBuckets(99) {
@@ -68,31 +71,32 @@ func TestSchedulerCanonicalBucketsCoverAllQuotaPlatforms(t *testing.T) {
 	require.ElementsMatch(t, AllowedQuotaPlatforms, platforms)
 }
 
-// 复合分组的平台集刻意窄于 AllowedQuotaPlatforms，理由见 compositeRequestPlatforms。
-// 这批用例的作用是：谁想放宽它，必须先把三处运行时缺口一起补上，否则这里会红。
-func TestCompositeRequestPlatformsStaysNarrowerThanQuotaPlatforms(t *testing.T) {
+// 复合分组的平台集与 AllowedQuotaPlatforms 现已同为 8 个，但**次序**仍是行为契约。
+// 这批用例钉住两件事：全列表的字面次序，以及国产三家只能追加在队尾。
+func TestCompositeRequestPlatformsOrderIsPricingContract(t *testing.T) {
 	// 用有序断言而非 ElementsMatch：次序决定复合分组下同名模型取哪个平台的定价/映射
-	// （lookupPricingAcrossPlatforms 取首个命中），属行为契约。
+	// （lookupPricingAcrossPlatforms / lookupMappingAcrossPlatforms 取首个命中），属行为契约。
 	require.Equal(t,
-		[]string{PlatformAnthropic, PlatformGemini, PlatformOpenAI, PlatformAntigravity, PlatformGrok},
+		[]string{
+			PlatformAnthropic, PlatformGemini, PlatformOpenAI, PlatformAntigravity, PlatformGrok,
+			PlatformKimi, PlatformZhipu, PlatformDeepseek,
+		},
 		compositeRequestPlatforms(),
 	)
 
-	// fork 多出的 3 个国产 openai-compat 平台只能做单平台分组，不能进复合分组。
-	for _, platform := range []string{
-		PlatformKimi, PlatformZhipu, PlatformDeepseek,
-	} {
-		require.False(t, isConcreteRequestPlatform(platform),
-			"%s 复合路由未实现端到端支持（DetectModelPlatform 不认其模型名、"+
-				"openAICompatibleRequestPlatform 会把它压成 openai、端点白名单也没有它）；"+
-				"放宽这里只会配出静默误路由", platform)
-	}
+	// 尾追加不变量：原有 5 个平台的相对次序必须一字不动。国产三家插到前 5 个中间会
+	// 改变既有复合分组的定价/映射命中结果（把某个平台的精确/通配行抢到前面）。
+	require.Equal(t,
+		[]string{PlatformAnthropic, PlatformGemini, PlatformOpenAI, PlatformAntigravity, PlatformGrok},
+		compositeRequestPlatforms()[:5],
+		"国产三家只能排在队尾；插进前 5 个中间 = 改变存量复合分组的定价/映射命中")
 
-	// 集合必须是配额平台全集的真子集：新增平台默认不进复合分组，要进得显式补齐。
+	// 与配额平台全集互为同一集合（仅次序不同）：新增平台时两处必须同步，
+	// 否则复合分组会出现「有配额、进不了复合路由」或反之的裂缝。
+	require.ElementsMatch(t, AllowedQuotaPlatforms, compositeRequestPlatforms())
 	for _, platform := range compositeRequestPlatforms() {
 		require.Contains(t, AllowedQuotaPlatforms, platform)
 	}
-	require.Less(t, len(compositeRequestPlatforms()), len(AllowedQuotaPlatforms))
 }
 
 // DetectModelPlatform 的产出必须落在复合分组能承载的平台集内——它解析出来的平台
@@ -102,20 +106,38 @@ func TestDetectModelPlatformNeverEscapesCompositePlatformSet(t *testing.T) {
 	for _, p := range compositeRequestPlatforms() {
 		allowed[p] = struct{}{}
 	}
-	for _, model := range []string{
-		"claude-sonnet-4.5", "anthropic/claude-opus", "gpt-5.6", "o3-mini", "codex-mini",
-		"text-embedding-3-large", "gemini-2.5-pro", "models/gemini-2.0-flash", "grok-4",
-		"openai/gpt-4o", "xai/grok-3",
+	// 断言具体平台而不只是「落在集合内」，以捕捉 kimi / zhipu 之类的串台。
+	for model, want := range map[string]string{
+		"claude-sonnet-4.5":       PlatformAnthropic,
+		"anthropic/claude-opus":   PlatformAnthropic,
+		"gpt-5.6":                 PlatformOpenAI,
+		"o3-mini":                 PlatformOpenAI,
+		"codex-mini":              PlatformOpenAI,
+		"text-embedding-3-large":  PlatformOpenAI,
+		"openai/gpt-4o":           PlatformOpenAI,
+		"gemini-2.5-pro":          PlatformGemini,
+		"models/gemini-2.0-flash": PlatformGemini,
+		"grok-4":                  PlatformGrok,
+		"xai/grok-3":              PlatformGrok,
+		// 国产三家已被上游补齐端到端支持，必须探测得到（见 compositeRequestPlatforms 注释）。
+		"kimi-k2.6":            PlatformKimi,
+		"kimi-k2.7":            PlatformKimi,
+		"moonshot-v1-8k":       PlatformKimi,
+		"moonshotai/kimi-k2.6": PlatformKimi,
+		"glm-4.6":              PlatformZhipu,
+		"z-ai/glm-5.1":         PlatformZhipu,
+		"deepseek-chat":        PlatformDeepseek,
+		"deepseek-v4-pro":      PlatformDeepseek,
 	} {
 		platform, ok := DetectModelPlatform(model)
 		require.True(t, ok, "%s 应能被识别", model)
+		require.Equal(t, want, platform, "%s 解析出的平台不对", model)
 		require.Contains(t, allowed, platform, "%s 解析出集合外的平台 %s", model, platform)
 	}
 
-	// 国产模型不参与自动探测：探测不到就走不进复合路由，与平台集口径一致。
-	for _, model := range []string{
-		"deepseek-chat", "deepseek-reasoner", "kimi-k2.6", "glm-4.6", "qwen-max", "seedance-1.0",
-	} {
+	// qwen / seedance 平台已下线，llama 从未支持：必须探测不到，
+	// 防止被误当成复合路由目标（fail-closed 优于猜）。
+	for _, model := range []string{"qwen-max", "seedance-1.0", "llama-4-maverick"} {
 		_, ok := DetectModelPlatform(model)
 		require.False(t, ok, "%s 不应被自动探测为复合路由目标", model)
 	}
@@ -131,4 +153,11 @@ func TestMatchingPlatformsCompositeSharesSingleSource(t *testing.T) {
 	}
 	require.Equal(t, []string{PlatformDeepseek}, matchingPlatforms(PlatformDeepseek),
 		"具体平台分组只匹配自身")
+}
+
+func TestCompositeConcretePlatformsIncludeCNProviders(t *testing.T) {
+	for _, platform := range []string{PlatformKimi, PlatformZhipu, PlatformDeepseek} {
+		require.True(t, isConcreteRequestPlatform(platform))
+		require.True(t, canCopyAccountsFromGroupPlatform(PlatformComposite, platform))
+	}
 }

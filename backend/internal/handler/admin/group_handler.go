@@ -183,8 +183,8 @@ type CreateGroupRequest struct {
 // UpdateGroupRequest represents update group request
 type UpdateGroupRequest struct {
 	Name                      string                         `json:"name"`
-	Description               *string                        `json:"description"` // 来自 main：nil 不改，&"" 清空
-	NameI18n                  map[string]string              `json:"name_i18n"`   // 来自 dev：多语言
+	Description               *string                        `json:"description"` // nil 不改，&"" 清空
+	NameI18n                  map[string]string              `json:"name_i18n"`   // fork 独有：分组名多语言
 	DescriptionI18n           map[string]string              `json:"description_i18n"`
 	Platform                  string                         `json:"platform" binding:"omitempty,oneof=anthropic openai gemini antigravity grok kimi zhipu deepseek composite"`
 	RateMultiplier            *float64                       `json:"rate_multiplier"`
@@ -263,7 +263,7 @@ type UpdateGroupRequest struct {
 type CompositeRouteRequest struct {
 	PublicModel    string `json:"public_model" binding:"required"`
 	MatchType      string `json:"match_type" binding:"omitempty,oneof=exact prefix"`
-	TargetPlatform string `json:"target_platform" binding:"required,oneof=anthropic openai gemini antigravity grok"`
+	TargetPlatform string `json:"target_platform" binding:"required,oneof=anthropic openai gemini antigravity grok kimi zhipu deepseek"`
 	UpstreamModel  string `json:"upstream_model"`
 	Endpoint       string `json:"endpoint" binding:"omitempty,oneof=any messages count_tokens responses chat_completions embeddings images gemini"`
 	Priority       int    `json:"priority"`

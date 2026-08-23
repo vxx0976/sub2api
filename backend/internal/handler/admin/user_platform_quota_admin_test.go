@@ -115,11 +115,41 @@ func TestUpdateUserPlatformQuotas_Success(t *testing.T) {
 	if len(repo.upsertCalls) != 1 {
 		t.Fatalf("UpsertForUser should be called once, got %d", len(repo.upsertCalls))
 	}
+	// upsert 记录数 = 请求体中给出的平台数；本用例请求体列全了 AllowedQuotaPlatforms
+	// （含 kimi/zhipu/deepseek），因此两者相等。"未给出的平台不落库" 由下面的
+	// TestUpdateUserPlatformQuotas_PartialBodyOnlyUpsertsGivenPlatforms 单独钉住。
 	if repo.upsertCalls[0].userID != 42 || len(repo.upsertCalls[0].records) != len(service.AllowedQuotaPlatforms) {
 		t.Errorf("unexpected upsert call: %+v", repo.upsertCalls[0])
 	}
-	// 缓存失效：按全部允许平台统一失效，
+	// 缓存失效：按全部允许平台统一失效（含 kimi/zhipu/deepseek），
 	// 总数与 service.AllowedQuotaPlatforms 保持一致。
+	if len(cache.deleteCalls) != len(service.AllowedQuotaPlatforms) {
+		t.Errorf("expected %d cache delete calls, got %d: %+v", len(service.AllowedQuotaPlatforms), len(cache.deleteCalls), cache.deleteCalls)
+	}
+}
+
+// 请求体只给部分平台时，未给出的平台不落库；但缓存仍按全部允许平台统一失效。
+func TestUpdateUserPlatformQuotas_PartialBodyOnlyUpsertsGivenPlatforms(t *testing.T) {
+	repo := &upsertCapturingQuotaRepo{}
+	cache := &billingCacheStub{}
+	h := buildTestHandler(repo, cache)
+
+	body := `{"quotas":[
+		{"platform":"anthropic","daily_limit_usd":10.0},
+		{"platform":"kimi","daily_limit_usd":20.0}
+	]}`
+	c, w := putReq(t, body)
+	h.UpdateUserPlatformQuotas(c)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+	if len(repo.upsertCalls) != 1 {
+		t.Fatalf("UpsertForUser should be called once, got %d", len(repo.upsertCalls))
+	}
+	if len(repo.upsertCalls[0].records) != 2 {
+		t.Errorf("expected 2 upsert records, got %d: %+v", len(repo.upsertCalls[0].records), repo.upsertCalls[0])
+	}
 	if len(cache.deleteCalls) != len(service.AllowedQuotaPlatforms) {
 		t.Errorf("expected %d cache delete calls, got %d: %+v", len(service.AllowedQuotaPlatforms), len(cache.deleteCalls), cache.deleteCalls)
 	}

@@ -1619,7 +1619,11 @@ export default {
       openai: 'OpenAI',
       anthropic: 'Anthropic',
       gemini: 'Gemini',
-      grok: 'Grok'
+      grok: 'Grok',
+      antigravity: 'Antigravity',
+      kimi: 'Kimi',
+      zhipu: '智谱 GLM',
+      deepseek: 'DeepSeek',
     },
     extraModelsHeader: '附加模型',
     extraModelsEmpty: '无附加模型',
@@ -1638,7 +1642,33 @@ export default {
     relativeSecondsAgo: '{n} 秒前',
     relativeMinutesAgo: '{n} 分钟前',
     relativeHoursAgo: '{n} 小时前',
-    relativeDaysAgo: '{n} 天前'
+    relativeDaysAgo: '{n} 天前',
+    checkMode: {
+      probe: '探活',
+      quota: '配额',
+      quota_probe: '探活 + 配额',
+    },
+    quota: {
+      unavailable: '配额信息不可用',
+      resetSoon: '即将重置',
+      windows: {
+        '5h': '5 小时',
+        '7d': '7 天',
+        '7dSonnet': '7 天 Sonnet',
+        '7dFable': '7 天 Fable',
+        weekly: '周',
+        daily: '日',
+        '30d': '30 天',
+        total: '总量',
+      },
+      labels: {
+        requests: '请求',
+        tokens: 'Token',
+        shared: '共享',
+        pro: 'Pro',
+        flash: 'Flash',
+      },
+    },
   },
 
   // Channel Status (user-facing read-only view)
@@ -3297,7 +3327,7 @@ export default {
         title: '分组逐模型定价',
         description: '匹配模型后覆盖渠道和内置价格。长上下文阶梯沿用官方/预设价卡，无需再手填区间。音频可用按次层级配置 realtime、tts、stt。',
         longContext: '启用长上下文阶梯定价',
-        longContextHint: '勾选后按官方/预设阶梯计费；关闭则始终按第一档基础价。',
+        longContextHint: '勾选后按渠道区间或官方预设阶梯计费；关闭后默认按第一档，账号显式开启时除外。',
         add: '添加模型价格'
       },
       voicePricing: {
@@ -3600,7 +3630,8 @@ export default {
           cacheWritePrice: '缓存写入价格',
           cacheReadPrice: '缓存读取价格',
           perRequestPrice: '单次价格'
-        }
+        },
+        multiplierPositive: '区间 #{index}：{field}必须大于 0',
       },
       deleteConfirm: '确定要删除渠道「{name}」吗？此操作不可撤销。',
       columns: {
@@ -3709,8 +3740,30 @@ export default {
         syncingModels: '同步中...',
         syncModelsSuccess: '已同步 {count} 个新模型',
         syncModelsAlreadyUpToDate: '模型列表已是最新',
-        syncModelsError: '同步模型失败'
-      }
+        syncModelsError: '同步模型失败',
+        fastMultiplier: 'Fast 倍率',
+        flexMultiplier: 'Flex 倍率',
+        multiplierPlaceholder: '未配置',
+        multiplierPositive: 'Fast/Flex 倍率必须大于 0',
+        inputMultiplier: '输入倍率',
+        outputMultiplier: '输出倍率',
+        cacheWriteMultiplier: '缓存写倍率',
+        cacheReadMultiplier: '缓存读倍率',
+        timePricing: '时间段定价（可选）',
+        timezone: '时区',
+        addTimePeriod: '添加时间段',
+        startTime: '开始时间',
+        endTime: '结束时间',
+        multiplier: '倍率',
+        removeTimePeriod: '删除时间段',
+      },
+      timePricingValidation: {
+        timezone: '请选择有效的 IANA 时区',
+        format: '开始时间和结束时间必须使用 HH:mm:ss 格式',
+        range: '开始时间必须早于结束时间；跨午夜请拆分为两个时间段',
+        overlap: '时间段不能重叠',
+        multiplier: '倍率必须大于 0，且最多保留两位小数',
+      },
     },
 
     modelPricing: {
@@ -4120,7 +4173,20 @@ export default {
         jitterSeconds: '随机抖动 (± 秒)',
         jitterSecondsHint: '每次检测在间隔基础上正负随机偏移该秒数，0 表示固定间隔；需满足 间隔 - 抖动 ≥ 15 秒',
         enabled: '启用监控',
-        kindRequired: '请选择供应商'
+        kindRequired: '请选择供应商',
+        checkMode: '检查方式',
+        checkModeProbe: '探活',
+        checkModeProbeHint: '向上游发送轻量 LLM 请求，检测可用性与延迟',
+        checkModeQuota: '配额',
+        checkModeQuotaHint: '只查询关联账号的用量滚动窗口/余额，不发送探活请求',
+        checkModeQuotaProbe: '探活 + 配额',
+        checkModeQuotaProbeHint: '探活的同时查询配额，用量快照附加在主模型结果上',
+        linkedAccount: '关联账号',
+        linkedAccountPlaceholder: '选择账号',
+        linkedAccountHint: '配额数据来自所选账号（复用账号管理侧的用量/余额查询）',
+        linkedAccountEmpty: '当前平台暂无账号，请先在账号管理中添加',
+        linkedAccountMissing: '关联账号已不存在或不可访问，请重新选择账号',
+        openAIQuotaProbeHint: '注意：OpenAI 平台的用量查询可能触发 Codex 探测请求，会消耗账号自身的额度（每 10 分钟最多触发一次）',
       },
       runResultTitle: '检测结果',
       noMonitorsYet: '暂无监控',
@@ -4185,7 +4251,8 @@ export default {
           description: '说明',
           descriptionPlaceholder: '可选：说明这个模板的用途和来源（抓包日期等）'
         }
-      }
+      },
+      linkedAccountRequired: '请选择关联账号',
     },
 
     // Subscriptions Management
@@ -4683,7 +4750,8 @@ export default {
         creditsExhaustedUntil: 'AI Credits 已用尽，预计 {time} 恢复',
         overloadedUntil: '负载过重，重置时间：{time}',
         viewTempUnschedDetails: '查看临时不可调度详情',
-        tempUnschedulableUntil: '预计 {time} 恢复'
+        tempUnschedulableUntil: '预计 {time} 恢复',
+        expired: '已过期',
       },
       accountSchedulingThresholdOverride: '账号自动停调阈值覆盖',
       accountSchedulingThresholdOverrideHint: '仅对当前账号覆盖平台级自动停调阈值；关闭后使用平台设置。',
@@ -4882,7 +4950,11 @@ export default {
         noFieldsSelected: '请至少选择一个要更新的字段',
         rateSyncWarning: '已开启上游倍率同步的账号不能批量手工修改倍率，请先在账号编辑页关闭同步。',
         rateSyncConflict: '无法修改账号倍率：{count} 个目标账号已开启上游倍率同步。',
-        mixedPlatformWarning: '所选账号跨越多个平台（{platforms}）。显示的模型映射预设为合并结果——请确保映射对每个平台都适用。'
+        mixedPlatformWarning: '所选账号跨越多个平台（{platforms}）。显示的模型映射预设为合并结果——请确保映射对每个平台都适用。',
+        successWithInherited: '成功更新 {count} 个账号；其中 {inherited} 个影子账号仍跟随母账号。',
+        partialSuccessWithInherited: '部分更新成功：成功 {success} 个，失败 {failed} 个；其中 {inherited} 个影子账号仍跟随母账号。',
+        longContextShadowHint: '长上下文计费归母账号所有。选中的影子账号仍跟随母账号，筛选全量目标时同样如此。',
+        longContextParentRequired: '选中的账号全部是影子账号，请选择母账号修改长上下文计费。',
       },
       bulkDeleteTitle: '批量删除账号',
       bulkDeleteConfirm: '确定要删除选中的 {count} 个账号吗？此操作无法撤销。',
@@ -5869,7 +5941,38 @@ export default {
         todayCost: '今日费用',
         usageTrend: '30天费用与请求趋势',
         noData: '该账号暂无使用数据'
-      }
+      },
+      cnProviders: {
+        accountMode: {
+          title: '账号类型',
+          payg: '按量付费',
+          paygDesc: '消耗账户余额，按 Token 计费。余额不足自动冷却，充值后恢复。',
+          coding: 'Coding Plan',
+          codingDesc: '订阅制编程套餐，按 5 小时 / 每周滚动用量窗口限流。',
+        },
+        apiProtocol: {
+          title: 'API 协议',
+          adaptive: '自适应',
+          adaptiveDesc: '按入站协议优先使用供应商原生端点，仅在没有对应端点时转换。',
+          endpoints: '协议端点',
+          responsesFallbackDesc: '该供应商没有原生 Responses 端点，Responses 请求将转换为 Chat Completions。',
+          chatCompletions: 'Chat Completions',
+          chatCompletionsDesc: '标准 OpenAI 兼容端点，其他格式请求将被转换。',
+          anthropic: 'Anthropic',
+          anthropicDesc: '直通供应商原生 Anthropic 端点，零转换，适配 Claude Code。',
+          responses: 'Responses',
+          responsesDesc: '供应商原生 Responses 端点，适配 Codex。',
+        },
+        balance: '余额 --',
+        window5h: '5 小时窗口',
+        windowWeekly: '每周窗口',
+        probe: '查询',
+        probeTooltip: '请求供应商额度端点，查询 5 小时 / 每周滚动窗口用量',
+        balanceProbeTooltip: '请求供应商余额端点，查询账户余额',
+        balanceLow: '余额不足',
+        noBalanceEndpoint: '该平台暂无余额查询接口',
+        resetSoon: '即将重置',
+      },
     },
 
     // Scheduled Tests
@@ -6322,7 +6425,8 @@ export default {
       failedToUpdate: '更新公告失败',
       failedToDelete: '删除公告失败',
       failedToLoadReadStatus: '加载已读情况失败',
-      deleteConfirm: '确定要删除该公告吗？此操作无法撤销。'
+      deleteConfirm: '确定要删除该公告吗？此操作无法撤销。',
+      createFirstAnnouncement: '还没有公告，创建您的第一条公告。',
     },
 
     chat: {
@@ -6833,7 +6937,16 @@ export default {
         suggestPlatform: '🚨 平台错误，建议立即排查修复',
         suggestGeneric: '查看详情了解更多信息',
         apiKeyPrefix: 'Key 前缀',
-        keyDeletedBadge: 'Key 已删除'
+        keyDeletedBadge: 'Key 已删除',
+        upstreamStatus: '上游状态码',
+        rootCause: '根因',
+        diagnosticPayloads: '诊断载荷',
+        payloads: {
+          client: '客户端响应',
+          upstream_message: '上游消息',
+          upstream_detail: '上游详情',
+          upstream_events: '上游事件',
+        },
       },
       requestDetails: {
         title: '请求明细',
@@ -7290,6 +7403,8 @@ export default {
           hideThroughput: '对用户隐藏吞吐速率（RPM / TPM）',
           hideThroughputHint:
             '开启后，用户端渠道监控页面与用户 API 不返回 RPM/TPM，避免用「速率 × 时间窗」反推集群规模。管理员仍可见完整指标；错误率、延迟、缓存率照常展示。',
+          showQuota: '向用户展示渠道用量/余额',
+          showQuotaHint: '开启后，配额模式的渠道监控会在用户端渠道状态页展示关联账号的用量滚动窗口/余额。默认关闭；管理员始终可见。',
         },
         channelBalanceRefresh: {
           title: '渠道额度自动刷新',

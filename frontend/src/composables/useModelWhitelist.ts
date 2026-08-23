@@ -161,8 +161,8 @@ const xaiModels = [
   'grok-imagine',
   'grok-imagine-image-quality',
   'grok-imagine-image',
+  'grok-imagine-image-2.0',
   'grok-imagine-video',
-  'grok-imagine-video-1.5-preview',
   'grok-imagine-video-1.5'
 ]
 
@@ -187,7 +187,9 @@ const yiModels = [
 const moonshotModels = [
   'kimi-k2.6', 'kimi-k2.5', 'kimi-for-coding',
   'moonshot-v1-8k', 'moonshot-v1-32k', 'moonshot-v1-128k',
-  'moonshot-v1-8k-vision-preview', 'moonshot-v1-32k-vision-preview', 'moonshot-v1-128k-vision-preview'
+  'moonshot-v1-8k-vision-preview', 'moonshot-v1-32k-vision-preview', 'moonshot-v1-128k-vision-preview',
+  // 上游本轮补充（kimi-for-coding 两边都有，去重）
+  'kimi-latest', 'kimi-k2'
 ]
 
 // 字节跳动 豆包

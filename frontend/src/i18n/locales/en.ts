@@ -1619,7 +1619,11 @@ export default {
       openai: 'OpenAI',
       anthropic: 'Anthropic',
       gemini: 'Gemini',
-      grok: 'Grok'
+      grok: 'Grok',
+      antigravity: 'Antigravity',
+      kimi: 'Kimi',
+      zhipu: 'Zhipu GLM',
+      deepseek: 'DeepSeek',
     },
     extraModelsHeader: 'Extra Models',
     extraModelsEmpty: 'No extra models',
@@ -1638,7 +1642,33 @@ export default {
     relativeSecondsAgo: '{n}s ago',
     relativeMinutesAgo: '{n}m ago',
     relativeHoursAgo: '{n}h ago',
-    relativeDaysAgo: '{n}d ago'
+    relativeDaysAgo: '{n}d ago',
+    checkMode: {
+      probe: 'Probe',
+      quota: 'Quota',
+      quota_probe: 'Probe + Quota',
+    },
+    quota: {
+      unavailable: 'Quota unavailable',
+      resetSoon: 'resetting',
+      windows: {
+        '5h': '5h',
+        '7d': '7d',
+        '7dSonnet': '7d Sonnet',
+        '7dFable': '7d Fable',
+        weekly: 'Weekly',
+        daily: 'Daily',
+        '30d': '30d',
+        total: 'Total',
+      },
+      labels: {
+        requests: 'Requests',
+        tokens: 'Tokens',
+        shared: 'Shared',
+        pro: 'Pro',
+        flash: 'Flash',
+      },
+    },
   },
 
   // Channel Status (user-facing read-only view)
@@ -3238,6 +3268,7 @@ export default {
         deepseek: 'DeepSeek',
         kimi: 'Kimi',
         zhipu: 'GLM',
+        ollama: 'Ollama',
         composite: 'Composite',
       },
       deleteConfirm:
@@ -3301,7 +3332,7 @@ export default {
         title: 'Per-model group pricing',
         description: 'Overrides channel and built-in prices for matching models. Long-context tiers come from official presets — do not enter custom intervals. Use per-request tiers such as realtime, tts, and stt for audio.',
         longContext: 'Enable long-context tier pricing',
-        longContextHint: 'When checked, official/preset long-context tiers apply. When unchecked, token models stay on the first-tier base rate.',
+        longContextHint: 'When checked, channel intervals or official preset tiers apply. Otherwise the first tier is used unless the account explicitly enables long-context billing.',
         add: 'Add model price'
       },
       voicePricing: {
@@ -3602,7 +3633,8 @@ export default {
           cacheWritePrice: 'cache write price',
           cacheReadPrice: 'cache read price',
           perRequestPrice: 'per-request price'
-        }
+        },
+        multiplierPositive: 'Interval #{index}: {field} must be greater than 0',
       },
       deleteConfirm: 'Are you sure you want to delete channel "{name}"? This cannot be undone.',
       columns: {
@@ -3711,8 +3743,30 @@ export default {
          syncingModels: 'Syncing...',
          syncModelsSuccess: 'Synced {count} new model(s)',
          syncModelsAlreadyUpToDate: 'Models already up to date',
-         syncModelsError: 'Failed to sync models'
-       }
+         syncModelsError: 'Failed to sync models',
+         fastMultiplier: 'Fast Multiplier',
+         flexMultiplier: 'Flex Multiplier',
+         multiplierPlaceholder: 'Not set',
+         multiplierPositive: 'Fast/Flex multipliers must be greater than 0',
+         inputMultiplier: 'Input Mult.',
+         outputMultiplier: 'Output Mult.',
+         cacheWriteMultiplier: 'Cache Write Mult.',
+         cacheReadMultiplier: 'Cache Read Mult.',
+         timePricing: 'Time-based pricing (optional)',
+         timezone: 'Time zone',
+         addTimePeriod: 'Add period',
+         startTime: 'Start time',
+         endTime: 'End time',
+         multiplier: 'Multiplier',
+         removeTimePeriod: 'Remove period',
+       },
+       timePricingValidation: {
+         timezone: 'Select a valid IANA time zone',
+         format: 'Start and end times must use HH:mm:ss format',
+         range: 'Start time must be earlier than end time; split ranges across midnight',
+         overlap: 'Time periods must not overlap',
+         multiplier: 'Multiplier must be greater than 0 with at most two decimal places',
+       },
      },
 
     modelPricing: {
@@ -4122,7 +4176,20 @@ export default {
         jitterSeconds: 'Random Jitter (± seconds)',
         jitterSecondsHint: 'Each check fires at interval ± a random offset within this value; 0 means fixed interval. Interval minus jitter must be ≥ 15s',
         enabled: 'Enable monitor',
-        kindRequired: 'Please select a provider'
+        kindRequired: 'Please select a provider',
+        checkMode: 'Check Mode',
+        checkModeProbe: 'Probe',
+        checkModeProbeHint: 'Sends a lightweight LLM request to measure availability and latency',
+        checkModeQuota: 'Quota',
+        checkModeQuotaHint: 'Only queries the linked account usage windows / balance without probe requests',
+        checkModeQuotaProbe: 'Probe + Quota',
+        checkModeQuotaProbeHint: 'Probes the channel and attaches the quota snapshot to the primary model result',
+        linkedAccount: 'Linked Account',
+        linkedAccountPlaceholder: 'Select an account',
+        linkedAccountHint: 'Quota data comes from the selected account (reuses the account-side usage/balance queries)',
+        linkedAccountEmpty: 'No accounts on this platform yet. Add one in Account Management first',
+        linkedAccountMissing: 'The linked account no longer exists or is not accessible. Please re-select an account',
+        openAIQuotaProbeHint: 'Note: on the OpenAI platform the usage query may trigger a Codex probe request that consumes the account\'s own quota (at most once every 10 minutes)',
       },
       runResultTitle: 'Check Result',
       noMonitorsYet: 'No monitors yet',
@@ -4187,7 +4254,8 @@ export default {
           description: 'Description',
           descriptionPlaceholder: 'Optional: what this template is for, capture date, etc.'
         }
-      }
+      },
+      linkedAccountRequired: 'Please select a linked account',
     },
 
     // Subscriptions
@@ -4458,7 +4526,8 @@ export default {
         creditsExhaustedUntil: 'AI Credits exhausted, expected recovery at {time}',
         overloadedUntil: 'Overloaded until {time}',
         viewTempUnschedDetails: 'View temp unschedulable details',
-        tempUnschedulableUntil: 'Resumes {time}'
+        tempUnschedulableUntil: 'Resumes {time}',
+        expired: 'Expired',
       },
       accountSchedulingThresholdOverride: 'Account Auto-Pause Threshold Override',
       accountSchedulingThresholdOverrideHint: 'Override the platform auto-pause threshold for this account only. Disable to use platform settings.',
@@ -4772,7 +4841,11 @@ export default {
         noFieldsSelected: 'Select at least one field to update',
         rateSyncWarning: 'Accounts with upstream rate sync enabled cannot be changed in bulk. Disable sync in the account editor first.',
         rateSyncConflict: 'Cannot change account rates: {count} target account(s) have upstream rate sync enabled.',
-        mixedPlatformWarning: 'Selected accounts span multiple platforms ({platforms}). Model mapping presets shown are combined — ensure mappings are appropriate for each platform.'
+        mixedPlatformWarning: 'Selected accounts span multiple platforms ({platforms}). Model mapping presets shown are combined — ensure mappings are appropriate for each platform.',
+        successWithInherited: 'Updated {count} account(s). {inherited} selected shadow account(s) still follow their parent account.',
+        partialSuccessWithInherited: 'Partially updated: {success} succeeded, {failed} failed. {inherited} selected shadow account(s) still follow their parent account.',
+        longContextShadowHint: 'Long-context billing belongs to the parent account. Selected shadow accounts keep following their parent, including when targets come from a filter.',
+        longContextParentRequired: 'All selected accounts are shadows. Select the parent account to change long-context billing.',
       },
       bulkDeleteTitle: 'Bulk Delete Accounts',
       bulkDeleteConfirm: 'Delete the selected {count} account(s)? This action cannot be undone.',
@@ -5904,7 +5977,38 @@ export default {
       linkCopied: 'Link Copied',
       needsReauth: 'Re-auth Required',
       rateLimited: 'Rate Limited',
-      usageError: 'Fetch Error'
+      usageError: 'Fetch Error',
+      cnProviders: {
+        accountMode: {
+          title: 'Account Type',
+          payg: 'Pay-as-you-go',
+          paygDesc: 'Consumes account balance, billed per token. Auto-cools down on low balance and recovers after top-up.',
+          coding: 'Coding Plan',
+          codingDesc: 'Subscription coding package, rate-limited by 5-hour / weekly rolling usage windows.',
+        },
+        apiProtocol: {
+          title: 'API Protocol',
+          adaptive: 'Adaptive',
+          adaptiveDesc: 'Uses the matching native provider endpoint for each inbound protocol, converting only when unavailable.',
+          endpoints: 'Protocol endpoints',
+          responsesFallbackDesc: 'Responses requests are converted to Chat Completions because this provider has no native Responses endpoint.',
+          chatCompletions: 'Chat Completions',
+          chatCompletionsDesc: 'Standard OpenAI-compatible endpoint; requests in other formats are converted.',
+          anthropic: 'Anthropic',
+          anthropicDesc: 'Native passthrough to the provider’s Anthropic endpoint — ideal for Claude Code.',
+          responses: 'Responses',
+          responsesDesc: 'Provider’s native Responses endpoint — ideal for Codex.',
+        },
+        balance: 'Balance --',
+        window5h: '5-hour window',
+        windowWeekly: 'Weekly window',
+        probe: 'Query',
+        probeTooltip: 'Query the provider quota endpoint for 5-hour / weekly rolling window usage',
+        balanceProbeTooltip: 'Query the provider balance endpoint for the account balance',
+        balanceLow: 'Insufficient balance',
+        noBalanceEndpoint: 'This platform has no balance query endpoint',
+        resetSoon: 'reset soon',
+      },
     },
 
     // Scheduled Tests
@@ -6360,7 +6464,8 @@ export default {
       failedToUpdate: 'Failed to update announcement',
       failedToDelete: 'Failed to delete announcement',
       failedToLoadReadStatus: 'Failed to load read status',
-      deleteConfirm: 'Are you sure you want to delete this announcement? This action cannot be undone.'
+      deleteConfirm: 'Are you sure you want to delete this announcement? This action cannot be undone.',
+      createFirstAnnouncement: 'No announcements yet. Create your first one.',
     },
 
     chat: {
@@ -6871,7 +6976,16 @@ export default {
         suggestPlatform: 'Platform error: prioritize investigation and fix',
         suggestGeneric: 'See details for more context',
         apiKeyPrefix: 'Key Prefix',
-        keyDeletedBadge: 'Key Deleted'
+        keyDeletedBadge: 'Key Deleted',
+        upstreamStatus: 'Upstream Status',
+        rootCause: 'Root Cause',
+        diagnosticPayloads: 'Diagnostic Payloads',
+        payloads: {
+          client: 'Client Response',
+          upstream_message: 'Upstream Message',
+          upstream_detail: 'Upstream Detail',
+          upstream_events: 'Upstream Events',
+        },
       },
       requestDetails: {
         title: 'Request Details',
@@ -7327,6 +7441,8 @@ export default {
           hideThroughput: 'Hide throughput rates from users (RPM / TPM)',
           hideThroughputHint:
             'When on, the user Channel Monitor page and user APIs omit RPM and TPM so fleet volume cannot be reverse-estimated from rates × window. Admins still see full metrics. Error rates, latency, and cache rates remain visible.',
+          showQuota: 'Show channel usage/balance to users',
+          showQuotaHint: 'When on, quota-mode channel monitors expose the linked account usage windows/balance on the user Channel Status page. Disabled by default; admins always see it.',
         },
         channelBalanceRefresh: {
           title: 'Auto-refresh Channel Balances',

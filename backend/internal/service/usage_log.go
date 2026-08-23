@@ -128,7 +128,8 @@ type UsageLog struct {
 	BillingTier *string
 	// BillingMode 计费模式：token/image
 	BillingMode *string
-	// ServiceTier records the OpenAI service tier used for billing, e.g. "priority" / "flex".
+	// ServiceTier records the billable request tier, e.g. OpenAI "priority" / "flex"
+	// or Anthropic "fast".
 	ServiceTier *string
 	// PricingTimeBand 记录本笔计费命中的官方时段档（"peak"/"offpeak"）。
 	// 仅当价格来自内置定价表时非空；被渠道价/分组价卡覆盖或按次计费时为 nil。
