@@ -143,6 +143,8 @@ func (s *adminServiceImpl) CreateUser(ctx context.Context, input *CreateUserInpu
 		RPMLimit:      input.RPMLimit,
 		Status:        StatusActive,
 		AllowedGroups: input.AllowedGroups,
+
+		RestrictPublicGroups: input.RestrictPublicGroups,
 	}
 	if err := user.SetPassword(input.Password); err != nil {
 		return nil, err
@@ -285,17 +287,28 @@ func (s *adminServiceImpl) UpdateUser(ctx context.Context, id int64, input *Upda
 		fields.AllowedGroups = true
 	}
 
-	// 仅更新管理员意图修改的资料类字段；不走全行 Update，避免用 GetByID 旧快照
+	oldRestrictPublicGroups := user.RestrictPublicGroups
+	if input.RestrictPublicGroups != nil {
+		user.RestrictPublicGroups = *input.RestrictPublicGroups
+		fields.RestrictPublicGroups = true
+	}
+
+	// 仅写回管理员本次确实提交的列；不走全行 Update，避免用 GetByID 旧快照
 	// 覆盖并发写入的 balance / token_version / total_recharged。
 	//
-	// 这里刻意保留 dev 的 UpdateProfile 而不是 upstream 的 Update(ctx, user, fields)：
-	// UserUpdateFields 里没有 role_version，仓储的掩码 Update 也不写 role_version 列，
-	// 换过去会让角色降级后的旧 JWT / refresh token 继续通过 RoleVersion 校验（见
-	// auth_service.go 的 claims.RoleVersion != user.RoleVersion 分支）。
+	// 这里从 dev 的 UpdateProfile 换回 upstream 的 Update(ctx, user, fields)。原先保留
+	// UpdateProfile 的理由（"掩码 Update 不写 role_version"）已经过期：上一轮合并把
+	// role_version 接进了仓储的掩码 Update，它跟随 fields.Role 一起写回（见
+	// repository/user_repo.go 的 `if fields.Role` 分支），而 RoleVersion++ 只发生在
+	// input.Role != "" 的分支里、同时置 fields.Role = true，两者严格同步——角色降级后
+	// 的旧 JWT / refresh token 仍会被 auth_service.go 的
+	// claims.RoleVersion != user.RoleVersion 分支拦下。
+	// 反过来，UpdateProfile 不写 restrict_public_groups 列，继续用它会让 main 新增的
+	// "仅可绑定 allowed_groups 内公开分组"开关在编辑用户时静默失效。
 	// fields 仍按 upstream 的语义充当"本次到底有没有列要写"的掩码：管理员一列都没提交时
 	// 不产生用户行写入（后面的分组倍率同步 / 缓存失效仍照常执行）。
 	if !fields.IsEmpty() {
-		if err := s.userRepo.UpdateProfile(ctx, user); err != nil {
+		if err := s.userRepo.Update(ctx, user, fields); err != nil {
 			return nil, err
 		}
 	}
@@ -316,7 +329,7 @@ func (s *adminServiceImpl) UpdateUser(ctx context.Context, id int64, input *Upda
 	if s.authCacheInvalidator != nil {
 		// RPMLimit 直接参与 billing_cache_service.checkRPM 的三级级联，
 		// allowed_groups 参与 API Key 专属分组授权判断；不失效缓存会让修改在一个 L2 TTL 内失去效果。
-		if user.Concurrency != oldConcurrency || user.Status != oldStatus || user.Role != oldRole || user.RPMLimit != oldRPMLimit || !sameInt64Set(user.AllowedGroups, oldAllowedGroups) {
+		if user.Concurrency != oldConcurrency || user.Status != oldStatus || user.Role != oldRole || user.RPMLimit != oldRPMLimit || user.RestrictPublicGroups != oldRestrictPublicGroups || !sameInt64Set(user.AllowedGroups, oldAllowedGroups) {
 			s.authCacheInvalidator.InvalidateAuthCacheByUserID(ctx, user.ID)
 		}
 	}

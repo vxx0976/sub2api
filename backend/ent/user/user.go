@@ -65,6 +65,8 @@ const (
 	FieldTokenVersion = "token_version"
 	// FieldRoleVersion holds the string denoting the role_version field in the database.
 	FieldRoleVersion = "role_version"
+	// FieldRestrictPublicGroups holds the string denoting the restrict_public_groups field in the database.
+	FieldRestrictPublicGroups = "restrict_public_groups"
 	// FieldBalanceNotifyEnabled holds the string denoting the balance_notify_enabled field in the database.
 	FieldBalanceNotifyEnabled = "balance_notify_enabled"
 	// FieldBalanceNotifyThresholdType holds the string denoting the balance_notify_threshold_type field in the database.
@@ -290,6 +292,7 @@ var Columns = []string{
 	FieldParentID,
 	FieldTokenVersion,
 	FieldRoleVersion,
+	FieldRestrictPublicGroups,
 	FieldBalanceNotifyEnabled,
 	FieldBalanceNotifyThresholdType,
 	FieldBalanceNotifyThreshold,
@@ -370,6 +373,8 @@ var (
 	DefaultTokenVersion int64
 	// DefaultRoleVersion holds the default value on creation for the "role_version" field.
 	DefaultRoleVersion int64
+	// DefaultRestrictPublicGroups holds the default value on creation for the "restrict_public_groups" field.
+	DefaultRestrictPublicGroups bool
 	// DefaultBalanceNotifyEnabled holds the default value on creation for the "balance_notify_enabled" field.
 	DefaultBalanceNotifyEnabled bool
 	// DefaultBalanceNotifyThresholdType holds the default value on creation for the "balance_notify_threshold_type" field.
@@ -513,6 +518,11 @@ func ByTokenVersion(opts ...sql.OrderTermOption) OrderOption {
 // ByRoleVersion orders the results by the role_version field.
 func ByRoleVersion(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldRoleVersion, opts...).ToFunc()
+}
+
+// ByRestrictPublicGroups orders the results by the restrict_public_groups field.
+func ByRestrictPublicGroups(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRestrictPublicGroups, opts...).ToFunc()
 }
 
 // ByBalanceNotifyEnabled orders the results by the balance_notify_enabled field.

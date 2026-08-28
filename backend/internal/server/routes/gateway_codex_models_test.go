@@ -5,7 +5,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/Wei-Shaw/sub2api/internal/server/middleware"
 	"github.com/Wei-Shaw/sub2api/internal/service"
+	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 )
 
@@ -25,35 +27,69 @@ func TestGatewayRoutesCodexModelsManifestPathIsRegistered(t *testing.T) {
 	require.Equal(t, registered["/v1/models"], registered["/models"], "root alias should use the same platform-aware handler")
 }
 
-// Codex manifest 分支的路由门必须与 CodexModels handler 的 openai-only 检查一致：
-// OpenAI 兼容的国产平台分组带 client_version 请求 /v1/models 应落回通用模型列表，
-// 而不是被 CodexModels 以 404 拒绝。
-func TestGatewayRoutesModelsWithClientVersionFallsBackForCompatPlatforms(t *testing.T) {
+func TestDispatchCodexModelsGatewayKeepsOnlyOpenAIOnLiveManifestHandler(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	tests := []struct {
+		platform   string
+		wantOpenAI bool
+	}{
+		{platform: service.PlatformOpenAI, wantOpenAI: true},
+		{platform: service.PlatformComposite},
+		{platform: service.PlatformGrok},
+		{platform: service.PlatformDeepseek},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.platform, func(t *testing.T) {
+			rec := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(rec)
+			c.Request = httptest.NewRequest(http.MethodGet, "/models?client_version=0.147.0", nil)
+			c.Set(string(middleware.ContextKeyAPIKey), &service.APIKey{
+				Group: &service.Group{Platform: tt.platform},
+			})
+			called := ""
+
+			dispatchCodexModelsGateway(c,
+				func(c *gin.Context) { called = "openai" },
+				func(c *gin.Context) { called = "generated" },
+			)
+
+			if tt.wantOpenAI {
+				require.Equal(t, "openai", called)
+			} else {
+				require.Equal(t, "generated", called)
+			}
+		})
+	}
+}
+
+// fork 回归：OpenAI 兼容的国产平台（kimi/zhipu/deepseek）带 client_version 请求模型列表时，
+// 必须落到生成式 manifest（Gateway.CodexModels），不能进 OpenAIGateway.CodexModels ——
+// 后者是 openai-only，会以 404 拒绝，正是 fork 之前用「回落 Gateway.Models」绕开的问题。
+// 上游的分发表只钉了 deepseek，这里把 fork 另外两个国产平台一并钉住。
+func TestDispatchCodexModelsGatewayUsesGeneratedManifestForCNCompatPlatforms(t *testing.T) {
+	gin.SetMode(gin.TestMode)
 	for _, platform := range []string{
 		service.PlatformKimi,
 		service.PlatformZhipu,
 		service.PlatformDeepseek,
 	} {
-		router := newGatewayRoutesTestRouter(platform)
+		t.Run(platform, func(t *testing.T) {
+			rec := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(rec)
+			c.Request = httptest.NewRequest(http.MethodGet, "/v1/models?client_version=0.29.0", nil)
+			c.Set(string(middleware.ContextKeyAPIKey), &service.APIKey{
+				Group: &service.Group{Platform: platform},
+			})
+			called := ""
 
-		req := httptest.NewRequest(http.MethodGet, "/v1/models?client_version=0.29.0", nil)
-		w := httptest.NewRecorder()
+			dispatchCodexModelsGateway(c,
+				func(c *gin.Context) { called = "openai" },
+				func(c *gin.Context) { called = "generated" },
+			)
 
-		// 测试路由器的 handler 依赖为零值：真正落到 Gateway.Models 会因 nil 服务
-		// panic，这恰好证明分发正确；被 CodexModels 拒绝则会干净地写出 404。
-		fellBackToModels := func() (panicked bool) {
-			defer func() {
-				if recover() != nil {
-					panicked = true
-				}
-			}()
-			router.ServeHTTP(w, req)
-			return false
-		}()
-
-		if !fellBackToModels {
-			require.NotEqual(t, http.StatusNotFound, w.Code,
-				"platform=%s GET /v1/models?client_version=... should fall back to Gateway.Models, not Codex 404", platform)
-		}
+			require.Equal(t, "generated", called,
+				"platform=%s must not hit the openai-only live manifest handler", platform)
+		})
 	}
 }

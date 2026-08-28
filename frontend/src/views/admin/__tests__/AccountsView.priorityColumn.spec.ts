@@ -1,0 +1,162 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { flushPromises, mount } from '@vue/test-utils'
+
+import AccountsView from '../AccountsView.vue'
+
+const { listAccounts } = vi.hoisted(() => ({
+  listAccounts: vi.fn()
+}))
+
+vi.mock('@/api/admin', () => ({
+  adminAPI: {
+    accounts: {
+      list: listAccounts,
+      listWithEtag: vi.fn(),
+      getBatchTodayStats: vi.fn().mockResolvedValue({ stats: {} }),
+      getUpstreamBillingProbeSettings: vi.fn().mockResolvedValue({ enabled: true, interval_minutes: 30 }),
+      delete: vi.fn(),
+      batchClearError: vi.fn(),
+      batchRefresh: vi.fn(),
+      toggleSchedulable: vi.fn()
+    },
+    proxies: { getAll: vi.fn().mockResolvedValue([]) },
+    groups: { getAll: vi.fn().mockResolvedValue([]) }
+  }
+}))
+
+vi.mock('@/stores/app', () => ({
+  useAppStore: () => ({ showError: vi.fn(), showSuccess: vi.fn(), showInfo: vi.fn() })
+}))
+
+vi.mock('@/stores/auth', () => ({
+  useAuthStore: () => ({ token: 'test-token', isSimpleMode: false })
+}))
+
+vi.mock('vue-i18n', async () => {
+  const actual = await vi.importActual<typeof import('vue-i18n')>('vue-i18n')
+  return {
+    ...actual,
+    useI18n: () => ({ t: (key: string) => key })
+  }
+})
+
+const DataTableStub = {
+  props: ['columns'],
+  emits: ['sort'],
+  template: `
+    <div data-test="data-table">
+      <span v-for="column in columns" :key="column.key" :data-column="column.key">
+        {{ column.sortable ? 'sortable' : 'fixed' }}
+      </span>
+      <button data-test="sort-priority" @click="$emit('sort', 'priority', 'desc')" />
+    </div>
+  `
+}
+
+function mountView() {
+  return mount(AccountsView, {
+    global: {
+      stubs: {
+        AppLayout: { template: '<div><slot /></div>' },
+        TablePageLayout: {
+          template: '<div><slot name="filters" /><slot name="table" /><slot name="pagination" /></div>'
+        },
+        DataTable: DataTableStub,
+        AccountTableActions: { template: '<div><slot name="after" /></div>' },
+        AccountTableFilters: true,
+        AccountBulkActionsBar: true,
+        Pagination: true,
+        ConfirmDialog: true,
+        AccountActionMenu: true,
+        ImportDataModal: true,
+        ReAuthAccountModal: true,
+        AccountTestModal: true,
+        AccountStatsModal: true,
+        ScheduledTestsPanel: true,
+        SyncFromCrsModal: true,
+        TempUnschedStatusModal: true,
+        ErrorPassthroughRulesModal: true,
+        TLSFingerprintProfilesModal: true,
+        CreateAccountModal: true,
+        EditAccountModal: true,
+        BulkEditAccountModal: true,
+        PlatformTypeBadge: true,
+        AccountCapacityCell: true,
+        AccountStatusIndicator: true,
+        AccountTodayStatsCell: true,
+        AccountGroupsCell: true,
+        AccountUsageCell: true,
+        HelpTooltip: true,
+        Icon: true,
+        Teleport: true
+      }
+    }
+  })
+}
+
+describe('admin AccountsView priority column preferences', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    listAccounts.mockReset().mockResolvedValue({
+      items: [],
+      total: 0,
+      page: 1,
+      page_size: 20,
+      pages: 0
+    })
+  })
+
+  it('shows priority as a sortable column for fresh preferences', async () => {
+    const wrapper = mountView()
+    await flushPromises()
+
+    expect(wrapper.get('[data-column="priority"]').text()).toBe('sortable')
+
+    await wrapper.get('[data-test="sort-priority"]').trigger('click')
+    await flushPromises()
+
+    expect(listAccounts).toHaveBeenLastCalledWith(
+      1,
+      20,
+      expect.objectContaining({ sort_by: 'priority', sort_order: 'desc' }),
+      expect.objectContaining({ signal: expect.any(AbortSignal) })
+    )
+  })
+
+  // 版本键名与取值在本 fork 与上游不同：fork 用 'account-hidden-columns-v' + 数字版本
+  // （分级迁移 v2/v3），上游用 'account-hidden-columns-version' + 字符串标记。
+  // 这里按 fork 的键名写「已迁移到最新版」的前提，语义与上游用例一致：
+  // 已迁移过的偏好不得再被任何迁移步骤改动。
+  it('preserves an existing preference that explicitly hides priority', async () => {
+    localStorage.setItem('account-hidden-columns', JSON.stringify(['priority', 'today_stats']))
+    localStorage.setItem('account-hidden-columns-v', '3')
+
+    const wrapper = mountView()
+    await flushPromises()
+
+    expect(wrapper.find('[data-column="priority"]').exists()).toBe(false)
+    expect(JSON.parse(localStorage.getItem('account-hidden-columns') || '[]')).toEqual([
+      'priority',
+      'today_stats'
+    ])
+  })
+
+  // 未记版本号（savedVer=0）的老偏好会依次跑 fork 的 v2 与 v3 两步迁移：
+  //   v2 删掉 today_stats（它曾是旧版默认隐藏项，fork 决定改为默认展示）
+  //   v3 加上 scheduler_score（展示该列会 opt-in 重量级后端打分）
+  // 上游没有 v2 这一步，其用例因此断言 today_stats 被保留。本 fork 保留分级迁移，
+  // 所以这里断言 fork 的实际结果。两侧共同要守的性质是「priority 不得被迁移隐藏」。
+  it('keeps priority visible while migrating older saved preferences', async () => {
+    localStorage.setItem('account-hidden-columns', JSON.stringify(['today_stats']))
+
+    const wrapper = mountView()
+    await flushPromises()
+
+    expect(wrapper.get('[data-column="priority"]').text()).toBe('sortable')
+    const saved = JSON.parse(localStorage.getItem('account-hidden-columns') || '[]')
+    expect(saved).toEqual(expect.arrayContaining(['scheduler_score']))
+    expect(saved).not.toContain('today_stats')
+    expect(saved).not.toContain('priority')
+    expect(localStorage.getItem('account-hidden-columns-v')).toBe('3')
+  })
+})

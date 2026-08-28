@@ -731,6 +731,7 @@ export default {
     modelPlaza: '模型广场',
     subscriptions: '订阅管理',
     accounts: '账号管理',
+    plugins: '插件管理',
     proxies: 'IP管理',
     redeemCodes: '兑换码',
     ops: '运维监控',
@@ -1219,6 +1220,32 @@ export default {
         codexNoteWindows:
           '设置 $env:SUB2API_API_KEY，将 config.toml 保存到 %USERPROFILE%\\.codex。优先 env_key，勿提交密钥。'
       },
+      deepseek: {
+        description: '通过当前 DeepSeek 分组配置 Claude Code、Codex 或 OpenCode。',
+        codexDescription: '使用 API Key 配置 Codex，并通过当前 DeepSeek 分组发送请求。',
+        codexConfigTomlHint: '下载下方模型目录，将两个文件保存到 Codex 配置目录后重启 Codex。',
+        codexNote: '启动 Codex 前先导出 SUB2API_API_KEY。下载的目录只包含模型元数据，不包含 API Key。'
+      },
+      composite: {
+        description: '通过当前 Composite 路由分组配置受支持的客户端。',
+        codexDescription: '使用 API Key 和当前 Composite 分组的完整模型目录配置 Codex。',
+        codexConfigTomlHint: '下载下方模型目录，将两个文件保存到 Codex 配置目录后重启 Codex。',
+        codexNote: '启动 Codex 前先导出 SUB2API_API_KEY；分组会根据目录中选中的模型路由请求。'
+      },
+      routedCodex: {
+        description: '使用当前路由分组的完整模型目录配置 Codex。',
+        configTomlHint: '下载下方模型目录，将两个文件保存到 Codex 配置目录后重启 Codex。',
+        note: '启动 Codex 前先导出 SUB2API_API_KEY。下载的目录只包含模型元数据，不包含 API Key。'
+      },
+      codexModelCatalog: {
+        title: 'Codex 模型目录',
+        description: '使用当前 API Key 获取目录，并保存到 config.toml 引用的路径。',
+        fetch: '获取目录',
+        retry: '重试',
+        download: '下载目录',
+        modelsCount: '已获取 {count} 个模型',
+        errorDescription: '无法使用当前 API Key 获取模型目录。'
+      },
       opencode: {
         title: 'OpenCode 配置示例',
         subtitle: 'opencode.json',
@@ -1356,6 +1383,7 @@ export default {
     modelVariant: '疑似版本变体',
     modelMismatch: '模型不一致',
     reasoningEffort: '推理强度',
+    requestedReasoningEffort: '请求推理强度',
     endpoint: '端点',
     endpointDistribution: '端点分布',
     inbound: '入站',
@@ -1782,7 +1810,8 @@ export default {
     detail: {
       noModels: '该分组暂未配置模型',
       noPricing: '未配置定价',
-      peakNote: '高峰时段 {window} 计费倍率 ×{multiplier}'
+      peakNote: '高峰时段 {window} 计费倍率 ×{multiplier}',
+      longContextDisabledNote: '该分组未启用长上下文阶梯计费，超阈值请求仍按基础档计费，官方阶梯仅供参考'
     },
     table: {
       model: '模型',
@@ -1791,6 +1820,16 @@ export default {
       cache: '缓存',
       cacheWrite: '写入',
       cacheRead: '读取',
+      cacheWriteShort: '写',
+      cacheReadShort: '读',
+      tierHint: '按单次请求的总上下文（输入 + 缓存写入 + 缓存读取）所在档位对整单计价',
+      tierHintMarginal: '仅超过阈值的部分按该档计价，输出不加价',
+      marginalBadge: '超出部分计价',
+      timePricingRowHint: '按 {timezone} 时间，在该时段内发起的请求按本行价格计费',
+      timePricingRowHintWeekdays: '按 {timezone} 时间，仅工作日（周一至周五）在该时段内发起的请求按本行价格计费，周末全天按标准价',
+      timePricingRowHintPeak: '；本行价格未含高峰倍率，与高峰时段 {window} 重叠的部分实付再乘 ×{multiplier}',
+      timePricingWeekdays: '工作日',
+      timePricingRateHint: '生效倍率 {rate} × 时段倍率 {multiplier}',
       paidPrice: '实付价格(折后)',
       officialPrice: '官方价格',
       rate: '折扣倍率',
@@ -2876,6 +2915,8 @@ export default {
         statusLabel: '状态',
         selectStatus: '选择状态',
         rpmLimit: '每分钟请求数 (RPM)',
+        concurrencyPlaceholder: '0 表示不限制',
+        concurrencyHint: '该用户的最大并发请求数，0 = 不限制',
         rpmLimitPlaceholder: '0 表示不限制',
         rpmLimitHint: '该用户每分钟最大请求数，0 = 不限制；仅在所用分组未设置 rpm_limit 时作为兜底生效'
       },
@@ -2896,7 +2937,7 @@ export default {
       failedToSave: '保存用户失败',
       failedToAdjust: '调整失败',
       emailRequired: '请输入邮箱',
-      concurrencyMin: '并发数不能小于1',
+      concurrencyNonNegative: '并发数不能为负数，0 表示不限制',
       amountRequired: '请输入有效金额',
       insufficientBalance: '余额不足',
       setAllowedGroups: '设置允许分组',
@@ -2912,6 +2953,9 @@ export default {
       groupConfigHint: '为用户 {email} 配置专属分组倍率（覆盖分组默认倍率）',
       exclusiveGroups: '专属分组',
       publicGroups: '公开分组（默认可用）',
+      restrictPublicGroups: '限制可访问的公开分组',
+      restrictPublicGroupsHint: '开启后，该用户仅能使用下方勾选的公开分组；关闭则可使用全部公开分组。',
+      publicGroupsRestricted: '公开分组（已限制）',
       defaultRate: '默认倍率',
       customRate: '专属倍率',
       useDefaultRate: '使用默认',
@@ -3751,6 +3795,9 @@ export default {
         cacheReadMultiplier: '缓存读倍率',
         timePricing: '时间段定价（可选）',
         timezone: '时区',
+        timePricingDayScope: '生效日',
+        timePricingEveryDay: '每日生效（周一至周日，含周末）',
+        timePricingWeekdaysOnly: '仅工作日生效（周一至周五）',
         addTimePeriod: '添加时间段',
         startTime: '开始时间',
         endTime: '结束时间',
@@ -4856,6 +4903,14 @@ export default {
         resetAccountRecoveryFailed: '窗口已重置，但账号状态恢复失败，请手动恢复账号状态。',
         resetAccountRefreshFailed: '窗口、账号状态和重置次数缓存已更新，但无法加载最新账号显示。',
         refreshCachePersistFailed: '已显示实时次数，但到期明细获取失败，仍保留原有缓存明细。',
+        autoStatus: {
+          checking: '检测中',
+          available: '卡可用',
+          resetting: '自动重置中',
+          success: '自动重置成功',
+          noCredit: '无卡',
+          failed: '自动重置失败'
+        },
         confirmTitle: '确认重置周限',
         confirmMessage: '将消耗 1 次重置次数立即恢复当前窗口，剩余 {count} 次。此操作不可撤销，确定继续吗？'
       },
@@ -5241,6 +5296,7 @@ export default {
       syncUpstreamModelsEmpty: '上游没有返回可同步的模型',
       syncUpstreamModelsFailed: '同步上游模型失败',
       syncUpstreamModelsError: '同步上游模型失败：{message}',
+      syncUpstreamModelsMetadataIncomplete: '模型 ID 已同步，但能力元数据不完整，能力信息未更新。',
       clearAllModels: '清除所有模型',
       customModelName: '自定义模型名称',
       enterCustomModelName: '输入自定义模型名称',
@@ -5292,6 +5348,14 @@ export default {
 	  autoPause5hDisabled: '禁用 5h 自动暂停',
 	  autoPause7dDisabled: '禁用 7d 自动暂停',
 	  autoPauseDisabledHint: '开启后该账号永不进入自动暂停（即使全局默认阈值已配置）。',
+	  autoResetCredit: {
+	    title: '自动使用重置卡',
+	    hint: '仅在实际用量达到阈值时使用最早到期的可用卡；默认关闭。无卡或失败时账号保持暂停。',
+	    threshold5h: '5h 自动用卡阈值(%)',
+	    threshold7d: '7d 自动用卡阈值(%)',
+	    thresholdHint: '两个窗口独立判断，任一达到自身阈值即触发。可填写 0.1–100，默认均为 100。',
+	    thresholdInvalid: '自动使用重置卡阈值必须在 0.1% 到 100% 之间。'
+	  },
       // Quota control (Anthropic OAuth/SetupToken only)
       quotaControl: {
         title: '配额控制',
@@ -6862,6 +6926,7 @@ export default {
         title: '错误详情',
         titleWithId: '错误 #{id}',
         noErrorSelected: '未选择错误。',
+        backToList: '返回列表',
         resolution: '已解决：',
         failedToUpdateResolvedStatus: '更新解决状态失败',
         classificationKeys: {
@@ -7431,6 +7496,12 @@ export default {
           requireAuthHint: '开启后未登录访问将跳转登录页；关闭则公开可见，匿名访客仅展示非专属分组。',
           priceDescription: '价格说明（Markdown）',
           priceDescriptionHint: '展示在模型广场页面顶部，可用于说明计费规则、汇率、优惠活动等。',
+        },
+        pluginManagement: {
+          title: '插件管理',
+          description: '控制管理员侧边栏是否显示插件管理入口。此开关不控制插件运行状态。',
+          enabled: '显示插件管理菜单',
+          enabledHint: '关闭后仅隐藏侧边栏菜单；已加载或正在运行的插件不会因此停止。'
         },
         riskControl: {
           title: '风控中心',
@@ -9008,6 +9079,54 @@ export default {
         prompt_audit_encryption_key_required: '未配置固定加密密钥，审计节点 API Key 将在服务重启后失效。请先设置 TOTP_ENCRYPTION_KEY 环境变量并重启服务。',
         prompt_guard_requires_audit_enabled: '开启同步阻止前必须先启用提示词审计。', prompt_audit_invalid_endpoint: '审计节点配置无效。', prompt_audit_endpoint_required: '启用审计前至少需要一个启用节点。', prompt_audit_groups_required: '指定分组模式至少需要选择一个分组。', prompt_audit_scanners_required: '至少需要启用一个风险分类。',
       },
+    },
+    plugins: {
+      title: '插件管理',
+      description: '安装和管理独立运行的 OAuth 出站传输插件。API Key 流程不受影响。',
+      upload: '安装插件',
+      uploadHint: '仅接受 .s2plugin 包；默认要求可信发布者签名。',
+      runtimeNotice: '插件安装、启用、停用和配置由 Sub2API 宿主动态处理，通常不需要重启宿主实例。只有宿主版本或宿主配置本身变化时，才按部署方式执行重启。',
+      menuNotice: '系统设置中的“插件管理”开关仅控制侧边栏菜单显示，不会停止已经加载或正在运行的插件。',
+      empty: '尚未安装插件',
+      emptyHint: '选择本机的 .s2plugin 文件进行安装。Sub2API 不会自动下载第三方插件。',
+      configure: '配置',
+      enable: '启用',
+      disable: '停用',
+      test: '测试',
+      uninstall: '卸载',
+      rollout: 'OAuth 流量比例',
+      compatibility: '版本兼容性',
+      currentVersion: '当前 Sub2API',
+      requiredVersion: '要求范围',
+      recommendedVersion: '建议版本',
+      signature: '包签名',
+      trusted: '已验证',
+      unsigned: '未签名',
+      runtime: '运行状态',
+      healthy: '运行正常',
+      unhealthy: '未运行',
+      compatible: '兼容',
+      untested: '未验证版本',
+      incompatible: '不兼容',
+      enabled: '已启用',
+      disabled: '已停用',
+      error: '异常',
+      starting: '启动中',
+      configTitle: '{name} 配置',
+      loadingUI: '正在加载插件配置界面...',
+      uiUnavailable: '无法加载插件配置界面',
+      uploadSuccess: '插件安装成功，当前保持停用',
+      enableSuccess: '插件已启用',
+      disableSuccess: '插件已停用',
+      uninstallSuccess: '插件已卸载',
+      testSuccess: '插件测试通过',
+      confirmDisable: '确定停用此插件吗？新的 OAuth 请求会立即恢复 Sub2API 原有路径。',
+      confirmUninstall: '确定卸载此插件吗？插件必须先停用。此操作会移除安装文件和配置。',
+      confirmUntested: '该插件兼容当前版本范围，但未声明已测试当前 Sub2API 版本。确定承担风险并启用吗？',
+      fileRequired: '请选择 .s2plugin 文件',
+      bridgeRejected: '插件 UI 消息校验失败',
+      onlyOpenAI: '初期能力：仅 OpenAI OAuth 出站传输',
+      noAccountCoupling: '作用域为平台与账号类型，不修改账号数据，也不需要在账号页逐个开启。'
     },
   },
 

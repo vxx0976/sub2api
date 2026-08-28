@@ -180,6 +180,11 @@ func RoleVersion(v int64) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldRoleVersion, v))
 }
 
+// RestrictPublicGroups applies equality check predicate on the "restrict_public_groups" field. It's identical to RestrictPublicGroupsEQ.
+func RestrictPublicGroups(v bool) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldRestrictPublicGroups, v))
+}
+
 // BalanceNotifyEnabled applies equality check predicate on the "balance_notify_enabled" field. It's identical to BalanceNotifyEnabledEQ.
 func BalanceNotifyEnabled(v bool) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldBalanceNotifyEnabled, v))
@@ -1468,6 +1473,16 @@ func RoleVersionLT(v int64) predicate.User {
 // RoleVersionLTE applies the LTE predicate on the "role_version" field.
 func RoleVersionLTE(v int64) predicate.User {
 	return predicate.User(sql.FieldLTE(FieldRoleVersion, v))
+}
+
+// RestrictPublicGroupsEQ applies the EQ predicate on the "restrict_public_groups" field.
+func RestrictPublicGroupsEQ(v bool) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldRestrictPublicGroups, v))
+}
+
+// RestrictPublicGroupsNEQ applies the NEQ predicate on the "restrict_public_groups" field.
+func RestrictPublicGroupsNEQ(v bool) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldRestrictPublicGroups, v))
 }
 
 // BalanceNotifyEnabledEQ applies the EQ predicate on the "balance_notify_enabled" field.

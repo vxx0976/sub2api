@@ -92,6 +92,7 @@ func TestUsageLogRepositoryCreateSyncRequestTypeAndLegacyFields(t *testing.T) {
 			sqlmock.AnyArg(), // pricing_time_band
 			sqlmock.AnyArg(), // priced_at
 			sqlmock.AnyArg(), // reasoning_effort
+			sqlmock.AnyArg(), // requested_reasoning_effort
 			sqlmock.AnyArg(), // inbound_endpoint
 			sqlmock.AnyArg(), // upstream_endpoint
 			log.CacheTTLOverridden,
@@ -188,9 +189,10 @@ func TestUsageLogRepositoryCreate_PersistsServiceTier(t *testing.T) {
 			serviceTier,
 			sqlmock.AnyArg(), // pricing_time_band
 			sqlmock.AnyArg(), // priced_at
-			sqlmock.AnyArg(),
-			sqlmock.AnyArg(),
-			sqlmock.AnyArg(),
+			sqlmock.AnyArg(), // reasoning_effort
+			sqlmock.AnyArg(), // requested_reasoning_effort
+			sqlmock.AnyArg(), // inbound_endpoint
+			sqlmock.AnyArg(), // upstream_endpoint
 			log.CacheTTLOverridden,
 			sqlmock.AnyArg(), // merchant_rate_snapshot
 			sqlmock.AnyArg(), // platform_cost_snapshot
@@ -794,7 +796,7 @@ func (s usageLogScannerStub) Scan(dest ...any) error {
 	}
 	for i := range dest {
 		dv := reflect.ValueOf(dest[i])
-		if dv.Kind() != reflect.Ptr {
+		if dv.Kind() != reflect.Pointer {
 			return fmt.Errorf("dest[%d] is not pointer", i)
 		}
 		dv.Elem().Set(reflect.ValueOf(s.values[i]))
@@ -845,6 +847,7 @@ func TestScanUsageLogRequestTypeAndLegacyFallback(t *testing.T) {
 			sql.NullString{},
 			sql.NullString{}, // pricing_time_band
 			sql.NullTime{},   // priced_at
+			sql.NullString{},
 			sql.NullString{},
 			sql.NullString{},
 			sql.NullString{},
@@ -930,6 +933,7 @@ func TestScanUsageLogRequestTypeAndLegacyFallback(t *testing.T) {
 			sql.NullString{},
 			sql.NullString{},
 			sql.NullString{},
+			sql.NullString{},
 			false,
 			sql.NullFloat64{}, // merchant_rate_snapshot
 			sql.NullFloat64{}, // platform_cost_snapshot
@@ -995,6 +999,7 @@ func TestScanUsageLogRequestTypeAndLegacyFallback(t *testing.T) {
 			sql.NullString{},
 			sql.NullString{},
 			sql.NullString{},
+			sql.NullString{},
 			false,
 			sql.NullFloat64{}, // merchant_rate_snapshot
 			sql.NullFloat64{}, // platform_cost_snapshot
@@ -1057,6 +1062,7 @@ func TestScanUsageLogRequestTypeAndLegacyFallback(t *testing.T) {
 			sql.NullString{Valid: true, String: "priority"},
 			sql.NullString{}, // pricing_time_band
 			sql.NullTime{},   // priced_at
+			sql.NullString{},
 			sql.NullString{},
 			sql.NullString{},
 			sql.NullString{},

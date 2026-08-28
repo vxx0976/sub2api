@@ -108,6 +108,7 @@ var ProviderSet = wire.NewSet(
 	NewRechargeOrderRepo,
 	NewOrderRepo,
 	NewUsdtOrderRepo,
+	NewPluginRepository,
 	NewChannelMonitorRepository,
 	NewChannelMonitorV2Repository,
 	NewChannelMonitorRequestTemplateRepository,

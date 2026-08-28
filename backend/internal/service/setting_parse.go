@@ -208,9 +208,10 @@ func (s *SettingService) InitializeDefaultSettings(ctx context.Context) error {
 		// 上游默认关是因为广场对它是新增的 opt-in 功能；在本 fork 它是唯一的公开定价页
 		// （取代了原来的 /models），沿用 default-off 会让任何未显式写过该设置的部署
 		// ——包括全新部署——根本没有公开定价页（后端 404 + 前端跳 /home）。
-		SettingKeyModelPlazaEnabled:     "true",
-		SettingKeyModelPlazaRequireAuth: "false",
-		SettingKeyModelPlazaDescription: "",
+		SettingKeyModelPlazaEnabled:       "true",
+		SettingKeyModelPlazaRequireAuth:   "false",
+		SettingKeyModelPlazaDescription:   "",
+		SettingKeyPluginManagementEnabled: "false",
 
 		// Affiliate (邀请返利) feature (default disabled; opt-in)
 		SettingKeyAffiliateEnabled:              "false",
@@ -839,6 +840,7 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 	result.ModelPlazaEnabled = modelPlazaEnabledFrom(settings)
 	result.ModelPlazaRequireAuth = settings[SettingKeyModelPlazaRequireAuth] == "true"
 	result.ModelPlazaDescription = settings[SettingKeyModelPlazaDescription]
+	result.PluginManagementEnabled = settings[SettingKeyPluginManagementEnabled] == "true"
 
 	// Affiliate (邀请返利) feature (default: disabled; strict true)
 	result.AffiliateEnabled = settings[SettingKeyAffiliateEnabled] == "true"

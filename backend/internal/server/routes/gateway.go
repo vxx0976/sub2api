@@ -67,16 +67,17 @@ func RegisterGatewayRoutes(
 			h.Gateway.CountTokens(c)
 		}
 	}
-	// 门必须与 CodexModels handler 一致：只有 openai（以及未解析出目标平台的 composite）
-	// 走 Codex manifest。OpenAI 兼容的国产平台(kimi/zhipu/deepseek)走宽谓词会被
-	// handler 404，而它们本该从 Gateway.Models 拿到模型列表。
+	// 只有官方 openai 分组走 OpenAIGateway.CodexModels（保留上游实时 manifest 元数据）；
+	// 其余平台（含 OpenAI 兼容的国产供应商 kimi/zhipu/deepseek 与未解析目标的 composite）
+	// 走 Gateway.CodexModels 生成的 manifest —— 上游本轮新增，取代了 fork 原来
+	// "回落到 Gateway.Models" 的兜底（那只是为了绕开旧 CodexModels 的 openai-only 404）。
+	codexModelsHandler := func(c *gin.Context) {
+		dispatchCodexModelsGateway(c, h.OpenAIGateway.CodexModels, h.Gateway.CodexModels)
+	}
 	modelsHandler := func(c *gin.Context) {
 		if c.Query("client_version") != "" {
-			switch getGroupPlatform(c) {
-			case service.PlatformOpenAI, service.PlatformComposite:
-				h.OpenAIGateway.CodexModels(c)
-				return
-			}
+			codexModelsHandler(c)
+			return
 		}
 		h.Gateway.Models(c)
 	}
@@ -383,7 +384,7 @@ func RegisterGatewayRoutes(
 		codexDirect.GET("/responses", func(c *gin.Context) {
 			h.OpenAIGateway.ResponsesWebSocket(c)
 		})
-		codexDirect.GET("/models", h.OpenAIGateway.CodexModels)
+		codexDirect.GET("/models", codexModelsHandler)
 	}
 	// OpenAI Chat Completions API（不带v1前缀的别名）— auto-route based on group platform
 	r.POST("/chat/completions", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), compositeTarget, requireGroupAnthropic, func(c *gin.Context) {
@@ -508,6 +509,14 @@ func RegisterGatewayRoutes(
 		antigravityV1Beta.POST("/models/*modelAction", h.Gateway.GeminiV1BetaModels)
 	}
 
+}
+
+func dispatchCodexModelsGateway(c *gin.Context, openAIHandler, generatedHandler gin.HandlerFunc) {
+	if getGroupPlatform(c) == service.PlatformOpenAI {
+		openAIHandler(c)
+		return
+	}
+	generatedHandler(c)
 }
 
 // getGroupPlatform extracts the group platform from the API Key stored in context.

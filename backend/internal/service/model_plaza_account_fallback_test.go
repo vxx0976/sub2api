@@ -40,15 +40,15 @@ func plazaAccount(id int64, platform, status string, models ...string) Account {
 
 // accounts 取接口类型而非具体桩类型：传具体类型的 nil 指针会让接口非 nil
 // （typed nil），测不到「未接线」这条路径。
-func newPlazaServiceWithAccounts(groups []Group, accounts AccountRepository) *ChannelService {
+func newPlazaServiceWithAccounts(groups []Group, accounts AccountRepository) *ModelPlazaService {
 	repo := &mockChannelRepository{
 		listAllFn: func(ctx context.Context) ([]Channel, error) { return nil, nil },
 	}
-	return NewChannelService(repo, &stubGroupRepoForAvailable{activeGroups: groups}, nil, nil, accounts)
+	return NewModelPlazaService(repo, &stubGroupRepoForAvailable{activeGroups: groups}, nil, nil, nil, accounts)
 }
 
 // 本 fork 的模型目录挂在账号上，不在渠道上（channel_groups / channel_model_pricing
-// 生产库里是空表）。上游 ListPlazaGroups 只认渠道，会把每个分组算成 0 模型并整组丢弃，
+// 生产库里是空表）。上游 ListGroups 只认渠道，会把每个分组算成 0 模型并整组丢弃，
 // 广场页全空。这批用例钉住账号回落，避免以后有人把它当成"多余的分支"删掉。
 func TestListPlazaGroups_AccountFallbackWhenNoChannelModels(t *testing.T) {
 	groups := []Group{
@@ -61,7 +61,7 @@ func TestListPlazaGroups_AccountFallbackWhenNoChannelModels(t *testing.T) {
 		},
 	}}
 
-	out, err := newPlazaServiceWithAccounts(groups, accounts).ListPlazaGroups(context.Background())
+	out, err := newPlazaServiceWithAccounts(groups, accounts).ListGroups(context.Background())
 	require.NoError(t, err)
 	require.Len(t, out, 1, "渠道侧无模型时不能把分组整个丢掉")
 
@@ -87,7 +87,7 @@ func TestListPlazaGroups_AccountFallbackSkipsIrrelevantAccounts(t *testing.T) {
 		},
 	}}
 
-	out, err := newPlazaServiceWithAccounts(groups, accounts).ListPlazaGroups(context.Background())
+	out, err := newPlazaServiceWithAccounts(groups, accounts).ListGroups(context.Background())
 	require.NoError(t, err)
 	require.Len(t, out, 1)
 	require.Len(t, out[0].Models, 1)
@@ -102,7 +102,7 @@ func TestListPlazaGroups_AccountFallbackIgnoresWildcardMappings(t *testing.T) {
 		1: {plazaAccount(11, PlatformOpenAI, StatusActive, "gpt-5", "gpt-*")},
 	}}
 
-	out, err := newPlazaServiceWithAccounts(groups, accounts).ListPlazaGroups(context.Background())
+	out, err := newPlazaServiceWithAccounts(groups, accounts).ListGroups(context.Background())
 	require.NoError(t, err)
 	require.Len(t, out, 1)
 	require.Equal(t, []string{"gpt-5"}, []string{out[0].Models[0].Name})
@@ -119,7 +119,7 @@ func TestListPlazaGroups_AccountFallbackPassthroughWithoutPricingDropsGroup(t *t
 		1: {plazaAccount(11, PlatformOpenAI, StatusActive)},
 	}}
 
-	out, err := newPlazaServiceWithAccounts(groups, accounts).ListPlazaGroups(context.Background())
+	out, err := newPlazaServiceWithAccounts(groups, accounts).ListGroups(context.Background())
 	require.NoError(t, err)
 	require.Empty(t, out)
 }
@@ -131,7 +131,7 @@ func TestListPlazaGroups_AccountFallbackToleratesRepoError(t *testing.T) {
 	}
 	accounts := &stubAccountRepoForPlaza{err: errors.New("db down")}
 
-	out, err := newPlazaServiceWithAccounts(groups, accounts).ListPlazaGroups(context.Background())
+	out, err := newPlazaServiceWithAccounts(groups, accounts).ListGroups(context.Background())
 	require.NoError(t, err)
 	require.Empty(t, out)
 }
@@ -141,7 +141,7 @@ func TestListPlazaGroups_NilAccountRepoBehavesLikeUpstream(t *testing.T) {
 	groups := []Group{
 		{ID: 1, Name: "GPT", Platform: PlatformOpenAI, Status: StatusActive, RateMultiplier: 1},
 	}
-	out, err := newPlazaServiceWithAccounts(groups, nil).ListPlazaGroups(context.Background())
+	out, err := newPlazaServiceWithAccounts(groups, nil).ListGroups(context.Background())
 	require.NoError(t, err)
 	require.Empty(t, out)
 }
@@ -158,9 +158,9 @@ func TestListPlazaGroups_ChannelModelsSuppressAccountFallback(t *testing.T) {
 	repo := &mockChannelRepository{
 		listAllFn: func(ctx context.Context) ([]Channel, error) { return channels, nil },
 	}
-	svc := NewChannelService(repo, &stubGroupRepoForAvailable{activeGroups: groups}, nil, nil, accounts)
+	svc := NewModelPlazaService(repo, &stubGroupRepoForAvailable{activeGroups: groups}, nil, nil, nil, accounts)
 
-	out, err := svc.ListPlazaGroups(context.Background())
+	out, err := svc.ListGroups(context.Background())
 	require.NoError(t, err)
 	require.Len(t, out, 1)
 	require.Equal(t, "from-channel", out[0].Models[0].Name)

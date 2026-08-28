@@ -5,9 +5,9 @@
  */
 
 import { apiClient } from './client'
-import type { UserSupportedModelPricing } from './channels'
+import type { UserPricingInterval, UserSupportedModelPricing } from './channels'
 
-/** LiteLLM 官方参考价（USD per token，字段缺失 = 官方数据未覆盖）。 */
+/** 官方参考价（USD per token，与计费目录同源；字段缺失 = 目录未覆盖）。 */
 export interface PlazaOfficialPricing {
   input_price: number | null
   output_price: number | null
@@ -16,6 +16,31 @@ export interface PlazaOfficialPricing {
   /** 1h 缓存写入（LiteLLM cache_creation_above_1hr），多数模型缺失。 */
   cache_write_1h_price?: number | null
   cache_read_price: number | null
+  /** 官方长上下文阶梯（多档模型才有），不受分组开关影响。 */
+  intervals?: UserPricingInterval[]
+}
+
+/**
+ * 多档时的计价基准：
+ * - whole_request：整单按所在档单价计价（目录阶梯、渠道区间）；
+ * - marginal：仅超出阈值的部分按该档单价计价（平台旧规则）。
+ */
+export type PlazaLongContextBasis = 'whole_request' | 'marginal'
+
+/** 分时倍率时段：配置时区当天 [start_time, end_time) 内整单实付乘 multiplier。 */
+export interface PlazaTimePricingPeriod {
+  start_time: string
+  end_time: string
+  multiplier: number
+}
+
+/** 计费会生效的分时倍率（仅倍率 ≠ 1 的时段，已按开始时间升序）。 */
+export interface PlazaTimePricing {
+  /** IANA 时区名，如 Asia/Shanghai。 */
+  timezone: string
+  /** true 时时段仅周一至周五生效，周末整天按标准价计费。 */
+  weekdays_only?: boolean
+  periods: PlazaTimePricingPeriod[]
 }
 
 /**
@@ -43,9 +68,14 @@ export interface PlazaModel {
    * kimi / glm 等）为 'CNY'，前端据此显示 ¥；缺省按 '$' 处理。
    */
   price_currency?: string
+  /** 实收口径的展示定价：多档时 intervals 为各档绝对单价（已由计费服务折算）；均为标准时段价。 */
   pricing: UserSupportedModelPricing | null
   official_pricing: PlazaOfficialPricing | null
-  /** 官方时段分档；无分档的模型不下发该字段。 */
+  /** 仅多档模型返回。 */
+  long_context_basis?: PlazaLongContextBasis
+  /** 仅配置了分时倍率的模型返回（本站渠道售价倍率）。 */
+  time_pricing?: PlazaTimePricing
+  /** 官方时段分档（上游厂商峰谷价，与 time_pricing 正交）；无分档的模型不下发该字段。 */
   time_tier?: ModelTimeTier | null
 }
 
@@ -67,6 +97,8 @@ export interface ModelPlazaGroup {
   /** 生图独立倍率：true 时图片计费模型的实付倍率取 image_rate_multiplier，不取分组/专属倍率。 */
   image_rate_independent: boolean
   image_rate_multiplier: number
+  /** 分组是否启用长上下文阶梯计费；false 时实付列只展示最低档，官方阶梯仅供参考。 */
+  long_context_pricing_enabled: boolean
   models: PlazaModel[]
 }
 

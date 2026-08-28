@@ -134,7 +134,12 @@ func (User) Fields() []ent.Field {
 			Default(0).
 			Comment("角色版本号，角色变更时递增"),
 
-		// 余额不足通知（来自 main）
+		// 公开分组访问限制：为 false 时用户可绑定任意非专属分组（默认行为），
+		// 为 true 时仅可绑定 user_allowed_groups 中列出的公开分组。
+		field.Bool("restrict_public_groups").
+			Default(false),
+
+		// 余额不足通知
 		field.Bool("balance_notify_enabled").
 			Default(true),
 		field.String("balance_notify_threshold_type").

@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// 本文件是 fork 扩展，不在上游 channel_plaza.go 中。
+// 本文件是 fork 扩展，不在上游 model_plaza_service.go 中。
 //
 // 上游模型广场的模型目录完全来自「渠道」：channels → channel_groups → channel_model_pricing。
 // 本 fork 的部署从没用过那条链路（渠道表只用来做供应商余额监控），模型目录实际由
@@ -26,7 +26,7 @@ import (
 //
 // 交集口径会在账号各自映射不相交时得出空集（历史上 GPT 分组显示 0 模型即此因），
 // 故此处恒用并集。
-func (s *ChannelService) plazaAccountModelNames(ctx context.Context, groupID int64, platform string) []string {
+func (s *ModelPlazaService) plazaAccountModelNames(ctx context.Context, groupID int64, platform string) []string {
 	var union map[string]struct{} // nil = 还没遇到任何「显式列模型」的账号
 
 	if s.accountRepo != nil {
@@ -70,7 +70,7 @@ func (s *ChannelService) plazaAccountModelNames(ctx context.Context, groupID int
 }
 
 // plazaLiteLLMModelNames 返回某平台 LiteLLM 全表的模型名（已排序）。
-func (s *ChannelService) plazaLiteLLMModelNames(platform string) []string {
+func (s *ModelPlazaService) plazaLiteLLMModelNames(platform string) []string {
 	if s.pricingService == nil {
 		return nil
 	}
@@ -89,7 +89,7 @@ func (s *ChannelService) plazaLiteLLMModelNames(platform string) []string {
 // plazaAccountFallbackModels 为「渠道侧零模型」的分组构造广场模型条目。
 // 定价一律走 LiteLLM 全局表合成（账号侧没有渠道级单价），拿不到价的模型仍然展示，
 // 前端显示 "-"：能看到分组支持哪些模型本身就是广场的主要价值。
-func (s *ChannelService) plazaAccountFallbackModels(ctx context.Context, groupID int64, platform string) []PlazaModel {
+func (s *ModelPlazaService) plazaAccountFallbackModels(ctx context.Context, groupID int64, platform string) []PlazaModel {
 	names := s.plazaAccountModelNames(ctx, groupID, platform)
 	if len(names) == 0 {
 		return nil

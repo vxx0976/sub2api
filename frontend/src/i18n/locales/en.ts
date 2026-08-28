@@ -731,6 +731,7 @@ export default {
     modelPlaza: 'Model Plaza',
     subscriptions: 'Subscriptions',
     accounts: 'Accounts',
+    plugins: 'Plugins',
     proxies: 'Proxies',
     redeemCodes: 'Redeem Codes',
     ops: 'Ops',
@@ -1215,6 +1216,32 @@ export default {
         codexNoteWindows:
           'Set $env:SUB2API_API_KEY, save config.toml under %USERPROFILE%\\.codex. Prefer env_key auth; do not commit secrets.',
       },
+      deepseek: {
+        description: 'Configure Claude Code, Codex, or OpenCode through the current DeepSeek group.',
+        codexDescription: 'Configure Codex with API key authentication through the current DeepSeek group.',
+        codexConfigTomlHint: 'Download the model catalog below, save both files under the Codex config directory, and restart Codex.',
+        codexNote: 'Export SUB2API_API_KEY before starting Codex. The downloaded catalog contains model metadata only, not your API key.'
+      },
+      composite: {
+        description: 'Configure supported clients through the current Composite routing group.',
+        codexDescription: 'Configure Codex with API key authentication and the complete model catalog for this Composite group.',
+        codexConfigTomlHint: 'Download the model catalog below, save both files under the Codex config directory, and restart Codex.',
+        codexNote: 'Export SUB2API_API_KEY before starting Codex. Model requests are routed by the selected catalog slug.'
+      },
+      routedCodex: {
+        description: 'Configure Codex with the complete model catalog for the current routed group.',
+        configTomlHint: 'Download the model catalog below, save both files under the Codex config directory, and restart Codex.',
+        note: 'Export SUB2API_API_KEY before starting Codex. The downloaded catalog contains model metadata only, not your API key.'
+      },
+      codexModelCatalog: {
+        title: 'Codex model catalog',
+        description: 'Fetch with this API key, then save the catalog at the path referenced by config.toml.',
+        fetch: 'Fetch catalog',
+        retry: 'Retry',
+        download: 'Download catalog',
+        modelsCount: '{count} models ready to download',
+        errorDescription: 'The catalog could not be fetched with this API key.'
+      },
       opencode: {
         title: 'OpenCode Example',
         subtitle: 'opencode.json',
@@ -1351,6 +1378,7 @@ export default {
     modelVariant: 'Possible version variant',
     modelMismatch: 'Different model',
     reasoningEffort: 'Reasoning Effort',
+    requestedReasoningEffort: 'Requested reasoning effort',
     endpoint: 'Endpoint',
     endpointDistribution: 'Endpoint Distribution',
     inbound: 'Inbound',
@@ -1782,7 +1810,8 @@ export default {
     detail: {
       noModels: 'No models configured for this group',
       noPricing: 'Pricing not configured',
-      peakNote: 'Peak hours {window}: billing rate ×{multiplier}'
+      peakNote: 'Peak hours {window}: billing rate ×{multiplier}',
+      longContextDisabledNote: 'Long-context tier pricing is disabled for this group: requests above the threshold are billed at the base tier; official tiers are for reference only'
     },
     table: {
       model: 'Model',
@@ -1791,6 +1820,16 @@ export default {
       cache: 'Cache',
       cacheWrite: 'Write',
       cacheRead: 'Read',
+      cacheWriteShort: 'W',
+      cacheReadShort: 'R',
+      tierHint: 'The whole request is billed at the tier matching its total context (input + cache write + cache read)',
+      tierHintMarginal: 'Only the portion above the threshold is billed at this tier; output is unaffected',
+      marginalBadge: 'excess-only tiers',
+      timePricingRowHint: 'Requests made within this period ({timezone} time) are billed at the prices in this row',
+      timePricingRowHintWeekdays: 'On weekdays (Mon–Fri) only, requests made within this period ({timezone} time) are billed at the prices in this row; weekends use the standard prices',
+      timePricingRowHintPeak: '; prices in this row exclude the peak-hour rate — where this period overlaps the peak hours {window}, the overlapping portion is additionally multiplied by ×{multiplier}',
+      timePricingWeekdays: 'Weekdays',
+      timePricingRateHint: 'Effective rate {rate} × period multiplier {multiplier}',
       paidPrice: 'Your Price (Discounted)',
       officialPrice: 'Official Price',
       rate: 'Rate',
@@ -2849,7 +2888,7 @@ export default {
       failedToToggle: 'Failed to update user status',
       failedToLoadApiKeys: 'Failed to load user API keys',
       emailRequired: 'Please enter email',
-      concurrencyMin: 'Concurrency must be at least 1',
+      concurrencyNonNegative: 'Concurrency cannot be negative; 0 = unlimited',
       amountRequired: 'Please enter a valid amount',
       insufficientBalance: 'Insufficient balance',
       deleteConfirm: "Are you sure you want to delete '{email}'? This action cannot be undone.",
@@ -2867,6 +2906,9 @@ export default {
       groupConfigHint: 'Configure custom rate multipliers for user {email} (overrides group defaults)',
       exclusiveGroups: 'Exclusive Groups',
       publicGroups: 'Public Groups (Default Available)',
+      restrictPublicGroups: 'Restrict accessible public groups',
+      restrictPublicGroupsHint: 'When on, this user may only use the public groups checked below. When off, every public group stays available.',
+      publicGroupsRestricted: 'Public Groups (Restricted)',
       defaultRate: 'Default Rate',
       customRate: 'Custom Rate',
       useDefaultRate: 'Use Default',
@@ -2924,6 +2966,8 @@ export default {
         statusLabel: 'Status',
         selectStatus: 'Select status',
         rpmLimit: 'Requests Per Minute (RPM)',
+        concurrencyPlaceholder: '0 = unlimited',
+        concurrencyHint: 'Max concurrent requests for this user; 0 = unlimited.',
         rpmLimitPlaceholder: '0 = unlimited',
         rpmLimitHint: 'Max requests per minute for this user; 0 = unlimited. Acts as a fallback only when the group has no rpm_limit set.'
       },
@@ -3754,6 +3798,9 @@ export default {
          cacheReadMultiplier: 'Cache Read Mult.',
          timePricing: 'Time-based pricing (optional)',
          timezone: 'Time zone',
+         timePricingDayScope: 'Effective days',
+         timePricingEveryDay: 'Every day (Monday-Sunday, including weekends)',
+         timePricingWeekdaysOnly: 'Weekdays only (Monday-Friday)',
          addTimePeriod: 'Add period',
          startTime: 'Start time',
          endTime: 'End time',
@@ -5153,6 +5200,7 @@ export default {
       syncUpstreamModelsEmpty: 'Upstream returned no models to sync',
       syncUpstreamModelsFailed: 'Failed to sync upstream models',
       syncUpstreamModelsError: 'Failed to sync upstream models: {message}',
+      syncUpstreamModelsMetadataIncomplete: 'Model IDs were synced, but capability metadata is incomplete and was not updated.',
       clearAllModels: 'Clear all models',
       customModelName: 'Custom model name',
       enterCustomModelName: 'Enter custom model name',
@@ -5231,6 +5279,14 @@ export default {
 	  autoPause5hDisabled: 'Disable 5h auto-pause',
 	  autoPause7dDisabled: 'Disable 7d auto-pause',
 	  autoPauseDisabledHint: 'When enabled, this account is never auto-paused (even if a global default threshold is configured).',
+	  autoResetCredit: {
+	    title: 'Automatically use reset credits',
+	    hint: 'Uses the earliest-expiring available credit only when actual usage reaches a threshold. Off by default; the account remains paused if no credit is available or reset fails.',
+	    threshold5h: '5h auto-reset threshold (%)',
+	    threshold7d: '7d auto-reset threshold (%)',
+	    thresholdHint: 'Each window is evaluated independently. Enter 0.1–100; both default to 100.',
+	    thresholdInvalid: 'Automatic reset-credit thresholds must be between 0.1% and 100%.'
+	  },
       // Quota control (Anthropic OAuth/SetupToken only)
       quotaControl: {
         title: 'Quota Control',
@@ -5954,6 +6010,14 @@ export default {
         resetAccountRecoveryFailed: 'The window was reset, but account state recovery failed. Recover the account state manually.',
         resetAccountRefreshFailed: 'The window, account state, and reset-credit cache were updated, but the latest account display could not be loaded.',
         refreshCachePersistFailed: 'Showing the live count, but its expiration details were unavailable, so the cached details were kept.',
+        autoStatus: {
+          checking: 'Checking',
+          available: 'Credit available',
+          resetting: 'Auto-resetting',
+          success: 'Auto-reset succeeded',
+          noCredit: 'No credit',
+          failed: 'Auto-reset failed'
+        },
         confirmTitle: 'Confirm Weekly Limit Reset',
         confirmMessage: 'This will consume 1 reset credit to immediately restore the current window ({count} remaining). This action cannot be undone. Continue?'
       },
@@ -6901,6 +6965,7 @@ export default {
         title: 'Error Detail',
         titleWithId: 'Error #{id}',
         noErrorSelected: 'No error selected.',
+        backToList: 'Back to List',
         resolution: 'Resolved:',
         failedToUpdateResolvedStatus: 'Failed to update resolved status',
         classificationKeys: {
@@ -7469,6 +7534,12 @@ export default {
           requireAuthHint: 'When on, anonymous visitors are redirected to the login page; when off, the page is public and anonymous visitors only see non-exclusive groups.',
           priceDescription: 'Pricing notes (Markdown)',
           priceDescriptionHint: 'Rendered at the top of the plaza page. Use it for billing rules, exchange rates, promotions, etc.',
+        },
+        pluginManagement: {
+          title: 'Plugin Management',
+          description: 'Controls whether the plugin management entry appears in the admin sidebar. This switch does not control plugin runtime state.',
+          enabled: 'Show Plugin Management',
+          enabledHint: 'Turning this off only hides the sidebar entry; loaded or running plugins are not stopped.'
         },
         riskControl: {
           title: 'Risk Control',
@@ -9055,7 +9126,55 @@ export default {
         prompt_audit_encryption_key_required: 'No fixed encryption key is configured, so audit node API Keys would be lost on restart. Set the TOTP_ENCRYPTION_KEY environment variable and restart the service first.',
         prompt_guard_requires_audit_enabled: 'Enable Prompt Audit before synchronous blocking.', prompt_audit_invalid_endpoint: 'The audit node configuration is invalid.', prompt_audit_endpoint_required: 'Enable at least one audit node before enabling Prompt Audit.', prompt_audit_groups_required: 'Select at least one group in selected-group mode.', prompt_audit_scanners_required: 'Enable at least one risk category.',
       },
-    }
+    },
+    plugins: {
+      title: 'Plugin Management',
+      description: 'Install and manage isolated OAuth outbound transport plugins. API Key flows are unchanged.',
+      upload: 'Install plugin',
+      uploadHint: 'Only .s2plugin packages are accepted; trusted publisher signatures are required by default.',
+      runtimeNotice: 'Plugin installation, enable/disable, and configuration are handled dynamically by the Sub2API host and normally do not require a host restart. Restart only when the host version or host configuration changes according to your deployment process.',
+      menuNotice: 'The Plugin Management switch in System Settings controls only sidebar visibility; it does not stop loaded or running plugins.',
+      empty: 'No plugins installed',
+      emptyHint: 'Select a local .s2plugin package. Sub2API never downloads third-party plugins automatically.',
+      configure: 'Configure',
+      enable: 'Enable',
+      disable: 'Disable',
+      test: 'Test',
+      uninstall: 'Uninstall',
+      rollout: 'OAuth traffic percentage',
+      compatibility: 'Version compatibility',
+      currentVersion: 'Current Sub2API',
+      requiredVersion: 'Required range',
+      recommendedVersion: 'Recommended version',
+      signature: 'Package signature',
+      trusted: 'Verified',
+      unsigned: 'Unsigned',
+      runtime: 'Runtime',
+      healthy: 'Healthy',
+      unhealthy: 'Not running',
+      compatible: 'Compatible',
+      untested: 'Untested version',
+      incompatible: 'Incompatible',
+      enabled: 'Enabled',
+      disabled: 'Disabled',
+      error: 'Error',
+      starting: 'Starting',
+      configTitle: '{name} configuration',
+      loadingUI: 'Loading plugin configuration UI...',
+      uiUnavailable: 'Unable to load the plugin configuration UI',
+      uploadSuccess: 'Plugin installed and kept disabled',
+      enableSuccess: 'Plugin enabled',
+      disableSuccess: 'Plugin disabled',
+      uninstallSuccess: 'Plugin uninstalled',
+      testSuccess: 'Plugin test passed',
+      confirmDisable: 'Disable this plugin? New OAuth requests immediately return to the built-in Sub2API path.',
+      confirmUninstall: 'Uninstall this plugin? It must be disabled first. Installed files and configuration will be removed.',
+      confirmUntested: 'This plugin is compatible but has not declared the current Sub2API version as tested. Enable it anyway?',
+      fileRequired: 'Select a .s2plugin file',
+      bridgeRejected: 'Plugin UI message validation failed',
+      onlyOpenAI: 'Initial capability: OpenAI OAuth outbound transport only',
+      noAccountCoupling: 'The scope is platform and account type. Account records are not changed and no per-account toggle is required.'
+    },
   },
 
   // Subscription Progress (Header component)

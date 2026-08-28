@@ -2374,6 +2374,7 @@ var (
 		{Name: "register_domain", Type: field.TypeString, Nullable: true, Size: 255, Default: ""},
 		{Name: "token_version", Type: field.TypeInt64, Default: 0},
 		{Name: "role_version", Type: field.TypeInt64, Default: 0},
+		{Name: "restrict_public_groups", Type: field.TypeBool, Default: false},
 		{Name: "balance_notify_enabled", Type: field.TypeBool, Default: true},
 		{Name: "balance_notify_threshold_type", Type: field.TypeString, Default: "fixed"},
 		{Name: "balance_notify_threshold", Type: field.TypeFloat64, Nullable: true, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
@@ -2390,7 +2391,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "users_users_sub_users",
-				Columns:    []*schema.Column{UsersColumns[31]},
+				Columns:    []*schema.Column{UsersColumns[32]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -2409,7 +2410,7 @@ var (
 			{
 				Name:    "user_parent_id",
 				Unique:  false,
-				Columns: []*schema.Column{UsersColumns[31]},
+				Columns: []*schema.Column{UsersColumns[32]},
 			},
 		},
 	}

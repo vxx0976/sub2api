@@ -137,10 +137,14 @@ type UsageLog struct {
 	// PricedAt 是定档所用的时刻（请求开始冻结的 pricingAt）。与 PricingTimeBand 成对落库，
 	// 使「按 PricedAt 重算的档位 == PricingTimeBand」成为可机械回放的对账不变量。
 	PricedAt *time.Time
-	// ReasoningEffort is the request's reasoning effort level.
+	// ReasoningEffort is the effective effort recorded for this request after
+	// group policy rewriting and model-family remapping (e.g. max -> xhigh).
 	// OpenAI: "low" / "medium" / "high" / "xhigh"; Claude: "low" / "medium" / "high" / "max".
 	// Nil means not provided / not applicable.
 	ReasoningEffort *string
+	// RequestedReasoningEffort is the client-requested effort before mapping.
+	// Nil means historical rows, or that no explicit/suffix-derived effort was observed.
+	RequestedReasoningEffort *string
 	// InboundEndpoint is the client-facing API endpoint path, e.g. /v1/chat/completions.
 	InboundEndpoint *string
 	// UpstreamEndpoint is the normalized upstream endpoint path, e.g. /v1/responses.

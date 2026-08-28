@@ -67,6 +67,8 @@ type User struct {
 	TokenVersion int64 `json:"token_version,omitempty"`
 	// 角色版本号，角色变更时递增
 	RoleVersion int64 `json:"role_version,omitempty"`
+	// RestrictPublicGroups holds the value of the "restrict_public_groups" field.
+	RestrictPublicGroups bool `json:"restrict_public_groups,omitempty"`
 	// BalanceNotifyEnabled holds the value of the "balance_notify_enabled" field.
 	BalanceNotifyEnabled bool `json:"balance_notify_enabled,omitempty"`
 	// BalanceNotifyThresholdType holds the value of the "balance_notify_threshold_type" field.
@@ -330,7 +332,7 @@ func (*User) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case user.FieldReferralRewarded, user.FieldTotpEnabled, user.FieldBalanceNotifyEnabled:
+		case user.FieldReferralRewarded, user.FieldTotpEnabled, user.FieldRestrictPublicGroups, user.FieldBalanceNotifyEnabled:
 			values[i] = new(sql.NullBool)
 		case user.FieldBalance, user.FieldFrozenBalance, user.FieldBalanceNotifyThreshold, user.FieldTotalRecharged:
 			values[i] = new(sql.NullFloat64)
@@ -518,6 +520,12 @@ func (_m *User) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field role_version", values[i])
 			} else if value.Valid {
 				_m.RoleVersion = value.Int64
+			}
+		case user.FieldRestrictPublicGroups:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field restrict_public_groups", values[i])
+			} else if value.Valid {
+				_m.RestrictPublicGroups = value.Bool
 			}
 		case user.FieldBalanceNotifyEnabled:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -787,6 +795,9 @@ func (_m *User) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("role_version=")
 	builder.WriteString(fmt.Sprintf("%v", _m.RoleVersion))
+	builder.WriteString(", ")
+	builder.WriteString("restrict_public_groups=")
+	builder.WriteString(fmt.Sprintf("%v", _m.RestrictPublicGroups))
 	builder.WriteString(", ")
 	builder.WriteString("balance_notify_enabled=")
 	builder.WriteString(fmt.Sprintf("%v", _m.BalanceNotifyEnabled))
