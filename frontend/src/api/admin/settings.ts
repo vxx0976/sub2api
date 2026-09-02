@@ -636,6 +636,7 @@ export interface SystemSettings {
   epay_key_configured: boolean
 
   // Gateway forwarding behavior
+  openai_ttft_mode: string;
   enable_fingerprint_unification: boolean;
   enable_metadata_passthrough: boolean;
   enable_claude_oauth_system_prompt_injection: boolean;
@@ -964,6 +965,7 @@ export interface UpdateSettingsRequest {
   epay_api_url?: string;
   epay_pid?: string;
   epay_key?: string;
+  openai_ttft_mode?: string;
   enable_fingerprint_unification?: boolean;
   enable_metadata_passthrough?: boolean;
   enable_claude_oauth_system_prompt_injection?: boolean;

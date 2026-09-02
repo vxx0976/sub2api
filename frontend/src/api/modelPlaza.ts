@@ -58,6 +58,8 @@ export interface ModelTimeTier {
   off_peak_factor: number
   /** 当前所处档位：'peak' | 'offpeak'。 */
   current_band: string
+  /** 高峰窗口是否仅工作日生效（周末全天空闲）。缺省视为 false。 */
+  peak_weekdays_only?: boolean
 }
 
 export interface PlazaModel {

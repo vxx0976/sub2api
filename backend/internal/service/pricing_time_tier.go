@@ -50,6 +50,10 @@ type timeTierSchedule struct {
 	tzLabel       string                // 展示用，如 "UTC+08:00"
 	peakWindows   []timeTierWindow
 	offPeakFactor float64 // 空闲档相对表价的系数，必须落在 (0,1]
+	// peakWeekdaysOnly 为 true 时，周六/周日（按本 schedule 的时区判定）全天算空闲档，
+	// 高峰窗口只在工作日生效。DeepSeek 官方口径即如此。
+	// 默认 false，不影响未声明该字段的其它 schedule。
+	peakWeekdaysOnly bool
 }
 
 // bandAt 返回时刻 at 所处的档位与价格系数。纯函数，不读任何外部状态。
@@ -76,6 +80,14 @@ func (s *timeTierSchedule) bandAt(at time.Time) (string, float64) {
 	}
 
 	t := at.In(loc)
+	// 周末全天空闲（仅当 schedule 声明了 peakWeekdaysOnly）。放在窗口判定之前，
+	// 使周末即便落在高峰时刻也返回空闲档。
+	if s.peakWeekdaysOnly {
+		switch t.Weekday() {
+		case time.Saturday, time.Sunday:
+			return PricingBandOffPeak, s.offPeakFactor
+		}
+	}
 	cur := t.Hour()*60 + t.Minute() // 秒被忽略：08:59:59 属空闲、09:00:00 起为高峰
 	for _, w := range s.peakWindows {
 		if cur >= w.startMin && cur < w.endMin {
@@ -110,6 +122,11 @@ func (s *timeTierSchedule) factor() float64 {
 	return s.offPeakFactor
 }
 
+// weekdaysOnly 报告高峰窗口是否仅工作日生效；schedule 为 nil 时返回 false。
+func (s *timeTierSchedule) weekdaysOnly() bool {
+	return s != nil && s.peakWeekdaysOnly
+}
+
 // timezoneLabel 返回展示用时区标签。
 func (s *timeTierSchedule) timezoneLabel() string {
 	if s == nil {
@@ -124,6 +141,10 @@ type ModelTimeTierDTO struct {
 	Timezone      string   `json:"timezone"`        // 窗口所用时区标签，如 "UTC+08:00"
 	OffPeakFactor float64  `json:"off_peak_factor"` // 空闲档系数（如 0.5）
 	CurrentBand   string   `json:"current_band"`    // 当前所处档位：peak / offpeak
+	// PeakWeekdaysOnly 表示高峰窗口仅工作日生效、周末全天空闲。
+	// 必须随 DTO 下发：否则周末页面自相矛盾——CurrentBand 正确高亮「空闲」，
+	// 而说明文字仍宣称此刻在高峰窗口内。展示与计费同源是这套机制的既定口径。
+	PeakWeekdaysOnly bool `json:"peak_weekdays_only,omitempty"`
 }
 
 // ModelTimeTierInfo 返回某模型的官方时段分档说明；无分档时返回 nil。
@@ -161,10 +182,11 @@ func ModelTimeTierInfo(model string, at time.Time) *ModelTimeTierDTO {
 	}
 	band, _ := schedule.bandAt(at)
 	return &ModelTimeTierDTO{
-		PeakWindows:   windows,
-		Timezone:      schedule.timezoneLabel(),
-		OffPeakFactor: schedule.factor(),
-		CurrentBand:   band,
+		PeakWindows:      windows,
+		Timezone:         schedule.timezoneLabel(),
+		OffPeakFactor:    schedule.factor(),
+		CurrentBand:      band,
+		PeakWeekdaysOnly: schedule.peakWeekdaysOnly,
 	}
 }
 
@@ -180,7 +202,8 @@ var deepSeekPricingLocation = sync.OnceValue(func() *time.Location {
 })
 
 // deepSeekOfficialSchedule 是 DeepSeek 官方公布的分时段规则：
-// 高峰时段为北京时间 09:00-12:00、14:00-18:00，其余为空闲时段，空闲价 = 高峰价的一半。
+// 高峰时段为北京时间 09:00-12:00、14:00-18:00 且**仅工作日**；周六/周日全天空闲。
+// 其余时段为空闲，空闲价 = 高峰价的一半。
 // 来源：https://api-docs.deepseek.com/zh-cn/quick_start/pricing/ （2026-08-17 核对）
 var deepSeekOfficialSchedule = &timeTierSchedule{
 	locFn:   deepSeekPricingLocation,
@@ -190,4 +213,6 @@ var deepSeekOfficialSchedule = &timeTierSchedule{
 		{startMin: 14 * 60, endMin: 18 * 60},
 	},
 	offPeakFactor: 0.5,
+	// 官方口径：周六/周日（北京时间）全天低谷，高峰窗口只在工作日生效。
+	peakWeekdaysOnly: true,
 }

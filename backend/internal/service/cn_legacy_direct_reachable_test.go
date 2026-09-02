@@ -59,8 +59,13 @@ func TestLegacyCNAccountReachesAnthropicDirect(t *testing.T) {
 		{"显式 anthropic", withProto(PlatformDeepseek, APIProtocolAnthropic), "native-anthropic"},
 		{"显式 adaptive", withProto(PlatformDeepseek, APIProtocolAdaptive), "native-anthropic"},
 		{"显式 chat_completions", withProto(PlatformDeepseek, APIProtocolChatCompletions), "raw-chat-completions"},
-		{"显式 responses（deepseek 独有）", withProto(PlatformDeepseek, APIProtocolResponses), "responses"},
-		{"kimi 显式 responses → 回落 CC", withProto(PlatformKimi, APIProtocolResponses), "raw-chat-completions"},
+		{"显式 responses（deepseek）", withProto(PlatformDeepseek, APIProtocolResponses), "responses"},
+		// Kimi 自 2026-09 起也有原生 Responses 端点（moonshot.cn / kimi.com/coding 均为
+		// /v1/responses），SupportsNativeCNResponses 因此含 kimi：显式配 responses 不再
+		// 被 GetAPIProtocol 归一回 chat_completions。仅影响显式配了 api_protocol 的账号，
+		// 存量无 api_protocol 的 Kimi 号仍走上面的 legacy-direct。
+		{"kimi 显式 responses（原生端点）", withProto(PlatformKimi, APIProtocolResponses), "responses"},
+		{"zhipu 显式 responses → 回落 CC", withProto(PlatformZhipu, APIProtocolResponses), "raw-chat-completions"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			if got := route(tc.acc); got != tc.want {

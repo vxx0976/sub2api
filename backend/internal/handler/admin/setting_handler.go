@@ -298,6 +298,7 @@ func (h *SettingHandler) GetSettings(c *gin.Context) {
 		EpayAPIURL:                                             settings.EpayAPIURL,
 		EpayPID:                                                settings.EpayPID,
 		EpayKeyConfigured:                                      settings.EpayKeyConfigured,
+		OpenAITTFTMode:                                         settings.OpenAITTFTMode,
 		EnableFingerprintUnification:                           settings.EnableFingerprintUnification,
 		EnableMetadataPassthrough:                              settings.EnableMetadataPassthrough,
 		EnableClaudeOAuthSystemPromptInjection:                 settings.EnableClaudeOAuthSystemPromptInjection,

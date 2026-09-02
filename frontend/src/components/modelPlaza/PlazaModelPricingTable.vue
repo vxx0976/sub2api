@@ -145,9 +145,13 @@
                   class="whitespace-nowrap font-mono text-xs leading-5 text-gray-800 dark:text-gray-200"
                   :title="tierHint(m)"
                 >
-                  <template v-if="iv.cache_write_price != null || iv.cache_read_price != null">
+                  <template v-if="iv.cache_write_price != null || iv.cache_write_1h_price != null || iv.cache_read_price != null">
                     <span class="font-sans font-normal text-gray-400 dark:text-dark-500">{{ t('modelPlaza.table.cacheWriteShort') }}</span>
                     {{ paidPerMillion(m, iv.cache_write_price, period) }}
+                    <template v-if="iv.cache_write_1h_price != null"
+                      ><span class="font-sans font-normal text-gray-400 dark:text-dark-500"> (1h </span>{{ paidPerMillion(m, iv.cache_write_1h_price, period)
+                      }}<span class="font-sans font-normal text-gray-400 dark:text-dark-500">)</span></template
+                    >
                     <span class="ml-1 font-sans font-normal text-gray-400 dark:text-dark-500">{{ t('modelPlaza.table.cacheReadShort') }}</span>
                     {{ paidPerMillion(m, iv.cache_read_price, period) }}
                   </template>
@@ -160,7 +164,11 @@
               >
                 <div>
                   <span class="mr-1 font-sans font-normal text-gray-400 dark:text-dark-500">{{ t('modelPlaza.table.cacheWrite') }}</span>
-                  {{ paidPerMillion(m, m.pricing?.cache_write_price, period) }}
+                  {{ paidPerMillion(m, m.pricing?.cache_write_price, period)
+                  }}<template v-if="m.pricing?.cache_write_1h_price != null"
+                    ><span class="font-sans font-normal text-gray-400 dark:text-dark-500"> (1h </span>{{ paidPerMillion(m, m.pricing.cache_write_1h_price, period)
+                    }}<span class="font-sans font-normal text-gray-400 dark:text-dark-500">)</span></template
+                  >
                 </div>
                 <div>
                   <span class="mr-1 font-sans font-normal text-gray-400 dark:text-dark-500">{{ t('modelPlaza.table.cacheRead') }}</span>
@@ -263,9 +271,13 @@
                 class="whitespace-nowrap font-mono text-xs leading-5 text-gray-500 dark:text-dark-400"
                 :title="t('modelPlaza.table.tierHint')"
               >
-                <template v-if="iv.cache_write_price != null || iv.cache_read_price != null">
+                <template v-if="iv.cache_write_price != null || iv.cache_write_1h_price != null || iv.cache_read_price != null">
                   <span class="font-sans text-gray-400 dark:text-dark-500">{{ t('modelPlaza.table.cacheWriteShort') }}</span>
                   {{ official(m, iv.cache_write_price) }}
+                  <template v-if="iv.cache_write_1h_price != null"
+                    ><span class="font-sans text-gray-400 dark:text-dark-500"> (1h </span>{{ official(m, iv.cache_write_1h_price)
+                    }}<span class="font-sans text-gray-400 dark:text-dark-500">)</span></template
+                  >
                   <span class="ml-1 font-sans text-gray-400 dark:text-dark-500">{{ t('modelPlaza.table.cacheReadShort') }}</span>
                   {{ official(m, iv.cache_read_price) }}
                 </template>
@@ -506,11 +518,19 @@ function hasTimeTier(m: PlazaModel): boolean {
   return !!tier && tier.peak_windows.length > 0 && tier.off_peak_factor > 0 && tier.off_peak_factor < 1
 }
 
-/** 时段说明文案：高峰 09:00-12:00、14:00-18:00 (UTC+08:00)，其余时段半价。 */
+/**
+ * 时段说明文案：高峰 09:00-12:00、14:00-18:00 (UTC+08:00)，其余时段半价。
+ *
+ * peak_weekdays_only 时必须换用带「仅工作日」的文案：否则周六/周日页面会自相矛盾——
+ * current_band 正确高亮「空闲」，说明文字却仍宣称此刻在高峰窗口内。
+ */
 function timeTierNote(m: PlazaModel): string {
   const tier = m.time_tier
   if (!tier) return ''
-  return t('modelPlaza.table.timeTierNote', {
+  const key = tier.peak_weekdays_only
+    ? 'modelPlaza.table.timeTierNoteWeekdays'
+    : 'modelPlaza.table.timeTierNote'
+  return t(key, {
     windows: tier.peak_windows.join('、'),
     tz: tier.timezone,
     percent: Math.round(tier.off_peak_factor * 100),
@@ -525,7 +545,7 @@ function perUnitSuffix(m: PlazaModel): string {
 }
 
 function hasCachePricing(m: PlazaModel): boolean {
-  return m.pricing?.cache_write_price != null || m.pricing?.cache_read_price != null
+  return m.pricing?.cache_write_price != null || m.pricing?.cache_write_1h_price != null || m.pricing?.cache_read_price != null
 }
 
 function hasOfficialCache(o: NonNullable<PlazaModel['official_pricing']>): boolean {
@@ -578,7 +598,7 @@ function officialIntervals(m: PlazaModel): UserPricingInterval[] {
 
 /** 任一档带缓存价才按档渲染缓存列;否则沿用平价的写入/读取两行。 */
 function hasTierCachePricing(intervals: UserPricingInterval[]): boolean {
-  return intervals.some((iv) => iv.cache_write_price != null || iv.cache_read_price != null)
+  return intervals.some((iv) => iv.cache_write_price != null || iv.cache_write_1h_price != null || iv.cache_read_price != null)
 }
 
 /** 档位说明:整单按档计价,或(平台旧规则)仅超出部分按档计价。 */

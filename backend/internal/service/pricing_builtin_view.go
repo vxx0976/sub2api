@@ -26,6 +26,8 @@ type BuiltinPricingEntry struct {
 	OffPeakFactor float64  `json:"off_peak_factor,omitempty"` // 空闲档系数（如 0.5）
 	PeakWindows   []string `json:"peak_windows,omitempty"`    // 高峰窗口，如 ["09:00-12:00","14:00-18:00"]
 	TimeTierTZ    string   `json:"time_tier_tz,omitempty"`    // 窗口所用时区标签，如 "UTC+08:00"
+	// PeakWeekdaysOnly 高峰窗口是否仅工作日生效（周末全天空闲）。
+	PeakWeekdaysOnly bool `json:"peak_weekdays_only,omitempty"`
 }
 
 // ModelPricingViewDTO 是「模型定价」页 List 接口的载荷:
@@ -67,16 +69,17 @@ func (s *PricingService) ListBuiltinPricing() []BuiltinPricingEntry {
 			}
 			seen[key] = struct{}{}
 			out = append(out, BuiltinPricingEntry{
-				Model:         model,
-				Currency:      CurrencyCNY,
-				InputPerM:     p.inputCNY,
-				OutputPerM:    p.outputCNY,
-				CachePerM:     p.cacheReadCNY,
-				HasCache:      p.hasCache,
-				Source:        source,
-				OffPeakFactor: p.schedule.factor(),
-				PeakWindows:   p.schedule.windowLabels(),
-				TimeTierTZ:    p.schedule.timezoneLabel(),
+				Model:            model,
+				Currency:         CurrencyCNY,
+				InputPerM:        p.inputCNY,
+				OutputPerM:       p.outputCNY,
+				CachePerM:        p.cacheReadCNY,
+				HasCache:         p.hasCache,
+				Source:           source,
+				OffPeakFactor:    p.schedule.factor(),
+				PeakWindows:      p.schedule.windowLabels(),
+				TimeTierTZ:       p.schedule.timezoneLabel(),
+				PeakWeekdaysOnly: p.schedule.weekdaysOnly(),
 			})
 		}
 	}

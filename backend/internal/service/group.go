@@ -112,6 +112,8 @@ type Group struct {
 	// OpenAI Messages 调度配置（仅 openai 平台使用）
 	AllowMessagesDispatch       bool                              `json:"allow_messages_dispatch"`
 	AllowLive                   bool                              `json:"allow_live"`          // 允许 OpenAI Live（Realtime）会话
+	ForceOpenAIFast             bool                              `json:"force_openai_fast"`   // 强制 OpenAI 网关请求使用 service_tier=priority
+	FreeOpenAIFast              bool                              `json:"free_openai_fast"`    // OpenAI Fast 请求按 Standard 价格向用户计费
 	RequireOAuthOnly            bool                              `json:"require_oauth_only"`  // 仅允许非 apikey 类型账号关联（OpenAI/Antigravity/Anthropic/Gemini）
 	RequirePrivacySet           bool                              `json:"require_privacy_set"` // 调度时仅允许 privacy 已成功设置的账号（OpenAI/Antigravity/Anthropic/Gemini）
 	DefaultMappedModel          string                            `json:"default_mapped_model"`
@@ -125,6 +127,9 @@ type Group struct {
 	// MaxReasoningEffort limits the effective OpenAI/Codex reasoning effort.
 	// Empty means unlimited; supported values are minimal/low/medium/high/xhigh/max.
 	MaxReasoningEffort string `json:"max_reasoning_effort,omitempty"`
+	// MaxReasoningEffortOverLimit is the access control when an explicit effort
+	// exceeds the ceiling: downgrade (default) or deny.
+	MaxReasoningEffortOverLimit string `json:"max_reasoning_effort_over_limit,omitempty"`
 	// ReasoningEffortMappings rewrites explicit request values before applying the ceiling.
 	ReasoningEffortMappings []ReasoningEffortMapping `json:"reasoning_effort_mappings,omitempty"`
 
