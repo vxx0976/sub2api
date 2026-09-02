@@ -3233,6 +3233,16 @@ export default {
         reasoningEffortMappings: 'Reasoning effort mappings',
         addReasoningEffortMapping: 'Add mapping',
         removeReasoningEffortMapping: 'Remove mapping',
+        reasoningEffortMappingsHint: 'Type and model can both be left empty to match every model. One type and model can hold multiple request mappings, for example prefix gpt mapping both high and xhigh to medium. Exact matches beat affixes, and longer affixes beat shorter ones.',
+        addReasoningEffortPair: 'Add request value',
+        removeReasoningEffortPair: 'Remove request value',
+        reasoningEffortMatchType: 'Type',
+        reasoningEffortModel: 'Model',
+        reasoningEffortMatchExact: 'Exact',
+        reasoningEffortMatchPrefix: 'Prefix',
+        reasoningEffortMatchSuffix: 'Suffix',
+        reasoningEffortMatchTypePlaceholder: 'All models',
+        reasoningEffortModelPlaceholder: 'Empty = all / gpt / gpt-5.4',
         reasoningEffortFrom: 'Request value',
         reasoningEffortTo: 'Forwarded value',
         reasoningEffortFromPlaceholder: 'Select A',
@@ -3241,7 +3251,9 @@ export default {
         toRequired: 'Select forwarded value B',
         unsupportedFrom: 'Request value is not supported by this platform',
         unsupportedTo: 'Forwarded value is not supported by this platform',
-        duplicateFrom: 'Request value A must be unique'
+        unsupportedMatchType: 'Match type must be exact, prefix, or suffix',
+        duplicateFrom: 'Request value A must be unique within the same model scope',
+        duplicateScope: 'Type and model combination must be unique'
       },
       exclusiveObj: {
         yes: 'Yes',
