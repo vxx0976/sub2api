@@ -20,7 +20,6 @@ import (
 	"unsafe"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
-	"github.com/Wei-Shaw/sub2api/internal/pkg/claude"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/timezone"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/xai"
@@ -1708,18 +1707,6 @@ func (s *GatewayService) getOAuthToken(ctx context.Context, account *Account) (s
 	}
 	// Token刷新由后台 TokenRefreshService 处理，此处只返回当前token
 	return accessToken, "oauth", nil
-}
-
-func claudeBillingSyncUserAgent(tokenType string, mimicClaudeCode bool, fingerprint *Fingerprint) string {
-	if tokenType == "oauth" && mimicClaudeCode {
-		if ua := strings.TrimSpace(claude.DefaultHeaders["User-Agent"]); ua != "" {
-			return ua
-		}
-	}
-	if fingerprint == nil {
-		return ""
-	}
-	return strings.TrimSpace(fingerprint.UserAgent)
 }
 
 // shouldBillPartialStream 判断流式转发中途出错时，是否应对已产出的 usage 计费。
