@@ -483,8 +483,8 @@ func TestTryModelFilePricing_Fable51MaxEffortUsesTripleQuota(t *testing.T) {
 		"claude-fable-5-1": {InputPricePerToken: 0.001},
 	})
 	tokens := UsageTokens{InputTokens: 100}
-	standard := tryModelFilePricing(bs, "claude-fable-5-1", tokens, "", "xhigh")
-	max := tryModelFilePricing(bs, "claude-fable-5-1", tokens, "", "max")
+	standard := tryModelFilePricing(bs, "claude-fable-5-1", tokens, "", time.Time{}, "xhigh")
+	max := tryModelFilePricing(bs, "claude-fable-5-1", tokens, "", time.Time{}, "max")
 	require.NotNil(t, standard)
 	require.NotNil(t, max)
 	require.InDelta(t, *standard*3, *max, 1e-12)
