@@ -20,7 +20,7 @@ describe("groupsMessagesDispatch", () => {
       allow_messages_dispatch: false,
       opus_mapped_model: "gpt-6-astra",
       sonnet_mapped_model: "gpt-5.6-sol",
-      haiku_mapped_model: "gpt-5.4-mini",
+      haiku_mapped_model: "gpt-5.6-sol",
       exact_model_mappings: [],
     });
   });
@@ -56,7 +56,7 @@ describe("groupsMessagesDispatch", () => {
       messagesDispatchConfigToFormState({
         opus_mapped_model: "gpt-5.4",
         sonnet_mapped_model: "gpt-5.2",
-        haiku_mapped_model: "gpt-5.4-mini",
+        haiku_mapped_model: "gpt-5.6-sol",
         exact_model_mappings: {
           "claude-opus-4-6": "gpt-5.4",
           "claude-haiku-4-5-20251001": "gpt-5.4-mini",
@@ -66,7 +66,7 @@ describe("groupsMessagesDispatch", () => {
       allow_messages_dispatch: false,
       opus_mapped_model: "gpt-5.4",
       sonnet_mapped_model: "gpt-5.2",
-      haiku_mapped_model: "gpt-5.4-mini",
+      haiku_mapped_model: "gpt-5.6-sol",
       exact_model_mappings: [
         {
           claude_model: "claude-haiku-4-5-20251001",
@@ -94,7 +94,7 @@ describe("groupsMessagesDispatch", () => {
       allow_messages_dispatch: false,
       opus_mapped_model: "gpt-6-astra",
       sonnet_mapped_model: "gpt-5.6-sol",
-      haiku_mapped_model: "gpt-5.4-mini",
+      haiku_mapped_model: "gpt-5.6-sol",
       exact_model_mappings: [],
     });
   });

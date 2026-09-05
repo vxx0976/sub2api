@@ -113,7 +113,8 @@ func normalizeKnownOpenAICodexModel(model string) string {
 	case strings.Contains(normalized, "codex"):
 		return "gpt-5.3-codex"
 	case strings.Contains(normalized, "gpt-5"):
-		return "gpt-5.4"
+		// gpt-5.4 已下架，未知的 gpt-5.x 兜底改到当代在售型号。
+		return "gpt-5.6-sol"
 	default:
 		return ""
 	}

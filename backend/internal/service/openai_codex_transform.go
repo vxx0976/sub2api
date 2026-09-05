@@ -47,16 +47,19 @@ var codexModelMap = map[string]string{
 	"gpt-5.2-medium":       "gpt-5.2",
 	"gpt-5.2-high":         "gpt-5.2",
 	"gpt-5.2-xhigh":        "gpt-5.2",
-	"gpt-5":                "gpt-5.4",
-	"gpt-5-mini":           "gpt-5.4",
-	"gpt-5-nano":           "gpt-5.4",
-	"gpt-5.1":              "gpt-5.4",
-	"gpt-5.1-codex":        "gpt-5.3-codex",
-	"gpt-5.1-codex-max":    "gpt-5.3-codex",
-	"gpt-5.1-codex-mini":   "gpt-5.3-codex",
-	"gpt-5.2-codex":        "gpt-5.2",
-	"codex-mini-latest":    "gpt-5.3-codex",
-	"gpt-5-codex":          "gpt-5.3-codex",
+	// gpt-5.4 已下架：以下遗留别名改落到当代在售的 gpt-5.6-sol。
+	// 显式请求 gpt-5.4 / gpt-5.4-mini 仍按原样归一（见上方 identity 条目），
+	// 让上游自己回 400，而不是被我们静默升档到更贵的型号上计费。
+	"gpt-5":              "gpt-5.6-sol",
+	"gpt-5-mini":         "gpt-5.6-sol",
+	"gpt-5-nano":         "gpt-5.6-sol",
+	"gpt-5.1":            "gpt-5.6-sol",
+	"gpt-5.1-codex":      "gpt-5.3-codex",
+	"gpt-5.1-codex-max":  "gpt-5.3-codex",
+	"gpt-5.1-codex-mini": "gpt-5.3-codex",
+	"gpt-5.2-codex":      "gpt-5.2",
+	"codex-mini-latest":  "gpt-5.3-codex",
+	"gpt-5-codex":        "gpt-5.3-codex",
 }
 
 var codexVersionModelPrefixes = []struct {
@@ -601,7 +604,7 @@ func stringifyCodexContentText(value any) string {
 func normalizeCodexModel(model string) string {
 	model = strings.TrimSpace(model)
 	if model == "" {
-		return "gpt-5.4"
+		return "gpt-5.6-sol"
 	}
 	if mapped, ok := normalizeKnownCodexModel(model); ok {
 		return mapped
