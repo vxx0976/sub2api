@@ -812,8 +812,33 @@ func TestGetFallbackPricing_FamilyMatching(t *testing.T) {
 			expectedInput: 0.098e-6,
 		},
 
+		// ---- OpenAI GPT-6 ----
+		{
+			name:              "gpt-6-astra fallback",
+			model:             "gpt-6-astra",
+			expectedInput:     10e-6,
+			expectedOutput:    floatPtr(50e-6),
+			expectedCacheRead: floatPtr(1e-6),
+		},
+		{
+			name:              "bare gpt-6 falls back to astra",
+			model:             "gpt-6",
+			expectedInput:     10e-6,
+			expectedOutput:    floatPtr(50e-6),
+			expectedCacheRead: floatPtr(1e-6),
+		},
+		{
+			name:              "gpt-6-astra effort suffix keeps astra price",
+			model:             "gpt-6-astra-high",
+			expectedInput:     10e-6,
+			expectedOutput:    floatPtr(50e-6),
+			expectedCacheRead: floatPtr(1e-6),
+		},
+
 		// ---- 负向用例 ----
 		{name: "qwen unknown no fallback", model: "qwen-max", expectNilPricing: true},
+		// 未知的 GPT-6 变体不得按 astra 计价。
+		{name: "unknown gpt-6 variant no fallback", model: "gpt-6-nova", expectNilPricing: true},
 		// doubao-pro / doubao-embedding（纯文本）不在白名单，不回退；仅 doubao-embedding-vision 显式命中。
 		{name: "doubao unknown no fallback", model: "doubao-pro", expectNilPricing: true},
 		{name: "doubao text embedding no fallback", model: "doubao-embedding-text-240515", expectNilPricing: true},

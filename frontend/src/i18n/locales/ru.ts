@@ -3458,11 +3458,11 @@ export default {
         familyMappingTitle: 'Сопоставление по умолчанию для семейства',
         familyMappingHint: 'Запросы, попадающие в семейства Opus, Sonnet или Haiku, будут в первую очередь использовать настроенную здесь целевую модель.',
         opusModel: 'Целевая модель для Opus',
-        opusModelPlaceholder: 'например: gpt-5.4',
+        opusModelPlaceholder: 'например: gpt-6-astra',
         sonnetModel: 'Целевая модель для Sonnet',
-        sonnetModelPlaceholder: 'например: gpt-5.3-codex',
+        sonnetModelPlaceholder: 'например: gpt-5.6-sol',
         haikuModel: 'Целевая модель для Haiku',
-        haikuModelPlaceholder: 'например: gpt-5.4-mini',
+        haikuModelPlaceholder: 'например: gpt-5.6-terra',
         exactMappingTitle: 'Точные переопределения моделей',
         exactMappingHint: 'Точные переопределения моделей Claude имеют приоритет над сопоставлением по умолчанию для семейства и позволяют направить конкретную модель Claude на другую целевую модель.',
         noExactMappings: 'Точных переопределений моделей пока нет',
@@ -3470,7 +3470,7 @@ export default {
         claudeModel: 'Модель Claude',
         claudeModelPlaceholder: 'например: claude-sonnet-4-5-20250929',
         targetModel: 'Целевая модель',
-        targetModelPlaceholder: 'например: gpt-5.4',
+        targetModelPlaceholder: 'например: gpt-6-astra',
         removeExactMapping: 'Удалить точное сопоставление'
       },
       healthCheck: {

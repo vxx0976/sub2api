@@ -592,12 +592,13 @@ func isOpenAICodexGPTModel(modelID string) bool {
 
 func isOpenAICodexReasoningGPTModel(modelID string) bool {
 	normalized := canonicalizeOpenAIModelAliasSpelling(modelID)
-	return strings.HasPrefix(normalized, "gpt-5")
+	return strings.HasPrefix(normalized, "gpt-5") || strings.HasPrefix(normalized, "gpt-6")
 }
 
 func isOpenAICodexImageInputModel(modelID string) bool {
 	normalized := canonicalizeOpenAIModelAliasSpelling(modelID)
 	return strings.HasPrefix(normalized, "gpt-5") ||
+		strings.HasPrefix(normalized, "gpt-6") ||
 		strings.HasPrefix(normalized, "gpt-4o") ||
 		strings.HasPrefix(normalized, "gpt-4.1") ||
 		strings.HasPrefix(normalized, "gpt-4.5") ||

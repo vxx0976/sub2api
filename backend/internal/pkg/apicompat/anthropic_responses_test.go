@@ -1663,9 +1663,11 @@ func TestAnthropicToResponses_TemperatureStrippedForReasoningModel(t *testing.T)
 	assert.NotContains(t, string(b), `"top_p"`)
 }
 
-func TestAnthropicToResponses_TemperatureStrippedForAllGpt5Variants(t *testing.T) {
+func TestAnthropicToResponses_TemperatureStrippedForAllReasoningVariants(t *testing.T) {
 	temp := 1.0
-	models := []string{"gpt-5.2", "gpt-5.4", "gpt-5.4-mini", "gpt-5.3-codex", "gpt-5.5"}
+	// gpt-6-astra 实测与 gpt-5.x 同样拒绝 temperature（上游返回
+	// 400 Unsupported parameter: temperature），必须一并剥离。
+	models := []string{"gpt-5.2", "gpt-5.4", "gpt-5.4-mini", "gpt-5.3-codex", "gpt-5.5", "gpt-5.6-sol", "gpt-6-astra"}
 	for _, model := range models {
 		t.Run(model, func(t *testing.T) {
 			req := &AnthropicRequest{

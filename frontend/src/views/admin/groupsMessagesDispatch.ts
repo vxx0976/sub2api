@@ -28,7 +28,7 @@ function getDefaultModelsForPlatform(platform?: GroupPlatform | null): {
     case "zhipu":
       return { opus: "glm-4.6", sonnet: "glm-4.6", haiku: "glm-4.5-air" };
     default:
-      return { opus: "gpt-5.4", sonnet: "gpt-5.3-codex", haiku: "gpt-5.4-mini" };
+      return { opus: "gpt-6-astra", sonnet: "gpt-5.6-sol", haiku: "gpt-5.6-terra" };
   }
 }
 

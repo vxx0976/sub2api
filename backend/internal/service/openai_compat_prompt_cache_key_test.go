@@ -23,6 +23,11 @@ func TestShouldAutoInjectPromptCacheKeyForCompat(t *testing.T) {
 	require.True(t, shouldAutoInjectPromptCacheKeyForCompat("gpt-5.3"))
 	require.True(t, shouldAutoInjectPromptCacheKeyForCompat("gpt-5.3-codex"))
 	require.True(t, shouldAutoInjectPromptCacheKeyForCompat("gpt-5.3-codex-spark"))
+	require.True(t, shouldAutoInjectPromptCacheKeyForCompat("gpt-5.6-sol"))
+	// GPT-6 是 Opus 档的默认目标：漏掉它会静默关掉 prompt_cache_key 注入与 api-key 续接，
+	// 多轮会话每轮都按未命中缓存的输入价重算。
+	require.True(t, shouldAutoInjectPromptCacheKeyForCompat("gpt-6-astra"))
+	require.True(t, shouldAutoInjectPromptCacheKeyForCompat("gpt-6"))
 	require.False(t, shouldAutoInjectPromptCacheKeyForCompat("gpt-4o"))
 }
 

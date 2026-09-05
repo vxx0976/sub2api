@@ -465,6 +465,19 @@ func (s *BillingService) initFallbackPricing() {
 		SupportsCacheBreakdown:     false,
 	}
 
+	// OpenAI GPT-6 官方价格（USD/token）。缓存写入为输入价的 1.25 倍。
+	// 兜底价必须补齐：LiteLLM 同步一旦滞后，缺兜底价的型号会 fail-closed 直接拒绝请求。
+	s.fallbackPrices["gpt-6-astra"] = &ModelPricing{
+		InputPricePerToken:                 10e-6,
+		InputPricePerTokenPriority:         20e-6,
+		OutputPricePerToken:                50e-6,
+		OutputPricePerTokenPriority:        100e-6,
+		CacheCreationPricePerToken:         12.5e-6,
+		CacheCreationPricePerTokenPriority: 25e-6,
+		CacheReadPricePerToken:             1e-6,
+		CacheReadPricePerTokenPriority:     2e-6,
+	}
+
 	// OpenAI GPT-5.6 官方价格（USD/token）。缓存写入为输入价的 1.25 倍。
 	s.fallbackPrices["gpt-5.6-sol"] = &ModelPricing{
 		InputPricePerToken:                 5e-6,
@@ -1016,6 +1029,8 @@ func (s *BillingService) getFallbackPricing(model string) *ModelPricing {
 	// OpenAI（GPT-5 / Codex 族）：仅匹配已知型号，避免未知 OpenAI 型号误计价。
 	if normalized := normalizeKnownOpenAICodexModel(modelLower); normalized != "" {
 		switch normalized {
+		case "gpt-6-astra":
+			return s.fallbackPrices["gpt-6-astra"]
 		case "gpt-5.6-sol":
 			return s.fallbackPrices["gpt-5.6-sol"]
 		case "gpt-5.6-terra":

@@ -65,6 +65,17 @@ func normalizeKnownOpenAICodexModel(model string) string {
 	}
 
 	switch {
+	// GPT-6 目前上游只有 astra 一个型号；裸 gpt-6 按 5.6 的处理惯例落到当代旗舰。
+	case strings.Contains(normalized, "gpt-6-astra"):
+		return "gpt-6-astra"
+	case normalized == "gpt-6":
+		return "gpt-6-astra"
+	case strings.HasPrefix(normalized, "gpt-6-"):
+		suffix := strings.TrimPrefix(normalized, "gpt-6-")
+		if suffix == "max" || isKnownCodexModelSuffix(suffix) {
+			return "gpt-6-astra"
+		}
+		return ""
 	case strings.Contains(normalized, "gpt-5.6-sol"):
 		return "gpt-5.6-sol"
 	case strings.Contains(normalized, "gpt-5.6-terra"):

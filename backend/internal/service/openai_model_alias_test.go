@@ -34,3 +34,24 @@ func TestUsageBillingModelCandidates_BareGPT56IncludesSol(t *testing.T) {
 		usageBillingModelCandidates("openai/gpt-5.6"),
 	)
 }
+
+func TestNormalizeKnownOpenAICodexModel_GPT6RoutesToAstra(t *testing.T) {
+	tests := map[string]string{
+		"gpt-6":                  "gpt-6-astra",
+		"gpt-6-astra":            "gpt-6-astra",
+		"openai/gpt-6-astra":     "gpt-6-astra",
+		"gpt-6-astra-high":       "gpt-6-astra",
+		"gpt-6-high":             "gpt-6-astra",
+		"gpt-6-max":              "gpt-6-astra",
+		"gpt-6-astra-2026-08-30": "gpt-6-astra",
+	}
+
+	for input, expected := range tests {
+		t.Run(input, func(t *testing.T) {
+			require.Equal(t, expected, normalizeKnownOpenAICodexModel(input))
+		})
+	}
+
+	// 未知的 GPT-6 变体不得被猜成 astra，否则会按 astra 的价计费到别的型号上。
+	require.Empty(t, normalizeKnownOpenAICodexModel("gpt-6-nova"))
+}

@@ -13,13 +13,17 @@ const compatPromptCacheKeyPrefix = "compat_cc_"
 
 func shouldAutoInjectPromptCacheKeyForCompat(model string) bool {
 	trimmed := strings.TrimSpace(strings.ToLower(model))
-	// 仅对 Responses 兼容路径支持的 GPT-5 族开启自动注入，避免 normalizeCodexModel
+	// 仅对 Responses 兼容路径支持的 GPT-5/GPT-6 族开启自动注入，避免 normalizeCodexModel
 	// 的默认兜底把任意模型（如 gpt-4o、claude-*）误判为 gpt-5.4。
-	if !strings.Contains(trimmed, "gpt-5") && !strings.Contains(trimmed, "codex") {
+	// ⚠️ 新增 GPT 代际必须同时加进这两处判断：漏掉就会静默关掉 prompt_cache_key 注入、
+	// 全量重放护栏与 api-key 续接，多轮会话每次都按未命中缓存的输入价重算。
+	if !strings.Contains(trimmed, "gpt-5") && !strings.Contains(trimmed, "gpt-6") && !strings.Contains(trimmed, "codex") {
 		return false
 	}
 	normalized := strings.TrimSpace(strings.ToLower(normalizeCodexModel(trimmed)))
-	return strings.HasPrefix(normalized, "gpt-5") || strings.Contains(normalized, "codex")
+	return strings.HasPrefix(normalized, "gpt-5") ||
+		strings.HasPrefix(normalized, "gpt-6") ||
+		strings.Contains(normalized, "codex")
 }
 
 func deriveCompatPromptCacheKey(req *apicompat.ChatCompletionsRequest, mappedModel string) string {

@@ -39,11 +39,11 @@ describe('CN 分组的 messages dispatch 支持', () => {
       sonnet_mapped_model: 'glm-4.6',
       haiku_mapped_model: 'glm-4.5-air',
     })
-    // OpenAI 仍是原来的默认值
+    // OpenAI 默认走 GPT-5.6 家族
     expect(createDefaultMessagesDispatchFormState('openai')).toMatchObject({
-      opus_mapped_model: 'gpt-5.4',
-      sonnet_mapped_model: 'gpt-5.3-codex',
-      haiku_mapped_model: 'gpt-5.4-mini',
+      opus_mapped_model: 'gpt-6-astra',
+      sonnet_mapped_model: 'gpt-5.6-sol',
+      haiku_mapped_model: 'gpt-5.6-terra',
     })
     // 国产平台的默认值里不得出现任何 gpt-*
     for (const p of ['deepseek', 'kimi', 'zhipu'] as const) {
