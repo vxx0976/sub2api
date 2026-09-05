@@ -13,19 +13,24 @@ const compatPromptCacheKeyPrefix = "compat_cc_"
 
 func shouldAutoInjectPromptCacheKeyForCompat(model string) bool {
 	trimmed := strings.TrimSpace(strings.ToLower(model))
-	// 仅对 Responses 兼容路径支持的 GPT-5/GPT-6 族开启自动注入，避免 normalizeCodexModel
+	canonical := canonicalizeOpenAIModelAliasSpelling(trimmed)
+	// GPT-6 is the public alias for Astra. Keep this deliberately scoped to
+	// Astra so other GPT-6 families do not inherit Messages compatibility state.
+	if canonical == "gpt-6" || canonical == "gpt-6-astra" {
+		return true
+	}
+	// 仅对 Responses 兼容路径支持的 GPT-5 族开启自动注入，避免 normalizeCodexModel
 	// 的默认兜底把任意模型（如 gpt-4o、claude-*）误判为 gpt-5.4。
-	// ⚠️ 新增 GPT 代际必须同时加进这两处判断：漏掉就会静默关掉 prompt_cache_key 注入、
-	// 全量重放护栏与 api-key 续接，多轮会话每次都按未命中缓存的输入价重算。
-	if !strings.Contains(trimmed, "gpt-5") && !strings.Contains(trimmed, "gpt-6") && !strings.Contains(trimmed, "codex") {
+	// ⚠️ GPT-6 只认上面 canonical 的 gpt-6 / gpt-6-astra 两种写法（上游刻意收窄，
+	// 见 TestShouldAutoInjectPromptCacheKeyForCompat_GPT6AstraForms）；新增 GPT 代际
+	// 必须显式加进这里，漏掉会静默关掉 prompt_cache_key 注入、全量重放护栏与
+	// api-key 续接，多轮会话每次都按未命中缓存的输入价重算。
+	if !strings.Contains(trimmed, "gpt-5") && !strings.Contains(trimmed, "codex") {
 		return false
 	}
 	normalized := strings.TrimSpace(strings.ToLower(normalizeCodexModel(trimmed)))
-	return strings.HasPrefix(normalized, "gpt-5") ||
-		strings.HasPrefix(normalized, "gpt-6") ||
-		strings.Contains(normalized, "codex")
+	return strings.HasPrefix(normalized, "gpt-5") || strings.Contains(normalized, "codex")
 }
-
 func deriveCompatPromptCacheKey(req *apicompat.ChatCompletionsRequest, mappedModel string) string {
 	if req == nil {
 		return ""

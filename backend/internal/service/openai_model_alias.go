@@ -66,6 +66,8 @@ func normalizeKnownOpenAICodexModel(model string) string {
 
 	switch {
 	// GPT-6 目前上游只有 astra 一个型号；裸 gpt-6 按 5.6 的处理惯例落到当代旗舰。
+	// 比上游多认后缀变体（gpt-6-astra-high / 日期后缀 / gpt-6-high），
+	// 未知的 gpt-6-* 变体仍返回空，避免按 astra 的价错计到别的型号上。
 	case strings.Contains(normalized, "gpt-6-astra"):
 		return "gpt-6-astra"
 	case normalized == "gpt-6":
@@ -133,6 +135,13 @@ func isOpenAIGPT56Model(model string) bool {
 		}
 	}
 	return false
+}
+
+// isOpenAIGPT6AstraModel reports GPT-6 Astra and dated/provider-prefixed variants.
+// The public "gpt-6" alias routes to Astra; unrelated GPT-6 families stay excluded.
+func isOpenAIGPT6AstraModel(model string) bool {
+	normalized := canonicalizeOpenAIModelAliasSpelling(model)
+	return normalized == "gpt-6" || normalized == "gpt-6-astra" || strings.HasPrefix(normalized, "gpt-6-astra-")
 }
 
 func appendUsageBillingModelCandidate(candidates []string, seen map[string]struct{}, model string) []string {

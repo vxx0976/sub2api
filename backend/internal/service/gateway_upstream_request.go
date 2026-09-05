@@ -86,8 +86,8 @@ func (s *GatewayService) buildUpstreamRequest(ctx context.Context, c *gin.Contex
 
 	// 同步 billing header cc_version 与实际发送的 User-Agent 版本。
 	// mimic 模式稍后会强制覆盖 UA，因此这里必须提前使用同一个最终 UA。
-	if billingUserAgent := claudeBillingSyncUserAgent(tokenType, mimicClaudeCode, fingerprint); billingUserAgent != "" {
-		body = syncBillingHeaderVersion(body, billingUserAgent)
+	if billingUA := effectiveBillingUserAgent(tokenType, mimicClaudeCode, fingerprint); billingUA != "" {
+		body = syncBillingHeaderVersion(body, billingUA)
 	}
 
 	// === 计算最终 anthropic-beta header（先于 body sanitize）===

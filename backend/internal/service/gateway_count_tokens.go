@@ -270,6 +270,8 @@ func (s *GatewayService) forwardCountTokensAnthropicAPIKeyPassthrough(ctx contex
 	if err != nil {
 		setOpsUpstreamError(c, 0, sanitizeUpstreamErrorMessage(err.Error()), "")
 		appendOpsUpstreamError(c, OpsUpstreamErrorEvent{
+			ProxyID:            opsUpstreamProxyID(account),
+			ProxyName:          opsUpstreamProxyName(account),
 			Platform:           account.Platform,
 			AccountID:          account.ID,
 			AccountName:        account.Name,
@@ -324,6 +326,8 @@ func (s *GatewayService) forwardCountTokensAnthropicAPIKeyPassthrough(ctx contex
 		}
 		setOpsUpstreamError(c, resp.StatusCode, upstreamMsg, upstreamDetail)
 		appendOpsUpstreamError(c, OpsUpstreamErrorEvent{
+			ProxyID:            opsUpstreamProxyID(account),
+			ProxyName:          opsUpstreamProxyName(account),
 			Platform:           account.Platform,
 			AccountID:          account.ID,
 			AccountName:        account.Name,
@@ -482,13 +486,14 @@ func (s *GatewayService) buildCountTokensRequest(ctx context.Context, c *gin.Con
 	}
 
 	// 同步 billing header cc_version 与实际发送的 User-Agent 版本。
-	// mimic 模式稍后会强制覆盖 UA，因此这里必须提前使用同一个最终 UA。
-	ctBillingFingerprint := ctFingerprint
-	if !ctEnableFP {
-		ctBillingFingerprint = nil
+	// mimic 模式稍后会强制覆盖 UA，因此这里必须提前使用同一个最终 UA；
+	// 关闭指纹统一不等于关闭强制 mimic 头，两者由 effectiveBillingUserAgent 一起判定。
+	var billingFingerprint *Fingerprint
+	if ctEnableFP {
+		billingFingerprint = ctFingerprint
 	}
-	if billingUserAgent := claudeBillingSyncUserAgent(tokenType, mimicClaudeCode, ctBillingFingerprint); billingUserAgent != "" {
-		body = syncBillingHeaderVersion(body, billingUserAgent)
+	if billingUA := effectiveBillingUserAgent(tokenType, mimicClaudeCode, billingFingerprint); billingUA != "" {
+		body = syncBillingHeaderVersion(body, billingUA)
 	}
 
 	// === 计算最终 anthropic-beta header（先于 body sanitize）===
