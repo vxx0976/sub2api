@@ -9,7 +9,11 @@ import (
 const (
 	defaultOpenAIMessagesDispatchOpusMappedModel   = "gpt-6-astra"
 	defaultOpenAIMessagesDispatchSonnetMappedModel = "gpt-5.6-sol"
-	defaultOpenAIMessagesDispatchHaikuMappedModel  = "gpt-5.6-terra"
+	// Haiku 刻意停在 gpt-5.4-mini 而不是同代的 gpt-5.6-terra：2026-09-05 实测
+	// terra 在生产号池里按账号分化严重（三个账号分别 10/10、6/10、5/10 完成），
+	// 失败形态是卡 30-45 秒无任何输出。Haiku 承接 Claude Code 的后台高频调用，
+	// 量大且对延迟敏感，卡住即用户侧超时。terra 容量恢复后再考虑换回。
+	defaultOpenAIMessagesDispatchHaikuMappedModel = "gpt-5.4-mini"
 )
 
 func normalizeOpenAIMessagesDispatchMappedModel(model string) string {

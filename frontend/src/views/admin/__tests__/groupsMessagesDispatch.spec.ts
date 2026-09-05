@@ -20,7 +20,7 @@ describe("groupsMessagesDispatch", () => {
       allow_messages_dispatch: false,
       opus_mapped_model: "gpt-6-astra",
       sonnet_mapped_model: "gpt-5.6-sol",
-      haiku_mapped_model: "gpt-5.6-terra",
+      haiku_mapped_model: "gpt-5.4-mini",
       exact_model_mappings: [],
     });
   });
@@ -94,7 +94,7 @@ describe("groupsMessagesDispatch", () => {
       allow_messages_dispatch: false,
       opus_mapped_model: "gpt-6-astra",
       sonnet_mapped_model: "gpt-5.6-sol",
-      haiku_mapped_model: "gpt-5.6-terra",
+      haiku_mapped_model: "gpt-5.4-mini",
       exact_model_mappings: [],
     });
   });

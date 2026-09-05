@@ -43,7 +43,7 @@ describe('CN 分组的 messages dispatch 支持', () => {
     expect(createDefaultMessagesDispatchFormState('openai')).toMatchObject({
       opus_mapped_model: 'gpt-6-astra',
       sonnet_mapped_model: 'gpt-5.6-sol',
-      haiku_mapped_model: 'gpt-5.6-terra',
+      haiku_mapped_model: 'gpt-5.4-mini',
     })
     // 国产平台的默认值里不得出现任何 gpt-*
     for (const p of ['deepseek', 'kimi', 'zhipu'] as const) {

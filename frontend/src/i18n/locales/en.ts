@@ -3514,7 +3514,7 @@ export default {
         sonnetModel: 'Sonnet Target Model',
         sonnetModelPlaceholder: 'e.g., gpt-5.6-sol',
         haikuModel: 'Haiku Target Model',
-        haikuModelPlaceholder: 'e.g., gpt-5.6-terra',
+        haikuModelPlaceholder: 'e.g., gpt-5.4-mini',
         exactMappingTitle: 'Exact Model Overrides',
         exactMappingHint: 'Exact Claude model overrides take priority over the family defaults and can route a specific Claude model to a different target model.',
         noExactMappings: 'No exact model overrides yet',

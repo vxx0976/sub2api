@@ -28,7 +28,9 @@ function getDefaultModelsForPlatform(platform?: GroupPlatform | null): {
     case "zhipu":
       return { opus: "glm-4.6", sonnet: "glm-4.6", haiku: "glm-4.5-air" };
     default:
-      return { opus: "gpt-6-astra", sonnet: "gpt-5.6-sol", haiku: "gpt-5.6-terra" };
+      // Haiku 停在 gpt-5.4-mini：gpt-5.6-terra 实测在部分账号上会卡 30-45 秒无输出，
+      // 详见后端 defaultOpenAIMessagesDispatchHaikuMappedModel 的说明。
+      return { opus: "gpt-6-astra", sonnet: "gpt-5.6-sol", haiku: "gpt-5.4-mini" };
   }
 }
 

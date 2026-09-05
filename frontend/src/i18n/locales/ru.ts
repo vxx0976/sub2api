@@ -3462,7 +3462,7 @@ export default {
         sonnetModel: 'Целевая модель для Sonnet',
         sonnetModelPlaceholder: 'например: gpt-5.6-sol',
         haikuModel: 'Целевая модель для Haiku',
-        haikuModelPlaceholder: 'например: gpt-5.6-terra',
+        haikuModelPlaceholder: 'например: gpt-5.4-mini',
         exactMappingTitle: 'Точные переопределения моделей',
         exactMappingHint: 'Точные переопределения моделей Claude имеют приоритет над сопоставлением по умолчанию для семейства и позволяют направить конкретную модель Claude на другую целевую модель.',
         noExactMappings: 'Точных переопределений моделей пока нет',
