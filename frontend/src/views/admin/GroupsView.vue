@@ -6731,6 +6731,21 @@ const handleCreateGroup = async () => {
   }
 };
 
+// 把分组存量的 /v1/messages 调度配置载入编辑表单。
+// handleEdit 与 editForm.platform 的 watcher 共用，避免两处逻辑漂移。
+const applyMessagesDispatchFromGroup = (group: AdminGroup) => {
+  const state = messagesDispatchConfigToFormState(
+    group.messages_dispatch_model_config,
+    group.platform,
+  );
+  editForm.allow_messages_dispatch =
+    group.allow_messages_dispatch || state.allow_messages_dispatch;
+  editForm.opus_mapped_model = state.opus_mapped_model;
+  editForm.sonnet_mapped_model = state.sonnet_mapped_model;
+  editForm.haiku_mapped_model = state.haiku_mapped_model;
+  editForm.exact_model_mappings = state.exact_model_mappings;
+};
+
 const handleEdit = async (group: AdminGroup) => {
   editingGroup.value = group;
   editForm.name = group.name;
@@ -6789,19 +6804,8 @@ const handleEdit = async (group: AdminGroup) => {
   editForm.fallback_group_id = group.fallback_group_id;
   editForm.fallback_group_id_on_invalid_request =
     group.fallback_group_id_on_invalid_request;
-  const messagesDispatchFormState = messagesDispatchConfigToFormState(
-    group.messages_dispatch_model_config,
-    group.platform,
-  );
-  editForm.allow_messages_dispatch =
-    group.allow_messages_dispatch ||
-    messagesDispatchFormState.allow_messages_dispatch;
+  applyMessagesDispatchFromGroup(group);
   editForm.allow_live = group.allow_live ?? false;
-  editForm.opus_mapped_model = messagesDispatchFormState.opus_mapped_model;
-  editForm.sonnet_mapped_model = messagesDispatchFormState.sonnet_mapped_model;
-  editForm.haiku_mapped_model = messagesDispatchFormState.haiku_mapped_model;
-  editForm.exact_model_mappings =
-    messagesDispatchFormState.exact_model_mappings;
   editForm.require_oauth_only = group.require_oauth_only ?? false;
   editForm.require_privacy_set = group.require_privacy_set ?? false;
   editForm.default_mapped_model = group.default_mapped_model || "";
@@ -7393,7 +7397,16 @@ watch(
     if (!["anthropic", "antigravity"].includes(newVal)) {
       editForm.fallback_group_id_on_invalid_request = null;
     }
-    resetMessagesDispatchFormState(editForm, newVal);
+    // ⚠️ 打开编辑弹窗时 handleEdit 会把 platform 从上一次的值改成本分组的平台，
+    // 这个 watcher 随后异步触发。此处若无条件重置，就会把刚载入的调度开关和模型
+    // 映射冲成平台默认值，管理员照常保存即静默清空线上配置——生产分组 29 因此
+    // 关掉了 /v1/messages 调度、Claude Code 流量掉线三天。
+    // 所以只有「用户真的把平台切走」才重置；切回本分组平台时重新载入存量配置。
+    if (editingGroup.value && newVal === editingGroup.value.platform) {
+      applyMessagesDispatchFromGroup(editingGroup.value);
+    } else {
+      resetMessagesDispatchFormState(editForm, newVal);
+    }
     if (!supportsLivePlatform(newVal)) {
       editForm.allow_live = false;
     }
