@@ -37,11 +37,11 @@ export async function sendMessage(
 export async function getMessages(
   conversationId: number,
   limit = 50,
-  offset = 0,
+  offset?: number,
   guestToken?: string
 ): Promise<{ messages: ChatMessage[]; total: number }> {
   const { data } = await apiClient.get(`/chat/conversations/${conversationId}/messages`, {
-    params: { limit, offset, guest_token: guestToken },
+    params: { limit, guest_token: guestToken, ...(offset === undefined ? {} : { offset }) },
   })
   return data
 }

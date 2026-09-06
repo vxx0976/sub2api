@@ -71,7 +71,7 @@ func (h *ChatHandler) CreateOrGetConversation(c *gin.Context) {
 		return
 	}
 
-	msgs, _, _ := h.chatService.GetMessages(c.Request.Context(), conv.ID, 50, 0)
+	msgs, _, _ := h.chatService.GetMessages(c.Request.Context(), conv.ID, 50, -1)
 	response.Success(c, gin.H{
 		"conversation": chatConversationDTO(conv),
 		"messages":     chatMessagesDTO(msgs),
@@ -109,7 +109,7 @@ func (h *ChatHandler) GetOpenConversation(c *gin.Context) {
 		return
 	}
 
-	msgs, _, _ := h.chatService.GetMessages(c.Request.Context(), conv.ID, 50, 0)
+	msgs, _, _ := h.chatService.GetMessages(c.Request.Context(), conv.ID, 50, -1)
 	response.Success(c, gin.H{
 		"conversation": chatConversationDTO(conv),
 		"messages":     chatMessagesDTO(msgs),
@@ -206,7 +206,8 @@ func (h *ChatHandler) GetMessages(c *gin.Context) {
 	}
 
 	limit := 50
-	offset := 0
+	// 不传 offset 时取最后一页,即最近的 limit 条消息
+	offset := -1
 	if v, err := strconv.Atoi(c.Query("limit")); err == nil && v > 0 && v <= 200 {
 		limit = v
 	}

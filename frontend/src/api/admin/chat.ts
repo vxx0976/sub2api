@@ -20,10 +20,10 @@ export async function getConversation(id: number): Promise<ChatConversation> {
 export async function getMessages(
   id: number,
   limit = 50,
-  offset = 0
+  offset?: number
 ): Promise<{ messages: ChatMessage[]; total: number }> {
   const { data } = await apiClient.get(`/admin/chat/conversations/${id}/messages`, {
-    params: { limit, offset },
+    params: { limit, ...(offset === undefined ? {} : { offset }) },
   })
   return data
 }

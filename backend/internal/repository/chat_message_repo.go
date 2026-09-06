@@ -40,6 +40,15 @@ func (r *chatMessageRepository) ListByConversation(ctx context.Context, conversa
 		return nil, 0, err
 	}
 
+	// offset 为负表示"最后一页":会话可能积压上千条消息,默认要展示最近的 limit 条。
+	// 否则列表预览显示的是最新消息、点进去却只有最早的 50 条,对不上。
+	if offset < 0 {
+		offset = total - limit
+		if offset < 0 {
+			offset = 0
+		}
+	}
+
 	items, err := q.
 		Order(dbent.Asc(chatmessage.FieldCreatedAt)).
 		Offset(offset).

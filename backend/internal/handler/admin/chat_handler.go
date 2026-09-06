@@ -90,7 +90,8 @@ func (h *ChatHandler) GetMessages(c *gin.Context) {
 	}
 
 	limit := 50
-	offset := 0
+	// 不传 offset 时取最后一页,即最近的 limit 条消息
+	offset := -1
 	if v, err := strconv.Atoi(c.Query("limit")); err == nil && v > 0 && v <= 200 {
 		limit = v
 	}
