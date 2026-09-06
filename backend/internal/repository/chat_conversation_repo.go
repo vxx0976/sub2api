@@ -110,7 +110,11 @@ func (r *chatConversationRepository) List(
 	params pagination.PaginationParams,
 	filters service.ChatConversationListFilters,
 ) ([]service.ChatConversation, *pagination.PaginationResult, error) {
-	q := r.client.ChatConversation.Query()
+	q := r.client.ChatConversation.Query().
+		// 只展示真正聊过的会话:访客点开气泡就会建会话,一句话没发的空会话
+		// 对客服没有价值,且 last_message_at 为 NULL 在 Postgres 的
+		// `ORDER BY ... DESC` 下默认 NULLS FIRST,会把这些空壳顶到列表最前面。
+		Where(chatconversation.LastMessageAtNotNil())
 
 	if filters.Status != "" {
 		q = q.Where(chatconversation.StatusEQ(filters.Status))

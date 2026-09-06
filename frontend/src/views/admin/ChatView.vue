@@ -74,8 +74,15 @@ const filteredConversations = computed(() => {
         c.last_message_preview?.toLowerCase().includes(q)
     )
   }
-  return list
+  // 最新消息排最前:后端已按 last_message_at 排过序,但 WebSocket 推来的新消息
+  // 只就地改字段不会重排,这里兜住实时更新后的顺序
+  return [...list].sort((a, b) => convTime(b) - convTime(a))
 })
+
+function convTime(conv: ChatConversation): number {
+  const t = Date.parse(conv.last_message_at || conv.created_at || '')
+  return Number.isNaN(t) ? 0 : t
+}
 
 async function loadConversations() {
   loading.value = true
