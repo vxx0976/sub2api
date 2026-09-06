@@ -26,8 +26,20 @@ export async function updateApiKeyGroup(id: number, groupId: number | null): Pro
   return data
 }
 
+/**
+ * Enable or disable a single API key
+ * @param id - API Key ID
+ * @param status - 'active' | 'inactive'
+ * @returns Updated API key
+ */
+export async function updateApiKeyStatus(id: number, status: 'active' | 'inactive'): Promise<UpdateApiKeyGroupResult> {
+  const { data } = await apiClient.put<UpdateApiKeyGroupResult>(`/admin/api-keys/${id}`, { status })
+  return data
+}
+
 export const apiKeysAPI = {
-  updateApiKeyGroup
+  updateApiKeyGroup,
+  updateApiKeyStatus
 }
 
 export default apiKeysAPI

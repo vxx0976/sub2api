@@ -13,7 +13,24 @@
         <div v-for="key in apiKeys" :key="key.id" class="rounded-xl border border-gray-200 bg-white p-4 dark:border-dark-600 dark:bg-dark-800">
           <div class="flex items-start justify-between">
             <div class="min-w-0 flex-1">
-              <div class="mb-1 flex items-center gap-2"><span class="font-medium text-gray-900 dark:text-white">{{ key.name }}</span><span :class="['badge text-xs', key.status === 'active' ? 'badge-success' : 'badge-danger']">{{ key.status }}</span></div>
+              <div class="mb-1 flex items-center gap-2">
+                <span class="font-medium text-gray-900 dark:text-white">{{ key.name }}</span>
+                <span :class="['badge text-xs', key.status === 'active' ? 'badge-success' : 'badge-danger']">{{ key.status }}</span>
+                <button
+                  v-if="key.status === 'active' || key.status === 'inactive'"
+                  @click="toggleKeyStatus(key)"
+                  :disabled="updatingKeyIds.has(key.id)"
+                  :class="[
+                    'rounded-md px-2 py-0.5 text-xs transition-colors disabled:opacity-50',
+                    key.status === 'active'
+                      ? 'text-gray-500 hover:bg-yellow-50 hover:text-yellow-600 dark:hover:bg-yellow-900/20 dark:hover:text-yellow-400'
+                      : 'text-gray-500 hover:bg-green-50 hover:text-green-600 dark:hover:bg-green-900/20 dark:hover:text-green-400'
+                  ]"
+                  :data-test="`toggle-key-status-${key.id}`"
+                >
+                  {{ key.status === 'active' ? t('admin.users.disableKey') : t('admin.users.enableKey') }}
+                </button>
+              </div>
               <p class="truncate font-mono text-sm text-gray-500">{{ key.key.substring(0, 20) }}...{{ key.key.substring(key.key.length - 8) }}</p>
             </div>
           </div>
@@ -222,6 +239,28 @@ const changeGroup = async (key: ApiKey, newGroupId: number | null) => {
     }
   } catch (error: any) {
     appStore.showError(error?.message || t('admin.users.groupChangeFailed'))
+  } finally {
+    updatingKeyIds.value.delete(key.id)
+  }
+}
+
+// 启用/停用单把 key：只在 active / inactive 之间切换。
+// expired 与 quota_exhausted 由计费和过期逻辑维护，界面不提供手工改动入口，
+// 否则会把可自动恢复的状态改成不可恢复。
+const toggleKeyStatus = async (key: ApiKey) => {
+  const nextStatus = key.status === 'active' ? 'inactive' : 'active'
+  updatingKeyIds.value.add(key.id)
+  try {
+    const result = await adminAPI.apiKeys.updateApiKeyStatus(key.id, nextStatus)
+    const idx = apiKeys.value.findIndex((k) => k.id === key.id)
+    if (idx !== -1) {
+      apiKeys.value[idx] = result.api_key
+    }
+    appStore.showSuccess(
+      nextStatus === 'inactive' ? t('admin.users.keyDisabledSuccess') : t('admin.users.keyEnabledSuccess')
+    )
+  } catch (error: any) {
+    appStore.showError(error?.message || t('admin.users.keyStatusChangeFailed'))
   } finally {
     updatingKeyIds.value.delete(key.id)
   }

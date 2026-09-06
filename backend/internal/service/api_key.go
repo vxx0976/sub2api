@@ -8,7 +8,10 @@ import (
 
 // API Key status constants
 const (
-	StatusAPIKeyActive         = "active"
+	StatusAPIKeyActive = "active"
+	// StatusAPIKeyInactive 是实际落库的停用值（用户面板禁用按钮写的就是它）。
+	// StatusAPIKeyDisabled 是历史遗留常量，生产库中没有任何一行使用。
+	StatusAPIKeyInactive       = "inactive"
 	StatusAPIKeyDisabled       = "disabled"
 	StatusAPIKeyQuotaExhausted = "quota_exhausted"
 	StatusAPIKeyExpired        = "expired"

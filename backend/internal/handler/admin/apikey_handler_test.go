@@ -240,3 +240,31 @@ type failingUpdateGroupService struct {
 func (f *failingUpdateGroupService) AdminUpdateAPIKeyGroupID(_ context.Context, _ int64, _ *int64) (*service.AdminUpdateAPIKeyGroupIDResult, error) {
 	return nil, f.err
 }
+
+func TestAdminAPIKeyHandler_UpdateStatus_DisablesSingleKey(t *testing.T) {
+	stub := newStubAdminService()
+	router := setupAPIKeyHandler(stub)
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPut, "/api/v1/admin/api-keys/10", bytes.NewBufferString(`{"status":"inactive"}`))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusOK, rec.Code)
+	require.Equal(t, service.StatusAPIKeyInactive, stub.apiKeys[0].Status)
+	require.Contains(t, rec.Body.String(), `"status":"inactive"`)
+}
+
+func TestAdminAPIKeyHandler_UpdateStatus_RejectsUnknownStatus(t *testing.T) {
+	stub := newStubAdminService()
+	router := setupAPIKeyHandler(stub)
+
+	rec := httptest.NewRecorder()
+	// expired / quota_exhausted 由计费与过期逻辑维护，管理员不得手工写入。
+	req := httptest.NewRequest(http.MethodPut, "/api/v1/admin/api-keys/10", bytes.NewBufferString(`{"status":"quota_exhausted"}`))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusBadRequest, rec.Code)
+	require.Equal(t, service.StatusActive, stub.apiKeys[0].Status)
+}

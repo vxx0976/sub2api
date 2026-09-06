@@ -1378,6 +1378,38 @@ func (s *adminServiceImpl) AdminResetAPIKeyRateLimitUsage(ctx context.Context, k
 	return apiKey, nil
 }
 
+// AdminUpdateAPIKeyStatus 由管理员启用/停用单把 API Key。
+//
+// 只接受 active / inactive 两个取值：inactive 是本仓库实际在用的"停用"值
+// （用户面板的禁用按钮与生产存量数据都是它），而不是常量里那个从未落库的
+// StatusAPIKeyDisabled。expired / quota_exhausted 由计费与过期逻辑自行维护，
+// 管理员不该手工写入，否则会把"额度耗尽"这类可自动恢复的状态改成不可恢复。
+//
+// 改完必须按 key 失效鉴权缓存：鉴权走 L1 15s / L2 300s 两级缓存，
+// 不失效的话停用最长 5 分钟才生效，掐滥用 key 时这段时间是白送的。
+func (s *adminServiceImpl) AdminUpdateAPIKeyStatus(ctx context.Context, keyID int64, status string) (*APIKey, error) {
+	if status != StatusAPIKeyActive && status != StatusAPIKeyInactive {
+		return nil, infraerrors.BadRequest("INVALID_STATUS", "status must be active or inactive")
+	}
+	apiKey, err := s.apiKeyRepo.GetByID(ctx, keyID)
+	if err != nil {
+		return nil, err
+	}
+	// 状态没变也要失效缓存：库里已是 inactive 但鉴权缓存还留着 active 时
+	// （上次失效失败，或有人直接改了库），管理员再点一次"停用"就是止血手段，
+	// 这里若提前返回，这把 key 还能再放行最多一个 L2 TTL（300 秒）。
+	if apiKey.Status != status {
+		apiKey.Status = status
+		if err := s.apiKeyRepo.Update(ctx, apiKey, APIKeyUpdateFields{Status: true}); err != nil {
+			return nil, fmt.Errorf("update api key status: %w", err)
+		}
+	}
+	if s.authCacheInvalidator != nil {
+		s.authCacheInvalidator.InvalidateAuthCacheByKey(ctx, apiKey.Key)
+	}
+	return apiKey, nil
+}
+
 // ReplaceUserGroup 替换用户的专属分组
 func (s *adminServiceImpl) ReplaceUserGroup(ctx context.Context, userID, oldGroupID, newGroupID int64) (*ReplaceUserGroupResult, error) {
 	if oldGroupID == newGroupID {
