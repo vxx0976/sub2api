@@ -73,6 +73,10 @@ beforeEach(() => {
   apiMocks.resetPlatformQuotaWindow.mockResolvedValue({ platform_quotas: [] })
 })
 
+// 与 UserPlatformQuotaModal.vue 的 PLATFORMS（真源 = 后端 service.AllowedQuotaPlatforms）
+// 保持一致；加平台时只需改这一个数字。
+const PLATFORM_COUNT = 9
+
 describe('UserPlatformQuotaModal', () => {
   it('挂载并 show=true 时调用 getPlatformQuotas', async () => {
     await mountAndOpen()
@@ -98,13 +102,13 @@ describe('UserPlatformQuotaModal', () => {
     })
     const w = await mountAndOpen()
     const inputs = w.findAll('input[type=number]')
-    // 8 platforms × 3 windows = 24 inputs
-    expect(inputs.length).toBe(24)
+    // PLATFORM_COUNT 个平台 × 3 个窗口
+    expect(inputs.length).toBe(PLATFORM_COUNT * 3)
     // 第一个 input 是 anthropic.daily = 10
     expect((inputs[0].element as HTMLInputElement).value).toBe('10')
   })
 
-  it('保存提交完整 8 platform payload', async () => {
+  it('保存提交完整 platform payload', async () => {
     apiMocks.getPlatformQuotas.mockResolvedValueOnce({
       platform_quotas: [
         { platform: 'openai', daily_limit_usd: null, weekly_limit_usd: 20, monthly_limit_usd: null,
@@ -121,7 +125,7 @@ describe('UserPlatformQuotaModal', () => {
     expect(apiMocks.updatePlatformQuotas).toHaveBeenCalledTimes(1)
     const [uid, payload] = apiMocks.updatePlatformQuotas.mock.calls[0]
     expect(uid).toBe(99)
-    expect(payload).toHaveLength(8) // 8 platforms always submitted
+    expect(payload).toHaveLength(PLATFORM_COUNT) // 所有平台每次都整份提交
     const openai = payload.find((p: any) => p.platform === 'openai')
     expect(openai.weekly_limit_usd).toBe(20)
   })

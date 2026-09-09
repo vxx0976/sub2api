@@ -112,6 +112,8 @@ func DetectModelPlatform(model string) (string, bool) {
 			return PlatformZhipu, true
 		case "deepseek":
 			return PlatformDeepseek, true
+		case "minimax":
+			return PlatformMiniMax, true
 		}
 		if rest != "" {
 			normalized = strings.TrimPrefix(rest, "models/")
@@ -148,6 +150,11 @@ func DetectModelPlatform(model string) (string, bool) {
 		return PlatformZhipu, true
 	case strings.HasPrefix(normalized, "deepseek-"):
 		return PlatformDeepseek, true
+	case strings.HasPrefix(normalized, "minimax-"),
+		strings.HasPrefix(normalized, "abab5"),
+		strings.HasPrefix(normalized, "abab6"),
+		strings.HasPrefix(normalized, "abab7"):
+		return PlatformMiniMax, true
 	default:
 		return "", false
 	}
@@ -194,18 +201,19 @@ func (s *GatewayService) resolveCompositeRouteDecision(ctx context.Context, grou
 
 // compositeRequestPlatforms 是复合分组能够真正承载的具体平台集合。
 //
-// 本集合与 AllowedQuotaPlatforms 现已同为 8 个，但仍是两条独立不变量：调度桶
+// 本集合与 AllowedQuotaPlatforms 现已同为 9 个，但仍是两条独立不变量：调度桶
 // （schedulerCanonicalBuckets / schedulerBucketsForGroup）对任意分组通用，本集合
 // 只描述「复合分组能承载什么」。别把两者当同一件事，也别用其中一个去证明另一个。
 //
-// 国产三家（kimi / zhipu / deepseek）曾因三处运行时缺口被刻意排除在外，现已全部补齐：
+// 国产四家（kimi / zhipu / deepseek / minimax）曾因三处运行时缺口被刻意排除在外，现已全部补齐：
 //
-//  1. DetectModelPlatform 认 kimi/moonshot、zhipu/glm/bigmodel、deepseek 三组
-//     provider 前缀，以及 kimi- / moonshot- / glm- / deepseek- 四组模型名前缀。
+//  1. DetectModelPlatform 认 kimi/moonshot、zhipu/glm/bigmodel、deepseek、minimax 四组
+//     provider 前缀，以及 kimi- / moonshot- / glm- / deepseek- / minimax- / abab5|6|7
+//     六组模型名前缀。
 //  2. handler 侧 openAICompatibleRequestPlatform 改走
-//     service.NormalizeOpenAICompatiblePlatform：grok/kimi/zhipu/deepseek 原样保留，
+//     service.NormalizeOpenAICompatiblePlatform：grok/kimi/zhipu/deepseek/minimax 原样保留，
 //     不再被压成 PlatformOpenAI（压平会进错号池、错计费平台）。
-//  3. 文本类端点白名单 openAICompatibleTextTargetAllowed 含 Kimi/Zhipu/Deepseek，
+//  3. 文本类端点白名单 openAICompatibleTextTargetAllowed 含 Kimi/Zhipu/Deepseek/MiniMax，
 //     覆盖 /v1/chat/completions、/v1/responses、/v1/messages 及两个 count_tokens 端点。
 //
 // ⚠️ 仍**刻意**不放开的窄口（这是当前设计，不是待办事项，解冲突/重构时别顺手补齐）：
@@ -223,8 +231,8 @@ func (s *GatewayService) resolveCompositeRouteDecision(ctx context.Context, grou
 // 本函数的结果，lookupPricingAcrossPlatforms / lookupMappingAcrossPlatforms 先整轮
 // 精确匹配、再整轮通配匹配，两轮都按此顺序取**首个命中**。复合分组下同名模型在多个
 // 平台都配了定价/映射时，由这个顺序决定用哪一份。
-// 国产三家一律**追加在队尾**，理由是：前 5 个平台之间的既有命中结果因此一字不变，
-// 从 5 扩到 8 对存量复合分组零回归。把它们插进前 5 个中间会改变既有命中。
+// 国产各家一律**追加在队尾**，理由是：前 5 个平台之间的既有命中结果因此一字不变，
+// 从 5 扩到 9 对存量复合分组零回归。把它们插进前 5 个中间会改变既有命中。
 func compositeRequestPlatforms() []string {
 	return []string{
 		PlatformAnthropic,
@@ -235,6 +243,7 @@ func compositeRequestPlatforms() []string {
 		PlatformKimi,
 		PlatformZhipu,
 		PlatformDeepseek,
+		PlatformMiniMax,
 	}
 }
 

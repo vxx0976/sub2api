@@ -27,6 +27,9 @@ function getDefaultModelsForPlatform(platform?: GroupPlatform | null): {
       return { opus: "kimi-k2.6", sonnet: "kimi-k2.6", haiku: "kimi-k2.6" };
     case "zhipu":
       return { opus: "glm-4.6", sonnet: "glm-4.6", haiku: "glm-4.5-air" };
+    case "minimax":
+      // MiniMax 只有一档主力型号，三档 claude-* 都映到它。
+      return { opus: "MiniMax-M2.7", sonnet: "MiniMax-M2.7", haiku: "MiniMax-M2.7" };
     default:
       // Haiku 用 gpt-5.6-sol：gpt-5.4-mini 官方公告下架、gpt-5.6-terra 实测会卡
       // 30-45 秒无输出，详见后端 defaultOpenAIMessagesDispatchHaikuMappedModel 的说明。
@@ -50,6 +53,7 @@ const MESSAGES_DISPATCH_PLATFORMS: GroupPlatform[] = [
   "deepseek",
   "kimi",
   "zhipu",
+  "minimax",
 ];
 
 export function supportsMessagesDispatchPlatform(

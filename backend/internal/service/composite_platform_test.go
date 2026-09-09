@@ -177,6 +177,11 @@ func TestDetectModelPlatform(t *testing.T) {
 		{name: "moonshot prefix", model: "moonshot/moonshot-v1-32k", platform: PlatformKimi, ok: true},
 		{name: "zhipu", model: "glm-5.2", platform: PlatformZhipu, ok: true},
 		{name: "deepseek", model: "deepseek-v4-pro", platform: PlatformDeepseek, ok: true},
+		{name: "minimax", model: "MiniMax-M3", platform: PlatformMiniMax, ok: true},
+		{name: "minimax prefix", model: "minimax/MiniMax-M2.5", platform: PlatformMiniMax, ok: true},
+		{name: "abab legacy", model: "abab6.5-chat", platform: PlatformMiniMax, ok: true},
+		{name: "abab7 legacy", model: "abab7-chat-preview", platform: PlatformMiniMax, ok: true},
+		{name: "abab unrelated namespace", model: "abab-other", ok: false},
 		{name: "unknown k3 alias", model: "k3-preview", ok: false},
 		{name: "unknown", model: "llama-4-maverick", ok: false},
 	}
@@ -202,11 +207,11 @@ func TestQuotaPlatformCompositeUsesResolvedOrForceOnly(t *testing.T) {
 	require.Equal(t, PlatformAntigravity, QuotaPlatform(ctx, apiKey))
 }
 
-// 调度快照桶必须覆盖 AllowedQuotaPlatforms 全部 8 个平台。
+// 调度快照桶必须覆盖 AllowedQuotaPlatforms 全部 9 个平台。
 //
 // 这是所有分组通用的桶集合（schedulerBucketsForGroup 对任意 groupID 都调用），
-// 8 个平台各自的单平台分组都需要桶。⚠️ 它与 compositeRequestPlatforms 现在虽然
-// 同为 8 个，但仍是两条**独立不变量**：调度桶对任意分组通用，与「复合分组能承载
+// 9 个平台各自的单平台分组都需要桶。⚠️ 它与 compositeRequestPlatforms 现在虽然
+// 同为 9 个，但仍是两条**独立不变量**：调度桶对任意分组通用，与「复合分组能承载
 // 什么」无关。别用其中一个去证明另一个——两者恰好相等是巧合，不是契约。
 func TestSchedulerCanonicalBucketsCoverAllQuotaPlatforms(t *testing.T) {
 	seen := make(map[string]struct{})
@@ -220,20 +225,19 @@ func TestSchedulerCanonicalBucketsCoverAllQuotaPlatforms(t *testing.T) {
 	require.ElementsMatch(t, AllowedQuotaPlatforms, platforms)
 }
 
-// 复合分组的平台集与 AllowedQuotaPlatforms 现已同为 8 个，但**次序**仍是行为契约。
-// 这批用例钉住两件事：全列表的字面次序，以及国产三家只能追加在队尾。
+// 复合分组的平台集与 AllowedQuotaPlatforms 现已同为 9 个，但**次序**仍是行为契约。
+// 这批用例钉住两件事：全列表的字面次序，以及国产各家只能追加在队尾。
 func TestCompositeRequestPlatformsOrderIsPricingContract(t *testing.T) {
 	// 用有序断言而非 ElementsMatch：次序决定复合分组下同名模型取哪个平台的定价/映射
 	// （lookupPricingAcrossPlatforms / lookupMappingAcrossPlatforms 取首个命中），属行为契约。
 	require.Equal(t,
 		[]string{
 			PlatformAnthropic, PlatformGemini, PlatformOpenAI, PlatformAntigravity, PlatformGrok,
-			PlatformKimi, PlatformZhipu, PlatformDeepseek,
+			PlatformKimi, PlatformZhipu, PlatformDeepseek, PlatformMiniMax,
 		},
-		compositeRequestPlatforms(),
-	)
+		compositeRequestPlatforms())
 
-	// 尾追加不变量：原有 5 个平台的相对次序必须一字不动。国产三家插到前 5 个中间会
+	// 尾追加不变量：原有 5 个平台的相对次序必须一字不动。国产四家插到前 5 个中间会
 	// 改变既有复合分组的定价/映射命中结果（把某个平台的精确/通配行抢到前面）。
 	require.Equal(t,
 		[]string{PlatformAnthropic, PlatformGemini, PlatformOpenAI, PlatformAntigravity, PlatformGrok},
@@ -305,7 +309,7 @@ func TestMatchingPlatformsCompositeSharesSingleSource(t *testing.T) {
 }
 
 func TestCompositeConcretePlatformsIncludeCNProviders(t *testing.T) {
-	for _, platform := range []string{PlatformKimi, PlatformZhipu, PlatformDeepseek} {
+	for _, platform := range []string{PlatformKimi, PlatformZhipu, PlatformDeepseek, PlatformMiniMax} {
 		require.True(t, isConcreteRequestPlatform(platform))
 		require.True(t, canCopyAccountsFromGroupPlatform(PlatformComposite, platform))
 	}

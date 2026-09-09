@@ -413,6 +413,8 @@ export function getPlatformTagClass(platform: string): string {
     case 'deepseek': return 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400'
     case 'kimi': return 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400'
     case 'zhipu': return 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400'
+    // 上游给 minimax 分的也是 rose，与本 fork 的 zhipu 撞色，另取 fuchsia 保持可区分。
+    case 'minimax': return 'bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-900/30 dark:text-fuchsia-400'
     case 'grok': return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
     default: return 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400'
   }
@@ -428,6 +430,7 @@ export function getPlatformTextClass(platform: string): string {
     case 'deepseek': return 'text-cyan-700 dark:text-cyan-400'
     case 'kimi': return 'text-indigo-700 dark:text-indigo-400'
     case 'zhipu': return 'text-rose-700 dark:text-rose-400'
+    case 'minimax': return 'text-fuchsia-700 dark:text-fuchsia-400'
     case 'grok': return 'text-slate-700 dark:text-slate-300'
     default: return ''
   }

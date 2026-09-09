@@ -8,21 +8,23 @@ import GroupsView from '@/views/admin/GroupsView.vue'
 const {
   listGroups,
   updateGroup,
-  getModelsListCandidates,
+  getModelAllowlistCandidates,
   getUsageSummary,
   getCapacitySummary,
   getLiveCapability,
   showSuccess,
-  showError
+  showError,
+  authState
 } = vi.hoisted(() => ({
   listGroups: vi.fn(),
   updateGroup: vi.fn(),
-  getModelsListCandidates: vi.fn(),
+  getModelAllowlistCandidates: vi.fn(),
   getUsageSummary: vi.fn(),
   getCapacitySummary: vi.fn(),
   getLiveCapability: vi.fn(),
   showSuccess: vi.fn(),
-  showError: vi.fn()
+  showError: vi.fn(),
+  authState: { isSimpleMode: false }
 }))
 
 vi.mock('@/api/admin', () => ({
@@ -30,7 +32,7 @@ vi.mock('@/api/admin', () => ({
     groups: {
       list: listGroups,
       duplicate: vi.fn(),
-      getModelsListCandidates,
+      getModelAllowlistCandidates,
       getUsageSummary,
       getCapacitySummary,
       getLiveCapability,
@@ -49,6 +51,10 @@ vi.mock('@/api/admin', () => ({
 
 vi.mock('@/stores/app', () => ({
   useAppStore: () => ({ showSuccess, showError })
+}))
+
+vi.mock('@/stores/auth', () => ({
+  useAuthStore: () => authState,
 }))
 
 vi.mock('@/stores/onboarding', () => ({
@@ -121,7 +127,7 @@ const dispatchGroup: AdminGroup = {
   account_count: 1,
   active_account_count: 1,
   rate_limited_account_count: 0,
-  models_list_config: undefined,
+  model_allowlist: undefined,
   sort_order: 10
 }
 
@@ -180,7 +186,7 @@ describe('GroupsView messages dispatch editing', () => {
     for (const fn of [
       listGroups,
       updateGroup,
-      getModelsListCandidates,
+      getModelAllowlistCandidates,
       getUsageSummary,
       getCapacitySummary,
       getLiveCapability,
@@ -198,7 +204,7 @@ describe('GroupsView messages dispatch editing', () => {
       pages: 1
     })
     updateGroup.mockResolvedValue({ ...dispatchGroup })
-    getModelsListCandidates.mockResolvedValue([])
+    getModelAllowlistCandidates.mockResolvedValue([])
     getUsageSummary.mockResolvedValue([])
     getCapacitySummary.mockResolvedValue([])
     getLiveCapability.mockResolvedValue({ supported: false })

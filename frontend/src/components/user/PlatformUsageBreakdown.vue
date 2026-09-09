@@ -95,7 +95,14 @@ const PLATFORM_LABELS: Record<string, string> = {
   anthropic: 'Claude',
   openai: 'OpenAI',
   gemini: 'Gemini',
-  antigravity: 'Antigravity'
+  antigravity: 'Antigravity',
+  grok: 'Grok',
+  kimi: 'Kimi',
+  // 与 utils/platformColors.ts 的 platformLabel() 一致：zhipu 固定显示 GLM（fork 品牌口径），
+  // 不跟上游的 'Zhipu GLM'——同一页的仪表盘徽章用的就是 GLM，两处不一致会被当成两个平台。
+  zhipu: 'GLM',
+  deepseek: 'DeepSeek',
+  minimax: 'MiniMax',
 }
 
 function platformLabel(platform: string): string {

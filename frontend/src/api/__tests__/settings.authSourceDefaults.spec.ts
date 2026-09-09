@@ -19,7 +19,13 @@ const allNullQuotas: DefaultPlatformQuotasMap = {
   deepseek: { daily: null, weekly: null, monthly: null },
   kimi: { daily: null, weekly: null, monthly: null },
   zhipu: { daily: null, weekly: null, monthly: null },
+  minimax: { daily: null, weekly: null, monthly: null },
 }
+
+/** 归一化后必须覆盖的平台全集，与后端 service.AllowedQuotaPlatforms 逐字对应 */
+const EXPECTED_QUOTA_PLATFORMS = [
+  "anthropic", "openai", "gemini", "antigravity", "grok", "deepseek", "kimi", "zhipu", "minimax",
+]
 
 describe("admin settings auth source defaults helpers", () => {
   it("builds auth source defaults state from flat settings fields", () => {
@@ -243,9 +249,9 @@ describe("normalizePlatformQuotasMap", () => {
     expect(result.grok).toEqual({ daily: null, weekly: null, monthly: null });
   });
 
-  it("无参数时返回全 8 平台全 null", () => {
+  it("无参数时返回全 9 平台全 null", () => {
     const result = normalizePlatformQuotasMap();
-    expect(Object.keys(result)).toHaveLength(8);
+    expect(Object.keys(result).sort()).toEqual([...EXPECTED_QUOTA_PLATFORMS].sort());
     for (const v of Object.values(result)) {
       expect(v).toEqual({ daily: null, weekly: null, monthly: null });
     }
@@ -293,7 +299,7 @@ describe("sanitizePlatformQuotasMap", () => {
 
   it("缺失平台填充为全 null", () => {
     const result = sanitizePlatformQuotasMap({});
-    expect(Object.keys(result)).toHaveLength(8);
+    expect(Object.keys(result).sort()).toEqual([...EXPECTED_QUOTA_PLATFORMS].sort());
     for (const v of Object.values(result)) {
       expect(v).toEqual({ daily: null, weekly: null, monthly: null });
     }

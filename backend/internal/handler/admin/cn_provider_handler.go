@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// CNProviderHandler 暴露国产供应商（kimi/zhipu/deepseek）的额度与余额查询端点。
+// CNProviderHandler 暴露国产供应商（kimi/zhipu/deepseek/minimax）的额度与余额查询端点。
 //
 //   - GET /admin/cn-providers/accounts/:id/quota   Coding Plan 滚动窗口用量（kimi/zhipu）
 //   - GET /admin/cn-providers/accounts/:id/balance  payg 账号余额（kimi/deepseek）

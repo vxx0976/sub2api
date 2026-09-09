@@ -56,6 +56,8 @@ func TestCNGroupResolvesConfiguredClaudeModelMapping(t *testing.T) {
 		{"未配置的 deepseek 分组 haiku", &Group{Platform: PlatformDeepseek}, "claude-haiku-4-5-20251001", "deepseek-v4-flash"},
 		{"未配置的 kimi 分组", &Group{Platform: PlatformKimi}, "claude-sonnet-5", "kimi-k2.6"},
 		{"未配置的 zhipu 分组 haiku", &Group{Platform: PlatformZhipu}, "claude-haiku-4-5-20251001", "glm-4.5-air"},
+		{"未配置的 minimax 分组 opus", &Group{Platform: PlatformMiniMax}, "claude-opus-5", "MiniMax-M2.7"},
+		{"未配置的 minimax 分组 haiku", &Group{Platform: PlatformMiniMax}, "claude-haiku-4-5-20251001", "MiniMax-M2.7"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -69,7 +71,7 @@ func TestCNGroupResolvesConfiguredClaudeModelMapping(t *testing.T) {
 // 没配置映射时必须返回空（原样透传），绝不能回落到 OpenAI 的 gpt-5.x 默认值——
 // 那些型号发给 kimi / zhipu / deepseek 上游必然 400。
 func TestCNGroupNeverFallsBackToOpenAIDefaultModels(t *testing.T) {
-	for _, platform := range []string{PlatformKimi, PlatformZhipu, PlatformDeepseek} {
+	for _, platform := range []string{PlatformKimi, PlatformZhipu, PlatformDeepseek, PlatformMiniMax} {
 		g := &Group{Platform: platform} // 无任何映射配置
 		for _, model := range []string{"claude-opus-5", "claude-sonnet-5", "claude-haiku-4-5-20251001"} {
 			got := g.ResolveMessagesDispatchModel(model)

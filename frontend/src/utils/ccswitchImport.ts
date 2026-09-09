@@ -3,6 +3,10 @@ import type { GroupPlatform } from '@/types'
 export const OPENAI_CC_SWITCH_CODEX_MODEL = 'gpt-5.5'
 export const DEEPSEEK_CC_SWITCH_CODEX_MODEL = 'deepseek-v4-flash'
 export const KIMI_CC_SWITCH_CODEX_MODEL = 'kimi-for-coding'
+// zhipu / minimax 的 Codex 目标型号与后端 cnDefaultMessagesDispatchModels
+// （openai_messages_dispatch.go）、前端 groupsMessagesDispatch.ts 的兜底保持一致。
+export const ZHIPU_CC_SWITCH_CODEX_MODEL = 'glm-4.6'
+export const MINIMAX_CC_SWITCH_CODEX_MODEL = 'MiniMax-M2.7'
 export const GROK_CC_SWITCH_MODEL = 'grok-4.5'
 
 export type CcSwitchClientType = 'claude' | 'gemini' | 'codex'
@@ -51,6 +55,16 @@ export function resolveCcSwitchImportConfig(
     case 'kimi':
       if (clientType === 'codex') {
         return { app: 'codex', endpoint: baseUrl, model: KIMI_CC_SWITCH_CODEX_MODEL }
+      }
+      return { app: 'claude', endpoint: baseUrl }
+    case 'zhipu':
+      if (clientType === 'codex') {
+        return { app: 'codex', endpoint: baseUrl, model: ZHIPU_CC_SWITCH_CODEX_MODEL }
+      }
+      return { app: 'claude', endpoint: baseUrl }
+    case 'minimax':
+      if (clientType === 'codex') {
+        return { app: 'codex', endpoint: baseUrl, model: MINIMAX_CC_SWITCH_CODEX_MODEL }
       }
       return { app: 'claude', endpoint: baseUrl }
     case 'gemini':

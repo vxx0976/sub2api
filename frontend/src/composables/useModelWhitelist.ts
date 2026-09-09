@@ -17,7 +17,7 @@ const openaiModels = [
   'gpt-5.3-codex-spark', 'codex-auto-review',
   'gpt-4o-audio-preview', 'gpt-4o-realtime-preview',
   // GPT Image 系列
-  'gpt-image-1', 'gpt-image-1.5', 'gpt-image-2'
+  'gpt-image-1', 'gpt-image-1.5', 'gpt-image-2', 'gpt-image-2.5-flare', 'gpt-image-2.5-sunburst'
 ]
 
 // Anthropic Claude
@@ -102,7 +102,9 @@ const zhipuModels = [
   'glm-5v-turbo', 'glm-4.6v', 'glm-4.6v-flash',
   'glm-4.1v-thinking-flashx', 'glm-4.1v-thinking-flash', 'glm-4v-flash',
   // 专用模型
-  'codegeex-4', 'charglm-4'
+  'codegeex-4', 'charglm-4',
+  // 上游补充的在售/历史型号
+  'glm-5.2', 'glm-4', 'glm-4v', 'glm-4-plus', 'glm-4-air', 'glm-4-airx', 'glm-4-flash', 'glm-4v-plus', 'glm-4.5', 'glm-4.5-x',
 ]
 
 // 阿里 通义千问
@@ -205,6 +207,14 @@ const doubaoModels = [
 
 // MiniMax
 const minimaxModels = [
+  'MiniMax-M3',
+  'MiniMax-M2.7',
+  'MiniMax-M2.7-highspeed',
+  'MiniMax-M2.5',
+  'MiniMax-M2.5-highspeed',
+  'MiniMax-M2.1',
+  'MiniMax-M2.1-highspeed',
+  'MiniMax-M2',
   'abab6.5-chat', 'abab6.5s-chat', 'abab6.5s-chat-pro',
   'abab6-chat',
   'abab5.5-chat', 'abab5.5s-chat'
@@ -337,6 +347,14 @@ const zhipuPresetMappings = [
   { label: 'GLM-5.1', from: 'GLM-5.1', to: 'GLM-5.1', color: 'bg-rose-100 text-rose-700 hover:bg-rose-200 dark:bg-rose-900/30 dark:text-rose-400' },
   { label: 'GLM-5', from: 'glm-5', to: 'glm-5', color: 'bg-rose-100 text-rose-700 hover:bg-rose-200 dark:bg-rose-900/30 dark:text-rose-400' },
   { label: 'GLM-4.7 Flash', from: 'glm-4.7-flash', to: 'glm-4.7-flash', color: 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400' }
+]
+
+// MiniMax 预设映射
+const minimaxPresetMappings = [
+  { label: 'MiniMax-M3', from: 'MiniMax-M3', to: 'MiniMax-M3', color: 'bg-fuchsia-100 text-fuchsia-700 hover:bg-fuchsia-200 dark:bg-fuchsia-900/30 dark:text-fuchsia-400' },
+  { label: 'MiniMax-M2.7', from: 'MiniMax-M2.7', to: 'MiniMax-M2.7', color: 'bg-fuchsia-100 text-fuchsia-700 hover:bg-fuchsia-200 dark:bg-fuchsia-900/30 dark:text-fuchsia-400' },
+  { label: 'M2.7 Highspeed', from: 'MiniMax-M2.7-highspeed', to: 'MiniMax-M2.7-highspeed', color: 'bg-pink-100 text-pink-700 hover:bg-pink-200 dark:bg-pink-900/30 dark:text-pink-400' },
+  { label: 'MiniMax-M2.5', from: 'MiniMax-M2.5', to: 'MiniMax-M2.5', color: 'bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-900/30 dark:text-purple-400' }
 ]
 
 // Grok (xAI) 预设映射
@@ -485,6 +503,7 @@ export function getPresetMappingsByPlatform(platform: string) {
   if (platform === 'deepseek') return deepseekPresetMappings
   if (platform === 'kimi') return kimiPresetMappings
   if (platform === 'zhipu') return zhipuPresetMappings
+  if (platform === 'minimax') return minimaxPresetMappings
   if (platform === 'grok' || platform === 'xai') return grokPresetMappings
   if (platform === 'antigravity') return antigravityPresetMappings
   if (platform === 'bedrock') return bedrockPresetMappings

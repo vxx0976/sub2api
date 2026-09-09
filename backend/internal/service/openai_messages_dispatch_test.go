@@ -112,7 +112,7 @@ func TestSanitizeGroupMessagesDispatchFields_PreservesOpenAIConfig(t *testing.T)
 func TestMessagesDispatchSanitizeForCNProviders(t *testing.T) {
 	t.Parallel()
 
-	for _, platform := range []string{PlatformKimi, PlatformZhipu, PlatformDeepseek} {
+	for _, platform := range []string{PlatformKimi, PlatformZhipu, PlatformDeepseek, PlatformMiniMax} {
 		cfg := OpenAIMessagesDispatchModelConfig{SonnetMappedModel: "kimi-k2.6"}
 		group := &Group{
 			Platform:                    platform,
@@ -139,7 +139,7 @@ func TestMessagesDispatchCNProvidersNeverInheritOpenAIDefaults(t *testing.T) {
 	// 本 fork 不是靠「返回空」达成的，而是按平台给各自兜底——返回空会让 claude-*
 	// 原样透传国产上游（选号失败，或上游接受后被 filterCNProviderBillingModelCandidates
 	// 滤空候选 → 零成本落账）。要守的实质是「不得吃到 gpt-5.x」。
-	for _, platform := range []string{PlatformKimi, PlatformZhipu, PlatformDeepseek} {
+	for _, platform := range []string{PlatformKimi, PlatformZhipu, PlatformDeepseek, PlatformMiniMax} {
 		group := &Group{Platform: platform, AllowMessagesDispatch: true} // 未配任何映射
 		for _, model := range []string{"claude-sonnet-4-5", "claude-opus-5"} {
 			got := group.ResolveMessagesDispatchModel(model)

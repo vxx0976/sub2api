@@ -101,6 +101,7 @@ const PROVIDER_TINT: Record<string, string> = {
   kimi: 'text-pink-600 dark:text-pink-300',
   zhipu: 'text-indigo-600 dark:text-indigo-300',
   deepseek: 'text-teal-600 dark:text-teal-300',
+  minimax: 'text-fuchsia-600 dark:text-fuchsia-300',
 }
 
 const props = defineProps<{

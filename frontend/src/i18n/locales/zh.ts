@@ -547,6 +547,12 @@ export default {
     delete: '删除',
     edit: '编辑',
     create: '创建',
+    apply: '应用',
+    clear: '清除',
+    creating: '创建中...',
+    required: '必填',
+    sending: '发送中...',
+    tryAgain: '请重试',
     update: '更新',
     confirm: '确认',
     reset: '重置',
@@ -1226,6 +1232,12 @@ export default {
         codexConfigTomlHint: '下载下方模型目录，将两个文件保存到 Codex 配置目录后重启 Codex。',
         codexNote: '启动 Codex 前先导出 SUB2API_API_KEY。下载的目录只包含模型元数据，不包含 API Key。'
       },
+      minimax: {
+        description: '通过当前 MiniMax 分组配置 Claude Code、Codex 或 OpenCode。',
+        codexDescription: '使用 API Key 配置 Codex，并通过当前 MiniMax 分组发送请求。',
+        codexConfigTomlHint: '下载下方模型目录，将两个文件保存到 Codex 配置目录后重启 Codex。',
+        codexNote: '启动 Codex 前先导出 SUB2API_API_KEY。下载的目录只包含模型元数据，不包含 API Key。'
+      },
       composite: {
         description: '通过当前 Composite 路由分组配置受支持的客户端。',
         codexDescription: '使用 API Key 和当前 Composite 分组的完整模型目录配置 Codex。',
@@ -1657,6 +1669,7 @@ export default {
       kimi: 'Kimi',
       zhipu: '智谱 GLM',
       deepseek: 'DeepSeek',
+      minimax: 'MiniMax',
     },
     extraModelsHeader: '附加模型',
     extraModelsEmpty: '无附加模型',
@@ -1951,6 +1964,7 @@ export default {
   // Recharge
   topupOrders: {
     title: '充值记录',
+    description: '查看你的 支付宝 / 微信 / USDT 充值订单',
     userDescription: '查看你的 支付宝 / 微信 / USDT 充值订单',
     adminTitle: '充值订单',
     adminDescription: '集中查看与管理 支付宝(免签) / 微信(易支付) / USDT 三种充值订单',
@@ -2837,6 +2851,7 @@ export default {
       leaveEmptyToKeep: '留空则保持原密码不变',
       generatePassword: '生成随机密码',
       copyPassword: '复制密码',
+      passwordCopied: '密码已复制',
       creating: '创建中...',
       updating: '更新中...',
       columns: {
@@ -3213,7 +3228,7 @@ export default {
         reasoningEffortMappings: '推理强度映射',
         addReasoningEffortMapping: '添加映射',
         removeReasoningEffortMapping: '删除映射',
-        reasoningEffortMappingsHint: '类型和模型均可留空，表示匹配全部模型。同一类型和模型下可添加多条请求值映射，例如前缀 gpt 同时将 high、xhigh 转到 medium。精确优先于前后缀，更长前后缀优先。',
+        reasoningEffortMappingsHint: '类型和模型均可留空，表示匹配全部模型。同一类型和模型下可添加多条请求值映射，例如前缀 gpt 同时将 high、xhigh 转到 medium。转发值可选拒绝，命中对应请求值时直接返回错误。精确优先于前后缀，更长前后缀优先。',
         addReasoningEffortPair: '添加请求值',
         removeReasoningEffortPair: '删除请求值',
         reasoningEffortMatchType: '类型',
@@ -3225,6 +3240,7 @@ export default {
         reasoningEffortModelPlaceholder: '留空则全部 / gpt / gpt-5.4',
         reasoningEffortFrom: '请求值',
         reasoningEffortTo: '转发值',
+        reasoningEffortToDeny: '拒绝',
         reasoningEffortFromPlaceholder: '请选择 A',
         reasoningEffortToPlaceholder: '请选择 B',
         fromRequired: '请选择请求值 A',
@@ -3269,6 +3285,7 @@ export default {
         deepseek: 'DeepSeek',
         kimi: 'Kimi',
         zhipu: 'GLM',
+        minimax: 'MiniMax',
         ollama: 'Ollama',
         composite: 'Composite',
       },
@@ -3438,21 +3455,30 @@ export default {
         bufferRangeError: '安全缓冲应在 0 到 99.99 之间',
         sumTooHigh: '最低毛利率与安全缓冲之和必须小于 100%，否则将排除全部账号'
       },
-      modelsList: {
-        title: '自定义 {endpoint} 模型列表',
-        hint: '仅影响 {endpoint} 展示结果，不影响白名单模型调用和账号调度。',
-        loading: '正在加载模型列表...',
-        empty: '暂无可展示模型',
+      modelAllowlist: {
+        title: '模型白名单',
+        hint: '开启后，不在白名单中的模型会被拒绝（404 model_not_found），模型列表接口也只展示白名单内的模型。条目支持精确模型 ID 与末尾 * 通配。注意：Claude Code 会用 haiku 系小模型做标题/摘要等探测，/messages/count_tokens 同样受白名单控制，请一并勾选所需的小模型。',
+        loading: '正在加载候选模型...',
+        empty: '暂无候选模型，可在下方手工添加条目',
         selectedSummary: '已选 {selected} / {total}',
         selectAll: '全选',
-        invertSelection: '反选'
+        invertSelection: '反选',
+        wildcardTag: '通配',
+        customPlaceholder: '自定义条目，如 claude-* 或 gpt-5.5-codex',
+        addCustom: '添加',
+        emptySelectionError: '模型白名单已开启，请至少选择或添加一个模型条目',
+        errors: {
+          empty: '请输入模型条目',
+          invalidWildcard: '通配符 * 只能出现在条目末尾',
+          duplicate: '该条目已存在'
+        }
       },
       codexModelsManifest: {
-        title: '固定账号获取 Codex Model Manifest',
-        hint: '开启后，该分组的 Codex 客户端 /models 请求只用选定账号向上游拉取并按 slug 合并，不经过调度器；限流/过载中的选定账号仍会被使用。',
-        enable: '使用特定账号获取 manifest',
+        title: '固定账号获取模型列表',
+        hint: '开启后，普通模型列表与 Codex Model Manifest 均优先从选定账号获取并合并，再应用账号映射和分组列表过滤；限流/过载中的选定账号仍会被使用。',
+        enable: '使用特定账号获取模型列表',
         enabledHint: '账号来源限定为当前分组内的 OpenAI 账号，最多选择 10 个。',
-        disabledHint: '未启用：manifest 请求经由调度器选账。',
+        disabledHint: '未启用：普通列表使用本地映射或默认模型；Codex 优先使用本地目录，无本地目录时由调度器选账。',
         accounts: '选定账号',
         searchPlaceholder: '搜索账号（当前分组内 OpenAI 账号）',
         searchEmpty: '未找到匹配账号',
@@ -3593,14 +3619,6 @@ export default {
         selectAccounts: '选择账号',
         noAccounts: '此分组暂无账号',
         loadingAccounts: '加载账号中...',
-        claudeMaxSimulation: {
-          title: 'Claude Max 用量模拟',
-          tooltip:
-            '启用后，对于没有上游缓存写入用量的 Claude 模型，系统会确定性地将 token 映射为少量输入加 1h 缓存创建，同时保持总 token 不变。',
-          enabled: '已启用（模拟 1h 缓存）',
-          disabled: '已禁用',
-          hint: '仅调整用量计费日志中的 token 类别。不会持久化每个请求的映射状态。'
-        },
         removeRule: '删除规则',
         noRules: '暂无路由规则',
         noRulesHint: '添加路由规则以将特定模型请求优先路由到指定账号',
@@ -3629,6 +3647,14 @@ export default {
         tooltip: '启用后，当请求包含 MCP 工具时，会在 system prompt 中注入 XML 格式调用协议提示词。关闭此选项可避免对某些客户端造成干扰。',
         enabled: '已启用',
         disabled: '已禁用'
+      },
+      claudeMaxSimulation: {
+        title: 'Claude Max 用量模拟',
+        tooltip:
+          '启用后，对于没有上游缓存写入用量的 Claude 模型，系统会确定性地将 token 映射为少量输入加 1h 缓存创建，同时保持总 token 不变。',
+        enabled: '已启用（模拟 1h 缓存）',
+        disabled: '已禁用',
+        hint: '仅调整用量计费日志中的 token 类别。不会持久化每个请求的映射状态。'
       },
       supportedScopes: {
         title: '支持的模型系列',
@@ -3710,6 +3736,8 @@ export default {
       updateError: '更新渠道失败',
       deleteError: '删除渠道失败',
       nameRequired: '请输入渠道名称',
+      noGroupsSelected: '请为 {platform} 至少选择一个分组',
+      emptyModelsInPricing: '请为 {platform} 定价规则至少添加一个模型',
       duplicateModels: '模型「{0}」在多个定价条目中重复',
       modelConflict: "模型模式 '{model1}' 和 '{model2}' 冲突：匹配范围重叠。模型名称按大小写不敏感匹配，已有条目已覆盖其所有大小写变体，无需重复添加。",
       mappingConflict: "模型映射源 '{model1}' 和 '{model2}' 冲突：匹配范围重叠。源模式按大小写不敏感匹配，已有条目已覆盖其所有大小写变体。",
@@ -4816,6 +4844,7 @@ export default {
         deepseek: 'DeepSeek',
         kimi: 'Kimi',
         zhipu: 'GLM',
+        minimax: 'MiniMax',
       },
       types: {
         oauth: 'OAuth',
@@ -4940,7 +4969,9 @@ export default {
         grokLastProbe: '探测 {time}',
         grokLastHeadersSeen: '响应头 {time}',
         passiveSampled: '被动采样',
-        activeQuery: '查询'
+        activeQuery: '查询',
+        estimatedTotalCost: '预计总费用 ${cost}',
+        estimatedTotalCostTooltip: '根据当前窗口费用和使用率估算达到 100% 使用率时的总费用'
       },
       openaiQuotaReset: {
         count: '次数',
@@ -5346,6 +5377,8 @@ export default {
       modelRestriction: '模型限制（可选）',
       modelWhitelist: '模型白名单',
       modelMapping: '模型映射',
+      fromModel: '请求模型',
+      toModel: '目标模型',
       wildcardOnlyAtEnd: '通配符 * 只能放在末尾',
       targetNoWildcard: '目标模型不能包含通配符 *',
       selectAllowedModels: '选择允许的模型。留空则支持所有模型。',
@@ -5410,6 +5443,30 @@ export default {
       grokClientToolCache: {
         title: '客户端工具缓存（可能改变自动工具选择）',
         hint: '仅对已识别为 Free 的 Grok OAuth 账号生效，默认会为 Codex、Trae 等客户端函数工具请求启用上游提示缓存；如不接受自动工具选择行为，可关闭此开关退出。'
+      },
+      grokMediaEligibility: {
+        title: '媒体生成资格',
+        hint: '控制该 Grok OAuth 账号是否可被图片和视频生成请求选中。',
+        auto: '自动判断',
+        enabled: '强制启用',
+        disabled: '强制禁用',
+        current: '当前判定：',
+        eligible: '可用',
+        ineligible: '不可用',
+        loading: '正在读取媒体资格…',
+        loadFailed: '无法读取媒体资格',
+        autoHint: '自动判断只会清除手工覆盖，不会主动触发媒体请求。',
+        forceEnableWarning: '强制启用会绕过自动资格检查，仅应对已确认支持生图/生视频的账号使用。',
+        partialSave: '账号其他配置可能已保存，但媒体资格未更新，请重试。',
+        reasons: {
+          eligible: '已确认付费资格',
+          billing_inconclusive: 'Billing 信息不明确',
+          billing_forbidden: 'Billing 接口拒绝访问',
+          billing_free_tier: 'Free 账号',
+          billing_unobserved: '尚未探测到 Billing',
+          override_enabled: '手工强制启用',
+          override_disabled: '手工强制禁用'
+        }
       },
       autoPauseOnExpired: '过期自动暂停调度',
       autoPauseOnExpiredDesc: '启用后，账号过期将自动暂停调度',
@@ -5992,6 +6049,11 @@ export default {
       zhipu: {
         baseUrlHint: '留空使用官方智谱 API（open.bigmodel.cn）',
         apiKeyHint: '您的智谱 GLM API Key'
+      },
+      // MiniMax specific
+      minimax: {
+        baseUrlHint: '留空使用官方 MiniMax API（国内 api.minimaxi.com，海外 api.minimax.io）',
+        apiKeyHint: '您的 MiniMax API Key'
       },
       // Re-Auth Modal
       reAuthorizeAccount: '重新授权账号',
@@ -6752,8 +6814,11 @@ export default {
         samplingInitial: '采样初始条数',
         samplingThereafter: '后续采样间隔',
         retentionDays: '保留天数',
+        retentionDaysHint: '由定时数据清理任务执行。',
         caller: '调用方',
         sampling: '采样',
+        persistAccessLogs: '将访问日志写入数据库',
+        persistAccessLogsHint: '默认关闭，因为访问日志会为每个请求新增一条带索引的数据库记录。警告、错误和审计日志始终会保留。',
         saveAndApply: '保存并应用',
         resetDefaults: '重置默认值',
         latestWriteError: '最近写入错误：',
@@ -7289,6 +7354,16 @@ export default {
         alertTitle: '告警评估器',
         groupAvailabilityTitle: '分组可用性监控',
         evalIntervalSeconds: '评估间隔（秒）',
+        metricThresholds: '指标阈值配置',
+        metricThresholdsHint: '配置各项指标的告警阈值，超出阈值时将以红色显示',
+        slaMinPercent: 'SLA 最低百分比',
+        slaMinPercentHint: 'SLA 低于此值时显示为红色（默认：99.5%）',
+        ttftP99MaxMs: 'TTFT P99 最大值（毫秒）',
+        ttftP99MaxMsHint: 'TTFT P99 高于此值时显示为红色（默认：500ms）',
+        requestErrorRateMaxPercent: '请求错误率最大值（%）',
+        requestErrorRateMaxPercentHint: '请求错误率高于此值时显示为红色（默认：5%）',
+        upstreamErrorRateMaxPercent: '上游错误率最大值（%）',
+        upstreamErrorRateMaxPercentHint: '上游错误率高于此值时显示为红色（默认：5%）',
         silencing: {
           title: '告警静默（维护模式）',
           enabled: '启用静默',
@@ -7561,6 +7636,9 @@ export default {
             '开启后，用户端渠道监控页面与用户 API 不返回 RPM/TPM，避免用「速率 × 时间窗」反推集群规模。管理员仍可见完整指标；错误率、延迟、缓存率照常展示。',
           showQuota: '向用户展示渠道用量/余额',
           showQuotaHint: '开启后，配额模式的渠道监控会在用户端渠道状态页展示关联账号的用量滚动窗口/余额。默认关闭；管理员始终可见。',
+          hideUserRanking: '对用户隐藏用户排行',
+          hideUserRankingHint:
+            '开启后，用户端渠道监控 V2 不再显示「用户排行」页，用户 API 也不返回排行数据。管理员仍可查看。',
         },
         channelBalanceRefresh: {
           title: '渠道额度自动刷新',
@@ -8011,7 +8089,7 @@ export default {
         grokDefaultTextModel: '默认 Grok 文本模型',
         grokDefaultTextModelHint: '用于空模型值；仅在右侧开关开启时也用于其他客户端模型命名空间。允许填写自定义 Grok 模型 ID。',
         grokCrossClientMap: '映射其他客户端模型到 Grok',
-        grokCrossClientMapHint: '默认关闭。开启后，GPT、Codex、o 系列和 Claude 模型 ID 会路由到左侧默认 Grok 文本模型。',
+        grokCrossClientMapHint: '为兼容客户端，默认开启。GPT、Codex、o 系列和 Claude 模型 ID 会路由到左侧默认 Grok 文本模型；关闭后必须使用 Grok 模型 ID。',
         grokDefaultBaseURLMode: '默认 Grok 上游',
         grokDefaultBaseURLModeHint: '仅用于 Grok 账号未配置显式 base URL 的文本请求；媒体和语音仍使用官方 API 主机。',
         grokBaseURLModeCLI: 'CLI 聊天代理',
@@ -9819,6 +9897,7 @@ export default {
       queryRefundStatus: '查询退款状态',
       refundInfo: '退款信息',
       refundEnabled: '允许退款',
+      allowUserRefund: '允许用户退款',
       alreadyRefunded: '已退款',
       deductBalance: '扣除余额',
       deductBalanceHint: '从用户余额中扣回充值金额',

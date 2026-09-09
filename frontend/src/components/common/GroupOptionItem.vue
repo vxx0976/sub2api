@@ -144,6 +144,7 @@ const RATE_PILL_COLORS: Record<string, string> = {
   kimi: 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-400',
   zhipu: 'bg-rose-50 text-rose-700 dark:bg-rose-900/20 dark:text-rose-400',
   grok: 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200',
+  minimax: 'bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-900/20 dark:text-fuchsia-400',
 }
 const ratePillClass = computed(() => {
   return RATE_PILL_COLORS[props.platform] || 'bg-violet-50 text-violet-700 dark:bg-violet-900/20 dark:text-violet-400'

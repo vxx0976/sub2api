@@ -651,6 +651,123 @@ func TestTryModelFilePricing_WithCacheTokens(t *testing.T) {
 	require.InDelta(t, 0.95, *result, 1e-12)
 }
 
+// DeepSeek 官方峰谷分档在**账号统计成本**上的口径（本 fork）：
+// 表价恒为最贵档（北京时间工作日 09:00-12:00 / 14:00-18:00 高峰），空闲档由
+// deepSeekOfficialSchedule.offPeakFactor=0.5 折算，周六/周日全天空闲。
+//
+// ⚠️ 上游同名用例（TestTryModelFilePricing_DeepSeekPeakPricing）钉的是**相反口径**：
+// $ 低谷价常量作基准、高峰 ×2。本 fork 已按 ¥ 表重写——若哪天有人把上游那版搬回来，
+// 上游成本估算会掉到约 14.5%，利润看板虚高。口径全貌见 billing_service.go 文件头的
+// "DeepSeek 官方分时段定价" 注释与 deepseek_pricing_test.go。
+//
+// 这里刻意用装配了 PricingService 的 BillingService：nil pricingService 会落到
+// fallback 表（同为高峰价、但无时段分档），根本测不到 pricingAt 是否真的接上了线。
+func TestTryModelFilePricing_DeepSeekOfficialBands(t *testing.T) {
+	// UTC+8 是 DeepSeek 官方定价时区：UTC 01:00-04:00 / 06:00-10:00 即北京 09-12 / 14-18。
+	weekday := func(hour, minute int) time.Time {
+		return time.Date(2026, time.August, 24, hour, minute, 0, 0, time.UTC) // 周一
+	}
+	for _, model := range []struct {
+		name                          string
+		input, output, cacheReadPrice float64
+	}{
+		{"deepseek-v4-flash", dsFlashPeakInput, dsFlashPeakOutput, dsFlashPeakCacheRead},
+		{"deepseek-v4-pro", dsProPeakInput, dsProPeakOutput, dsProPeakCacheRead},
+	} {
+		for _, usage := range []struct {
+			name   string
+			tokens UsageTokens
+		}{
+			{"input", UsageTokens{InputTokens: 1000}},
+			{"output", UsageTokens{OutputTokens: 500}},
+			{"cache_read", UsageTokens{CacheReadTokens: 1000}},
+			{"mixed", UsageTokens{InputTokens: 1000, OutputTokens: 500, CacheReadTokens: 1000}},
+		} {
+			t.Run(model.name+"/"+usage.name, func(t *testing.T) {
+				bs := NewBillingService(&config.Config{}, newCNYPricingService(1.0))
+				tokens := usage.tokens
+				peakCost := float64(tokens.InputTokens)*model.input +
+					float64(tokens.OutputTokens)*model.output + float64(tokens.CacheReadTokens)*model.cacheReadPrice
+				for _, slot := range []struct {
+					name   string
+					at     time.Time
+					factor float64
+				}{
+					{"before_morning_peak", weekday(0, 59), 0.5},
+					{"morning_peak_start", weekday(1, 0), 1},
+					{"morning_peak_last_minute", weekday(3, 59), 1},
+					{"morning_peak_end", weekday(4, 0), 0.5},
+					{"afternoon_peak_start", weekday(6, 0), 1},
+					{"afternoon_peak_last_minute", weekday(9, 59), 1},
+					{"afternoon_peak_end", weekday(10, 0), 0.5},
+					{"saturday", time.Date(2026, time.August, 22, 2, 0, 0, 0, time.UTC), 0.5},
+					{"sunday", time.Date(2026, time.August, 23, 7, 0, 0, 0, time.UTC), 0.5},
+					// 零值 pricingAt = 未接线 → 基准价（最贵档），绝不静默按谷价少算。
+					{"zero_pricing_at", time.Time{}, 1},
+				} {
+					t.Run(slot.name, func(t *testing.T) {
+						cost := tryModelFilePricing(bs, model.name, tokens, "", slot.at)
+						require.NotNil(t, cost)
+						require.InDelta(t, peakCost*slot.factor, *cost, 1e-12)
+					})
+				}
+			})
+		}
+	}
+}
+
+// 四级优先级链在 DeepSeek 上的行为：自定义规则 > 客户计费 > 目录价（¥ 表 + 时段档）。
+// catalog 用例同时钉住「渠道 ModelPricing（客户售价）不得泄漏进账号统计成本」——
+// 优先级 3 走 NewModelPricingResolver(nil, bs)，不查渠道价卡。
+func TestResolveAccountStatsCost_DeepSeekPricingPriority(t *testing.T) {
+	peak := time.Date(2026, time.August, 24, 2, 0, 0, 0, time.UTC) // 北京周一 10:00 → 高峰
+	for _, tt := range []struct {
+		name         string
+		customRule   bool
+		applyPricing bool
+		noChannel    bool
+		want         float64
+	}{
+		// 高峰档 = ¥ 表价本身（fork 口径：表价即最贵档）。
+		{name: "catalog", want: 1000 * dsFlashPeakInput},
+		{name: "custom_rule", customRule: true, want: 1},
+		{name: "custom_rule_before_customer_price", customRule: true, applyPricing: true, want: 1},
+		{name: "customer_price", applyPricing: true, want: 0.75},
+		{name: "no_channel", noChannel: true},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			channel := &Channel{
+				ID: 1, Status: StatusActive, ApplyPricingToAccountStats: tt.applyPricing,
+				ModelPricing: []ChannelModelPricing{{
+					Models: []string{"deepseek-v4-flash"}, InputPrice: testPtrFloat64(0.02),
+				}},
+			}
+			if tt.customRule {
+				channel.AccountStatsPricingRules = []AccountStatsPricingRule{{
+					AccountIDs: []int64{1},
+					Pricing: []ChannelModelPricing{{
+						Models: []string{"deepseek-v4-flash"}, InputPrice: testPtrFloat64(0.001),
+					}},
+				}}
+			}
+			cs := newTestChannelServiceForStats(t, channel, 10, PlatformDeepseek)
+			groupID := int64(10)
+			if tt.noChannel {
+				groupID = 99
+			}
+			bs := NewBillingService(&config.Config{}, newCNYPricingService(1.0))
+			cost := resolveAccountStatsCost(context.Background(), cs, bs,
+				1, groupID, "deepseek-v4-flash", UsageTokens{InputTokens: 1000}, 1, 0.75, "", peak)
+			if tt.noChannel {
+				require.Nil(t, cost)
+				return
+			}
+			require.NotNil(t, cost)
+			require.InDelta(t, tt.want, *cost, 1e-12)
+		})
+	}
+}
+
 // ---------------------------------------------------------------------------
 // resolveAccountStatsCost — integration tests covering the 4-level priority chain
 // ---------------------------------------------------------------------------
@@ -661,8 +778,7 @@ func TestResolveAccountStatsCost_NilChannelService(t *testing.T) {
 		nil, // channelService is nil
 		newTestBillingServiceWithPrices(map[string]*ModelPricing{}),
 		1, 1, "claude-sonnet-4",
-		UsageTokens{InputTokens: 100}, 1, 0.5, "",
-		time.Time{},
+		UsageTokens{InputTokens: 100}, 1, 0.5, "", time.Time{},
 	)
 	require.Nil(t, result)
 }
@@ -678,8 +794,7 @@ func TestResolveAccountStatsCost_EmptyUpstreamModel(t *testing.T) {
 		cs,
 		newTestBillingServiceWithPrices(map[string]*ModelPricing{}),
 		1, 1, "", // empty upstream model
-		UsageTokens{InputTokens: 100}, 1, 0.5, "",
-		time.Time{},
+		UsageTokens{InputTokens: 100}, 1, 0.5, "", time.Time{},
 	)
 	require.Nil(t, result)
 }
@@ -696,8 +811,7 @@ func TestResolveAccountStatsCost_GetChannelForGroupReturnsNil(t *testing.T) {
 		cs,
 		newTestBillingServiceWithPrices(map[string]*ModelPricing{}),
 		1, 99, "claude-sonnet-4", // groupID 99 has no channel
-		UsageTokens{InputTokens: 100}, 1, 0.5, "",
-		time.Time{},
+		UsageTokens{InputTokens: 100}, 1, 0.5, "", time.Time{},
 	)
 	require.Nil(t, result)
 }
@@ -728,8 +842,7 @@ func TestResolveAccountStatsCost_HitsCustomRule(t *testing.T) {
 		context.Background(),
 		cs, nil, // billingService not needed when custom rule hits
 		1, 10, "claude-sonnet-4",
-		tokens, 1, 999.0, "priority", // 自定义账号价格不叠加服务层级倍率,
-		time.Time{},
+		tokens, 1, 999.0, "priority", time.Time{}, // 自定义账号价格不叠加服务层级倍率
 	)
 	require.NotNil(t, result)
 	// 100*0.01 + 50*0.02 = 1.0 + 1.0 = 2.0
@@ -751,8 +864,7 @@ func TestResolveAccountStatsCost_ApplyPricingToAccountStats_UsesTotalCost(t *tes
 		context.Background(),
 		cs, nil,
 		1, 10, "claude-sonnet-4",
-		tokens, 1, 0.75, "priority", // 已完成用户计费，不再重复应用服务层级倍率,
-		time.Time{},
+		tokens, 1, 0.75, "priority", time.Time{}, // 已完成用户计费，不再重复应用服务层级倍率
 	)
 	require.NotNil(t, result)
 	require.InDelta(t, 0.75, *result, 1e-12)
@@ -770,8 +882,7 @@ func TestResolveAccountStatsCost_ApplyPricingToAccountStats_ZeroTotalCost_Return
 		context.Background(),
 		cs, nil,
 		1, 10, "claude-sonnet-4",
-		UsageTokens{}, 1, 0.0, "", // totalCost = 0,
-		time.Time{},
+		UsageTokens{}, 1, 0.0, "", time.Time{}, // totalCost = 0
 	)
 	require.Nil(t, result)
 }
@@ -798,8 +909,7 @@ func TestResolveAccountStatsCost_FallsBackToLiteLLM(t *testing.T) {
 		context.Background(),
 		cs, bs,
 		1, 10, "claude-sonnet-4",
-		tokens, 1, 999.0, "", // totalCost ignored,
-		time.Time{},
+		tokens, 1, 999.0, "", time.Time{}, // totalCost ignored
 	)
 	require.NotNil(t, result)
 	// 100*0.001 + 50*0.002 = 0.1 + 0.1 = 0.2
@@ -820,8 +930,7 @@ func TestResolveAccountStatsCost_FallbackHonorsAnthropicFast(t *testing.T) {
 		context.Background(), cs, bs,
 		1, 10, "claude-opus-5",
 		UsageTokens{InputTokens: 1_000_000, OutputTokens: 1_000_000},
-		1, 0, "fast",
-		time.Time{},
+		1, 0, "fast", time.Time{},
 	)
 	require.NotNil(t, result)
 	require.InDelta(t, 60, *result, 1e-12)
@@ -840,8 +949,7 @@ func TestResolveAccountStatsCost_Gemini36FlashTierUsesFallbackPricing(t *testing
 		context.Background(),
 		cs, bs,
 		1, 10, "gemini-3.6-flash-low",
-		UsageTokens{InputTokens: 1_000_000, OutputTokens: 1_000_000, CacheReadTokens: 1_000_000}, 1, 0, "",
-		time.Time{},
+		UsageTokens{InputTokens: 1_000_000, OutputTokens: 1_000_000, CacheReadTokens: 1_000_000}, 1, 0, "", time.Time{},
 	)
 	require.NotNil(t, result)
 	require.InDelta(t, 9.15, *result, 1e-12)
@@ -865,8 +973,7 @@ func TestResolveAccountStatsCost_AllMiss_ReturnsNil(t *testing.T) {
 		context.Background(),
 		cs, bs,
 		1, 10, "totally-unknown-model",
-		tokens, 1, 0.0, "",
-		time.Time{},
+		tokens, 1, 0.0, "", time.Time{},
 	)
 	require.Nil(t, result)
 }
@@ -883,8 +990,7 @@ func TestResolveAccountStatsCost_NilBillingService_SkipsLiteLLM(t *testing.T) {
 		context.Background(),
 		cs, nil, // billingService is nil
 		1, 10, "claude-sonnet-4",
-		UsageTokens{InputTokens: 100}, 1, 0.0, "",
-		time.Time{},
+		UsageTokens{InputTokens: 100}, 1, 0.0, "", time.Time{},
 	)
 	require.Nil(t, result)
 }
@@ -917,8 +1023,7 @@ func TestResolveAccountStatsCost_CustomRulePriorityOverApplyPricing(t *testing.T
 		context.Background(),
 		cs, nil,
 		1, 10, "claude-sonnet-4",
-		tokens, 1, 99.0, "", // totalCost = 99.0 (would be used if ApplyPricing wins),
-		time.Time{},
+		tokens, 1, 99.0, "", time.Time{}, // totalCost = 99.0 (would be used if ApplyPricing wins)
 	)
 	require.NotNil(t, result)
 	// Custom rule: 100*0.05 = 5.0 (NOT 99.0 from totalCost)
@@ -946,8 +1051,7 @@ func TestApplyAccountStatsCost_UsesUsageLogServiceTier(t *testing.T) {
 	applyAccountStatsCost(
 		context.Background(), usageLog, cs, bs,
 		1, 10, "gpt-5.6-sol", "gpt-5.6-sol",
-		UsageTokens{InputTokens: 100, OutputTokens: 50}, 999,
-		time.Time{},
+		UsageTokens{InputTokens: 100, OutputTokens: 50}, 999, time.Time{},
 	)
 
 	require.NotNil(t, usageLog.AccountStatsCost)

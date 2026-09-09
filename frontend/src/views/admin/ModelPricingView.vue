@@ -266,7 +266,8 @@ const CATEGORIES: { key: string; label: string }[] = [
   { key: 'deepseek', label: 'DeepSeek' },
   { key: 'qwen', label: 'Qwen 通义' },
   { key: 'glm', label: 'GLM 智谱' },
-  { key: 'kimi', label: 'Kimi · Moonshot' }
+  { key: 'kimi', label: 'Kimi · Moonshot' },
+  { key: 'minimax', label: 'MiniMax' }
 ]
 
 function categoryOf(e: BuiltinPricingEntry): string {
@@ -278,6 +279,9 @@ function categoryOf(e: BuiltinPricingEntry): string {
   if (m.includes('qwen') || m.startsWith('qwq') || m.startsWith('qvq') || s.includes('qwen') || s.includes('dashscope')) return 'qwen'
   if (m.includes('glm') || s.includes('zhipu') || s.includes('z-ai') || s.includes('bigmodel')) return 'glm'
   if (m.includes('kimi') || m.includes('moonshot') || s.includes('moonshot')) return 'kimi'
+  // minimax 要排在 gpt 之前：其 source 字段里带 openrouter/novita 等中转前缀时
+  // 不会误命中 gpt 分支，但 abab* 老型号名没有任何品牌词，只能靠 source 兜住。
+  if (m.includes('minimax') || m.startsWith('abab') || s.includes('minimax')) return 'minimax'
   if (/^(gpt|o1|o3|o4|chatgpt|codex)/.test(m) || m.includes('gpt') || s.includes('openai')) return 'gpt'
   return 'other'
 }

@@ -75,6 +75,10 @@ func cnDefaultMessagesDispatchModels(platform string) (opus, sonnet, haiku strin
 		return "kimi-k2.6", "kimi-k2.6", "kimi-k2.6"
 	case PlatformZhipu:
 		return "glm-4.6", "glm-4.6", "glm-4.5-air"
+	case PlatformMiniMax:
+		// MiniMax 只有一档主力型号（M2.7 系列），三档 claude-* 都映到它；
+		// highspeed 变体留给管理员自行在分组里覆盖。
+		return "MiniMax-M2.7", "MiniMax-M2.7", "MiniMax-M2.7"
 	default:
 		return "", "", ""
 	}

@@ -114,3 +114,22 @@ describe('PlatformTypeBadge OpenAI authentication modes', () => {
     expect(wrapper.text()).toContain('OAuth')
   })
 })
+
+describe('PlatformTypeBadge MiniMax', () => {
+  it('labels MiniMax API keys as MiniMax, not Gemini', () => {
+    const wrapper = mount(PlatformTypeBadge, {
+      props: {
+        platform: 'minimax',
+        type: 'apikey',
+      },
+    })
+
+    expect(wrapper.text()).toContain('MiniMax')
+    expect(wrapper.text()).toContain('Key')
+    expect(wrapper.text()).not.toContain('Gemini')
+    // fork 调色板：上游给 minimax 分的 rose 在本 fork 已被 zhipu 占用（两者会完全同色），
+    // 因此 minimax 固定用 fuchsia，见 utils/platformColors.ts 头部的配色约定。
+    expect(wrapper.html()).toContain('bg-fuchsia-100')
+    expect(wrapper.html()).not.toContain('bg-rose-100')
+  })
+})

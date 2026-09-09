@@ -336,6 +336,17 @@ var ErrModelPricingUnavailable = errors.New("pricing not found")
 // ⚠️ 下次合并 main 时若看到 deepseekPeakMultiplierAt / deepseek*OffPeak* 常量
 // 被重新引入，先确认它们不会覆盖 ¥ 表，否则 DeepSeek 收入会掉到约 14.5%。
 
+// isDeepSeekModel 判断模型名是否为 DeepSeek 模型（大小写不敏感）。
+//
+// 纯模型名前缀判定，与计价口径无关——本 fork 的 DeepSeek 价格走内置 ¥ 价表
+// （pricing_service.go 的 deepSeekPricingTable + pricing_time_tier.go 的官方峰谷档），
+// 上游那套「$ 低谷价常量 + deepseekPeakMultiplierAt ×2 + forceDeepSeekRates 强制覆盖」
+// 已按站长决定移除，勿因本函数存在而误以为可以一并带回。
+// 本函数只被 ollama cloud 的 max_tokens 归一逻辑使用。
+func isDeepSeekModel(model string) bool {
+	return strings.HasPrefix(strings.ToLower(strings.TrimSpace(model)), "deepseek-")
+}
+
 // BillingService 计费服务
 type BillingService struct {
 	cfg            *config.Config
@@ -624,7 +635,20 @@ func (s *BillingService) initFallbackPricing() {
 	// Source: https://docs.z.ai/guides/overview/pricing (USD per 1M tokens)
 	// 注意：CacheReadPricePerToken 即"缓存命中"价格，CacheCreationPricePerToken 留空（智谱未公开写入价，按 0 处理）。
 	// GLM-4.6 与 GLM-4.5 在 z.ai 国际版上定价一致；GLM-4.5 国内按 ¥0.8/¥2，汇率换算后约 $0.112/$0.28，与国际版 $0.6/$2.2 不同，本分支采用国际版 USD 口径与现有 Claude/GPT 一致。
-	// GLM-5.2 与 GLM-5.1 在 z.ai 上同价。
+	// GLM-5.3 / GLM-5.2 与 GLM-5.1 在 z.ai 上同价。
+	// GLM-5.3-Flash 列表价 $0.15/$0.50（2026-09-09 前五折促销，此处按列表价，与其它模型口径一致）。
+	s.fallbackPrices["glm-5.3-flash"] = &ModelPricing{
+		InputPricePerToken:     0.15e-6, // $0.15 per MTok
+		OutputPricePerToken:    0.5e-6,  // $0.50 per MTok
+		CacheReadPricePerToken: 0.03e-6,
+		SupportsCacheBreakdown: false,
+	}
+	s.fallbackPrices["glm-5.3"] = &ModelPricing{
+		InputPricePerToken:     1.4e-6, // $1.40 per MTok
+		OutputPricePerToken:    4.4e-6, // $4.40 per MTok
+		CacheReadPricePerToken: 0.26e-6,
+		SupportsCacheBreakdown: false,
+	}
 	s.fallbackPrices["glm-5.2"] = &ModelPricing{
 		InputPricePerToken:     1.4e-6, // $1.40 per MTok
 		OutputPricePerToken:    4.4e-6, // $4.40 per MTok
@@ -966,9 +990,16 @@ func (s *BillingService) getFallbackPricing(model string) *ModelPricing {
 	// 匹配策略：长 key 优先（具体模型 → 系列 / 厂商），未知型号不回退以避免误计价。
 	// 与 DeepSeek 一样采用"白名单"语义：未在本表命中的国产模型 alias 一律不返回兜底价。
 
-	// 智谱 GLM（z.ai 公开 SKU：glm-5.2 / glm-5.1 / glm-5 / glm-5-turbo / glm-4.7 / glm-4.6 / glm-4.5 等）
+	// 智谱 GLM（z.ai 公开 SKU：glm-5.3 / glm-5.3-flash / glm-5.2 / glm-5.1 / glm-5 / glm-5-turbo / glm-4.7 / glm-4.6 / glm-4.5 等）
 	// 匹配顺序：先判别最高 tier，再依次降级。
-	// 注意：带小数点的型号必须排在裸 "glm-5" 之前，否则会被 strings.Contains 抢走。
+	// 注意：带小数点的型号必须排在裸 "glm-5" 之前，否则会被 strings.Contains 抢走；
+	// glm-5.3-flash 必须排在 glm-5.3 之前（前者包含后者子串）。
+	if strings.Contains(modelLower, "glm-5.3-flash") || strings.Contains(modelLower, "glm-5.3flash") {
+		return s.fallbackPrices["glm-5.3-flash"]
+	}
+	if strings.Contains(modelLower, "glm-5.3") {
+		return s.fallbackPrices["glm-5.3"]
+	}
 	if strings.Contains(modelLower, "glm-5.2") {
 		return s.fallbackPrices["glm-5.2"]
 	}
@@ -1056,6 +1087,20 @@ func (s *BillingService) getFallbackPricing(model string) *ModelPricing {
 	}
 	if strings.Contains(modelLower, "minimax-m2") || strings.Contains(modelLower, "minimax-m-2") {
 		return s.fallbackPrices["minimax-m2"]
+	}
+	// 兜底：其余所有 minimax-* 与 abab*（MiniMax 老款型号名里没有品牌词）一律按**最贵档**
+	// minimax-m3 计费。没有这条的话它们会一路落到函数末尾返回 nil → GetModelPricingAt
+	// 报 ErrModelPricingUnavailable → 该请求零成本落账。
+	//
+	// 刻意选最贵而非最便宜：Kimi 曾因末尾静默兜底到旧款便宜价，新模型上线三天少收 ¥503
+	// （kimi-k3 事故），DeepSeek 也已按同口径处理（pricing_service.go 的 matchDeepSeekCNY）。
+	// 宁可多收（可发现、可退款）也绝不少收；真价确认后补一行到上面的 fallbackPrices 即可，
+	// 调用方 GetModelPricingAt 打的 "Using fallback pricing for model" 就是补表提醒。
+	//
+	// abab* 确实可达：composite_platform.go 的 DetectModelPlatform 把 abab5/6/7* 判为 MiniMax
+	// 并路由过去，而这些型号在价表里一条都没有。
+	if strings.Contains(modelLower, "minimax") || strings.HasPrefix(modelLower, "abab") {
+		return s.fallbackPrices["minimax-m3"]
 	}
 
 	// 火山方舟 豆包 Embedding（多模态向量化）。

@@ -40,6 +40,12 @@ func usesLegacyCNAnthropicDirect(account *Account) bool {
 	return account != nil &&
 		account.Type == AccountTypeAPIKey &&
 		account.IsCNProvider() &&
+		// minimax 排除在外：本路径的定义是「存量账号」，而 minimax 是随本轮上游合并
+		// 新增的平台，不可能有存量账号。放它进来只会命中
+		// buildAnthropicDirectMessagesURL 的 default 分支返回空串，
+		// 随后报 "unsupported platform for direct Anthropic forwarding: minimax" 500。
+		// 新平台一律走上游的协议分流（api_protocol 缺省即 chat_completions）。
+		account.Platform != PlatformMiniMax &&
 		strings.TrimSpace(account.GetCredential("api_protocol")) == ""
 }
 
@@ -314,10 +320,9 @@ func (s *OpenAIGatewayService) ForwardAsAnthropic(
 	if account.Platform == PlatformOpenAI {
 		policyBody, changed, policyErr := ApplyOpenAIReasoningEffortPolicyFromContext(ctx, responsesBody)
 		if policyErr != nil {
-			var overLimit *ReasoningEffortOverLimitError
-			if errors.As(policyErr, &overLimit) {
+			if IsReasoningEffortPolicyDenied(policyErr) {
 				MarkOpsClientBusinessLimited(c, OpsClientBusinessLimitedReasonLocalPolicyDenied)
-				writeAnthropicError(c, http.StatusForbidden, "forbidden_error", overLimit.Error())
+				writeAnthropicError(c, http.StatusForbidden, "forbidden_error", policyErr.Error())
 			}
 			return nil, policyErr
 		}

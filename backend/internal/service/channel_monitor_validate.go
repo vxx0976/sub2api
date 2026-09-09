@@ -9,8 +9,13 @@ import (
 // 渠道监控参数校验与归一化辅助函数。
 // 校验失败一律返回 channel_monitor_const.go 中预定义的 Err* 错误，错误信息不含具体 IP/hostname，避免泄露内网拓扑。
 
-// monitorProviders 渠道监控支持的全部 provider（与迁移 226 的 CHECK 约束一致）。
+// monitorProviders 渠道监控支持的全部 provider（与迁移 237 的 CHECK 约束一致）。
 // 不再以 adapter 表为唯一来源：antigravity 没有探活 adapter，但支持配额模式。
+//
+// ⚠️ 加平台必须同步这里和下面的 probeCapableProviders：handler 的 binding
+// `oneof=... minimax` 和迁移 237 的 CHECK 都已放行，唯独这两张表漏了的话，
+// 新建/更新监控会被 validateProvider 挡成 400，checker 里那份 adapter 变成死代码。
+// 上游 98d86915b 加 minimax 时就漏了这两张表，本 fork 在合并时补齐。
 //
 //nolint:gochecknoglobals // 静态查表，初始化后不变。
 var monitorProviders = map[string]struct{}{
@@ -22,6 +27,7 @@ var monitorProviders = map[string]struct{}{
 	MonitorProviderKimi:        {},
 	MonitorProviderZhipu:       {},
 	MonitorProviderDeepseek:    {},
+	MonitorProviderMiniMax:     {},
 }
 
 // probeCapableProviders 支持探活（probe / quota_probe）的 provider。
@@ -36,6 +42,7 @@ var probeCapableProviders = map[string]struct{}{
 	MonitorProviderKimi:      {},
 	MonitorProviderZhipu:     {},
 	MonitorProviderDeepseek:  {},
+	MonitorProviderMiniMax:   {},
 }
 
 // validateProvider 校验 provider 字符串。
@@ -211,22 +218,22 @@ func normalizeMonitorPrimaryModel(provider, checkMode, model string) string {
 // monitorAccountQuotaCapability 校验关联账号能否充当配额数据源，与
 // fetchUncached 的路由一一对应（coding→CN 额度端点 / payg→CN 余额端点 /
 // 其余→AccountUsageService）。在创建/更新期拦截注定运行期永久 error 的组合：
-//   - kimi/zhipu/deepseek coding：GetCodingPlanProvider 须识别为 kimi/zhipu
-//     （deepseek coding、自定义域名 kimi coding 无法路由额度端点）
-//   - kimi/zhipu/deepseek payg：仅 kimi/deepseek 有公开余额端点（zhipu payg 无）
+//   - kimi/zhipu/deepseek/minimax coding：GetCodingPlanProvider 须识别官方域名
+//     （deepseek coding、自定义中转、minimax payg 无法路由额度端点）
+//   - kimi/zhipu/deepseek/minimax payg：仅 kimi/deepseek 有公开余额端点
 //   - anthropic：OAuth / Setup Token（API-Key 型无 usage 通道，永久 error）
 //   - openai：OAuth（API-Key 型无 usage 通道）
 //   - gemini/grok/antigravity：本地统计/值通道降级，不会永久 error，放行
 func monitorAccountQuotaCapability(account *Account) error {
 	switch account.Platform {
-	case PlatformKimi, PlatformZhipu, PlatformDeepseek:
+	case PlatformKimi, PlatformZhipu, PlatformDeepseek, PlatformMiniMax:
 		if account.IsCodingPlan() {
-			if p := account.GetCodingPlanProvider(); p != PlatformKimi && p != PlatformZhipu {
+			if p := account.GetCodingPlanProvider(); p != PlatformKimi && p != PlatformZhipu && p != PlatformMiniMax {
 				return ErrChannelMonitorAccountNotSupportable
 			}
 			return nil
 		}
-		if account.Platform == PlatformZhipu {
+		if account.Platform == PlatformZhipu || account.Platform == PlatformMiniMax {
 			return ErrChannelMonitorAccountNotSupportable
 		}
 		return nil

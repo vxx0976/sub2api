@@ -17,7 +17,7 @@ export interface DefaultSubscriptionSetting {
 }
 
 // ── 平台限额类型 ──────────────────────────────────────────────────
-export type PlatformType = "anthropic" | "openai" | "gemini" | "antigravity" | "grok" | "deepseek" | "kimi" | "zhipu"
+export type PlatformType = "anthropic" | "openai" | "gemini" | "antigravity" | "grok" | "deepseek" | "kimi" | "zhipu" | "minimax"
 export type QuotaWindowType = "daily" | "weekly" | "monthly"
 
 /** 单平台三档限额；null = 不限制，undefined = 未填（等价 null） */
@@ -30,7 +30,13 @@ export interface PlatformQuotaLimits {
 /** 全平台默认限额 map（key = PlatformType） */
 export type DefaultPlatformQuotasMap = Partial<Record<PlatformType, PlatformQuotaLimits>>
 
-const PLATFORMS: PlatformType[] = ["anthropic", "openai", "gemini", "antigravity", "grok", "deepseek", "kimi", "zhipu"]
+/**
+ * 平台限额矩阵的平台清单——与后端 service.AllowedQuotaPlatforms 逐字对应。
+ * normalize/sanitize 都按它重建整个 map：漏一个平台 = 后台每次保存设置
+ * 都会静默抹掉该平台已配置的限额，所以加平台必须同步这里。
+ * 导出给 SettingsView 的限额表格直接遍历，避免模板再抄一份字面量。
+ */
+export const PLATFORM_QUOTA_PLATFORMS: PlatformType[] = ["anthropic", "openai", "gemini", "antigravity", "grok", "deepseek", "kimi", "zhipu", "minimax"]
 
 export type SchedulingThresholdPlatformType =
   | "openai"
@@ -38,17 +44,19 @@ export type SchedulingThresholdPlatformType =
   | "grok"
   | "kimi"
   | "zhipu"
+  | "minimax"
 
 export type AccountSchedulingThresholdsMap = Record<SchedulingThresholdPlatformType, number>
 
 // 与后端 AllowedSchedulingThresholdPlatforms 保持一致（deepseek 为余额型，
-// 走余额检测而非用量阈值）。
+// 走余额检测而非用量阈值；minimax Coding/Token Plan 有 5h/weekly 窗口）。
 export const SCHEDULING_THRESHOLD_PLATFORMS: SchedulingThresholdPlatformType[] = [
   "openai",
   "anthropic",
   "grok",
   "kimi",
   "zhipu",
+  "minimax",
 ]
 
 export function normalizeAccountSchedulingThresholdsMap(
@@ -73,7 +81,7 @@ export function sanitizeAccountSchedulingThresholdsMap(
 /** 归一化为全平台 × 3 窗口（缺失填 null），供模板非空绑定 */
 export function normalizePlatformQuotasMap(input?: DefaultPlatformQuotasMap | null): DefaultPlatformQuotasMap {
   const result: DefaultPlatformQuotasMap = {}
-  for (const p of PLATFORMS) {
+  for (const p of PLATFORM_QUOTA_PLATFORMS) {
     const src = input?.[p]
     result[p] = {
       daily:   typeof src?.daily === "number" ? src.daily : null,
@@ -88,7 +96,7 @@ export function normalizePlatformQuotasMap(input?: DefaultPlatformQuotasMap | nu
 export function sanitizePlatformQuotasMap(input?: DefaultPlatformQuotasMap | null): DefaultPlatformQuotasMap {
   const clean = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) && v >= 0 ? v : null)
   const result: DefaultPlatformQuotasMap = {}
-  for (const p of PLATFORMS) {
+  for (const p of PLATFORM_QUOTA_PLATFORMS) {
     const src = input?.[p]
     result[p] = { daily: clean(src?.daily), weekly: clean(src?.weekly), monthly: clean(src?.monthly) }
   }
@@ -733,6 +741,7 @@ export interface SystemSettings {
   channel_monitor_default_interval_seconds: number;
   channel_monitor_hide_throughput?: boolean;
   channel_monitor_show_quota?: boolean;
+  channel_monitor_hide_user_ranking?: boolean;
 
   // Periodic channel balance refresh feature switch
   channel_balance_refresh_enabled: boolean;
@@ -1047,6 +1056,7 @@ export interface UpdateSettingsRequest {
   channel_monitor_default_interval_seconds?: number;
   channel_monitor_hide_throughput?: boolean;
   channel_monitor_show_quota?: boolean;
+  channel_monitor_hide_user_ranking?: boolean;
 
   // Periodic channel balance refresh feature switch
   channel_balance_refresh_enabled?: boolean;

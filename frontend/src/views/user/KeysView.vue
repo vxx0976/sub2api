@@ -1940,8 +1940,16 @@ const importToCcswitch = (row: ApiKey) => {
     return
   }
 
-  // For openai/deepseek/kimi with messages dispatch enabled, show protocol selection dialog
-  if (platform === 'openai' || platform === 'deepseek' || platform === 'kimi') {
+  // 支持 /v1/messages 派发的平台：开了派发就先问协议，否则直接按 Codex（OpenAI 协议）导入。
+  // 平台集与 views/admin/groupsMessagesDispatch.ts 的 MESSAGES_DISPATCH_PLATFORMS 对齐
+  // （composite 不在此列：它没有单一上游协议，走 default 的 Anthropic 导出）。
+  if (
+    platform === 'openai' ||
+    platform === 'deepseek' ||
+    platform === 'kimi' ||
+    platform === 'zhipu' ||
+    platform === 'minimax'
+  ) {
     if (row.group?.allow_messages_dispatch) {
       pendingCcsRow.value = row
       showCcsProtocolSelect.value = true

@@ -369,6 +369,7 @@ func TestProviderProbeCapabilityMatrix(t *testing.T) {
 	for _, p := range []string{
 		MonitorProviderOpenAI, MonitorProviderAnthropic, MonitorProviderGemini,
 		MonitorProviderGrok, MonitorProviderKimi, MonitorProviderZhipu, MonitorProviderDeepseek,
+		MonitorProviderMiniMax,
 	} {
 		require.True(t, providerSupportsProbe(p), p)
 	}
@@ -376,8 +377,27 @@ func TestProviderProbeCapabilityMatrix(t *testing.T) {
 		MonitorProviderOpenAI, MonitorProviderAnthropic, MonitorProviderGemini,
 		MonitorProviderGrok, MonitorProviderAntigravity,
 		MonitorProviderKimi, MonitorProviderZhipu, MonitorProviderDeepseek,
+		MonitorProviderMiniMax,
 	} {
 		require.NoError(t, validateProvider(p), p)
+	}
+}
+
+// 渠道监控的 provider 名与平台名同名，白名单必须覆盖 AllowedQuotaPlatforms 的全集。
+// 加平台时只改 handler 的 binding oneof 和迁移 CHECK、忘了改 monitorProviders，
+// 表现是「新建监控 400 invalid provider」，而 checker 里那份 adapter 成为死代码。
+// 上游 98d86915b 加 minimax 时就是这么漏的，这条测试用来钉住。
+func TestMonitorProvidersCoverAllPlatforms(t *testing.T) {
+	for _, platform := range AllowedQuotaPlatforms {
+		require.NoError(t, validateProvider(platform),
+			"平台 %s 能配 quota 却不能建渠道监控，白名单漏了", platform)
+		if platform == MonitorProviderAntigravity {
+			// antigravity 上游只有 IDE 代理形态，没有可打的 Chat/Responses，仅配额模式。
+			require.False(t, providerSupportsProbe(platform), platform)
+			continue
+		}
+		require.True(t, providerSupportsProbe(platform),
+			"平台 %s 不在 probeCapableProviders 里，check_mode=probe/quota_probe 会被拒", platform)
 	}
 }
 
@@ -459,8 +479,23 @@ func TestMonitorAccountQuotaCapability_Matrix(t *testing.T) {
 			account: &Account{ID: 4, Platform: domain.PlatformZhipu, Credentials: map[string]any{"account_mode": AccountModeCoding}},
 		},
 		{
+			name:    "minimax coding default endpoint ok",
+			account: &Account{ID: 14, Platform: domain.PlatformMiniMax, Credentials: map[string]any{"account_mode": AccountModeCoding}},
+		},
+		{
+			name: "custom-domain minimax coding unsupported",
+			account: &Account{ID: 16, Platform: domain.PlatformMiniMax, Type: AccountTypeAPIKey,
+				Credentials: map[string]any{"account_mode": AccountModeCoding, "base_url": "https://relay.example.com/v1"}},
+			wantErr: ErrChannelMonitorAccountNotSupportable,
+		},
+		{
 			name:    "zhipu payg has no balance endpoint",
 			account: &Account{ID: 5, Platform: domain.PlatformZhipu},
+			wantErr: ErrChannelMonitorAccountNotSupportable,
+		},
+		{
+			name:    "minimax payg has no balance endpoint",
+			account: &Account{ID: 15, Platform: domain.PlatformMiniMax},
 			wantErr: ErrChannelMonitorAccountNotSupportable,
 		},
 		{

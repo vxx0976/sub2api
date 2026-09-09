@@ -269,7 +269,12 @@ func getDefaultTestModel(platform string) string {
 	case "anthropic":
 		return "claude-haiku-4-5-20251001"
 	case "openai":
-		return "gpt-5.4"
+		// gpt-5.4 / gpt-5.4-mini 已下架（见 a14266b28），健康检查改用在售型号。
+		// 选 sol 不选更便宜的 terra：terra 在生产号池里按账号分化严重
+		// （2026-09-05 实测三个账号 10/10、6/10、5/10，失败形态是卡 30-45 秒无输出，
+		// 详见 openai_messages_dispatch.go 的 Haiku 档说明），而本函数下游的
+		// 单账号测试超时正好是 60 秒——用 terra 会让号少的分组被误判不健康。
+		return "gpt-5.6-sol"
 	case "gemini":
 		return "gemini-2.0-flash"
 	case "antigravity":
@@ -280,6 +285,13 @@ func getDefaultTestModel(platform string) string {
 		return "kimi-k2"
 	case "zhipu":
 		return "GLM-5.1"
+	case "minimax":
+		// MiniMax 官方在售型号（与 gateway_handler.go 的 minimax 默认模型列表、
+		// billing_service.go 的 fallbackPrices["minimax-m2.7"] 同款；
+		// data/model_pricing.json 是运行时同步缓存，目前还没同步到 m2.7，不作为依据）。
+		// 不补这条会落到 default 的 claude-*，把 Claude 模型名发给 MiniMax 上游必 4xx，
+		// 导致 minimax 分组健康检查恒判不健康、账号「测试连接」必失败。
+		return "MiniMax-M2.7"
 	case "grok":
 		return "grok-4.3"
 	default:

@@ -120,7 +120,7 @@ func TestResponsesStreamingFromNativeAnthropic_ClientDisconnectDrainsUsage(t *te
 }
 
 func TestHandle403_CNProviderHTMLBodySkipsAccountPenalty(t *testing.T) {
-	for _, platform := range []string{PlatformKimi, PlatformZhipu, PlatformDeepseek} {
+	for _, platform := range []string{PlatformKimi, PlatformZhipu, PlatformDeepseek, PlatformMiniMax} {
 		repo := &rateLimitAccountRepoStub{}
 		service := NewRateLimitService(repo, nil, &config.Config{}, nil, nil)
 		account := &Account{ID: 401, Platform: platform, Type: AccountTypeAPIKey}
