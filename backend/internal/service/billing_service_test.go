@@ -1340,6 +1340,20 @@ func TestGetModelPricing_GrokCatalogFallbacks(t *testing.T) {
 			output:    2.5e-6,
 		},
 		{
+			name: "Grok 4.6 family",
+			models: []string{
+				"grok",
+				"grok-latest",
+				"grok-4.6",
+				"grok-4.6-latest",
+				// 中转实际路由到 grok-4.6-build，按 4.6 卡计价。
+				"grok-build-latest",
+			},
+			input:     2e-6,
+			cacheRead: 0.5e-6,
+			output:    6e-6,
+		},
+		{
 			name: "Grok coding and Composer family",
 			models: []string{
 				"grok-build",

@@ -1137,7 +1137,10 @@ func (s *BillingService) getFallbackPricing(model string) *ModelPricing {
 	}
 
 	switch modelLower {
-	case "grok", "grok-latest", "grok-4.6", "grok-4.6-latest":
+	// grok-build-latest：生产中转（apishop）实际把它路由到 grok-4.6-build
+	// （2026-09-14 实测 upstream_response_model），按 Build 0.1 卡（$1/$2）会低于实际服务模型，
+	// 故按 4.6 卡计价；grok-build / grok-build-0.1 仍是 Build 0.1 卡。
+	case "grok", "grok-latest", "grok-4.6", "grok-4.6-latest", "grok-build-latest":
 		return s.fallbackPrices["grok-4.6"]
 	case "grok-4.5", "grok-4.5-latest":
 		return s.fallbackPrices["grok-4.5"]
@@ -1153,7 +1156,7 @@ func (s *BillingService) getFallbackPricing(model string) *ModelPricing {
 		"grok-4.20-reasoning",
 		"grok-4.20-non-reasoning":
 		return s.fallbackPrices["grok-4.20"]
-	case "grok-build", "grok-build-latest", "grok-build-0.1", "grok-composer", "grok-composer-2.5-fast", "composer-2.5":
+	case "grok-build", "grok-build-0.1", "grok-composer", "grok-composer-2.5-fast", "composer-2.5":
 		return s.fallbackPrices["grok-build-0.1"]
 	}
 
