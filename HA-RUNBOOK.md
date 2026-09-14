@@ -249,6 +249,16 @@ ssh hostdzire "cd /opt/sub2api && sed -i 's/DATABASE_HOST=10.88.0.4/DATABASE_HOS
     - **✅ 端到端实测**: admin 手跑 `pg_backup_offsite.sh` → `RECV_OK … size=857023689`、`rc=0`(全程约 2.5min,含 dump+gzip+传输+校验);main 巡检读回 `mtime/size/name` 一致;失败路径用不可达 IP 演练确认会 `notify FAIL`。
     - **⏳ 遗留**: ① **备份仍只有 2 份**,想回到 3 份需再找一台异地机(地理分散优先,别再用"随时回收"的免费机当唯一异地)。② **恢复演练仍未做**(bk-4 老待办,现在更值得做:全靠 R2+spartan 两条没验证过的恢复路径)。③ admin 上 `jp_backup`/`sg_backup`、main 上 `jp_check`/`sg_check` 四把废 key 未删(无害,目标已不存在)。
 
+22. **2026-09-14 etcd NOSPACE 全集群只读 4 天(零告警)→ admin 重启后 PG 零从库 3 天;已修+根治+切回 admin**:
+    - **经过**: 2026-09-10 05:04 UTC bwh2(`--quota-backend-bytes=512MB`)触发 NOSPACE,etcd 全集群拒绝 put/lease_grant。hostdzire PG leader 靠 lease keepalive 苟住(再抖一下丢锁即无法重拿 → PG 自降只读 = 全站写挂)。09-11 08:10 UTC admin 厂商重启:Redis 主 sentinel 切 hostdzire(复制自动恢复);admin Patroni 起来后 lease_grant 被拒卡 "waiting on etcd" → **PG 零从库**。check.sh 无 etcd 项,只报了 pg_replicas。
+    - **根因**: etcd v3.5 periodic compactor **只在 leader 上跑**;main/merchant/admin/hostdzire 四个 docker etcd 都没配 `--auto-compaction-*`,只有 bwh2(systemd)配了,而 leader 常驻 merchant → MVCC 历史从不压缩(实际仅 7 个 Patroni key,revision 堆到 270 万 / 537MB)。
+    - **止血手法(实测)**: `etcdctl snapshot save`(留 `hostdzire:/var/lib/etcd/snap-20260914-nospace.db`)→ `etcdctl compact <当前rev>` → 逐成员 `defrag`(leader 最后)→ `alarm disarm`。**坑: bwh2(0.5G)应用 compaction 要 ~2min,远程 defrag 会超时且告警被它重新触发;须在 bwh2 本机等 `dbSizeInUse` 降到 KB 级再本地 defrag,再 disarm。** 之后 admin Patroni 自动 "starting as a secondary" streaming 追平,无需 reinit。
+    - **根治**: 四个 docker etcd 逐台重建加 `--auto-compaction-mode=periodic --auto-compaction-retention=1h`(`docker run -d --name etcd --net=host --restart unless-stopped -v /var/lib/etcd:/etcd-data quay.io/coreos/etcd:v3.5.16 <原参数> <新参数>`;原 inspect 备份在各机 `/root/etcd-inspect.bak-20260914.json`)。重建后 leader 落到 bwh2,已 `move-leader` 到 admin(bwh2 太弱别当 leader)。
+    - **监控**: main check.sh 新增 `etcd_health`(5/5 healthy,重试一次)+ `etcd_space`(任何 alarm 或任一成员 dbSize>256MB);**取不到数据一律 FAIL 不静默**,四个失败分支均 mock 实测。备份 `check.sh.bak-20260914`。
+    - **切回 admin**: PG 主自 **07-21**(admin 重启)起一直在 hostdzire、从未切回。`patronictl switchover --leader pg-hostdzire --candidate pg-admin --force`(TL20)→ `sentinel failover mymaster`。**代价: PG 切换 ~6s 写入窗口有 3 条 usage 记账失败**(record_usage_failed),按"计费可丢分钟级"接受。
+    - **HAProxy 修**: redis 段缺 `on-marked-down shutdown-sessions`(PG 段有)→ 切换后 fall 窗口内重连的 go-redis pubsub 连接卡在新从库上;已两台补上并 reload(备份 `haproxy.cfg.bak-20260914`),残留连接手工 `CLIENT KILL` 后全部回到 admin。
+    - **顺带发现**: hostdzire `qwen3guard`(llama-server,6GiB cgroup 上限)**24h 内被 OOM kill 108 次**(约每 13 分钟一次,anon-rss ~4.2G),待处理。
+
 ---
 
 ## §8 当前故障自愈能力 (实测验证)
@@ -310,7 +320,7 @@ ssh hostdzire "cd /opt/sub2api && sed -i 's/DATABASE_HOST=10.88.0.4/DATABASE_HOS
 - 改 prometheus 配置后(**在 spartan**): `docker exec inkmirage-prometheus-1 promtool check config /etc/prometheus/prometheus.yml` 校验,再 `docker restart inkmirage-prometheus-1` (没开 hot reload)
 
 ### 告警 (TG + 邮件,状态变化才发)
-- **主监控**: dmit-main `/opt/ha-monitor/check.sh` (cron 每分钟)。14 项: PG有主/patroni从数/mesh可达(含bwh2)/mayi+dsrrr业务/redis主/磁盘(含bwh2)
+- **主监控**: dmit-main `/opt/ha-monitor/check.sh` (cron 每分钟)。14 项: PG有主/patroni从数/mesh可达(含bwh2)/mayi+dsrrr业务/redis主/磁盘(含bwh2) ;后续追加 redis_drift/备份新鲜度/pg_drift/redis_replica,**2026-09-14 追加 etcd_health + etcd_space**(见 §7#22)
 - **bwh2 哨兵** (2026-05-29 新增): bwh2 `/opt/ha-monitor/check.sh` (cron 每分钟,TG/邮件带 `[bwh2哨兵]` 前缀)。独立服务商,专盯 main存活(公网+mesh)/main源站mayi/mayi端到端/PG有主/Redis主 —— **补上"main 挂则主监控随之失效"的盲区**
 - ~~solid 灾备自检~~ 已随 solid 释放下线(2026-05-29)
 - 凭据: `/opt/ha-monitor/secrets` (TG_TOKEN/TG_CHAT/ALERT_EMAIL/REDIS_PW,chmod 600;bwh2 同款 + `/etc/msmtprc`)
