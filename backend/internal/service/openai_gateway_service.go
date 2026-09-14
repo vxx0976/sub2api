@@ -4211,6 +4211,17 @@ func openAIStreamFailureStatus(payload []byte, message string) int {
 	return http.StatusBadGateway
 }
 
+// openAIStreamFailureClientStatus 给「未 failover、需在协议转换路径（Chat
+// Completions / Anthropic Messages）写给客户端」的流内失败选状态码与错误类型。
+// 上下文窗口超限是确定性请求错误：回 502 会让 Claude Code 等客户端当作上游故障
+// 反复重试同一份超长请求，因此与 HTTP 400 路径、原生 /v1/responses 对齐为 400。
+func openAIStreamFailureClientStatus(payload []byte, message, defaultErrType string) (int, string) {
+	if isOpenAIContextWindowError(message, payload) {
+		return http.StatusBadRequest, "invalid_request_error"
+	}
+	return http.StatusBadGateway, defaultErrType
+}
+
 // openAIStreamCredentialAuthFailure distinguishes credential failures from
 // request/content permission denials carried inside an HTTP 200 stream. Do not
 // infer credential health from free-form 403 messages: providers also use
@@ -4465,6 +4476,10 @@ func (s *OpenAIGatewayService) recordOpenAIStreamUpstreamError(
 		message = "OpenAI upstream response failed"
 	}
 	statusCode := openAIStreamFailureStatus(payload, message)
+	if isOpenAIContextWindowError(message, payload) {
+		// 与客户端实际收到的 400 对齐，避免 ops 把确定性请求错误记成上游 502。
+		statusCode = http.StatusBadRequest
+	}
 	detail := ""
 	if len(payload) > 0 && s != nil && s.cfg != nil && s.cfg.Gateway.LogUpstreamErrorBody {
 		maxBytes := s.cfg.Gateway.LogUpstreamErrorBodyMaxBytes
@@ -5146,7 +5161,7 @@ func (s *OpenAIGatewayService) handlePassthroughSSEToJSON(resp *http.Response, c
 		if failoverErr := s.nonStreamingTerminalFailureFailover(c, resp, account, true, terminalType, terminalPayload, msg, mappedModel); failoverErr != nil {
 			return nil, failoverErr
 		}
-		return nil, s.writeOpenAINonStreamingProtocolError(resp, c, msg)
+		return nil, s.writeOpenAINonStreamingProtocolError(resp, c, msg, terminalPayload)
 	}
 	finalResponse, ok := extractCodexFinalResponse(bodyText)
 
@@ -9117,7 +9132,7 @@ func (s *OpenAIGatewayService) handleSSEToJSON(resp *http.Response, c *gin.Conte
 		if failoverErr := s.nonStreamingTerminalFailureFailover(c, resp, account, false, terminalType, terminalPayload, msg, mappedModel); failoverErr != nil {
 			return nil, failoverErr
 		}
-		return nil, s.writeOpenAINonStreamingProtocolError(resp, c, msg)
+		return nil, s.writeOpenAINonStreamingProtocolError(resp, c, msg, terminalPayload)
 	}
 	finalResponse, ok := extractCodexFinalResponse(bodyText)
 
@@ -9328,23 +9343,24 @@ func sanitizeOpenAIResponseFailedEventForClient(payload []byte, eventType string
 	return updated, !bytes.Equal(updated, payload)
 }
 
-func (s *OpenAIGatewayService) writeOpenAINonStreamingProtocolError(resp *http.Response, c *gin.Context, message string) error {
+func (s *OpenAIGatewayService) writeOpenAINonStreamingProtocolError(resp *http.Response, c *gin.Context, message string, payload []byte) error {
 	message = sanitizeUpstreamErrorMessage(strings.TrimSpace(message))
 	if message == "" {
 		message = "Upstream returned an invalid non-streaming response"
 	}
-	setOpsUpstreamError(c, http.StatusBadGateway, message, "")
+	status, errType := openAIStreamFailureClientStatus(payload, message, "upstream_error")
+	setOpsUpstreamError(c, status, message, "")
 	// body-signal compact 心跳可能已把响应头提交为 200，此时只能以
 	// response.failed 终止事件回传错误，不能再写 JSON+状态码。
 	if openAICompactClientWantsStream(c) && StopOpenAICompactSSEKeepaliveCommitted(c) {
-		writeOpenAICompactSSEFailureMessage(c, http.StatusBadGateway, "upstream_error", message)
+		writeOpenAICompactSSEFailureMessage(c, status, errType, message)
 		return fmt.Errorf("non-streaming openai protocol error: %s", message)
 	}
 	responseheaders.WriteFilteredHeaders(c.Writer.Header(), resp.Header, s.responseHeaderFilter)
 	c.Writer.Header().Set("Content-Type", "application/json; charset=utf-8")
-	c.JSON(http.StatusBadGateway, gin.H{
+	c.JSON(status, gin.H{
 		"error": gin.H{
-			"type":    "upstream_error",
+			"type":    errType,
 			"message": message,
 		},
 	})

@@ -214,7 +214,9 @@ func TestForwardAsAnthropic_ResponseFailed_PassthroughRule(t *testing.T) {
 	require.NotEmpty(t, errMsg, "passthrough should preserve error message")
 }
 
-func TestForwardAsChatCompletions_ResponseFailed_NoRule_Still502(t *testing.T) {
+// 未配透传规则时，上下文窗口超限也按确定性请求错误回 400（与 HTTP 400 路径对齐）；
+// 其余不可 failover 的 response.failed 仍回 502，见 TestForwardAsAnthropic_StreamingGenericNonFailoverErrorStays502。
+func TestForwardAsChatCompletions_ResponseFailed_NoRule_ContextWindowIs400(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	body := []byte(`{"model":"gpt-5.4","messages":[{"role":"user","content":"hello"}],"stream":false}`)
@@ -237,7 +239,7 @@ func TestForwardAsChatCompletions_ResponseFailed_NoRule_Still502(t *testing.T) {
 	_, err := svc.ForwardAsChatCompletions(context.Background(), c, account, body, "", "")
 
 	require.Error(t, err)
-	require.Equal(t, http.StatusBadGateway, rec.Code, "without passthrough rule should still be 502")
+	require.Equal(t, http.StatusBadRequest, rec.Code, "context window errors are deterministic client errors")
 }
 
 // bindStatusCodePassthroughRule 绑定一条按错误码+关键词双条件(MatchModeAll)匹配的规则。

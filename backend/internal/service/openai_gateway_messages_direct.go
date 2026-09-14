@@ -483,7 +483,8 @@ func (s *OpenAIGatewayService) handleAnthropicDirectBufferedSSE(
 		if message == "" {
 			message = "Upstream returned an error event"
 		}
-		writeAnthropicError(c, http.StatusBadGateway, "api_error", message)
+		status, errType := openAIStreamFailureClientStatus([]byte(errorEventData), message, "api_error")
+		writeAnthropicError(c, status, errType, message)
 		return nil, fmt.Errorf("anthropic direct sse error event: %s", message)
 	}
 	if err := scanner.Err(); err != nil {

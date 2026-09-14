@@ -105,27 +105,32 @@ func TestNonStreamingSSEToJSON_UnclassifiedFailedEventFailsOver(t *testing.T) {
 	require.Empty(t, rec.Body.String())
 }
 
-// 「response.failed 必须回写协议错误」这一契约没有丢：明确不可重试的错误仍写 502。
+// 「response.failed 必须回写协议错误」这一契约没有丢：明确不可重试的错误仍写协议错误。
 func TestNonStreamingSSEToJSON_NonRetryableFailedEventStillWritesProtocolError(t *testing.T) {
+	// 上下文窗口超限是确定性请求错误，回 400 而非 502（与转换路径、HTTP 400 路径对齐）。
 	cases := []struct {
-		name    string
-		data    string
-		wantMsg string
+		name       string
+		data       string
+		wantMsg    string
+		wantStatus int
 	}{
 		{
-			name:    "invalid_request",
-			data:    `{"type":"response.failed","error":{"type":"invalid_request_error","code":"invalid_request","message":"unknown parameter foo"}}`,
-			wantMsg: "unknown parameter foo",
+			name:       "invalid_request",
+			data:       `{"type":"response.failed","error":{"type":"invalid_request_error","code":"invalid_request","message":"unknown parameter foo"}}`,
+			wantMsg:    "unknown parameter foo",
+			wantStatus: http.StatusBadGateway,
 		},
 		{
-			name:    "context_window",
-			data:    `{"type":"response.failed","response":{"id":"resp_failed","status":"failed","output":[],"error":{"code":"upstream_error","message":"input exceeds the context window"}}}`,
-			wantMsg: "input exceeds the context window",
+			name:       "context_window",
+			data:       `{"type":"response.failed","response":{"id":"resp_failed","status":"failed","output":[],"error":{"code":"upstream_error","message":"input exceeds the context window"}}}`,
+			wantMsg:    "input exceeds the context window",
+			wantStatus: http.StatusBadRequest,
 		},
 		{
-			name:    "content_policy",
-			data:    `{"type":"response.failed","error":{"type":"content_policy_violation","message":"blocked by our content policy"}}`,
-			wantMsg: "blocked by our content policy",
+			name:       "content_policy",
+			data:       `{"type":"response.failed","error":{"type":"content_policy_violation","message":"blocked by our content policy"}}`,
+			wantMsg:    "blocked by our content policy",
+			wantStatus: http.StatusBadGateway,
 		},
 	}
 
@@ -141,7 +146,7 @@ func TestNonStreamingSSEToJSON_NonRetryableFailedEventStillWritesProtocolError(t
 			require.Error(t, err)
 			var failoverErr *UpstreamFailoverError
 			require.False(t, errors.As(err, &failoverErr), "不可重试的上游错误不得换号")
-			require.Equal(t, http.StatusBadGateway, rec.Code)
+			require.Equal(t, tc.wantStatus, rec.Code)
 			require.Contains(t, rec.Body.String(), tc.wantMsg)
 			require.Contains(t, rec.Header().Get("Content-Type"), "application/json")
 		})
@@ -255,4 +260,22 @@ func TestNonStreamingTerminalFailureFailover_NilAccountProposesNothing(t *testin
 	require.Nil(t, svc.nonStreamingTerminalFailureFailover(
 		c, newNonStreamingSSEResponse(), nil, false, "response.failed", payload,
 		"Selected model is at capacity. Please try a different model."))
+}
+
+// 上下文窗口超限在非流式 SSE→JSON 路径也按确定性请求错误回 400，不换号。
+func TestNonStreamingSSEToJSON_ContextWindowErrorReturns400(t *testing.T) {
+	c, rec := newNonStreamingFailoverContext(t)
+	svc := newNonStreamingFailoverService()
+	body := sseTerminalBody("error",
+		`{"type":"error","error":{"code":"context_length_exceeded","message":"Your input exceeds the context window of this model. Please adjust your input and try again.","param":"input","type":"invalid_request_error"},"sequence_number":2}`)
+
+	result, err := svc.handleSSEToJSON(newNonStreamingSSEResponse(), c, newNonStreamingFailoverAccount(), body, "model", "model")
+
+	require.Nil(t, result)
+	require.Error(t, err)
+	var failoverErr *UpstreamFailoverError
+	require.False(t, errors.As(err, &failoverErr))
+	require.Equal(t, http.StatusBadRequest, rec.Code)
+	require.Contains(t, rec.Body.String(), `"type":"invalid_request_error"`)
+	require.Contains(t, rec.Body.String(), "exceeds the context window")
 }
