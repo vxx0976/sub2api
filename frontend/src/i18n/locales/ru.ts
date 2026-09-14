@@ -7973,7 +7973,7 @@ export default {
         antigravityUserAgentVersionPlaceholder: '1.23.2',
         antigravityUserAgentVersionHint: 'Оставьте пустым, чтобы использовать ANTIGRAVITY_USER_AGENT_VERSION или встроенное значение по умолчанию 1.23.2; при заполнении настройка в админке имеет приоритет.',
         openaiCodexUserAgent: 'OpenAI Codex UA',
-        openaiCodexUserAgentPlaceholder: 'codex-tui/0.146.1 (Ubuntu 22.4.0; x86_64) WindowsTerminal (codex-tui; 0.146.1)',
+        openaiCodexUserAgentPlaceholder: 'codex-tui/0.154.0 (Ubuntu 22.4.0; x86_64) WindowsTerminal (codex-tui; 0.154.0)',
         openaiCodexUserAgentHint: 'Полный User-Agent Codex, используемый для всех исходящих запросов — для настройки отпечатка ОС / архитектуры / терминала. Оставьте пустым, чтобы собрать стандартную идентичность codex-tui из версии ниже (рекомендуется). Если задано, обе декларации версии — в начале и в конце — синхронизируются с версией ниже, поэтому UA никогда не остаётся привязанным к релизу, введённому здесь: под нагрузкой апстрим сбрасывает трафик по идентичности клиента и первыми отбрасывает устаревшие или неофициальные идентичности с server_is_overloaded.',
         openaiCodexClientVersion: 'Версия клиента Codex',
         openaiCodexClientVersionPlaceholder: 'Оставьте пустым, чтобы следовать автосинхронизации',
