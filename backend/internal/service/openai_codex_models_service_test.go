@@ -2339,16 +2339,36 @@ func TestFetchCodexModelsManifestOAuthPreservesResponsesLite(t *testing.T) {
 func TestConvertOpenAIModelListToCompleteCodexManifest(t *testing.T) {
 	t.Parallel()
 
-	body := []byte(`{"object":"list","data":[{"id":"deepseek-v4-flash"},{"id":"deepseek-v4-pro"}]}`)
+	body := []byte(`{"object":"list","data":[{"id":"deepseek-v4-flash"},{"id":"deepseek-v4-pro"},{"id":"deepseek-flash"}]}`)
 	models := decodeCodexManifestModels(t, convertOpenAIModelListToCodexManifest(body))
 
-	require.Len(t, models, 2)
+	require.Len(t, models, 3)
 	requireCompleteConfiguredCodexModel(t, models[0], "deepseek-v4-flash")
 	requireCompleteConfiguredCodexModel(t, models[1], "deepseek-v4-pro")
+	requireCompleteConfiguredCodexModel(t, models[2], "deepseek-flash")
 	require.Equal(t, "DeepSeek V4 Flash", models[0]["display_name"])
 	require.Equal(t, "DeepSeek V4 Pro", models[1]["display_name"])
+	require.Equal(t, "DeepSeek V4.1 Flash", models[2]["display_name"])
 	require.EqualValues(t, 1_000_000, models[0]["context_window"])
 	require.EqualValues(t, 1_000_000, models[1]["context_window"])
+	require.EqualValues(t, 1_000_000, models[2]["context_window"])
+}
+
+func TestDeepSeekCodexDisplayName(t *testing.T) {
+	t.Parallel()
+
+	for _, tt := range []struct {
+		modelID string
+		want    string
+	}{
+		{"deepseek-flash", "DeepSeek V4.1 Flash"},
+		{" DeepSeek-Flash ", "DeepSeek V4.1 Flash"},
+		{"deepseek-v4-flash", "DeepSeek V4 Flash"},
+		{"deepseek-v4-pro", "DeepSeek V4 Pro"},
+		{"deepseek-flash-0910", "deepseek-flash-0910"},
+	} {
+		require.Equalf(t, tt.want, deepSeekCodexDisplayName(tt.modelID), "modelID=%q", tt.modelID)
+	}
 }
 
 func TestConvertOpenAIModelListToCodexManifestLeavesUnsupportedBodiesUnchanged(t *testing.T) {

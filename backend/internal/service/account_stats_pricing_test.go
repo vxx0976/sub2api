@@ -671,6 +671,7 @@ func TestTryModelFilePricing_DeepSeekOfficialBands(t *testing.T) {
 		name                          string
 		input, output, cacheReadPrice float64
 	}{
+		{"deepseek-flash", dsFlashPeakInput, dsFlashPeakOutput, dsFlashPeakCacheRead},
 		{"deepseek-v4-flash", dsFlashPeakInput, dsFlashPeakOutput, dsFlashPeakCacheRead},
 		{"deepseek-v4-pro", dsProPeakInput, dsProPeakOutput, dsProPeakCacheRead},
 	} {

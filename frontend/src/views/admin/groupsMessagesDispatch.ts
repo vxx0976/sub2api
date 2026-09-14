@@ -22,7 +22,7 @@ function getDefaultModelsForPlatform(platform?: GroupPlatform | null): {
 } {
   switch (platform) {
     case "deepseek":
-      return { opus: "deepseek-v4-pro", sonnet: "deepseek-v4-pro", haiku: "deepseek-v4-flash" };
+      return { opus: "deepseek-v4-pro", sonnet: "deepseek-v4-pro", haiku: "deepseek-flash" };
     case "kimi":
       return { opus: "kimi-k2.6", sonnet: "kimi-k2.6", haiku: "kimi-k2.6" };
     case "zhipu":
@@ -42,7 +42,7 @@ function getDefaultModelsForPlatform(platform?: GroupPlatform | null): {
 // ⚠️ 上游这里只有 openai + composite，因为上游假定国产账号配 api_protocol=anthropic
 // 原生直通、模型名交给账号级 model_mapping。本站不满足该前提：生产 Deepseek 分组近
 // 30 天约 90% 请求用 claude-* 模型名，全靠这份**分组级**映射翻成 deepseek-v4-pro /
-// deepseek-v4-flash（账号级 model_mapping 是恒等白名单，接不住）。
+// deepseek-flash（账号级 model_mapping 是恒等白名单，接不住）。
 // 后端也是这么实现的——sanitizeGroupMessagesDispatchFields 对 CN 分组保留
 // MessagesDispatchModelConfig，ResolveMessagesDispatchModel 对 CN 分组读它。
 // 这里若跟随上游收窄，就会变成「后端在用、管理员却看不到也改不了」，

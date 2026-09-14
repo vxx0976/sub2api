@@ -34,11 +34,11 @@ func TestGatewayRecordUsage_PersistsPricingTimeBandAndPricedAt(t *testing.T) {
 		name      string
 		pricingAt time.Time
 		wantBand  string
-		// 1M input tokens 的期望成本（¥ 表 1:1 汇率）：高峰 3.0 / 空闲 1.5
+		// 1M input tokens 的期望成本（¥ 表 1:1 汇率）：高峰 2.0 / 空闲 1.0
 		wantCost float64
 	}{
-		{"空闲时段发起 → 谷价 + offpeak", bjTestTime(20, 0, 0), PricingBandOffPeak, 1.5},
-		{"高峰时段发起 → 表价 + peak", bjTestTime(10, 0, 0), PricingBandPeak, 3.0},
+		{"空闲时段发起 → 谷价 + offpeak", bjTestTime(20, 0, 0), PricingBandOffPeak, 1.0},
+		{"高峰时段发起 → 表价 + peak", bjTestTime(10, 0, 0), PricingBandPeak, 2.0},
 	}
 
 	for _, tt := range cases {
@@ -84,8 +84,8 @@ func TestOpenAIRecordUsage_PersistsPricingTimeBandAndPricedAt(t *testing.T) {
 		wantBand  string
 		wantCost  float64
 	}{
-		{"空闲时段发起 → 谷价 + offpeak", bjTestTime(3, 0, 0), PricingBandOffPeak, 1.5},
-		{"高峰时段发起 → 表价 + peak", bjTestTime(15, 0, 0), PricingBandPeak, 3.0},
+		{"空闲时段发起 → 谷价 + offpeak", bjTestTime(3, 0, 0), PricingBandOffPeak, 1.0},
+		{"高峰时段发起 → 表价 + peak", bjTestTime(15, 0, 0), PricingBandPeak, 2.0},
 	}
 
 	for _, tt := range cases {

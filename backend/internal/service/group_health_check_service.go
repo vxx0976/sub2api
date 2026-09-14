@@ -280,7 +280,8 @@ func getDefaultTestModel(platform string) string {
 	case "antigravity":
 		return "claude-haiku-4-5-20251001"
 	case "deepseek":
-		return "deepseek-chat"
+		// deepseek-chat 已下线；官方 /models 现仅列 deepseek-flash 与 deepseek-v4-pro，取便宜的 flash。
+		return "deepseek-flash"
 	case "kimi":
 		return "kimi-k2"
 	case "zhipu":

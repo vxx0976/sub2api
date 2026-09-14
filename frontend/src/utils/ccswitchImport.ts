@@ -1,7 +1,7 @@
 import type { GroupPlatform } from '@/types'
 
 export const OPENAI_CC_SWITCH_CODEX_MODEL = 'gpt-5.5'
-export const DEEPSEEK_CC_SWITCH_CODEX_MODEL = 'deepseek-v4-flash'
+export const DEEPSEEK_CC_SWITCH_CODEX_MODEL = 'deepseek-flash'
 export const KIMI_CC_SWITCH_CODEX_MODEL = 'kimi-for-coding'
 // zhipu / minimax 的 Codex 目标型号与后端 cnDefaultMessagesDispatchModels
 // （openai_messages_dispatch.go）、前端 groupsMessagesDispatch.ts 的兜底保持一致。

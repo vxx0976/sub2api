@@ -121,7 +121,9 @@ const qwenModels = [
 
 // DeepSeek
 const deepseekModels = [
-  'deepseek-v4-flash', 'deepseek-v4-pro', 'deepseek-v4-flash-vision-exp'
+  'deepseek-flash', 'deepseek-v4-pro',
+  // 旧名：官方暂时路由到 V4.1-Flash（deepseek-flash），保留以兼容存量配置
+  'deepseek-v4-flash', 'deepseek-v4-flash-vision-exp'
 ]
 
 // Mistral
@@ -328,7 +330,7 @@ const geminiPresetMappings = [
 
 // DeepSeek 预设映射
 const deepseekPresetMappings = [
-  { label: 'V4 Flash', from: 'deepseek-v4-flash', to: 'deepseek-v4-flash', color: 'bg-violet-100 text-violet-700 hover:bg-violet-200 dark:bg-violet-900/30 dark:text-violet-400' },
+  { label: 'V4.1 Flash', from: 'deepseek-flash', to: 'deepseek-flash', color: 'bg-violet-100 text-violet-700 hover:bg-violet-200 dark:bg-violet-900/30 dark:text-violet-400' },
   { label: 'V4 Pro', from: 'deepseek-v4-pro', to: 'deepseek-v4-pro', color: 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-400' }
 ]
 

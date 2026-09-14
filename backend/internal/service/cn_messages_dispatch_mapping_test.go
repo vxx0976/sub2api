@@ -48,12 +48,14 @@ func TestCNGroupResolvesConfiguredClaudeModelMapping(t *testing.T) {
 
 		// 原生模型名不属于 claude 家族，不改写。
 		{"deepseek 原生模型不改写", deepseek, "deepseek-v4-flash", ""},
+		{"deepseek 原生 V4.1 Flash 不改写", deepseek, "deepseek-flash", ""},
 		{"kimi 原生模型不改写", kimi, "kimi-k3", ""},
 
 		// 未配置分组级映射时按平台兜底（与前端 getDefaultModelsForPlatform 一致），
 		// 而不是回落 gpt-5.x。新建的 CN 分组走的就是这条。
 		{"未配置的 deepseek 分组 opus", &Group{Platform: PlatformDeepseek}, "claude-opus-5", "deepseek-v4-pro"},
-		{"未配置的 deepseek 分组 haiku", &Group{Platform: PlatformDeepseek}, "claude-haiku-4-5-20251001", "deepseek-v4-flash"},
+		// haiku 兜底随 2026-09-10 官方上线 V4.1-Flash 改为 deepseek-flash（旧名已被官方路由过去）。
+		{"未配置的 deepseek 分组 haiku", &Group{Platform: PlatformDeepseek}, "claude-haiku-4-5-20251001", "deepseek-flash"},
 		{"未配置的 kimi 分组", &Group{Platform: PlatformKimi}, "claude-sonnet-5", "kimi-k2.6"},
 		{"未配置的 zhipu 分组 haiku", &Group{Platform: PlatformZhipu}, "claude-haiku-4-5-20251001", "glm-4.5-air"},
 		{"未配置的 minimax 分组 opus", &Group{Platform: PlatformMiniMax}, "claude-opus-5", "MiniMax-M2.7"},

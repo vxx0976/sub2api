@@ -264,15 +264,17 @@ func TestListBuiltinPricing_DeepSeekAlwaysPeakPriceWithTierMeta(t *testing.T) {
 		byModel[e.Model] = e
 	}
 
-	flash, ok := byModel["deepseek-v4-flash"]
-	require.True(t, ok)
-	require.Equal(t, CurrencyCNY, flash.Currency)
-	require.InDelta(t, 3.0, flash.InputPerM, 1e-12, "内置表恒为高峰价，不随时刻变化")
-	require.InDelta(t, 9.0, flash.OutputPerM, 1e-12)
-	require.InDelta(t, 0.10, flash.CachePerM, 1e-12)
-	require.InDelta(t, 0.5, flash.OffPeakFactor, 1e-12)
-	require.Equal(t, []string{"09:00-12:00", "14:00-18:00"}, flash.PeakWindows)
-	require.Equal(t, "UTC+08:00", flash.TimeTierTZ)
+	for _, model := range []string{"deepseek-flash", "deepseek-v4-flash"} {
+		flash, ok := byModel[model]
+		require.Truef(t, ok, "%s", model)
+		require.Equalf(t, CurrencyCNY, flash.Currency, "%s", model)
+		require.InDeltaf(t, 2.0, flash.InputPerM, 1e-12, "%s 内置表恒为高峰价，不随时刻变化", model)
+		require.InDeltaf(t, 8.0, flash.OutputPerM, 1e-12, "%s", model)
+		require.InDeltaf(t, 0.04, flash.CachePerM, 1e-12, "%s", model)
+		require.InDeltaf(t, 0.5, flash.OffPeakFactor, 1e-12, "%s", model)
+		require.Equalf(t, []string{"09:00-12:00", "14:00-18:00"}, flash.PeakWindows, "%s", model)
+		require.Equalf(t, "UTC+08:00", flash.TimeTierTZ, "%s", model)
+	}
 
 	// 无分档的国产模型不得凭空长出时段字段
 	kimi, ok := byModel["kimi-k3"]

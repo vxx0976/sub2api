@@ -27,8 +27,8 @@ func TestCalculateCostAt_DeepSeekOffPeakHalvesCost(t *testing.T) {
 	off, err := svc.CalculateCostAt("deepseek-v4-flash", tokens, 1.0, bj(t, 20, 0, 0))
 	require.NoError(t, err)
 
-	require.InDelta(t, 3.0+9.0, peak.TotalCost, 1e-9, "高峰档 = 表价")
-	require.InDelta(t, (3.0+9.0)/2, off.TotalCost, 1e-9, "空闲档 = 表价的一半")
+	require.InDelta(t, 2.0+8.0, peak.TotalCost, 1e-9, "高峰档 = 表价")
+	require.InDelta(t, (2.0+8.0)/2, off.TotalCost, 1e-9, "空闲档 = 表价的一半")
 	require.Equal(t, PricingBandPeak, peak.PricingTimeBand)
 	require.Equal(t, PricingBandOffPeak, off.PricingTimeBand)
 }
@@ -42,13 +42,13 @@ func TestCalculateCostAt_UsesFrozenInstantNotNow(t *testing.T) {
 	// 固定传入一个空闲时刻；无论测试在一天中的哪个真实时刻运行，结果都必须是谷价。
 	off, err := svc.CalculateCostAt("deepseek-v4-flash", tokens, 1.0, bj(t, 3, 0, 0))
 	require.NoError(t, err)
-	require.InDelta(t, 1.5, off.TotalCost, 1e-9)
+	require.InDelta(t, 1.0, off.TotalCost, 1e-9)
 	require.Equal(t, PricingBandOffPeak, off.PricingTimeBand)
 
 	// 同理，高峰时刻恒为表价。
 	peak, err := svc.CalculateCostAt("deepseek-v4-flash", tokens, 1.0, bj(t, 15, 30, 0))
 	require.NoError(t, err)
-	require.InDelta(t, 3.0, peak.TotalCost, 1e-9)
+	require.InDelta(t, 2.0, peak.TotalCost, 1e-9)
 	require.Equal(t, PricingBandPeak, peak.PricingTimeBand)
 }
 
@@ -59,7 +59,7 @@ func TestCalculateCost_WithoutInstantIsPeakBaseline(t *testing.T) {
 
 	cost, err := svc.CalculateCost("deepseek-v4-flash", tokens, 1.0)
 	require.NoError(t, err)
-	require.InDelta(t, 3.0, cost.TotalCost, 1e-9, "未接线路径必须落在贵的一侧")
+	require.InDelta(t, 2.0, cost.TotalCost, 1e-9, "未接线路径必须落在贵的一侧")
 	require.Equal(t, "", cost.PricingTimeBand, "未标档位可作为漏接线的监控信号")
 }
 
@@ -70,8 +70,8 @@ func TestOffPeakStacksWithGroupRateMultiplier(t *testing.T) {
 
 	cost, err := svc.CalculateCostAt("deepseek-v4-flash", tokens, 3.0, bj(t, 20, 0, 0))
 	require.NoError(t, err)
-	require.InDelta(t, 1.5, cost.TotalCost, 1e-9, "TotalCost 是倍率前的口径")
-	require.InDelta(t, 1.5*3.0, cost.ActualCost, 1e-9, "谷单价 × tokens × 分组倍率")
+	require.InDelta(t, 1.0, cost.TotalCost, 1e-9, "TotalCost 是倍率前的口径")
+	require.InDelta(t, 1.0*3.0, cost.ActualCost, 1e-9, "谷单价 × tokens × 分组倍率")
 }
 
 // 谷价 ×0.5 与长上下文输入 ×2.0 叠乘后恰好等于基准价——这正是对账不能只靠
@@ -88,10 +88,10 @@ func TestOffPeakStacksWithLongContextMultiplier(t *testing.T) {
 	require.Equal(t, PricingBandOffPeak, off.PricingTimeBand,
 		"叠加长上下文后档位标记仍须保留，否则对账无法拆分这两个乘数")
 
-	// 谷价 1.5/MTok。TotalCost 是**倍率前**口径：范围内 100k + 范围外 100k 各按 1.5 计 = 0.30；
-	// 长上下文的 ×2 只体现在 ActualCost：0.15 + 0.30 = 0.45。
-	require.InDelta(t, 0.30, off.TotalCost, 1e-9)
-	require.InDelta(t, 0.45, off.ActualCost, 1e-9)
+	// 谷价 1.0/MTok。TotalCost 是**倍率前**口径：范围内 100k + 范围外 100k 各按 1.0 计 = 0.20；
+	// 长上下文的 ×2 只体现在 ActualCost：0.10 + 0.20 = 0.30。
+	require.InDelta(t, 0.20, off.TotalCost, 1e-9)
+	require.InDelta(t, 0.30, off.ActualCost, 1e-9)
 
 	// 🔴 对账盲区实证：谷价(×0.5) × 长上下文(×2.0) 的实收金额，与「高峰档、无长上下文」
 	// 的 150k 请求完全相同。仅凭 cost÷tokens 反算无法区分这两种情况，
@@ -203,8 +203,8 @@ func TestPricingBandPrecedence_PartialGroupCardStillUsesBaselineForUncoveredFiel
 	}
 	require.InDelta(t, costs[0], costs[1], 1e-12,
 		"半张价卡在峰谷两时刻必须同价：未被卡覆盖的字段也走基准价，不得混入谷价折扣")
-	// input 走卡价 10；output 9 + cache_read 0.10 走基准（高峰）价
-	require.InDelta(t, 10.0+9.0+0.10, costs[0], 1e-9)
+	// input 走卡价 10；output 8 + cache_read 0.04 走基准（高峰）价
+	require.InDelta(t, 10.0+8.0+0.04, costs[0], 1e-9)
 }
 
 // 预解析（GatewayService 侧 resolveChannelPricing 不传时刻）与内联解析（OpenAI 侧
@@ -268,7 +268,7 @@ func TestPricingBandPrecedence_BuiltinPathCarriesBand(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.Equal(t, PricingBandOffPeak, off.PricingTimeBand)
-	require.InDelta(t, 1.5, off.TotalCost, 1e-9)
+	require.InDelta(t, 1.0, off.TotalCost, 1e-9)
 }
 
 // 🔒 band 与实际成交单价不允许漂移：标了 offpeak 就必须真的按谷价成交。
@@ -285,9 +285,9 @@ func TestPricingBandMatchesActualUnitPrice(t *testing.T) {
 		impliedPerM := cost.InputCost // 1M tokens，故 InputCost 即每百万单价
 		switch cost.PricingTimeBand {
 		case PricingBandPeak:
-			require.InDeltaf(t, 3.0, impliedPerM, 1e-9, "标为 peak 却按 %v 成交 @%v", impliedPerM, at)
+			require.InDeltaf(t, 2.0, impliedPerM, 1e-9, "标为 peak 却按 %v 成交 @%v", impliedPerM, at)
 		case PricingBandOffPeak:
-			require.InDeltaf(t, 1.5, impliedPerM, 1e-9, "标为 offpeak 却按 %v 成交 @%v", impliedPerM, at)
+			require.InDeltaf(t, 1.0, impliedPerM, 1e-9, "标为 offpeak 却按 %v 成交 @%v", impliedPerM, at)
 		default:
 			t.Fatalf("内置价路径必须标注档位，得到 %q @%v", cost.PricingTimeBand, at)
 		}

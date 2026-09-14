@@ -595,8 +595,9 @@ func TestOpenAIGatewayServiceRecordUsage_DeepSeekAccountStatsUsesRequestPricingA
 		name     string
 		peakCost float64
 	}{
-		// ¥ 表价（deepSeekPricingTable，汇率 1:1）：flash 3/9/0.10，pro 9/27/0.30 每 MTok。
-		{"deepseek-v4-flash", 1000*3e-6 + 500*9e-6 + 1000*1e-7},
+		// ¥ 表价（deepSeekPricingTable，汇率 1:1）：flash 2/8/0.04，pro 9/27/0.30 每 MTok。
+		{"deepseek-flash", 1000*2e-6 + 500*8e-6 + 1000*4e-8},
+		{"deepseek-v4-flash", 1000*2e-6 + 500*8e-6 + 1000*4e-8},
 		{"deepseek-v4-pro", 1000*9e-6 + 500*2.7e-5 + 1000*3e-7},
 	} {
 		for _, slot := range []struct {

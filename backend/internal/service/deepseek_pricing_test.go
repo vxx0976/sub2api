@@ -35,9 +35,11 @@ import (
 // deepSeekCNYPeak/OffPeak 是 deepSeekPricingTable 的 ¥ 价（汇率 1:1）换算出的
 // 每 token 单价，直接写死以便与表格数值对照。
 const (
-	dsFlashPeakInput     = 3.0e-6 // ¥3.0 per MTok
-	dsFlashPeakOutput    = 9.0e-6 // ¥9.0 per MTok
-	dsFlashPeakCacheRead = 1.0e-7 // ¥0.10 per MTok
+	// Flash 档：2026-09-10 V4.1-Flash（deepseek-flash）上线后官方降价 ¥3/¥9/¥0.10 → ¥2/¥8/¥0.04，
+	// 旧名 deepseek-v4-flash / -vision-exp / chat / reasoner 同价。
+	dsFlashPeakInput     = 2.0e-6 // ¥2.0 per MTok
+	dsFlashPeakOutput    = 8.0e-6 // ¥8.0 per MTok
+	dsFlashPeakCacheRead = 4.0e-8 // ¥0.04 per MTok
 	dsProPeakInput       = 9.0e-6 // ¥9.0 per MTok
 	dsProPeakOutput      = 2.7e-5 // ¥27.0 per MTok
 	dsProPeakCacheRead   = 3.0e-7 // ¥0.30 per MTok
@@ -62,8 +64,14 @@ func TestCalculateCostUnified_DeepSeekDefaultCardUsesCNYTableBands(t *testing.T)
 		model                    string
 		input, output, cacheRead float64
 	}{
+		{"deepseek-flash", dsFlashPeakInput, dsFlashPeakOutput, dsFlashPeakCacheRead},
 		{"deepseek-v4-flash", dsFlashPeakInput, dsFlashPeakOutput, dsFlashPeakCacheRead},
 		{"deepseek-v4-pro", dsProPeakInput, dsProPeakOutput, dsProPeakCacheRead},
+		// V4.1-Flash 的各种写法：大小写、provider 前缀、日期后缀、带版本号写法，均按新 flash 价。
+		{"DeepSeek-Flash", dsFlashPeakInput, dsFlashPeakOutput, dsFlashPeakCacheRead},
+		{"deepseek/deepseek-flash", dsFlashPeakInput, dsFlashPeakOutput, dsFlashPeakCacheRead},
+		{"deepseek-flash-0910", dsFlashPeakInput, dsFlashPeakOutput, dsFlashPeakCacheRead},
+		{"deepseek-v4.1-flash", dsFlashPeakInput, dsFlashPeakOutput, dsFlashPeakCacheRead},
 		// 版本化名称按子串归档，与精确名同价。
 		{"deepseek-v4-flash-0731", dsFlashPeakInput, dsFlashPeakOutput, dsFlashPeakCacheRead},
 		{"deepseek-v4-pro-0813", dsProPeakInput, dsProPeakOutput, dsProPeakCacheRead},
@@ -114,7 +122,7 @@ func TestCalculateCostUnified_DeepSeekWeekendIsOffPeak(t *testing.T) {
 				RateMultiplier: 1.0, Resolver: resolver, PricingAt: bjAt(t, tc.day, 10),
 			})
 			require.NoError(t, err)
-			require.InDelta(t, 3.0/2, cost.TotalCost, 1e-12)
+			require.InDelta(t, 2.0/2, cost.TotalCost, 1e-12)
 			require.Equal(t, PricingBandOffPeak, cost.PricingTimeBand)
 		})
 	}
@@ -133,7 +141,7 @@ func TestCalculateCostUnified_DeepSeekZeroPricingAtIsPeakBaseline(t *testing.T) 
 		RateMultiplier: 1.0, Resolver: resolver, // PricingAt 零值
 	})
 	require.NoError(t, err)
-	require.InDelta(t, 3.0, cost.TotalCost, 1e-12, "未接线路径必须落在贵的一侧")
+	require.InDelta(t, 2.0, cost.TotalCost, 1e-12, "未接线路径必须落在贵的一侧")
 	require.Equal(t, "", cost.PricingTimeBand, "未标档位可作为漏接线的监控信号")
 }
 
@@ -142,7 +150,7 @@ func TestCalculateCostUnified_DeepSeekZeroPricingAtIsPeakBaseline(t *testing.T) 
 func TestGetModelPricing_UnknownDeepSeekFallsBackToMostExpensiveTier(t *testing.T) {
 	bs := NewBillingService(&config.Config{}, newCNYPricingService(1.0))
 
-	for _, m := range []string{"deepseek-foo", "deepseek-v4.5", "deepseek-v5-max", "deepseek-v3-2-251201"} {
+	for _, m := range []string{"deepseek-foo", "deepseek-v4.5", "deepseek-v5-max", "deepseek-v3-2-251201", "deepseek-v5-flash", "deepseek-flash-pro", "deepseek-flash-max"} {
 		t.Run(m, func(t *testing.T) {
 			pricing, err := bs.GetModelPricing(m)
 			require.NoError(t, err)

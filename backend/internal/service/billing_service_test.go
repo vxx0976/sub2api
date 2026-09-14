@@ -516,33 +516,56 @@ func TestGetFallbackPricing_FamilyMatching(t *testing.T) {
 			expectedCacheRead: floatPtr(3e-7),
 		},
 		{
+			// V4.1-Flash（2026-09-10 上线，Flash 降价到 ¥2/¥8/¥0.04）。
+			name:              "deepseek flash v4.1",
+			model:             "deepseek-flash",
+			expectedInput:     2e-6,
+			expectedOutput:    floatPtr(8e-6),
+			expectedCacheRead: floatPtr(4e-8),
+		},
+		{
+			name:              "deepseek flash dated variant",
+			model:             "deepseek-flash-0910",
+			expectedInput:     2e-6,
+			expectedOutput:    floatPtr(8e-6),
+			expectedCacheRead: floatPtr(4e-8),
+		},
+		{
+			name:              "deepseek v4.1 flash versioned name",
+			model:             "deepseek-v4.1-flash",
+			expectedInput:     2e-6,
+			expectedOutput:    floatPtr(8e-6),
+			expectedCacheRead: floatPtr(4e-8),
+		},
+		{
+			// 旧名被官方暂时路由到 V4.1-Flash 并按新 Flash 价结算。
 			name:              "deepseek v4 flash",
 			model:             "deepseek-v4-flash",
-			expectedInput:     3e-6,
-			expectedOutput:    floatPtr(9e-6),
-			expectedCacheRead: floatPtr(1e-7),
+			expectedInput:     2e-6,
+			expectedOutput:    floatPtr(8e-6),
+			expectedCacheRead: floatPtr(4e-8),
 		},
 		{
 			name:              "deepseek v4 flash vision exp",
 			model:             "deepseek-v4-flash-vision-exp",
-			expectedInput:     3e-6,
-			expectedOutput:    floatPtr(9e-6),
-			expectedCacheRead: floatPtr(1e-7),
+			expectedInput:     2e-6,
+			expectedOutput:    floatPtr(8e-6),
+			expectedCacheRead: floatPtr(4e-8),
 		},
 		{
 			// deepseek-chat / deepseek-reasoner 已停止服务，统一按 flash 价兜底。
 			name:              "deepseek chat discontinued maps to flash",
 			model:             "deepseek-chat",
-			expectedInput:     3e-6,
-			expectedOutput:    floatPtr(9e-6),
-			expectedCacheRead: floatPtr(1e-7),
+			expectedInput:     2e-6,
+			expectedOutput:    floatPtr(8e-6),
+			expectedCacheRead: floatPtr(4e-8),
 		},
 		{
 			name:              "deepseek reasoner discontinued maps to flash",
 			model:             "deepseek-reasoner",
-			expectedInput:     3e-6,
-			expectedOutput:    floatPtr(9e-6),
-			expectedCacheRead: floatPtr(1e-7),
+			expectedInput:     2e-6,
+			expectedOutput:    floatPtr(8e-6),
+			expectedCacheRead: floatPtr(4e-8),
 		},
 		{
 			// 认不出档位的 deepseek-* 兜底到**最贵档** v4-pro（上游兜底到最便宜的 flash）。

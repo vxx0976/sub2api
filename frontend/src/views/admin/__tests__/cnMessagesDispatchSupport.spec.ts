@@ -9,7 +9,7 @@ import {
 //
 // 上游这里只有 openai + composite，前提是国产账号配 api_protocol=anthropic 原生直通、
 // 模型名交给账号级 model_mapping。本站不满足该前提：生产 Deepseek 分组近 30 天约 90%
-// 请求用 claude-* 模型名，靠分组级映射翻成 deepseek-v4-pro / deepseek-v4-flash；
+// 请求用 claude-* 模型名，靠分组级映射翻成 deepseek-v4-pro / deepseek-flash；
 // 账号级 model_mapping 是恒等白名单，接不住。后端（sanitizeGroupMessagesDispatchFields
 // 对 CN 保留配置、ResolveMessagesDispatchModel 对 CN 读它）也是这么实现的，
 // 前端若跟随上游收窄，就变成「后端在用、管理员看不到也改不了」，新建 CN 分组还必然空配置。
@@ -27,7 +27,7 @@ describe('CN 分组的 messages dispatch 支持', () => {
     expect(createDefaultMessagesDispatchFormState('deepseek')).toMatchObject({
       opus_mapped_model: 'deepseek-v4-pro',
       sonnet_mapped_model: 'deepseek-v4-pro',
-      haiku_mapped_model: 'deepseek-v4-flash',
+      haiku_mapped_model: 'deepseek-flash',
     })
     expect(createDefaultMessagesDispatchFormState('kimi')).toMatchObject({
       opus_mapped_model: 'kimi-k2.6',
@@ -61,6 +61,6 @@ describe('CN 分组的 messages dispatch 支持', () => {
     )
     expect(state.opus_mapped_model).toBe('deepseek-v4-pro')
     expect(state.sonnet_mapped_model).toBe('deepseek-v4-pro')
-    expect(state.haiku_mapped_model).toBe('deepseek-v4-flash')
+    expect(state.haiku_mapped_model).toBe('deepseek-flash')
   })
 })

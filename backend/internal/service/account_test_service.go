@@ -393,7 +393,7 @@ func (s *AccountTestService) testCNProviderChatCompletionsConnection(c *gin.Cont
 	if testModelID == "" {
 		// ⚠️ 不能用 openai.DefaultTestModel（gpt-5.4）：CN 上游不认这个模型名，
 		// 未显式指定模型的连通性测试会必然失败。按平台取默认测试模型，
-		// 与 getDefaultTestModel 这一张表共用真源（deepseek-chat / kimi-k2 / GLM-5.1）。
+		// 与 getDefaultTestModel 这一张表共用真源（deepseek-flash / kimi-k2 / GLM-5.1）。
 		testModelID = getDefaultTestModel(account.Platform)
 	}
 	testModelID = account.GetMappedModel(testModelID)

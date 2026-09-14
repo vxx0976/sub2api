@@ -119,8 +119,12 @@ func TestGetModelPricing_DeepSeekV4AllModels(t *testing.T) {
 		outputCNY float64
 		cacheCNY  float64
 	}{
-		{"deepseek-v4-flash", 3.0, 9.0, 0.10},
+		{"deepseek-flash", 2.0, 8.0, 0.04}, // V4.1-Flash（2026-09-10 上线并降价）
+		{"deepseek-v4-flash", 2.0, 8.0, 0.04},
+		{"deepseek-v4-flash-vision-exp", 2.0, 8.0, 0.04},
 		{"deepseek-v4-pro", 9.0, 27.0, 0.30},
+		{"deepseek-chat", 2.0, 8.0, 0.04},
+		{"deepseek-reasoner", 2.0, 8.0, 0.04},
 	}
 	for _, tt := range tests {
 		got := svc.GetModelPricing(tt.model)
@@ -142,6 +146,9 @@ func TestGetModelPricing_DeepSeekV4NameVariants(t *testing.T) {
 		"DeepSeek-V4-Flash",
 		"deepseek/deepseek-v4-flash",
 		"deepseek/deepseek-v4-pro",
+		"deepseek-flash",
+		"DeepSeek-Flash",
+		"deepseek/deepseek-flash",
 	} {
 		got := svc.GetModelPricing(name)
 		require.NotNilf(t, got, "expected pricing for %q", name)
@@ -163,11 +170,12 @@ func TestGetModelPricingAt_DeepSeekOffPeak(t *testing.T) {
 		outputCNY float64
 		cacheCNY  float64
 	}{
-		{"deepseek-v4-flash", 1.5, 4.5, 0.05},
+		{"deepseek-flash", 1.0, 4.0, 0.02},
+		{"deepseek-v4-flash", 1.0, 4.0, 0.02},
 		{"deepseek-v4-pro", 4.5, 13.5, 0.15},
 		// 已下线别名并入 ¥ 口径后同样跟随分档（按 flash 计价）
-		{"deepseek-chat", 1.5, 4.5, 0.05},
-		{"deepseek-reasoner", 1.5, 4.5, 0.05},
+		{"deepseek-chat", 1.0, 4.0, 0.02},
+		{"deepseek-reasoner", 1.0, 4.0, 0.02},
 	}
 	for _, tt := range tests {
 		got := svc.GetModelPricingAt(tt.model, offPeak)
@@ -184,12 +192,14 @@ func TestGetModelPricingAt_DeepSeekOffPeak(t *testing.T) {
 // 高峰时刻必须等于表价，且标注 peak 档。
 func TestGetModelPricingAt_DeepSeekPeakEqualsTablePrice(t *testing.T) {
 	svc := newCNYPricingService(1.0)
-	got := svc.GetModelPricingAt("deepseek-v4-flash", bj(t, 10, 0, 0))
-	require.NotNil(t, got)
-	require.InDelta(t, 3.0/1e6, got.InputCostPerToken, 1e-15)
-	require.InDelta(t, 9.0/1e6, got.OutputCostPerToken, 1e-15)
-	require.InDelta(t, 0.10/1e6, got.CacheReadInputTokenCost, 1e-15)
-	require.Equal(t, PricingBandPeak, got.PricingTimeBand)
+	for _, model := range []string{"deepseek-flash", "deepseek-v4-flash"} {
+		got := svc.GetModelPricingAt(model, bj(t, 10, 0, 0))
+		require.NotNilf(t, got, "%s", model)
+		require.InDeltaf(t, 2.0/1e6, got.InputCostPerToken, 1e-15, "%s input", model)
+		require.InDeltaf(t, 8.0/1e6, got.OutputCostPerToken, 1e-15, "%s output", model)
+		require.InDeltaf(t, 0.04/1e6, got.CacheReadInputTokenCost, 1e-15, "%s cache", model)
+		require.Equalf(t, PricingBandPeak, got.PricingTimeBand, "%s band", model)
+	}
 }
 
 // 零值时刻 = 基准价（最贵档）且不标档位：所有未接线路径落在贵的一侧。
@@ -197,7 +207,7 @@ func TestGetModelPricingAt_ZeroTimeIsBaseline(t *testing.T) {
 	svc := newCNYPricingService(1.0)
 	zero := svc.GetModelPricingAt("deepseek-v4-flash", time.Time{})
 	require.NotNil(t, zero)
-	require.InDelta(t, 3.0/1e6, zero.InputCostPerToken, 1e-15)
+	require.InDelta(t, 2.0/1e6, zero.InputCostPerToken, 1e-15)
 	require.Equal(t, "", zero.PricingTimeBand)
 
 	// 旧签名必须与零值时刻逐字节一致
@@ -211,15 +221,21 @@ func TestGetModelPricingAt_DeepSeekNameVariantsBothBands(t *testing.T) {
 	svc := newCNYPricingService(1.0)
 	for _, name := range []string{
 		"deepseek-v4-flash", "DeepSeek-V4-Flash", "deepseek/deepseek-v4-flash",
+		// V4.1-Flash（deepseek-flash）的写法：大小写、provider 前缀、日期后缀、带版本号写法。
+		"deepseek-flash", "DeepSeek-Flash", "deepseek/deepseek-flash", "deepseek-flash-0910", "deepseek-v4.1-flash",
 	} {
 		peak := svc.GetModelPricingAt(name, bj(t, 15, 0, 0))
 		require.NotNilf(t, peak, "peak %q", name)
-		require.InDeltaf(t, 3.0/1e6, peak.InputCostPerToken, 1e-15, "peak %q", name)
+		require.InDeltaf(t, 2.0/1e6, peak.InputCostPerToken, 1e-15, "peak %q", name)
+		require.InDeltaf(t, 8.0/1e6, peak.OutputCostPerToken, 1e-15, "peak %q output", name)
+		require.InDeltaf(t, 0.04/1e6, peak.CacheReadInputTokenCost, 1e-15, "peak %q cache", name)
 		require.Equalf(t, PricingBandPeak, peak.PricingTimeBand, "peak %q", name)
 
 		off := svc.GetModelPricingAt(name, bj(t, 3, 0, 0))
 		require.NotNilf(t, off, "offpeak %q", name)
-		require.InDeltaf(t, 1.5/1e6, off.InputCostPerToken, 1e-15, "offpeak %q", name)
+		require.InDeltaf(t, 1.0/1e6, off.InputCostPerToken, 1e-15, "offpeak %q", name)
+		require.InDeltaf(t, 4.0/1e6, off.OutputCostPerToken, 1e-15, "offpeak %q output", name)
+		require.InDeltaf(t, 0.02/1e6, off.CacheReadInputTokenCost, 1e-15, "offpeak %q cache", name)
 		require.Equalf(t, PricingBandOffPeak, off.PricingTimeBand, "offpeak %q", name)
 	}
 }
@@ -228,7 +244,7 @@ func TestGetModelPricingAt_DeepSeekNameVariantsBothBands(t *testing.T) {
 func TestGetModelPricingAt_OffPeakRespectsCNYRate(t *testing.T) {
 	got := newCNYPricingService(7.0).GetModelPricingAt("deepseek-v4-flash", bj(t, 22, 0, 0))
 	require.NotNil(t, got)
-	require.InDelta(t, 1.5/7.0/1e6, got.InputCostPerToken, 1e-15)
+	require.InDelta(t, 1.0/7.0/1e6, got.InputCostPerToken, 1e-15)
 }
 
 // 未知 deepseek-* 型号按最贵档（v4-pro）兜底，绝不少收；且同样跟随时段。
@@ -248,6 +264,9 @@ func TestGetModelPricingAt_UnknownDeepSeekFallsBackToMostExpensive(t *testing.T)
 		"deepseek-v4-ultra", // 同上
 		"deepseek-v4",       // 光杆 v4，档位未知
 		"deepseek/deepseek-v4-turbo",
+		"deepseek-v5-flash",  // 未知新代际的 flash：只认 deepseek-flash 前缀 / v4(.1)-flash，不按 "flash" 宽松归档
+		"deepseek-flash-pro", // 带档位后缀的 flash 变体不得按 Flash 低价静默归档
+		"deepseek-flash-max",
 	}
 	for _, name := range unknown {
 		peak := svc.GetModelPricingAt(name, bj(t, 10, 0, 0))
@@ -267,9 +286,12 @@ func TestGetModelPricingAt_DeepSeekNamedTierVariants(t *testing.T) {
 		model    string
 		inputCNY float64
 	}{
-		{"deepseek-v4-flash-0731", 3.0},
+		{"deepseek-v4-flash-0731", 2.0},
 		{"deepseek-v4-pro-260201", 9.0},
-		{"DeepSeek-V4-Flash-Preview", 3.0},
+		{"DeepSeek-V4-Flash-Preview", 2.0},
+		{"deepseek-flash-0910", 2.0},
+		{"deepseek-v4.1-flash", 2.0},
+		{"deepseek-v4-1-flash", 2.0},
 	}
 	for _, tt := range cases {
 		got := svc.GetModelPricingAt(tt.model, bj(t, 10, 0, 0))
@@ -297,12 +319,12 @@ func TestGetModelPricing_DeepSeekV4RateConfigurable(t *testing.T) {
 	// 汇率可配置
 	got := newCNYPricingService(7.0).GetModelPricing("deepseek-v4-flash")
 	require.NotNil(t, got)
-	require.InDelta(t, 3.0/7.0/1e6, got.InputCostPerToken, 1e-15)
+	require.InDelta(t, 2.0/7.0/1e6, got.InputCostPerToken, 1e-15)
 
 	// 配置缺失（0）时回退到兜底汇率
 	got2 := newCNYPricingService(0).GetModelPricing("deepseek-v4-flash")
 	require.NotNil(t, got2)
-	require.InDelta(t, 3.0/defaultCNYToUSDRate/1e6, got2.InputCostPerToken, 1e-15)
+	require.InDelta(t, 2.0/defaultCNYToUSDRate/1e6, got2.InputCostPerToken, 1e-15)
 }
 
 func TestGetModelPricing_QwenAllModels(t *testing.T) {

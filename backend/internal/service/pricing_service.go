@@ -1316,8 +1316,11 @@ func matchDeepSeekCNY(modelLower string) (cnyModelPricing, bool) {
 	switch {
 	case strings.Contains(m, "v4-pro"):
 		return deepSeekPricingTable["deepseek-v4-pro"], true
-	case strings.Contains(m, "v4-flash"):
-		return deepSeekPricingTable["deepseek-v4-flash"], true
+	case isDeepSeekFlashModelName(m),
+		strings.Contains(m, "v4-flash"),
+		strings.Contains(m, "v4.1-flash"),
+		strings.Contains(m, "v4-1-flash"):
+		return deepSeekPricingTable["deepseek-flash"], true
 	}
 	// 兜底：其余所有 deepseek-* 一律按**最贵档**（v4-pro）计费，并告警一次。
 	// 刻意选最贵而非最便宜：Kimi 曾因末尾静默兜底到旧款便宜价，新模型上线三天少收 ¥503
@@ -1325,6 +1328,30 @@ func matchDeepSeekCNY(modelLower string) (cnyModelPricing, bool) {
 	// 补一行到 deepSeekPricingTable 即可，告警日志就是补表提醒。
 	warnUnpricedDeepSeekModelOnce(m)
 	return deepSeekPricingTable["deepseek-v4-pro"], true
+}
+
+// isDeepSeekFlashModelName 判断是否为 V4.1-Flash 起的无版本号 Flash 命名：
+// deepseek-flash 本名，或其后只跟纯数字日期版本（deepseek-flash-0910）。
+// 刻意不认 deepseek-flash-pro / -max 之类的档位后缀，也不用 Contains(m, "flash")：
+// 那类未知新型号必须走最贵档兜底 + 告警，绝不静默按 Flash 低价收。
+func isDeepSeekFlashModelName(m string) bool {
+	rest, ok := strings.CutPrefix(m, "deepseek-flash")
+	if !ok {
+		return false
+	}
+	if rest == "" {
+		return true
+	}
+	digits, ok := strings.CutPrefix(rest, "-")
+	if !ok || digits == "" {
+		return false
+	}
+	for _, r := range digits {
+		if r < '0' || r > '9' {
+			return false
+		}
+	}
+	return true
 }
 
 // unpricedDeepSeekModels 记录已告警过的未知 DeepSeek 模型名，保证每个名字只告警一次——
@@ -1867,27 +1894,33 @@ func (s *PricingService) matchOpenAIModel(model string) *LiteLLMModelPricing {
 }
 
 // DeepSeek V4 官方定价（人民币，每 100 万 token），来源：
-// https://api-docs.deepseek.com/quick_start/pricing/ （2026-08-17 核对，官方已调价）
+// https://api-docs.deepseek.com/zh-cn/quick_start/pricing （2026-09-14 核对）
 // 用法同 Kimi/Moonshot：CNY 价格通过可配置汇率折算（默认 1:1）。
 // 官方按时段分档：下表数字为【高峰时段价】（北京时间 09:00-12:00、14:00-18:00），
 // 空闲时段为其一半，由 deepSeekOfficialSchedule 折算（见 pricing_time_tier.go）。
 // ⚠️ 表价恒为最贵档，改动数值须同步 pricing_service_test.go 的断言。
 //
+// 2026-09-10 12:00（北京时间）起官方上线 DeepSeek-V4.1-Flash，模型名 deepseek-flash，
+// 同时下调 Flash 价（¥3/¥0.10/¥9 → ¥2/¥0.04/¥8）。V4-Flash 与 V4-Flash-Vision-Exp 下线，
+// 旧名 deepseek-v4-flash / deepseek-v4-flash-vision-exp 被官方暂时路由到 V4.1-Flash 并按
+// **新 Flash 价**结算（生产 upstream_response_model 实测回 deepseek-flash），故旧名也必须跟随
+// 新价，否则按旧价多收（9/10-9/13 实测多收 ¥11.87）。V4-Pro 官方明确继续提供、计费不变。
+//
 // deepseek-chat / deepseek-reasoner 是官方已下线的旧别名（现行文档已无此二名），
-// 显式列出以并入 ¥ 口径：不列的话它们会掉到 LiteLLM JSON 的陈旧美元价（约 ¥1/¥2），
-// 既低于官方现价也与其余 DeepSeek 模型的币种口径不一致。按 flash 计价与仓库既有约定
-// 一致（matchByPlatformFallback 首选 deepseek-chat、前端 ccswitch 默认型号亦为 flash）。
+// 显式列出以并入 ¥ 口径：不列的话它们会掉到 LiteLLM JSON 的陈旧美元价，
+// 与其余 DeepSeek 模型的币种口径不一致。按 flash 计价与仓库既有约定一致。
 var deepSeekPricingTable = map[string]cnyModelPricing{
-	"deepseek-v4-flash": {inputCNY: 3.0, cacheReadCNY: 0.10, outputCNY: 9.0, hasCache: true, schedule: deepSeekOfficialSchedule},
-	// vision-exp 与 flash 同价。必须显式列为 key 而不是靠下面 Contains(m,"v4-flash") 兜底：
+	"deepseek-flash": {inputCNY: 2.0, cacheReadCNY: 0.04, outputCNY: 8.0, hasCache: true, schedule: deepSeekOfficialSchedule},
+	// 以下旧名与 deepseek-flash 同价。必须显式列为 key 而不是靠下面的变体匹配兜底：
 	// pricing_builtin_view.go 的 ListBuiltinPricing 按 map key 枚举 ¥ 表，兜底命中的型号
-	// 会掉进 LiteLLM 分支被渲染成 $0.22/USD（实收 ¥3，差 13.6 倍）。admin「模型定价」页的
-	// 「覆盖」按钮会把那个错价直接预填成 enabled 的永久 override，而覆盖表在
-	// GetModelPricingAt 里短路在最前、还会让官方峰谷失效 —— 与 kimi-k3 少收 ¥503 同一形态。
-	"deepseek-v4-flash-vision-exp": {inputCNY: 3.0, cacheReadCNY: 0.10, outputCNY: 9.0, hasCache: true, schedule: deepSeekOfficialSchedule},
+	// 会掉进 LiteLLM 分支被渲染成 USD 价。admin「模型定价」页的「覆盖」按钮会把那个错价
+	// 直接预填成 enabled 的永久 override，而覆盖表在 GetModelPricingAt 里短路在最前、
+	// 还会让官方峰谷失效 —— 与 kimi-k3 少收 ¥503 同一形态。
+	"deepseek-v4-flash":            {inputCNY: 2.0, cacheReadCNY: 0.04, outputCNY: 8.0, hasCache: true, schedule: deepSeekOfficialSchedule},
+	"deepseek-v4-flash-vision-exp": {inputCNY: 2.0, cacheReadCNY: 0.04, outputCNY: 8.0, hasCache: true, schedule: deepSeekOfficialSchedule},
 	"deepseek-v4-pro":              {inputCNY: 9.0, cacheReadCNY: 0.30, outputCNY: 27.0, hasCache: true, schedule: deepSeekOfficialSchedule},
-	"deepseek-chat":                {inputCNY: 3.0, cacheReadCNY: 0.10, outputCNY: 9.0, hasCache: true, schedule: deepSeekOfficialSchedule},
-	"deepseek-reasoner":            {inputCNY: 3.0, cacheReadCNY: 0.10, outputCNY: 9.0, hasCache: true, schedule: deepSeekOfficialSchedule},
+	"deepseek-chat":                {inputCNY: 2.0, cacheReadCNY: 0.04, outputCNY: 8.0, hasCache: true, schedule: deepSeekOfficialSchedule},
+	"deepseek-reasoner":            {inputCNY: 2.0, cacheReadCNY: 0.04, outputCNY: 8.0, hasCache: true, schedule: deepSeekOfficialSchedule},
 }
 
 // qwenPricingTable 阿里云百炼(DashScope)通义千问官方价（人民币/每百万 token，

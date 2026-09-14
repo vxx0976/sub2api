@@ -602,9 +602,10 @@ func (s *BillingService) initFallbackPricing() {
 	// 覆盖逻辑见同文件 getFallbackPricing()
 	// ============================================================
 
-	// ---- DeepSeek V4 系列 ----
-	// Source: https://api-docs.deepseek.com/quick_start/pricing （2026-08-17 官方调价后核对）
-	// （deepseek-chat / deepseek-reasoner 为官方已下线的旧别名，按 flash 价兜底）
+	// ---- DeepSeek 系列 ----
+	// Source: https://api-docs.deepseek.com/zh-cn/quick_start/pricing （2026-09-14 核对，V4.1-Flash 上线后）
+	// deepseek-flash = DeepSeek-V4.1-Flash；旧名 deepseek-v4-flash / -vision-exp 被官方暂时路由到
+	// V4.1-Flash 并按新 Flash 价结算；deepseek-chat / deepseek-reasoner 为已下线旧别名，同按 flash 价。
 	//
 	// ⚠️ 正常情况下这几条**用不到**：PricingService 的官方 ¥ 表（deepSeekPricingTable）已覆盖
 	// 全部 deepseek-* 型号，只有 pricingService 未装配时才会落到这里。数值按官方 ¥ 价 ×
@@ -617,18 +618,15 @@ func (s *BillingService) initFallbackPricing() {
 		CacheReadPricePerToken: 3e-7,   // ¥0.30 per MTok (cache hit)
 		SupportsCacheBreakdown: false,
 	}
-	s.fallbackPrices["deepseek-v4-flash"] = &ModelPricing{
-		InputPricePerToken:     3e-6, // ¥3.0 per MTok (cache miss, 高峰档)
-		OutputPricePerToken:    9e-6, // ¥9.0 per MTok
-		CacheReadPricePerToken: 1e-7, // ¥0.10 per MTok (cache hit)
+	deepSeekFlashFallback := ModelPricing{
+		InputPricePerToken:     2e-6, // ¥2.0 per MTok (cache miss, 高峰档)
+		OutputPricePerToken:    8e-6, // ¥8.0 per MTok
+		CacheReadPricePerToken: 4e-8, // ¥0.04 per MTok (cache hit)
 		SupportsCacheBreakdown: false,
 	}
-	// deepseek-v4-flash-vision-exp：本轮上游新增的官方型号，与 flash 同价（¥ 高峰档口径）。
-	s.fallbackPrices["deepseek-v4-flash-vision-exp"] = &ModelPricing{
-		InputPricePerToken:     3e-6, // ¥3.0 per MTok (cache miss, 高峰档)
-		OutputPricePerToken:    9e-6, // ¥9.0 per MTok
-		CacheReadPricePerToken: 1e-7, // ¥0.10 per MTok (cache hit)
-		SupportsCacheBreakdown: false,
+	for _, m := range []string{"deepseek-flash", "deepseek-v4-flash", "deepseek-v4-flash-vision-exp"} {
+		p := deepSeekFlashFallback
+		s.fallbackPrices[m] = &p
 	}
 
 	// ---- 智谱 GLM（Z.AI）----
@@ -964,20 +962,20 @@ func (s *BillingService) getFallbackPricing(model string) *ModelPricing {
 		return s.fallbackPrices["gemini-3.6-flash"]
 	}
 
-	// DeepSeek 系列：官方模型 V4 Pro/Flash（含 vision-exp）按各自价卡；
-	// 已停服的 deepseek-chat / deepseek-reasoner 按 flash 价兜底。
-	// "deepseek-v4-flash-vision-exp" 含 "deepseek-v4-flash" 子串，显式分支置于 flash 之前，语义清晰。
-	if strings.Contains(modelLower, "deepseek-v4-flash-vision-exp") {
-		return s.fallbackPrices["deepseek-v4-flash-vision-exp"]
-	}
-	if strings.Contains(modelLower, "deepseek-v4-flash") {
-		return s.fallbackPrices["deepseek-v4-flash"]
+	// DeepSeek 系列：官方模型 deepseek-flash（V4.1-Flash）/ V4 Pro 按各自价卡；
+	// 官方暂时路由到 V4.1-Flash 的旧名（v4-flash / v4-flash-vision-exp）与已停服的
+	// deepseek-chat / deepseek-reasoner 均按 flash 价。
+	if isDeepSeekFlashModelName(lastSegment(modelLower)) ||
+		strings.Contains(modelLower, "deepseek-v4-flash") ||
+		strings.Contains(modelLower, "deepseek-v4.1-flash") ||
+		strings.Contains(modelLower, "deepseek-v4-1-flash") {
+		return s.fallbackPrices["deepseek-flash"]
 	}
 	if strings.Contains(modelLower, "deepseek-v4-pro") {
 		return s.fallbackPrices["deepseek-v4-pro"]
 	}
 	if strings.Contains(modelLower, "deepseek-chat") || strings.Contains(modelLower, "deepseek-reasoner") {
-		return s.fallbackPrices["deepseek-v4-flash"]
+		return s.fallbackPrices["deepseek-flash"]
 	}
 	// 认不出档位的 deepseek-* 一律兜底到**最贵档**（v4-pro），与 PricingService 的
 	// matchDeepSeekCNY 同向。上游这里兜底到最便宜的 flash（40.9× 差），与 kimi-k3

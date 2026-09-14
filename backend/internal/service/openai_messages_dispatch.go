@@ -70,7 +70,7 @@ func claudeMessagesDispatchFamily(model string) string {
 func cnDefaultMessagesDispatchModels(platform string) (opus, sonnet, haiku string) {
 	switch platform {
 	case PlatformDeepseek:
-		return "deepseek-v4-pro", "deepseek-v4-pro", "deepseek-v4-flash"
+		return "deepseek-v4-pro", "deepseek-v4-pro", "deepseek-flash"
 	case PlatformKimi:
 		return "kimi-k2.6", "kimi-k2.6", "kimi-k2.6"
 	case PlatformZhipu:

@@ -6,7 +6,7 @@ import "testing"
 //
 // ListBuiltinPricing 按 deepSeekPricingTable 的 **map key** 枚举 ¥ 表；只靠
 // matchDeepSeekCNY 里 Contains(m, "v4-flash") 兜底命中的型号不是 key，会掉进
-// LiteLLM 分支被渲染成 USD（deepseek-v4-flash-vision-exp 曾显示 $0.22，实收 ¥3，差 13.6 倍）。
+// LiteLLM 分支被渲染成 USD（deepseek-v4-flash-vision-exp 曾显示 $0.22，实收当时的 flash 价 ¥3，差 13.6 倍）。
 // 危害不止于展示：admin「模型定价」页的「覆盖」按钮会把那个错价预填成 enabled 的永久
 // override，而覆盖表在 GetModelPricingAt 里短路在 ¥ 表之前、还会让官方峰谷整体失效 ——
 // 与 kimi-k3 少收 ¥503 同一形态，也违反「漏接线只会多收、绝不静默少收」这条底座。
@@ -31,6 +31,7 @@ func TestBuiltinPricingCurrencyMatchesActualBilling(t *testing.T) {
 // 否则就会重演上面那条（兜底命中 → 不进内置视图 → 被渲染成 USD）。
 func TestDeepSeekOfficialModelsAreExplicitTableKeys(t *testing.T) {
 	for _, model := range []string{
+		"deepseek-flash",
 		"deepseek-v4-flash",
 		"deepseek-v4-pro",
 		"deepseek-v4-flash-vision-exp",
@@ -39,5 +40,28 @@ func TestDeepSeekOfficialModelsAreExplicitTableKeys(t *testing.T) {
 			t.Errorf("%s 未列为 deepSeekPricingTable 的显式 key —— "+
 				"只靠 Contains 兜底会让它在 admin 内置价目表里显示成美元价", model)
 		}
+	}
+}
+
+// V4.1-Flash（deepseek-flash，2026-09-10 上线并降价）必须以 ¥ 新 flash 价出现在内置价目表里，
+// 否则 admin「覆盖」按钮会预填出错价（见上方两条用例的说明）。
+func TestListBuiltinPricing_DeepSeekFlashIsCNYWithNewFlashPrice(t *testing.T) {
+	ps := &PricingService{}
+	var found bool
+	for _, entry := range ps.ListBuiltinPricing() {
+		if entry.Model != "deepseek-flash" {
+			continue
+		}
+		found = true
+		if entry.Currency != CurrencyCNY {
+			t.Errorf("deepseek-flash 内置视图币种 = %s，期望 %s", entry.Currency, CurrencyCNY)
+		}
+		if entry.InputPerM != 2.0 || entry.OutputPerM != 8.0 || entry.CachePerM != 0.04 {
+			t.Errorf("deepseek-flash 内置视图 in/out/cache = %v/%v/%v，期望 ¥2/¥8/¥0.04",
+				entry.InputPerM, entry.OutputPerM, entry.CachePerM)
+		}
+	}
+	if !found {
+		t.Error("deepseek-flash 未出现在 ListBuiltinPricing 中")
 	}
 }
