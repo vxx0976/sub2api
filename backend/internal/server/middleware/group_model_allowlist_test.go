@@ -499,3 +499,41 @@ func TestGroupModelAllowlistDuplicateIdenticalModelsAllowed(t *testing.T) {
 		t.Fatalf("expected handler to run once, got %v", *calls)
 	}
 }
+
+func TestGroupModelAllowlistMessagesStripsClaudeCodeLongContextSuffix(t *testing.T) {
+	kimiKey := allowlistAPIKey(true, "kimi-k3")
+	kimiKey.Group.Platform = service.PlatformKimi
+	router, calls := newGroupModelAllowlistTestRouter(kimiKey, "/v1")
+
+	// Messages 入口：kimi-k3[1m] 按剥后的 kimi-k3 校验放行。
+	if w := doJSON(t, router, http.MethodPost, "/v1/messages", `{"model":"kimi-k3[1m]"}`); w.Code != http.StatusOK {
+		t.Fatalf("expected 200 for kimi-k3[1m] on messages, got %d: %s", w.Code, w.Body.String())
+	}
+	if len(*calls) != 1 {
+		t.Fatalf("expected handler to run once, got %v", *calls)
+	}
+	// 剥后仍不在白名单的照样拒绝。
+	if w := doJSON(t, router, http.MethodPost, "/v1/messages", `{"model":"kimi-k4[1m]"}`); w.Code != http.StatusNotFound {
+		t.Fatalf("expected 404 for kimi-k4[1m], got %d: %s", w.Code, w.Body.String())
+	}
+	// 非 Messages 入口不剥（下游不会剥，放行会把带后缀的名字发给上游）。
+	if w := doJSON(t, router, http.MethodPost, "/v1/chat/completions", `{"model":"kimi-k3[1m]"}`); w.Code != http.StatusNotFound {
+		t.Fatalf("expected 404 for kimi-k3[1m] on chat completions, got %d: %s", w.Code, w.Body.String())
+	}
+	if len(*calls) != 1 {
+		t.Fatalf("expected handler not to run again, got %v", *calls)
+	}
+}
+
+func TestGroupModelAllowlistMessagesDoesNotStripSuffixForNonStrippingPlatforms(t *testing.T) {
+	openaiKey := allowlistAPIKey(true, "gpt-5.6-sol")
+	openaiKey.Group.Platform = service.PlatformOpenAI
+	router, calls := newGroupModelAllowlistTestRouter(openaiKey, "/v1")
+
+	if w := doJSON(t, router, http.MethodPost, "/v1/messages", `{"model":"gpt-5.6-sol[1m]"}`); w.Code != http.StatusNotFound {
+		t.Fatalf("expected 404 for openai group, got %d: %s", w.Code, w.Body.String())
+	}
+	if len(*calls) != 0 {
+		t.Fatalf("expected handler not to run, got %v", *calls)
+	}
+}

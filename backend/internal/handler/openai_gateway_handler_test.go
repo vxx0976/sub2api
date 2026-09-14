@@ -3297,3 +3297,44 @@ data: {"type":"response.failed","error":{"message":"This content was flagged"}}
 		require.False(t, openAIForwardErrorAlreadyCommunicated(c, c.Writer.Size(), errors.New("openai cyber_policy: blocked")))
 	})
 }
+
+func TestNormalizeCNMessagesLongContextModel(t *testing.T) {
+	cnKey := &service.APIKey{Group: &service.Group{Platform: service.PlatformKimi}}
+
+	t.Run("CN 分组剥掉 [1m] 并改写 body", func(t *testing.T) {
+		body := []byte(`{"model":"kimi-k3[1m]","max_tokens":10}`)
+		gotBody, gotModel, err := normalizeCNMessagesLongContextModel(cnKey, body, "kimi-k3[1m]")
+		require.NoError(t, err)
+		require.Equal(t, "kimi-k3", gotModel)
+		require.Equal(t, "kimi-k3", gjson.GetBytes(gotBody, "model").String())
+		require.Equal(t, int64(10), gjson.GetBytes(gotBody, "max_tokens").Int())
+	})
+
+	t.Run("重复后缀与大小写", func(t *testing.T) {
+		_, gotModel, err := normalizeCNMessagesLongContextModel(
+			&service.APIKey{Group: &service.Group{Platform: service.PlatformDeepseek}},
+			[]byte(`{"model":"deepseek-flash[1M][1m]"}`), "deepseek-flash[1M][1m]")
+		require.NoError(t, err)
+		require.Equal(t, "deepseek-flash", gotModel)
+	})
+
+	t.Run("无后缀原样返回", func(t *testing.T) {
+		body := []byte(`{"model":"kimi-k3"}`)
+		gotBody, gotModel, err := normalizeCNMessagesLongContextModel(cnKey, body, "kimi-k3")
+		require.NoError(t, err)
+		require.Equal(t, "kimi-k3", gotModel)
+		require.Equal(t, body, gotBody)
+	})
+
+	t.Run("非 CN 分组不改写", func(t *testing.T) {
+		body := []byte(`{"model":"claude-opus-4-6[1m]"}`)
+		openaiKey := &service.APIKey{Group: &service.Group{Platform: service.PlatformOpenAI}}
+		gotBody, gotModel, err := normalizeCNMessagesLongContextModel(openaiKey, body, "claude-opus-4-6[1m]")
+		require.NoError(t, err)
+		require.Equal(t, "claude-opus-4-6[1m]", gotModel)
+		require.Equal(t, body, gotBody)
+		_, gotModel, err = normalizeCNMessagesLongContextModel(nil, body, "claude-opus-4-6[1m]")
+		require.NoError(t, err)
+		require.Equal(t, "claude-opus-4-6[1m]", gotModel)
+	})
+}

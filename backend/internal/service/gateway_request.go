@@ -175,6 +175,11 @@ func normalizeClaudeCodeLongContextModel(model string) string {
 	return model
 }
 
+// NormalizeClaudeCodeLongContextModel 去掉 Claude Code 泄漏到模型名上的 [1m] 上下文选择后缀。
+func NormalizeClaudeCodeLongContextModel(model string) string {
+	return normalizeClaudeCodeLongContextModel(model)
+}
+
 // parseGatewayRequestCurrentBody 只做标量和 raw range 轻量解析，不恢复 system/messages 对象图。
 func parseGatewayRequestCurrentBody(parsed *ParsedRequest, protocol string) error {
 	if parsed == nil || parsed.Body == nil {

@@ -29,6 +29,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/tidwall/gjson"
+	"github.com/tidwall/sjson"
 	"go.uber.org/zap"
 )
 
@@ -292,6 +293,24 @@ func openAIResponsesRequiredCapabilityForRequest(imageIntent bool, needsResponse
 		return service.OpenAIEndpointCapabilityResponses
 	}
 	return openAIResponsesRequiredCapability(imageIntent, platform)
+}
+
+// normalizeCNMessagesLongContextModel 去掉国产供应商分组 /v1/messages 请求模型名上的
+// Claude Code [1m] 上下文选择器（如 kimi-k3[1m]）。Anthropic 分组在 ParseGatewayRequest
+// 里剥掉；CN 分组走 OpenAI 兼容 handler，不剥会让账号白名单按 "kimi-k3[1m]" 查找而 404。
+func normalizeCNMessagesLongContextModel(apiKey *service.APIKey, body []byte, model string) ([]byte, string, error) {
+	if apiKey == nil || apiKey.Group == nil || !service.IsCNProvider(apiKey.Group.Platform) {
+		return body, model, nil
+	}
+	normalized := service.NormalizeClaudeCodeLongContextModel(model)
+	if normalized == model || normalized == "" {
+		return body, model, nil
+	}
+	patched, err := sjson.SetBytes(body, "model", normalized)
+	if err != nil {
+		return body, model, err
+	}
+	return patched, normalized, nil
 }
 
 func allowOpenAICompatibleMessagesDispatch(c *gin.Context, apiKey *service.APIKey) bool {
@@ -1188,6 +1207,10 @@ func (h *OpenAIGatewayHandler) Messages(c *gin.Context) {
 		return
 	}
 	reqModel := modelResult.String()
+	if body, reqModel, err = normalizeCNMessagesLongContextModel(apiKey, body, reqModel); err != nil {
+		h.anthropicErrorResponse(c, http.StatusBadRequest, "invalid_request_error", "Failed to normalize model field")
+		return
+	}
 	ensureCompositeTargetPlatform(c, apiKey, reqModel)
 	if !openAICompatibleTextTargetAllowed(c, apiKey, reqModel) {
 		h.anthropicErrorResponse(c, http.StatusBadRequest, "invalid_request_error", "Model is not supported by this OpenAI-compatible endpoint for composite groups")

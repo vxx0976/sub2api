@@ -57,22 +57,107 @@ func buildAnthropicDirectMessagesURL(account *Account) string {
 // normalizeAnthropicDirectInputUsage 把直连上游的 usage 归一为主路径计费口径
 // （input_tokens 含 cache_read，下游 actualInput = input_tokens - cache_read）。
 //
+// 各平台 Anthropic 端点的 input_tokens 语义：
 //   - Deepseek（已实测 api.deepseek.com：input=71、cache_read=2944 对应 3015 token
 //     prompt）：input_tokens 永远只报缓存未命中数，必须无条件加回缓存桶；
 //     条件判断会在新增内容超过缓存前缀时漏计。
-//   - 其他平台（Kimi 等）：usage 语义未实测（仓库内 Kimi fixture 显示 input_tokens
-//     疑似总量口径），仅在 input_tokens < cache_read+cache_creation（明显为未命中
-//     口径，总量口径下 input 恒 >= 两缓存桶之和）时加回，避免总量口径上游把缓存
-//     前缀按全价+缓存价双重计费。
+//   - Kimi（2026-09-14 实测 api.kimi.com/coding/v1/messages：2482 token 前缀已缓存、
+//     再追加约 6250 token 新内容 → input=6430、cache_read=2304，两者之和才是完整
+//     prompt）：同样是未命中口径，且新增内容远超缓存前缀是常态，必须无条件加回。
+//     旧的条件加回会在 input >= cache_read 时漏计整段缓存前缀的「全价 − 缓存价」差额。
+//   - 其他平台（Zhipu 等）：usage 语义未实测，仅在 input_tokens < cache_read+cache_creation
+//     （明显为未命中口径，总量口径下 input 恒 >= 两缓存桶之和）时加回，避免总量口径上游
+//     把缓存前缀按全价+缓存价双重计费。
 //
 // cache_read 与 cache_creation 必须同款条件一起加回：下游计费按互斥三桶拆分
 // （actualInput = InputTokens - cache_read - cache_creation，见 openai_gateway_service.go
 // RecordUsage），因此归一后的 InputTokens 必须是含全部桶的总量。只加回 cache_read
 // 会让下游多减一次 cache_creation，creation>input 时把真实新输入夹成 0（漏计新输入费）。
 func normalizeAnthropicDirectInputUsage(platform string, usage *OpenAIUsage) {
-	if platform == PlatformDeepseek || usage.InputTokens < usage.CacheReadInputTokens+usage.CacheCreationInputTokens {
+	if platform == PlatformDeepseek || platform == PlatformKimi ||
+		usage.InputTokens < usage.CacheReadInputTokens+usage.CacheCreationInputTokens {
 		usage.InputTokens += usage.CacheReadInputTokens + usage.CacheCreationInputTokens
 	}
+}
+
+// anthropicDirectInputUsage 是归一化后的输入三桶（total 含全部桶，与 OpenAIUsage.InputTokens 同口径）。
+type anthropicDirectInputUsage struct {
+	total, cacheRead, cacheCreation int
+}
+
+func (u anthropicDirectInputUsage) apply(usage *OpenAIUsage) {
+	usage.InputTokens = u.total
+	usage.CacheReadInputTokens = u.cacheRead
+	usage.CacheCreationInputTokens = u.cacheCreation
+}
+
+// resolveAnthropicDirectInputUsage 从一个 usage 节点（message.usage / message_delta.usage /
+// 非流式 usage）解析并归一化输入三桶：
+//   - 上游带 prompt_tokens / prompt_cache_hit_tokens / prompt_cache_miss_tokens 时，按显式总量
+//     拆分（normalizeAnthropicCompatiblePromptUsage，与 Anthropic 原生路径同一口径）——这类
+//     上游的 input_tokens 可能是总量（历史 Kimi 样例 input=prompt=173306、cache_read=173056），
+//     按平台一律加回会双计；
+//   - 否则按 normalizeAnthropicDirectInputUsage 的逐平台口径加回缓存桶。
+func resolveAnthropicDirectInputUsage(platform string, node gjson.Result) anthropicDirectInputUsage {
+	claude := ClaudeUsage{
+		InputTokens:              int(node.Get("input_tokens").Int()),
+		CacheReadInputTokens:     int(node.Get("cache_read_input_tokens").Int()),
+		CacheCreationInputTokens: int(node.Get("cache_creation_input_tokens").Int()),
+	}
+	// 只有显式总量（prompt_tokens>0）或显式未命中桶（prompt_cache_miss_tokens）时才走拆分：
+	// 只带 prompt_cache_hit_tokens 的节点在共享 helper 里会把未命中输入算成 0（少计）。
+	explicitPromptTotal := node.Get("prompt_tokens").Int() > 0 || node.Get("prompt_cache_miss_tokens").Exists()
+	if explicitPromptTotal && normalizeAnthropicCompatiblePromptUsage(node, &claude) {
+		return anthropicDirectInputUsage{
+			total:         claude.InputTokens + claude.CacheReadInputTokens + claude.CacheCreationInputTokens,
+			cacheRead:     claude.CacheReadInputTokens,
+			cacheCreation: claude.CacheCreationInputTokens,
+		}
+	}
+	u := OpenAIUsage{
+		InputTokens:              claude.InputTokens,
+		CacheReadInputTokens:     claude.CacheReadInputTokens,
+		CacheCreationInputTokens: claude.CacheCreationInputTokens,
+	}
+	normalizeAnthropicDirectInputUsage(platform, &u)
+	return anthropicDirectInputUsage{total: u.InputTokens, cacheRead: u.CacheReadInputTokens, cacheCreation: u.CacheCreationInputTokens}
+}
+
+// hasAnthropicDirectInputFields 判断 usage 节点是否显式携带了任一输入字段。
+func hasAnthropicDirectInputFields(node gjson.Result) bool {
+	for _, key := range []string{
+		"input_tokens", "cache_read_input_tokens", "cache_creation_input_tokens",
+		"prompt_tokens", "prompt_cache_hit_tokens", "prompt_cache_miss_tokens",
+	} {
+		if node.Get(key).Exists() {
+			return true
+		}
+	}
+	return false
+}
+
+// mergeAnthropicDirectDeltaInputUsage 用 message_delta 携带的最终输入拆分覆盖
+// message_start 的值。Anthropic 流式协议里 message_delta.usage 是累计终值；Kimi 编程
+// 端点在 message_start 只报「输入=完整 prompt、缓存=0」，真实的未命中/命中拆分只在
+// message_delta 给出（实测 start 8736/0 → delta 32/8704），只取 start 会把缓存命中
+// 按全价计费。
+//
+// 护栏（均按**归一化后**的总量比较，避免各平台加回口径不同导致误判）：
+//   - delta 未显式携带输入字段（DeepSeek 等只报 output_tokens）→ 保持 start；
+//   - delta 归一后总量为 0 或小于 start 总量 → 保持 start。宁可少享受缓存折扣（多收、
+//     可发现），也绝不让残缺/口径不明的 delta 把已记录的 prompt 量调小（少收）。
+//
+// 返回是否发生了覆盖。
+func mergeAnthropicDirectDeltaInputUsage(platform string, deltaUsage gjson.Result, start anthropicDirectInputUsage, usage *OpenAIUsage) bool {
+	if !hasAnthropicDirectInputFields(deltaUsage) {
+		return false
+	}
+	delta := resolveAnthropicDirectInputUsage(platform, deltaUsage)
+	if delta.total == 0 || delta.total < start.total || delta == start {
+		return false
+	}
+	delta.apply(usage)
+	return true
 }
 
 // forwardAnthropicDirect forwards an Anthropic Messages request directly to
@@ -215,6 +300,7 @@ func (s *OpenAIGatewayService) handleAnthropicDirectStreamingResponse(
 	c.Writer.WriteHeader(http.StatusOK)
 
 	var usage OpenAIUsage
+	var startInput anthropicDirectInputUsage
 	var requestID, responseID string
 	var firstTokenMs *int
 
@@ -265,12 +351,9 @@ func (s *OpenAIGatewayService) handleAnthropicDirectStreamingResponse(
 			// Extract input tokens and request/response IDs.
 			msg := gjson.Get(data, "message")
 			responseID = msg.Get("id").String()
-			usage.InputTokens = int(msg.Get("usage.input_tokens").Int())
-			usage.CacheCreationInputTokens = int(msg.Get("usage.cache_creation_input_tokens").Int())
-			usage.CacheReadInputTokens = int(msg.Get("usage.cache_read_input_tokens").Int())
-
-			// 归一化口径见 normalizeAnthropicDirectInputUsage（DeepSeek 无条件、其他平台条件加回）。
-			normalizeAnthropicDirectInputUsage(platform, &usage)
+			// 归一化口径见 resolveAnthropicDirectInputUsage。
+			startInput = resolveAnthropicDirectInputUsage(platform, msg.Get("usage"))
+			startInput.apply(&usage)
 
 		case "content_block_start", "content_block_delta":
 			if firstTokenMs == nil {
@@ -279,8 +362,9 @@ func (s *OpenAIGatewayService) handleAnthropicDirectStreamingResponse(
 			}
 
 		case "message_delta":
-			// Extract output tokens.
-			usage.OutputTokens = int(gjson.Get(data, "usage.output_tokens").Int())
+			deltaUsage := gjson.Get(data, "usage")
+			usage.OutputTokens = int(deltaUsage.Get("output_tokens").Int())
+			mergeAnthropicDirectDeltaInputUsage(platform, deltaUsage, startInput, &usage)
 		}
 	}
 
@@ -341,13 +425,10 @@ func (s *OpenAIGatewayService) handleAnthropicDirectBufferedResponse(
 
 	// Extract usage from the JSON response.
 	var usage OpenAIUsage
-	usage.InputTokens = int(gjson.GetBytes(respBody, "usage.input_tokens").Int())
-	usage.OutputTokens = int(gjson.GetBytes(respBody, "usage.output_tokens").Int())
-	usage.CacheCreationInputTokens = int(gjson.GetBytes(respBody, "usage.cache_creation_input_tokens").Int())
-	usage.CacheReadInputTokens = int(gjson.GetBytes(respBody, "usage.cache_read_input_tokens").Int())
-
-	// 归一化口径见 normalizeAnthropicDirectInputUsage。
-	normalizeAnthropicDirectInputUsage(platform, &usage)
+	usageNode := gjson.GetBytes(respBody, "usage")
+	usage.OutputTokens = int(usageNode.Get("output_tokens").Int())
+	// 归一化口径见 resolveAnthropicDirectInputUsage。
+	resolveAnthropicDirectInputUsage(platform, usageNode).apply(&usage)
 
 	responseID := gjson.GetBytes(respBody, "id").String()
 	requestID := resp.Header.Get("x-request-id")
@@ -381,6 +462,7 @@ func (s *OpenAIGatewayService) handleAnthropicDirectBufferedSSE(
 ) (*OpenAIForwardResult, error) {
 	platform := account.Platform
 	var usage OpenAIUsage
+	var startInput anthropicDirectInputUsage
 	var lastMessageData []byte
 	var responseID, requestID string
 	var stopReason string
@@ -425,11 +507,9 @@ func (s *OpenAIGatewayService) handleAnthropicDirectBufferedSSE(
 		case "message_start":
 			msg := gjson.Get(data, "message")
 			responseID = msg.Get("id").String()
-			usage.InputTokens = int(msg.Get("usage.input_tokens").Int())
-			usage.CacheCreationInputTokens = int(msg.Get("usage.cache_creation_input_tokens").Int())
-			usage.CacheReadInputTokens = int(msg.Get("usage.cache_read_input_tokens").Int())
-			// 归一化口径见 normalizeAnthropicDirectInputUsage。
-			normalizeAnthropicDirectInputUsage(platform, &usage)
+			// 归一化口径见 resolveAnthropicDirectInputUsage。
+			startInput = resolveAnthropicDirectInputUsage(platform, msg.Get("usage"))
+			startInput.apply(&usage)
 			// Store the initial message object as the base for the final response.
 			lastMessageData = []byte(msg.Raw)
 
@@ -455,7 +535,9 @@ func (s *OpenAIGatewayService) handleAnthropicDirectBufferedSSE(
 			}
 
 		case "message_delta":
-			usage.OutputTokens = int(gjson.Get(data, "usage.output_tokens").Int())
+			deltaUsage := gjson.Get(data, "usage")
+			usage.OutputTokens = int(deltaUsage.Get("output_tokens").Int())
+			mergeAnthropicDirectDeltaInputUsage(platform, deltaUsage, startInput, &usage)
 			if sr := gjson.Get(data, "delta.stop_reason").String(); sr != "" {
 				stopReason = sr
 			}
@@ -513,8 +595,10 @@ func (s *OpenAIGatewayService) handleAnthropicDirectBufferedSSE(
 		}
 		var msgResp map[string]any
 		if err := json.Unmarshal(lastMessageData, &msgResp); err == nil {
+			// 回给客户端的是 Anthropic 口径：input_tokens 只含未命中部分。usage.InputTokens
+			// 是计费用的含全部桶总量，原样写回会让客户端把缓存再算一遍（上下文占用虚高）。
 			msgResp["usage"] = anthropicUsage{
-				InputTokens:              usage.InputTokens,
+				InputTokens:              max(usage.InputTokens-usage.CacheReadInputTokens-usage.CacheCreationInputTokens, 0),
 				OutputTokens:             usage.OutputTokens,
 				CacheCreationInputTokens: usage.CacheCreationInputTokens,
 				CacheReadInputTokens:     usage.CacheReadInputTokens,

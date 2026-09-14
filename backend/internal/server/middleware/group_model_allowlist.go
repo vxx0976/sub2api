@@ -71,7 +71,17 @@ func GroupModelAllowlist() gin.HandlerFunc {
 		}
 
 		blocked := ""
+		// 只对 handler 确实会剥 [1m] 的分组生效（Anthropic 在 ParseGatewayRequest、国产供应商在
+		// OpenAI 兼容 Messages handler）；其他平台放行后会把带后缀的原名发给上游。
+		messagesRoute := c.Request.URL != nil && strings.Contains(c.Request.URL.Path, "/messages") &&
+			(apiKey.Group.Platform == service.PlatformAnthropic || service.IsCNProvider(apiKey.Group.Platform))
 		for _, candidate := range models {
+			// Claude Code 开 1M 上下文时把 [1m] 选择器泄漏进模型名（如 kimi-k3[1m]）；
+			// Messages 入口的 handler 会先剥掉再路由，这里按剥后的真实模型名校验，
+			// 否则白名单写了 kimi-k3 也会把 kimi-k3[1m] 拒成 404。
+			if messagesRoute {
+				candidate = service.NormalizeClaudeCodeLongContextModel(candidate)
+			}
 			if !allowlist.Allows(candidate) {
 				blocked = candidate
 				break
