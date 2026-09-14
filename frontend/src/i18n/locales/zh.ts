@@ -6424,6 +6424,11 @@ export default {
       fallbackProxy: '指定备用代理',
       fallbackDirect: '回退直连',
       backupProxy: '备用代理',
+      failureFallbackMode: '故障回退',
+      failureFallbackHint: '每分钟探测一次，连续 3 次失败判定故障并把账号改投到回退目标；连续 5 次正常后自动改回本代理。',
+      failureBackupProxy: '故障备用代理',
+      healthDegraded: '故障中',
+      healthDegradedTitle: '{time} 起判定故障：{error}',
     },
 
     // Redeem Codes Management

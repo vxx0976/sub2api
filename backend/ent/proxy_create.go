@@ -187,6 +187,104 @@ func (_c *ProxyCreate) SetNillableExpiryWarnDays(v *int) *ProxyCreate {
 	return _c
 }
 
+// SetFailureFallbackMode sets the "failure_fallback_mode" field.
+func (_c *ProxyCreate) SetFailureFallbackMode(v string) *ProxyCreate {
+	_c.mutation.SetFailureFallbackMode(v)
+	return _c
+}
+
+// SetNillableFailureFallbackMode sets the "failure_fallback_mode" field if the given value is not nil.
+func (_c *ProxyCreate) SetNillableFailureFallbackMode(v *string) *ProxyCreate {
+	if v != nil {
+		_c.SetFailureFallbackMode(*v)
+	}
+	return _c
+}
+
+// SetFailureBackupProxyID sets the "failure_backup_proxy_id" field.
+func (_c *ProxyCreate) SetFailureBackupProxyID(v int64) *ProxyCreate {
+	_c.mutation.SetFailureBackupProxyID(v)
+	return _c
+}
+
+// SetNillableFailureBackupProxyID sets the "failure_backup_proxy_id" field if the given value is not nil.
+func (_c *ProxyCreate) SetNillableFailureBackupProxyID(v *int64) *ProxyCreate {
+	if v != nil {
+		_c.SetFailureBackupProxyID(*v)
+	}
+	return _c
+}
+
+// SetHealthStatus sets the "health_status" field.
+func (_c *ProxyCreate) SetHealthStatus(v string) *ProxyCreate {
+	_c.mutation.SetHealthStatus(v)
+	return _c
+}
+
+// SetNillableHealthStatus sets the "health_status" field if the given value is not nil.
+func (_c *ProxyCreate) SetNillableHealthStatus(v *string) *ProxyCreate {
+	if v != nil {
+		_c.SetHealthStatus(*v)
+	}
+	return _c
+}
+
+// SetHealthChangedAt sets the "health_changed_at" field.
+func (_c *ProxyCreate) SetHealthChangedAt(v time.Time) *ProxyCreate {
+	_c.mutation.SetHealthChangedAt(v)
+	return _c
+}
+
+// SetNillableHealthChangedAt sets the "health_changed_at" field if the given value is not nil.
+func (_c *ProxyCreate) SetNillableHealthChangedAt(v *time.Time) *ProxyCreate {
+	if v != nil {
+		_c.SetHealthChangedAt(*v)
+	}
+	return _c
+}
+
+// SetHealthLastError sets the "health_last_error" field.
+func (_c *ProxyCreate) SetHealthLastError(v string) *ProxyCreate {
+	_c.mutation.SetHealthLastError(v)
+	return _c
+}
+
+// SetNillableHealthLastError sets the "health_last_error" field if the given value is not nil.
+func (_c *ProxyCreate) SetNillableHealthLastError(v *string) *ProxyCreate {
+	if v != nil {
+		_c.SetHealthLastError(*v)
+	}
+	return _c
+}
+
+// SetHealthFailStreak sets the "health_fail_streak" field.
+func (_c *ProxyCreate) SetHealthFailStreak(v int) *ProxyCreate {
+	_c.mutation.SetHealthFailStreak(v)
+	return _c
+}
+
+// SetNillableHealthFailStreak sets the "health_fail_streak" field if the given value is not nil.
+func (_c *ProxyCreate) SetNillableHealthFailStreak(v *int) *ProxyCreate {
+	if v != nil {
+		_c.SetHealthFailStreak(*v)
+	}
+	return _c
+}
+
+// SetHealthOkStreak sets the "health_ok_streak" field.
+func (_c *ProxyCreate) SetHealthOkStreak(v int) *ProxyCreate {
+	_c.mutation.SetHealthOkStreak(v)
+	return _c
+}
+
+// SetNillableHealthOkStreak sets the "health_ok_streak" field if the given value is not nil.
+func (_c *ProxyCreate) SetNillableHealthOkStreak(v *int) *ProxyCreate {
+	if v != nil {
+		_c.SetHealthOkStreak(*v)
+	}
+	return _c
+}
+
 // AddAccountIDs adds the "accounts" edge to the Account entity by IDs.
 func (_c *ProxyCreate) AddAccountIDs(ids ...int64) *ProxyCreate {
 	_c.mutation.AddAccountIDs(ids...)
@@ -285,6 +383,22 @@ func (_c *ProxyCreate) defaults() error {
 		v := proxy.DefaultExpiryWarnDays
 		_c.mutation.SetExpiryWarnDays(v)
 	}
+	if _, ok := _c.mutation.FailureFallbackMode(); !ok {
+		v := proxy.DefaultFailureFallbackMode
+		_c.mutation.SetFailureFallbackMode(v)
+	}
+	if _, ok := _c.mutation.HealthStatus(); !ok {
+		v := proxy.DefaultHealthStatus
+		_c.mutation.SetHealthStatus(v)
+	}
+	if _, ok := _c.mutation.HealthFailStreak(); !ok {
+		v := proxy.DefaultHealthFailStreak
+		_c.mutation.SetHealthFailStreak(v)
+	}
+	if _, ok := _c.mutation.HealthOkStreak(); !ok {
+		v := proxy.DefaultHealthOkStreak
+		_c.mutation.SetHealthOkStreak(v)
+	}
 	return nil
 }
 
@@ -351,6 +465,33 @@ func (_c *ProxyCreate) check() error {
 	}
 	if _, ok := _c.mutation.ExpiryWarnDays(); !ok {
 		return &ValidationError{Name: "expiry_warn_days", err: errors.New(`ent: missing required field "Proxy.expiry_warn_days"`)}
+	}
+	if _, ok := _c.mutation.FailureFallbackMode(); !ok {
+		return &ValidationError{Name: "failure_fallback_mode", err: errors.New(`ent: missing required field "Proxy.failure_fallback_mode"`)}
+	}
+	if v, ok := _c.mutation.FailureFallbackMode(); ok {
+		if err := proxy.FailureFallbackModeValidator(v); err != nil {
+			return &ValidationError{Name: "failure_fallback_mode", err: fmt.Errorf(`ent: validator failed for field "Proxy.failure_fallback_mode": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.HealthStatus(); !ok {
+		return &ValidationError{Name: "health_status", err: errors.New(`ent: missing required field "Proxy.health_status"`)}
+	}
+	if v, ok := _c.mutation.HealthStatus(); ok {
+		if err := proxy.HealthStatusValidator(v); err != nil {
+			return &ValidationError{Name: "health_status", err: fmt.Errorf(`ent: validator failed for field "Proxy.health_status": %w`, err)}
+		}
+	}
+	if v, ok := _c.mutation.HealthLastError(); ok {
+		if err := proxy.HealthLastErrorValidator(v); err != nil {
+			return &ValidationError{Name: "health_last_error", err: fmt.Errorf(`ent: validator failed for field "Proxy.health_last_error": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.HealthFailStreak(); !ok {
+		return &ValidationError{Name: "health_fail_streak", err: errors.New(`ent: missing required field "Proxy.health_fail_streak"`)}
+	}
+	if _, ok := _c.mutation.HealthOkStreak(); !ok {
+		return &ValidationError{Name: "health_ok_streak", err: errors.New(`ent: missing required field "Proxy.health_ok_streak"`)}
 	}
 	return nil
 }
@@ -430,6 +571,34 @@ func (_c *ProxyCreate) createSpec() (*Proxy, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.ExpiryWarnDays(); ok {
 		_spec.SetField(proxy.FieldExpiryWarnDays, field.TypeInt, value)
 		_node.ExpiryWarnDays = value
+	}
+	if value, ok := _c.mutation.FailureFallbackMode(); ok {
+		_spec.SetField(proxy.FieldFailureFallbackMode, field.TypeString, value)
+		_node.FailureFallbackMode = value
+	}
+	if value, ok := _c.mutation.FailureBackupProxyID(); ok {
+		_spec.SetField(proxy.FieldFailureBackupProxyID, field.TypeInt64, value)
+		_node.FailureBackupProxyID = &value
+	}
+	if value, ok := _c.mutation.HealthStatus(); ok {
+		_spec.SetField(proxy.FieldHealthStatus, field.TypeString, value)
+		_node.HealthStatus = value
+	}
+	if value, ok := _c.mutation.HealthChangedAt(); ok {
+		_spec.SetField(proxy.FieldHealthChangedAt, field.TypeTime, value)
+		_node.HealthChangedAt = &value
+	}
+	if value, ok := _c.mutation.HealthLastError(); ok {
+		_spec.SetField(proxy.FieldHealthLastError, field.TypeString, value)
+		_node.HealthLastError = &value
+	}
+	if value, ok := _c.mutation.HealthFailStreak(); ok {
+		_spec.SetField(proxy.FieldHealthFailStreak, field.TypeInt, value)
+		_node.HealthFailStreak = value
+	}
+	if value, ok := _c.mutation.HealthOkStreak(); ok {
+		_spec.SetField(proxy.FieldHealthOkStreak, field.TypeInt, value)
+		_node.HealthOkStreak = value
 	}
 	if nodes := _c.mutation.AccountsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -730,6 +899,126 @@ func (u *ProxyUpsert) AddExpiryWarnDays(v int) *ProxyUpsert {
 	return u
 }
 
+// SetFailureFallbackMode sets the "failure_fallback_mode" field.
+func (u *ProxyUpsert) SetFailureFallbackMode(v string) *ProxyUpsert {
+	u.Set(proxy.FieldFailureFallbackMode, v)
+	return u
+}
+
+// UpdateFailureFallbackMode sets the "failure_fallback_mode" field to the value that was provided on create.
+func (u *ProxyUpsert) UpdateFailureFallbackMode() *ProxyUpsert {
+	u.SetExcluded(proxy.FieldFailureFallbackMode)
+	return u
+}
+
+// SetFailureBackupProxyID sets the "failure_backup_proxy_id" field.
+func (u *ProxyUpsert) SetFailureBackupProxyID(v int64) *ProxyUpsert {
+	u.Set(proxy.FieldFailureBackupProxyID, v)
+	return u
+}
+
+// UpdateFailureBackupProxyID sets the "failure_backup_proxy_id" field to the value that was provided on create.
+func (u *ProxyUpsert) UpdateFailureBackupProxyID() *ProxyUpsert {
+	u.SetExcluded(proxy.FieldFailureBackupProxyID)
+	return u
+}
+
+// AddFailureBackupProxyID adds v to the "failure_backup_proxy_id" field.
+func (u *ProxyUpsert) AddFailureBackupProxyID(v int64) *ProxyUpsert {
+	u.Add(proxy.FieldFailureBackupProxyID, v)
+	return u
+}
+
+// ClearFailureBackupProxyID clears the value of the "failure_backup_proxy_id" field.
+func (u *ProxyUpsert) ClearFailureBackupProxyID() *ProxyUpsert {
+	u.SetNull(proxy.FieldFailureBackupProxyID)
+	return u
+}
+
+// SetHealthStatus sets the "health_status" field.
+func (u *ProxyUpsert) SetHealthStatus(v string) *ProxyUpsert {
+	u.Set(proxy.FieldHealthStatus, v)
+	return u
+}
+
+// UpdateHealthStatus sets the "health_status" field to the value that was provided on create.
+func (u *ProxyUpsert) UpdateHealthStatus() *ProxyUpsert {
+	u.SetExcluded(proxy.FieldHealthStatus)
+	return u
+}
+
+// SetHealthChangedAt sets the "health_changed_at" field.
+func (u *ProxyUpsert) SetHealthChangedAt(v time.Time) *ProxyUpsert {
+	u.Set(proxy.FieldHealthChangedAt, v)
+	return u
+}
+
+// UpdateHealthChangedAt sets the "health_changed_at" field to the value that was provided on create.
+func (u *ProxyUpsert) UpdateHealthChangedAt() *ProxyUpsert {
+	u.SetExcluded(proxy.FieldHealthChangedAt)
+	return u
+}
+
+// ClearHealthChangedAt clears the value of the "health_changed_at" field.
+func (u *ProxyUpsert) ClearHealthChangedAt() *ProxyUpsert {
+	u.SetNull(proxy.FieldHealthChangedAt)
+	return u
+}
+
+// SetHealthLastError sets the "health_last_error" field.
+func (u *ProxyUpsert) SetHealthLastError(v string) *ProxyUpsert {
+	u.Set(proxy.FieldHealthLastError, v)
+	return u
+}
+
+// UpdateHealthLastError sets the "health_last_error" field to the value that was provided on create.
+func (u *ProxyUpsert) UpdateHealthLastError() *ProxyUpsert {
+	u.SetExcluded(proxy.FieldHealthLastError)
+	return u
+}
+
+// ClearHealthLastError clears the value of the "health_last_error" field.
+func (u *ProxyUpsert) ClearHealthLastError() *ProxyUpsert {
+	u.SetNull(proxy.FieldHealthLastError)
+	return u
+}
+
+// SetHealthFailStreak sets the "health_fail_streak" field.
+func (u *ProxyUpsert) SetHealthFailStreak(v int) *ProxyUpsert {
+	u.Set(proxy.FieldHealthFailStreak, v)
+	return u
+}
+
+// UpdateHealthFailStreak sets the "health_fail_streak" field to the value that was provided on create.
+func (u *ProxyUpsert) UpdateHealthFailStreak() *ProxyUpsert {
+	u.SetExcluded(proxy.FieldHealthFailStreak)
+	return u
+}
+
+// AddHealthFailStreak adds v to the "health_fail_streak" field.
+func (u *ProxyUpsert) AddHealthFailStreak(v int) *ProxyUpsert {
+	u.Add(proxy.FieldHealthFailStreak, v)
+	return u
+}
+
+// SetHealthOkStreak sets the "health_ok_streak" field.
+func (u *ProxyUpsert) SetHealthOkStreak(v int) *ProxyUpsert {
+	u.Set(proxy.FieldHealthOkStreak, v)
+	return u
+}
+
+// UpdateHealthOkStreak sets the "health_ok_streak" field to the value that was provided on create.
+func (u *ProxyUpsert) UpdateHealthOkStreak() *ProxyUpsert {
+	u.SetExcluded(proxy.FieldHealthOkStreak)
+	return u
+}
+
+// AddHealthOkStreak adds v to the "health_ok_streak" field.
+func (u *ProxyUpsert) AddHealthOkStreak(v int) *ProxyUpsert {
+	u.Add(proxy.FieldHealthOkStreak, v)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create.
 // Using this option is equivalent to using:
 //
@@ -1003,6 +1292,146 @@ func (u *ProxyUpsertOne) AddExpiryWarnDays(v int) *ProxyUpsertOne {
 func (u *ProxyUpsertOne) UpdateExpiryWarnDays() *ProxyUpsertOne {
 	return u.Update(func(s *ProxyUpsert) {
 		s.UpdateExpiryWarnDays()
+	})
+}
+
+// SetFailureFallbackMode sets the "failure_fallback_mode" field.
+func (u *ProxyUpsertOne) SetFailureFallbackMode(v string) *ProxyUpsertOne {
+	return u.Update(func(s *ProxyUpsert) {
+		s.SetFailureFallbackMode(v)
+	})
+}
+
+// UpdateFailureFallbackMode sets the "failure_fallback_mode" field to the value that was provided on create.
+func (u *ProxyUpsertOne) UpdateFailureFallbackMode() *ProxyUpsertOne {
+	return u.Update(func(s *ProxyUpsert) {
+		s.UpdateFailureFallbackMode()
+	})
+}
+
+// SetFailureBackupProxyID sets the "failure_backup_proxy_id" field.
+func (u *ProxyUpsertOne) SetFailureBackupProxyID(v int64) *ProxyUpsertOne {
+	return u.Update(func(s *ProxyUpsert) {
+		s.SetFailureBackupProxyID(v)
+	})
+}
+
+// AddFailureBackupProxyID adds v to the "failure_backup_proxy_id" field.
+func (u *ProxyUpsertOne) AddFailureBackupProxyID(v int64) *ProxyUpsertOne {
+	return u.Update(func(s *ProxyUpsert) {
+		s.AddFailureBackupProxyID(v)
+	})
+}
+
+// UpdateFailureBackupProxyID sets the "failure_backup_proxy_id" field to the value that was provided on create.
+func (u *ProxyUpsertOne) UpdateFailureBackupProxyID() *ProxyUpsertOne {
+	return u.Update(func(s *ProxyUpsert) {
+		s.UpdateFailureBackupProxyID()
+	})
+}
+
+// ClearFailureBackupProxyID clears the value of the "failure_backup_proxy_id" field.
+func (u *ProxyUpsertOne) ClearFailureBackupProxyID() *ProxyUpsertOne {
+	return u.Update(func(s *ProxyUpsert) {
+		s.ClearFailureBackupProxyID()
+	})
+}
+
+// SetHealthStatus sets the "health_status" field.
+func (u *ProxyUpsertOne) SetHealthStatus(v string) *ProxyUpsertOne {
+	return u.Update(func(s *ProxyUpsert) {
+		s.SetHealthStatus(v)
+	})
+}
+
+// UpdateHealthStatus sets the "health_status" field to the value that was provided on create.
+func (u *ProxyUpsertOne) UpdateHealthStatus() *ProxyUpsertOne {
+	return u.Update(func(s *ProxyUpsert) {
+		s.UpdateHealthStatus()
+	})
+}
+
+// SetHealthChangedAt sets the "health_changed_at" field.
+func (u *ProxyUpsertOne) SetHealthChangedAt(v time.Time) *ProxyUpsertOne {
+	return u.Update(func(s *ProxyUpsert) {
+		s.SetHealthChangedAt(v)
+	})
+}
+
+// UpdateHealthChangedAt sets the "health_changed_at" field to the value that was provided on create.
+func (u *ProxyUpsertOne) UpdateHealthChangedAt() *ProxyUpsertOne {
+	return u.Update(func(s *ProxyUpsert) {
+		s.UpdateHealthChangedAt()
+	})
+}
+
+// ClearHealthChangedAt clears the value of the "health_changed_at" field.
+func (u *ProxyUpsertOne) ClearHealthChangedAt() *ProxyUpsertOne {
+	return u.Update(func(s *ProxyUpsert) {
+		s.ClearHealthChangedAt()
+	})
+}
+
+// SetHealthLastError sets the "health_last_error" field.
+func (u *ProxyUpsertOne) SetHealthLastError(v string) *ProxyUpsertOne {
+	return u.Update(func(s *ProxyUpsert) {
+		s.SetHealthLastError(v)
+	})
+}
+
+// UpdateHealthLastError sets the "health_last_error" field to the value that was provided on create.
+func (u *ProxyUpsertOne) UpdateHealthLastError() *ProxyUpsertOne {
+	return u.Update(func(s *ProxyUpsert) {
+		s.UpdateHealthLastError()
+	})
+}
+
+// ClearHealthLastError clears the value of the "health_last_error" field.
+func (u *ProxyUpsertOne) ClearHealthLastError() *ProxyUpsertOne {
+	return u.Update(func(s *ProxyUpsert) {
+		s.ClearHealthLastError()
+	})
+}
+
+// SetHealthFailStreak sets the "health_fail_streak" field.
+func (u *ProxyUpsertOne) SetHealthFailStreak(v int) *ProxyUpsertOne {
+	return u.Update(func(s *ProxyUpsert) {
+		s.SetHealthFailStreak(v)
+	})
+}
+
+// AddHealthFailStreak adds v to the "health_fail_streak" field.
+func (u *ProxyUpsertOne) AddHealthFailStreak(v int) *ProxyUpsertOne {
+	return u.Update(func(s *ProxyUpsert) {
+		s.AddHealthFailStreak(v)
+	})
+}
+
+// UpdateHealthFailStreak sets the "health_fail_streak" field to the value that was provided on create.
+func (u *ProxyUpsertOne) UpdateHealthFailStreak() *ProxyUpsertOne {
+	return u.Update(func(s *ProxyUpsert) {
+		s.UpdateHealthFailStreak()
+	})
+}
+
+// SetHealthOkStreak sets the "health_ok_streak" field.
+func (u *ProxyUpsertOne) SetHealthOkStreak(v int) *ProxyUpsertOne {
+	return u.Update(func(s *ProxyUpsert) {
+		s.SetHealthOkStreak(v)
+	})
+}
+
+// AddHealthOkStreak adds v to the "health_ok_streak" field.
+func (u *ProxyUpsertOne) AddHealthOkStreak(v int) *ProxyUpsertOne {
+	return u.Update(func(s *ProxyUpsert) {
+		s.AddHealthOkStreak(v)
+	})
+}
+
+// UpdateHealthOkStreak sets the "health_ok_streak" field to the value that was provided on create.
+func (u *ProxyUpsertOne) UpdateHealthOkStreak() *ProxyUpsertOne {
+	return u.Update(func(s *ProxyUpsert) {
+		s.UpdateHealthOkStreak()
 	})
 }
 
@@ -1445,6 +1874,146 @@ func (u *ProxyUpsertBulk) AddExpiryWarnDays(v int) *ProxyUpsertBulk {
 func (u *ProxyUpsertBulk) UpdateExpiryWarnDays() *ProxyUpsertBulk {
 	return u.Update(func(s *ProxyUpsert) {
 		s.UpdateExpiryWarnDays()
+	})
+}
+
+// SetFailureFallbackMode sets the "failure_fallback_mode" field.
+func (u *ProxyUpsertBulk) SetFailureFallbackMode(v string) *ProxyUpsertBulk {
+	return u.Update(func(s *ProxyUpsert) {
+		s.SetFailureFallbackMode(v)
+	})
+}
+
+// UpdateFailureFallbackMode sets the "failure_fallback_mode" field to the value that was provided on create.
+func (u *ProxyUpsertBulk) UpdateFailureFallbackMode() *ProxyUpsertBulk {
+	return u.Update(func(s *ProxyUpsert) {
+		s.UpdateFailureFallbackMode()
+	})
+}
+
+// SetFailureBackupProxyID sets the "failure_backup_proxy_id" field.
+func (u *ProxyUpsertBulk) SetFailureBackupProxyID(v int64) *ProxyUpsertBulk {
+	return u.Update(func(s *ProxyUpsert) {
+		s.SetFailureBackupProxyID(v)
+	})
+}
+
+// AddFailureBackupProxyID adds v to the "failure_backup_proxy_id" field.
+func (u *ProxyUpsertBulk) AddFailureBackupProxyID(v int64) *ProxyUpsertBulk {
+	return u.Update(func(s *ProxyUpsert) {
+		s.AddFailureBackupProxyID(v)
+	})
+}
+
+// UpdateFailureBackupProxyID sets the "failure_backup_proxy_id" field to the value that was provided on create.
+func (u *ProxyUpsertBulk) UpdateFailureBackupProxyID() *ProxyUpsertBulk {
+	return u.Update(func(s *ProxyUpsert) {
+		s.UpdateFailureBackupProxyID()
+	})
+}
+
+// ClearFailureBackupProxyID clears the value of the "failure_backup_proxy_id" field.
+func (u *ProxyUpsertBulk) ClearFailureBackupProxyID() *ProxyUpsertBulk {
+	return u.Update(func(s *ProxyUpsert) {
+		s.ClearFailureBackupProxyID()
+	})
+}
+
+// SetHealthStatus sets the "health_status" field.
+func (u *ProxyUpsertBulk) SetHealthStatus(v string) *ProxyUpsertBulk {
+	return u.Update(func(s *ProxyUpsert) {
+		s.SetHealthStatus(v)
+	})
+}
+
+// UpdateHealthStatus sets the "health_status" field to the value that was provided on create.
+func (u *ProxyUpsertBulk) UpdateHealthStatus() *ProxyUpsertBulk {
+	return u.Update(func(s *ProxyUpsert) {
+		s.UpdateHealthStatus()
+	})
+}
+
+// SetHealthChangedAt sets the "health_changed_at" field.
+func (u *ProxyUpsertBulk) SetHealthChangedAt(v time.Time) *ProxyUpsertBulk {
+	return u.Update(func(s *ProxyUpsert) {
+		s.SetHealthChangedAt(v)
+	})
+}
+
+// UpdateHealthChangedAt sets the "health_changed_at" field to the value that was provided on create.
+func (u *ProxyUpsertBulk) UpdateHealthChangedAt() *ProxyUpsertBulk {
+	return u.Update(func(s *ProxyUpsert) {
+		s.UpdateHealthChangedAt()
+	})
+}
+
+// ClearHealthChangedAt clears the value of the "health_changed_at" field.
+func (u *ProxyUpsertBulk) ClearHealthChangedAt() *ProxyUpsertBulk {
+	return u.Update(func(s *ProxyUpsert) {
+		s.ClearHealthChangedAt()
+	})
+}
+
+// SetHealthLastError sets the "health_last_error" field.
+func (u *ProxyUpsertBulk) SetHealthLastError(v string) *ProxyUpsertBulk {
+	return u.Update(func(s *ProxyUpsert) {
+		s.SetHealthLastError(v)
+	})
+}
+
+// UpdateHealthLastError sets the "health_last_error" field to the value that was provided on create.
+func (u *ProxyUpsertBulk) UpdateHealthLastError() *ProxyUpsertBulk {
+	return u.Update(func(s *ProxyUpsert) {
+		s.UpdateHealthLastError()
+	})
+}
+
+// ClearHealthLastError clears the value of the "health_last_error" field.
+func (u *ProxyUpsertBulk) ClearHealthLastError() *ProxyUpsertBulk {
+	return u.Update(func(s *ProxyUpsert) {
+		s.ClearHealthLastError()
+	})
+}
+
+// SetHealthFailStreak sets the "health_fail_streak" field.
+func (u *ProxyUpsertBulk) SetHealthFailStreak(v int) *ProxyUpsertBulk {
+	return u.Update(func(s *ProxyUpsert) {
+		s.SetHealthFailStreak(v)
+	})
+}
+
+// AddHealthFailStreak adds v to the "health_fail_streak" field.
+func (u *ProxyUpsertBulk) AddHealthFailStreak(v int) *ProxyUpsertBulk {
+	return u.Update(func(s *ProxyUpsert) {
+		s.AddHealthFailStreak(v)
+	})
+}
+
+// UpdateHealthFailStreak sets the "health_fail_streak" field to the value that was provided on create.
+func (u *ProxyUpsertBulk) UpdateHealthFailStreak() *ProxyUpsertBulk {
+	return u.Update(func(s *ProxyUpsert) {
+		s.UpdateHealthFailStreak()
+	})
+}
+
+// SetHealthOkStreak sets the "health_ok_streak" field.
+func (u *ProxyUpsertBulk) SetHealthOkStreak(v int) *ProxyUpsertBulk {
+	return u.Update(func(s *ProxyUpsert) {
+		s.SetHealthOkStreak(v)
+	})
+}
+
+// AddHealthOkStreak adds v to the "health_ok_streak" field.
+func (u *ProxyUpsertBulk) AddHealthOkStreak(v int) *ProxyUpsertBulk {
+	return u.Update(func(s *ProxyUpsert) {
+		s.AddHealthOkStreak(v)
+	})
+}
+
+// UpdateHealthOkStreak sets the "health_ok_streak" field to the value that was provided on create.
+func (u *ProxyUpsertBulk) UpdateHealthOkStreak() *ProxyUpsertBulk {
+	return u.Update(func(s *ProxyUpsert) {
+		s.UpdateHealthOkStreak()
 	})
 }
 

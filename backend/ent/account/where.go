@@ -100,6 +100,11 @@ func ProxyFallbackOriginID(v int64) predicate.Account {
 	return predicate.Account(sql.FieldEQ(FieldProxyFallbackOriginID, v))
 }
 
+// ProxyFailureOriginID applies equality check predicate on the "proxy_failure_origin_id" field. It's identical to ProxyFailureOriginIDEQ.
+func ProxyFailureOriginID(v int64) predicate.Account {
+	return predicate.Account(sql.FieldEQ(FieldProxyFailureOriginID, v))
+}
+
 // Concurrency applies equality check predicate on the "concurrency" field. It's identical to ConcurrencyEQ.
 func Concurrency(v int) predicate.Account {
 	return predicate.Account(sql.FieldEQ(FieldConcurrency, v))
@@ -683,6 +688,56 @@ func ProxyFallbackOriginIDIsNil() predicate.Account {
 // ProxyFallbackOriginIDNotNil applies the NotNil predicate on the "proxy_fallback_origin_id" field.
 func ProxyFallbackOriginIDNotNil() predicate.Account {
 	return predicate.Account(sql.FieldNotNull(FieldProxyFallbackOriginID))
+}
+
+// ProxyFailureOriginIDEQ applies the EQ predicate on the "proxy_failure_origin_id" field.
+func ProxyFailureOriginIDEQ(v int64) predicate.Account {
+	return predicate.Account(sql.FieldEQ(FieldProxyFailureOriginID, v))
+}
+
+// ProxyFailureOriginIDNEQ applies the NEQ predicate on the "proxy_failure_origin_id" field.
+func ProxyFailureOriginIDNEQ(v int64) predicate.Account {
+	return predicate.Account(sql.FieldNEQ(FieldProxyFailureOriginID, v))
+}
+
+// ProxyFailureOriginIDIn applies the In predicate on the "proxy_failure_origin_id" field.
+func ProxyFailureOriginIDIn(vs ...int64) predicate.Account {
+	return predicate.Account(sql.FieldIn(FieldProxyFailureOriginID, vs...))
+}
+
+// ProxyFailureOriginIDNotIn applies the NotIn predicate on the "proxy_failure_origin_id" field.
+func ProxyFailureOriginIDNotIn(vs ...int64) predicate.Account {
+	return predicate.Account(sql.FieldNotIn(FieldProxyFailureOriginID, vs...))
+}
+
+// ProxyFailureOriginIDGT applies the GT predicate on the "proxy_failure_origin_id" field.
+func ProxyFailureOriginIDGT(v int64) predicate.Account {
+	return predicate.Account(sql.FieldGT(FieldProxyFailureOriginID, v))
+}
+
+// ProxyFailureOriginIDGTE applies the GTE predicate on the "proxy_failure_origin_id" field.
+func ProxyFailureOriginIDGTE(v int64) predicate.Account {
+	return predicate.Account(sql.FieldGTE(FieldProxyFailureOriginID, v))
+}
+
+// ProxyFailureOriginIDLT applies the LT predicate on the "proxy_failure_origin_id" field.
+func ProxyFailureOriginIDLT(v int64) predicate.Account {
+	return predicate.Account(sql.FieldLT(FieldProxyFailureOriginID, v))
+}
+
+// ProxyFailureOriginIDLTE applies the LTE predicate on the "proxy_failure_origin_id" field.
+func ProxyFailureOriginIDLTE(v int64) predicate.Account {
+	return predicate.Account(sql.FieldLTE(FieldProxyFailureOriginID, v))
+}
+
+// ProxyFailureOriginIDIsNil applies the IsNil predicate on the "proxy_failure_origin_id" field.
+func ProxyFailureOriginIDIsNil() predicate.Account {
+	return predicate.Account(sql.FieldIsNull(FieldProxyFailureOriginID))
+}
+
+// ProxyFailureOriginIDNotNil applies the NotNil predicate on the "proxy_failure_origin_id" field.
+func ProxyFailureOriginIDNotNil() predicate.Account {
+	return predicate.Account(sql.FieldNotNull(FieldProxyFailureOriginID))
 }
 
 // ConcurrencyEQ applies the EQ predicate on the "concurrency" field.

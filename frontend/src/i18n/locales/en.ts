@@ -6464,7 +6464,12 @@ export default {
       fallbackNone: 'No fallback',
       fallbackProxy: 'Backup proxy',
       fallbackDirect: 'Direct connection',
-      backupProxy: 'Backup proxy'
+      backupProxy: 'Backup proxy',
+      failureFallbackMode: 'Failure fallback',
+      failureFallbackHint: 'Probed every minute. After 3 consecutive failures the proxy is marked down and its accounts move to the fallback target; after 5 consecutive successes they move back automatically.',
+      failureBackupProxy: 'Failure backup proxy',
+      healthDegraded: 'Down',
+      healthDegradedTitle: 'Down since {time}: {error}'
     },
 
     // Redeem Codes

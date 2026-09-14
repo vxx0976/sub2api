@@ -38,6 +38,8 @@ const (
 	FieldProxyID = "proxy_id"
 	// FieldProxyFallbackOriginID holds the string denoting the proxy_fallback_origin_id field in the database.
 	FieldProxyFallbackOriginID = "proxy_fallback_origin_id"
+	// FieldProxyFailureOriginID holds the string denoting the proxy_failure_origin_id field in the database.
+	FieldProxyFailureOriginID = "proxy_failure_origin_id"
 	// FieldConcurrency holds the string denoting the concurrency field in the database.
 	FieldConcurrency = "concurrency"
 	// FieldLoadFactor holds the string denoting the load_factor field in the database.
@@ -146,6 +148,7 @@ var Columns = []string{
 	FieldExtra,
 	FieldProxyID,
 	FieldProxyFallbackOriginID,
+	FieldProxyFailureOriginID,
 	FieldConcurrency,
 	FieldLoadFactor,
 	FieldPriority,
@@ -309,6 +312,11 @@ func ByProxyID(opts ...sql.OrderTermOption) OrderOption {
 // ByProxyFallbackOriginID orders the results by the proxy_fallback_origin_id field.
 func ByProxyFallbackOriginID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldProxyFallbackOriginID, opts...).ToFunc()
+}
+
+// ByProxyFailureOriginID orders the results by the proxy_failure_origin_id field.
+func ByProxyFailureOriginID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldProxyFailureOriginID, opts...).ToFunc()
 }
 
 // ByConcurrency orders the results by the concurrency field.

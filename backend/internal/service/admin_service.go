@@ -577,6 +577,9 @@ type CreateProxyInput struct {
 	FallbackMode   string
 	BackupProxyID  *int64
 	ExpiryWarnDays int
+
+	FailureFallbackMode  string
+	FailureBackupProxyID *int64
 }
 
 // UpdateProxyInput preserves omitted expiry/backup values; Clear flags explicitly
@@ -595,6 +598,11 @@ type UpdateProxyInput struct {
 	BackupProxyID  *int64
 	ClearBackupID  bool
 	ExpiryWarnDays *int
+
+	// 故障回退：空 FailureFallbackMode 保留原值；ClearFailureBackupID 显式清除故障备用代理。
+	FailureFallbackMode  string
+	FailureBackupProxyID *int64
+	ClearFailureBackupID bool
 }
 
 type GenerateRedeemCodesInput struct {

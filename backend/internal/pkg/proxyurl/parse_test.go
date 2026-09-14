@@ -213,3 +213,13 @@ func TestParse_无Scheme裸地址(t *testing.T) {
 		t.Fatal("无 scheme 的裸地址应返回错误")
 	}
 }
+
+func TestParse_解析失败不泄露口令(t *testing.T) {
+	_, _, err := Parse("socks5://user:s3cretPW@bad%zzhost:1080")
+	if err == nil {
+		t.Fatal("非法 URL 应返回错误")
+	}
+	if strings.Contains(err.Error(), "s3cretPW") || strings.Contains(err.Error(), "user:") {
+		t.Fatalf("错误信息泄露了凭据: %v", err)
+	}
+}

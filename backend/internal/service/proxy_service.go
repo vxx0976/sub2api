@@ -35,6 +35,20 @@ type ProxyRepository interface {
 	ListAllForFallback(ctx context.Context) ([]Proxy, error)
 	CountExpired(ctx context.Context) (int64, error)
 	CountExpiringSoon(ctx context.Context, now time.Time) (int64, error)
+
+	// 故障回退（健康检查）
+	ListProxiesForHealthCheck(ctx context.Context) ([]Proxy, error)
+	RecordProxyHealthResult(ctx context.Context, proxyID int64, success bool) (ProxyHealthStreak, error)
+	MarkProxyDegraded(ctx context.Context, proxyID int64, target *int64, change bool, lastError string) (accountIDs []int64, transitioned bool, err error)
+	MarkProxyHealthy(ctx context.Context, proxyID int64) (accountIDs []int64, transitioned bool, err error)
+}
+
+// ProxyHealthStreak 是一次健康检查结果累加后的持久化计数。Found=false 表示代理已不存在。
+type ProxyHealthStreak struct {
+	FailStreak   int
+	OkStreak     int
+	HealthStatus string
+	Found        bool
 }
 
 // CreateProxyRequest 创建代理请求

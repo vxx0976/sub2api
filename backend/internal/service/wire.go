@@ -411,6 +411,14 @@ func ProvideOpenAICodexVersionSyncService(
 	return svc
 }
 
+// ProvideProxyHealthService creates and starts ProxyHealthService.
+func ProvideProxyHealthService(proxyRepo ProxyRepository, prober ProxyExitInfoProber, lockCache LeaderLockCache, db *sql.DB) *ProxyHealthService {
+	svc := NewProxyHealthService(proxyRepo, prober, proxyHealthCheckInterval)
+	svc.SetLeaderLock(lockCache, db)
+	svc.Start()
+	return svc
+}
+
 // ProvideProxyExpiryService creates and starts ProxyExpiryService.
 func ProvideProxyExpiryService(proxyRepo ProxyRepository) *ProxyExpiryService {
 	svc := NewProxyExpiryService(proxyRepo, time.Minute)
@@ -946,6 +954,7 @@ var ProviderSet = wire.NewSet(
 	ProvideAccountExpiryService,
 	ProvideOpenAICodexVersionSyncService,
 	ProvideProxyExpiryService,
+	ProvideProxyHealthService,
 	ProvideSubscriptionExpiryService,
 	ProvideChannelBalanceRefreshService,
 	ProvideTimingWheelService,

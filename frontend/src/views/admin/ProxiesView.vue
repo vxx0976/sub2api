@@ -256,15 +256,24 @@
             <span class="text-xs text-gray-600 dark:text-gray-300">{{ formatDateTime(row.created_at) }}</span>
           </template>
 
-          <template #cell-status="{ value }">
-            <span
-              :class="[
-                'badge',
-                value === 'active' ? 'badge-success' : value === 'expired' ? 'badge-danger' : 'badge-danger'
-              ]"
-            >
-              {{ t('admin.accounts.status.' + value) }}
-            </span>
+          <template #cell-status="{ value, row }">
+            <div class="flex flex-wrap items-center gap-1">
+              <span
+                :class="[
+                  'badge',
+                  value === 'active' ? 'badge-success' : value === 'expired' ? 'badge-danger' : 'badge-danger'
+                ]"
+              >
+                {{ t('admin.accounts.status.' + value) }}
+              </span>
+              <span
+                v-if="row.health_status === 'degraded'"
+                class="badge badge-warning"
+                :title="t('admin.proxies.healthDegradedTitle', { time: row.health_changed_at ? formatDateTime(row.health_changed_at) : '-', error: row.health_last_error || '-' })"
+              >
+                {{ t('admin.proxies.healthDegraded') }}
+              </span>
+            </div>
           </template>
 
           <template #cell-actions="{ row }">
@@ -527,6 +536,19 @@
           <label class="input-label">{{ t('admin.proxies.backupProxy') }}</label>
           <Select v-model="createForm.backup_proxy_id" :options="backupProxyOptions()" />
         </div>
+        <div>
+          <label class="input-label">{{ t('admin.proxies.failureFallbackMode') }}</label>
+          <Select v-model="createForm.failure_fallback_mode" :options="[
+            { label: t('admin.proxies.fallbackNone'), value: 'none' },
+            { label: t('admin.proxies.fallbackProxy'), value: 'proxy' },
+            { label: t('admin.proxies.fallbackDirect'), value: 'direct' },
+          ]" />
+          <p class="input-hint">{{ t('admin.proxies.failureFallbackHint') }}</p>
+        </div>
+        <div v-if="createForm.failure_fallback_mode === 'proxy'">
+          <label class="input-label">{{ t('admin.proxies.failureBackupProxy') }}</label>
+          <Select v-model="createForm.failure_backup_proxy_id" :options="backupProxyOptions()" />
+        </div>
 
       </form>
 
@@ -759,6 +781,19 @@
         <div v-if="editForm.fallback_mode === 'proxy'">
           <label class="input-label">{{ t('admin.proxies.backupProxy') }}</label>
           <Select v-model="editForm.backup_proxy_id" :options="backupProxyOptions(editingProxy?.id)" />
+        </div>
+        <div>
+          <label class="input-label">{{ t('admin.proxies.failureFallbackMode') }}</label>
+          <Select v-model="editForm.failure_fallback_mode" :options="[
+            { label: t('admin.proxies.fallbackNone'), value: 'none' },
+            { label: t('admin.proxies.fallbackProxy'), value: 'proxy' },
+            { label: t('admin.proxies.fallbackDirect'), value: 'direct' },
+          ]" />
+          <p class="input-hint">{{ t('admin.proxies.failureFallbackHint') }}</p>
+        </div>
+        <div v-if="editForm.failure_fallback_mode === 'proxy'">
+          <label class="input-label">{{ t('admin.proxies.failureBackupProxy') }}</label>
+          <Select v-model="editForm.failure_backup_proxy_id" :options="backupProxyOptions(editingProxy?.id)" />
         </div>
 
       </form>
@@ -1132,6 +1167,8 @@ const createForm = reactive({
   fallback_mode: 'none' as 'none' | 'proxy' | 'direct',
   backup_proxy_id: null as number | null,
   expiry_warn_days: 7 as number,
+  failure_fallback_mode: 'none' as 'none' | 'proxy' | 'direct',
+  failure_backup_proxy_id: null as number | null,
 })
 
 const editForm = reactive({
@@ -1146,6 +1183,8 @@ const editForm = reactive({
   fallback_mode: 'none' as 'none' | 'proxy' | 'direct',
   backup_proxy_id: null as number | null,
   expiry_warn_days: 7 as number,
+  failure_fallback_mode: 'none' as 'none' | 'proxy' | 'direct',
+  failure_backup_proxy_id: null as number | null,
 })
 
 const allProxiesForBackup = ref<Proxy[]>([])
@@ -1261,6 +1300,8 @@ const closeCreateModal = () => {
   createForm.fallback_mode = 'none'
   createForm.backup_proxy_id = null
   createForm.expiry_warn_days = 7
+  createForm.failure_fallback_mode = 'none'
+  createForm.failure_backup_proxy_id = null
   createPasswordVisible.value = false
   batchInput.value = ''
   batchParseResult.total = 0
@@ -1397,6 +1438,8 @@ const handleCreateProxy = async () => {
       fallback_mode: createForm.fallback_mode,
       backup_proxy_id: createForm.fallback_mode === 'proxy' ? createForm.backup_proxy_id : null,
       expiry_warn_days: createForm.expiry_warn_days,
+      failure_fallback_mode: createForm.failure_fallback_mode,
+      failure_backup_proxy_id: createForm.failure_fallback_mode === 'proxy' ? createForm.failure_backup_proxy_id : null,
     })
     appStore.showSuccess(t('admin.proxies.proxyCreated'))
     closeCreateModal()
@@ -1422,6 +1465,8 @@ const handleEdit = (proxy: Proxy) => {
   editForm.fallback_mode = proxy.fallback_mode || 'none'
   editForm.backup_proxy_id = proxy.backup_proxy_id ?? null
   editForm.expiry_warn_days = proxy.expiry_warn_days ?? 7
+  editForm.failure_fallback_mode = proxy.failure_fallback_mode || 'none'
+  editForm.failure_backup_proxy_id = proxy.failure_backup_proxy_id ?? null
   editPasswordVisible.value = false
   editPasswordDirty.value = false
   showEditModal.value = true
@@ -1462,6 +1507,8 @@ const handleUpdateProxy = async () => {
       fallback_mode: editForm.fallback_mode,
       backup_proxy_id: editForm.fallback_mode === 'proxy' ? editForm.backup_proxy_id : null,
       expiry_warn_days: editForm.expiry_warn_days,
+      failure_fallback_mode: editForm.failure_fallback_mode,
+      failure_backup_proxy_id: editForm.failure_fallback_mode === 'proxy' ? editForm.failure_backup_proxy_id : null,
     }
 
     // Only include password if user actually modified the field

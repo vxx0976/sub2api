@@ -110,6 +110,22 @@ func (m *mockProxyRepoForOAuth) CountExpiringSoon(ctx context.Context, now time.
 	panic("CountExpiringSoon not implemented")
 }
 
+func (m *mockProxyRepoForOAuth) ListProxiesForHealthCheck(ctx context.Context) ([]Proxy, error) {
+	return nil, nil
+}
+
+func (m *mockProxyRepoForOAuth) RecordProxyHealthResult(ctx context.Context, proxyID int64, success bool) (ProxyHealthStreak, error) {
+	return ProxyHealthStreak{}, nil
+}
+
+func (m *mockProxyRepoForOAuth) MarkProxyDegraded(ctx context.Context, proxyID int64, target *int64, change bool, lastError string) ([]int64, bool, error) {
+	return nil, false, nil
+}
+
+func (m *mockProxyRepoForOAuth) MarkProxyHealthy(ctx context.Context, proxyID int64) ([]int64, bool, error) {
+	return nil, false, nil
+}
+
 // =====================
 // 测试用例
 // =====================

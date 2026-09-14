@@ -14,6 +14,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/service"
 
 	entsql "entgo.io/ent/dialect/sql"
+	"github.com/lib/pq"
 )
 
 // sqlQuerier 已替换为 sqlExecutor（定义在 group_repo.go），
@@ -53,6 +54,12 @@ func (r *proxyRepository) Create(ctx context.Context, proxyIn *service.Proxy) er
 	}
 	if proxyIn.BackupProxyID != nil {
 		builder.SetBackupProxyID(*proxyIn.BackupProxyID)
+	}
+	if proxyIn.FailureFallbackMode != "" {
+		builder.SetFailureFallbackMode(proxyIn.FailureFallbackMode)
+	}
+	if proxyIn.FailureBackupProxyID != nil {
+		builder.SetFailureBackupProxyID(*proxyIn.FailureBackupProxyID)
 	}
 
 	created, err := builder.Save(ctx)
@@ -176,6 +183,16 @@ func updateProxyAndInvalidateProbeSnapshots(ctx context.Context, client *dbent.C
 	} else {
 		builder.ClearBackupProxyID()
 	}
+	if proxyIn.FailureFallbackMode != "" {
+		builder.SetFailureFallbackMode(proxyIn.FailureFallbackMode)
+	}
+	if proxyIn.FailureBackupProxyID != nil {
+		builder.SetFailureBackupProxyID(*proxyIn.FailureBackupProxyID)
+	} else {
+		builder.ClearFailureBackupProxyID()
+	}
+	// 管理员修改代理（地址、状态、故障回退配置等）后重新累计健康检查次数，旧计数不再代表新配置。
+	builder.SetHealthFailStreak(0).SetHealthOkStreak(0)
 
 	updated, err := builder.Save(ctx)
 	if dbent.IsNotFound(err) {
@@ -274,7 +291,11 @@ func enqueueProxyProbeAccountChanges(ctx context.Context, exec sqlExecutor, acco
 }
 
 func (r *proxyRepository) Delete(ctx context.Context, id int64) error {
-	_, err := r.client.Proxy.Delete().Where(proxy.IDEQ(id)).Exec(ctx)
+	if _, err := r.client.Proxy.Delete().Where(proxy.IDEQ(id)).Exec(ctx); err != nil {
+		return err
+	}
+	// 代理删除后不会再恢复，清掉指向它的故障回退来源，避免账号永久挂着失效的跟踪。
+	_, err := r.sql.ExecContext(ctx, `UPDATE accounts SET proxy_failure_origin_id = NULL WHERE proxy_failure_origin_id = $1`, id)
 	return err
 }
 
@@ -596,6 +617,14 @@ func proxyEntityToService(m *dbent.Proxy) *service.Proxy {
 		FallbackMode:   m.FallbackMode,
 		BackupProxyID:  m.BackupProxyID,
 		ExpiryWarnDays: m.ExpiryWarnDays,
+
+		FailureFallbackMode:  m.FailureFallbackMode,
+		FailureBackupProxyID: m.FailureBackupProxyID,
+		HealthStatus:         m.HealthStatus,
+		HealthChangedAt:      m.HealthChangedAt,
+	}
+	if m.HealthLastError != nil {
+		out.HealthLastError = *m.HealthLastError
 	}
 	if m.Username != nil {
 		out.Username = *m.Username
@@ -807,4 +836,242 @@ func (r *proxyRepository) CountExpiringSoon(ctx context.Context, now time.Time) 
 		  AND expires_at > $2 AND expires_at <= $2 + (expiry_warn_days || ' days')::interval`,
 		[]any{service.StatusActive, now}, &c)
 	return c, err
+}
+
+// ListProxiesForHealthCheck 返回需要健康检查的代理：active 且配置了故障回退，或仍处于故障状态
+// （故障期间管理员关掉故障回退，也要继续探测，恢复后才能把账号改回）。
+func (r *proxyRepository) ListProxiesForHealthCheck(ctx context.Context) ([]service.Proxy, error) {
+	proxies, err := r.client.Proxy.Query().
+		Where(
+			proxy.StatusEQ(service.StatusActive),
+			proxy.Or(
+				proxy.FailureFallbackModeNEQ(service.FallbackModeNone),
+				proxy.HealthStatusEQ(service.ProxyHealthDegraded),
+			),
+		).
+		Order(dbent.Asc(proxy.FieldID)).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]service.Proxy, 0, len(proxies))
+	for i := range proxies {
+		out = append(out, *proxyEntityToService(proxies[i]))
+	}
+	return out, nil
+}
+
+// proxyHealthStreakCap 防止长期故障/长期健康时计数溢出。
+const proxyHealthStreakCap = 1000000
+
+// RecordProxyHealthResult 原子累加一次健康检查结果，返回累加后的连续失败/成功次数与当前健康状态。
+// 计数不刷新 updated_at：它是运行态，不是管理员配置变更。
+func (r *proxyRepository) RecordProxyHealthResult(ctx context.Context, proxyID int64, success bool) (service.ProxyHealthStreak, error) {
+	var streak service.ProxyHealthStreak
+	rows, err := r.sql.QueryContext(ctx, `
+		UPDATE proxies SET
+			health_fail_streak = CASE WHEN $2 THEN 0 ELSE LEAST(health_fail_streak + 1, $3) END,
+			health_ok_streak = CASE WHEN $2 THEN LEAST(health_ok_streak + 1, $3) ELSE 0 END
+		WHERE id = $1 AND deleted_at IS NULL
+		RETURNING health_fail_streak, health_ok_streak, health_status`, proxyID, success, proxyHealthStreakCap)
+	if err != nil {
+		return streak, err
+	}
+	defer func() { _ = rows.Close() }()
+	if rows.Next() {
+		if err := rows.Scan(&streak.FailStreak, &streak.OkStreak, &streak.HealthStatus); err != nil {
+			return streak, err
+		}
+		streak.Found = true
+	}
+	return streak, rows.Err()
+}
+
+// MarkProxyDegraded 在单事务内把代理标记为故障，并按 change/target 改投账号：
+//   - 当前绑定在该代理上的账号；
+//   - 以及故障回退来源是该代理、但当前不在目标上的账号（故障期间回退目标变化，如备用代理恢复/
+//     故障或管理员改了故障回退配置时，让它们跟随最新目标）。
+//
+// proxy_failure_origin_id 记录最初被故障回退移走的代理，恢复时据此改回；proxy_fallback_origin_id
+// 同步写入最初来源，沿用后台的回退标记与手动恢复。同时清掉因代理故障产生的传输层临时不可调度。
+// 已处于故障状态时重复调用是幂等的。
+func (r *proxyRepository) MarkProxyDegraded(ctx context.Context, proxyID int64, target *int64, change bool, lastError string) ([]int64, bool, error) {
+	tx, err := r.client.Tx(ctx)
+	if err != nil && err != dbent.ErrTxStarted {
+		return nil, false, err
+	}
+	var exec sqlExecutor = r.sql
+	if tx != nil {
+		defer func() { _ = tx.Rollback() }()
+		exec = tx.Client()
+	}
+
+	var previous sql.NullString
+	if err := scanSingleRow(ctx, exec, `
+		WITH old AS (
+			SELECT health_status FROM proxies WHERE id = $1 AND deleted_at IS NULL FOR UPDATE
+		)
+		UPDATE proxies p SET
+			health_status = $2::varchar,
+			health_changed_at = CASE WHEN old.health_status <> $2::varchar THEN NOW() ELSE p.health_changed_at END,
+			health_last_error = $3::varchar
+		FROM old
+		WHERE p.id = $1
+		RETURNING old.health_status`, []any{proxyID, service.ProxyHealthDegraded, truncateProxyHealthError(lastError)}, &previous); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, false, service.ErrProxyNotFound
+		}
+		return nil, false, err
+	}
+	transitioned := previous.String != service.ProxyHealthDegraded
+
+	var accountIDs []int64
+	if change {
+		accountIDs, err = queryAccountIDs(ctx, exec, `
+			UPDATE accounts SET
+				proxy_id = $2,
+				proxy_failure_origin_id = COALESCE(proxy_failure_origin_id, $1),
+				proxy_fallback_origin_id = COALESCE(proxy_fallback_origin_id, $1),
+				temp_unschedulable_until = CASE WHEN temp_unschedulable_reason LIKE $3 THEN NULL ELSE temp_unschedulable_until END,
+				temp_unschedulable_reason = CASE WHEN temp_unschedulable_reason LIKE $3 THEN NULL ELSE temp_unschedulable_reason END,
+				extra = CASE
+					WHEN type = 'apikey' AND extra ? 'upstream_billing_probe'
+					THEN extra - 'upstream_billing_probe'
+					ELSE extra
+				END,
+				updated_at = NOW()
+			WHERE (proxy_id = $1 OR proxy_failure_origin_id = $1)
+				AND proxy_id IS DISTINCT FROM $2
+				AND deleted_at IS NULL
+			RETURNING id`, proxyID, target, service.ProxyTransportTempUnschedReasonPrefix+"%")
+		if err != nil {
+			return nil, false, err
+		}
+		shadowIDs, err := syncShadowProxiesToParents(ctx, exec, accountIDs)
+		if err != nil {
+			return nil, false, err
+		}
+		accountIDs = append(accountIDs, shadowIDs...)
+		if err := enqueueProxyProbeAccountChanges(ctx, exec, accountIDs); err != nil {
+			return nil, false, err
+		}
+	}
+	if tx != nil {
+		if err := tx.Commit(); err != nil {
+			return nil, false, err
+		}
+	}
+	return accountIDs, transitioned, nil
+}
+
+// MarkProxyHealthy 在单事务内把故障代理恢复为健康，并把故障回退来源是该代理的账号改回：
+// 管理员期间手动改绑过代理的账号已清掉故障回退来源，不会被拉回；到期回退留下的
+// proxy_fallback_origin_id 若不是本代理则保留，手动恢复仍指向原到期代理。代理本就健康时不做任何事。
+func (r *proxyRepository) MarkProxyHealthy(ctx context.Context, proxyID int64) ([]int64, bool, error) {
+	tx, err := r.client.Tx(ctx)
+	if err != nil && err != dbent.ErrTxStarted {
+		return nil, false, err
+	}
+	var exec sqlExecutor = r.sql
+	if tx != nil {
+		defer func() { _ = tx.Rollback() }()
+		exec = tx.Client()
+	}
+
+	updated, err := queryAccountIDs(ctx, exec, `
+		UPDATE proxies SET
+			health_status = $2,
+			health_changed_at = NOW(),
+			health_last_error = NULL
+		WHERE id = $1 AND deleted_at IS NULL AND health_status = $3
+		RETURNING id`, proxyID, service.ProxyHealthHealthy, service.ProxyHealthDegraded)
+	if err != nil {
+		return nil, false, err
+	}
+	if len(updated) == 0 {
+		return nil, false, nil
+	}
+	accountIDs, err := queryAccountIDs(ctx, exec, `
+		UPDATE accounts SET
+			proxy_id = $1,
+			proxy_failure_origin_id = NULL,
+			proxy_fallback_origin_id = CASE WHEN proxy_fallback_origin_id = $1 THEN NULL ELSE proxy_fallback_origin_id END,
+			extra = CASE
+				WHEN type = 'apikey' AND extra ? 'upstream_billing_probe'
+				THEN extra - 'upstream_billing_probe'
+				ELSE extra
+			END,
+			updated_at = NOW()
+		WHERE proxy_failure_origin_id = $1 AND deleted_at IS NULL
+		RETURNING id`, proxyID)
+	if err != nil {
+		return nil, false, err
+	}
+	shadowIDs, err := syncShadowProxiesToParents(ctx, exec, accountIDs)
+	if err != nil {
+		return nil, false, err
+	}
+	accountIDs = append(accountIDs, shadowIDs...)
+	if err := enqueueProxyProbeAccountChanges(ctx, exec, accountIDs); err != nil {
+		return nil, false, err
+	}
+	if tx != nil {
+		if err := tx.Commit(); err != nil {
+			return nil, false, err
+		}
+	}
+	return accountIDs, true, nil
+}
+
+// syncShadowProxiesToParents 让 spark 影子账号的代理跟随刚被改投的母账号（影子恒继承母账号代理）。
+// 影子若在故障回退期间才创建，自身不带故障回退来源，只能靠母账号的变化带动。
+func syncShadowProxiesToParents(ctx context.Context, exec sqlExecutor, parentIDs []int64) ([]int64, error) {
+	if len(parentIDs) == 0 {
+		return nil, nil
+	}
+	return queryAccountIDs(ctx, exec, `
+		UPDATE accounts s SET
+			proxy_id = p.proxy_id,
+			proxy_failure_origin_id = p.proxy_failure_origin_id,
+			updated_at = NOW()
+		FROM accounts p
+		WHERE s.parent_account_id = p.id
+			AND p.id = ANY($1)
+			AND s.deleted_at IS NULL
+			AND (s.proxy_id IS DISTINCT FROM p.proxy_id OR s.proxy_failure_origin_id IS DISTINCT FROM p.proxy_failure_origin_id)
+		RETURNING s.id`, pq.Array(parentIDs))
+}
+
+func truncateProxyHealthError(msg string) string {
+	const maxRunes = 500
+	msg = strings.TrimSpace(msg)
+	if r := []rune(msg); len(r) > maxRunes {
+		return string(r[:maxRunes])
+	}
+	return msg
+}
+
+// queryAccountIDs 执行返回单列 id 的语句，读完并关闭结果集后再返回，避免事务内连接处于 busy 状态。
+func queryAccountIDs(ctx context.Context, exec sqlExecutor, query string, args ...any) ([]int64, error) {
+	rows, err := exec.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	ids := make([]int64, 0)
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			_ = rows.Close()
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	if err := rows.Err(); err != nil {
+		_ = rows.Close()
+		return nil, err
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	return ids, nil
 }

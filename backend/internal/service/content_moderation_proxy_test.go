@@ -97,6 +97,22 @@ func (r *contentModerationTestProxyRepo) CountExpiringSoon(ctx context.Context, 
 	panic("not implemented")
 }
 
+func (r *contentModerationTestProxyRepo) ListProxiesForHealthCheck(ctx context.Context) ([]Proxy, error) {
+	return nil, nil
+}
+
+func (r *contentModerationTestProxyRepo) RecordProxyHealthResult(ctx context.Context, proxyID int64, success bool) (ProxyHealthStreak, error) {
+	return ProxyHealthStreak{}, nil
+}
+
+func (r *contentModerationTestProxyRepo) MarkProxyDegraded(ctx context.Context, proxyID int64, target *int64, change bool, lastError string) ([]int64, bool, error) {
+	return nil, false, nil
+}
+
+func (r *contentModerationTestProxyRepo) MarkProxyHealthy(ctx context.Context, proxyID int64) ([]int64, bool, error) {
+	return nil, false, nil
+}
+
 func moderationProxyIDPtr(v int64) *int64 { return &v }
 
 // 审计请求必须真正经过配置的代理发出（#2646 核心行为）。

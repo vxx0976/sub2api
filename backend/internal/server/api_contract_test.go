@@ -2169,6 +2169,22 @@ func (stubProxyRepo) CountExpiringSoon(ctx context.Context, now time.Time) (int6
 	return 0, nil
 }
 
+func (stubProxyRepo) ListProxiesForHealthCheck(ctx context.Context) ([]service.Proxy, error) {
+	return nil, nil
+}
+
+func (stubProxyRepo) RecordProxyHealthResult(ctx context.Context, proxyID int64, success bool) (service.ProxyHealthStreak, error) {
+	return service.ProxyHealthStreak{}, nil
+}
+
+func (stubProxyRepo) MarkProxyDegraded(ctx context.Context, proxyID int64, target *int64, change bool, lastError string) ([]int64, bool, error) {
+	return nil, false, nil
+}
+
+func (stubProxyRepo) MarkProxyHealthy(ctx context.Context, proxyID int64) ([]int64, bool, error) {
+	return nil, false, nil
+}
+
 type stubRedeemCodeRepo struct {
 	service.RedeemCodeRepository
 	byUser map[int64][]service.RedeemCode

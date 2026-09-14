@@ -3897,6 +3897,10 @@ const applyOpenAIModelMappingCredentials = (credentials: Record<string, unknown>
   }
 }
 
+// 打开编辑框时账号的代理。保存时只有代理被改动才提交 proxy_id：代理可能在编辑期间被
+// 到期/故障回退或其自动恢复改写，照旧回写打开时的值会把账号拉回旧代理并丢掉回退跟踪。
+const loadedProxyId = ref<number | null>(null)
+
 const syncFormFromAccount = (newAccount: Account | null) => {
   if (!newAccount) {
     return
@@ -3914,6 +3918,7 @@ const syncFormFromAccount = (newAccount: Account | null) => {
   form.name = newAccount.name
   form.notes = newAccount.notes || ''
   form.proxy_id = newAccount.proxy_id
+  loadedProxyId.value = newAccount.proxy_id ?? null
   form.concurrency = newAccount.concurrency
   form.load_factor = newAccount.load_factor ?? null
   form.priority = newAccount.priority
@@ -4940,8 +4945,10 @@ const handleSubmit = async () => {
 
   const updatePayload: Record<string, unknown> = { ...form }
   try {
-    // 后端期望 proxy_id: 0 表示清除代理，而不是 null
-    if (updatePayload.proxy_id === null) {
+    if ((form.proxy_id ?? null) === loadedProxyId.value) {
+      delete updatePayload.proxy_id
+    } else if (updatePayload.proxy_id === null) {
+      // 后端期望 proxy_id: 0 表示清除代理，而不是 null
       updatePayload.proxy_id = 0
     }
     if (form.expires_at === null) {

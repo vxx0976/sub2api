@@ -443,6 +443,22 @@ func (s *proxyRepoStub) CountExpiringSoon(_ context.Context, _ time.Time) (int64
 	return 0, nil
 }
 
+func (s *proxyRepoStub) ListProxiesForHealthCheck(context.Context) ([]Proxy, error) {
+	return nil, nil
+}
+
+func (s *proxyRepoStub) RecordProxyHealthResult(context.Context, int64, bool) (ProxyHealthStreak, error) {
+	return ProxyHealthStreak{}, nil
+}
+
+func (s *proxyRepoStub) MarkProxyDegraded(context.Context, int64, *int64, bool, string) ([]int64, bool, error) {
+	return nil, false, nil
+}
+
+func (s *proxyRepoStub) MarkProxyHealthy(context.Context, int64) ([]int64, bool, error) {
+	return nil, false, nil
+}
+
 type redeemRepoStub struct {
 	RedeemCodeRepository
 	deleteErrByID map[int64]error

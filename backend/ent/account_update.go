@@ -178,6 +178,33 @@ func (_u *AccountUpdate) ClearProxyFallbackOriginID() *AccountUpdate {
 	return _u
 }
 
+// SetProxyFailureOriginID sets the "proxy_failure_origin_id" field.
+func (_u *AccountUpdate) SetProxyFailureOriginID(v int64) *AccountUpdate {
+	_u.mutation.ResetProxyFailureOriginID()
+	_u.mutation.SetProxyFailureOriginID(v)
+	return _u
+}
+
+// SetNillableProxyFailureOriginID sets the "proxy_failure_origin_id" field if the given value is not nil.
+func (_u *AccountUpdate) SetNillableProxyFailureOriginID(v *int64) *AccountUpdate {
+	if v != nil {
+		_u.SetProxyFailureOriginID(*v)
+	}
+	return _u
+}
+
+// AddProxyFailureOriginID adds value to the "proxy_failure_origin_id" field.
+func (_u *AccountUpdate) AddProxyFailureOriginID(v int64) *AccountUpdate {
+	_u.mutation.AddProxyFailureOriginID(v)
+	return _u
+}
+
+// ClearProxyFailureOriginID clears the value of the "proxy_failure_origin_id" field.
+func (_u *AccountUpdate) ClearProxyFailureOriginID() *AccountUpdate {
+	_u.mutation.ClearProxyFailureOriginID()
+	return _u
+}
+
 // SetConcurrency sets the "concurrency" field.
 func (_u *AccountUpdate) SetConcurrency(v int) *AccountUpdate {
 	_u.mutation.ResetConcurrency()
@@ -891,6 +918,15 @@ func (_u *AccountUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if _u.mutation.ProxyFallbackOriginIDCleared() {
 		_spec.ClearField(account.FieldProxyFallbackOriginID, field.TypeInt64)
 	}
+	if value, ok := _u.mutation.ProxyFailureOriginID(); ok {
+		_spec.SetField(account.FieldProxyFailureOriginID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedProxyFailureOriginID(); ok {
+		_spec.AddField(account.FieldProxyFailureOriginID, field.TypeInt64, value)
+	}
+	if _u.mutation.ProxyFailureOriginIDCleared() {
+		_spec.ClearField(account.FieldProxyFailureOriginID, field.TypeInt64)
+	}
 	if value, ok := _u.mutation.Concurrency(); ok {
 		_spec.SetField(account.FieldConcurrency, field.TypeInt, value)
 	}
@@ -1377,6 +1413,33 @@ func (_u *AccountUpdateOne) AddProxyFallbackOriginID(v int64) *AccountUpdateOne 
 // ClearProxyFallbackOriginID clears the value of the "proxy_fallback_origin_id" field.
 func (_u *AccountUpdateOne) ClearProxyFallbackOriginID() *AccountUpdateOne {
 	_u.mutation.ClearProxyFallbackOriginID()
+	return _u
+}
+
+// SetProxyFailureOriginID sets the "proxy_failure_origin_id" field.
+func (_u *AccountUpdateOne) SetProxyFailureOriginID(v int64) *AccountUpdateOne {
+	_u.mutation.ResetProxyFailureOriginID()
+	_u.mutation.SetProxyFailureOriginID(v)
+	return _u
+}
+
+// SetNillableProxyFailureOriginID sets the "proxy_failure_origin_id" field if the given value is not nil.
+func (_u *AccountUpdateOne) SetNillableProxyFailureOriginID(v *int64) *AccountUpdateOne {
+	if v != nil {
+		_u.SetProxyFailureOriginID(*v)
+	}
+	return _u
+}
+
+// AddProxyFailureOriginID adds value to the "proxy_failure_origin_id" field.
+func (_u *AccountUpdateOne) AddProxyFailureOriginID(v int64) *AccountUpdateOne {
+	_u.mutation.AddProxyFailureOriginID(v)
+	return _u
+}
+
+// ClearProxyFailureOriginID clears the value of the "proxy_failure_origin_id" field.
+func (_u *AccountUpdateOne) ClearProxyFailureOriginID() *AccountUpdateOne {
+	_u.mutation.ClearProxyFailureOriginID()
 	return _u
 }
 
@@ -2122,6 +2185,15 @@ func (_u *AccountUpdateOne) sqlSave(ctx context.Context) (_node *Account, err er
 	}
 	if _u.mutation.ProxyFallbackOriginIDCleared() {
 		_spec.ClearField(account.FieldProxyFallbackOriginID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.ProxyFailureOriginID(); ok {
+		_spec.SetField(account.FieldProxyFailureOriginID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedProxyFailureOriginID(); ok {
+		_spec.AddField(account.FieldProxyFailureOriginID, field.TypeInt64, value)
+	}
+	if _u.mutation.ProxyFailureOriginIDCleared() {
+		_spec.ClearField(account.FieldProxyFailureOriginID, field.TypeInt64)
 	}
 	if value, ok := _u.mutation.Concurrency(); ok {
 		_spec.SetField(account.FieldConcurrency, field.TypeInt, value)

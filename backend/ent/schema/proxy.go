@@ -64,6 +64,28 @@ func (Proxy) Fields() []ent.Field {
 		field.Int("expiry_warn_days").
 			Default(7).
 			Comment("Days before expiry to flag as expiring-soon (per proxy)."),
+		field.String("failure_fallback_mode").
+			MaxLen(20).Default("none").
+			Comment("Fallback target when health checks mark the proxy degraded: none | proxy | direct."),
+		field.Int64("failure_backup_proxy_id").
+			Optional().Nillable().
+			Comment("Backup proxy id when failure_fallback_mode=proxy (FK in SQL migration, no ent edge)."),
+		field.String("health_status").
+			MaxLen(20).Default("healthy").
+			Comment("Health check state: healthy | degraded."),
+		field.Time("health_changed_at").
+			Optional().Nillable().
+			Comment("When health_status last changed."),
+		field.String("health_last_error").
+			MaxLen(500).
+			Optional().Nillable().
+			Comment("Last health check error that marked the proxy degraded."),
+		field.Int("health_fail_streak").
+			Default(0).
+			Comment("Consecutive failed health checks (persisted so it survives leader changes)."),
+		field.Int("health_ok_streak").
+			Default(0).
+			Comment("Consecutive successful health checks (persisted so it survives leader changes)."),
 	}
 }
 
@@ -89,5 +111,6 @@ func (Proxy) Indexes() []ent.Index {
 		index.Fields("deleted_at"),
 		index.Fields("expires_at"),
 		index.Fields("backup_proxy_id"),
+		index.Fields("failure_backup_proxy_id"),
 	}
 }

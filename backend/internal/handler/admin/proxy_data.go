@@ -66,6 +66,10 @@ func (h *ProxyHandler) ExportData(c *gin.Context) {
 		if p.BackupProxyID != nil {
 			backupProxyName = proxyNameByID[*p.BackupProxyID]
 		}
+		var failureBackupProxyName string
+		if p.FailureBackupProxyID != nil {
+			failureBackupProxyName = proxyNameByID[*p.FailureBackupProxyID]
+		}
 		dataProxies = append(dataProxies, DataProxy{
 			ProxyKey:        key,
 			Name:            p.Name,
@@ -79,6 +83,9 @@ func (h *ProxyHandler) ExportData(c *gin.Context) {
 			FallbackMode:    p.FallbackMode,
 			BackupProxyName: backupProxyName,
 			ExpiryWarnDays:  p.ExpiryWarnDays,
+
+			FailureFallbackMode:    p.FailureFallbackMode,
+			FailureBackupProxyName: failureBackupProxyName,
 		})
 	}
 
@@ -223,6 +230,7 @@ func (h *ProxyHandler) ImportData(c *gin.Context) {
 			}
 		}
 
+		failureFallbackMode, failureBackupProxyID := resolveImportFailureFallback(item, key, proxyNameToID, &result)
 		created, err := h.adminService.CreateProxy(ctx, &service.CreateProxyInput{
 			Name:           defaultProxyName(item.Name),
 			Protocol:       item.Protocol,
@@ -234,6 +242,9 @@ func (h *ProxyHandler) ImportData(c *gin.Context) {
 			FallbackMode:   fallbackMode,
 			BackupProxyID:  backupProxyID,
 			ExpiryWarnDays: item.ExpiryWarnDays,
+
+			FailureFallbackMode:  failureFallbackMode,
+			FailureBackupProxyID: failureBackupProxyID,
 		})
 		if err != nil {
 			result.ProxyFailed++

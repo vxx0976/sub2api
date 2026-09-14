@@ -244,41 +244,41 @@ func init() {
 	// account.DefaultExtra holds the default value on creation for the extra field.
 	account.DefaultExtra = accountDescExtra.Default.(func() map[string]interface{})
 	// accountDescConcurrency is the schema descriptor for concurrency field.
-	accountDescConcurrency := accountFields[8].Descriptor()
+	accountDescConcurrency := accountFields[9].Descriptor()
 	// account.DefaultConcurrency holds the default value on creation for the concurrency field.
 	account.DefaultConcurrency = accountDescConcurrency.Default.(int)
 	// accountDescPriority is the schema descriptor for priority field.
-	accountDescPriority := accountFields[10].Descriptor()
+	accountDescPriority := accountFields[11].Descriptor()
 	// account.DefaultPriority holds the default value on creation for the priority field.
 	account.DefaultPriority = accountDescPriority.Default.(int)
 	// accountDescRateMultiplier is the schema descriptor for rate_multiplier field.
-	accountDescRateMultiplier := accountFields[11].Descriptor()
+	accountDescRateMultiplier := accountFields[12].Descriptor()
 	// account.DefaultRateMultiplier holds the default value on creation for the rate_multiplier field.
 	account.DefaultRateMultiplier = accountDescRateMultiplier.Default.(float64)
 	// accountDescStatus is the schema descriptor for status field.
-	accountDescStatus := accountFields[12].Descriptor()
+	accountDescStatus := accountFields[13].Descriptor()
 	// account.DefaultStatus holds the default value on creation for the status field.
 	account.DefaultStatus = accountDescStatus.Default.(string)
 	// account.StatusValidator is a validator for the "status" field. It is called by the builders before save.
 	account.StatusValidator = accountDescStatus.Validators[0].(func(string) error)
 	// accountDescAutoPauseOnExpired is the schema descriptor for auto_pause_on_expired field.
-	accountDescAutoPauseOnExpired := accountFields[16].Descriptor()
+	accountDescAutoPauseOnExpired := accountFields[17].Descriptor()
 	// account.DefaultAutoPauseOnExpired holds the default value on creation for the auto_pause_on_expired field.
 	account.DefaultAutoPauseOnExpired = accountDescAutoPauseOnExpired.Default.(bool)
 	// accountDescSchedulable is the schema descriptor for schedulable field.
-	accountDescSchedulable := accountFields[17].Descriptor()
+	accountDescSchedulable := accountFields[18].Descriptor()
 	// account.DefaultSchedulable holds the default value on creation for the schedulable field.
 	account.DefaultSchedulable = accountDescSchedulable.Default.(bool)
 	// accountDescSessionWindowStatus is the schema descriptor for session_window_status field.
-	accountDescSessionWindowStatus := accountFields[25].Descriptor()
+	accountDescSessionWindowStatus := accountFields[26].Descriptor()
 	// account.SessionWindowStatusValidator is a validator for the "session_window_status" field. It is called by the builders before save.
 	account.SessionWindowStatusValidator = accountDescSessionWindowStatus.Validators[0].(func(string) error)
 	// accountDescActiveStartTime is the schema descriptor for active_start_time field.
-	accountDescActiveStartTime := accountFields[26].Descriptor()
+	accountDescActiveStartTime := accountFields[27].Descriptor()
 	// account.ActiveStartTimeValidator is a validator for the "active_start_time" field. It is called by the builders before save.
 	account.ActiveStartTimeValidator = accountDescActiveStartTime.Validators[0].(func(string) error)
 	// accountDescActiveEndTime is the schema descriptor for active_end_time field.
-	accountDescActiveEndTime := accountFields[27].Descriptor()
+	accountDescActiveEndTime := accountFields[28].Descriptor()
 	// account.ActiveEndTimeValidator is a validator for the "active_end_time" field. It is called by the builders before save.
 	account.ActiveEndTimeValidator = accountDescActiveEndTime.Validators[0].(func(string) error)
 	accountgroupFields := schema.AccountGroup{}.Fields()
@@ -1975,6 +1975,30 @@ func init() {
 	proxyDescExpiryWarnDays := proxyFields[10].Descriptor()
 	// proxy.DefaultExpiryWarnDays holds the default value on creation for the expiry_warn_days field.
 	proxy.DefaultExpiryWarnDays = proxyDescExpiryWarnDays.Default.(int)
+	// proxyDescFailureFallbackMode is the schema descriptor for failure_fallback_mode field.
+	proxyDescFailureFallbackMode := proxyFields[11].Descriptor()
+	// proxy.DefaultFailureFallbackMode holds the default value on creation for the failure_fallback_mode field.
+	proxy.DefaultFailureFallbackMode = proxyDescFailureFallbackMode.Default.(string)
+	// proxy.FailureFallbackModeValidator is a validator for the "failure_fallback_mode" field. It is called by the builders before save.
+	proxy.FailureFallbackModeValidator = proxyDescFailureFallbackMode.Validators[0].(func(string) error)
+	// proxyDescHealthStatus is the schema descriptor for health_status field.
+	proxyDescHealthStatus := proxyFields[13].Descriptor()
+	// proxy.DefaultHealthStatus holds the default value on creation for the health_status field.
+	proxy.DefaultHealthStatus = proxyDescHealthStatus.Default.(string)
+	// proxy.HealthStatusValidator is a validator for the "health_status" field. It is called by the builders before save.
+	proxy.HealthStatusValidator = proxyDescHealthStatus.Validators[0].(func(string) error)
+	// proxyDescHealthLastError is the schema descriptor for health_last_error field.
+	proxyDescHealthLastError := proxyFields[15].Descriptor()
+	// proxy.HealthLastErrorValidator is a validator for the "health_last_error" field. It is called by the builders before save.
+	proxy.HealthLastErrorValidator = proxyDescHealthLastError.Validators[0].(func(string) error)
+	// proxyDescHealthFailStreak is the schema descriptor for health_fail_streak field.
+	proxyDescHealthFailStreak := proxyFields[16].Descriptor()
+	// proxy.DefaultHealthFailStreak holds the default value on creation for the health_fail_streak field.
+	proxy.DefaultHealthFailStreak = proxyDescHealthFailStreak.Default.(int)
+	// proxyDescHealthOkStreak is the schema descriptor for health_ok_streak field.
+	proxyDescHealthOkStreak := proxyFields[17].Descriptor()
+	// proxy.DefaultHealthOkStreak holds the default value on creation for the health_ok_streak field.
+	proxy.DefaultHealthOkStreak = proxyDescHealthOkStreak.Default.(int)
 	rechargeorderFields := schema.RechargeOrder{}.Fields()
 	_ = rechargeorderFields
 	// rechargeorderDescOrderNo is the schema descriptor for order_no field.

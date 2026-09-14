@@ -139,6 +139,20 @@ func (_c *AccountCreate) SetNillableProxyFallbackOriginID(v *int64) *AccountCrea
 	return _c
 }
 
+// SetProxyFailureOriginID sets the "proxy_failure_origin_id" field.
+func (_c *AccountCreate) SetProxyFailureOriginID(v int64) *AccountCreate {
+	_c.mutation.SetProxyFailureOriginID(v)
+	return _c
+}
+
+// SetNillableProxyFailureOriginID sets the "proxy_failure_origin_id" field if the given value is not nil.
+func (_c *AccountCreate) SetNillableProxyFailureOriginID(v *int64) *AccountCreate {
+	if v != nil {
+		_c.SetProxyFailureOriginID(*v)
+	}
+	return _c
+}
+
 // SetConcurrency sets the "concurrency" field.
 func (_c *AccountCreate) SetConcurrency(v int) *AccountCreate {
 	_c.mutation.SetConcurrency(v)
@@ -763,6 +777,10 @@ func (_c *AccountCreate) createSpec() (*Account, *sqlgraph.CreateSpec) {
 		_spec.SetField(account.FieldProxyFallbackOriginID, field.TypeInt64, value)
 		_node.ProxyFallbackOriginID = &value
 	}
+	if value, ok := _c.mutation.ProxyFailureOriginID(); ok {
+		_spec.SetField(account.FieldProxyFailureOriginID, field.TypeInt64, value)
+		_node.ProxyFailureOriginID = &value
+	}
 	if value, ok := _c.mutation.Concurrency(); ok {
 		_spec.SetField(account.FieldConcurrency, field.TypeInt, value)
 		_node.Concurrency = value
@@ -1132,6 +1150,30 @@ func (u *AccountUpsert) AddProxyFallbackOriginID(v int64) *AccountUpsert {
 // ClearProxyFallbackOriginID clears the value of the "proxy_fallback_origin_id" field.
 func (u *AccountUpsert) ClearProxyFallbackOriginID() *AccountUpsert {
 	u.SetNull(account.FieldProxyFallbackOriginID)
+	return u
+}
+
+// SetProxyFailureOriginID sets the "proxy_failure_origin_id" field.
+func (u *AccountUpsert) SetProxyFailureOriginID(v int64) *AccountUpsert {
+	u.Set(account.FieldProxyFailureOriginID, v)
+	return u
+}
+
+// UpdateProxyFailureOriginID sets the "proxy_failure_origin_id" field to the value that was provided on create.
+func (u *AccountUpsert) UpdateProxyFailureOriginID() *AccountUpsert {
+	u.SetExcluded(account.FieldProxyFailureOriginID)
+	return u
+}
+
+// AddProxyFailureOriginID adds v to the "proxy_failure_origin_id" field.
+func (u *AccountUpsert) AddProxyFailureOriginID(v int64) *AccountUpsert {
+	u.Add(account.FieldProxyFailureOriginID, v)
+	return u
+}
+
+// ClearProxyFailureOriginID clears the value of the "proxy_failure_origin_id" field.
+func (u *AccountUpsert) ClearProxyFailureOriginID() *AccountUpsert {
+	u.SetNull(account.FieldProxyFailureOriginID)
 	return u
 }
 
@@ -1730,6 +1772,34 @@ func (u *AccountUpsertOne) UpdateProxyFallbackOriginID() *AccountUpsertOne {
 func (u *AccountUpsertOne) ClearProxyFallbackOriginID() *AccountUpsertOne {
 	return u.Update(func(s *AccountUpsert) {
 		s.ClearProxyFallbackOriginID()
+	})
+}
+
+// SetProxyFailureOriginID sets the "proxy_failure_origin_id" field.
+func (u *AccountUpsertOne) SetProxyFailureOriginID(v int64) *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetProxyFailureOriginID(v)
+	})
+}
+
+// AddProxyFailureOriginID adds v to the "proxy_failure_origin_id" field.
+func (u *AccountUpsertOne) AddProxyFailureOriginID(v int64) *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.AddProxyFailureOriginID(v)
+	})
+}
+
+// UpdateProxyFailureOriginID sets the "proxy_failure_origin_id" field to the value that was provided on create.
+func (u *AccountUpsertOne) UpdateProxyFailureOriginID() *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateProxyFailureOriginID()
+	})
+}
+
+// ClearProxyFailureOriginID clears the value of the "proxy_failure_origin_id" field.
+func (u *AccountUpsertOne) ClearProxyFailureOriginID() *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.ClearProxyFailureOriginID()
 	})
 }
 
@@ -2557,6 +2627,34 @@ func (u *AccountUpsertBulk) UpdateProxyFallbackOriginID() *AccountUpsertBulk {
 func (u *AccountUpsertBulk) ClearProxyFallbackOriginID() *AccountUpsertBulk {
 	return u.Update(func(s *AccountUpsert) {
 		s.ClearProxyFallbackOriginID()
+	})
+}
+
+// SetProxyFailureOriginID sets the "proxy_failure_origin_id" field.
+func (u *AccountUpsertBulk) SetProxyFailureOriginID(v int64) *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetProxyFailureOriginID(v)
+	})
+}
+
+// AddProxyFailureOriginID adds v to the "proxy_failure_origin_id" field.
+func (u *AccountUpsertBulk) AddProxyFailureOriginID(v int64) *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.AddProxyFailureOriginID(v)
+	})
+}
+
+// UpdateProxyFailureOriginID sets the "proxy_failure_origin_id" field to the value that was provided on create.
+func (u *AccountUpsertBulk) UpdateProxyFailureOriginID() *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateProxyFailureOriginID()
+	})
+}
+
+// ClearProxyFailureOriginID clears the value of the "proxy_failure_origin_id" field.
+func (u *AccountUpsertBulk) ClearProxyFailureOriginID() *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.ClearProxyFailureOriginID()
 	})
 }
 

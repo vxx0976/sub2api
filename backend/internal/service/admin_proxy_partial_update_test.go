@@ -79,3 +79,52 @@ func TestAdminProxyPartialUpdateValidatesMergedFallback(t *testing.T) {
 		})
 	}
 }
+
+func TestAdminProxyFailureFallbackValidationAndPartialUpdate(t *testing.T) {
+	backup := int64(10)
+	t.Run("partial update preserves failure fallback", func(t *testing.T) {
+		repo := &updatingProxyRepoStub{proxyRepoStub: &proxyRepoStub{}, proxy: &Proxy{ID: 9, Status: StatusActive, FallbackMode: FallbackModeNone, FailureFallbackMode: FallbackModeProxy, FailureBackupProxyID: &backup}}
+		svc := &adminServiceImpl{proxyRepo: repo}
+		got, err := svc.UpdateProxy(context.Background(), 9, &UpdateProxyInput{Name: "renamed"})
+		require.NoError(t, err)
+		require.Equal(t, FallbackModeProxy, got.FailureFallbackMode)
+		require.Equal(t, &backup, got.FailureBackupProxyID)
+	})
+	t.Run("proxy mode requires backup", func(t *testing.T) {
+		repo := &updatingProxyRepoStub{proxyRepoStub: &proxyRepoStub{}, proxy: &Proxy{ID: 9, Status: StatusActive, FallbackMode: FallbackModeNone}}
+		svc := &adminServiceImpl{proxyRepo: repo}
+		_, err := svc.UpdateProxy(context.Background(), 9, &UpdateProxyInput{FailureFallbackMode: FallbackModeProxy})
+		require.Error(t, err)
+		require.Zero(t, repo.updateCalls)
+	})
+	t.Run("backup cannot be itself", func(t *testing.T) {
+		self := int64(9)
+		repo := &updatingProxyRepoStub{proxyRepoStub: &proxyRepoStub{}, proxy: &Proxy{ID: 9, Status: StatusActive}}
+		svc := &adminServiceImpl{proxyRepo: repo}
+		_, err := svc.UpdateProxy(context.Background(), 9, &UpdateProxyInput{FailureFallbackMode: FallbackModeProxy, FailureBackupProxyID: &self})
+		require.Error(t, err)
+	})
+	t.Run("switching to direct drops the backup", func(t *testing.T) {
+		repo := &updatingProxyRepoStub{proxyRepoStub: &proxyRepoStub{}, proxy: &Proxy{ID: 9, Status: StatusActive, FallbackMode: FallbackModeNone, FailureFallbackMode: FallbackModeProxy, FailureBackupProxyID: &backup}}
+		svc := &adminServiceImpl{proxyRepo: repo}
+		got, err := svc.UpdateProxy(context.Background(), 9, &UpdateProxyInput{FailureFallbackMode: FallbackModeDirect})
+		require.NoError(t, err)
+		require.Equal(t, FallbackModeDirect, got.FailureFallbackMode)
+		require.Nil(t, got.FailureBackupProxyID)
+	})
+	t.Run("invalid mode rejected", func(t *testing.T) {
+		repo := &updatingProxyRepoStub{proxyRepoStub: &proxyRepoStub{}, proxy: &Proxy{ID: 9, Status: StatusActive}}
+		svc := &adminServiceImpl{proxyRepo: repo}
+		_, err := svc.UpdateProxy(context.Background(), 9, &UpdateProxyInput{FailureFallbackMode: "DIRECT"})
+		require.Error(t, err)
+		require.Zero(t, repo.updateCalls)
+	})
+	t.Run("expiry fallback edits leave failure fallback alone", func(t *testing.T) {
+		repo := &updatingProxyRepoStub{proxyRepoStub: &proxyRepoStub{}, proxy: &Proxy{ID: 9, Status: StatusActive, FallbackMode: FallbackModeNone, FailureFallbackMode: FallbackModeDirect}}
+		svc := &adminServiceImpl{proxyRepo: repo}
+		got, err := svc.UpdateProxy(context.Background(), 9, &UpdateProxyInput{FallbackMode: FallbackModeDirect})
+		require.NoError(t, err)
+		require.Equal(t, FallbackModeDirect, got.FallbackMode)
+		require.Equal(t, FallbackModeDirect, got.FailureFallbackMode)
+	})
+}

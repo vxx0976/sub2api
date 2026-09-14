@@ -85,7 +85,7 @@ func (s *GatewayService) tempUnscheduleTransportError(ctx context.Context, accou
 		return
 	}
 	until := time.Now().Add(gatewayTransportErrorTempUnschedDuration)
-	reason := "upstream transport error (proxy/network): " + safeErr
+	reason := ProxyTransportTempUnschedReasonPrefix + " (proxy/network): " + safeErr
 
 	bgCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), openAIAccountStateUpdateTimeout)
 	defer cancel()

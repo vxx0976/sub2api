@@ -48,6 +48,9 @@ type DataProxy struct {
 	FallbackMode    string `json:"fallback_mode,omitempty"`     // none/direct/proxy
 	BackupProxyName string `json:"backup_proxy_name,omitempty"` // 备用代理 name（跨实例按 name 反查）
 	ExpiryWarnDays  int    `json:"expiry_warn_days,omitempty"`
+
+	FailureFallbackMode    string `json:"failure_fallback_mode,omitempty"`     // none/direct/proxy
+	FailureBackupProxyName string `json:"failure_backup_proxy_name,omitempty"` // 故障备用代理 name（跨实例按 name 反查）
 }
 
 // DataAccount 是管理员显式备份导出使用的账号结构，故意不走 dto.Account 的脱敏路径，
@@ -169,6 +172,10 @@ func (h *AccountHandler) ExportData(c *gin.Context) {
 		if p.BackupProxyID != nil {
 			backupProxyName = proxyNameByID[*p.BackupProxyID]
 		}
+		var failureBackupProxyName string
+		if p.FailureBackupProxyID != nil {
+			failureBackupProxyName = proxyNameByID[*p.FailureBackupProxyID]
+		}
 		dataProxies = append(dataProxies, DataProxy{
 			ProxyKey:        key,
 			Name:            p.Name,
@@ -182,6 +189,9 @@ func (h *AccountHandler) ExportData(c *gin.Context) {
 			FallbackMode:    p.FallbackMode,
 			BackupProxyName: backupProxyName,
 			ExpiryWarnDays:  p.ExpiryWarnDays,
+
+			FailureFallbackMode:    p.FailureFallbackMode,
+			FailureBackupProxyName: failureBackupProxyName,
 		})
 	}
 
@@ -351,6 +361,7 @@ func (h *AccountHandler) importData(ctx context.Context, req DataImportRequest) 
 			}
 		}
 
+		failureFallbackMode, failureBackupProxyID := resolveImportFailureFallback(item, key, proxyNameToID, &result)
 		created, createErr := h.adminService.CreateProxy(ctx, &service.CreateProxyInput{
 			Name:           defaultProxyName(item.Name),
 			Protocol:       item.Protocol,
@@ -362,6 +373,9 @@ func (h *AccountHandler) importData(ctx context.Context, req DataImportRequest) 
 			FallbackMode:   fallbackMode,
 			BackupProxyID:  backupProxyID,
 			ExpiryWarnDays: item.ExpiryWarnDays,
+
+			FailureFallbackMode:  failureFallbackMode,
+			FailureBackupProxyID: failureBackupProxyID,
 		})
 		if createErr != nil {
 			result.ProxyFailed++
@@ -782,4 +796,35 @@ func normalizeProxyStatus(status string) string {
 	default:
 		return normalized
 	}
+}
+
+// resolveImportFailureFallback 解析导入代理的故障回退配置：failure_backup_proxy_name 按 name 反查 id，
+// 查不到时把故障回退降级为 none 并记录 warning（与到期回退的导入降级规则一致）。
+func resolveImportFailureFallback(item DataProxy, key string, proxyNameToID map[string]int64, result *DataImportResult) (string, *int64) {
+	mode := strings.ToLower(strings.TrimSpace(item.FailureFallbackMode))
+	switch mode {
+	case "", service.FallbackModeNone:
+		return service.FallbackModeNone, nil
+	case service.FallbackModeDirect:
+		return mode, nil
+	case service.FallbackModeProxy:
+	default:
+		result.Errors = append(result.Errors, DataImportError{
+			Kind:     "proxy",
+			Name:     item.Name,
+			ProxyKey: key,
+			Message:  fmt.Sprintf("failure_fallback_mode %q invalid, downgraded to none", item.FailureFallbackMode),
+		})
+		return service.FallbackModeNone, nil
+	}
+	if bid, ok := proxyNameToID[item.FailureBackupProxyName]; ok && item.FailureBackupProxyName != "" {
+		return mode, &bid
+	}
+	result.Errors = append(result.Errors, DataImportError{
+		Kind:     "proxy",
+		Name:     item.Name,
+		ProxyKey: key,
+		Message:  fmt.Sprintf("failure_backup_proxy_name %q not found, failure_fallback_mode downgraded to none", item.FailureBackupProxyName),
+	})
+	return service.FallbackModeNone, nil
 }

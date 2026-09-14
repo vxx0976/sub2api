@@ -37,6 +37,9 @@ type CreateProxyRequest struct {
 	FallbackMode   string `json:"fallback_mode" binding:"omitempty,oneof=none proxy direct"`
 	BackupProxyID  *int64 `json:"backup_proxy_id"`
 	ExpiryWarnDays int    `json:"expiry_warn_days" binding:"omitempty,min=0"`
+
+	FailureFallbackMode  string `json:"failure_fallback_mode" binding:"omitempty,oneof=none proxy direct"`
+	FailureBackupProxyID *int64 `json:"failure_backup_proxy_id"`
 }
 
 // UpdateProxyRequest represents update proxy request
@@ -52,6 +55,9 @@ type UpdateProxyRequest struct {
 	FallbackMode   string                 `json:"fallback_mode" binding:"omitempty,oneof=none proxy direct"`
 	BackupProxyID  dto.NullableInt64Field `json:"backup_proxy_id"`
 	ExpiryWarnDays *int                   `json:"expiry_warn_days" binding:"omitempty,min=0"`
+
+	FailureFallbackMode  string                 `json:"failure_fallback_mode" binding:"omitempty,oneof=none proxy direct"`
+	FailureBackupProxyID dto.NullableInt64Field `json:"failure_backup_proxy_id"`
 }
 
 // List handles listing all proxies with pagination
@@ -159,6 +165,9 @@ func (h *ProxyHandler) Create(c *gin.Context) {
 			FallbackMode:   strings.TrimSpace(req.FallbackMode),
 			BackupProxyID:  req.BackupProxyID,
 			ExpiryWarnDays: req.ExpiryWarnDays,
+
+			FailureFallbackMode:  strings.TrimSpace(req.FailureFallbackMode),
+			FailureBackupProxyID: req.FailureBackupProxyID,
 		})
 		if err != nil {
 			return nil, err
@@ -201,6 +210,10 @@ func (h *ProxyHandler) Update(c *gin.Context) {
 		BackupProxyID:  req.BackupProxyID.Value,
 		ClearBackupID:  req.BackupProxyID.Set && req.BackupProxyID.Value == nil,
 		ExpiryWarnDays: req.ExpiryWarnDays,
+
+		FailureFallbackMode:  strings.TrimSpace(req.FailureFallbackMode),
+		FailureBackupProxyID: req.FailureBackupProxyID.Value,
+		ClearFailureBackupID: req.FailureBackupProxyID.Set && req.FailureBackupProxyID.Value == nil,
 	})
 	if err != nil {
 		response.ErrorFrom(c, err)

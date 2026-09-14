@@ -1044,6 +1044,11 @@ export interface Proxy {
   fallback_mode: 'none' | 'proxy' | 'direct'
   backup_proxy_id?: number | null
   expiry_warn_days: number
+  failure_fallback_mode?: 'none' | 'proxy' | 'direct'
+  failure_backup_proxy_id?: number | null
+  health_status?: 'healthy' | 'degraded'
+  health_changed_at?: string | null
+  health_last_error?: string
   created_at: string
   updated_at: string
 }
@@ -1654,6 +1659,8 @@ export interface CreateProxyRequest {
   fallback_mode?: 'none' | 'proxy' | 'direct'
   backup_proxy_id?: number | null
   expiry_warn_days?: number
+  failure_fallback_mode?: 'none' | 'proxy' | 'direct'
+  failure_backup_proxy_id?: number | null
 }
 
 export interface UpdateProxyRequest {
@@ -1668,6 +1675,8 @@ export interface UpdateProxyRequest {
   fallback_mode?: 'none' | 'proxy' | 'direct'
   backup_proxy_id?: number | null
   expiry_warn_days?: number
+  failure_fallback_mode?: 'none' | 'proxy' | 'direct'
+  failure_backup_proxy_id?: number | null
 }
 
 export interface AdminDataPayload {

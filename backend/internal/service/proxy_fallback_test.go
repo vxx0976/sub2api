@@ -71,3 +71,71 @@ func TestResolveFallbackTarget(t *testing.T) {
 		require.Nil(t, target)
 	})
 }
+
+func mkFailureProxy(id int64, mode string, backup *int64) Proxy {
+	return Proxy{ID: id, Status: StatusActive, HealthStatus: ProxyHealthHealthy, FailureFallbackMode: mode, FailureBackupProxyID: backup}
+}
+
+func TestResolveProxyFailureFallbackTarget(t *testing.T) {
+	now := time.Now()
+	t.Run("none keeps accounts", func(t *testing.T) {
+		a := mkFailureProxy(1, FallbackModeNone, nil)
+		target, change := ResolveProxyFailureFallbackTarget(a, map[int64]Proxy{1: a}, now)
+		require.False(t, change)
+		require.Nil(t, target)
+	})
+	t.Run("direct", func(t *testing.T) {
+		a := mkFailureProxy(1, FallbackModeDirect, nil)
+		target, change := ResolveProxyFailureFallbackTarget(a, map[int64]Proxy{1: a}, now)
+		require.True(t, change)
+		require.Nil(t, target)
+	})
+	t.Run("healthy backup", func(t *testing.T) {
+		a := mkFailureProxy(1, FallbackModeProxy, i64(2))
+		b := mkFailureProxy(2, FallbackModeNone, nil)
+		target, change := ResolveProxyFailureFallbackTarget(a, map[int64]Proxy{1: a, 2: b}, now)
+		require.True(t, change)
+		require.Equal(t, int64(2), *target)
+	})
+	t.Run("degraded backup follows its own failure fallback", func(t *testing.T) {
+		a := mkFailureProxy(1, FallbackModeProxy, i64(2))
+		b := mkFailureProxy(2, FallbackModeProxy, i64(3))
+		b.HealthStatus = ProxyHealthDegraded
+		c := mkFailureProxy(3, FallbackModeNone, nil)
+		target, change := ResolveProxyFailureFallbackTarget(a, map[int64]Proxy{1: a, 2: b, 3: c}, now)
+		require.True(t, change)
+		require.Equal(t, int64(3), *target)
+	})
+	t.Run("inactive backup with direct tail", func(t *testing.T) {
+		a := mkFailureProxy(1, FallbackModeProxy, i64(2))
+		b := mkFailureProxy(2, FallbackModeDirect, nil)
+		b.Status = "inactive"
+		target, change := ResolveProxyFailureFallbackTarget(a, map[int64]Proxy{1: a, 2: b}, now)
+		require.True(t, change)
+		require.Nil(t, target)
+	})
+	t.Run("expired backup without tail keeps accounts", func(t *testing.T) {
+		a := mkFailureProxy(1, FallbackModeProxy, i64(2))
+		past := now.Add(-time.Hour)
+		b := mkFailureProxy(2, FallbackModeNone, nil)
+		b.ExpiresAt = &past
+		target, change := ResolveProxyFailureFallbackTarget(a, map[int64]Proxy{1: a, 2: b}, now)
+		require.False(t, change)
+		require.Nil(t, target)
+	})
+	t.Run("cycle keeps accounts", func(t *testing.T) {
+		a := mkFailureProxy(1, FallbackModeProxy, i64(2))
+		b := mkFailureProxy(2, FallbackModeProxy, i64(1))
+		b.HealthStatus = ProxyHealthDegraded
+		target, change := ResolveProxyFailureFallbackTarget(a, map[int64]Proxy{1: a, 2: b}, now)
+		require.False(t, change)
+		require.Nil(t, target)
+	})
+	t.Run("expiry fallback settings are ignored", func(t *testing.T) {
+		a := mkFailureProxy(1, FallbackModeNone, nil)
+		a.FallbackMode = FallbackModeDirect
+		target, change := ResolveProxyFailureFallbackTarget(a, map[int64]Proxy{1: a}, now)
+		require.False(t, change)
+		require.Nil(t, target)
+	})
+}

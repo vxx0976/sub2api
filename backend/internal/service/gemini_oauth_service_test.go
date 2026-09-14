@@ -818,6 +818,22 @@ func (m *mockGeminiProxyRepo) CountExpiringSoon(ctx context.Context, now time.Ti
 	panic("not impl")
 }
 
+func (m *mockGeminiProxyRepo) ListProxiesForHealthCheck(ctx context.Context) ([]Proxy, error) {
+	return nil, nil
+}
+
+func (m *mockGeminiProxyRepo) RecordProxyHealthResult(ctx context.Context, proxyID int64, success bool) (ProxyHealthStreak, error) {
+	return ProxyHealthStreak{}, nil
+}
+
+func (m *mockGeminiProxyRepo) MarkProxyDegraded(ctx context.Context, proxyID int64, target *int64, change bool, lastError string) ([]int64, bool, error) {
+	return nil, false, nil
+}
+
+func (m *mockGeminiProxyRepo) MarkProxyHealthy(ctx context.Context, proxyID int64) ([]int64, bool, error) {
+	return nil, false, nil
+}
+
 // mockDriveClient implements geminicli.DriveClient for tests.
 type mockDriveClient struct {
 	getStorageQuotaFunc func(ctx context.Context, accessToken, proxyURL string) (*geminicli.DriveStorageInfo, error)

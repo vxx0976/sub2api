@@ -6295,11 +6295,16 @@ export default {
       nDays: '{days} дн.',
       expiryDaysPlaceholder: 'Своё число дней, пусто = бессрочно',
       expiryWarnDays: 'Напоминание об истечении (за сколько дней)',
-      fallbackMode: 'Откат при сбое',
+      fallbackMode: 'Откат по истечении срока',
       fallbackNone: 'Без отката',
       fallbackProxy: 'Указать запасной прокси',
       fallbackDirect: 'Откат к прямому подключению',
-      backupProxy: 'Запасной прокси'
+      backupProxy: 'Запасной прокси',
+      failureFallbackMode: 'Откат при сбое',
+      failureFallbackHint: 'Проверка раз в минуту. После 3 неудач подряд прокси считается неисправным, и аккаунты переводятся на цель отката; после 5 успешных проверок подряд они автоматически возвращаются.',
+      failureBackupProxy: 'Запасной прокси при сбое',
+      healthDegraded: 'Сбой',
+      healthDegradedTitle: 'Сбой с {time}: {error}'
     },
     redeem: {
       title: 'Управление кодами активации',

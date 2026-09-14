@@ -537,6 +537,15 @@ func (r *accountRepository) updateLockedAccount(
 		schedulable = false
 	}
 
+	// 代理被改成别的值即结束故障回退跟踪：否则原代理恢复时会把管理员手动改绑的账号拉回去。
+	// 行已由 lockAndMergeAccountProbeExtra 锁定，与后续更新同一事务。
+	if _, err := client.ExecContext(ctx, `
+		UPDATE accounts SET proxy_failure_origin_id = NULL
+		WHERE id = $1 AND proxy_failure_origin_id IS NOT NULL AND proxy_id IS DISTINCT FROM $2`,
+		account.ID, account.ProxyID); err != nil {
+		return nil, err
+	}
+
 	builder := client.Account.UpdateOneID(account.ID).
 		SetName(account.Name).
 		SetNillableNotes(account.Notes).
@@ -2886,10 +2895,13 @@ func (r *accountRepository) BulkUpdate(ctx context.Context, ids []int64, updates
 	if updates.ProxyID != nil {
 		// 0 表示清除代理（前端发送 0 而不是 null 来表达清除意图）
 		if *updates.ProxyID == 0 {
+			setClauses = append(setClauses, "proxy_failure_origin_id = CASE WHEN proxy_id IS NOT NULL THEN NULL ELSE proxy_failure_origin_id END")
 			setClauses = append(setClauses, "proxy_id = NULL")
 			ollamaProxyIdentityChanged = "proxy_id IS NOT NULL"
 		} else {
 			proxyPlaceholder := "$" + itoa(idx)
+			// 改到别的代理即结束故障回退跟踪（SET 右侧读的是更新前的 proxy_id）。
+			setClauses = append(setClauses, "proxy_failure_origin_id = CASE WHEN proxy_id IS DISTINCT FROM "+proxyPlaceholder+" THEN NULL ELSE proxy_failure_origin_id END")
 			setClauses = append(setClauses, "proxy_id = "+proxyPlaceholder)
 			ollamaProxyIdentityChanged = "proxy_id IS DISTINCT FROM " + proxyPlaceholder
 			args = append(args, *updates.ProxyID)
@@ -3860,7 +3872,7 @@ func (r *accountRepository) ResetQuotaUsedAndClearRateLimitCooldown(ctx context.
 // 若影响行数为 0，则返回 ErrAccountNotInFallback（账号存在但不在 fallback 状态）。
 func (r *accountRepository) RevertProxyFallback(ctx context.Context, accountID int64) error {
 	res, err := r.sql.ExecContext(ctx, `
-		UPDATE accounts SET proxy_id=proxy_fallback_origin_id, proxy_fallback_origin_id=NULL, updated_at=NOW()
+		UPDATE accounts SET proxy_id=proxy_fallback_origin_id, proxy_fallback_origin_id=NULL, proxy_failure_origin_id=NULL, updated_at=NOW()
 		WHERE id=$1 AND proxy_fallback_origin_id IS NOT NULL AND deleted_at IS NULL`, accountID)
 	if err != nil {
 		return err

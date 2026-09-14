@@ -45,6 +45,20 @@ type Proxy struct {
 	BackupProxyID *int64 `json:"backup_proxy_id,omitempty"`
 	// Days before expiry to flag as expiring-soon (per proxy).
 	ExpiryWarnDays int `json:"expiry_warn_days,omitempty"`
+	// Fallback target when health checks mark the proxy degraded: none | proxy | direct.
+	FailureFallbackMode string `json:"failure_fallback_mode,omitempty"`
+	// Backup proxy id when failure_fallback_mode=proxy (FK in SQL migration, no ent edge).
+	FailureBackupProxyID *int64 `json:"failure_backup_proxy_id,omitempty"`
+	// Health check state: healthy | degraded.
+	HealthStatus string `json:"health_status,omitempty"`
+	// When health_status last changed.
+	HealthChangedAt *time.Time `json:"health_changed_at,omitempty"`
+	// Last health check error that marked the proxy degraded.
+	HealthLastError *string `json:"health_last_error,omitempty"`
+	// Consecutive failed health checks (persisted so it survives leader changes).
+	HealthFailStreak int `json:"health_fail_streak,omitempty"`
+	// Consecutive successful health checks (persisted so it survives leader changes).
+	HealthOkStreak int `json:"health_ok_streak,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ProxyQuery when eager-loading is set.
 	Edges        ProxyEdges `json:"edges"`
@@ -98,11 +112,11 @@ func (*Proxy) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case proxy.FieldID, proxy.FieldPort, proxy.FieldBackupProxyID, proxy.FieldExpiryWarnDays:
+		case proxy.FieldID, proxy.FieldPort, proxy.FieldBackupProxyID, proxy.FieldExpiryWarnDays, proxy.FieldFailureBackupProxyID, proxy.FieldHealthFailStreak, proxy.FieldHealthOkStreak:
 			values[i] = new(sql.NullInt64)
-		case proxy.FieldName, proxy.FieldProtocol, proxy.FieldHost, proxy.FieldUsername, proxy.FieldPassword, proxy.FieldStatus, proxy.FieldFallbackMode:
+		case proxy.FieldName, proxy.FieldProtocol, proxy.FieldHost, proxy.FieldUsername, proxy.FieldPassword, proxy.FieldStatus, proxy.FieldFallbackMode, proxy.FieldFailureFallbackMode, proxy.FieldHealthStatus, proxy.FieldHealthLastError:
 			values[i] = new(sql.NullString)
-		case proxy.FieldCreatedAt, proxy.FieldUpdatedAt, proxy.FieldDeletedAt, proxy.FieldExpiresAt:
+		case proxy.FieldCreatedAt, proxy.FieldUpdatedAt, proxy.FieldDeletedAt, proxy.FieldExpiresAt, proxy.FieldHealthChangedAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -214,6 +228,51 @@ func (_m *Proxy) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.ExpiryWarnDays = int(value.Int64)
 			}
+		case proxy.FieldFailureFallbackMode:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field failure_fallback_mode", values[i])
+			} else if value.Valid {
+				_m.FailureFallbackMode = value.String
+			}
+		case proxy.FieldFailureBackupProxyID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field failure_backup_proxy_id", values[i])
+			} else if value.Valid {
+				_m.FailureBackupProxyID = new(int64)
+				*_m.FailureBackupProxyID = value.Int64
+			}
+		case proxy.FieldHealthStatus:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field health_status", values[i])
+			} else if value.Valid {
+				_m.HealthStatus = value.String
+			}
+		case proxy.FieldHealthChangedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field health_changed_at", values[i])
+			} else if value.Valid {
+				_m.HealthChangedAt = new(time.Time)
+				*_m.HealthChangedAt = value.Time
+			}
+		case proxy.FieldHealthLastError:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field health_last_error", values[i])
+			} else if value.Valid {
+				_m.HealthLastError = new(string)
+				*_m.HealthLastError = value.String
+			}
+		case proxy.FieldHealthFailStreak:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field health_fail_streak", values[i])
+			} else if value.Valid {
+				_m.HealthFailStreak = int(value.Int64)
+			}
+		case proxy.FieldHealthOkStreak:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field health_ok_streak", values[i])
+			} else if value.Valid {
+				_m.HealthOkStreak = int(value.Int64)
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -316,6 +375,33 @@ func (_m *Proxy) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("expiry_warn_days=")
 	builder.WriteString(fmt.Sprintf("%v", _m.ExpiryWarnDays))
+	builder.WriteString(", ")
+	builder.WriteString("failure_fallback_mode=")
+	builder.WriteString(_m.FailureFallbackMode)
+	builder.WriteString(", ")
+	if v := _m.FailureBackupProxyID; v != nil {
+		builder.WriteString("failure_backup_proxy_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("health_status=")
+	builder.WriteString(_m.HealthStatus)
+	builder.WriteString(", ")
+	if v := _m.HealthChangedAt; v != nil {
+		builder.WriteString("health_changed_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.HealthLastError; v != nil {
+		builder.WriteString("health_last_error=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	builder.WriteString("health_fail_streak=")
+	builder.WriteString(fmt.Sprintf("%v", _m.HealthFailStreak))
+	builder.WriteString(", ")
+	builder.WriteString("health_ok_streak=")
+	builder.WriteString(fmt.Sprintf("%v", _m.HealthOkStreak))
 	builder.WriteByte(')')
 	return builder.String()
 }

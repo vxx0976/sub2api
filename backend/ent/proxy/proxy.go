@@ -43,6 +43,20 @@ const (
 	FieldBackupProxyID = "backup_proxy_id"
 	// FieldExpiryWarnDays holds the string denoting the expiry_warn_days field in the database.
 	FieldExpiryWarnDays = "expiry_warn_days"
+	// FieldFailureFallbackMode holds the string denoting the failure_fallback_mode field in the database.
+	FieldFailureFallbackMode = "failure_fallback_mode"
+	// FieldFailureBackupProxyID holds the string denoting the failure_backup_proxy_id field in the database.
+	FieldFailureBackupProxyID = "failure_backup_proxy_id"
+	// FieldHealthStatus holds the string denoting the health_status field in the database.
+	FieldHealthStatus = "health_status"
+	// FieldHealthChangedAt holds the string denoting the health_changed_at field in the database.
+	FieldHealthChangedAt = "health_changed_at"
+	// FieldHealthLastError holds the string denoting the health_last_error field in the database.
+	FieldHealthLastError = "health_last_error"
+	// FieldHealthFailStreak holds the string denoting the health_fail_streak field in the database.
+	FieldHealthFailStreak = "health_fail_streak"
+	// FieldHealthOkStreak holds the string denoting the health_ok_streak field in the database.
+	FieldHealthOkStreak = "health_ok_streak"
 	// EdgeAccounts holds the string denoting the accounts edge name in mutations.
 	EdgeAccounts = "accounts"
 	// EdgePrimaryProxies holds the string denoting the primary_proxies edge name in mutations.
@@ -85,6 +99,13 @@ var Columns = []string{
 	FieldFallbackMode,
 	FieldBackupProxyID,
 	FieldExpiryWarnDays,
+	FieldFailureFallbackMode,
+	FieldFailureBackupProxyID,
+	FieldHealthStatus,
+	FieldHealthChangedAt,
+	FieldHealthLastError,
+	FieldHealthFailStreak,
+	FieldHealthOkStreak,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -131,6 +152,20 @@ var (
 	FallbackModeValidator func(string) error
 	// DefaultExpiryWarnDays holds the default value on creation for the "expiry_warn_days" field.
 	DefaultExpiryWarnDays int
+	// DefaultFailureFallbackMode holds the default value on creation for the "failure_fallback_mode" field.
+	DefaultFailureFallbackMode string
+	// FailureFallbackModeValidator is a validator for the "failure_fallback_mode" field. It is called by the builders before save.
+	FailureFallbackModeValidator func(string) error
+	// DefaultHealthStatus holds the default value on creation for the "health_status" field.
+	DefaultHealthStatus string
+	// HealthStatusValidator is a validator for the "health_status" field. It is called by the builders before save.
+	HealthStatusValidator func(string) error
+	// HealthLastErrorValidator is a validator for the "health_last_error" field. It is called by the builders before save.
+	HealthLastErrorValidator func(string) error
+	// DefaultHealthFailStreak holds the default value on creation for the "health_fail_streak" field.
+	DefaultHealthFailStreak int
+	// DefaultHealthOkStreak holds the default value on creation for the "health_ok_streak" field.
+	DefaultHealthOkStreak int
 )
 
 // OrderOption defines the ordering options for the Proxy queries.
@@ -209,6 +244,41 @@ func ByBackupProxyID(opts ...sql.OrderTermOption) OrderOption {
 // ByExpiryWarnDays orders the results by the expiry_warn_days field.
 func ByExpiryWarnDays(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldExpiryWarnDays, opts...).ToFunc()
+}
+
+// ByFailureFallbackMode orders the results by the failure_fallback_mode field.
+func ByFailureFallbackMode(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldFailureFallbackMode, opts...).ToFunc()
+}
+
+// ByFailureBackupProxyID orders the results by the failure_backup_proxy_id field.
+func ByFailureBackupProxyID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldFailureBackupProxyID, opts...).ToFunc()
+}
+
+// ByHealthStatus orders the results by the health_status field.
+func ByHealthStatus(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldHealthStatus, opts...).ToFunc()
+}
+
+// ByHealthChangedAt orders the results by the health_changed_at field.
+func ByHealthChangedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldHealthChangedAt, opts...).ToFunc()
+}
+
+// ByHealthLastError orders the results by the health_last_error field.
+func ByHealthLastError(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldHealthLastError, opts...).ToFunc()
+}
+
+// ByHealthFailStreak orders the results by the health_fail_streak field.
+func ByHealthFailStreak(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldHealthFailStreak, opts...).ToFunc()
+}
+
+// ByHealthOkStreak orders the results by the health_ok_streak field.
+func ByHealthOkStreak(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldHealthOkStreak, opts...).ToFunc()
 }
 
 // ByAccountsCount orders the results by accounts count.

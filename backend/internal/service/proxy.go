@@ -13,6 +13,15 @@ const (
 	FallbackModeDirect = "direct"
 )
 
+const (
+	ProxyHealthHealthy  = "healthy"
+	ProxyHealthDegraded = "degraded"
+)
+
+// ProxyTransportTempUnschedReasonPrefix 是代理/网络传输失败写入临时不可调度原因的前缀。
+// 代理被判定故障并改投账号时，据此只清掉由代理故障造成的临时不可调度。
+const ProxyTransportTempUnschedReasonPrefix = "upstream transport error"
+
 type Proxy struct {
 	ID             int64
 	Name           string
@@ -28,6 +37,18 @@ type Proxy struct {
 	FallbackMode   string
 	BackupProxyID  *int64
 	ExpiryWarnDays int
+
+	// 故障回退：健康检查判定代理故障后的改投目标，与到期回退相互独立。
+	FailureFallbackMode  string
+	FailureBackupProxyID *int64
+	HealthStatus         string
+	HealthChangedAt      *time.Time
+	HealthLastError      string
+}
+
+// IsDegraded 报告代理是否被健康检查判定为故障。
+func (p *Proxy) IsDegraded() bool {
+	return p.HealthStatus == ProxyHealthDegraded
 }
 
 func (p *Proxy) IsActive() bool {
