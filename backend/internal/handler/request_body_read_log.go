@@ -1,21 +1,18 @@
 package handler
 
 import (
-	"context"
-	"errors"
-	"io"
-	"net"
 	"net/http"
 	"strings"
-	"syscall"
 
+	pkghttputil "github.com/Wei-Shaw/sub2api/internal/pkg/httputil"
 	"go.uber.org/zap"
 )
 
 // logRequestBodyReadFailure records a bounded, payload-free reason for a body
-// read failure. Clients continue to receive the stable generic error message;
-// operators get enough information to distinguish compression failures from a
-// disconnected/truncated upload without logging request content.
+// read failure. Clients receive the generic message plus a fixed reason from
+// pkghttputil.RequestBodyReadFailureMessage; operators get enough information
+// to distinguish compression failures from a disconnected/truncated upload
+// without logging request content.
 func logRequestBodyReadFailure(reqLog *zap.Logger, req *http.Request, err error) {
 	if reqLog == nil || err == nil {
 		return
@@ -51,29 +48,9 @@ func requestContentEncodingCategory(value string) string {
 }
 
 func requestBodyReadErrorKind(err error) string {
-	if err == nil {
-		return "none"
-	}
-	var maxErr *http.MaxBytesError
-	if errors.As(err, &maxErr) {
-		return "max_bytes"
-	}
-	lower := strings.ToLower(err.Error())
-	if strings.Contains(lower, "decode content-encoding") {
-		if strings.Contains(lower, "unsupported content-encoding") {
-			return "unsupported_content_encoding"
-		}
-		return "decode_content_encoding"
-	}
-	if errors.Is(err, context.Canceled) || errors.Is(err, syscall.ECONNRESET) || errors.Is(err, syscall.EPIPE) {
-		return "client_disconnect"
-	}
-	if errors.Is(err, io.ErrUnexpectedEOF) {
-		return "truncated_body"
-	}
-	var netErr net.Error
-	if errors.As(err, &netErr) {
-		return "transport"
-	}
-	return "io_read"
+	return pkghttputil.RequestBodyReadErrorKind(err)
+}
+
+func requestBodyReadFailureMessage(err error) string {
+	return pkghttputil.RequestBodyReadFailureMessage(err)
 }

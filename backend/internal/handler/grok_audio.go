@@ -191,7 +191,16 @@ func (h *OpenAIGatewayHandler) GrokVoice(c *gin.Context, endpoint string) {
 
 	body, err := readGrokVoiceGatewayBody(c)
 	if err != nil {
-		h.errorResponse(c, http.StatusBadRequest, "invalid_request_error", err.Error())
+		if maxErr, ok := extractMaxBytesError(err); ok {
+			h.errorResponse(c, http.StatusRequestEntityTooLarge, "invalid_request_error", buildBodyTooLargeMessage(maxErr.Limit))
+			return
+		}
+		if errors.Is(err, errGrokVoiceBodyRequired) {
+			h.errorResponse(c, http.StatusBadRequest, "invalid_request_error", err.Error())
+			return
+		}
+		// 底层读错误原文可能带内网地址（read tcp 10.x:8080->...），不回给客户端。
+		h.errorResponse(c, http.StatusBadRequest, "invalid_request_error", requestBodyReadFailureMessage(err))
 		return
 	}
 	if endpoint == "tts" {
@@ -349,15 +358,17 @@ func (h *OpenAIGatewayHandler) recordGrokVoiceUsage(
 	})
 }
 
+var errGrokVoiceBodyRequired = errors.New("request body is required")
+
 func readGrokVoiceGatewayBody(c *gin.Context) ([]byte, error) {
 	if c == nil || c.Request == nil {
-		return nil, errors.New("request body is required")
+		return nil, errGrokVoiceBodyRequired
 	}
 	if c.Request.Body == nil {
 		if c.Request.Method == http.MethodGet || c.Request.Method == http.MethodDelete {
 			return nil, nil
 		}
-		return nil, errors.New("request body is required")
+		return nil, errGrokVoiceBodyRequired
 	}
 	return io.ReadAll(c.Request.Body)
 }
