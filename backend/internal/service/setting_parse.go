@@ -206,6 +206,9 @@ func (s *SettingService) InitializeDefaultSettings(ctx context.Context) error {
 		// Available channels feature (default disabled; opt-in)
 		SettingKeyAvailableChannelsEnabled: "false",
 
+		// Subscription feature (default enabled; opt-out)
+		SettingKeySubscriptionEnabled: "true",
+
 		// Model plaza feature（fork 改为默认开启，public unless require_auth）。
 		// 上游默认关是因为广场对它是新增的 opt-in 功能；在本 fork 它是唯一的公开定价页
 		// （取代了原来的 /models），沿用 default-off 会让任何未显式写过该设置的部署
@@ -837,6 +840,9 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 
 	// Available channels feature (default: disabled; strict true)
 	result.AvailableChannelsEnabled = settings[SettingKeyAvailableChannelsEnabled] == "true"
+
+	// Subscription feature (default: enabled; only an explicit false disables)
+	result.SubscriptionEnabled = !isFalseSettingValue(settings[SettingKeySubscriptionEnabled])
 
 	// Model plaza feature（fork 默认开启；键缺失=开，显式值按字面判定）。
 	// 与 modelPlazaEnabledFrom 同口径，否则后台开关会显示「关」而广场实际开着。

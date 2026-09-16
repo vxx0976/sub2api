@@ -4098,23 +4098,10 @@
                 <span
                   :class="[
                     'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
-                    group.platform === 'anthropic'
-                      ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
-                      : group.platform === 'openai'
-                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                        : group.platform === 'antigravity'
-                          ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
-                          : group.platform === 'grok'
-                            ? 'bg-zinc-200 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-100'
-                            : group.platform === 'kimi'
-                              ? 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400'
-                              : group.platform === 'zhipu'
-                                ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400'
-                                : group.platform === 'deepseek'
-                                  ? 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400'
-                                  : group.platform === 'minimax'
-                                    ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400'
-                                    : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+                    // 走 PLATFORM_PILL_COLORS 单一真源：上游这里内联了一串三元，
+                    // 用的是它自己那套 kimi=pink / zhipu=indigo / deepseek=teal / minimax=rose /
+                    // opencode_go=amber，与 fork 的配色（见 platformPillClass）全不一致。
+                    platformPillClass(group.platform),
                   ]"
                 >
                   {{ t("admin.groups.platforms." + group.platform) }}
@@ -4991,6 +4978,9 @@ const PLATFORM_PILL_COLORS: Record<string, string> = {
   // minimax：上游把 rose 分给了 minimax，但 fork 的 zhipu 已经占了 rose，
   // 直接照抄两者在列表里无法区分，这里改用 fuchsia。
   minimax: 'bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-900/30 dark:text-fuchsia-400',
+  // opencode_go：上游给的是 amber，但 amber 与 anthropic 在 GroupBadge / GroupOptionItem
+  // 里逐字撞色，fork 统一改用 lime（见 utils/platformColors.ts 顶部注释）。
+  opencode_go: 'bg-lime-100 text-lime-800 dark:bg-lime-900/30 dark:text-lime-300',
   composite: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400',
 }
 function platformPillClass(p: string): string {

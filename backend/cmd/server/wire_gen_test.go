@@ -69,6 +69,7 @@ func TestProvideCleanup_WithMinimalDependencies_NoPanic(t *testing.T) {
 		nil, // cnProviderBalanceCheck
 		codexVersionSyncSvc,
 		proxyExpirySvc,
+		nil, // proxyHealth（fork b2d30d884 故障回退新增；上游 provideCleanup 无此形参，合并时勿删）
 		subscriptionExpirySvc,
 		nil, // channelBalanceRefresh
 		&service.UsageCleanupService{},

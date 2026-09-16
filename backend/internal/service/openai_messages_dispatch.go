@@ -151,6 +151,14 @@ func (g *Group) ResolveMessagesDispatchModel(requestedModel string) string {
 		}
 	}
 
+	// OpenCode（Zen 按量 / Go 订阅）不是国产供应商：Zen 协议表把 claude-* 直接映到
+	// Anthropic 原生端点，无需改写，更不能吃到下面的 gpt-5.x（发给 opencode.ai 必 400）。
+	// 与 CN 分组的区别是这里**不做**按平台兜底——用户点名的模型名原样透传，
+	// 其 MessagesDispatchModelConfig 也照上游被 sanitizeGroupMessagesDispatchFields 清空。
+	if IsOpenCodeGo(g.Platform) {
+		return ""
+	}
+
 	if mappedModel := strings.TrimSpace(cfg.ExactModelMappings[requestedModel]); mappedModel != "" {
 		return mappedModel
 	}

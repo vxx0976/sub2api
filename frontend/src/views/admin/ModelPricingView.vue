@@ -267,12 +267,16 @@ const CATEGORIES: { key: string; label: string }[] = [
   { key: 'qwen', label: 'Qwen 通义' },
   { key: 'glm', label: 'GLM 智谱' },
   { key: 'kimi', label: 'Kimi · Moonshot' },
-  { key: 'minimax', label: 'MiniMax' }
+  { key: 'minimax', label: 'MiniMax' },
+  { key: 'opencode_go', label: 'OpenCode' }
 ]
 
 function categoryOf(e: BuiltinPricingEntry): string {
   const m = e.model.toLowerCase()
   const s = (e.source || '').toLowerCase()
+  // opencode 必须最先判：它的模型 ID 是 grok-*/gpt-*/glm-* 等借用名，
+  // 只有 source 能区分，放在后面会被 glm/gpt 那几条抢走。
+  if (s.includes('opencode')) return 'opencode_go'
   if (m.includes('claude') || s.includes('anthropic')) return 'claude'
   if (m.includes('gemini') || m.includes('gemma') || s.includes('vertex') || s.includes('google')) return 'gemini'
   if (m.includes('deepseek') || s.includes('deepseek')) return 'deepseek'

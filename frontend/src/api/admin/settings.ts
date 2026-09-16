@@ -17,7 +17,7 @@ export interface DefaultSubscriptionSetting {
 }
 
 // ── 平台限额类型 ──────────────────────────────────────────────────
-export type PlatformType = "anthropic" | "openai" | "gemini" | "antigravity" | "grok" | "deepseek" | "kimi" | "zhipu" | "minimax"
+export type PlatformType = "anthropic" | "openai" | "gemini" | "antigravity" | "grok" | "deepseek" | "kimi" | "zhipu" | "minimax" | "opencode_go"
 export type QuotaWindowType = "daily" | "weekly" | "monthly"
 
 /** 单平台三档限额；null = 不限制，undefined = 未填（等价 null） */
@@ -36,7 +36,7 @@ export type DefaultPlatformQuotasMap = Partial<Record<PlatformType, PlatformQuot
  * 都会静默抹掉该平台已配置的限额，所以加平台必须同步这里。
  * 导出给 SettingsView 的限额表格直接遍历，避免模板再抄一份字面量。
  */
-export const PLATFORM_QUOTA_PLATFORMS: PlatformType[] = ["anthropic", "openai", "gemini", "antigravity", "grok", "deepseek", "kimi", "zhipu", "minimax"]
+export const PLATFORM_QUOTA_PLATFORMS: PlatformType[] = ["anthropic", "openai", "gemini", "antigravity", "grok", "deepseek", "kimi", "zhipu", "minimax", "opencode_go"]
 
 export type SchedulingThresholdPlatformType =
   | "openai"
@@ -45,11 +45,12 @@ export type SchedulingThresholdPlatformType =
   | "kimi"
   | "zhipu"
   | "minimax"
+  | "opencode_go"
 
 export type AccountSchedulingThresholdsMap = Record<SchedulingThresholdPlatformType, number>
 
 // 与后端 AllowedSchedulingThresholdPlatforms 保持一致（deepseek 为余额型，
-// 走余额检测而非用量阈值；minimax Coding/Token Plan 有 5h/weekly 窗口）。
+// 走余额检测而非用量阈值；minimax Coding/Token Plan 与 OpenCode GO 有滚动窗口）。
 export const SCHEDULING_THRESHOLD_PLATFORMS: SchedulingThresholdPlatformType[] = [
   "openai",
   "anthropic",
@@ -57,6 +58,7 @@ export const SCHEDULING_THRESHOLD_PLATFORMS: SchedulingThresholdPlatformType[] =
   "kimi",
   "zhipu",
   "minimax",
+  "opencode_go",
 ]
 
 export function normalizeAccountSchedulingThresholdsMap(
@@ -750,6 +752,9 @@ export interface SystemSettings {
   // Available Channels feature switch
   available_channels_enabled: boolean;
 
+  // Subscription feature switch (user sidebar "My Subscriptions" entry)
+  subscription_enabled: boolean;
+
   // Model Plaza feature switches + description
   model_plaza_enabled: boolean;
   model_plaza_require_auth: boolean;
@@ -1064,6 +1069,9 @@ export interface UpdateSettingsRequest {
 
   // Available Channels feature switch
   available_channels_enabled?: boolean;
+
+  // Subscription feature switch
+  subscription_enabled?: boolean;
 
   // Model Plaza feature switches + description
   model_plaza_enabled?: boolean;
@@ -1495,7 +1503,7 @@ export async function updateRectifierSettings(
  * Matches backend dto.OpenAIFastPolicyRule.
  */
 export interface OpenAIFastPolicyRule {
-  service_tier: "all" | "priority" | "flex" | "ultrafast";
+  service_tier: "all" | "priority" | "flex" | "ultrafast" | "missing";
   action: "pass" | "filter" | "block" | "force_priority";
   scope: "all" | "oauth" | "apikey" | "bedrock";
   user_ids?: number[];

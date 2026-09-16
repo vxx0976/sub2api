@@ -293,6 +293,12 @@ func getDefaultTestModel(platform string) string {
 		// 不补这条会落到 default 的 claude-*，把 Claude 模型名发给 MiniMax 上游必 4xx，
 		// 导致 minimax 分组健康检查恒判不健康、账号「测试连接」必失败。
 		return "MiniMax-M2.7"
+	case "opencode_go":
+		// 与 opencode_go.go 的 DefaultOpenCodeGoTestModel 共用真源（管理端「测试连接」也用它）。
+		// 不补这条会落到 default 的 claude-*：opencode.ai 的 Zen 目录里确实有 claude-* 条目，
+		// 但按 OpenCodeGoModelProtocol 会被分流到 Anthropic 原生端点，与健康检查这条
+		// Chat Completions 路径不符，表现为 opencode 分组健康检查恒判不健康。
+		return DefaultOpenCodeGoTestModel
 	case "grok":
 		return "grok-4.3"
 	default:

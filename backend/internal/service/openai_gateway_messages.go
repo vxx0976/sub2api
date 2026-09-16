@@ -57,6 +57,7 @@ func (s *OpenAIGatewayService) ForwardAsAnthropic(
 	promptCacheKey string,
 	defaultMappedModel string,
 ) (*OpenAIForwardResult, error) {
+	rememberOpenCodeInboundBody(c, body)
 	beginUpstreamResponseModelObservation(c)
 	ClearActualOpenAIUpstreamEndpoint(c)
 	if shouldForwardOpenAIResponsesViaRawChatCompletions(account) {
@@ -67,12 +68,23 @@ func (s *OpenAIGatewayService) ForwardAsAnthropic(
 		return nil, err
 	}
 
-	// 入口分流（国产供应商 Anthropic 协议）：上游为供应商原生 Anthropic 端点时，
-	// /v1/messages 请求零转换直通（仅模型名映射 + 少量 body 清洗），完整保留
-	// thinking / tool_use / cache 语义，适配 Claude Code 等原生客户端。
-	// 必须先于 ShouldUseResponsesAPI 分流：Anthropic 协议账号经 probe 落标
-	// openai_responses_supported=false，会先命中下方的 CC 直转分支。
-	if account.IsAnthropicProtocol() || account.IsAdaptiveAPIProtocol() {
+	// OpenCode Go：按模型原生协议分流。规则未命中兜底 Chat Completions。
+	if account.IsOpenCodeGo() {
+		mapped := resolveOpenCodeGoMappedModel(account, body, defaultMappedModel)
+		switch openCodeGoNativeProtocol(account, mapped) {
+		case APIProtocolAnthropic:
+			return s.forwardAnthropicViaNativeAnthropicEndpoint(ctx, c, account, body, defaultMappedModel)
+		case APIProtocolResponses:
+			break
+		default:
+			return s.forwardAnthropicViaRawChatCompletions(ctx, c, account, body, defaultMappedModel)
+		}
+	} else if account.IsAnthropicProtocol() || account.IsAdaptiveAPIProtocol() {
+		// 入口分流（国产供应商 Anthropic 协议）：上游为供应商原生 Anthropic 端点时，
+		// /v1/messages 请求零转换直通（仅模型名映射 + 少量 body 清洗），完整保留
+		// thinking / tool_use / cache 语义，适配 Claude Code 等原生客户端。
+		// 必须先于 ShouldUseResponsesAPI 分流：Anthropic 协议账号经 probe 落标
+		// openai_responses_supported=false，会先命中下方的 CC 直转分支。
 		return s.forwardAnthropicViaNativeAnthropicEndpoint(ctx, c, account, body, defaultMappedModel)
 	}
 
@@ -87,6 +99,7 @@ func (s *OpenAIGatewayService) ForwardAsAnthropic(
 	if !usesLegacyCNAnthropicDirect(account) && shouldForwardOpenAIResponsesViaRawChatCompletions(account) {
 		return s.forwardAnthropicViaRawChatCompletions(ctx, c, account, body, defaultMappedModel)
 	}
+	SetActualOpenAIUpstreamEndpoint(c, openAIResponsesUpstreamEndpoint)
 
 	startTime := time.Now()
 
@@ -119,6 +132,12 @@ func (s *OpenAIGatewayService) ForwardAsAnthropic(
 	// 已经处理，这里必须让路——否则 api_protocol=responses 的账号会被本分支劫持到
 	// Anthropic 端点（上游 TestFixedCNResponsesProtocolOverridesStaleChatMode 钉死了这点）。
 	if usesLegacyCNAnthropicDirect(account) {
+		// 这条路径真正打到的是供应商的原生 /v1/messages（见 buildAnthropicDirectMessagesURL），
+		// 必须在这里把上游端点标回来：上面第 64 行按 raw-CC 打了 "/v1/chat/completions"，
+		// 移植上游 Responses 分流时又在第 102 行打了 openAIResponsesUpstreamEndpoint，
+		// 两者都会让 usage_logs.upstream_endpoint / ops_error_logs 记错桶
+		// （forwardAnthropicDirect 自己不写 result.UpstreamEndpoint，handler 只能取 ctx 里的值）。
+		SetActualOpenAIUpstreamEndpoint(c, "/v1/messages")
 		return s.forwardAnthropicDirect(ctx, c, account, body, originalModel, billingModel, upstreamModel, clientStream, startTime)
 	}
 
@@ -578,6 +597,7 @@ func (s *OpenAIGatewayService) ForwardAsAnthropic(
 		notifyOpenAIAutoReset(*account.ParentAccountID)
 	}
 
+	stampOpenAIResponsesUpstreamEndpoint(c, result)
 	return result, handleErr
 }
 

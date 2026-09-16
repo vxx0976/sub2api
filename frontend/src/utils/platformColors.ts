@@ -10,9 +10,15 @@
  *
  * minimax：上游给的是 rose，但 fork 的 zhipu 已经占了 rose（两者在后台列表里
  * 会完全无法区分），因此本 fork 固定用 fuchsia。上游后续若再送 rose 同样要改回
- * fuchsia。当前占用一览：anthropic=orange、openai=green/emerald、antigravity=purple、
+ * fuchsia。
+ *
+ * opencode_go：上游给的是 amber，但 amber 在 GroupOptionItem.vue 的 RATE_PILL_COLORS
+ * 与 GroupBadge.vue 的 BADGE_COLORS.anthropic.std 里与 anthropic 逐字撞色，因此本 fork
+ * 固定用 lime（全前端未被占用）。上游后续若再送 amber 同样要改回 lime。
+ *
+ * 当前占用一览：anthropic=orange、openai=green/emerald、antigravity=purple、
  * gemini=blue、deepseek=cyan、kimi=indigo、zhipu=rose、minimax=fuchsia、
- * grok=zinc、composite=cyan。
+ * opencode_go=lime、grok=zinc、composite=cyan。
  */
 
 export type Platform =
@@ -25,6 +31,7 @@ export type Platform =
   | 'zhipu'
   | 'deepseek'
   | 'minimax'
+  | 'opencode_go'
   | 'composite'
 
 // ── Badge (bg + text + border, for inline badges with border) ───────
@@ -38,6 +45,7 @@ const BADGE: Record<Platform, string> = {
   zhipu: 'bg-rose-500/10 text-rose-600 border-rose-500/30 dark:text-rose-400',
   grok: 'bg-zinc-800/10 text-zinc-800 border-zinc-800/30 dark:bg-zinc-500/10 dark:text-zinc-200 dark:border-zinc-500/30',
   minimax: 'bg-fuchsia-500/10 text-fuchsia-600 border-fuchsia-500/30 dark:text-fuchsia-400',
+  opencode_go: 'bg-lime-500/10 text-lime-700 border-lime-500/30 dark:text-lime-300',
   composite: 'bg-cyan-500/10 text-cyan-700 border-cyan-500/30 dark:text-cyan-300',
 }
 const BADGE_DEFAULT = 'bg-slate-500/10 text-slate-600 border-slate-500/30 dark:text-slate-400'
@@ -53,6 +61,7 @@ const BADGE_LIGHT: Record<Platform, string> = {
   zhipu: 'bg-rose-500/10 text-rose-600 dark:bg-rose-500/10 dark:text-rose-300',
   grok: 'bg-zinc-800/10 text-zinc-800 dark:bg-zinc-500/10 dark:text-zinc-200',
   minimax: 'bg-fuchsia-500/10 text-fuchsia-600 dark:bg-fuchsia-500/10 dark:text-fuchsia-300',
+  opencode_go: 'bg-lime-500/10 text-lime-700 dark:bg-lime-500/10 dark:text-lime-300',
   composite: 'bg-cyan-500/10 text-cyan-700 dark:bg-cyan-500/10 dark:text-cyan-300',
 }
 
@@ -67,6 +76,7 @@ const BORDER: Record<Platform, string> = {
   zhipu: 'border-rose-500/20 dark:border-rose-500/20',
   grok: 'border-zinc-800/20 dark:border-zinc-500/20',
   minimax: 'border-fuchsia-500/20 dark:border-fuchsia-500/20',
+  opencode_go: 'border-lime-500/20 dark:border-lime-500/20',
   composite: 'border-cyan-500/20 dark:border-cyan-500/20',
 }
 const BORDER_DEFAULT = 'border-gray-200 dark:border-dark-700'
@@ -83,6 +93,7 @@ const BORDER_STRONG: Record<Platform, string> = {
   zhipu: 'border-rose-500/35 dark:border-rose-500/30',
   grok: 'border-zinc-800/35 dark:border-zinc-500/35',
   minimax: 'border-fuchsia-500/35 dark:border-fuchsia-500/30',
+  opencode_go: 'border-lime-500/35 dark:border-lime-500/30',
   composite: 'border-cyan-500/35 dark:border-cyan-500/30',
 }
 const BORDER_STRONG_DEFAULT = 'border-gray-300 dark:border-dark-600'
@@ -100,6 +111,7 @@ const ACCENT: Record<Platform, string> = {
   zhipu: '#f43f5e', // rose-500
   grok: '#71717a', // zinc-500
   minimax: '#d946ef', // fuchsia-500
+  opencode_go: '#84cc16', // lime-500
   composite: '#06b6d4', // cyan-500
 }
 const ACCENT_DEFAULT = '#14b8a6' // primary-500 (teal)
@@ -115,6 +127,7 @@ const ACCENT_BAR: Record<Platform, string> = {
   zhipu: 'bg-gradient-to-r from-rose-400 to-rose-500',
   grok: 'bg-gradient-to-r from-zinc-700 to-zinc-900',
   minimax: 'bg-gradient-to-r from-fuchsia-400 to-fuchsia-500',
+  opencode_go: 'bg-gradient-to-r from-lime-400 to-lime-500',
   composite: 'bg-gradient-to-r from-slate-500 to-cyan-500',
 }
 const ACCENT_BAR_DEFAULT = 'bg-gradient-to-r from-primary-400 to-primary-500'
@@ -130,6 +143,7 @@ const TEXT: Record<Platform, string> = {
   zhipu: 'text-rose-600 dark:text-rose-400',
   grok: 'text-zinc-800 dark:text-zinc-200',
   minimax: 'text-fuchsia-600 dark:text-fuchsia-400',
+  opencode_go: 'text-lime-700 dark:text-lime-300',
   composite: 'text-cyan-700 dark:text-cyan-300',
 }
 const TEXT_DEFAULT = 'text-primary-600 dark:text-primary-400'
@@ -145,6 +159,7 @@ const ICON: Record<Platform, string> = {
   zhipu: 'text-rose-500 dark:text-rose-400',
   grok: 'text-zinc-800 dark:text-zinc-200',
   minimax: 'text-fuchsia-500 dark:text-fuchsia-400',
+  opencode_go: 'text-lime-500 dark:text-lime-300',
   composite: 'text-cyan-600 dark:text-cyan-300',
 }
 const ICON_DEFAULT = 'text-primary-500 dark:text-primary-400'
@@ -160,6 +175,7 @@ const BUTTON: Record<Platform, string> = {
   zhipu: 'bg-rose-500 text-white hover:bg-rose-600 active:bg-rose-700 dark:bg-rose-500/80 dark:hover:bg-rose-500',
   grok: 'bg-zinc-800 text-white hover:bg-zinc-900 active:bg-black dark:bg-zinc-700 dark:hover:bg-zinc-600',
   minimax: 'bg-fuchsia-500 text-white hover:bg-fuchsia-600 active:bg-fuchsia-700 dark:bg-fuchsia-500/80 dark:hover:bg-fuchsia-500',
+  opencode_go: 'bg-lime-500 text-white hover:bg-lime-600 active:bg-lime-700 dark:bg-lime-500/80 dark:hover:bg-lime-500',
   composite: 'bg-cyan-700 text-white hover:bg-cyan-800 active:bg-cyan-900 dark:bg-cyan-600 dark:hover:bg-cyan-500',
 }
 const BUTTON_DEFAULT = 'bg-primary-500 text-white hover:bg-primary-600 dark:bg-primary-600 dark:hover:bg-primary-500'
@@ -175,6 +191,7 @@ const DISCOUNT: Record<Platform, string> = {
   zhipu: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300',
   grok: 'bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200',
   minimax: 'bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-900/40 dark:text-fuchsia-300',
+  opencode_go: 'bg-lime-100 text-lime-800 dark:bg-lime-900/40 dark:text-lime-300',
   composite: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/40 dark:text-cyan-300',
 }
 const DISCOUNT_DEFAULT = 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
@@ -190,6 +207,7 @@ const GRADIENT: Record<Platform, string> = {
   zhipu: 'from-rose-500 to-rose-600',
   grok: 'from-zinc-700 to-zinc-900',
   minimax: 'from-fuchsia-500 to-fuchsia-600',
+  opencode_go: 'from-lime-500 to-lime-600',
   composite: 'from-slate-600 to-cyan-600',
 }
 const GRADIENT_DEFAULT = 'from-primary-500 to-primary-600'
@@ -205,6 +223,7 @@ const GRADIENT_TEXT: Record<Platform, string> = {
   zhipu: 'text-rose-100',
   grok: 'text-zinc-100',
   minimax: 'text-fuchsia-100',
+  opencode_go: 'text-lime-100',
   composite: 'text-cyan-100',
 }
 const GRADIENT_TEXT_DEFAULT = 'text-primary-100'
@@ -219,6 +238,7 @@ const GRADIENT_SUBTEXT: Record<Platform, string> = {
   zhipu: 'text-rose-200',
   grok: 'text-zinc-300',
   minimax: 'text-fuchsia-200',
+  opencode_go: 'text-lime-200',
   composite: 'text-cyan-200',
 }
 const GRADIENT_SUBTEXT_DEFAULT = 'text-primary-200'
@@ -236,6 +256,7 @@ function isPlatform(p: string): p is Platform {
     p === 'zhipu' ||
     p === 'deepseek' ||
     p === 'minimax' ||
+    p === 'opencode_go' ||
     p === 'composite'
   )
 }
@@ -308,6 +329,7 @@ export function platformLabel(p: string): string {
     case 'zhipu': return 'GLM'
     case 'minimax': return 'MiniMax'
     case 'grok': return 'Grok'
+    case 'opencode_go': return 'OpenCode'
     case 'composite': return 'Composite'
     default: return p || 'API'
   }

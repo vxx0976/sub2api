@@ -95,6 +95,7 @@ type ModelPricing struct {
 	InputPricePerToken                 float64  // 每token输入价格 (USD)
 	InputPricePerTokenPriority         float64  // priority service tier 下每token输入价格 (USD)
 	ImageInputPricePerToken            float64  // 图片输入 token 价格 (USD)，用于多模态 embedding 等图文不同价场景；为 0 时回退到 InputPricePerToken
+	ImageCacheReadPricePerToken        float64  // 图片缓存输入价格；无独立价格时沿用缓存读取价
 	OutputPricePerToken                float64  // 每token输出价格 (USD)
 	OutputPricePerTokenPriority        float64  // priority service tier 下每token输出价格 (USD)
 	CacheCreationPricePerToken         float64  // 缓存创建每token价格 (USD)
@@ -230,6 +231,7 @@ func pricingWithPriorityMultiplier(base *ModelPricing, multiplier float64) *Mode
 type UsageTokens struct {
 	InputTokens           int
 	ImageInputTokens      int
+	ImageCacheReadTokens  int
 	OutputTokens          int
 	CacheCreationTokens   int
 	CacheReadTokens       int
@@ -479,6 +481,30 @@ func (s *BillingService) initFallbackPricing() {
 		InputPricePerToken:     1.5e-6,
 		OutputPricePerToken:    7.5e-6,
 		CacheReadPricePerToken: 0.15e-6,
+		SupportsCacheBreakdown: false,
+	}
+
+	// Gemini 3.7 Flash (Google AI pricing: $0.75 input / $3.75 output /
+	// $0.075 cached input per MTok, promotional through 2026-12-31; official
+	// rates double to $1.50/$7.50/$0.15 from 2027-01-01). Antigravity's
+	// -high/-low/-medium/-tiered aliases are matched below so unavailable
+	// remote pricing never records token-bearing requests at $0.
+	s.fallbackPrices["gemini-3.7-flash"] = &ModelPricing{
+		InputPricePerToken:     0.75e-6,
+		OutputPricePerToken:    3.75e-6,
+		CacheReadPricePerToken: 0.075e-6,
+		SupportsCacheBreakdown: false,
+	}
+
+	// Gemini 3.8 Flash (Google AI pricing: $0.75 input / $3.75 output /
+	// $0.075 cached input per MTok, promotional through 2026-12-31; official
+	// rates double to $1.50/$7.50/$0.15 from 2027-01-01). Antigravity's
+	// -high/-low/-medium/-tiered aliases are matched below so unavailable
+	// remote pricing never records token-bearing requests at $0.
+	s.fallbackPrices["gemini-3.8-flash"] = &ModelPricing{
+		InputPricePerToken:     0.75e-6,
+		OutputPricePerToken:    3.75e-6,
+		CacheReadPricePerToken: 0.075e-6,
 		SupportsCacheBreakdown: false,
 	}
 
@@ -744,6 +770,17 @@ func (s *BillingService) initFallbackPricing() {
 		CacheReadPricePerToken: 0.30e-6, // $0.30 per MTok (cache hit)
 		SupportsCacheBreakdown: false,
 	}
+
+	// ---- OpenCode Go 目录里没有公开价的自有品牌兜底 ----
+	// 数值 = 实测本目录最贵档（kimi-k3 经 pricingService 的 ¥ 表解析出来是
+	// ¥20/¥100/¥2 每 MTok，汇率 1:1；注意不是上面 fallbackPrices["kimi-k3"] 的 $3/$15）。
+	// 理由见 getFallbackPricing 里的说明。
+	s.fallbackPrices["opencode-go-unpriced"] = &ModelPricing{
+		InputPricePerToken:     20e-6,
+		OutputPricePerToken:    100e-6,
+		CacheReadPricePerToken: 2e-6,
+		SupportsCacheBreakdown: false,
+	}
 	s.fallbackPrices["kimi-k2.6"] = &ModelPricing{
 		InputPricePerToken:     0.95e-6, // $0.95 per MTok (cache miss)
 		OutputPricePerToken:    4e-6,    // $4.00 per MTok
@@ -961,6 +998,12 @@ func (s *BillingService) getFallbackPricing(model string) *ModelPricing {
 	if strings.Contains(modelLower, "gemini-3.6-flash") || strings.Contains(modelLower, "gemini-3-6-flash") {
 		return s.fallbackPrices["gemini-3.6-flash"]
 	}
+	if strings.Contains(modelLower, "gemini-3.7-flash") || strings.Contains(modelLower, "gemini-3-7-flash") {
+		return s.fallbackPrices["gemini-3.7-flash"]
+	}
+	if strings.Contains(modelLower, "gemini-3.8-flash") || strings.Contains(modelLower, "gemini-3-8-flash") {
+		return s.fallbackPrices["gemini-3.8-flash"]
+	}
 
 	// DeepSeek 系列：官方模型 deepseek-flash（V4.1-Flash）/ V4 Pro 按各自价卡；
 	// 官方暂时路由到 V4.1-Flash 的旧名（v4-flash / v4-flash-vision-exp）与已停服的
@@ -1166,6 +1209,24 @@ func (s *BillingService) getFallbackPricing(model string) *ModelPricing {
 		return pricing
 	}
 
+	// OpenCode Go 目录独有品牌：longcat / mimo / muse-spark / hy3|hy4 / omen。
+	// 这 8 个 ID（见 opencode_go.go 的 DefaultOpenCodeGoModelIDs）官方与 LiteLLM 都没有公开价，
+	// 不兜底就会一路落到下面的 return nil → GetModelPricingAt 报 ErrModelPricingUnavailable
+	// → 该请求零成本落账（openai_gateway_service.go 的「零成本 + 告警」分支）。
+	//
+	// 按 fork 一贯口径兜到**本目录最贵档**（= kimi-k3 的 $20/$100/$2 每 MTok）：宁可多收
+	// （可发现、可退款）也绝不少收，与 deepseek/minimax 的未知型号兜底同理（kimi-k3 三天
+	// 少收 ¥503 的教训）。真价一旦确认，补一条显式 fallbackPrices 条目即可，
+	// 调用方打的 "Using fallback pricing for model" 就是补表提醒。
+	if strings.HasPrefix(modelLower, "longcat") ||
+		strings.HasPrefix(modelLower, "mimo-") ||
+		strings.HasPrefix(modelLower, "muse-spark") ||
+		strings.HasPrefix(modelLower, "hy3") ||
+		strings.HasPrefix(modelLower, "hy4") ||
+		strings.HasPrefix(modelLower, "omen-") {
+		return s.fallbackPrices["opencode-go-unpriced"]
+	}
+
 	return nil
 }
 
@@ -1281,6 +1342,7 @@ func (s *BillingService) GetModelPricingAt(model string, at time.Time) (*ModelPr
 				LongContextInputMultiplier:    litellmPricing.LongContextInputCostMultiplier,
 				LongContextOutputMultiplier:   litellmPricing.LongContextOutputCostMultiplier,
 				ImageInputPricePerToken:       litellmPricing.InputCostPerImageToken,
+				ImageCacheReadPricePerToken:   litellmPricing.CacheReadInputImageTokenCost,
 				ImageOutputPricePerToken:      litellmPricing.OutputCostPerImageToken,
 				// PricingTimeBand 是 fork 的官方时段档标记（DeepSeek 峰谷），必须随价卡带出，
 				// 否则 usage_log.pricing_time_band 为空、对账无法区分峰谷。
@@ -1641,6 +1703,9 @@ func (s *BillingService) computeTokenBreakdown(
 	bd.CacheCreationCost = s.computeCacheCreationCost(pricing, tokens, cacheCreationPrice, cacheCreationMultiplier)
 
 	bd.CacheReadCost = float64(tokens.CacheReadTokens) * cacheReadPrice
+	if imageCached := min(max(tokens.ImageCacheReadTokens, 0), max(tokens.CacheReadTokens, 0)); imageCached > 0 && pricing.ImageCacheReadPricePerToken > 0 {
+		bd.CacheReadCost = float64(tokens.CacheReadTokens-imageCached)*cacheReadPrice + float64(imageCached)*pricing.ImageCacheReadPricePerToken
+	}
 
 	if tierMultiplier != 1.0 {
 		bd.InputCost *= tierMultiplier

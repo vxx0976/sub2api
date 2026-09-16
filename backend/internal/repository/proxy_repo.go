@@ -900,7 +900,7 @@ func (r *proxyRepository) MarkProxyDegraded(ctx context.Context, proxyID int64, 
 	if err != nil && err != dbent.ErrTxStarted {
 		return nil, false, err
 	}
-	var exec sqlExecutor = r.sql
+	exec := sqlExecutor(r.sql)
 	if tx != nil {
 		defer func() { _ = tx.Rollback() }()
 		exec = tx.Client()
@@ -972,7 +972,7 @@ func (r *proxyRepository) MarkProxyHealthy(ctx context.Context, proxyID int64) (
 	if err != nil && err != dbent.ErrTxStarted {
 		return nil, false, err
 	}
-	var exec sqlExecutor = r.sql
+	exec := sqlExecutor(r.sql)
 	if tx != nil {
 		defer func() { _ = tx.Rollback() }()
 		exec = tx.Client()

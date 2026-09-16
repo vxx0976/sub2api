@@ -254,8 +254,9 @@ func TestDeepseekPricingFileMatchesOfficialRates(t *testing.T) {
 		model                    string
 		input, output, cacheRead float64
 	}{
-		{"deepseek-v4-flash", 2.2e-7, 6.6e-7, 7e-9},
-		{"deepseek-v4-flash-vision-exp", 2.2e-7, 6.6e-7, 7e-9},
+		{"deepseek-flash", 1.5e-7, 6e-7, 3e-9},
+		{"deepseek-v4-flash", 1.5e-7, 6e-7, 3e-9},
+		{"deepseek-v4-flash-vision-exp", 1.5e-7, 6e-7, 3e-9},
 		{"deepseek-v4-pro", 6.6e-7, 1.98e-6, 2.2e-8},
 	}
 	for _, tt := range tests {
@@ -266,5 +267,34 @@ func TestDeepseekPricingFileMatchesOfficialRates(t *testing.T) {
 			require.InDelta(t, tt.output, entry.OutputCostPerToken, 1e-15)
 			require.InDelta(t, tt.cacheRead, entry.CacheReadInputTokenCost, 1e-15)
 		})
+	}
+}
+
+// ⚠️ 上游 0.2.5 在此处有两个用例 TestCalculateCostUnified_DeepseekFlashAndLegacyFlashShareNewRates
+// 与 TestCalculateCostUnified_DeepseekProRoutesToFlashAtCutoff，本 fork **刻意不收**：
+// 它们断言的是上游那套「$ 低谷价常量 + deepseekProRoutesToFlashAt 切换」口径，
+// 与本 fork 的人民币价表（deepSeekPricingTable + pricing_time_tier.go 官方峰谷档）冲突。
+// deepseek-flash 与旧名同价这件事，fork 侧由 billing_service_test.go 的三条用例覆盖。
+// 下轮合并若又看到这两个函数，同样删掉，别改期望值去迁就。
+
+// isDeepSeekModel 是纯模型名前缀谓词，与计价口径无关（本 fork 的 DeepSeek 走内置 ¥ 价表）。
+// 它只被 ollama cloud 的 max_tokens 归一使用，见 billing_service.go 的函数注释。
+func TestIsDeepSeekModel(t *testing.T) {
+	deepseek := []string{
+		"deepseek-flash", "deepseek-v4-flash", "deepseek-v4-pro", "deepseek-v4-flash-vision-exp",
+		"deepseek-chat", "deepseek-reasoner", "deepseek-v3-2-251201",
+		"deepseek-coder", "deepseek-foo", "deepseek-v4-pro-0813",
+		"DEEPSEEK-V4-PRO", " deepseek-v4-flash ",
+	}
+	for _, m := range deepseek {
+		require.True(t, isDeepSeekModel(m), "model %q should be deepseek", m)
+	}
+
+	nonDeepseek := []string{
+		"gpt-5.4", "claude-sonnet-4", "deepseekcoder", // 无连字符不算 deepseek- 前缀
+		"", " deepseek", // 无连字符后缀
+	}
+	for _, m := range nonDeepseek {
+		require.False(t, isDeepSeekModel(m), "model %q should not be deepseek", m)
 	}
 }

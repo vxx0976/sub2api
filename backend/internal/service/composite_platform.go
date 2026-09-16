@@ -201,9 +201,16 @@ func (s *GatewayService) resolveCompositeRouteDecision(ctx context.Context, grou
 
 // compositeRequestPlatforms 是复合分组能够真正承载的具体平台集合。
 //
-// 本集合与 AllowedQuotaPlatforms 现已同为 9 个，但仍是两条独立不变量：调度桶
+// 本集合与 AllowedQuotaPlatforms 现已同为 10 个，但仍是两条独立不变量：调度桶
 // （schedulerCanonicalBuckets / schedulerBucketsForGroup）对任意分组通用，本集合
 // 只描述「复合分组能承载什么」。别把两者当同一件事，也别用其中一个去证明另一个。
+//
+// opencode_go（OpenCode，Zen 按量 / Go 订阅）随上游 0.2.5 加入：它不是国产供应商
+// （IsCNProvider 不含它），但同走 OpenAI 网关，NormalizeOpenAICompatiblePlatform 保留其原值，
+// 故一并纳入本集合（仍在队尾）。
+// ⚠️ 与 PlatformAntigravity 同理，DetectModelPlatform **不会**产出 opencode_go——
+// 它的目录全是 grok-*/gpt-*/glm-*/kimi-*/deepseek-* 等借用名，按模型名探测只会解析成
+// 原厂平台；opencode_go 只能经分组/账号的显式平台进来。
 //
 // 国产四家（kimi / zhipu / deepseek / minimax）曾因三处运行时缺口被刻意排除在外，现已全部补齐：
 //
@@ -217,8 +224,9 @@ func (s *GatewayService) resolveCompositeRouteDecision(ctx context.Context, grou
 //     覆盖 /v1/chat/completions、/v1/responses、/v1/messages 及两个 count_tokens 端点。
 //
 // ⚠️ 仍**刻意**不放开的窄口（这是当前设计，不是待办事项，解冲突/重构时别顺手补齐）：
-//   - /v1/embeddings、/v1/images/*、/v1/alpha/search、/v1/realtime 仍只允许
-//     PlatformOpenAI（各自硬写死）。
+//   - /v1/images/*、/v1/alpha/search、/v1/realtime 仍只允许 PlatformOpenAI（各自硬写死）。
+//     /v1/embeddings 不在此列：fork 的 routes/gateway.go 用 isOpenAICompatPlatform
+//     放行了全部 OpenAI 兼容平台，别照这段注释去「收紧」它。
 //   - Responses WebSocket 走 isResponsesWebSocketCompositePlatform，只有
 //     openai + grok：CN 账号过不了 WSv2 ingress 的 transport 过滤，且 WS HTTP 桥
 //     没有面向 CN 的 Responses 转换，放行只会把明确的策略拒绝变成误导性的
@@ -232,7 +240,7 @@ func (s *GatewayService) resolveCompositeRouteDecision(ctx context.Context, grou
 // 精确匹配、再整轮通配匹配，两轮都按此顺序取**首个命中**。复合分组下同名模型在多个
 // 平台都配了定价/映射时，由这个顺序决定用哪一份。
 // 国产各家一律**追加在队尾**，理由是：前 5 个平台之间的既有命中结果因此一字不变，
-// 从 5 扩到 9 对存量复合分组零回归。把它们插进前 5 个中间会改变既有命中。
+// 从 5 扩到 10 对存量复合分组零回归。把它们插进前 5 个中间会改变既有命中。
 func compositeRequestPlatforms() []string {
 	return []string{
 		PlatformAnthropic,
@@ -244,6 +252,7 @@ func compositeRequestPlatforms() []string {
 		PlatformZhipu,
 		PlatformDeepseek,
 		PlatformMiniMax,
+		PlatformOpenCodeGo,
 	}
 }
 

@@ -248,7 +248,8 @@ export default {
     querySuccess: 'Запрос выполнен успешно',
     queryFailed: 'Запрос не выполнен',
     queryFailedRetry: 'Запрос не выполнен, повторите попытку позже',
-    noDailyUsage: 'Нет данных об использовании по дням'
+    noDailyUsage: 'Нет данных об использовании по дням',
+    billingType: 'Тип тарификации'
   },
   setup: {
     title: 'Настройка Sub2API',
@@ -777,7 +778,8 @@ export default {
     adminReferrals: 'Управление рефералами',
     adminRechargeOrders: 'Управление пополнениями',
     rechargeSettings: 'Настройки пополнения',
-    referral: 'Пригласить друзей'
+    referral: 'Пригласить друзей',
+    subscribe: 'Подписка'
   },
   auth: {
     welcomeBack: 'С возвращением',
@@ -1311,6 +1313,34 @@ export default {
       inactive: 'Неактивен',
       quota_exhausted: 'Квота исчерпана',
       expired: 'Истёк'
+    },
+    bulkEdit: {
+      title: 'Массовое редактирование',
+      selectedCount: 'Выбрано ключей: {count}',
+      selectKey: 'Выбрать ключ {name}',
+      clearSelection: 'Снять выбор',
+      hint: 'Отметьте поля для изменения. Неотмеченные поля сохранят текущие значения.',
+      limitHint: 'Введите 0, чтобы снять ограничение. Уже израсходованная сумма сохраняется.',
+      ipHint: 'По одному IP или CIDR в строке. Оставьте пустым, чтобы очистить этот список у выбранных ключей.',
+      invalidLimit: 'Введите корректную сумму не меньше 0.',
+      invalidExpiration: 'Выберите корректную дату истечения или отметьте «Бессрочно».',
+      apply: 'Применить к {count} ключам',
+      success: 'Обновлено ключей: {count}',
+      partialFailure: 'Обновлено ключей: {success}; с ошибкой: {failed}',
+      failureHint: 'Эти ключи не удалось обновить. Измените настройки и повторите — повторно будут обработаны только неудавшиеся ключи.'
+    },
+    providerLabel: 'Поставщик',
+    providers: {
+      anthropic: 'Anthropic',
+      openai: 'OpenAI',
+      domestic: 'Китайские модели',
+      other: 'Другие'
+    },
+    providerHints: {
+      anthropic: 'Выберите доступную группу Anthropic / Claude',
+      openai: 'Выберите доступную группу OpenAI / GPT',
+      domestic: 'Включает DeepSeek, Kimi, Zhipu GLM и MiniMax',
+      other: 'Включает Gemini, Grok, Antigravity, OpenCode и смешанные группы'
     }
   },
   usage: {
@@ -1632,6 +1662,7 @@ export default {
       zhipu: 'Zhipu GLM',
       deepseek: 'DeepSeek',
       minimax: 'MiniMax',
+      opencode_go: 'OpenCode'
     },
     extraModelsHeader: 'Доп. модели',
     extraModelsEmpty: 'Нет доп. моделей',
@@ -1667,6 +1698,7 @@ export default {
         daily: 'Сутки',
         '30d': '30 дн',
         total: 'Всего',
+        monthly: 'Месяц'
       },
       labels: {
         requests: 'Запросы',
@@ -1913,7 +1945,8 @@ export default {
     codeRedeemSuccess: 'Код успешно активирован!',
     failedToRedeem: 'Не удалось активировать код. Проверьте код и попробуйте снова.',
     subscriptionRefreshFailed: 'Активация прошла успешно, но не удалось обновить статус подписки.',
-    pleaseEnterCode: 'Пожалуйста, введите код активации'
+    pleaseEnterCode: 'Пожалуйста, введите код активации',
+    userRefreshFailed: 'Активация прошла успешно, но не удалось обновить данные аккаунта.'
   },
   topupOrders: {
     title: 'История пополнений',
@@ -3101,7 +3134,8 @@ export default {
           button: 'Сбросить окно',
           confirm: 'Сбросить использование за {window} для платформы {platform} у этого пользователя? Операция вступит в силу немедленно.',
           success: 'Использование {platform} {window} сброшено',
-          failed: 'Сброс не удался'
+          failed: 'Сброс не удался',
+          unavailable: 'Для этой платформы лимит не настроен, сбрасывать нечего'
         },
         updateSuccess: 'Лимиты платформ обновлены',
         updateFailed: 'Не удалось сохранить',
@@ -3114,6 +3148,13 @@ export default {
         cellColumnTooltip: 'Показаны только платформы с установленным лимитом',
         subscriptionWarning: 'У этого пользователя есть активная подписка. Лимиты платформ действуют только для запросов в режиме баланса (стандартном); запросы в режиме подписки этим лимитам не подчиняются.',
         invalidNumber: 'Следующие поля содержат недопустимые числа. Исправьте их перед сохранением: {fields}'
+      },
+      bulkDelete: {
+        action: 'Удалить выбранных ({count})',
+        title: 'Удаление выбранных пользователей',
+        confirm: 'Удалить выбранных пользователей ({count})? Действие нельзя отменить. Аккаунты администраторов удалить нельзя.',
+        success: 'Удалено пользователей: {count}',
+        failed: 'Не удалось удалить пользователей: {count}. Они остались выбранными для повтора.'
       }
     },
     groups: {
@@ -3259,7 +3300,8 @@ export default {
         zhipu: 'GLM',
         minimax: 'MiniMax',
         ollama: 'Ollama',
-        composite: 'Composite'
+        composite: 'Composite',
+        opencode_go: 'OpenCode'
       },
       saving: 'Сохранение...',
       noGroups: 'Нет групп',
@@ -4166,7 +4208,7 @@ export default {
       workerActive: 'Обработка асинхронной задачи аудита или записи',
       workerIdle: 'Запущено, свободно и готово',
       workerDisabled: 'Контроль рисков или модерация контента отключены',
-      processed: 'Обработано',
+      processed: 'Асинхронно обработано',
       droppedErrors: 'Отброшено / ошибки',
       autoRefresh: 'Автообновление каждые 15 с',
       lastCleanup: 'Последняя очистка: {time}',
@@ -4443,7 +4485,8 @@ export default {
         user: 'Пользователь',
         group: 'Группа подписки',
         validityDays: 'Срок действия (дни)',
-        extendDays: 'Продлить на (дни)'
+        extendDays: 'Продлить на (дни)',
+        adjustDays: 'Изменить на (дней)'
       },
       selectUser: 'Выберите пользователя',
       selectGroup: 'Выберите группу подписки',
@@ -4503,7 +4546,43 @@ export default {
           revokeDesc: 'Немедленно прекратить подписку пользователя (можно восстановить из списка отозванных)'
         },
         tip: 'Подсказка: в выпадающем списке групп подписки отображаются только группы с типом тарификации «Подписка» и статусом «Активна». Если вариантов нет, сначала создайте группу в управлении группами.'
-      }
+      },
+      batchAssign: {
+        enable: 'Массовое назначение подписок',
+        hint: 'Найдите и добавьте несколько пользователей, чтобы назначить одну и ту же группу и срок действия. Не более 100 за раз.',
+        selected: 'Добавлено пользователей: {count}',
+        removeUser: 'Удалить {email}',
+        result: 'Назначение завершено: успешно {success}, с ошибкой {failed}',
+        retryHint: 'Успешные пользователи удалены из списка. Устраните ошибки и отправьте оставшихся повторно.'
+      },
+      bulk: {
+        extend: 'Массовое изменение срока',
+        reset_quota: 'Массовый сброс квоты',
+        revoke: 'Массовый отзыв',
+        restore: 'Массовое восстановление',
+        selected: 'Выбрано подписок: {count}',
+        selectSubscription: 'Выбрать подписку #{id}',
+        clearSelection: 'Очистить выбор',
+        selectionHint: 'Выбор действует на текущей странице; смена страницы или фильтров сбрасывает его. Не более 100 подписок. Каждое действие обрабатывает только подписки с подходящим статусом.',
+        selectionLimit: 'За один раз можно обработать не более 100 подписок',
+        selectionRequired: 'Выберите хотя бы одну подписку',
+        confirmTargets: 'Будет обработано подписок: {count}',
+        groupFallback: 'Группа #{id}',
+        extendHint: 'Положительное целое продлевает срок, отрицательное сокращает, максимум 36500 дней. Истёкшие подписки продлеваются от текущего момента и не могут быть сокращены; новая дата окончания должна быть в будущем.',
+        invalidDays: 'Введите целое число дней, отличное от нуля (не более 36500).',
+        resetWindows: 'Окна для сброса',
+        resetHint: 'Сбрасывает счётчики выбранных окон квоты; настройки лимитов не меняются.',
+        selectWindow: 'Выберите хотя бы одно окно',
+        revokeHint: 'Отозванные подписки перестают действовать сразу; восстановить их можно массовым восстановлением.',
+        restoreHint: 'Эти подписки снова будут включены. Подписки, срок действия которых уже истёк, восстанавливаются со статусом «истекла».',
+        confirm: 'Подтвердить',
+        retry: 'Повторить исходную операцию',
+        retryHint: 'Повторная отправка использует тот же ключ идемпотентности и обрабатывает весь исходный список целиком; уже применённые изменения не дублируются.',
+        requestFailed: 'Не удалось выполнить массовую операцию',
+        result: 'Готово: успешно {success}, с ошибкой {failed}',
+        itemFailed: 'Подписка #{id}: {message}'
+      },
+      adjustDaysPlaceholder: 'Положительное — продлить, отрицательное — сократить'
     },
     accounts: {
       title: 'Управление аккаунтами',
@@ -4845,7 +4924,8 @@ export default {
         deepseek: 'DeepSeek',
         kimi: 'Kimi',
         zhipu: 'GLM',
-        minimax: 'MiniMax'
+        minimax: 'MiniMax',
+        opencode_go: 'OpenCode'
       },
       types: {
         oauth: 'OAuth',
@@ -5199,14 +5279,14 @@ export default {
         responsesWebsocketsV2Desc: 'По умолчанию отключено. Включите, чтобы разрешить возможность протокола responses_websockets_v2 (зависит от глобального переключателя шлюза и переключателя типа аккаунта).',
         wsMode: 'WS mode',
         wsModeDesc:
-          'Применяется только к текущему типу аккаунта OpenAI; режимы WS аккаунта, включая http_bridge, действуют только при глобальном gateway.openai_ws.mode_router_v2_enabled=true.',
+          'Применяется только к текущему типу аккаунта OpenAI. Выберите «Выключено», чтобы отключить WS. Остальные режимы используют выбранный способ подключения только при gateway.openai_ws.mode_router_v2_enabled=true; иначе используется пул контекста.',
         wsModeOff: 'Выключено (off)',
         wsModeCtxPool: 'Пул контекста (ctx_pool)',
         wsModePassthrough: 'Passthrough (passthrough)',
+        wsModeHttpBridge: 'HTTP-мост (http_bridge)',
         wsModeShared: 'Общий (shared)',
         wsModeDedicated: 'Выделенный (dedicated)',
-        wsModeConcurrencyHint: 'При включённом WS mode параллелизм аккаунта используется как лимит пула WS-соединений для этого аккаунта.',
-        wsModePassthroughHint: 'Режим passthrough не использует пул WS-соединений.',
+        wsModePassthroughHint: 'Шлюз открывает отдельное апстрим-соединение WS для каждой клиентской сессии, без пула соединений.',
         oauthResponsesWebsocketsV2: 'OAuth WebSocket Mode',
         oauthResponsesWebsocketsV2Desc: 'Применяется только к OpenAI OAuth. Только при включении этот аккаунт может использовать протокол OpenAI WebSocket Mode.',
         apiKeyResponsesWebsocketsV2: 'API Key WebSocket Mode',
@@ -5273,7 +5353,9 @@ export default {
         testMode: 'Тестовый режим',
         testModeDefault: 'Обычный запрос',
         testModeCompact: 'Проверка Compact',
-        modelRestrictionDisabledByPassthrough: 'Включена автоматическая сквозная передача: белый список/сопоставление моделей не действуют.'
+        modelRestrictionDisabledByPassthrough: 'Включена автоматическая сквозная передача: белый список/сопоставление моделей не действуют.',
+        wsModeCtxPoolHint: 'Шлюз берёт и переиспользует апстрим-соединения WS из пула; лимит пула задаётся конфигурацией шлюза.',
+        wsModeHttpBridgeHint: 'Шлюз преобразует WS-запросы клиента в HTTP-запросы к апстриму, а потоковые SSE-ответы — обратно в сообщения WS.'
       },
       grok: {
         baseUrlHint: 'Аккаунты Grok OAuth перенаправляются на официальный Base URL xAI API.',
@@ -6069,7 +6151,25 @@ export default {
         balanceProbeTooltip: 'Запросить эндпоинт баланса провайдера, чтобы узнать баланс аккаунта',
         balanceLow: 'Недостаточно средств',
         noBalanceEndpoint: 'У этой платформы нет эндпоинта запроса баланса',
+        windowMonthly: '30 дн.'
       },
+      opencodeGo: {
+        accountMode: {
+          zen: 'Zen',
+          zenDesc: 'Шлюз с оплатой по факту. Расходует кредиты аккаунта, тарификация по токенам.',
+          go: 'GO',
+          goDesc: 'Подписочный шлюз, лимиты по скользящим окнам 5 часов / неделя / месяц.'
+        },
+        protocolRules: {
+          title: 'Маршрутизация протоколов по моделям',
+          hint: 'В адаптивном режиме каждая модель отправляется в нативный протокол апстрима. Укажите точный ID или шаблон с * в конце (например, grok-*, qwen*). Срабатывает первое совпавшее правило; модели без совпадения идут в Chat Completions.',
+          patternPlaceholder: 'grok-* или deepseek-v4-flash',
+          add: 'Добавить правило',
+          remove: 'Удалить правило',
+          restoreDefaults: 'Восстановить значения по умолчанию',
+          fallback: 'Модели без совпадения → Chat Completions (/v1/chat/completions)'
+        }
+      }
     },
     scheduledTests: {
       title: 'Запланированные тесты',
@@ -6747,15 +6847,15 @@ export default {
         custom: 'Произвольный'
       },
       openaiTokenStats: {
-        title: 'Статистика запросов OpenAI Token',
+        title: 'Статистика запросов по токенам',
         viewModeTopN: 'TopN',
         viewModePagination: 'Постранично',
         prevPage: 'Назад',
         nextPage: 'Далее',
         pageInfo: 'Страница {page}/{total}',
         totalModels: 'Всего моделей: {total}',
-        failedToLoad: 'Не удалось загрузить статистику OpenAI Token',
-        empty: 'Нет данных статистики запросов OpenAI Token для текущих фильтров',
+        failedToLoad: 'Не удалось загрузить статистику запросов по токенам',
+        empty: 'Нет данных статистики запросов по токенам для текущих фильтров',
         table: {
           model: 'Модель',
           requestCount: 'Запросов',
@@ -7378,8 +7478,8 @@ export default {
         dashboardCards: 'Карточки панели',
         displayAlertEvents: 'Показывать события оповещений',
         displayAlertEventsHint: 'Управляет отображением карточки событий оповещений на панели мониторинга. По умолчанию включено.',
-        displayOpenAITokenStats: 'Показывать статистику запросов OpenAI Token',
-        displayOpenAITokenStatsHint: 'Управляет отображением карточки статистики запросов OpenAI Token на панели мониторинга. По умолчанию отключено.',
+        displayOpenAITokenStats: 'Показывать статистику запросов по токенам',
+        displayOpenAITokenStatsHint: 'Статистика запросов по токенам в разрезе моделей по всем платформам, с фильтрами по платформе и группе. По умолчанию отключено.',
         autoRefreshCountdown: 'Автообновление: {seconds}с',
         validation: {
           title: 'Пожалуйста, исправьте следующие проблемы',
@@ -7600,6 +7700,21 @@ export default {
             hint: 'Установить единую персональную ставку возврата для всех выбранных пользователей.',
             placeholder: 'например 30',
             clearHint: 'Отправка с пустым полем очистит персональную ставку у выбранных пользователей.'
+          }
+        },
+        siteBillingMode: {
+          title: 'Тип сайта',
+          description: 'Определяет, какие способы покупки доступны пользователям. По умолчанию — «Пополнение и подписка».',
+          label: 'Способы покупки',
+          options: {
+            rechargeAndSubscription: 'Пополнение и подписка',
+            rechargeOnly: 'Только пополнение',
+            subscriptionOnly: 'Только подписка'
+          },
+          hints: {
+            rechargeAndSubscription: 'Пользователям доступно и пополнение баланса, и покупка подписок.',
+            rechargeOnly: 'Скрывает «Мои подписки», вкладку подписок на странице покупки, индикатор подписки в шапке и фильтр по типу тарификации в разделе использования. В админке также скрывается пункт «Управление подписками».',
+            subscriptionOnly: 'На странице покупки остаются только подписки, пункт в боковом меню называется «Подписка», заказы на пополнение баланса отклоняются.'
           }
         }
       },
@@ -7872,7 +7987,7 @@ export default {
         subscriptionGroup: 'Группа подписок',
         subscriptionValidityDays: 'Срок действия (дней)',
         defaultPlatformQuotas: 'Лимиты платформ по умолчанию (назначаются при регистрации)',
-        defaultPlatformQuotasHint: 'Автоматически записываются новым пользователям при регистрации; существующих пользователей не затрагивают. Пусто = без ограничений для этой платформы в этом окне.',
+        defaultPlatformQuotasHint: 'Применяется к новым пользователям при регистрации; существующих пользователей не затрагивает. Пусто = без ограничения для этой платформы и окна.',
         platformQuotaNotice: 'Месячный лимит использует скользящее окно 30 дней, а не календарный месяц.'
       },
       platformQuota: {
@@ -8206,7 +8321,8 @@ export default {
         add: 'Добавить пункт меню',
         remove: 'Удалить',
         moveUp: 'Вверх',
-        moveDown: 'Вниз'
+        moveDown: 'Вниз',
+        hideOpenButton: 'Скрыть кнопку «Открыть в новой вкладке»'
       },
       payment: {
         title: 'Настройки платежей',
@@ -8275,7 +8391,7 @@ export default {
         subscriptionUsdToCnyRateDisabled: 'Отключено (цена взимается как есть)',
         validationEasyPayCustomMethodRequired: 'Для каждого пользовательского способа EasyPay необходимо указать способ оплаты и тип upstream',
         validationEasyPayCustomMethodTypeInvalid: 'Пользовательские способы оплаты EasyPay могут содержать только строчные буквы, цифры, подчёркивания и дефисы',
-        validationEasyPayCustomMethodUpstreamTypeInvalid: 'Типы upstream EasyPay могут содержать только строчные буквы, цифры, подчёркивания и дефисы',
+        validationEasyPayCustomMethodUpstreamTypeInvalid: 'Тип апстрима EasyPay может содержать только строчные латинские буквы, цифры, точки, подчёркивания и дефисы',
         validationEasyPayCustomMethodReserved: 'Пользовательские способы оплаты EasyPay не могут использовать встроенные alipay или wxpay',
         validationEasyPayCustomMethodPrefixReserved: 'Пользовательские способы оплаты EasyPay не могут начинаться с alipay или wxpay',
         validationEasyPayCustomMethodDuplicate: 'Пользовательские способы оплаты EasyPay не должны повторяться',
@@ -8617,7 +8733,7 @@ export default {
       },
       openaiFastPolicy: {
         title: 'Политика OpenAI Fast/Flex',
-        description: 'Блокировать, фильтровать или пропускать запросы OpenAI fast(priority) и flex на основе поля service_tier в теле запроса; применяется только к шлюзу OpenAI.',
+        description: 'Перехват, фильтрация или сквозная передача запросов OpenAI fast(priority), ultrafast и flex на основе поля service_tier в теле запроса; действует только для шлюза OpenAI. «Все значения tier» включает только явно переданные tier.',
         empty: 'Правила ещё не настроены. Нажмите кнопку ниже, чтобы добавить.',
         ruleHeader: 'Правило #{index}',
         removeRule: 'Удалить правило',
@@ -8664,7 +8780,8 @@ export default {
           filter: 'Фильтровать',
           block: 'Блокировать',
           force_priority: 'Принудительно priority'
-        }
+        },
+        tierMissing: 'Tier не передан'
       },
       wechatConnect: {
         title: 'Вход через WeChat',
@@ -9286,7 +9403,9 @@ export default {
     notEnabledTitle: 'Функция не включена',
     notEnabledDesc: 'Администратор не включил страницу покупки. Пожалуйста, свяжитесь с администратором.',
     notConfiguredTitle: 'URL покупки не настроен',
-    notConfiguredDesc: 'Администратор включил пункт, но не настроил URL покупки. Пожалуйста, свяжитесь с администратором.'
+    notConfiguredDesc: 'Администратор включил пункт, но не настроил URL покупки. Пожалуйста, свяжитесь с администратором.',
+    rechargeDescription: 'Пополнение баланса через встроенную страницу',
+    subscriptionDescription: 'Оформление подписки через встроенную страницу'
   },
   customPage: {
     title: 'Пользовательская страница',
@@ -9867,7 +9986,8 @@ export default {
     transferMemo: 'Примечание к переводу',
     openAlipay: 'Открыть Alipay',
     waitingForPayment: 'Ожидание оплаты...',
-    paymentSuccess: 'Оплата прошла успешно'
+    paymentSuccess: 'Оплата прошла успешно',
+    billingUnavailable: 'Пополнение и подписки сейчас недоступны. Обратитесь к администратору.'
   },
   consoleHome: {
     title: 'Главная',

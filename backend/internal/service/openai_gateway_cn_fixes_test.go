@@ -30,11 +30,15 @@ import (
 // 是恒等白名单）。返回空会让 claude-* 原样透传到国产上游 —— 选号失败，或上游接受后被
 // filterCNProviderBillingModelCandidates 滤空候选变成零成本落账。
 // 所以这里守的是「不得吃到 gpt-5.x」，达成方式是按平台各自兜底。
+//
+// opencode_go 不在本表里：它不是国产供应商，走的是「原样透传」（返回空），
+// 由本文件末尾的 TestResolveMessagesDispatchModel_OpenCodeGoPassthrough 单独钉住。
 func TestResolveMessagesDispatchModel_CNProvidersNoOpenAIDefaults(t *testing.T) {
 	want := map[string][2]string{
 		PlatformKimi:     {"kimi-k2.6", "kimi-k2.6"},
 		PlatformZhipu:    {"glm-4.6", "glm-4.6"},
 		PlatformDeepseek: {"deepseek-v4-pro", "deepseek-v4-pro"},
+		PlatformMiniMax:  {"MiniMax-M2.7", "MiniMax-M2.7"},
 	}
 	for platform, exp := range want {
 		g := &Group{Platform: platform}
@@ -50,6 +54,16 @@ func TestResolveMessagesDispatchModel_CNProvidersNoOpenAIDefaults(t *testing.T) 
 	openaiGroup := &Group{Platform: PlatformOpenAI}
 	require.NotEmpty(t, openaiGroup.ResolveMessagesDispatchModel("claude-sonnet-4-5"),
 		"openai 分组的调度默认映射不应受 CN 修复影响")
+}
+
+// OpenCode（Zen/Go）与 CN 分组的口径刻意不同：不做按平台兜底，原样透传用户点名的模型名
+// （Zen 协议表会把 claude-* 直接映到 Anthropic 原生端点），但同样不得吃到 gpt-5.x。
+func TestResolveMessagesDispatchModel_OpenCodeGoPassthrough(t *testing.T) {
+	g := &Group{Platform: PlatformOpenCodeGo}
+	for _, model := range []string{"claude-sonnet-4-5", "claude-opus-4-1", "claude-haiku-4-5-20251001"} {
+		require.Empty(t, g.ResolveMessagesDispatchModel(model),
+			"opencode_go 分组应原样透传 %s，既不改写也不得回落 gpt-5.x", model)
+	}
 }
 
 func TestFilterCNProviderBillingModelCandidates(t *testing.T) {
@@ -73,6 +87,12 @@ func TestFilterCNProviderBillingModelCandidates(t *testing.T) {
 	require.Equal(t, []string{"claude-sonnet-4-5", "gpt-5.4"}, passthrough)
 
 	require.Nil(t, svc.filterCNProviderBillingModelCandidates(context.Background(), nil, apiKey, nil))
+
+	openCodeAccount := &Account{ID: 3, Platform: PlatformOpenCodeGo}
+	openCodeFiltered := svc.filterCNProviderBillingModelCandidates(context.Background(), openCodeAccount, apiKey,
+		[]string{"claude-sonnet-4-5", "muse-spark-1.3-contributor-free"})
+	require.Equal(t, []string{"muse-spark-1.3-contributor-free"}, openCodeFiltered,
+		"OpenCode 无显式定价时不得按 Claude 原价计费 claude-*")
 }
 
 func TestCalculateOpenAIRecordUsageCost_EmptyCandidatesIsPricingUnavailable(t *testing.T) {

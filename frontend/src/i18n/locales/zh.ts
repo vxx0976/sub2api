@@ -250,6 +250,7 @@ export default {
     queryFailed: '查询失败',
     queryFailedRetry: '查询失败，请稍后重试',
     noDailyUsage: '暂无按日用量数据',
+    billingType: '计费方式'
   },
 
   // Setup Wizard
@@ -784,6 +785,7 @@ export default {
     auditLogs: '操作日志',
     chat: '在线客服',
     batchImage: '批量生图',
+    subscribe: '订阅'
   },
 
   // Auth
@@ -1341,6 +1343,34 @@ export default {
       inactive: '已停用',
       quota_exhausted: '额度耗尽',
       expired: '已过期'
+    },
+    bulkEdit: {
+      title: '批量编辑',
+      selectedCount: '已选择 {count} 个密钥',
+      selectKey: '选择密钥 {name}',
+      clearSelection: '取消选择',
+      hint: '勾选需要修改的字段，未勾选的字段保持原值。',
+      limitHint: '输入 0 表示不限制；已用额度保持不变。',
+      ipHint: '每行一个 IP 或 CIDR；留空将清空所选密钥的此项名单。',
+      invalidLimit: '请输入大于或等于 0 的有效金额。',
+      invalidExpiration: '请选择有效的过期时间，或勾选永久有效。',
+      apply: '应用到 {count} 个密钥',
+      success: '已更新 {count} 个密钥',
+      partialFailure: '已更新 {success} 个密钥，{failed} 个失败',
+      failureHint: '以下密钥更新失败，可修改设置后重试。再次提交只会更新失败的密钥。'
+    },
+    providerLabel: '厂商',
+    providers: {
+      anthropic: 'Anthropic',
+      openai: 'OpenAI',
+      domestic: '国产模型',
+      other: '其他'
+    },
+    providerHints: {
+      anthropic: '选择 Anthropic / Claude 的可用分组',
+      openai: '选择 OpenAI / GPT 的可用分组',
+      domestic: '包含 DeepSeek、Kimi、智谱 GLM、MiniMax',
+      other: '包含 Gemini、Grok、Antigravity、OpenCode 和混合分组'
     }
   },
 
@@ -1670,6 +1700,7 @@ export default {
       zhipu: '智谱 GLM',
       deepseek: 'DeepSeek',
       minimax: 'MiniMax',
+      opencode_go: 'OpenCode'
     },
     extraModelsHeader: '附加模型',
     extraModelsEmpty: '无附加模型',
@@ -1705,6 +1736,7 @@ export default {
         daily: '日',
         '30d': '30 天',
         total: '总量',
+        monthly: '月'
       },
       labels: {
         requests: '请求',
@@ -1958,7 +1990,8 @@ export default {
     codeRedeemSuccess: '兑换成功！',
     failedToRedeem: '兑换失败，请检查兑换码后重试。',
     subscriptionRefreshFailed: '兑换成功，但订阅状态刷新失败。',
-    pleaseEnterCode: '请输入兑换码'
+    pleaseEnterCode: '请输入兑换码',
+    userRefreshFailed: '兑换成功，但账户信息刷新失败。'
   },
 
   // Recharge
@@ -3124,6 +3157,7 @@ export default {
           confirm: '确认重置该用户 {platform} 平台的 {window} 用量？此操作立即生效。',
           success: '已重置 {platform} {window} 用量',
           failed: '重置失败',
+          unavailable: '该平台未配置限额，没有可重置的用量窗口'
         },
         updateSuccess: '平台限额已更新',
         updateFailed: '保存失败',
@@ -3136,6 +3170,13 @@ export default {
         cellColumnTooltip: '仅展示已设限额的平台',
         subscriptionWarning: '此用户有活跃订阅，平台限额仅在余额（标准）模式下生效，订阅模式请求不受此限额约束。',
         invalidNumber: '以下字段填写不是合法数字，请修正后再保存：{fields}',
+      },
+      bulkDelete: {
+        action: '批量删除（{count}）',
+        title: '删除已选用户',
+        confirm: '确定删除已选的 {count} 个用户吗？此操作无法撤销。管理员账号无法删除。',
+        success: '已删除 {count} 个用户',
+        failed: '{count} 个用户删除失败，已保留选中，可重试。'
       }
     },
 
@@ -3288,6 +3329,7 @@ export default {
         minimax: 'MiniMax',
         ollama: 'Ollama',
         composite: 'Composite',
+        opencode_go: 'OpenCode'
       },
       saving: '保存中...',
       noGroups: '暂无分组',
@@ -4160,7 +4202,7 @@ export default {
       workerActive: '正在处理异步审计或记录任务',
       workerIdle: '已启动，当前空闲可用',
       workerDisabled: '风控或内容审计未启用',
-      processed: '已处理',
+      processed: '异步已处理',
       droppedErrors: '丢弃/异常',
       autoRefresh: '每 15 秒自动刷新',
       lastCleanup: '上次清理：{time}',
@@ -4443,7 +4485,8 @@ export default {
         user: '用户',
         group: '订阅分组',
         validityDays: '有效期（天）',
-        extendDays: '延长天数'
+        extendDays: '延长天数',
+        adjustDays: '调整天数'
       },
       selectUser: '选择用户',
       selectGroup: '选择订阅分组',
@@ -4509,7 +4552,43 @@ export default {
           revokeDesc: '立即终止该用户的订阅，可在已撤销列表中恢复'
         },
         tip: '提示：订阅分组下拉列表中只会显示计费类型为「订阅」且状态为「正常」的分组。如果没有可选项，请先到分组管理中创建。'
-      }
+      },
+      batchAssign: {
+        enable: '批量分配订阅',
+        hint: '搜索并添加多个用户，统一分配所选分组和有效期。每次最多 100 人。',
+        selected: '已添加 {count} 位用户',
+        removeUser: '移除 {email}',
+        result: '分配完成：成功 {success} 人，失败 {failed} 人',
+        retryHint: '已移除成功项，可检查失败原因后重新提交剩余用户。'
+      },
+      bulk: {
+        extend: '批量调整有效期',
+        reset_quota: '批量重置配额',
+        revoke: '批量撤销',
+        restore: '批量恢复',
+        selected: '已选择 {count} 条订阅',
+        selectSubscription: '选择订阅 #{id}',
+        clearSelection: '清空选择',
+        selectionHint: '当前页选择，翻页或筛选会清空，最多 100 条。各操作仅处理适用状态的订阅。',
+        selectionLimit: '每次最多操作 100 条订阅',
+        selectionRequired: '请至少选择一条订阅',
+        confirmTargets: '本次将处理以下 {count} 条订阅',
+        groupFallback: '分组 #{id}',
+        extendHint: '正整数延长，负整数缩短，最多调整 36500 天。已过期订阅从当前时间起延长，不能缩短；缩短后的到期时间必须在未来。',
+        invalidDays: '请输入 -36500 到 36500 之间的非零整数天数',
+        resetWindows: '选择要重置的配额窗口',
+        resetHint: '所选窗口的用量将归零，并从今天开始重新计算。',
+        selectWindow: '请至少选择一个配额窗口',
+        revokeHint: '撤销后这些订阅将无法继续使用，可稍后在已撤销列表中恢复。',
+        restoreHint: '恢复后将重新启用这些订阅。原有效期已结束的订阅将显示为已过期。',
+        confirm: '确认执行',
+        retry: '重试原操作',
+        retryHint: '暂未确认操作结果。重试会继续原操作，避免重复处理。也可关闭后重新选择相同订阅和参数重试。',
+        requestFailed: '批量操作请求失败，请重试',
+        result: '处理完成：成功 {success} 条，失败 {failed} 条',
+        itemFailed: '操作失败'
+      },
+      adjustDaysPlaceholder: '正数延长，负数缩短'
     },
 
     // Accounts Management
@@ -4845,6 +4924,7 @@ export default {
         kimi: 'Kimi',
         zhipu: 'GLM',
         minimax: 'MiniMax',
+        opencode_go: 'OpenCode'
       },
       types: {
         oauth: 'OAuth',
@@ -5221,15 +5301,14 @@ export default {
           '默认关闭。开启后可启用 responses_websockets_v2 协议能力（受网关全局开关与账号类型开关约束）。',
         wsMode: 'WS mode',
         wsModeDesc:
-          '仅对当前 OpenAI 账号类型生效；包括 http_bridge 在内的账号 WS mode 仅在全局 gateway.openai_ws.mode_router_v2_enabled=true 时生效。',
+          '仅对当前 OpenAI 账号类型生效。选择“关闭”可禁用 WS；其余模式需全局 gateway.openai_ws.mode_router_v2_enabled=true 才按所选方式连接，未开启时统一使用上下文池。',
         wsModeOff: '关闭（off）',
         wsModeCtxPool: '上下文池（ctx_pool）',
         wsModePassthrough: '透传（passthrough）',
         wsModeHttpBridge: 'HTTP 桥接（http_bridge）',
         wsModeShared: '共享（shared）',
         wsModeDedicated: '独享（dedicated）',
-        wsModeConcurrencyHint: '启用 WS mode 后，该账号并发数将作为该账号 WS 连接池上限。',
-        wsModePassthroughHint: 'passthrough 模式不使用 WS 连接池。',
+        wsModePassthroughHint: '网关为每个客户端会话单独建立上游 WS 连接，不使用连接池。',
         oauthResponsesWebsocketsV2: 'OAuth WebSocket Mode',
         oauthResponsesWebsocketsV2Desc:
           '仅对 OpenAI OAuth 生效。开启后该账号才允许使用 OpenAI WebSocket Mode 协议。',
@@ -5307,6 +5386,8 @@ export default {
         testModeDefault: '常规请求',
         testModeCompact: 'Compact 探测',
         modelRestrictionDisabledByPassthrough: '已开启自动透传：模型白名单/映射不会生效。',
+        wsModeCtxPoolHint: '网关从连接池获取并复用上游 WS 连接，连接池上限由网关配置决定。',
+        wsModeHttpBridgeHint: '网关将客户端 WS 请求转换为上游 HTTP 请求，再将 SSE 流式响应转换为 WS 消息返回。'
       },
       grok: {
         baseUrlHint: 'Grok OAuth 账号会转发到官方 xAI API Base URL。',
@@ -6185,7 +6266,25 @@ export default {
         balanceProbeTooltip: '请求供应商余额端点，查询账户余额',
         balanceLow: '余额不足',
         noBalanceEndpoint: '该平台暂无余额查询接口',
+        windowMonthly: '月'
       },
+      opencodeGo: {
+        accountMode: {
+          zen: 'Zen',
+          zenDesc: '按量付费网关，消耗账户余额，按 Token 计费。',
+          go: 'GO',
+          goDesc: '订阅制网关，按 5 小时 / 周 / 月滚动用量窗口限流。'
+        },
+        protocolRules: {
+          title: '模型协议分流',
+          hint: '自适应模式下按模型匹配上游协议。支持精确 ID 或末尾 * 通配（如 grok-*、qwen*）；自上而下第一条命中生效；未命中走 Chat Completions。',
+          patternPlaceholder: 'grok-* 或 deepseek-v4-flash',
+          add: '添加规则',
+          remove: '删除规则',
+          restoreDefaults: '恢复默认',
+          fallback: '未命中以上规则 → Chat Completions（/v1/chat/completions）'
+        }
+      }
     },
 
     // Scheduled Tests
@@ -6930,15 +7029,15 @@ export default {
         custom: '自定义'
       },
       openaiTokenStats: {
-        title: 'OpenAI Token 请求统计',
+        title: 'Token 请求统计',
         viewModeTopN: 'TopN',
         viewModePagination: '分页',
         prevPage: '上一页',
         nextPage: '下一页',
         pageInfo: '第 {page}/{total} 页',
         totalModels: '模型总数：{total}',
-        failedToLoad: '加载 OpenAI Token 统计失败',
-        empty: '当前筛选条件下暂无 OpenAI Token 请求统计数据',
+        failedToLoad: '加载 Token 请求统计失败',
+        empty: '当前筛选条件下暂无 Token 请求统计数据',
         table: {
           model: '模型',
           requestCount: '请求数',
@@ -7524,8 +7623,8 @@ export default {
         dashboardCards: '仪表盘卡片',
         displayAlertEvents: '展示告警事件',
         displayAlertEventsHint: '控制运维监控仪表盘中告警事件卡片是否显示，默认开启。',
-        displayOpenAITokenStats: '展示 OpenAI Token 请求统计',
-        displayOpenAITokenStatsHint: '控制运维监控仪表盘中 OpenAI Token 请求统计卡片是否显示，默认关闭。',
+        displayOpenAITokenStats: '展示 Token 请求统计',
+        displayOpenAITokenStatsHint: '按模型统计所有平台的 Token 请求，支持平台和分组筛选，默认关闭。',
         autoRefreshCountdown: '自动刷新：{seconds}s',
         validation: {
           title: '请先修正以下问题',
@@ -7761,6 +7860,21 @@ export default {
             clearHint: '留空提交将清除所选用户的专属比例。',
           },
         },
+        siteBillingMode: {
+          title: '站点类型',
+          description: '决定用户端提供哪些购买方式。默认「充值 & 订阅」。',
+          label: '购买方式',
+          options: {
+            rechargeAndSubscription: '充值 & 订阅',
+            rechargeOnly: '仅充值',
+            subscriptionOnly: '仅订阅'
+          },
+          hints: {
+            rechargeAndSubscription: '用户端同时提供余额充值与订阅套餐。',
+            rechargeOnly: '用户端隐藏「我的订阅」、购买页订阅套餐、顶栏订阅进度与用量页「计费类型」筛选，直接访问「我的订阅」会跳回仪表盘；管理端侧边栏同时隐藏「订阅管理」入口（页面仍可通过地址访问）。已有订阅的计费与兑换码发放的订阅不受影响。',
+            subscriptionOnly: '用户端购买页只保留订阅套餐，侧边栏入口显示为「订阅」，余额充值下单会被拒绝；兑换码、返利等余额入账不受影响。'
+          }
+        }
       },
       emailTabDisabledTitle: '邮箱验证未启用',
       emailTabDisabledHint: '请在「安全与认证」选项卡中启用邮箱验证后，再配置 SMTP 设置。',
@@ -8035,7 +8149,7 @@ export default {
         subscriptionGroup: '订阅分组',
         subscriptionValidityDays: '有效期（天）',
         defaultPlatformQuotas: '默认平台限额（注册时分配）',
-        defaultPlatformQuotasHint: '新用户注册时自动写入平台限额记录；已有用户不受影响。留空 = 该平台该窗口不限制。',
+        defaultPlatformQuotasHint: '新用户注册时自动获得这里配置的限额；已有用户不受影响。留空 = 该平台该窗口不限制。',
         platformQuotaNotice: '月限额为 30 天滚动窗口，非自然月',
       },
       platformQuota: {
@@ -8401,6 +8515,7 @@ export default {
         remove: '删除',
         moveUp: '上移',
         moveDown: '下移',
+        hideOpenButton: '隐藏“新窗口打开”按钮'
       },
       payment: {
         title: '支付设置',
@@ -8476,7 +8591,7 @@ export default {
         validationFieldRequired: '{field} 不能为空',
         validationEasyPayCustomMethodRequired: '每个易支付自定义方式都必须填写支付方式和上游 type',
         validationEasyPayCustomMethodTypeInvalid: '易支付自定义支付方式只能包含小写字母、数字、下划线和短横线',
-        validationEasyPayCustomMethodUpstreamTypeInvalid: '易支付上游 type 只能包含小写字母、数字、下划线和短横线',
+        validationEasyPayCustomMethodUpstreamTypeInvalid: '易支付上游 type 只能包含小写字母、数字、点号、下划线和短横线',
         validationEasyPayCustomMethodReserved: '易支付自定义支付方式不能使用内置的 alipay 或 wxpay',
         validationEasyPayCustomMethodPrefixReserved: '易支付自定义支付方式不能以 alipay 或 wxpay 开头',
         validationEasyPayCustomMethodDuplicate: '易支付自定义支付方式不能重复',
@@ -8813,7 +8928,7 @@ export default {
       },
       openaiFastPolicy: {
         title: 'OpenAI Fast/Flex 策略',
-        description: '基于请求体 service_tier 字段拦截/过滤/透传 OpenAI fast(priority)、ultrafast 与 flex 请求；仅作用于 OpenAI 网关。',
+        description: '基于请求体 service_tier 字段拦截/过滤/透传 OpenAI fast(priority)、ultrafast 与 flex 请求；仅作用于 OpenAI 网关。“全部 tier 值”仅包含显式传入的 tier。',
         empty: '尚未配置任何规则。点击下方按钮新增。',
         ruleHeader: '规则 #{index}',
         removeRule: '删除规则',
@@ -8859,7 +8974,8 @@ export default {
           filter: '过滤',
           block: '拦截',
           force_priority: '强制 priority'
-        }
+        },
+        tierMissing: '省略 tier'
       },
       wechatConnect: {
         title: '微信登录',
@@ -9375,7 +9491,9 @@ export default {
     notEnabledTitle: '该功能未开启',
     notEnabledDesc: '管理员暂未开启充值/订阅入口，请联系管理员。',
     notConfiguredTitle: '充值/订阅链接未配置',
-    notConfiguredDesc: '管理员已开启入口，但尚未配置充值/订阅链接，请联系管理员。'
+    notConfiguredDesc: '管理员已开启入口，但尚未配置充值/订阅链接，请联系管理员。',
+    rechargeDescription: '通过内嵌页面完成充值',
+    subscriptionDescription: '通过内嵌页面完成订阅'
   },
 
   // Custom Page (iframe embed)
@@ -9996,6 +10114,7 @@ export default {
         revoked: '已撤销',
       },
     },
+    billingUnavailable: '充值与订阅均暂未开放，请联系管理员。'
   },
 
   modelPricing: {

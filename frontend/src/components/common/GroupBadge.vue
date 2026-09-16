@@ -156,6 +156,8 @@ const labelClass = computed(() => {
     kimi: 'bg-indigo-200/60 text-indigo-800 dark:bg-indigo-800/40 dark:text-indigo-300',
     zhipu: 'bg-rose-200/60 text-rose-800 dark:bg-rose-800/40 dark:text-rose-300',
     minimax: 'bg-fuchsia-200/60 text-fuchsia-800 dark:bg-fuchsia-800/40 dark:text-fuchsia-300',
+    // opencode_go 用 lime：上游给的 amber 与本表 anthropic 的 std 档撞色。
+    opencode_go: 'bg-lime-200/60 text-lime-800 dark:bg-lime-800/40 dark:text-lime-300',
     grok: 'bg-zinc-300/70 text-zinc-800 dark:bg-zinc-700/60 dark:text-zinc-200',
     composite: 'bg-cyan-200/70 text-cyan-900 dark:bg-cyan-900/50 dark:text-cyan-300',
   }
@@ -177,6 +179,7 @@ const BADGE_COLORS: Record<GroupPlatform, { sub: string; std: string }> = {
   kimi:        { sub: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400',     std: 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-400' },
   zhipu:       { sub: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400', std: 'bg-rose-50 text-rose-700 dark:bg-rose-900/20 dark:text-rose-400' },
   minimax:     { sub: 'bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-900/30 dark:text-fuchsia-400', std: 'bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-900/20 dark:text-fuchsia-400' },
+  opencode_go: { sub: 'bg-lime-100 text-lime-700 dark:bg-lime-900/30 dark:text-lime-400',           std: 'bg-lime-50 text-lime-700 dark:bg-lime-900/20 dark:text-lime-400' },
   grok:        { sub: 'bg-zinc-200 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-100',              std: 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200' },
   composite:   { sub: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300',          std: 'bg-cyan-50 text-cyan-800 dark:bg-cyan-900/20 dark:text-cyan-300' },
 }

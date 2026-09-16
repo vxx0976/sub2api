@@ -122,13 +122,15 @@ func (s *CNProviderBalanceCheckService) runOnce() {
 			}
 			// coding 账号：探测滚动窗口并落快照（不要求 Schedulable——已被
 			// 阈值停调的账号也需要新鲜快照决定是否续停）。
-			if account.IsCodingPlan() {
+			// OpenCode 的 GO 订阅同样是滚动窗口额度（5h/周/月），口径等同 coding；
+			// Zen 是按量付费、无额度窗口，不进探测。
+			if account.IsCodingPlan() || account.IsOpenCodeGoPlan() {
 				quotaTargets = append(quotaTargets, quotaTarget{id: account.ID, platform: account.Platform})
 				continue
 			}
-			// payg 余额探测仅 kimi/deepseek（智谱 / MiniMax 无公开余额端点，
+			// payg 余额探测仅 kimi/deepseek（智谱 / MiniMax / OpenCode 无公开余额端点，
 			// payg 账号依赖响应式 402/429 处理）。
-			if platform != PlatformZhipu && platform != PlatformMiniMax && account.Schedulable {
+			if platform != PlatformZhipu && platform != PlatformMiniMax && platform != PlatformOpenCodeGo && account.Schedulable {
 				paygTargets = append(paygTargets, account)
 			}
 		}
@@ -141,9 +143,11 @@ func (s *CNProviderBalanceCheckService) runOnce() {
 		}
 		collect(platform, accounts)
 	}
-	// 智谱 / MiniMax 无余额端点，仅进额度探测。
+	// 智谱 / MiniMax / OpenCode 无余额端点，仅进额度探测。
+	// OpenCode 漏在这里的后果是 GO 订阅账号的 5h/周/月窗口快照永远不刷新，
+	// 账号自动停调阈值（AllowedSchedulingThresholdPlatforms 已含 opencode_go）拿不到数据。
 	if s.quotaService != nil {
-		for _, platform := range []string{PlatformZhipu, PlatformMiniMax} {
+		for _, platform := range []string{PlatformZhipu, PlatformMiniMax, PlatformOpenCodeGo} {
 			accounts, err := s.accountRepo.ListByPlatform(context.Background(), platform)
 			if err != nil {
 				log.Printf("[CNBalance] list %s accounts failed: %v", platform, err)

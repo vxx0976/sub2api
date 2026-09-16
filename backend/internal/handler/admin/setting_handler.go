@@ -395,6 +395,7 @@ func (h *SettingHandler) GetSettings(c *gin.Context) {
 		ChannelBalanceRefreshIntervalMinutes: settings.ChannelBalanceRefreshIntervalMinutes,
 
 		AvailableChannelsEnabled: settings.AvailableChannelsEnabled,
+		SubscriptionEnabled:      settings.SubscriptionEnabled,
 
 		ModelPlazaEnabled:       settings.ModelPlazaEnabled,
 		ModelPlazaRequireAuth:   settings.ModelPlazaRequireAuth,

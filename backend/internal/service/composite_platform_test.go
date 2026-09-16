@@ -207,11 +207,11 @@ func TestQuotaPlatformCompositeUsesResolvedOrForceOnly(t *testing.T) {
 	require.Equal(t, PlatformAntigravity, QuotaPlatform(ctx, apiKey))
 }
 
-// 调度快照桶必须覆盖 AllowedQuotaPlatforms 全部 9 个平台。
+// 调度快照桶必须覆盖 AllowedQuotaPlatforms 全部 10 个平台。
 //
 // 这是所有分组通用的桶集合（schedulerBucketsForGroup 对任意 groupID 都调用），
-// 9 个平台各自的单平台分组都需要桶。⚠️ 它与 compositeRequestPlatforms 现在虽然
-// 同为 9 个，但仍是两条**独立不变量**：调度桶对任意分组通用，与「复合分组能承载
+// 10 个平台各自的单平台分组都需要桶。⚠️ 它与 compositeRequestPlatforms 现在虽然
+// 同为 10 个，但仍是两条**独立不变量**：调度桶对任意分组通用，与「复合分组能承载
 // 什么」无关。别用其中一个去证明另一个——两者恰好相等是巧合，不是契约。
 func TestSchedulerCanonicalBucketsCoverAllQuotaPlatforms(t *testing.T) {
 	seen := make(map[string]struct{})
@@ -225,7 +225,7 @@ func TestSchedulerCanonicalBucketsCoverAllQuotaPlatforms(t *testing.T) {
 	require.ElementsMatch(t, AllowedQuotaPlatforms, platforms)
 }
 
-// 复合分组的平台集与 AllowedQuotaPlatforms 现已同为 9 个，但**次序**仍是行为契约。
+// 复合分组的平台集与 AllowedQuotaPlatforms 现已同为 10 个，但**次序**仍是行为契约。
 // 这批用例钉住两件事：全列表的字面次序，以及国产各家只能追加在队尾。
 func TestCompositeRequestPlatformsOrderIsPricingContract(t *testing.T) {
 	// 用有序断言而非 ElementsMatch：次序决定复合分组下同名模型取哪个平台的定价/映射
@@ -233,16 +233,16 @@ func TestCompositeRequestPlatformsOrderIsPricingContract(t *testing.T) {
 	require.Equal(t,
 		[]string{
 			PlatformAnthropic, PlatformGemini, PlatformOpenAI, PlatformAntigravity, PlatformGrok,
-			PlatformKimi, PlatformZhipu, PlatformDeepseek, PlatformMiniMax,
+			PlatformKimi, PlatformZhipu, PlatformDeepseek, PlatformMiniMax, PlatformOpenCodeGo,
 		},
 		compositeRequestPlatforms())
 
-	// 尾追加不变量：原有 5 个平台的相对次序必须一字不动。国产四家插到前 5 个中间会
+	// 尾追加不变量：原有 5 个平台的相对次序必须一字不动。后追加的平台插到前 5 个中间会
 	// 改变既有复合分组的定价/映射命中结果（把某个平台的精确/通配行抢到前面）。
 	require.Equal(t,
 		[]string{PlatformAnthropic, PlatformGemini, PlatformOpenAI, PlatformAntigravity, PlatformGrok},
 		compositeRequestPlatforms()[:5],
-		"国产三家只能排在队尾；插进前 5 个中间 = 改变存量复合分组的定价/映射命中")
+		"国产四家与 OpenCode 只能排在队尾；插进前 5 个中间 = 改变存量复合分组的定价/映射命中")
 
 	// 与配额平台全集互为同一集合（仅次序不同）：新增平台时两处必须同步，
 	// 否则复合分组会出现「有配额、进不了复合路由」或反之的裂缝。
@@ -309,7 +309,7 @@ func TestMatchingPlatformsCompositeSharesSingleSource(t *testing.T) {
 }
 
 func TestCompositeConcretePlatformsIncludeCNProviders(t *testing.T) {
-	for _, platform := range []string{PlatformKimi, PlatformZhipu, PlatformDeepseek, PlatformMiniMax} {
+	for _, platform := range []string{PlatformKimi, PlatformZhipu, PlatformDeepseek, PlatformMiniMax, PlatformOpenCodeGo} {
 		require.True(t, isConcreteRequestPlatform(platform))
 		require.True(t, canCopyAccountsFromGroupPlatform(PlatformComposite, platform))
 	}

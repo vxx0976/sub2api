@@ -103,6 +103,7 @@ const PLATFORM_LABELS: Record<string, string> = {
   zhipu: 'GLM',
   deepseek: 'DeepSeek',
   minimax: 'MiniMax',
+  opencode_go: 'OpenCode',
 }
 
 function platformLabel(platform: string): string {

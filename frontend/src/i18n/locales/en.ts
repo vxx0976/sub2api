@@ -465,6 +465,7 @@ export default {
     queryFailed: 'Query failed',
     queryFailedRetry: 'Query failed, please try again later',
     noDailyUsage: 'No daily usage data',
+    billingType: 'Billing Type'
   },
 
   // Setup Wizard
@@ -783,6 +784,7 @@ export default {
     promptAudit: 'Prompt Audit',
     auditLogs: 'Audit Logs',
     chat: 'Live Chat',
+    subscribe: 'Subscription'
   },
 
   // Auth
@@ -1337,6 +1339,34 @@ export default {
       quota_exhausted: 'Quota Exhausted',
       expired: 'Expired',
     },
+    bulkEdit: {
+      title: 'Bulk Edit',
+      selectedCount: '{count} keys selected',
+      selectKey: 'Select key {name}',
+      clearSelection: 'Clear selection',
+      hint: 'Check the fields to update. Unchecked fields keep their current values.',
+      limitHint: 'Enter 0 for no limit. Existing usage is preserved.',
+      ipHint: 'One IP or CIDR per line. Leave empty to clear this list on the selected keys.',
+      invalidLimit: 'Enter a valid amount greater than or equal to 0.',
+      invalidExpiration: 'Choose a valid expiration date or select Never expires.',
+      apply: 'Apply to {count} keys',
+      success: 'Updated {count} keys',
+      partialFailure: 'Updated {success} keys; {failed} failed',
+      failureHint: 'These keys could not be updated. Adjust the settings and retry. Only failed keys will be retried.'
+    },
+    providerLabel: 'Provider',
+    providers: {
+      anthropic: 'Anthropic',
+      openai: 'OpenAI',
+      domestic: 'Chinese AI',
+      other: 'Other'
+    },
+    providerHints: {
+      anthropic: 'Choose an available Anthropic / Claude group',
+      openai: 'Choose an available OpenAI / GPT group',
+      domestic: 'Includes DeepSeek, Kimi, Zhipu GLM and MiniMax',
+      other: 'Includes Gemini, Grok, Antigravity, OpenCode and mixed groups'
+    }
   },
 
   // Usage
@@ -1670,6 +1700,7 @@ export default {
       zhipu: 'Zhipu GLM',
       deepseek: 'DeepSeek',
       minimax: 'MiniMax',
+      opencode_go: 'OpenCode'
     },
     extraModelsHeader: 'Extra Models',
     extraModelsEmpty: 'No extra models',
@@ -1705,6 +1736,7 @@ export default {
         daily: 'Daily',
         '30d': '30d',
         total: 'Total',
+        monthly: 'Monthly'
       },
       labels: {
         requests: 'Requests',
@@ -1958,7 +1990,8 @@ export default {
     codeRedeemSuccess: 'Code redeemed successfully!',
     failedToRedeem: 'Failed to redeem code. Please check the code and try again.',
     subscriptionRefreshFailed: 'Redeemed successfully, but failed to refresh subscription status.',
-    pleaseEnterCode: 'Please enter a redeem code'
+    pleaseEnterCode: 'Please enter a redeem code',
+    userRefreshFailed: 'Redeemed successfully, but failed to refresh account information.'
   },
 
   // Recharge
@@ -3127,6 +3160,7 @@ export default {
           confirm: 'Reset the {window} usage for {platform} for this user? This is effective immediately.',
           success: 'Reset {platform} {window} usage',
           failed: 'Reset failed',
+          unavailable: 'No limit configured for this platform, so there is no usage window to reset'
         },
         updateSuccess: 'Platform quotas updated',
         updateFailed: 'Save failed',
@@ -3139,6 +3173,13 @@ export default {
         cellColumnTooltip: 'Only platforms with a limit are shown',
         subscriptionWarning: 'This user has an active subscription. Platform quotas only apply to balance (standard) mode requests; subscription mode requests are not subject to these limits.',
         invalidNumber: 'The following fields contain invalid numbers. Please fix them before saving: {fields}',
+      },
+      bulkDelete: {
+        action: 'Delete selected ({count})',
+        title: 'Delete selected users',
+        confirm: 'Delete the {count} selected users? This action cannot be undone. Administrator accounts cannot be deleted.',
+        success: 'Deleted {count} users',
+        failed: 'Failed to delete {count} users. They remain selected for retry.'
       }
     },
 
@@ -3361,6 +3402,7 @@ export default {
         minimax: 'MiniMax',
         ollama: 'Ollama',
         composite: 'Composite',
+        opencode_go: 'OpenCode'
       },
       deleteConfirm:
         "Are you sure you want to delete '{name}'? All associated API keys will no longer belong to any group.",
@@ -4163,7 +4205,7 @@ export default {
       workerActive: 'Processing an async audit or record task',
       workerIdle: 'Started, idle and ready',
       workerDisabled: 'Risk control or content audit is disabled',
-      processed: 'Processed',
+      processed: 'Async processed',
       droppedErrors: 'Dropped / Errors',
       autoRefresh: 'Auto refresh every 15s',
       lastCleanup: 'Last cleanup: {time}',
@@ -4446,7 +4488,8 @@ export default {
         user: 'User',
         group: 'Subscription Group',
         validityDays: 'Validity (Days)',
-        extendDays: 'Extend by (Days)'
+        extendDays: 'Extend by (Days)',
+        adjustDays: 'Adjust by (Days)'
       },
       selectUser: 'Select a user',
       selectGroup: 'Select a subscription group',
@@ -4514,7 +4557,43 @@ export default {
           revokeDesc: 'Immediately terminate the subscription (restorable from the revoked list)'
         },
         tip: 'Tip: Only groups with billing type "Subscription" and status "Active" appear in the group dropdown. If no options are available, create one in Group Management first.'
-      }
+      },
+      batchAssign: {
+        enable: 'Assign to multiple users',
+        hint: 'Search and add up to 100 users to assign the same group and validity period.',
+        selected: '{count} users added',
+        removeUser: 'Remove {email}',
+        result: 'Assignment complete: {success} succeeded, {failed} failed',
+        retryHint: 'Successful users have been removed. Resolve any errors and submit the remaining users again.'
+      },
+      bulk: {
+        extend: 'Bulk Adjust Expiration',
+        reset_quota: 'Bulk Reset Quota',
+        revoke: 'Bulk Revoke',
+        restore: 'Bulk Restore',
+        selected: '{count} subscriptions selected',
+        selectSubscription: 'Select subscription #{id}',
+        clearSelection: 'Clear Selection',
+        selectionHint: 'Select up to 100 subscriptions on this page. Changing pages or filters clears the selection. Each action only processes subscriptions with an applicable status.',
+        selectionLimit: 'You can process up to 100 subscriptions at a time',
+        selectionRequired: 'Select at least one subscription',
+        confirmTargets: 'This action will process the following {count} subscriptions',
+        groupFallback: 'Group #{id}',
+        extendHint: 'Enter a positive whole number to extend or a negative one to shorten, up to 36500 days. Expired subscriptions are extended from now and cannot be shortened. The new expiration must be in the future.',
+        invalidDays: 'Enter a nonzero whole number of days between -36500 and 36500',
+        resetWindows: 'Select quota windows to reset',
+        resetHint: 'Usage in the selected windows will be zeroed and restarted from today.',
+        selectWindow: 'Select at least one quota window',
+        revokeHint: 'These subscriptions will no longer be usable. You can restore them later from the revoked list.',
+        restoreHint: 'These subscriptions will be enabled again. Subscriptions whose original validity has ended will be restored as expired.',
+        confirm: 'Confirm Action',
+        retry: 'Retry Original Action',
+        retryHint: 'The outcome is not yet confirmed. Retrying continues the original operation to avoid duplicate changes. You can also close this dialog, then select the same subscriptions and settings to retry.',
+        requestFailed: 'The bulk request failed. Please retry.',
+        result: 'Completed: {success} succeeded, {failed} failed',
+        itemFailed: 'Action failed'
+      },
+      adjustDaysPlaceholder: 'Positive to extend, negative to shorten'
     },
 
     // Accounts
@@ -4623,6 +4702,7 @@ export default {
         kimi: 'Kimi',
         zhipu: 'GLM',
         minimax: 'MiniMax',
+        opencode_go: 'OpenCode'
       },
       types: {
         oauth: 'OAuth',
@@ -5117,16 +5197,14 @@ export default {
           'Disabled by default. Enable to allow responses_websockets_v2 capability (still gated by global and account-type switches).',
         wsMode: 'WS mode',
         wsModeDesc:
-          'Only applies to the current OpenAI account type; account WS modes, including http_bridge, take effect only when the global gateway.openai_ws.mode_router_v2_enabled=true.',
+          'Applies only to the current OpenAI account type. Select Off to disable WS. Other modes use the selected connection method only when gateway.openai_ws.mode_router_v2_enabled=true; otherwise, they use the context pool.',
         wsModeOff: 'Off (off)',
         wsModeCtxPool: 'Context Pool (ctx_pool)',
         wsModePassthrough: 'Passthrough (passthrough)',
         wsModeHttpBridge: 'HTTP Bridge (http_bridge)',
         wsModeShared: 'Shared (shared)',
         wsModeDedicated: 'Dedicated (dedicated)',
-        wsModeConcurrencyHint:
-          'When WS mode is enabled, account concurrency becomes the WS connection pool limit for this account.',
-        wsModePassthroughHint: 'Passthrough mode does not use the WS connection pool.',
+        wsModePassthroughHint: 'The gateway opens a separate upstream WS connection for each client session, without using a connection pool.',
         oauthResponsesWebsocketsV2: 'OAuth WebSocket Mode',
         oauthResponsesWebsocketsV2Desc:
           'Only applies to OpenAI OAuth. This account can use OpenAI WebSocket Mode only when enabled.',
@@ -5209,6 +5287,8 @@ export default {
         testModeDefault: 'Default request',
         testModeCompact: 'Compact probe',
         modelRestrictionDisabledByPassthrough: 'Automatic passthrough is enabled: model whitelist/mapping will not take effect.',
+        wsModeCtxPoolHint: 'The gateway gets and reuses upstream WS connections from a pool, with the pool limit determined by gateway configuration.',
+        wsModeHttpBridgeHint: 'The gateway converts client WS requests to upstream HTTP requests, then converts SSE streaming responses back into WS messages.'
       },
       grok: {
         baseUrlHint: 'Grok OAuth accounts forward to the official xAI API base URL.',
@@ -6224,7 +6304,25 @@ export default {
         balanceProbeTooltip: 'Query the provider balance endpoint for the account balance',
         balanceLow: 'Insufficient balance',
         noBalanceEndpoint: 'This platform has no balance query endpoint',
+        windowMonthly: '30d'
       },
+      opencodeGo: {
+        accountMode: {
+          zen: 'Zen',
+          zenDesc: 'Pay-as-you-go gateway. Consumes account credits, billed per token.',
+          go: 'GO',
+          goDesc: 'Subscription gateway, rate-limited by 5-hour / weekly / monthly usage windows.'
+        },
+        protocolRules: {
+          title: 'Model protocol routing',
+          hint: 'In adaptive mode, each model is sent to a native upstream protocol. Use an exact ID or a trailing * glob (e.g. grok-*, qwen*). The first matching rule wins; unmatched models use Chat Completions.',
+          patternPlaceholder: 'grok-* or deepseek-v4-flash',
+          add: 'Add rule',
+          remove: 'Remove rule',
+          restoreDefaults: 'Restore defaults',
+          fallback: 'Unmatched models → Chat Completions (/v1/chat/completions)'
+        }
+      }
     },
 
     // Scheduled Tests
@@ -6976,15 +7074,15 @@ export default {
         endTime: 'End Time'
       },
       openaiTokenStats: {
-        title: 'OpenAI Token Request Stats',
+        title: 'Token Request Stats',
         viewModeTopN: 'TopN',
         viewModePagination: 'Pagination',
         prevPage: 'Previous',
         nextPage: 'Next',
         pageInfo: 'Page {page}/{total}',
         totalModels: 'Total models: {total}',
-        failedToLoad: 'Failed to load OpenAI token stats',
-        empty: 'No OpenAI token stats for the current filters',
+        failedToLoad: 'Failed to load token request stats',
+        empty: 'No token request stats for the current filters',
         table: {
           model: 'Model',
           requestCount: 'Requests',
@@ -7565,8 +7663,8 @@ export default {
         dashboardCards: 'Dashboard Cards',
         displayAlertEvents: 'Display alert events',
         displayAlertEventsHint: 'Show or hide the recent alert events card on the ops dashboard. Enabled by default.',
-        displayOpenAITokenStats: 'Display OpenAI token request stats',
-        displayOpenAITokenStatsHint: 'Show or hide the OpenAI token request stats card on the ops dashboard. Hidden by default.',
+        displayOpenAITokenStats: 'Display token request stats',
+        displayOpenAITokenStatsHint: 'Show token request stats by model across all platforms, with platform and group filters. Hidden by default.',
         autoRefreshCountdown: 'Auto refresh: {seconds}s',
         validation: {
           title: 'Please fix the following issues',
@@ -7802,6 +7900,21 @@ export default {
             clearHint: 'Submitting empty will clear the exclusive rate for selected users.',
           },
         },
+        siteBillingMode: {
+          title: 'Site Billing Mode',
+          description: 'Controls which purchase options users see. Defaults to "Recharge & Subscription".',
+          label: 'Purchase options',
+          options: {
+            rechargeAndSubscription: 'Recharge & Subscription',
+            rechargeOnly: 'Recharge only',
+            subscriptionOnly: 'Subscription only'
+          },
+          hints: {
+            rechargeAndSubscription: 'Users can both top up their balance and buy subscription plans.',
+            rechargeOnly: 'Hides "My Subscriptions", the purchase-page subscription tab, the header subscription badge and the usage billing-type filter; direct visits to "My Subscriptions" return to the dashboard. The admin sidebar also hides the "Subscription Management" entry (the page stays reachable by URL). Existing subscription billing and redeem-code subscriptions are unaffected.',
+            subscriptionOnly: 'The purchase page only offers subscription plans and the sidebar entry reads "Subscription"; balance top-up orders are rejected. Redeem codes, affiliate payouts and other balance credits are unaffected.'
+          }
+        }
       },
       emailTabDisabledTitle: 'Email Verification Not Enabled',
       emailTabDisabledHint: 'Enable email verification in the Security tab to configure SMTP settings.',
@@ -8081,7 +8194,7 @@ export default {
         subscriptionGroup: 'Subscription Group',
         subscriptionValidityDays: 'Validity (days)',
         defaultPlatformQuotas: 'Default Platform Quotas (on signup)',
-        defaultPlatformQuotasHint: 'Automatically assigned to new users on signup; existing users are not affected. Leave blank = unlimited.',
+        defaultPlatformQuotasHint: 'Applied to new users on signup; existing users are not affected. Leave blank = no limit for that platform and window.',
         platformQuotaNotice: 'Monthly quota uses a 30-day rolling window, not a calendar month.',
       },
       platformQuota: {
@@ -8447,6 +8560,7 @@ export default {
         remove: 'Remove',
         moveUp: 'Move Up',
         moveDown: 'Move Down',
+        hideOpenButton: 'Hide the “Open in new tab” button'
       },
       payment: {
         title: 'Payment Settings',
@@ -8516,7 +8630,7 @@ export default {
         validationFieldRequired: '{field} is required',
         validationEasyPayCustomMethodRequired: 'Each custom EasyPay method requires both a payment type and an upstream type',
         validationEasyPayCustomMethodTypeInvalid: 'Custom EasyPay payment types may only contain lowercase letters, digits, underscores, and hyphens',
-        validationEasyPayCustomMethodUpstreamTypeInvalid: 'EasyPay upstream types may only contain lowercase letters, digits, underscores, and hyphens',
+        validationEasyPayCustomMethodUpstreamTypeInvalid: 'EasyPay upstream types may only contain lowercase letters, digits, periods, underscores, and hyphens',
         validationEasyPayCustomMethodReserved: 'Custom EasyPay payment types cannot use built-in alipay or wxpay',
         validationEasyPayCustomMethodPrefixReserved: 'Custom EasyPay payment types cannot start with alipay or wxpay',
         validationEasyPayCustomMethodDuplicate: 'Custom EasyPay payment types must be unique',
@@ -8861,7 +8975,7 @@ export default {
       },
       openaiFastPolicy: {
         title: 'OpenAI Fast/Flex Policy',
-        description: 'Intercept, filter, or pass OpenAI fast(priority), ultrafast, or flex requests based on the request body service_tier field. Applies to the OpenAI gateway only.',
+        description: 'Intercept, filter, or pass OpenAI fast(priority), ultrafast, or flex requests based on the request body service_tier field. Applies to the OpenAI gateway only. "All tier values" includes explicitly sent tiers only.',
         empty: 'No rules configured. Click the button below to add one.',
         ruleHeader: 'Rule #{index}',
         removeRule: 'Remove rule',
@@ -8908,7 +9022,8 @@ export default {
           filter: 'Filter',
           block: 'Block',
           force_priority: 'Force priority'
-        }
+        },
+        tierMissing: 'Omitted tier'
       },
       wechatConnect: {
         title: 'WeChat Connect',
@@ -9427,7 +9542,9 @@ export default {
     notEnabledDesc: 'The administrator has not enabled the recharge/subscription entry. Please contact admin.',
     notConfiguredTitle: 'Recharge / Subscription URL not configured',
     notConfiguredDesc:
-      'The administrator enabled the entry but has not configured a recharge/subscription URL. Please contact admin.'
+      'The administrator enabled the entry but has not configured a recharge/subscription URL. Please contact admin.',
+    rechargeDescription: 'Recharge balance via the embedded page',
+    subscriptionDescription: 'Purchase subscription via the embedded page'
   },
 
   // Custom Page (iframe embed)
@@ -10022,6 +10139,7 @@ export default {
         revoked: 'Revoked',
       },
     },
+    billingUnavailable: 'Neither top-up nor subscriptions are currently available. Please contact the administrator.'
   },
 
   modelPricing: {

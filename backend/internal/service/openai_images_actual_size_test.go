@@ -100,7 +100,11 @@ func runOpenAIOAuthImageActualSizeTest(t *testing.T, stream bool) openAIOAuthIma
 func runOpenAIOAuthImageSizeTest(t *testing.T, stream bool, requestSize string, outputWidth, outputHeight int) openAIOAuthImageActualSizeTestRun {
 	t.Helper()
 	gin.SetMode(gin.TestMode)
-	body := []byte(fmt.Sprintf(`{"model":"gpt-image-2","prompt":"draw a test chart","size":%q,"quality":"low","output_format":"png","stream":%t}`, requestSize, stream))
+	// 模型必须留 gpt-image-1：上游 0.2.5 新增 usesCodexDirectImages（openai_images_direct.go），
+	// gpt-image-2 会被路由到直调端点并按 JSON 解析响应，而本用例的 fixture 是 Responses SSE，
+	// 用 gpt-image-2 会直接报 "invalid Images API JSON response"。
+	// size 保留 fork 的参数化形态（封顶用例要传 1024x1024）。
+	body := []byte(fmt.Sprintf(`{"model":"gpt-image-1","prompt":"draw a test chart","size":%q,"quality":"low","output_format":"png","stream":%t}`, requestSize, stream))
 	req := httptest.NewRequest(http.MethodPost, "/v1/images/generations", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
@@ -110,8 +114,8 @@ func runOpenAIOAuthImageSizeTest(t *testing.T, stream bool, requestSize string, 
 
 	encoded := encodeOpenAIImageTestPNG(t, outputWidth, outputHeight)
 	upstreamBody := fmt.Sprintf(
-		"data: {\"type\":\"response.created\",\"response\":{\"created_at\":1710000000,\"tools\":[{\"type\":\"image_generation\",\"model\":\"gpt-image-2\",\"size\":\"auto\",\"quality\":\"auto\",\"output_format\":\"png\"}]}}\n\n"+
-			"data: {\"type\":\"response.completed\",\"response\":{\"created_at\":1710000000,\"tools\":[{\"type\":\"image_generation\",\"model\":\"gpt-image-2\",\"size\":\"auto\",\"quality\":\"auto\",\"output_format\":\"png\"}],\"output\":[{\"id\":\"ig_actual_size\",\"type\":\"image_generation_call\",\"result\":%q}]}}\n\n"+
+		"data: {\"type\":\"response.created\",\"response\":{\"created_at\":1710000000,\"tools\":[{\"type\":\"image_generation\",\"model\":\"gpt-image-1\",\"size\":\"auto\",\"quality\":\"auto\",\"output_format\":\"png\"}]}}\n\n"+
+			"data: {\"type\":\"response.completed\",\"response\":{\"created_at\":1710000000,\"tools\":[{\"type\":\"image_generation\",\"model\":\"gpt-image-1\",\"size\":\"auto\",\"quality\":\"auto\",\"output_format\":\"png\"}],\"output\":[{\"id\":\"ig_actual_size\",\"type\":\"image_generation_call\",\"result\":%q}]}}\n\n"+
 			"data: [DONE]\n\n",
 		encoded,
 	)

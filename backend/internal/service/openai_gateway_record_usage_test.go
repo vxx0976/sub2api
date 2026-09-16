@@ -2170,8 +2170,11 @@ func TestOpenAIGatewayServiceRecordUsage_OutputImageSizeWinsBeforeBillingAndPers
 
 	err := svc.RecordUsage(context.Background(), &OpenAIRecordUsageInput{
 		Result: &OpenAIForwardResult{
-			RequestID:        "resp_image_output_size",
-			Model:            "gpt-image-2",
+			RequestID: "resp_image_output_size",
+			Model:     "gpt-image-2",
+			Usage: OpenAIUsage{
+				ImageCacheReadTokens: 40,
+			},
 			ImageCount:       1,
 			ImageInputSize:   "3840x2160",
 			ImageOutputSizes: []string{"1024x1024"},
@@ -2201,7 +2204,8 @@ func TestOpenAIGatewayServiceRecordUsage_OutputImageSizeWinsBeforeBillingAndPers
 	require.Equal(t, "1024x1024", *usageRepo.lastLog.ImageOutputSize)
 	require.NotNil(t, usageRepo.lastLog.ImageSizeSource)
 	require.Equal(t, ImageSizeSourceOutput, *usageRepo.lastLog.ImageSizeSource)
-	require.Equal(t, map[string]int{ImageBillingSize1K: 1}, usageRepo.lastLog.ImageSizeBreakdown)
+	// 图片缓存 token 借 image_size_breakdown 带出（cloneImageSizeBreakdown，不污染档位计价）。
+	require.Equal(t, map[string]int{ImageBillingSize1K: 1, "image_cache_read_tokens": 40}, usageRepo.lastLog.ImageSizeBreakdown)
 	require.InDelta(t, 0.11, usageRepo.lastLog.TotalCost, 1e-12)
 	require.InDelta(t, 0.11, usageRepo.lastLog.ActualCost, 1e-12)
 }

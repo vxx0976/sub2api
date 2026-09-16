@@ -222,6 +222,9 @@ func (s *BillingService) contextPricingBreakpoints(resolver *ModelPricingResolve
 	if pricing == nil {
 		return plan
 	}
+	// 本 fork 的 applyModelSpecificPricingPolicy 没有时间维度（上游那套 $ 低谷价强制覆盖
+	// 与 DeepSeek pro→Flash 切换已整体移除，见 billing_service.go 文件头的口径说明），
+	// 所以这里不需要传计费时点；此处也仅取 LongContextInputThreshold 等时间无关字段。
 	pricing = s.applyModelSpecificPricingPolicy(model, pricing)
 	if pricing.LongContextInputThreshold <= 0 {
 		return plan

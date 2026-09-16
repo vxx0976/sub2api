@@ -46,10 +46,10 @@ func RegisterGatewayRoutes(
 	groupModelAllowlist := middleware.GroupModelAllowlist()
 
 	isOpenAIResponsesCompatibleGatewayPlatform := func(c *gin.Context) bool {
-		// 国产 OpenAI 兼容供应商（kimi/zhipu/deepseek/minimax）与 openai/grok 一样经 OpenAI 网关转发。
-		// 与上游的字面量列表等价，这里走 isOpenAICompatPlatform 单一真源。
+		// 国产 OpenAI 兼容供应商（kimi/zhipu/deepseek/minimax）与 OpenCode、openai/grok
+		// 一样经 OpenAI 网关转发。与上游的字面量列表等价，这里走单一真源。
 		platform := getGroupPlatform(c)
-		return isOpenAICompatPlatform(platform) || platform == service.PlatformGrok
+		return isOpenAIGatewayForwardPlatform(platform) || platform == service.PlatformGrok
 	}
 	isOpenAIGatewayPlatform := func(c *gin.Context) bool {
 		return isOpenAICompatPlatform(getGroupPlatform(c))
@@ -59,7 +59,7 @@ func RegisterGatewayRoutes(
 	// 其余 Anthropic 兼容平台保留原生路径。
 	countTokensHandler := func(c *gin.Context) {
 		switch {
-		case isOpenAIGatewayPlatform(c):
+		case isOpenAIGatewayForwardPlatform(getGroupPlatform(c)):
 			h.OpenAIGateway.CountTokens(c)
 		case getGroupPlatform(c) == service.PlatformGrok:
 			h.OpenAIGateway.GrokCountTokens(c)
@@ -215,6 +215,8 @@ func RegisterGatewayRoutes(
 		// /models endpoint with a client_version query and expect the ChatGPT
 		// Codex manifest format; other clients keep the OpenAI-style list.
 		gateway.GET("/models", modelsHandler)
+		// Single-model discovery never selects the Codex client_version manifest.
+		gateway.GET("/models/:model", h.Gateway.Models)
 		gateway.GET("/usage", h.Gateway.Usage)
 		gateway.POST("/live", h.OpenAIGateway.Live)
 		gateway.GET("/live/:call_id", h.OpenAIGateway.LiveSideband)
@@ -379,6 +381,7 @@ func RegisterGatewayRoutes(
 		h.OpenAIGateway.ResponsesWebSocket(c)
 	})
 	rootRoute(http.MethodGet, "/models", bodyLimit, modelsHandler)
+	rootRoute(http.MethodGet, "/models/:model", bodyLimit, h.Gateway.Models)
 	rootRoute(http.MethodPost, "/messages/count_tokens", bodyLimit, countTokensHandler)
 	codexDirect := r.Group("/backend-api/codex")
 	codexDirect.Use(bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), groupModelAllowlist, compositeTarget, requireGroupAnthropic)
@@ -545,9 +548,14 @@ func getGroupPlatform(c *gin.Context) string {
 // isOpenAICompatPlatform returns true for platforms that use the OpenAI-compatible
 // gateway (OpenAI, Kimi, Zhipu, Deepseek, MiniMax). These platforms share the
 // same /v1/chat/completions and /v1/responses handler.
-// 加平台时必须同步这里：它是 fork 把上游多处字面量列表收敛后的单一真源，
-// 三个消费点分别是 isOpenAIResponsesCompatibleGatewayPlatform（进 OpenAI 网关的门）、
-// isOpenAIGatewayPlatform（count_tokens / embeddings）与 supportsImageGenEndpoint。
+// 加平台时必须同步这里：它是 fork 把上游多处字面量列表收敛后的单一真源。
+// 四个消费点：isOpenAIResponsesCompatibleGatewayPlatform（进 OpenAI 网关的门）、
+// count_tokens、isEmbeddingsCapableGatewayPlatform（/v1/embeddings）与
+// supportsImageGenEndpoint（/v1/images/*）。
+//
+// ⚠️ opencode_go **不在**本函数里，只经 isOpenAIGatewayForwardPlatform 进前两个：
+// DefaultOpenCodeGoModelIDs() 里没有任何 embedding / 图片模型，放开 embeddings
+// 与 images 只会把上游的 404/400 透给用户。
 func isOpenAICompatPlatform(platform string) bool {
 	switch platform {
 	case service.PlatformOpenAI,
@@ -558,6 +566,12 @@ func isOpenAICompatPlatform(platform string) bool {
 		return true
 	}
 	return false
+}
+
+// isOpenAIGatewayForwardPlatform 是「能进 OpenAI 网关转发（含 count_tokens）」的门，
+// 比 isOpenAICompatPlatform 多一个 opencode_go。两者刻意分开，理由见上。
+func isOpenAIGatewayForwardPlatform(platform string) bool {
+	return isOpenAICompatPlatform(platform) || platform == service.PlatformOpenCodeGo
 }
 
 // supportsImageGenEndpoint returns true for platforms that may use the

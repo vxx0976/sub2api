@@ -102,6 +102,8 @@ const PROVIDER_TINT: Record<string, string> = {
   zhipu: 'text-indigo-600 dark:text-indigo-300',
   deepseek: 'text-teal-600 dark:text-teal-300',
   minimax: 'text-fuchsia-600 dark:text-fuchsia-300',
+  // 上游给的是 amber（与 anthropic 撞色），fork 统一用 lime，见 utils/platformColors.ts 顶部注释。
+  opencode_go: 'text-lime-600 dark:text-lime-300',
 }
 
 const props = defineProps<{

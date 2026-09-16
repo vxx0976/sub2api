@@ -145,6 +145,8 @@ const RATE_PILL_COLORS: Record<string, string> = {
   zhipu: 'bg-rose-50 text-rose-700 dark:bg-rose-900/20 dark:text-rose-400',
   grok: 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200',
   minimax: 'bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-900/20 dark:text-fuchsia-400',
+  // opencode_go 用 lime：上游给的 amber 与本表 anthropic 的 amber-50 撞色。
+  opencode_go: 'bg-lime-50 text-lime-700 dark:bg-lime-900/20 dark:text-lime-400',
 }
 const ratePillClass = computed(() => {
   return RATE_PILL_COLORS[props.platform] || 'bg-violet-50 text-violet-700 dark:bg-violet-900/20 dark:text-violet-400'
