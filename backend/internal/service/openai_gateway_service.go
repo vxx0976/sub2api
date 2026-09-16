@@ -3932,10 +3932,15 @@ func openAIStreamClientOutputStarted(c *gin.Context, localStarted bool) bool {
 // x-codex-turn-state 等响应头塞进流里），OAuth 直连与中转透传都会出现，同样不构成
 // 输出；此前它们让 OAuth 号上所有流内降载也丢失 failover。codex.* 按设计是元数据侧
 // 信道，故按前缀归类；若上游将来在该命名空间下发可见输出，需改回白名单枚举。
+//
+// response.metadata 同为非协议事件（同日第三次抓包：中转 pigcode.ai 在 in_progress 之后、
+// 裸 error 之前推一份审核分类元数据 {"is_blocked":false,...}），不含任何输出。
+// 注意 `response.` 是官方命名空间，此项必须保持逐字枚举，不得推广为前缀匹配——
+// 否则会把 response.output_text.delta 等真正的输出事件一并吞进暂存区。
 func openAIStreamEventIsPreamble(eventType string) bool {
 	eventType = strings.TrimSpace(eventType)
 	switch eventType {
-	case "response.created", "response.in_progress", "keepalive", "ping":
+	case "response.created", "response.in_progress", "response.metadata", "keepalive", "ping":
 		return true
 	}
 	return strings.HasPrefix(eventType, "codex.")

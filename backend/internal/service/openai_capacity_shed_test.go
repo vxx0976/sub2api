@@ -132,6 +132,8 @@ func TestOpenAIStreamErrorFrameDoesNotStartClientOutput(t *testing.T) {
 		// ChatGPT Codex 后端在 created 之前推的元数据侧信道事件（抓包实测形态）。
 		{`{"type":"codex.rate_limits","plan_type":"pro","rate_limits":{"allowed":true,"primary":{"used_percent":2}}}`, "codex.rate_limits", false},
 		{`{"type":"codex.response.metadata","headers":{"x-codex-turn-state":"gAAAA"}}`, "codex.response.metadata", false},
+		// 中转 pigcode.ai 在裸 error 之前推的审核元数据事件（抓包实测形态）。
+		{`{"type":"response.metadata","metadata":{"moderation":{"is_blocked":false}},"generation":{},"tool_call":{}}`, "response.metadata", false},
 		{`{"type":"response.output_item.added","item":{"type":"reasoning","summary":[]}}`, "response.output_item.added", false},
 		{`{"type":"response.output_item.added","item":{"type":"reasoning","encrypted_content":"ciphertext"}}`, "response.output_item.added", true},
 		{`{"type":"response.reasoning_summary_part.added","part":{"type":"summary_text","text":""}}`, "response.reasoning_summary_part.added", false},
@@ -603,6 +605,50 @@ func TestOpenAIStreamCodexMetadataEventsBeforeCapacityShedStillFailOver(t *testi
 			require.True(t, failoverErr.RetryableOnSameAccount)
 			require.True(t, failoverErr.RequestScopedTransient)
 			require.Less(t, OpenAICompactKeepaliveAdjustedWrittenSize(c), 0, "codex.* 元数据事件不得提交响应")
+			require.Empty(t, rec.Body.String())
+		})
+	}
+}
+
+// 生产回归（2026-09-16 第三次抓包，apikey 中转 pigcode.ai）：created → in_progress →
+// response.metadata(审核分类元数据) → 裸 error("An error occurred while processing")，零输出。
+// response.metadata 此前被当作语义输出提交流，之后的裸 error 只能带内透传。
+func TestOpenAIStreamRelayResponseMetadataBeforeTransientErrorStillFailsOver(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	stream := strings.Join([]string{
+		"event: response.created",
+		`data: {"type":"response.created","response":{"id":"resp_1","status":"in_progress"},"sequence_number":0}`,
+		"",
+		"event: response.in_progress",
+		`data: {"type":"response.in_progress","response":{"id":"resp_1","status":"in_progress"},"sequence_number":1}`,
+		"",
+		"event: response.metadata",
+		`data: {"type":"response.metadata","metadata":{"moderation":{"results":[{"categories":{"S1":false,"V1":false},"is_blocked":false}]}},"generation":{},"tool_call":{},"tool_response":{}}`,
+		"",
+		"event: error",
+		`data: {"type":"error","error":{"code":"server_error","message":"An error occurred while processing your request. You can retry your request, or contact us through our help center at help.openai.com if the error persists. Please include the request ID 03a79833 in your message.","type":"server_error"},"sequence_number":2}`,
+		"",
+	}, "\n")
+	for _, path := range []string{"native", "passthrough"} {
+		t.Run(path, func(t *testing.T) {
+			svc := &OpenAIGatewayService{cfg: &config.Config{Gateway: config.GatewayConfig{MaxLineSize: defaultMaxLineSize}}}
+			rec := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(rec)
+			c.Request = httptest.NewRequest(http.MethodPost, "/v1/responses", nil)
+			resp := &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(strings.NewReader(stream)), Header: http.Header{"X-Request-Id": []string{"rid-relay-metadata"}}}
+			account := &Account{ID: 231, Platform: PlatformOpenAI, Type: AccountTypeAPIKey, Name: "relay"}
+			var err error
+			if path == "native" {
+				_, err = svc.handleStreamingResponse(c.Request.Context(), resp, c, account, time.Now(), "gpt-5.6-sol", "gpt-5.6-sol")
+			} else {
+				_, err = svc.handleStreamingResponsePassthrough(c.Request.Context(), resp, c, account, time.Now(), "gpt-5.6-sol", "gpt-5.6-sol")
+			}
+			require.Error(t, err)
+			var failoverErr *UpstreamFailoverError
+			require.ErrorAs(t, err, &failoverErr)
+			require.True(t, failoverErr.RetryableOnSameAccount)
+			require.True(t, failoverErr.RequestScopedTransient)
+			require.Less(t, OpenAICompactKeepaliveAdjustedWrittenSize(c), 0, "response.metadata 不得提交响应")
 			require.Empty(t, rec.Body.String())
 		})
 	}
