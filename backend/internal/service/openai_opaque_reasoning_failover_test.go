@@ -150,3 +150,85 @@ func TestOpenAIStreamOpaqueReasoningIsReplayedOnFirstVisibleOutput(t *testing.T)
 		})
 	}
 }
+
+// 对抗 review 补齐的缺口：暂存窗口 × 下游心跳。
+// 心跳负载 ": keepalive\n\n" 自带空行，一旦插进补发事件的 event: 行与 data: 行
+// 之间就会把事件块提前截断。断言暂存事件补发后 SSE 结构仍完整。
+func TestOpenAIPassthroughStagedReplayNotCorruptedByKeepalive(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	reader, writer := io.Pipe()
+	go func() {
+		defer func() { _ = writer.Close() }()
+		_, _ = io.WriteString(writer, "event: response.created\ndata: {\"type\":\"response.created\",\"response\":{\"id\":\"r1\"}}\n\n")
+		_, _ = io.WriteString(writer, "event: response.output_item.added\ndata: {\"type\":\"response.output_item.added\",\"item\":{\"id\":\"rs_1\",\"type\":\"reasoning\",\"summary\":[],\"encrypted_content\":\"gAAAA\"}}\n\n")
+		// 思考阶段跨过多个心跳周期
+		time.Sleep(2500 * time.Millisecond)
+		_, _ = io.WriteString(writer, "event: response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"delta\":\"hi\"}\n\n")
+		_, _ = io.WriteString(writer, "event: response.completed\ndata: {\"type\":\"response.completed\",\"response\":{\"id\":\"r1\",\"status\":\"completed\",\"output\":[{\"type\":\"message\",\"content\":[{\"type\":\"output_text\",\"text\":\"hi\"}]}],\"usage\":{\"input_tokens\":1,\"output_tokens\":1}}}\n\n")
+	}()
+
+	svc := &OpenAIGatewayService{cfg: &config.Config{Gateway: config.GatewayConfig{
+		MaxLineSize:             defaultMaxLineSize,
+		StreamKeepaliveInterval: 1,
+	}}}
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/responses", nil)
+	resp := &http.Response{StatusCode: http.StatusOK, Header: http.Header{}, Body: reader}
+	account := &Account{ID: 1, Platform: PlatformOpenAI, Type: AccountTypeOAuth, Name: "acc"}
+
+	_, err := svc.handleStreamingResponsePassthrough(c.Request.Context(), resp, c, account, time.Now(), "model", "model")
+	require.NoError(t, err)
+
+	body := rec.Body.String()
+	// 心跳应该出现过（证明暂存期间连接确实被保活）
+	require.Contains(t, body, ":", "暂存期间应有心跳写出")
+	// 每个 event: 行后面紧跟的必须是 data: 行，中间不得被心跳截断
+	lines := strings.Split(body, "\n")
+	for i, line := range lines {
+		if !strings.HasPrefix(line, "event: ") {
+			continue
+		}
+		require.Less(t, i+1, len(lines), "event 行后必须还有内容: %q", line)
+		require.True(t, strings.HasPrefix(lines[i+1], "data: "),
+			"event 行与 data 行之间被插入了内容: %q -> %q", line, lines[i+1])
+	}
+	require.Contains(t, body, `"encrypted_content":"gAAAA"`)
+	require.Contains(t, body, `"type":"response.completed"`)
+}
+
+// 对抗 review 发现：passthrough 的 pendingLines 原本无上限，只用 commits=false
+// 的事件（只带 encrypted_content 的 reasoning item、text 为空的 content_part.added
+// 等）就能把网关内存打爆——native 侧的 openAIFirstOutputStage 有 8MB 上限并会溢写
+// 磁盘，透传侧是裸内存切片。
+//
+// 判据：上游只发 commits=false 的事件、且【不】以终止事件收尾。修复前全部攒在
+// 内存里、EOF 时走无输出 failover，下游一个字节都没有；修复后超过上限即提交，
+// 下游必然见到字节。
+func TestOpenAIPassthroughStagingIsBounded(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	blob := strings.Repeat("x", 256*1024)
+	reader, writer := io.Pipe()
+	go func() {
+		defer func() { _ = writer.Close() }()
+		_, _ = io.WriteString(writer, "event: response.created\ndata: {\"type\":\"response.created\",\"response\":{\"id\":\"r1\"}}\n\n")
+		for i := 0; i < 40; i++ {
+			_, _ = io.WriteString(writer, "event: response.output_item.added\ndata: {\"type\":\"response.output_item.added\",\"item\":{\"id\":\"rs\",\"type\":\"reasoning\",\"summary\":[],\"encrypted_content\":\""+blob+"\"}}\n\n")
+		}
+		// 刻意不发终止事件
+	}()
+
+	svc := &OpenAIGatewayService{cfg: &config.Config{Gateway: config.GatewayConfig{MaxLineSize: defaultMaxLineSize}}}
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/responses", nil)
+	resp := &http.Response{StatusCode: http.StatusOK, Header: http.Header{}, Body: reader}
+	account := &Account{ID: 1, Platform: PlatformOpenAI, Type: AccountTypeOAuth, Name: "acc"}
+
+	_, _ = svc.handleStreamingResponsePassthrough(c.Request.Context(), resp, c, account, time.Now(), "model", "model")
+
+	require.Greater(t, rec.Body.Len(), 0,
+		"暂存量超过 openAIFirstOutputStageMaxBytes 后必须提交下发，否则 pendingLines 无上限增长")
+	require.GreaterOrEqual(t, rec.Body.Len(), int(openAIFirstOutputStageMaxBytes)/2,
+		"提交后应把已暂存的事件补发出去")
+}

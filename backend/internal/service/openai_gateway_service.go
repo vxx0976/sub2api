@@ -4788,7 +4788,9 @@ func (s *OpenAIGatewayService) handleStreamingResponsePassthrough(
 	bareErrorAccountSideEffectsPending := false
 	upstreamRequestID := strings.TrimSpace(resp.Header.Get("x-request-id"))
 	// pendingLines 在首个可见输出前保留前导事件，确保无输出失败仍可安全 failover。
+	// pendingLineBytes 为其设上限，见下方追加处的说明。
 	pendingLines := make([]string, 0, 8)
+	pendingLineBytes := int64(0)
 
 	// ── 首个可见输出之前的下游 keepalive ──────────────────────────────────
 	//
@@ -4847,12 +4849,19 @@ func (s *OpenAIGatewayService) handleStreamingResponsePassthrough(
 			}
 		}
 		pendingLines = pendingLines[:0]
+		pendingLineBytes = 0
 		return true
 	}
 	ensureResponseFailedTerminal := func() {
 		if !sawBareError || sawResponseFailed || failureDelivered {
 			return
 		}
+		// 与主循环首次写出前的处理对齐：本函数同样要独占 ResponseWriter。
+		// 心跳负载 ": keepalive\n\n" 自带空行，若在 writePendingLines 补发
+		// 事件的 event: 行与 data: 行之间插进来，会把事件块提前截断（下游
+		// 解析出一个空 data 的事件，随后的 data: 行变成匿名 message 事件），
+		// 同时构成对 w 的数据竞争。停拍是幂等的。
+		stopKeepalive()
 		if bareErrorAccountSideEffectsPending {
 			s.handleOpenAIStreamTerminalAccountSideEffects(c, account, bareErrorPayload, failedMessage, resp.Header, mappedModel)
 			bareErrorAccountSideEffectsPending = false
@@ -5014,6 +5023,23 @@ func (s *OpenAIGatewayService) handleStreamingResponsePassthrough(
 							// 命中透传规则也要记录 ops 上游错误事件（对齐 CC/Messages 与
 							// antigravity 先例），否则透传命中的 failed 在监控中不可见。
 							s.recordOpenAIStreamUpstreamError(c, account, true, upstreamRequestID, "http_error", dataBytes, failedMessage)
+							// 心跳可能已把响应头提交为 200 text/event-stream：此时再走
+							// c.JSON 会把 JSON 体追加进已提交的 SSE 流、状态码写不进去，
+							// 暂存事件被整体丢弃且没有终止事件，客户端只会看到一段没有
+							// response.completed 的畸形流并触发重连。与 handler 侧
+							// errorResponse 对齐，已提交就降级为流内终止事件。
+							if openAIStreamResponseCommittedByKeepalive(c) {
+								stopKeepalive()
+								MarkResponseCommitted(c)
+								if writePendingLines() {
+									if _, werr := fmt.Fprint(w, buildOpenAIResponseFailedSSE(responseID, originalModel, dataBytes, errMsg)); werr == nil {
+										failureDelivered = true
+									}
+								}
+								flushPending = true
+								flushPendingOutput()
+								return resultWithUsage(), fmt.Errorf("upstream response failed: passthrough rule matched message=%s", errMsg)
+							}
 							MarkResponseCommitted(c)
 							c.Writer.Header().Set("Content-Type", "application/json; charset=utf-8")
 							c.JSON(status, gin.H{
@@ -5082,9 +5108,20 @@ func (s *OpenAIGatewayService) handleStreamingResponsePassthrough(
 		}
 
 		if !clientDisconnected && !failureDelivered && !suppressCurrentEvent {
-			if !clientOutputStarted && !lineCommitsClientOutput {
+			if !clientOutputStarted && !lineCommitsClientOutput &&
+				pendingLineBytes+int64(len(line))+1 <= openAIFirstOutputStageMaxBytes {
 				pendingLines = append(pendingLines, line)
+				pendingLineBytes += int64(len(line)) + 1
 				continue
+			}
+			// 暂存区超过上限则立即提交，不再继续攒：pendingLines 是纯内存切片
+			// （native 侧的 openAIFirstOutputStage 会溢写磁盘并在超限时转
+			// failover），而「只带 encrypted_content 的 reasoning item」「text 为
+			// 空的 content_part.added」这类事件全部 commits=false，恶意或异常上游
+			// 可以只用这几种事件把网关内存打爆。提交后本次 attempt 失去 pre-output
+			// failover，但那是 8MB 不可见事件之后的极端形状，换成 OOM 更糟。
+			if !clientOutputStarted && !lineCommitsClientOutput {
+				logger.LegacyPrintf("service.openai_gateway", "[OpenAI passthrough] first-output staging limit exceeded, committing stream: account=%d staged_bytes=%d limit=%d", account.ID, pendingLineBytes, int64(openAIFirstOutputStageMaxBytes))
 			}
 			// 真实输出开始，心跳的使命结束。停拍是幂等的，且会与心跳 goroutine
 			// 建立 happens-before —— 之后 ResponseWriter 由本循环独占。
@@ -7967,18 +8004,19 @@ func (s *OpenAIGatewayService) handleStreamingResponseWithReasoning(ctx context.
 	}
 	completeGuardedEvent := func(queueDrained bool) {
 		completedProgressEvent := eventStartsClientOutput
-		completedCommitEvent := eventCommitsClientOutput
 		completedTTFTEvent := eventStartsTTFTOutput
 		shouldFlush := eventShouldFlush || (queueDrained && clientOutputStarted)
 		eventInProgress = false
 		if !clientDisconnected {
-			// 暂存头只在真正提交流的那一刻写出：仅有进度（例如只带
-			// encrypted_content 的 reasoning item）时保持不提交，否则 failover
-			// 后第二次尝试会把两个 attempt 的 x-request-id 叠加到同一响应上。
-			if completedCommitEvent {
-				applyAttemptResponseHeaders()
-			}
 			if shouldFlush {
+				// 暂存头必须紧贴真正把字节送上线的那一次 flush：只要还没写出，
+				// 这次 attempt 就仍可能被 failover 掉，此时把 x-request-id /
+				// x-codex-turn-state 挂到 c.Writer.Header() 上，下一次 attempt
+				// 会再 Add 一遍，客户端拿到两个值且按 HTTP 语义取到被丢弃那次的
+				// blob（noteStagedOpenAICodexTurnStateCommitted 的溯源也会错位）。
+				// 注意 completedCommitEvent 与 shouldFlush 会分叉（后者还要求
+				// queueDrained），所以不能用前者作为触发条件。
+				applyAttemptResponseHeaders()
 				if err := flushBuffered(); err != nil {
 					clientDisconnected = true
 					logger.LegacyPrintf("service.openai_gateway", "Client disconnected during streaming flush, continuing to drain upstream for billing")
@@ -8276,6 +8314,20 @@ func (s *OpenAIGatewayService) handleStreamingResponseWithReasoning(ctx context.
 							// 命中透传规则也要记录 ops 上游错误事件（对齐 CC/Messages 与
 							// antigravity 先例），否则透传命中的 failed 在监控中不可见。
 							s.recordOpenAIStreamUpstreamError(c, account, false, upstreamRequestID, "http_error", dataBytes, failedMessage)
+							// 同透传路径：心跳已提交响应头时不能再走 c.JSON，
+							// 降级为流内终止事件并把暂存内容按序补发。
+							if openAIStreamResponseCommittedByKeepalive(c) {
+								MarkResponseCommitted(c)
+								applyAttemptResponseHeaders()
+								if _, werr := writePendingString(buildOpenAIResponseFailedSSE(responseID, originalModel, dataBytes, errMsg)); werr == nil {
+									if flushErr := flushBuffered(); flushErr == nil {
+										clientOutputStarted = true
+										failureDelivered = true
+									}
+								}
+								streamEarlyErr = fmt.Errorf("upstream response failed: passthrough rule matched message=%s", errMsg)
+								return
+							}
 							MarkResponseCommitted(c)
 							c.Writer.Header().Set("Content-Type", "application/json; charset=utf-8")
 							c.JSON(status, gin.H{
@@ -9489,6 +9541,18 @@ func extractOpenAISSEErrorMessage(payload []byte) string {
 		}
 	}
 	return sanitizeUpstreamErrorMessage(strings.TrimSpace(extractUpstreamErrorMessage(payload)))
+}
+
+// openAIStreamResponseCommittedByKeepalive 报告响应头是否已经被下游保活心跳
+// 提交为 200 text/event-stream。compact 心跳（透传路径）与首输出暂存期的裸心跳
+// （原生路径直写 w）都会提交响应头。调用后 compact 心跳已停拍并与其 goroutine
+// 建立 happens-before，调用方可安全接管 ResponseWriter。
+func openAIStreamResponseCommittedByKeepalive(c *gin.Context) bool {
+	committed := StopOpenAICompactSSEKeepaliveCommitted(c)
+	if committed {
+		return true
+	}
+	return c != nil && c.Writer != nil && c.Writer.Written()
 }
 
 func buildOpenAIResponseFailedSSE(responseID, model string, source []byte, fallbackMessage string) string {
@@ -12089,6 +12153,11 @@ const OpenAIRequestBodyTooLargeClientMessage = "Request payload is too large"
 
 const openAIRequestBodyTooLargeReason = GatewayFailureReason("openai_request_body_too_large")
 
+// openAICapacityShedSameAccountRetryMax 是上游容量降载（server_is_overloaded /
+// slow_down）专用的同账号重试预算，独立于 pool_mode_retry_count。见
+// newOpenAIUpstreamFailoverError 里的说明。
+const openAICapacityShedSameAccountRetryMax = 1
+
 func isOpenAIRequestBodyTooLargeError(statusCode int, upstreamMsg string, upstreamBody []byte) bool {
 	return statusCode == http.StatusRequestEntityTooLarge && !isOpenAIContextWindowError(upstreamMsg, upstreamBody)
 }
@@ -12107,6 +12176,15 @@ func newOpenAIUpstreamFailoverError(
 		ResponseHeaders:        responseHeaders.Clone(),
 		RetryableOnSameAccount: retryableOnSameAccount || requestScopedCapacity,
 		RequestScopedTransient: requestScopedCapacity,
+	}
+	if requestScopedCapacity {
+		// 降载的同号重试预算必须独立于 pool_mode_retry_count：后者默认 3，且对
+		// 非池模式账号（OAuth 订阅号）也返回默认值，管理员在 UI 上根本调不到。
+		// 两个维度相乘就是单次客户端请求打给上游的完整请求数——5 个号的池子
+		// 会放大到 5×4=20 次，而降载恰恰意味着上游已经过载，属于典型的重试风暴。
+		// 生产实测降载失败的上游耗时 p50≈1s、p90≈3.1s，重试本身很快，
+		// 真正的代价是请求数，因此把同号预算压到 1（总量减半到 5×2=10）。
+		failoverErr.SameAccountRetryMax = openAICapacityShedSameAccountRetryMax
 	}
 	if isOpenAIRequestBodyTooLargeError(statusCode, upstreamMsg, responseBody) {
 		failoverErr.RetryableOnSameAccount = false
