@@ -1040,3 +1040,58 @@ func TestFailoverClientGone(t *testing.T) {
 		require.False(t, failoverClientGone(nil))
 	})
 }
+
+// 容量降载（server_is_overloaded / slow_down）的「同账号预算 × 驻留时长」是一对，
+// 必须放在一起断言。2026-09-16 的线上回归就是只改了预算没算驻留：
+// sameAccountRetryDelayFor 里那套指数退避阶梯有 `retryCount <= 1` 的短路，
+// 预算压到 1 时阶梯整段变成死代码，每账号驻留从秒级塌到一次 500ms，
+// 真实 failover 救回数 75 → 25、用户侧错误率 5.3% → 23.3%。
+//
+// 本用例模拟 handler 主循环对**单个账号**的重试过程（openai_gateway_handler.go
+// 的 pool_mode_same_account_retry 块），断言两个量同时成立：
+// 尝试次数（1 首发 + N 重试）与注入等待总时长。
+func TestCapacityShedRetryBudgetAndDwellAreConsistent(t *testing.T) {
+	// service 侧对容量降载设置的形状，与 newOpenAIUpstreamFailoverError 保持一致。
+	newCapacityShedErr := func() *service.UpstreamFailoverError {
+		return &service.UpstreamFailoverError{
+			RetryableOnSameAccount: true,
+			RequestScopedTransient: true,
+			SameAccountRetryMax:    2,
+			SameAccountRetryDelay:  2 * time.Second,
+		}
+	}
+
+	// 账号侧 pool_mode_retry_count 默认 3；错误级预算更小时以错误级为准。
+	const poolModeRetryCount = 3
+
+	attempts := 1 // 首发
+	var dwell time.Duration
+	retryCount := 0
+	for {
+		failoverErr := newCapacityShedErr()
+		limit := poolModeRetryCount
+		if failoverErr.SameAccountRetryMax > 0 && failoverErr.SameAccountRetryMax < limit {
+			limit = failoverErr.SameAccountRetryMax
+		}
+		if !sameAccountRetryAllowed(failoverErr, retryCount, limit) {
+			break
+		}
+		retryCount++
+		dwell += sameAccountRetryDelayFor(failoverErr, retryCount)
+		attempts++
+	}
+
+	require.Equal(t, 3, attempts,
+		"每账号应为 1 次首发 + 2 次重试；降到 2 即回到 2026-09-16 的回归形态")
+	require.Equal(t, 4*time.Second, dwell,
+		"每账号注入等待应为 2×2s；降载是数十秒的容量窗口，救回靠等而不是靠多打")
+
+	// 反向守卫：把预算压回 1 会让驻留塌到一次 500ms —— 正是那次回归的指纹。
+	regressed := newCapacityShedErr()
+	regressed.SameAccountRetryMax = 1
+	regressed.SameAccountRetryDelay = 0 // 回归版没有显式间隔，只能吃指数阶梯
+	require.True(t, sameAccountRetryAllowed(regressed, 0, 1))
+	require.False(t, sameAccountRetryAllowed(regressed, 1, 1))
+	require.Equal(t, sameAccountRetryDelay, sameAccountRetryDelayFor(regressed, 1),
+		"预算为 1 时 retryCount 永远到不了 2，指数阶梯不可达")
+}

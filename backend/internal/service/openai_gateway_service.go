@@ -12153,10 +12153,19 @@ const OpenAIRequestBodyTooLargeClientMessage = "Request payload is too large"
 
 const openAIRequestBodyTooLargeReason = GatewayFailureReason("openai_request_body_too_large")
 
-// openAICapacityShedSameAccountRetryMax 是上游容量降载（server_is_overloaded /
-// slow_down）专用的同账号重试预算，独立于 pool_mode_retry_count。见
-// newOpenAIUpstreamFailoverError 里的说明。
-const openAICapacityShedSameAccountRetryMax = 1
+// openAICapacityShedSameAccountRetryMax / openAICapacityShedSameAccountRetryDelay
+// 是上游容量降载（server_is_overloaded / slow_down）专用的同账号重试预算与驻留间隔，
+// 独立于 pool_mode_retry_count。见 newOpenAIUpstreamFailoverError 里的说明。
+//
+// ⚠️ 预算与驻留时长是**一对**，改其中一个必须同时算另一个：
+// handler 的 sameAccountRetryDelayFor（failover_loop.go）里那套给 RequestScopedTransient
+// 写的指数退避阶梯有个 `retryCount <= 1` 的短路，预算压到 1 时阶梯整段变成死代码，
+// 每账号驻留会从秒级塌到一次 500ms。2026-09-16 的线上回归就是这么来的：
+// 只算了「次数减半」没算「驻留缩到 1/7」，真实 failover 救回数 75 → 25。
+const (
+	openAICapacityShedSameAccountRetryMax   = 2
+	openAICapacityShedSameAccountRetryDelay = 2 * time.Second
+)
 
 func isOpenAIRequestBodyTooLargeError(statusCode int, upstreamMsg string, upstreamBody []byte) bool {
 	return statusCode == http.StatusRequestEntityTooLarge && !isOpenAIContextWindowError(upstreamMsg, upstreamBody)
@@ -12180,11 +12189,24 @@ func newOpenAIUpstreamFailoverError(
 	if requestScopedCapacity {
 		// 降载的同号重试预算必须独立于 pool_mode_retry_count：后者默认 3，且对
 		// 非池模式账号（OAuth 订阅号）也返回默认值，管理员在 UI 上根本调不到。
-		// 两个维度相乘就是单次客户端请求打给上游的完整请求数——5 个号的池子
-		// 会放大到 5×4=20 次，而降载恰恰意味着上游已经过载，属于典型的重试风暴。
-		// 生产实测降载失败的上游耗时 p50≈1s、p90≈3.1s，重试本身很快，
-		// 真正的代价是请求数，因此把同号预算压到 1（总量减半到 5×2=10）。
+		// 两个维度相乘就是单次客户端请求打给上游的完整请求数，而降载恰恰意味着
+		// 上游已经过载，无节制重试就是重试风暴。
+		//
+		// 但「少打」不等于「少等」：容量降载是持续数十秒的窗口现象，能救回请求的
+		// 是**在同一个号上等到容量放开**，不是换号（线上实测整池会同时降载）。
+		// 所以这里显式给一个 2s 的固定驻留间隔，而不是依赖 handler 的指数退避阶梯
+		// ——那套阶梯第一级结构性地就是 500ms，小预算下永远吃不到第二级。
+		//
+		// 结果形状：每账号 1 次首发 + 2 次重试、注入等待 2×2s=4s。
+		// 对比 2026-09-16 回归前的 4 次尝试 / 3.5s 等待，是「等得更久、打得更少」：
+		// 放大系数 4N→3N（5 号池 20→15 次），既保住抗风暴的方向，又把
+		// 「用时间等容量」这个真正有效的恢复机制拿回来。
+		//
+		// 不设 SameAccountRetryDeadline：failoverErr 每次上游失败都新建
+		// （见本函数调用点），deadline 会随之重置，对单请求总时长起不到封顶作用，
+		// 徒增一个看起来有用实则无效的旋钮。总放大的真正上限是 maxAccountSwitches。
 		failoverErr.SameAccountRetryMax = openAICapacityShedSameAccountRetryMax
+		failoverErr.SameAccountRetryDelay = openAICapacityShedSameAccountRetryDelay
 	}
 	if isOpenAIRequestBodyTooLargeError(statusCode, upstreamMsg, responseBody) {
 		failoverErr.RetryableOnSameAccount = false

@@ -81,6 +81,14 @@ func TestOpenAIStreamOpaqueReasoningThenCapacityShedStillFailsOver(t *testing.T)
 			require.True(t, failoverErr.RetryableOnSameAccount)
 			require.True(t, failoverErr.RequestScopedTransient)
 			require.Equal(t, http.StatusServiceUnavailable, failoverErr.ClientStatusCode)
+			// 预算与驻留间隔必须成对下发给 handler：只给预算不给间隔，
+			// failover_loop.go 的指数退避阶梯会因 `retryCount <= 1` 短路而不可达，
+			// 每账号驻留塌到一次 500ms —— 2026-09-16 线上回归的直接成因。
+			// 配套的 handler 侧断言见 TestCapacityShedRetryBudgetAndDwellAreConsistent。
+			require.Equal(t, openAICapacityShedSameAccountRetryMax, failoverErr.SameAccountRetryMax)
+			require.Equal(t, openAICapacityShedSameAccountRetryDelay, failoverErr.SameAccountRetryDelay)
+			require.GreaterOrEqual(t, failoverErr.SameAccountRetryMax, 2,
+				"降载靠『在同一个号上等容量』恢复；预算低于 2 会让退避阶梯与驻留时间一起失效")
 			require.False(t, c.Writer.Written(), "不得提交响应头，否则 failover 无法重放")
 			require.Empty(t, rec.Body.String())
 			if tt.stagesHeader {
