@@ -129,6 +129,9 @@ func TestOpenAIStreamErrorFrameDoesNotStartClientOutput(t *testing.T) {
 		{`{"type":"keepalive","sequence_number":2}`, "keepalive", false},
 		{`{"type":"keepalive","sequence_number":2}`, "", false},
 		{`{"type":"ping"}`, "ping", false},
+		// ChatGPT Codex 后端在 created 之前推的元数据侧信道事件（抓包实测形态）。
+		{`{"type":"codex.rate_limits","plan_type":"pro","rate_limits":{"allowed":true,"primary":{"used_percent":2}}}`, "codex.rate_limits", false},
+		{`{"type":"codex.response.metadata","headers":{"x-codex-turn-state":"gAAAA"}}`, "codex.response.metadata", false},
 		{`{"type":"response.output_item.added","item":{"type":"reasoning","summary":[]}}`, "response.output_item.added", false},
 		{`{"type":"response.output_item.added","item":{"type":"reasoning","encrypted_content":"ciphertext"}}`, "response.output_item.added", true},
 		{`{"type":"response.reasoning_summary_part.added","part":{"type":"summary_text","text":""}}`, "response.reasoning_summary_part.added", false},
@@ -245,7 +248,7 @@ func TestOpenAIStreamCapacityShedErrorFramePrecedingFailedStillFailsOver(t *test
 	require.ErrorAs(t, err, &failoverErr)
 	require.True(t, failoverErr.RetryableOnSameAccount)
 	require.True(t, failoverErr.RequestScopedTransient)
-	require.False(t, c.Writer.Written())
+	require.Less(t, OpenAICompactKeepaliveAdjustedWrittenSize(c), 0)
 	require.Empty(t, rec.Body.String())
 }
 
@@ -511,6 +514,9 @@ func TestOpenAIStreamRelayKeepaliveBeforeCapacityShedStillFailsOver(t *testing.T
 func TestOpenAIStreamRelayKeepaliveIsReplayedOnFirstVisibleOutput(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	stream := strings.Join([]string{
+		"event: codex.rate_limits",
+		`data: {"type":"codex.rate_limits","rate_limits":{"allowed":true}}`,
+		"",
 		"event: response.created",
 		`data: {"type":"response.created","response":{"id":"resp_1"},"sequence_number":0}`,
 		"",
@@ -541,13 +547,63 @@ func TestOpenAIStreamRelayKeepaliveIsReplayedOnFirstVisibleOutput(t *testing.T) 
 			}
 			require.NoError(t, err)
 			body := rec.Body.String()
+			rateLimits := strings.Index(body, "event: codex.rate_limits")
 			created := strings.Index(body, "event: response.created")
 			keepalive := strings.Index(body, "event: keepalive")
 			delta := strings.Index(body, "event: response.output_text.delta")
-			require.GreaterOrEqual(t, created, 0)
+			require.GreaterOrEqual(t, rateLimits, 0, "codex.* 元数据事件必须原样回放给客户端")
+			require.Greater(t, created, rateLimits)
 			require.Greater(t, keepalive, created, "心跳事件应在 created 之后按原序送出")
 			require.Greater(t, delta, keepalive, "首个可见输出应在暂存事件之后")
 			require.Contains(t, body, "event: response.completed")
+		})
+	}
+}
+
+// 生产回归（2026-09-16，抓包实测 OAuth 直连形态）：ChatGPT Codex 后端在 created 之前
+// 先推 codex.rate_limits / codex.response.metadata，随后 created → in_progress →
+// response.failed(server_is_overloaded)，全程 0.9s、零输出。此前 codex.* 被当作语义输出
+// 提交流，OAuth 号上所有流内降载都丢失 failover。
+func TestOpenAIStreamCodexMetadataEventsBeforeCapacityShedStillFailOver(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	stream := strings.Join([]string{
+		"event: codex.rate_limits",
+		`data: {"type":"codex.rate_limits","plan_type":"self_serve_business_prolite","rate_limits":{"allowed":true,"limit_reached":false,"primary":{"used_percent":2,"window_minutes":10080}},"credits":{"has_credits":false}}`,
+		"",
+		"event: codex.response.metadata",
+		`data: {"type":"codex.response.metadata","headers":{"x-models-etag":"W/\"abc\"","x-codex-turn-state":"gAAAAABturnstate","x-codex-safety-buffering-enabled":"true"}}`,
+		"",
+		"event: response.created",
+		`data: {"type":"response.created","response":{"id":"resp_1","status":"in_progress"},"sequence_number":0}`,
+		"",
+		"event: response.in_progress",
+		`data: {"type":"response.in_progress","response":{"id":"resp_1","status":"in_progress"},"sequence_number":1}`,
+		"",
+		"event: response.failed",
+		`data: {"type":"response.failed","response":{"id":"resp_1","status":"failed","error":{"code":"server_is_overloaded","message":"Our servers are currently overloaded. Please try again later."}},"sequence_number":2}`,
+		"",
+	}, "\n")
+	for _, path := range []string{"native", "passthrough"} {
+		t.Run(path, func(t *testing.T) {
+			svc := &OpenAIGatewayService{cfg: &config.Config{Gateway: config.GatewayConfig{MaxLineSize: defaultMaxLineSize}}}
+			rec := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(rec)
+			c.Request = httptest.NewRequest(http.MethodPost, "/v1/responses", nil)
+			resp := &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(strings.NewReader(stream)), Header: http.Header{"X-Request-Id": []string{"rid-codex-meta-shed"}}}
+			account := &Account{ID: 206, Platform: PlatformOpenAI, Type: AccountTypeOAuth, Name: "oauth"}
+			var err error
+			if path == "native" {
+				_, err = svc.handleStreamingResponse(c.Request.Context(), resp, c, account, time.Now(), "gpt-5.6-sol", "gpt-5.6-sol")
+			} else {
+				_, err = svc.handleStreamingResponsePassthrough(c.Request.Context(), resp, c, account, time.Now(), "gpt-5.6-sol", "gpt-5.6-sol")
+			}
+			require.Error(t, err)
+			var failoverErr *UpstreamFailoverError
+			require.ErrorAs(t, err, &failoverErr)
+			require.True(t, failoverErr.RetryableOnSameAccount)
+			require.True(t, failoverErr.RequestScopedTransient)
+			require.Less(t, OpenAICompactKeepaliveAdjustedWrittenSize(c), 0, "codex.* 元数据事件不得提交响应")
+			require.Empty(t, rec.Body.String())
 		})
 	}
 }

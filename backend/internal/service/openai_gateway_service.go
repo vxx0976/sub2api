@@ -3926,13 +3926,19 @@ func openAIStreamClientOutputStarted(c *gin.Context, localStarted bool) bool {
 // 全部来源于此。连接保活由本网关自己的 ":" 注释心跳负责（stream_keepalive_interval
 // 默认 10s；置 0 的部署暂存期下游收不到任何字节），中转心跳继续暂存即可，
 // 首个可见输出到达时会按原序一并送出。
+//
+// codex.* 是 ChatGPT Codex 后端在 response.created 之前推的客户端元数据侧信道
+// （同日抓包实测：codex.rate_limits 套餐用量快照、codex.response.metadata 把
+// x-codex-turn-state 等响应头塞进流里），OAuth 直连与中转透传都会出现，同样不构成
+// 输出；此前它们让 OAuth 号上所有流内降载也丢失 failover。codex.* 按设计是元数据侧
+// 信道，故按前缀归类；若上游将来在该命名空间下发可见输出，需改回白名单枚举。
 func openAIStreamEventIsPreamble(eventType string) bool {
-	switch strings.TrimSpace(eventType) {
+	eventType = strings.TrimSpace(eventType)
+	switch eventType {
 	case "response.created", "response.in_progress", "keepalive", "ping":
 		return true
-	default:
-		return false
 	}
+	return strings.HasPrefix(eventType, "codex.")
 }
 
 func openAIStreamAddedEventStartsClientOutput(payload []byte, eventType string) bool {
