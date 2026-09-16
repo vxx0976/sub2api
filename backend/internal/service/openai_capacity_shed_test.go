@@ -125,6 +125,10 @@ func TestOpenAIStreamErrorFrameDoesNotStartClientOutput(t *testing.T) {
 		{`{"type":"response.failed","response":{"error":{"code":"server_is_overloaded"}}}`, "response.failed", false},
 		{`{"type":"response.created","response":{"id":"resp_1"}}`, "response.created", false},
 		{`{"type":"response.in_progress","response":{"id":"resp_1"}}`, "response.in_progress", false},
+		// 中转网关自造的心跳事件（api.nexarelay.com 实测形态）不是客户端输出。
+		{`{"type":"keepalive","sequence_number":2}`, "keepalive", false},
+		{`{"type":"keepalive","sequence_number":2}`, "", false},
+		{`{"type":"ping"}`, "ping", false},
 		{`{"type":"response.output_item.added","item":{"type":"reasoning","summary":[]}}`, "response.output_item.added", false},
 		{`{"type":"response.output_item.added","item":{"type":"reasoning","encrypted_content":"ciphertext"}}`, "response.output_item.added", true},
 		{`{"type":"response.reasoning_summary_part.added","part":{"type":"summary_text","text":""}}`, "response.reasoning_summary_part.added", false},
@@ -426,4 +430,124 @@ func TestCodexOutboundVersionHasSingleSource(t *testing.T) {
 	require.GreaterOrEqual(t, CompareVersions(codexCLIVersion, codexUpstreamMinVersion), 0,
 		"codexCLIVersion=%q 不得低于上游最低门槛 %q", codexCLIVersion, codexUpstreamMinVersion,
 	)
+}
+
+// 生产回归（2026-09-16，GPT Pro 号池 apikey 中转 api.nexarelay.com）：抓包实测的
+// 客户端字节序列是 created → in_progress → keepalive → keepalive → response.failed
+// (server_error / overloaded)。中转的 keepalive 事件此前被当作语义输出，把暂存的
+// 前导事件冲给客户端并提交流，随后的 failed 只能带内透传（该中转上 Codex 请求 0% 救回，
+// ops_error_logs 里 attempts=1 / kind=stream_failed 的行全部来源于此）。
+// 期望：两条路径都不向客户端写出任何字节，并抛出 pre-output failover 错误。
+func TestOpenAIStreamRelayKeepaliveBeforeCapacityShedStillFailsOver(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	// 中转会重新序列化 JSON（键按字母序、"type" 在最后），保持原样以覆盖事件类型只能从 data 推断的情况。
+	stream := strings.Join([]string{
+		"event: response.created",
+		`data: {"response":{"created_at":1789546900,"id":"resp_1","object":"response","status":"in_progress"},"sequence_number":0,"type":"response.created"}`,
+		"",
+		"event: response.in_progress",
+		`data: {"response":{"created_at":1789546900,"id":"resp_1","object":"response","status":"in_progress"},"sequence_number":1,"type":"response.in_progress"}`,
+		"",
+		"event: keepalive",
+		`data: {"type":"keepalive","sequence_number":2}`,
+		"",
+		"event: keepalive",
+		`data: {"type":"keepalive","sequence_number":3}`,
+		"",
+		"event: response.failed",
+		`data: {"response":{"created_at":1789546900,"error":{"code":"server_error","message":"Our servers are currently overloaded. Please try again later."},"id":"resp_1","object":"response","status":"failed"},"sequence_number":5,"type":"response.failed"}`,
+		"",
+	}, "\n")
+
+	tests := []struct {
+		name string
+		run  func(*OpenAIGatewayService, *gin.Context, *http.Response, *Account) error
+	}{
+		{
+			name: "native",
+			run: func(svc *OpenAIGatewayService, c *gin.Context, resp *http.Response, account *Account) error {
+				_, err := svc.handleStreamingResponse(c.Request.Context(), resp, c, account, time.Now(), "gpt-6-astra", "gpt-6-astra")
+				return err
+			},
+		},
+		{
+			name: "passthrough",
+			run: func(svc *OpenAIGatewayService, c *gin.Context, resp *http.Response, account *Account) error {
+				_, err := svc.handleStreamingResponsePassthrough(c.Request.Context(), resp, c, account, time.Now(), "gpt-6-astra", "gpt-6-astra")
+				return err
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			svc := &OpenAIGatewayService{cfg: &config.Config{Gateway: config.GatewayConfig{MaxLineSize: defaultMaxLineSize}}}
+			rec := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(rec)
+			c.Request = httptest.NewRequest(http.MethodPost, "/v1/responses", nil)
+			resp := &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader(stream)),
+				Header:     http.Header{"X-Request-Id": []string{"rid-relay-keepalive-shed"}},
+			}
+			// apikey 中转号：没有 OAuth 路径的裸 error 扣留逻辑，failover 只能靠 failed 事件本身。
+			account := &Account{ID: 164, Platform: PlatformOpenAI, Type: AccountTypeAPIKey, Name: "relay"}
+
+			err := tt.run(svc, c, resp, account)
+			require.Error(t, err)
+			var failoverErr *UpstreamFailoverError
+			require.ErrorAs(t, err, &failoverErr)
+			require.True(t, failoverErr.RetryableOnSameAccount)
+			require.True(t, failoverErr.RequestScopedTransient)
+			require.Equal(t, http.StatusServiceUnavailable, failoverErr.ClientStatusCode)
+			// 生产默认开着 10s 的 ":" 注释心跳，Writer.Written() 可能为 true；真正的判据是
+			// 扣除心跳字节后没有任何语义字节写出（与 handler 侧 openAIForwardMayFailover 同口径）。
+			require.Less(t, OpenAICompactKeepaliveAdjustedWrittenSize(c), 0, "中转心跳不得提交响应，否则 failover 无法重放")
+			require.Empty(t, rec.Body.String())
+		})
+	}
+}
+
+// 正常流：中转心跳只是被暂存，首个可见输出到达时必须按原序一并送出，客户端不丢事件。
+func TestOpenAIStreamRelayKeepaliveIsReplayedOnFirstVisibleOutput(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	stream := strings.Join([]string{
+		"event: response.created",
+		`data: {"type":"response.created","response":{"id":"resp_1"},"sequence_number":0}`,
+		"",
+		"event: keepalive",
+		`data: {"type":"keepalive","sequence_number":1}`,
+		"",
+		"event: response.output_text.delta",
+		`data: {"type":"response.output_text.delta","delta":"hi","sequence_number":2}`,
+		"",
+		"event: response.completed",
+		`data: {"type":"response.completed","response":{"id":"resp_1","status":"completed","output":[{"type":"message","content":[{"type":"output_text","text":"hi"}]}],"usage":{"input_tokens":5,"output_tokens":1}},"sequence_number":3}`,
+		"",
+	}, "\n")
+
+	for _, path := range []string{"native", "passthrough"} {
+		t.Run(path, func(t *testing.T) {
+			svc := &OpenAIGatewayService{cfg: &config.Config{Gateway: config.GatewayConfig{MaxLineSize: defaultMaxLineSize}}}
+			rec := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(rec)
+			c.Request = httptest.NewRequest(http.MethodPost, "/v1/responses", nil)
+			resp := &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(strings.NewReader(stream)), Header: http.Header{}}
+			account := &Account{ID: 164, Platform: PlatformOpenAI, Type: AccountTypeAPIKey, Name: "relay"}
+			var err error
+			if path == "native" {
+				_, err = svc.handleStreamingResponse(c.Request.Context(), resp, c, account, time.Now(), "model", "model")
+			} else {
+				_, err = svc.handleStreamingResponsePassthrough(c.Request.Context(), resp, c, account, time.Now(), "model", "model")
+			}
+			require.NoError(t, err)
+			body := rec.Body.String()
+			created := strings.Index(body, "event: response.created")
+			keepalive := strings.Index(body, "event: keepalive")
+			delta := strings.Index(body, "event: response.output_text.delta")
+			require.GreaterOrEqual(t, created, 0)
+			require.Greater(t, keepalive, created, "心跳事件应在 created 之后按原序送出")
+			require.Greater(t, delta, keepalive, "首个可见输出应在暂存事件之后")
+			require.Contains(t, body, "event: response.completed")
+		})
+	}
 }

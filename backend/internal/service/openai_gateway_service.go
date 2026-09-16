@@ -3914,9 +3914,21 @@ func openAIStreamClientOutputStarted(c *gin.Context, localStarted bool) bool {
 	return OpenAICompactKeepaliveAdjustedWrittenSize(c) >= 0
 }
 
+// openAIStreamEventIsPreamble 判定事件是否为「不构成客户端输出」的前导事件：
+// 首个语义输出前这些事件只暂存不提交，保住 pre-output failover。
+//
+// keepalive / ping 不是 Responses 协议事件，来自中转网关（2026-09-16 线上实测
+// api.nexarelay.com 在上游排队/降载期间推 `event: keepalive` +
+// `{"type":"keepalive","sequence_number":N}`）。此前它们落入 default 分支被当作
+// 语义输出，把暂存的 created/in_progress 冲给客户端并提交流，随后的
+// response.failed(overloaded) 只能带内透传，failover 彻底失效——该中转上的
+// Codex 请求 0% 救回、ops_error_logs 里 attempts=1 / kind=stream_failed 的行
+// 全部来源于此。连接保活由本网关自己的 ":" 注释心跳负责（stream_keepalive_interval
+// 默认 10s；置 0 的部署暂存期下游收不到任何字节），中转心跳继续暂存即可，
+// 首个可见输出到达时会按原序一并送出。
 func openAIStreamEventIsPreamble(eventType string) bool {
 	switch strings.TrimSpace(eventType) {
-	case "response.created", "response.in_progress":
+	case "response.created", "response.in_progress", "keepalive", "ping":
 		return true
 	default:
 		return false
@@ -4007,7 +4019,13 @@ func openAIStreamDataStartsClientOutput(data, eventType string) bool {
 	if trimmed == "" {
 		return false
 	}
-	switch strings.TrimSpace(eventType) {
+	eventType = strings.TrimSpace(eventType)
+	if eventType == "" && gjson.Valid(trimmed) {
+		// 防御性对齐 openAIStreamDataStartsSemanticTTFT：本函数不保证调用方已做过
+		// effectiveOpenAISSEEventType 归一化（现有三个调用点都做了，此分支对它们是 no-op）。
+		eventType = strings.TrimSpace(gjson.Get(trimmed, "type").String())
+	}
+	switch eventType {
 	case "response.failed":
 		return false
 	case "error":
