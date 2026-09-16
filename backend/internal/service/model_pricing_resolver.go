@@ -80,14 +80,7 @@ type PricingInput struct {
 // 2. 如果指定了 GroupID，查找渠道定价并覆盖
 func (r *ModelPricingResolver) Resolve(ctx context.Context, input PricingInput) *ResolvedPricing {
 	longContextPricingEnabled := input.Group == nil || input.Group.LongContextPricingEnabled
-	if groupPricing := matchGroupModelPricing(input.Group, input.Model); groupPricing != nil {
-		// Group token cards only override the first-tier / flat rates.
-		// Long-context ladders come from official presets, gated by the checkbox.
-		if groupPricing.BillingMode == "" || groupPricing.BillingMode == BillingModeToken {
-			stripped := groupPricing.Clone()
-			stripped.Intervals = nil
-			groupPricing = &stripped
-		}
+	if groupPricing := MatchGroupModelPricing(input.Group, input.Model); groupPricing != nil {
 		// ⚠️ 刻意不传 input.At：见 resolveConfiguredPricing 的说明（有价卡 ⇒ 全档基准价）。
 		resolved := r.resolveConfiguredPricing(groupPricing, input.Model, PricingSourceGroup)
 		resolved.longContextPricingEnabled = longContextPricingEnabled
@@ -179,6 +172,27 @@ func (r *ModelPricingResolver) resolveConfiguredPricing(config *ChannelModelPric
 	resolved.SupportsCacheBreakdown = resolved.BasePricing != nil && resolved.BasePricing.SupportsCacheBreakdown
 	r.applyTokenOverrides(config, resolved)
 	return resolved
+}
+
+// MatchGroupModelPricing 返回分组价卡的**生效形态**，是计费与定价展示共用的唯一入口；
+// 返回值是副本，调用方可随意修改。
+//
+// 计费链路的优先级是 Group → Channel → LiteLLM → Fallback（见 Resolve）。定价展示端
+// 必须走同一条优先级、同一份生效形态，否则被分组价卡改过价的模型会按官方价展示，
+// 与实际扣费不符（线上真实案例见 handler.resolveDisplayPricing）。
+//
+// 生效形态 = 原始价卡剥掉 token 模式下的区间：分组 token 价卡只覆盖首档/平价，
+// 长上下文阶梯一律走官方预设（由分组的 LongContextPricingEnabled 开关控制）。
+// 非 token 模式（按次/图片/视频）的区间本就参与计费，原样保留。
+func MatchGroupModelPricing(group *Group, model string) *ChannelModelPricing {
+	cp := matchGroupModelPricing(group, model)
+	if cp == nil {
+		return nil
+	}
+	if cp.BillingMode == "" || cp.BillingMode == BillingModeToken {
+		cp.Intervals = nil
+	}
+	return cp
 }
 
 func matchGroupModelPricing(group *Group, model string) *ChannelModelPricing {

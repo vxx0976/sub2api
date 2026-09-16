@@ -447,7 +447,7 @@ func (h *AvailableChannelHandler) buildPricingGroups(ctx context.Context, groups
 			Models:         []userPricingModel{},
 		}
 		for _, name := range modelNames {
-			item.Models = append(item.Models, h.buildPricingModel(ctx, g.ID, name, lookupOfficial))
+			item.Models = append(item.Models, h.buildPricingModel(ctx, &g, name, lookupOfficial))
 		}
 		out = append(out, item)
 	}
@@ -511,12 +511,13 @@ func (h *AvailableChannelHandler) GetFXRate(c *gin.Context) {
 	response.Success(c, gin.H{"cny_per_usd": rate, "last_updated": nil})
 }
 
-// buildPricingModel 拼装单条模型的定价 DTO：渠道显式配置的基础单价覆盖到独立字段，
+// buildPricingModel 拼装单条模型的定价 DTO：运营方显式配置的基础单价覆盖到独立字段，
 // LiteLLM 官方价填到 official_*。两套字段都保持"基础单价"语义。
-// channelService 未注入或 group 未绑定 channel 时，channel 价部分留空。
+// 没有任何显式价卡命中时（未注入 channelService、分组既无分组价卡也未绑定 channel），
+// 显式价部分留空，前端回退到 official_*。
 func (h *AvailableChannelHandler) buildPricingModel(
 	ctx context.Context,
-	groupID int64,
+	group *service.Group,
 	name string,
 	lookupOfficial func(string) *service.ModelPricing,
 ) userPricingModel {
@@ -527,32 +528,52 @@ func (h *AvailableChannelHandler) buildPricingModel(
 		m.OfficialCacheWritePrice = positiveFloatPtr(p.CacheCreationPricePerToken)
 		m.OfficialCacheReadPrice = positiveFloatPtr(p.CacheReadPricePerToken)
 	}
-	if h.channelService != nil {
-		if cp := h.channelService.GetChannelModelPricing(ctx, groupID, name); cp != nil {
-			m.BillingMode = string(cp.BillingMode)
-			m.InputPrice = cp.InputPrice
-			m.OutputPrice = cp.OutputPrice
-			m.CacheWritePrice = cp.CacheWritePrice
-			m.CacheReadPrice = cp.CacheReadPrice
-			m.PerRequestPrice = cp.PerRequestPrice
-			if len(cp.Intervals) > 0 {
-				m.Intervals = make([]userPricingIntervalDTO, 0, len(cp.Intervals))
-				for _, iv := range cp.Intervals {
-					m.Intervals = append(m.Intervals, userPricingIntervalDTO{
-						MinTokens:       iv.MinTokens,
-						MaxTokens:       iv.MaxTokens,
-						TierLabel:       iv.TierLabel,
-						InputPrice:      iv.InputPrice,
-						OutputPrice:     iv.OutputPrice,
-						CacheWritePrice: iv.CacheWritePrice,
-						CacheReadPrice:  iv.CacheReadPrice,
-						PerRequestPrice: iv.PerRequestPrice,
-					})
-				}
+	if cp := h.resolveDisplayPricing(ctx, group, name); cp != nil {
+		m.BillingMode = string(cp.BillingMode)
+		m.InputPrice = cp.InputPrice
+		m.OutputPrice = cp.OutputPrice
+		m.CacheWritePrice = cp.CacheWritePrice
+		m.CacheReadPrice = cp.CacheReadPrice
+		m.PerRequestPrice = cp.PerRequestPrice
+		if len(cp.Intervals) > 0 {
+			m.Intervals = make([]userPricingIntervalDTO, 0, len(cp.Intervals))
+			for _, iv := range cp.Intervals {
+				m.Intervals = append(m.Intervals, userPricingIntervalDTO{
+					MinTokens:       iv.MinTokens,
+					MaxTokens:       iv.MaxTokens,
+					TierLabel:       iv.TierLabel,
+					InputPrice:      iv.InputPrice,
+					OutputPrice:     iv.OutputPrice,
+					CacheWritePrice: iv.CacheWritePrice,
+					CacheReadPrice:  iv.CacheReadPrice,
+					PerRequestPrice: iv.PerRequestPrice,
+				})
 			}
 		}
 	}
 	return m
+}
+
+// resolveDisplayPricing 按与计费链路一致的优先级取「运营方显式配置的价卡」：
+// 分组价卡 > 渠道价卡（见 service.ModelPricingResolver.Resolve 的
+// Group → Channel → LiteLLM → Fallback）。
+//
+// 展示端若只认渠道价卡，被分组价卡改过价的模型会按官方价展示，与实际扣费不符：
+// 2026-09-16 线上分组 29 把 gpt-5.6-luna 调到 terra 价后，/pricing/groups 仍返回
+// 官方 $0.2/MTok。分组价卡的生效形态（token 模式剥离区间）收口在
+// service.MatchGroupModelPricing，与计费共用同一份，不在这里二次实现。
+func (h *AvailableChannelHandler) resolveDisplayPricing(
+	ctx context.Context,
+	group *service.Group,
+	name string,
+) *service.ChannelModelPricing {
+	if cp := service.MatchGroupModelPricing(group, name); cp != nil {
+		return cp
+	}
+	if h.channelService == nil || group == nil {
+		return nil
+	}
+	return h.channelService.GetChannelModelPricing(ctx, group.ID, name)
 }
 
 // resolveGroupModelsByAccount 按"account 并集 + LiteLLM 兜底"算法计算 group 的模型列表。

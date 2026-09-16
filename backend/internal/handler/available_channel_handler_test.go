@@ -269,3 +269,115 @@ func TestBuildPlatformSections_CompositeWithoutModelsKeepsEmptyCompositeSection(
 	require.Len(t, sections[0].Groups, 1)
 	require.Empty(t, sections[0].SupportedModels)
 }
+
+// 分组价卡是计费链路的最高优先级来源（service.ModelPricingResolver.Resolve：
+// Group → Channel → LiteLLM → Fallback）。定价展示端必须同源，否则被分组价卡改过价的
+// 模型会按官方价展示，与实际扣费不符（线上真实案例：分组 29 把 gpt-5.6-luna 调到
+// terra 价后，/pricing/groups 仍返回官方 $0.2/MTok）。
+func TestBuildPricingModel_GroupCardOverridesOfficialPrice(t *testing.T) {
+	inPrice, outPrice := 2e-06, 1.2e-05
+	group := &service.Group{
+		ID:       29,
+		Platform: service.PlatformOpenAI,
+		ModelPricing: []service.ChannelModelPricing{{
+			Platform:    service.PlatformOpenAI,
+			Models:      []string{"gpt-5.6-luna"},
+			BillingMode: service.BillingModeToken,
+			InputPrice:  &inPrice,
+			OutputPrice: &outPrice,
+		}},
+	}
+	officialIn, officialOut := 2e-07, 1.2e-06
+	lookupOfficial := func(string) *service.ModelPricing {
+		return &service.ModelPricing{
+			InputPricePerToken:  officialIn,
+			OutputPricePerToken: officialOut,
+		}
+	}
+
+	// channelService 为 nil：分组价卡必须独立生效，不依赖分组是否绑定了渠道。
+	h := &AvailableChannelHandler{}
+	m := h.buildPricingModel(t.Context(), group, "gpt-5.6-luna", lookupOfficial)
+
+	require.NotNil(t, m.InputPrice)
+	require.InDelta(t, inPrice, *m.InputPrice, 1e-12)
+	require.NotNil(t, m.OutputPrice)
+	require.InDelta(t, outPrice, *m.OutputPrice, 1e-12)
+	// official_* 保持真实官方价：前端的「本站价 vs 官方价」对比依赖它。
+	require.NotNil(t, m.OfficialInputPrice)
+	require.InDelta(t, officialIn, *m.OfficialInputPrice, 1e-12)
+}
+
+// 同一分组里没有价卡的模型不受影响：显式价留空，前端回退 official_*。
+func TestBuildPricingModel_UnmatchedModelKeepsOfficialOnly(t *testing.T) {
+	inPrice := 2e-06
+	group := &service.Group{
+		ID:       29,
+		Platform: service.PlatformOpenAI,
+		ModelPricing: []service.ChannelModelPricing{{
+			Platform:   service.PlatformOpenAI,
+			Models:     []string{"gpt-5.6-luna"},
+			InputPrice: &inPrice,
+		}},
+	}
+	lookupOfficial := func(string) *service.ModelPricing {
+		return &service.ModelPricing{InputPricePerToken: 2e-06}
+	}
+
+	h := &AvailableChannelHandler{}
+	m := h.buildPricingModel(t.Context(), group, "gpt-5.6-terra", lookupOfficial)
+
+	require.Nil(t, m.InputPrice)
+	require.NotNil(t, m.OfficialInputPrice)
+}
+
+// token 模式的分组价卡只覆盖首档/平价，长上下文阶梯走官方预设（Resolve 里
+// stripped.Intervals = nil）。展示端保留区间会显示一套永不成交的阶梯。
+func TestBuildPricingModel_GroupTokenCardDropsIntervals(t *testing.T) {
+	inPrice, tierPrice := 2e-06, 9e-06
+	group := &service.Group{
+		ID:       29,
+		Platform: service.PlatformOpenAI,
+		ModelPricing: []service.ChannelModelPricing{{
+			Platform:    service.PlatformOpenAI,
+			Models:      []string{"gpt-5.6-luna"},
+			BillingMode: service.BillingModeToken,
+			InputPrice:  &inPrice,
+			Intervals: []service.PricingInterval{{
+				MinTokens:  272000,
+				TierLabel:  ">272K",
+				InputPrice: &tierPrice,
+			}},
+		}},
+	}
+
+	h := &AvailableChannelHandler{}
+	m := h.buildPricingModel(t.Context(), group, "gpt-5.6-luna", func(string) *service.ModelPricing { return nil })
+
+	require.NotNil(t, m.InputPrice)
+	require.Empty(t, m.Intervals)
+}
+
+// 按次/图片模式的分组价卡区间确实参与计费（Resolve 只对 token 模式剥离），必须展示。
+func TestBuildPricingModel_GroupPerRequestCardKeepsIntervals(t *testing.T) {
+	tierPrice := 0.02
+	group := &service.Group{
+		ID:       29,
+		Platform: service.PlatformOpenAI,
+		ModelPricing: []service.ChannelModelPricing{{
+			Platform:    service.PlatformOpenAI,
+			Models:      []string{"gpt-image-2"},
+			BillingMode: service.BillingModeImage,
+			Intervals: []service.PricingInterval{{
+				TierLabel:       "2K",
+				PerRequestPrice: &tierPrice,
+			}},
+		}},
+	}
+
+	h := &AvailableChannelHandler{}
+	m := h.buildPricingModel(t.Context(), group, "gpt-image-2", func(string) *service.ModelPricing { return nil })
+
+	require.Len(t, m.Intervals, 1)
+	require.Equal(t, "2K", m.Intervals[0].TierLabel)
+}
