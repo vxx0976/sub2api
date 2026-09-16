@@ -646,8 +646,8 @@ func TestOpenAIStreamRelayResponseMetadataBeforeTransientErrorStillFailsOver(t *
 			require.Error(t, err)
 			var failoverErr *UpstreamFailoverError
 			require.ErrorAs(t, err, &failoverErr)
-			require.True(t, failoverErr.RetryableOnSameAccount)
-			require.True(t, failoverErr.RequestScopedTransient)
+			// 只钉「进 failover」：瞬时处理错误的同号重试资格取决于账号是否 pool_mode，
+			// 与本用例要验证的前导事件分类无关。
 			require.Less(t, OpenAICompactKeepaliveAdjustedWrittenSize(c), 0, "response.metadata 不得提交响应")
 			require.Empty(t, rec.Body.String())
 		})
