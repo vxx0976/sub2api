@@ -17,6 +17,19 @@ import (
 
 const accountTestSuppressCompletionContextKey = "account_test_suppress_completion"
 
+// accountTestSkipAuthFailureMarkContextKey 在自适应账号的整轮探测期间置位，用于抑制
+// 「401 → SetError」。见 testCNProviderAdaptiveConnection 上方的说明。
+const accountTestSkipAuthFailureMarkContextKey = "account_test_skip_auth_failure_mark"
+
+// accountTestSkipsAuthFailureMark 报告当前这轮探测是否禁止因鉴权失败而停用账号。
+func accountTestSkipsAuthFailureMark(c *gin.Context) bool {
+	if c == nil {
+		return false
+	}
+	skip, _ := c.Value(accountTestSkipAuthFailureMarkContextKey).(bool)
+	return skip
+}
+
 // testCNProviderAdaptiveConnection verifies every native endpoint used by an
 // adaptive CN-provider account. Zhipu uses Chat Completions plus Anthropic;
 // DeepSeek and Kimi additionally use their native Responses endpoints.
@@ -36,6 +49,9 @@ func (s *AccountTestService) testCNProviderAdaptiveConnection(c *gin.Context, ac
 	// completion events until every native adaptive endpoint has passed.
 	c.Set(accountTestSuppressCompletionContextKey, true)
 	defer c.Set(accountTestSuppressCompletionContextKey, false)
+	// 三条通道共用一把 key，任一条的 401 都不得停用账号（含下面复用的 chat_completions 探针）。
+	c.Set(accountTestSkipAuthFailureMarkContextKey, true)
+	defer c.Set(accountTestSkipAuthFailureMarkContextKey, false)
 	if err := s.testCNProviderChatCompletionsConnection(c, account, modelID, prompt); err != nil {
 		return err
 	}
@@ -55,6 +71,14 @@ func (s *AccountTestService) testCNProviderAdaptiveConnection(c *gin.Context, ac
 	return nil
 }
 
+// ⚠️ 自适应账号的单条通道探测失败**不得** SetError（SetError 会把账号整体置 error +
+// schedulable=false）：adaptive 有 chat_completions / anthropic / responses 三条独立通道，
+// 其中一条端点配错就会连同还正常的通道一起停掉整个账号 —— 2026-09-18 线上即如此：
+// 编程套餐 key 的 Anthropic 端点被填成 PayG 的 api.moonshot.cn/anthropic → 恒 401 →
+// 测试把账号停掉，而 chat_completions 通道其实完全正常。且分组健康检查会周期性重跑同一
+// 探针，管理员手工恢复后会被反复打回。真实流量的 401 仍由 ratelimit_service 按既有规则
+// 处置（非 OAuth 401 → handleAuthError → SetError）；固定单协议账号
+// （api_protocol=anthropic/responses）保留 testCNProviderAnthropicConnection 的 SetError 行为。
 func (s *AccountTestService) testCNProviderAdaptiveAnthropicConnection(c *gin.Context, account *Account, testModelID string, authToken string) error {
 	ctx := c.Request.Context()
 	baseURL, err := s.validateUpstreamBaseURL(account.GetCNProtocolBaseURL(APIProtocolAnthropic))
@@ -95,9 +119,6 @@ func (s *AccountTestService) testCNProviderAdaptiveAnthropicConnection(c *gin.Co
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
 		errMsg := fmt.Sprintf("Adaptive Anthropic endpoint returned %d: %s", resp.StatusCode, string(body))
-		if resp.StatusCode == http.StatusUnauthorized && s.accountRepo != nil {
-			_ = s.accountRepo.SetError(ctx, account.ID, errMsg)
-		}
 		return s.sendErrorAndEnd(c, errMsg)
 	}
 
@@ -189,9 +210,6 @@ func (s *AccountTestService) testCNProviderAdaptiveResponsesConnection(c *gin.Co
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
 		errMsg := fmt.Sprintf("Adaptive Responses endpoint returned %d: %s", resp.StatusCode, string(body))
-		if resp.StatusCode == http.StatusUnauthorized && s.accountRepo != nil {
-			_ = s.accountRepo.SetError(ctx, account.ID, errMsg)
-		}
 		return s.sendErrorAndEnd(c, errMsg)
 	}
 

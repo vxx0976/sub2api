@@ -2139,7 +2139,8 @@ func (s *AccountTestService) testOpenAIChatCompletionsConnection(
 		if resp.StatusCode == http.StatusTooManyRequests {
 			s.reconcileOpenAI429State(ctx, account, resp.Header, body)
 		}
-		if resp.StatusCode == http.StatusUnauthorized && s.accountRepo != nil {
+		// 自适应账号整轮探测期间不得因单条通道 401 停用账号（见 account_test_service_cn_adaptive.go）。
+		if resp.StatusCode == http.StatusUnauthorized && s.accountRepo != nil && !accountTestSkipsAuthFailureMark(c) {
 			errMsg := fmt.Sprintf("Chat Completions authentication failed (401): %s", string(body))
 			_ = s.accountRepo.SetError(ctx, account.ID, errMsg)
 		}

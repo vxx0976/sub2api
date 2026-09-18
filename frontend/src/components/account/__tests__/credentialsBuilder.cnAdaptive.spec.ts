@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import { cnSupportsNativeResponses, defaultCNAdaptiveBaseUrls } from '../credentialsBuilder'
+import {
+  cnSupportsNativeResponses,
+  defaultCNAdaptiveBaseUrls,
+  inferCNAccountModeFromBaseUrl
+} from '../credentialsBuilder'
 
 describe('cnSupportsNativeResponses', () => {
   it('is true for DeepSeek, Kimi, and MiniMax', () => {
@@ -55,5 +59,25 @@ describe('defaultCNAdaptiveBaseUrls', () => {
     }
     expect(defaultCNAdaptiveBaseUrls('minimax', 'payg')).toEqual(expected)
     expect(defaultCNAdaptiveBaseUrls('minimax', 'coding')).toEqual(expected)
+  })
+})
+
+describe('inferCNAccountModeFromBaseUrl', () => {
+  it('官方域名 + 独立 /coding 路径段才算编程套餐', () => {
+    expect(inferCNAccountModeFromBaseUrl('kimi', 'https://api.kimi.com/coding/v1')).toBe('coding')
+    expect(inferCNAccountModeFromBaseUrl('kimi', ' https://API.Kimi.com/Coding ')).toBe('coding')
+    expect(inferCNAccountModeFromBaseUrl('zhipu', 'https://open.bigmodel.cn/api/coding/paas/v4')).toBe('coding')
+  })
+
+  it('按量付费端点、第三方中转、无编程套餐的平台一律返回空串（调用方回落 payg）', () => {
+    expect(inferCNAccountModeFromBaseUrl('kimi', 'https://api.moonshot.cn/v1')).toBe('')
+    expect(inferCNAccountModeFromBaseUrl('zhipu', 'https://open.bigmodel.cn/api/paas/v4')).toBe('')
+    // 第三方中转的 /coding-proxy 与套了 coding 路径的非官方域名都不算
+    expect(inferCNAccountModeFromBaseUrl('kimi', 'https://relay.example/coding-proxy/v1')).toBe('')
+    expect(inferCNAccountModeFromBaseUrl('kimi', 'https://relay.example/coding/v1')).toBe('')
+    // DeepSeek / MiniMax 的表单没有 coding 选项，不参与推断
+    expect(inferCNAccountModeFromBaseUrl('deepseek', 'https://api.kimi.com/coding/v1')).toBe('')
+    expect(inferCNAccountModeFromBaseUrl('kimi', '')).toBe('')
+    expect(inferCNAccountModeFromBaseUrl('kimi', 'not a url')).toBe('')
   })
 })

@@ -3122,6 +3122,7 @@ import {
   cnSupportsNativeResponses,
   defaultCNAdaptiveBaseUrls,
   defaultCNBaseUrl,
+  inferCNAccountModeFromBaseUrl,
   isCNProviderPlatform,
   HEADER_OVERRIDE_ENABLED_CREDENTIAL_KEY,
   HEADER_OVERRIDES_CREDENTIAL_KEY,
@@ -4291,7 +4292,17 @@ const syncFormFromAccount = (newAccount: Account | null) => {
       if (newAccount.platform === 'opencode_go') {
         editOpenCodeAccountMode.value = resolveOpenCodeAccountMode(credentials.account_mode)
       } else {
-        editAccountMode.value = credentials.account_mode === 'coding' ? 'coding' : 'payg'
+        // 存量账号可能没保存 account_mode：按 base_url 推断，避免把编程套餐账号
+        // 当成按量付费、进而用 PayG 端点预填 api_base_urls（见 inferCNAccountModeFromBaseUrl）。
+        editAccountMode.value =
+          credentials.account_mode === 'coding'
+            ? 'coding'
+            : credentials.account_mode === 'payg'
+              ? 'payg'
+              : inferCNAccountModeFromBaseUrl(
+                  newAccount.platform,
+                  typeof credentials.base_url === 'string' ? credentials.base_url : ''
+                ) || 'payg'
       }
       const storedProtocol = credentials.api_protocol
       editApiProtocol.value =

@@ -1603,12 +1603,78 @@ func (a *Account) GetCNProtocolBaseURL(protocol string) string {
 	return a.defaultCNProtocolBaseURL(protocol)
 }
 
+// effectiveCNAccountMode 返回国产供应商账号的接入模式：显式 account_mode 优先，
+// 缺失时按凭证 base_url 推断。
+//
+// ⚠️ 必须推断而不是一律当 PayG：Kimi/智谱的编程套餐 key 在按量付费端点上恒 401
+// （2026-09-18 实测编程套餐 key 打 api.moonshot.cn/anthropic 回 Invalid Authentication，
+// 两种鉴权头都一样）。存量账号常年只配了 base_url=编程套餐端点、没填 account_mode，
+// 一旦改成 adaptive 就会按 PayG 默认值去打 Anthropic/Responses 端点而全线 401。
+func (a *Account) effectiveCNAccountMode() string {
+	if mode := a.GetAccountMode(); mode != "" {
+		return mode
+	}
+	if isCNCodingPlanBaseURL(a.cnInferenceBaseURL()) {
+		return AccountModeCoding
+	}
+	return AccountModePayG
+}
+
+// cnInferenceBaseURL 取用于推断的 base_url：优先凭证 base_url，缺失时取 adaptive 的
+// chat_completions 端点（纯 API 建号可能只填了后者）。
+func (a *Account) cnInferenceBaseURL() string {
+	if baseURL := strings.TrimSpace(a.GetCredential("base_url")); baseURL != "" {
+		return baseURL
+	}
+	if baseURLs, ok := a.Credentials["api_base_urls"].(map[string]any); ok {
+		if baseURL, ok := baseURLs[APIProtocolChatCompletions].(string); ok {
+			return strings.TrimSpace(baseURL)
+		}
+	}
+	return ""
+}
+
+// cnCodingPlanHosts 是有编程套餐的国产供应商**官方**域名，与 GetCodingPlanProvider 的
+// 「只认官方域名」口径一致。
+var cnCodingPlanHosts = []string{"api.kimi.com", "open.bigmodel.cn", "api.z.ai"}
+
+// isCNCodingPlanBaseURL 判断 base_url 是否指向国产供应商的编程套餐端点：
+// Kimi 编程套餐在 api.kimi.com/coding，智谱在 open.bigmodel.cn/api/coding/...。
+// 必须同时命中官方 host 与独立的 "coding" 路径段：第三方中转的 /coding-proxy 之类路径
+// 误判成编程套餐会连带改掉额度/余额监控口径。
+func isCNCodingPlanBaseURL(baseURL string) bool {
+	if baseURL == "" {
+		return false
+	}
+	u, err := url.Parse(strings.TrimRight(baseURL, "/"))
+	if err != nil || u.Host == "" {
+		return false
+	}
+	host := strings.ToLower(u.Hostname())
+	officialHost := false
+	for _, candidate := range cnCodingPlanHosts {
+		if host == candidate {
+			officialHost = true
+			break
+		}
+	}
+	if !officialHost {
+		return false
+	}
+	for _, segment := range strings.Split(strings.ToLower(u.Path), "/") {
+		if segment == "coding" {
+			return true
+		}
+	}
+	return false
+}
+
 func (a *Account) defaultCNProtocolBaseURL(protocol string) string {
 	switch protocol {
 	case APIProtocolAnthropic:
 		switch a.Platform {
 		case PlatformKimi:
-			if a.GetAccountMode() == AccountModeCoding {
+			if a.effectiveCNAccountMode() == AccountModeCoding {
 				return DefaultKimiCodingAnthropicBaseURL
 			}
 			return DefaultKimiPayGAnthropicBaseURL
@@ -1624,12 +1690,12 @@ func (a *Account) defaultCNProtocolBaseURL(protocol string) string {
 	case APIProtocolChatCompletions, APIProtocolResponses:
 		switch a.Platform {
 		case PlatformKimi:
-			if a.GetAccountMode() == AccountModeCoding {
+			if a.effectiveCNAccountMode() == AccountModeCoding {
 				return DefaultKimiCodingBaseURL
 			}
 			return DefaultKimiPayGBaseURL
 		case PlatformZhipu:
-			if a.GetAccountMode() == AccountModeCoding {
+			if a.effectiveCNAccountMode() == AccountModeCoding {
 				return DefaultZhipuCodingBaseURL
 			}
 			return DefaultZhipuPayGBaseURL

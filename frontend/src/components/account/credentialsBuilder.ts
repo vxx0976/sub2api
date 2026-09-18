@@ -447,6 +447,37 @@ export function defaultCNBaseUrl(
   }
 }
 
+/**
+ * 从已存的 base_url 推断国产供应商账号的接入模式（未显式保存 account_mode 的存量账号）。
+ *
+ * ⚠️ 不能一律当 payg：Kimi/智谱编程套餐的 key 在按量付费端点上恒 401。存量账号常年只配了
+ * base_url=编程套餐端点、没有 account_mode，编辑时若按 payg 预填 api_base_urls，
+ * 改成 adaptive 保存后 Anthropic/Responses 两条通道会全线 401（2026-09-18 线上事故）。
+ * 只认 host 后的 /coding 路径段，避免把 "/coding-xxx" 之类的自定义中转路径误判。
+ */
+/** 有编程套餐的国产供应商**官方**域名（与后端 cnCodingPlanHosts 同一口径）。 */
+const CN_CODING_PLAN_HOSTS = ['api.kimi.com', 'open.bigmodel.cn', 'api.z.ai']
+
+export function inferCNAccountModeFromBaseUrl(platform: string, baseUrl: string): CnAccountMode | '' {
+  // 只对确有编程套餐的平台推断：DeepSeek 等平台的表单里根本没有 coding 选项，
+  // 误推断会让账号类型控件空选，并把 account_mode=coding 存回库里改掉额度/余额监控口径。
+  if (platform !== 'kimi' && platform !== 'zhipu') return ''
+  const trimmed = (baseUrl || '').trim()
+  if (!trimmed) return ''
+  let host = ''
+  let path = ''
+  try {
+    const parsed = new URL(trimmed)
+    host = parsed.hostname.toLowerCase()
+    path = parsed.pathname.toLowerCase()
+  } catch {
+    return ''
+  }
+  // 第三方中转的 /coding-proxy 之类路径不算编程套餐：必须官方 host + 独立 "coding" 路径段。
+  if (!CN_CODING_PLAN_HOSTS.includes(host)) return ''
+  return path.split('/').includes('coding') ? 'coding' : ''
+}
+
 /** 返回自适应模式下需要配置的原生协议及其默认端点。 */
 export function defaultCNAdaptiveBaseUrls(
   platform: CnProviderPlatform | 'opencode_go',
