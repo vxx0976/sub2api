@@ -687,7 +687,11 @@ func shouldBypassEmbeddedFrontend(path string) bool {
 		strings.HasPrefix(trimmed, "/responses/") ||
 		trimmed == "/alpha/search" ||
 		strings.HasPrefix(trimmed, "/images/") ||
-		strings.HasPrefix(trimmed, "/videos/")
+		strings.HasPrefix(trimmed, "/videos/") ||
+		// Seedance 原生任务接口的 /v3 与无前缀别名（/api/v3、/v1 已被上面的前缀覆盖）：
+		// 查询任务是 GET，不放行会被 SPA 兜底吞成 index.html。
+		strings.HasPrefix(trimmed, "/v3/contents/generations/") ||
+		strings.HasPrefix(trimmed, "/contents/generations/")
 }
 
 func serveIndexHTML(c *gin.Context, fsys fs.FS) {

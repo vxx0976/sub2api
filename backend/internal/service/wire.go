@@ -976,7 +976,7 @@ var ProviderSet = wire.NewSet(
 	NewResellerAPITokenService,
 	NewCommissionService,
 	NewTLSFingerprintProfileService,
-	NewPluginManager,
+	ProvidePluginManager,
 	NewDigestSessionStore,
 	ProvideIdempotencyCoordinator,
 	ProvideSystemOperationLockService,
@@ -1118,4 +1118,14 @@ func ProvideChannelMonitorV2Aggregator(repo ChannelMonitorV2Repository, db *sql.
 	}
 	aggregator.Start()
 	return aggregator
+}
+
+// ProvidePluginManager 构造插件管理器并注入账号目录。
+// SetAccountDirectory 是 setter 注入，Wire 生成不出来；上游把它手写在 wire_gen.go 里，
+// fork 每轮合并都会重生成 wire_gen.go，手写行会被静默丢掉（插件的 OpenAI 出站身份
+// 服务随之恒回 Unavailable），因此收进 provider。
+func ProvidePluginManager(repo PluginRepository, encryptor SecretEncryptor, cfg *config.Config, hostInfo PluginHostInfo, kvStore PluginKVStore, accountDirectory *OpenAIGatewayService) *PluginManager {
+	manager := NewPluginManager(repo, encryptor, cfg, hostInfo, kvStore)
+	manager.SetAccountDirectory(accountDirectory)
+	return manager
 }

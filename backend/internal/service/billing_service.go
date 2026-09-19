@@ -781,6 +781,15 @@ func (s *BillingService) initFallbackPricing() {
 		CacheReadPricePerToken: 2e-6,
 		SupportsCacheBreakdown: false,
 	}
+	// ---- Seedance（火山方舟视频生成）兜底 ----
+	// 上游 0.2.7 的 Seedance 原生接口按 usage.completion_tokens 计费，但 LiteLLM 与本表都
+	// 没有 doubao-seedance-* 的价，缺价会零成本落账。按「兜到最贵档、宁多收不漏收」的
+	// 约定给 ¥46/MTok 输出价（按已知最贵的 Seedance 档位取整上界；视频任务无输入 token）。
+	// 管理员配了模型价卡/渠道价后走真价，这里只在缺价时生效。
+	s.fallbackPrices["seedance-unpriced"] = &ModelPricing{
+		OutputPricePerToken:    46e-6,
+		SupportsCacheBreakdown: false,
+	}
 	s.fallbackPrices["kimi-k2.6"] = &ModelPricing{
 		InputPricePerToken:     0.95e-6, // $0.95 per MTok (cache miss)
 		OutputPricePerToken:    4e-6,    // $4.00 per MTok
@@ -1225,6 +1234,11 @@ func (s *BillingService) getFallbackPricing(model string) *ModelPricing {
 		strings.HasPrefix(modelLower, "hy4") ||
 		strings.HasPrefix(modelLower, "omen-") {
 		return s.fallbackPrices["opencode-go-unpriced"]
+	}
+
+	// Seedance 视频模型（doubao-seedance-* 或映射后的公开名）：见 fallbackPrices 定义处说明。
+	if strings.Contains(modelLower, "seedance") {
+		return s.fallbackPrices["seedance-unpriced"]
 	}
 
 	return nil

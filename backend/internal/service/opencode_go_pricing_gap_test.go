@@ -29,3 +29,14 @@ func TestOpenCodeGoCatalogModelsAllPriced(t *testing.T) {
 		}
 	}
 }
+
+// Seedance 原生接口按输出 token 计费；缺价必须落到兜底价而不是零成本。
+func TestSeedanceModelsResolveFallbackPricing(t *testing.T) {
+	svc := NewBillingService(&config.Config{}, nil)
+	for _, model := range []string{"doubao-seedance-1-0-pro-250528", "seedance-video", "Doubao-Seedance-2.0"} {
+		pricing := svc.getFallbackPricing(model)
+		if pricing == nil || pricing.OutputPricePerToken <= 0 {
+			t.Fatalf("model %q must resolve a non-zero fallback output price", model)
+		}
+	}
+}
