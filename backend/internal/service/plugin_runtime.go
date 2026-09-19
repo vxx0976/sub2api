@@ -121,6 +121,9 @@ func offerPluginHostServices(
 	startTimeout time.Duration,
 ) {
 	if broker == nil || hostServices == nil || api == nil {
+		slog.Warn("plugin_host_services_skipped",
+			"plugin", pluginKeyOf(installation),
+			"broker_nil", broker == nil, "host_services_nil", hostServices == nil, "api_nil", api == nil)
 		return
 	}
 	brokerID := broker.NextId()
@@ -149,7 +152,11 @@ func offerPluginHostServices(
 	}
 	if resp != nil && !resp.Ready {
 		slog.Debug("plugin_host_services_declined", "plugin", pluginKey, "message", resp.Message)
+		return
 	}
+	// 握手成功此前不打日志，于是「宿主服务已就绪」与「因 broker/hostServices 为 nil
+	// 静默跳过」在日志里完全同形（都是没有任何一行），排查时无法区分。
+	slog.Info("plugin_host_services_ready", "plugin", pluginKey, "broker_id", brokerID)
 }
 
 func (r *pluginRuntime) validateAndApplyConfig(ctx context.Context, configJSON []byte) error {
@@ -484,4 +491,12 @@ func headersFromPlugin(headers map[string]*pluginv1.HeaderValues) http.Header {
 		}
 	}
 	return out
+}
+
+// pluginKeyOf 安全取出插件键，供装配期日志使用。
+func pluginKeyOf(installation *PluginInstallation) string {
+	if installation == nil {
+		return ""
+	}
+	return installation.PluginKey
 }

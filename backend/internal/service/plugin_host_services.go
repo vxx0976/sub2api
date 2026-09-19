@@ -2,7 +2,9 @@ package service
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
+	"sync"
 	"time"
 
 	pluginv1 "github.com/Wei-Shaw/sub2api/pkg/pluginapi/v1"
@@ -63,6 +65,11 @@ type pluginHostServiceServer struct {
 	pluginKey string
 	store     PluginKVStore
 	directory PluginAccountDirectory
+	// 账号目录相关调用的「首次异常」只记一条：插件通常按秒级轮询，逐次记录会刷屏。
+	// 2026-09-19 线上排查：目录为 nil 或返回空集时全链路无任何日志（插件 stdout/stderr
+	// 也被 io.Discard 丢弃），只能靠抓包与逐段静态推演定位，故补这一层。
+	logAccountsOnce sync.Once
+	logResolveOnce  sync.Once
 }
 
 func newPluginHostServiceServer(pluginKey string, store PluginKVStore, directory PluginAccountDirectory) *pluginHostServiceServer {
@@ -172,6 +179,13 @@ func (s *pluginHostServiceServer) KVList(ctx context.Context, req *pluginv1.KVLi
 
 func (s *pluginHostServiceServer) ListAccounts(ctx context.Context, req *pluginv1.ListAccountsRequest) (*pluginv1.ListAccountsResponse, error) {
 	if s == nil || s.directory == nil {
+		// 目录为 nil = 清单未声明 OpenAI OAuth 能力，或装配阶段没注入。插件侧通常只
+		// 表现为「账号数 0」，不记录的话无从分辨这与「目录正常但集合为空」。
+		if s != nil {
+			s.logAccountsOnce.Do(func() {
+				slog.Warn("plugin_host_list_accounts_directory_unavailable", "plugin", s.pluginKey)
+			})
+		}
 		return nil, status.Error(codes.Unavailable, "账号目录不可用")
 	}
 	if req == nil {
@@ -179,13 +193,30 @@ func (s *pluginHostServiceServer) ListAccounts(ctx context.Context, req *pluginv
 	}
 	ids, err := s.directory.ListPluginAccounts(ctx, req.Platform, req.AccountType)
 	if err != nil {
+		s.logAccountsOnce.Do(func() {
+			slog.Warn("plugin_host_list_accounts_failed", "plugin", s.pluginKey,
+				"platform", req.Platform, "account_type", req.AccountType, "error", err)
+		})
 		return nil, status.Errorf(codes.Internal, "列举账号失败: %v", err)
+	}
+	if len(ids) == 0 {
+		// 请求参数与宿主的过滤口径不一致（平台名、账号类型大小写等）会静默返回空集，
+		// 把插件的能力直接打成 0 个账号；记下实参才能一眼看出是不是口径错配。
+		s.logAccountsOnce.Do(func() {
+			slog.Warn("plugin_host_list_accounts_empty", "plugin", s.pluginKey,
+				"platform", req.Platform, "account_type", req.AccountType)
+		})
 	}
 	return &pluginv1.ListAccountsResponse{AccountIds: ids}, nil
 }
 
 func (s *pluginHostServiceServer) ResolveOutboundIdentity(ctx context.Context, req *pluginv1.ResolveOutboundIdentityRequest) (*pluginv1.ResolveOutboundIdentityResponse, error) {
 	if s == nil || s.directory == nil {
+		if s != nil {
+			s.logResolveOnce.Do(func() {
+				slog.Warn("plugin_host_resolve_identity_directory_unavailable", "plugin", s.pluginKey)
+			})
+		}
 		return nil, status.Error(codes.Unavailable, "账号目录不可用")
 	}
 	if req == nil || req.AccountId <= 0 {
@@ -193,9 +224,18 @@ func (s *pluginHostServiceServer) ResolveOutboundIdentity(ctx context.Context, r
 	}
 	identity, err := s.directory.ResolvePluginOutboundIdentity(ctx, req.AccountId)
 	if err != nil {
+		s.logResolveOnce.Do(func() {
+			slog.Warn("plugin_host_resolve_identity_failed", "plugin", s.pluginKey,
+				"account_id", req.AccountId, "error", err)
+		})
 		return nil, status.Errorf(codes.Internal, "解析账号出站身份失败: %v", err)
 	}
 	if identity == nil {
+		// 账号落在目录口径之外（非 OAuth / 影子 / 取不到 token）时返回 Found=false，
+		// 插件只会当成「这个号没票」，同样需要一条可检索的线索。
+		s.logResolveOnce.Do(func() {
+			slog.Warn("plugin_host_resolve_identity_not_found", "plugin", s.pluginKey, "account_id", req.AccountId)
+		})
 		return &pluginv1.ResolveOutboundIdentityResponse{Found: false}, nil
 	}
 	return &pluginv1.ResolveOutboundIdentityResponse{
