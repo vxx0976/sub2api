@@ -394,6 +394,11 @@ func (h *GatewayHandler) handleResponsesFailoverExhausted(c *gin.Context, lastEr
 	} else if lastErr != nil && service.IsOpenAISilentRefusalErrorBody(lastErr.ResponseBody) {
 		service.SetOpsUpstreamError(c, statusCode, service.OpenAISilentRefusalClientMessage(), "")
 		status, code, message = http.StatusBadGateway, "upstream_error", service.OpenAISilentRefusalClientMessage()
+	} else if lastErr != nil && service.IsRelayRequestBlockedError(statusCode, lastErr.ResponseBody) {
+		// fork: 中转 422 风控拦截换号耗尽时与 /v1/messages（mapUpstreamError）对齐回 502：
+		// 422 配 server_error 自相矛盾，且拦截原因属中转内部信息，只记进 ops。
+		service.SetOpsUpstreamError(c, statusCode, service.ExtractUpstreamErrorMessage(lastErr.ResponseBody), "")
+		status, code, message = http.StatusBadGateway, "upstream_error", "Upstream request failed"
 	} else if lastErr != nil && statusCode == http.StatusTooManyRequests {
 		status, code, message = http.StatusTooManyRequests, "rate_limit_error", "All available accounts are currently rate-limited. Please retry later."
 	}

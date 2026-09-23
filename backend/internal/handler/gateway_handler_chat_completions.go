@@ -412,6 +412,11 @@ func (h *GatewayHandler) handleCCFailoverExhausted(c *gin.Context, lastErr *serv
 			writeChatCompletionsErrorSSE(c, "upstream_error", service.OpenAISilentRefusalClientMessage())
 			return
 		}
+		if lastErr != nil && service.IsRelayRequestBlockedError(lastErr.StatusCode, lastErr.ResponseBody) {
+			service.SetOpsUpstreamError(c, lastErr.StatusCode, service.ExtractUpstreamErrorMessage(lastErr.ResponseBody), "")
+			writeChatCompletionsErrorSSE(c, "upstream_error", "Upstream request failed")
+			return
+		}
 		writeChatCompletionsErrorSSE(c, "server_error", "All available accounts exhausted")
 		return
 	}
@@ -438,6 +443,12 @@ func (h *GatewayHandler) handleCCFailoverExhausted(c *gin.Context, lastErr *serv
 	if lastErr != nil && service.IsOpenAISilentRefusalErrorBody(lastErr.ResponseBody) {
 		service.SetOpsUpstreamError(c, statusCode, service.OpenAISilentRefusalClientMessage(), "")
 		h.chatCompletionsErrorResponse(c, http.StatusBadGateway, "upstream_error", service.OpenAISilentRefusalClientMessage())
+		return
+	}
+	if lastErr != nil && service.IsRelayRequestBlockedError(statusCode, lastErr.ResponseBody) {
+		// fork: 中转 422 风控拦截换号耗尽，与 /v1/messages 对齐回 502（见 handleResponsesFailoverExhausted）。
+		service.SetOpsUpstreamError(c, statusCode, service.ExtractUpstreamErrorMessage(lastErr.ResponseBody), "")
+		h.chatCompletionsErrorResponse(c, http.StatusBadGateway, "upstream_error", "Upstream request failed")
 		return
 	}
 	h.chatCompletionsErrorResponse(c, statusCode, "server_error", "All available accounts exhausted")

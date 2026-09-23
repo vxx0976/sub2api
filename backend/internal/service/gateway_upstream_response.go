@@ -221,6 +221,12 @@ func isRelayRequestBlockedError(statusCode int, respBody []byte) bool {
 	return strings.Contains(msg, "request blocked")
 }
 
+// IsRelayRequestBlockedError 供 handler 在换号耗尽时识别中转风控拦截：
+// 与 /v1/messages 一致按 502 上游错误回给客户端，拦截原因只进 ops。
+func IsRelayRequestBlockedError(statusCode int, respBody []byte) bool {
+	return isRelayRequestBlockedError(statusCode, respBody)
+}
+
 // relayRequestBlockedFailover 读出 422 响应体；若是中转风控拦截则返回 failover 错误，
 // 否则把响应体放回 resp 并返回 nil，由调用方继续走常规错误处理。
 func (s *GatewayService) relayRequestBlockedFailover(c *gin.Context, resp *http.Response, account *Account, passthrough bool) *UpstreamFailoverError {
@@ -238,7 +244,7 @@ func (s *GatewayService) relayRequestBlockedFailover(c *gin.Context, resp *http.
 		return nil
 	}
 
-	logger.LegacyPrintf("service.gateway", "[Forward] Relay blocked request (failover): Account=%d(%s) Status=%d RequestID=%s Body=%s",
+	logger.LegacyPrintf("service.gateway", "[RelayBlocked] Relay blocked request (failover): Account=%d(%s) Status=%d RequestID=%s Body=%s",
 		account.ID, account.Name, resp.StatusCode, resp.Header.Get("x-request-id"), truncateString(string(respBody), 1000))
 	appendOpsUpstreamError(c, OpsUpstreamErrorEvent{
 		ProxyID:            opsUpstreamProxyID(account),
