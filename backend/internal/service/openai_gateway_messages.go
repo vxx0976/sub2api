@@ -147,7 +147,13 @@ func (s *OpenAIGatewayService) ForwardAsAnthropic(
 		// 两者都会让 usage_logs.upstream_endpoint / ops_error_logs 记错桶
 		// （forwardAnthropicDirect 自己不写 result.UpstreamEndpoint，handler 只能取 ctx 里的值）。
 		SetActualOpenAIUpstreamEndpoint(c, "/v1/messages")
-		return s.forwardAnthropicDirect(ctx, c, account, body, originalModel, billingModel, upstreamModel, clientStream, startTime)
+		// fork: 推理档倍率按 result.ReasoningEffort 计费，直通路径须在此补齐（口径见 anthropicDirectReasoningEffort）。
+		reasoningEffort := anthropicDirectReasoningEffort(body, billingModel)
+		result, err := s.forwardAnthropicDirect(ctx, c, account, body, originalModel, billingModel, upstreamModel, clientStream, startTime)
+		if result != nil && result.ReasoningEffort == nil {
+			result.ReasoningEffort = reasoningEffort
+		}
+		return result, err
 	}
 
 	promptCacheKey = strings.TrimSpace(promptCacheKey)

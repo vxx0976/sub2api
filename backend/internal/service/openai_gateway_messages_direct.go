@@ -160,6 +160,21 @@ func mergeAnthropicDirectDeltaInputUsage(platform string, deltaUsage gjson.Resul
 	return true
 }
 
+// anthropicDirectReasoningEffort 计算存量 CN 直通路径的计费推理档。
+//
+// fork: 与显式协议的原生路径（forwardAnthropicViaNativeAnthropicEndpoint）用同一组 helper：
+// 优先 output_config.effort，缺失且 thinking 已启用时按国产 passback-required 模型兜底 high。
+// 唯一差异是 GLM-5.3：原生路径先做 NormalizeGLM53AnthropicThinking 再取档，本路径不改写
+// 上游 body，因此按客户端原样发送的档位记账。
+// forwardAnthropicDirect 的各个 return 都不带 ReasoningEffort，由调用方统一补上——
+// 否则分组/渠道价卡的 reasoning_effort_multipliers 在这条路径上恒按 1x 计，
+// usage_logs.reasoning_effort 也恒为 NULL。无任何 effort 信号时返回 nil（倍率保持 1x）。
+// 必须用改写前的客户端 body 计算。
+func anthropicDirectReasoningEffort(body []byte, billingModel string) *string {
+	requested := NormalizeClaudeOutputEffort(gjson.GetBytes(body, "output_config.effort").String())
+	return ApplyThinkingEnabledFallback(requested, body, billingModel)
+}
+
 // forwardAnthropicDirect forwards an Anthropic Messages request directly to
 // upstream platforms that expose a native Anthropic-compatible endpoint
 // (Deepseek /anthropic, Kimi /coding). Unlike the normal ForwardAsAnthropic
