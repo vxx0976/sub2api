@@ -209,6 +209,58 @@ func (s *GatewayService) isThinkingBlockSignatureError(respBody []byte) bool {
 	return false
 }
 
+// isRelayRequestBlockedError 识别中转对单条请求的风控拦截，例如
+// 422 "request blocked: client identity could not be fully anonymized"。
+// 拦截只针对该请求在这家中转上的形态，换一家中转常能成功；账号本身没问题，
+// 所以只切换账号，不触发任何账号侧副作用（限流/封禁/标错）。
+func isRelayRequestBlockedError(statusCode int, respBody []byte) bool {
+	if statusCode != http.StatusUnprocessableEntity {
+		return false
+	}
+	msg := strings.ToLower(extractUpstreamErrorMessage(respBody))
+	return strings.Contains(msg, "request blocked")
+}
+
+// relayRequestBlockedFailover 读出 422 响应体；若是中转风控拦截则返回 failover 错误，
+// 否则把响应体放回 resp 并返回 nil，由调用方继续走常规错误处理。
+func (s *GatewayService) relayRequestBlockedFailover(c *gin.Context, resp *http.Response, account *Account, passthrough bool) *UpstreamFailoverError {
+	if resp.StatusCode != http.StatusUnprocessableEntity {
+		return nil
+	}
+	respBody, readErr := s.readUpstreamErrorBody(resp)
+	_ = resp.Body.Close()
+	resp.Body = io.NopCloser(bytes.NewReader(respBody))
+	if readErr != nil {
+		logger.LegacyPrintf("service.gateway", "Account %d: failed to read 422 upstream error body: %v", account.ID, readErr)
+		return nil
+	}
+	if !isRelayRequestBlockedError(resp.StatusCode, respBody) {
+		return nil
+	}
+
+	logger.LegacyPrintf("service.gateway", "[Forward] Relay blocked request (failover): Account=%d(%s) Status=%d RequestID=%s Body=%s",
+		account.ID, account.Name, resp.StatusCode, resp.Header.Get("x-request-id"), truncateString(string(respBody), 1000))
+	appendOpsUpstreamError(c, OpsUpstreamErrorEvent{
+		ProxyID:            opsUpstreamProxyID(account),
+		ProxyName:          opsUpstreamProxyName(account),
+		Platform:           account.Platform,
+		AccountID:          account.ID,
+		AccountName:        account.Name,
+		UpstreamStatusCode: resp.StatusCode,
+		UpstreamRequestID:  resp.Header.Get("x-request-id"),
+		Passthrough:        passthrough,
+		Kind:               "failover",
+		Message:            extractUpstreamErrorMessage(respBody),
+		Detail: func() string {
+			if s.cfg != nil && s.cfg.Gateway.LogUpstreamErrorBody {
+				return truncateString(string(respBody), s.cfg.Gateway.LogUpstreamErrorBodyMaxBytes)
+			}
+			return ""
+		}(),
+	})
+	return &UpstreamFailoverError{StatusCode: resp.StatusCode, ResponseBody: respBody}
+}
+
 func (s *GatewayService) shouldFailoverOn400(respBody []byte) bool {
 	// 只对"可能是兼容性差异导致"的 400 允许切换，避免无意义重试。
 	// 默认保守：无法识别则不切换。

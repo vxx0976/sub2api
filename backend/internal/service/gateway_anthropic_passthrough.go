@@ -247,6 +247,9 @@ func (s *GatewayService) forwardAnthropicAPIKeyPassthroughWithInput(
 	}
 
 	if resp.StatusCode >= 400 {
+		if failoverErr := s.relayRequestBlockedFailover(c, resp, account, true); failoverErr != nil {
+			return nil, failoverErr
+		}
 		return s.handleErrorResponse(ctx, resp, c, account, input.RequestModel)
 	}
 
