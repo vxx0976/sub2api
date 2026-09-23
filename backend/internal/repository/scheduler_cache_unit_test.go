@@ -451,6 +451,7 @@ func TestBuildSchedulerMetadataAccount_KeepsQuotaStateForCachedAccounts(t *testi
 	activeStart := now.Add(-time.Hour).Format(time.RFC3339)
 	expiredDailyStart := now.Add(-25 * time.Hour).Format(time.RFC3339)
 	expiredWeeklyStart := now.Add(-8 * 24 * time.Hour).Format(time.RFC3339)
+	expired5hStart := now.Add(-6 * time.Hour).Format(time.RFC3339)
 	weeklyResetDay := float64(now.AddDate(0, 0, 1).Weekday())
 
 	cases := []struct {
@@ -463,6 +464,18 @@ func TestBuildSchedulerMetadataAccount_KeepsQuotaStateForCachedAccounts(t *testi
 		{
 			name: "anthropic api key total quota exhausted", platform: service.PlatformAnthropic, typ: service.AccountTypeAPIKey,
 			extra: map[string]any{"quota_limit": 10.0, "quota_used": 10.0}, quotaExceeded: true,
+		},
+		{
+			name: "openai api key 5h rolling quota exhausted", platform: service.PlatformOpenAI, typ: service.AccountTypeAPIKey,
+			extra: map[string]any{
+				"quota_5h_limit": 5.0, "quota_5h_used": 5.0, "quota_5h_start": activeStart,
+			}, quotaExceeded: true,
+		},
+		{
+			name: "openai api key expired 5h rolling window", platform: service.PlatformOpenAI, typ: service.AccountTypeAPIKey,
+			extra: map[string]any{
+				"quota_5h_limit": 5.0, "quota_5h_used": 5.0, "quota_5h_start": expired5hStart,
+			},
 		},
 		{
 			name: "gemini api key rolling daily quota exhausted", platform: service.PlatformGemini, typ: service.AccountTypeAPIKey,
@@ -524,6 +537,102 @@ func TestBuildSchedulerMetadataAccount_KeepsQuotaStateForCachedAccounts(t *testi
 			require.Equal(t, !tc.quotaExceeded, cached.IsSchedulable())
 		})
 	}
+}
+
+// fork: 候选过滤阶段（listSchedulableAccounts 返回的投影）直接读取的 extra 键必须进投影，
+// 否则门控在投影上读到零值而失效。逐项断言投影后的判定与原账号一致。
+func TestBuildSchedulerMetadataAccount_KeepsSelectionTimeGateExtras(t *testing.T) {
+	now := time.Now().UTC()
+	future := now.Add(2 * time.Hour).Format(time.RFC3339)
+
+	thresholdCases := []struct {
+		name     string
+		platform string
+		extra    map[string]any
+	}{
+		{name: "grok", platform: service.PlatformGrok, extra: map[string]any{"grok_sched_utilization": 95.0, "grok_sched_reset_at": future}},
+		{name: "kimi 5h", platform: service.PlatformKimi, extra: map[string]any{"kimi_5h_used_percent": 95.0, "kimi_5h_reset_at": future}},
+		{name: "zhipu weekly", platform: service.PlatformZhipu, extra: map[string]any{"zhipu_weekly_used_percent": 95.0, "zhipu_weekly_reset_at": future}},
+		{name: "minimax 5h", platform: service.PlatformMiniMax, extra: map[string]any{"minimax_5h_used_percent": 95.0, "minimax_5h_reset_at": future}},
+		{name: "opencode go monthly", platform: service.PlatformOpenCodeGo, extra: map[string]any{"opencode_go_monthly_used_percent": 95.0, "opencode_go_monthly_reset_at": future}},
+	}
+	for _, tc := range thresholdCases {
+		t.Run("scheduling threshold "+tc.name, func(t *testing.T) {
+			account := service.Account{ID: 501, Platform: tc.platform, Type: service.AccountTypeAPIKey, Extra: tc.extra}
+			thresholds := map[string]int{tc.platform: 80}
+			require.True(t, service.EvaluateAccountSchedulingThreshold(&account, thresholds, now).ShouldPause)
+
+			got := buildSchedulerMetadataAccount(account)
+			require.Equal(t, tc.extra, got.Extra)
+			require.True(t, service.EvaluateAccountSchedulingThreshold(&got, thresholds, now).ShouldPause)
+		})
+	}
+
+	t.Run("anthropic daily and weekly cost limits", func(t *testing.T) {
+		account := service.Account{ID: 502, Platform: service.PlatformAnthropic, Type: service.AccountTypeOAuth,
+			Extra: map[string]any{"daily_cost_limit": 10.0, "weekly_cost_limit": 50.0}}
+		got := buildSchedulerMetadataAccount(account)
+		require.Equal(t, 10.0, got.GetDailyCostLimit())
+		require.Equal(t, 50.0, got.GetWeeklyCostLimit())
+		require.False(t, got.CheckDailyCostSchedulability(10))
+		require.False(t, got.CheckWeeklyCostSchedulability(50))
+	})
+
+	t.Run("privacy mode", func(t *testing.T) {
+		openai := service.Account{ID: 503, Platform: service.PlatformOpenAI, Type: service.AccountTypeOAuth,
+			Extra: map[string]any{"privacy_mode": service.PrivacyModeTrainingOff}}
+		antigravity := service.Account{ID: 504, Platform: service.PlatformAntigravity, Type: service.AccountTypeOAuth,
+			Extra: map[string]any{"privacy_mode": service.AntigravityPrivacySet}}
+		gotOpenAI := buildSchedulerMetadataAccount(openai)
+		gotAntigravity := buildSchedulerMetadataAccount(antigravity)
+		require.True(t, gotOpenAI.IsPrivacySet())
+		require.True(t, gotAntigravity.IsPrivacySet())
+	})
+
+	t.Run("openai compact capability", func(t *testing.T) {
+		unsupported := service.Account{ID: 505, Platform: service.PlatformOpenAI, Type: service.AccountTypeAPIKey,
+			Extra: map[string]any{"openai_compact_supported": false}}
+		forcedOff := service.Account{ID: 506, Platform: service.PlatformOpenAI, Type: service.AccountTypeAPIKey,
+			Extra: map[string]any{"openai_compact_mode": service.OpenAICompactModeForceOff, "openai_compact_supported": true}}
+		for _, account := range []service.Account{unsupported, forcedOff} {
+			got := buildSchedulerMetadataAccount(account)
+			supported, known := got.OpenAICompactSupportKnown()
+			require.True(t, known)
+			require.False(t, supported)
+			require.False(t, got.AllowsOpenAICompact())
+		}
+	})
+
+	t.Run("openai auto reset credit", func(t *testing.T) {
+		state := map[string]any{"status": "available", "available_count": 1.0, "checked_at": now.Format(time.RFC3339)}
+		account := service.Account{ID: 507, Platform: service.PlatformOpenAI, Type: service.AccountTypeOAuth,
+			Extra: map[string]any{
+				service.OpenAIAutoResetCreditEnabledExtraKey:     true,
+				service.OpenAIAutoResetCredit5hThresholdExtraKey: 0.95,
+				service.OpenAIAutoResetCredit7dThresholdExtraKey: 0.9,
+				service.OpenAIAutoResetCreditStateExtraKey:       state,
+				"codex_5h_used_percent":                          85.0,
+				"codex_usage_updated_at":                         now.Format(time.RFC3339),
+				"auto_pause_5h_threshold":                        0.8,
+			}}
+		want := service.ResolveOpenAIAutoResetCreditConfig(&account)
+		require.True(t, want.Enabled)
+
+		// 快照经 JSON 存 Redis，按线上形态往返一次再判定。
+		raw, err := json.Marshal(buildSchedulerMetadataAccount(account))
+		require.NoError(t, err)
+		var got service.Account
+		require.NoError(t, json.Unmarshal(raw, &got))
+		require.Equal(t, want, service.ResolveOpenAIAutoResetCreditConfig(&got))
+
+		encoded, err := json.Marshal(got.Extra[service.OpenAIAutoResetCreditStateExtraKey])
+		require.NoError(t, err)
+		var gotState service.OpenAIAutoResetCreditState
+		require.NoError(t, json.Unmarshal(encoded, &gotState))
+		require.Equal(t, service.OpenAIAutoResetStatusAvailable, gotState.Status)
+		require.Equal(t, 1, gotState.AvailableCount)
+		require.Equal(t, state["checked_at"], gotState.CheckedAt)
+	})
 }
 
 func TestBuildSchedulerMetadataAccount_KeepsModelRateLimits(t *testing.T) {

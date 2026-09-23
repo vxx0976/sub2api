@@ -521,7 +521,9 @@ func incrementUsageBillingAccountQuota(ctx context.Context, tx *sql.Tx, accountI
 			COALESCE((extra->>'quota_daily_used')::numeric, 0),
 			COALESCE((extra->>'quota_daily_limit')::numeric, 0),
 			COALESCE((extra->>'quota_weekly_used')::numeric, 0),
-			COALESCE((extra->>'quota_weekly_limit')::numeric, 0)`,
+			COALESCE((extra->>'quota_weekly_limit')::numeric, 0),
+			COALESCE((extra->>'quota_5h_used')::numeric, 0),
+			COALESCE((extra->>'quota_5h_limit')::numeric, 0)`,
 		amount, accountID)
 	if err != nil {
 		return nil, err
@@ -533,6 +535,7 @@ func incrementUsageBillingAccountQuota(ctx context.Context, tx *sql.Tx, accountI
 			&state.TotalUsed, &state.TotalLimit,
 			&state.DailyUsed, &state.DailyLimit,
 			&state.WeeklyUsed, &state.WeeklyLimit,
+			&state.FiveHourUsed, &state.FiveHourLimit,
 		); err != nil {
 			_ = rows.Close()
 			return nil, err
@@ -563,7 +566,9 @@ func incrementUsageBillingAccountQuota(ctx context.Context, tx *sql.Tx, accountI
 	crossedTotal := state.TotalLimit > 0 && state.TotalUsed >= state.TotalLimit && (state.TotalUsed-amount) < state.TotalLimit
 	crossedDaily := state.DailyLimit > 0 && state.DailyUsed >= state.DailyLimit && (state.DailyUsed-amount) < state.DailyLimit
 	crossedWeekly := state.WeeklyLimit > 0 && state.WeeklyUsed >= state.WeeklyLimit && (state.WeeklyUsed-amount) < state.WeeklyLimit
-	if crossedTotal || crossedDaily || crossedWeekly {
+	// fork: 5h 滚动额度同理；调度投影已保留 quota_5h_*，不刷新快照则要等下一轮全量重建才停调。
+	crossed5h := state.FiveHourLimit > 0 && state.FiveHourUsed >= state.FiveHourLimit && (state.FiveHourUsed-amount) < state.FiveHourLimit
+	if crossedTotal || crossedDaily || crossedWeekly || crossed5h {
 		if err := enqueueSchedulerOutbox(ctx, tx, service.SchedulerOutboxEventAccountChanged, &accountID, nil, nil); err != nil {
 			logger.LegacyPrintf("repository.usage_billing", "[SchedulerOutbox] enqueue quota exceeded failed: account=%d err=%v", accountID, err)
 			return nil, err

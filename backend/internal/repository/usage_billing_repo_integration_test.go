@@ -232,6 +232,16 @@ func TestUsageBillingRepositoryApply_EnqueuesSchedulerOutboxOnQuotaCrossing(t *t
 		).Scan(&count))
 		return count
 	}
+	// 未消费的 AccountChanged 行带 dedup_key，重复入队会被 ON CONFLICT DO NOTHING 静默吞掉；
+	// 断言「超限后不再入队」前先模拟消费者释放 dedup_key，否则该断言永远不会失败。
+	releaseOutboxDedup := func(t *testing.T, accountID int64) {
+		t.Helper()
+		_, err := integrationDB.ExecContext(ctx,
+			"UPDATE scheduler_outbox SET dedup_key = NULL WHERE event_type = $1 AND account_id = $2",
+			service.SchedulerOutboxEventAccountChanged, accountID,
+		)
+		require.NoError(t, err)
+	}
 
 	t.Run("daily_first_crossing_enqueues", func(t *testing.T) {
 		apiKeyID, accountID := newFixture(t, map[string]any{
@@ -260,6 +270,7 @@ func TestUsageBillingRepositoryApply_EnqueuesSchedulerOutboxOnQuotaCrossing(t *t
 		require.Equal(t, 1, outboxCountFor(t, accountID), "crossing daily limit should enqueue once")
 
 		// 再次递增（已超）：不应重复入队
+		releaseOutboxDedup(t, accountID)
 		_, err = repo.Apply(ctx, &service.UsageBillingCommand{
 			RequestID:        uuid.NewString(),
 			APIKeyID:         apiKeyID,
@@ -285,6 +296,72 @@ func TestUsageBillingRepositoryApply_EnqueuesSchedulerOutboxOnQuotaCrossing(t *t
 		require.NoError(t, err)
 		require.Equal(t, 1, outboxCountFor(t, accountID), "single-shot crossing weekly limit should enqueue once")
 	})
+
+	// fork: 5h 滚动额度跨越同样要刷新调度快照，否则投影里的 quota_5h_used 停在旧值。
+	t.Run("5h_first_crossing_enqueues", func(t *testing.T) {
+		apiKeyID, accountID := newFixture(t, map[string]any{
+			"quota_5h_limit": 10.0,
+		})
+		_, err := repo.Apply(ctx, &service.UsageBillingCommand{
+			RequestID:        uuid.NewString(),
+			APIKeyID:         apiKeyID,
+			AccountID:        accountID,
+			AccountType:      service.AccountTypeAPIKey,
+			AccountQuotaCost: 4,
+		})
+		require.NoError(t, err)
+		require.Equal(t, 0, outboxCountFor(t, accountID), "below 5h limit should not enqueue")
+
+		result, err := repo.Apply(ctx, &service.UsageBillingCommand{
+			RequestID:        uuid.NewString(),
+			APIKeyID:         apiKeyID,
+			AccountID:        accountID,
+			AccountType:      service.AccountTypeAPIKey,
+			AccountQuotaCost: 8,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, result.QuotaState)
+		require.InDelta(t, 12.0, result.QuotaState.FiveHourUsed, 1e-9)
+		require.InDelta(t, 10.0, result.QuotaState.FiveHourLimit, 1e-9)
+		require.Equal(t, 1, outboxCountFor(t, accountID), "crossing 5h limit should enqueue once")
+
+		releaseOutboxDedup(t, accountID)
+		_, err = repo.Apply(ctx, &service.UsageBillingCommand{
+			RequestID:        uuid.NewString(),
+			APIKeyID:         apiKeyID,
+			AccountID:        accountID,
+			AccountType:      service.AccountTypeAPIKey,
+			AccountQuotaCost: 2,
+		})
+		require.NoError(t, err)
+		require.Equal(t, 1, outboxCountFor(t, accountID), "subsequent increments beyond 5h limit should not re-enqueue")
+	})
+
+	// fork: legacy 兜底路径 accountRepository.IncrementQuotaUsed 同样要在 5h/日/周
+	// 任一维度刚跨越上限时刷新调度快照（原先只判总额度）。
+	for _, tc := range []struct {
+		name  string
+		extra map[string]any
+	}{
+		{"legacy_increment_5h_crossing", map[string]any{"quota_5h_limit": 10.0}},
+		{"legacy_increment_daily_crossing", map[string]any{"quota_daily_limit": 10.0}},
+		{"legacy_increment_weekly_crossing", map[string]any{"quota_weekly_limit": 10.0}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			_, accountID := newFixture(t, tc.extra)
+			accountRepo := newAccountRepositoryWithSQL(client, integrationDB, nil)
+
+			require.NoError(t, accountRepo.IncrementQuotaUsed(ctx, accountID, 4))
+			require.Equal(t, 0, outboxCountFor(t, accountID), "below limit should not enqueue")
+
+			require.NoError(t, accountRepo.IncrementQuotaUsed(ctx, accountID, 8))
+			require.Equal(t, 1, outboxCountFor(t, accountID), "crossing limit should enqueue once")
+
+			releaseOutboxDedup(t, accountID)
+			require.NoError(t, accountRepo.IncrementQuotaUsed(ctx, accountID, 2))
+			require.Equal(t, 1, outboxCountFor(t, accountID), "increments beyond limit should not re-enqueue")
+		})
+	}
 }
 
 func TestDashboardAggregationRepositoryCleanupUsageBillingDedup_BatchDeletesOldRows(t *testing.T) {

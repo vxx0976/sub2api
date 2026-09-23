@@ -4038,16 +4038,22 @@ func (r *accountRepository) IncrementQuotaUsed(ctx context.Context, id int64, am
 		WHERE id = $2 AND deleted_at IS NULL
 		RETURNING
 			COALESCE((extra->>'quota_used')::numeric, 0),
-			COALESCE((extra->>'quota_limit')::numeric, 0)`,
+			COALESCE((extra->>'quota_limit')::numeric, 0),
+			COALESCE((extra->>'quota_5h_used')::numeric, 0),
+			COALESCE((extra->>'quota_5h_limit')::numeric, 0),
+			COALESCE((extra->>'quota_daily_used')::numeric, 0),
+			COALESCE((extra->>'quota_daily_limit')::numeric, 0),
+			COALESCE((extra->>'quota_weekly_used')::numeric, 0),
+			COALESCE((extra->>'quota_weekly_limit')::numeric, 0)`,
 		amount, id)
 	if err != nil {
 		return err
 	}
 	defer func() { _ = rows.Close() }()
 
-	var newUsed, limit float64
+	var newUsed, limit, fiveHourUsed, fiveHourLimit, dailyUsed, dailyLimit, weeklyUsed, weeklyLimit float64
 	if rows.Next() {
-		if err := rows.Scan(&newUsed, &limit); err != nil {
+		if err := rows.Scan(&newUsed, &limit, &fiveHourUsed, &fiveHourLimit, &dailyUsed, &dailyLimit, &weeklyUsed, &weeklyLimit); err != nil {
 			return err
 		}
 	}
@@ -4056,7 +4062,9 @@ func (r *accountRepository) IncrementQuotaUsed(ctx context.Context, id int64, am
 	}
 
 	// 任一维度配额刚超限时触发调度快照刷新
-	if limit > 0 && newUsed >= limit && (newUsed-amount) < limit {
+	// fork: 原先只判总额度，与注释不符；5h/日/周与 incrementUsageBillingAccountQuota 口径对齐。
+	crossed := func(used, lim float64) bool { return lim > 0 && used >= lim && (used-amount) < lim }
+	if crossed(newUsed, limit) || crossed(fiveHourUsed, fiveHourLimit) || crossed(dailyUsed, dailyLimit) || crossed(weeklyUsed, weeklyLimit) {
 		if err := enqueueSchedulerOutbox(ctx, r.sql, service.SchedulerOutboxEventAccountChanged, &id, nil, nil); err != nil {
 			logger.LegacyPrintf("repository.account", "[SchedulerOutbox] enqueue quota exceeded failed: account=%d err=%v", id, err)
 		}

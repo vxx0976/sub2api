@@ -160,6 +160,9 @@ type AccountQuotaState struct {
 	DailyLimit  float64
 	WeeklyUsed  float64
 	WeeklyLimit float64
+	// fork: 5h 滚动额度，用于判断本次递增是否刚跨过 5h 上限（需刷新调度快照）
+	FiveHourUsed  float64
+	FiveHourLimit float64
 }
 
 type UsageBillingApplyResult struct {

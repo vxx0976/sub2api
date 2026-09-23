@@ -985,6 +985,11 @@ func filterSchedulerExtra(extra map[string]any) map[string]any {
 		"passive_usage_7d_oi_reset",
 		"quota_limit",
 		"quota_used",
+		// fork: 5h 滚动窗口额度(IsQuotaExceeded 读 limit/used/start)同样在候选过滤阶段
+		// 跑在本投影上；漏掉则 GetQuota5hLimit()=0 直接放行，5h 额度已用尽的账号照常被调度。
+		"quota_5h_limit",
+		"quota_5h_used",
+		"quota_5h_start",
 		"quota_daily_limit",
 		"quota_daily_used",
 		"quota_daily_start",
@@ -997,6 +1002,27 @@ func filterSchedulerExtra(extra map[string]any) map[string]any {
 		"quota_weekly_reset_day",
 		"quota_weekly_reset_hour",
 		"quota_reset_timezone",
+		// fork: Anthropic 日/周费用限额(isAccountSchedulableForDailyCost/WeeklyCost)在候选
+		// 过滤阶段读本投影；缺失时 limit=0 直接放行，非粘性路径上限额形同虚设。
+		"daily_cost_limit",
+		"weekly_cost_limit",
+		// fork: require_privacy_set 分组在候选循环里对本投影调 IsPrivacySet()；缺失则
+		// OpenAI/Antigravity 账号全被判未设置(Gateway 路径还会 SetError 停号)。
+		"privacy_mode",
+		// fork: compact 能力分档(openAICompactSupportTier)在候选排序/过滤阶段读本投影；
+		// 缺失则一律按"未知"放行，显式不支持的账号要到选中后 DB 复核才被剔除。
+		"openai_compact_mode",
+		"openai_compact_supported",
+		// fork: 调度阈值停调(filterAccountsBySchedulingThreshold)在候选列表上跑
+		// EvaluateAccountSchedulingThreshold；grok / 国产 Coding Plan 的用量快照不在投影里
+		// 就永远不触发停调。国产键形如 <platform>_<window>_used_percent/_reset_at。
+		"grok_sched_utilization",
+		"grok_sched_reset_at",
+		"kimi_5h_used_percent", "kimi_5h_reset_at", "kimi_weekly_used_percent", "kimi_weekly_reset_at",
+		"zhipu_5h_used_percent", "zhipu_5h_reset_at", "zhipu_weekly_used_percent", "zhipu_weekly_reset_at",
+		"minimax_5h_used_percent", "minimax_5h_reset_at", "minimax_weekly_used_percent", "minimax_weekly_reset_at",
+		"opencode_go_5h_used_percent", "opencode_go_5h_reset_at", "opencode_go_weekly_used_percent", "opencode_go_weekly_reset_at",
+		"opencode_go_monthly_used_percent", "opencode_go_monthly_reset_at",
 		"mixed_scheduling",
 		"window_cost_limit",
 		"window_cost_sticky_reserve",
@@ -1036,6 +1062,13 @@ func filterSchedulerExtra(extra map[string]any) map[string]any {
 		"auto_pause_7d_threshold",
 		"auto_pause_5h_disabled",
 		"auto_pause_7d_disabled",
+		// fork: 自动用卡(shouldAutoPauseOpenAIAccountByQuota)同样在候选过滤阶段读本投影；
+		// 缺失则 ResolveOpenAIAutoResetCreditConfig 恒为关闭，持有新鲜可用重置卡的账号
+		// 过了普通暂停阈值就在列表阶段被剔除，进不了 TopK/复核。state 是小 JSON 对象。
+		service.OpenAIAutoResetCreditEnabledExtraKey,
+		service.OpenAIAutoResetCredit5hThresholdExtraKey,
+		service.OpenAIAutoResetCredit7dThresholdExtraKey,
+		service.OpenAIAutoResetCreditStateExtraKey,
 		"model_rate_limits",
 		service.UpstreamBillingProbeExtraKey,
 		service.GrokMediaEligibleExtraKey,
