@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+
+	"github.com/Wei-Shaw/sub2api/internal/pkg/openai"
 )
 
 // AnthropicToResponses converts an Anthropic Messages request directly into
@@ -471,7 +473,9 @@ func boolPtr(v bool) *bool {
 // "Unsupported parameter: temperature" if these fields are present (verified
 // against the ChatGPT Codex backend for gpt-5.6-sol and gpt-6-astra alike).
 func isReasoningModel(model string) bool {
-	return strings.HasPrefix(model, "gpt-5") || strings.HasPrefix(model, "gpt-6")
+	// dev 按前缀覆盖全部 gpt-6.x（含 gpt-6-astra）；上游的 Sol/Luna 别名拼写
+	// 判定（如大小写/空格变体）一并保留，二者取并集。
+	return strings.HasPrefix(model, "gpt-5") || strings.HasPrefix(model, "gpt-6") || openai.IsGPT6SolOrLunaModelSpelling(model)
 }
 
 // normalizeToolParameters ensures the tool parameter schema is valid for

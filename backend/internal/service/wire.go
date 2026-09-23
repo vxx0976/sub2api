@@ -10,6 +10,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/Wei-Shaw/sub2api/internal/payment"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/antigravity"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/claude"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
 	pkgpayment "github.com/Wei-Shaw/sub2api/internal/pkg/payment"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/xai"
@@ -178,6 +179,15 @@ func ProvideOpenAITokenProvider(
 	return p
 }
 
+// ProvidePluginManager preserves account-directory wiring when regenerating Wire.
+// SetAccountDirectory 是 setter 注入，Wire 生成不出来；手写在 wire_gen.go 里会在重生成时
+// 被静默丢掉（插件的 OpenAI 出站身份服务随之恒回 Unavailable），因此收进 provider。
+func ProvidePluginManager(repo PluginRepository, encryptor SecretEncryptor, cfg *config.Config, hostInfo PluginHostInfo, kvStore PluginKVStore, gateway *OpenAIGatewayService) *PluginManager {
+	manager := NewPluginManager(repo, encryptor, cfg, hostInfo, kvStore)
+	manager.SetAccountDirectory(gateway)
+	return manager
+}
+
 // ProvideOpenAIQuotaService wires the OpenAI quota query/reset service.
 // It depends on the OpenAI token provider for refreshed access tokens and the
 // privacy client factory for the impersonated upstream HTTP client.
@@ -186,9 +196,10 @@ func ProvideOpenAIQuotaService(
 	proxyRepo ProxyRepository,
 	tokenProvider *OpenAITokenProvider,
 	privacyClientFactory PrivacyClientFactory,
+	referralClient OpenAIReferralClient,
 	openAIGatewayService *OpenAIGatewayService,
 ) *OpenAIQuotaService {
-	service := NewOpenAIQuotaService(accountRepo, proxyRepo, tokenProvider, privacyClientFactory)
+	service := NewOpenAIQuotaService(accountRepo, proxyRepo, tokenProvider, privacyClientFactory, referralClient)
 	service.agentIdentityWS = openAIGatewayService
 	return service
 }
@@ -377,8 +388,9 @@ func ProvideGrokTokenProvider(
 }
 
 // ProvideDashboardAggregationService 创建并启动仪表盘聚合服务
-func ProvideDashboardAggregationService(repo DashboardAggregationRepository, timingWheel *TimingWheelService, lockCache LeaderLockCache, db *sql.DB, cfg *config.Config) *DashboardAggregationService {
+func ProvideDashboardAggregationService(repo DashboardAggregationRepository, timingWheel *TimingWheelService, lockCache LeaderLockCache, db *sql.DB, cfg *config.Config, settingRepo SettingRepository) *DashboardAggregationService {
 	svc := NewDashboardAggregationService(repo, timingWheel, cfg)
+	svc.settingRepo = settingRepo
 	svc.SetLeaderLock(lockCache, db)
 	svc.Start()
 	return svc
@@ -407,6 +419,18 @@ func ProvideOpenAICodexVersionSyncService(
 	githubClient GitHubReleaseClient,
 ) *OpenAICodexVersionSyncService {
 	svc := NewOpenAICodexVersionSyncService(settingRepo, settingService, githubClient, openAICodexVersionSyncInterval)
+	svc.Start()
+	return svc
+}
+
+// ProvideClaudeCodeVersionSyncService creates and starts ClaudeCodeVersionSyncService.
+// 出站 Claude Code 身份的版本号靠它跟随官方发布，无需为了跟版本而发新版本；面板可关闭。
+func ProvideClaudeCodeVersionSyncService(
+	settingRepo SettingRepository,
+	settingService *SettingService,
+	githubClient GitHubReleaseClient,
+) *ClaudeCodeVersionSyncService {
+	svc := NewClaudeCodeVersionSyncService(settingRepo, settingService, githubClient, claudeCodeVersionSyncInterval)
 	svc.Start()
 	return svc
 }
@@ -827,6 +851,11 @@ func ProvideSettingService(settingRepo SettingRepository, groupRepo GroupReposit
 	SetCodexCanonicalUserAgentResolver(func() string {
 		return svc.GetOpenAICodexCanonicalUserAgent(context.Background())
 	})
+	// Claude CLI 伪装版本号同理：运行期解析（面板手动值 → 后台同步值 → 内置基线），
+	// 解析器内部自带 60s TTL 缓存，热路径不触库。
+	claude.SetCLIVersionResolver(func() string {
+		return svc.GetClaudeCodeClientVersion(context.Background())
+	})
 	return svc
 }
 
@@ -924,6 +953,7 @@ var ProviderSet = wire.NewSet(
 	ProvideAccountTestService,
 	ProvideUpstreamBillingProbeService,
 	ProvideOllamaCloudUsageService,
+	ProvideOpenCodeGoUsageService,
 	ProvideSettingService,
 	NewDataManagementService,
 	ProvideBackupService,
@@ -955,6 +985,7 @@ var ProviderSet = wire.NewSet(
 	wire.Bind(new(GrokOAuthReconciler), new(*TokenRefreshService)),
 	ProvideAccountExpiryService,
 	ProvideOpenAICodexVersionSyncService,
+	ProvideClaudeCodeVersionSyncService,
 	ProvideProxyExpiryService,
 	ProvideProxyHealthService,
 	ProvideSubscriptionExpiryService,
@@ -1118,14 +1149,4 @@ func ProvideChannelMonitorV2Aggregator(repo ChannelMonitorV2Repository, db *sql.
 	}
 	aggregator.Start()
 	return aggregator
-}
-
-// ProvidePluginManager 构造插件管理器并注入账号目录。
-// SetAccountDirectory 是 setter 注入，Wire 生成不出来；上游把它手写在 wire_gen.go 里，
-// fork 每轮合并都会重生成 wire_gen.go，手写行会被静默丢掉（插件的 OpenAI 出站身份
-// 服务随之恒回 Unavailable），因此收进 provider。
-func ProvidePluginManager(repo PluginRepository, encryptor SecretEncryptor, cfg *config.Config, hostInfo PluginHostInfo, kvStore PluginKVStore, accountDirectory *OpenAIGatewayService) *PluginManager {
-	manager := NewPluginManager(repo, encryptor, cfg, hostInfo, kvStore)
-	manager.SetAccountDirectory(accountDirectory)
-	return manager
 }

@@ -50,7 +50,7 @@ vi.mock('@/components/common/BaseDialog.vue', () => ({
 }))
 
 import UserPlatformQuotaModal from '../UserPlatformQuotaModal.vue'
-import type { UserSubscription } from '@/types'
+import type { PlatformQuotaUpdateItem, UserSubscription } from '@/types'
 
 function makeUser(overrides: { subscriptions?: UserSubscription[] } = {}) {
   return { id: 99, email: 'u@example.com', ...overrides } as any
@@ -74,8 +74,8 @@ beforeEach(() => {
   apiMocks.resetPlatformQuotaWindow.mockResolvedValue({ platform_quotas: [] })
 })
 
-// 与 UserPlatformQuotaModal.vue 的 PLATFORMS（真源 = 后端 service.AllowedQuotaPlatforms）
-// 保持一致；加平台时只需改这一个数字。
+// 与 api/admin/users.ts 的 PLATFORM_QUOTA_PLATFORMS（真源 = 后端 service.AllowedQuotaPlatforms）
+// 保持一致；加平台时改这个数字，并同步下方 'renders all ten supported platforms' 的顺序断言。
 const PLATFORM_COUNT = 10
 
 describe('UserPlatformQuotaModal', () => {
@@ -105,15 +105,47 @@ describe('UserPlatformQuotaModal', () => {
     expect(apiMocks.getPlatformQuotas).toHaveBeenCalledWith(99)
   })
 
-  it('空数据渲染 5 个 platform 行', async () => {
+  it('renders all ten supported platforms with empty limits', async () => {
     const w = await mountAndOpen()
-    const html = w.html()
-    expect(html).toContain('anthropic')
-    expect(html).toContain('openai')
-    expect(html).toContain('gemini')
-    expect(html).toContain('antigravity')
-    expect(html).toContain('grok')
+    const rows = w.findAll('tbody tr')
+    expect(rows.map(row => row.find('td').text())).toEqual([
+      'anthropic', 'openai', 'gemini', 'antigravity', 'grok',
+      'kimi', 'zhipu', 'deepseek', 'minimax', 'opencode_go',
+    ])
+    for (const row of rows) {
+      const inputs = row.findAll('input[type=number]')
+      expect(inputs).toHaveLength(3)
+      expect(inputs.map(input => input.element.value)).toEqual(['', '', ''])
+    }
+    w.unmount()
   })
+
+  it.each(['kimi', 'zhipu', 'deepseek', 'minimax', 'opencode_go'] as const)(
+    'saves edits to %s without erasing existing platform limits', async (platform) => {
+      const existing: PlatformQuotaUpdateItem[] = [
+        { platform: 'openai', daily_limit_usd: 10, weekly_limit_usd: 20, monthly_limit_usd: 100 },
+        ...(['kimi', 'zhipu', 'deepseek', 'minimax', 'opencode_go'] as const).map(p => ({
+          platform: p, daily_limit_usd: 0, weekly_limit_usd: null, monthly_limit_usd: 50,
+        })),
+      ]
+      apiMocks.getPlatformQuotas.mockResolvedValueOnce({ platform_quotas: existing })
+      const w = await mountAndOpen()
+      const row = w.findAll('tbody tr').find(r => r.find('td').text() === platform)!
+      const inputs = row.findAll('input[type=number]')
+      expect(inputs.map(input => input.element.value)).toEqual(['0', '', '50'])
+      await inputs[1].setValue('12.5')
+      await w.findAll('button').find(b => b.text() === 'admin.users.platformQuota.save')!.trigger('click')
+      await flushPromises()
+      const expected = existing.map(item => item.platform === platform
+        ? { ...item, weekly_limit_usd: 12.5 }
+        : item)
+      expect(apiMocks.updatePlatformQuotas).toHaveBeenCalledTimes(1)
+      expect(apiMocks.updatePlatformQuotas).toHaveBeenCalledWith(99, expect.arrayContaining(expected))
+      expect(apiMocks.updatePlatformQuotas.mock.calls[0][1]).toHaveLength(PLATFORM_COUNT)
+      expect(w.emitted('success')).toHaveLength(1)
+      w.unmount()
+    },
+  )
 
   it('已有数据正确填充 limit input', async () => {
     apiMocks.getPlatformQuotas.mockResolvedValueOnce({

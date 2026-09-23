@@ -37,6 +37,13 @@ func normalizeKnownOpenAICodexModel(model string) string {
 		}
 	}
 
+	if openai.IsGPT6SolOrLunaModelSpelling(normalized) {
+		if strings.HasPrefix(normalized, "gpt-6-sol") {
+			return "gpt-6-sol"
+		}
+		return "gpt-6-luna"
+	}
+
 	switch {
 	// GPT-6 目前上游只有 astra 一个型号；裸 gpt-6 按 5.6 的处理惯例落到当代旗舰。
 	// 比上游多认后缀变体（gpt-6-astra-high / 日期后缀 / gpt-6-high），
@@ -162,4 +169,8 @@ func firstUsageBillingModel(candidates []string) string {
 		}
 	}
 	return ""
+}
+
+func isOpenAIGPT6Model(model string) bool {
+	return isOpenAIGPT6AstraModel(model) || openai.IsGPT6SolOrLunaModelSpelling(model)
 }

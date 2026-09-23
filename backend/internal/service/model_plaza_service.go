@@ -235,6 +235,13 @@ func (s *ModelPlazaService) ListGroups(ctx context.Context) ([]PlazaGroup, error
 // token 模型取计费阶梯表（单价与档位均由真实计费函数得出），
 // 图片/按次模型（或阶梯表不可用时）沿用渠道定价与分组图片档位价。
 func (s *ModelPlazaService) fillDisplayPricing(ctx context.Context, m *PlazaModel, g *Group) {
+	// 分组级价卡优先于渠道/目录定价（与 ModelPricingResolver.Resolve 的取价顺序一致）。
+	// 用 fork 的 MatchGroupModelPricing（生效形态，计费与展示共用的唯一入口）。
+	// 必须先覆盖再做下面的图片模式判定：分组把图片模型改成 token/按次计费时，
+	// 展示口径要跟着实收走；推理等级倍率也随分组价卡带出。
+	if groupPricing := MatchGroupModelPricing(g, m.Name); groupPricing != nil {
+		m.Pricing = groupPricing
+	}
 	// 按图片计费的模型不能走 token 阶梯表：plazaPricingFromSchedule 会无条件把
 	// BillingMode 写成 token，覆盖掉 synthesizePricingFromLiteLLM 判定出的 image 模式，
 	// 并丢弃 plazaImageDisplayPricing 合成的 1K/2K/4K 档位。
@@ -255,7 +262,7 @@ func (s *ModelPlazaService) fillDisplayPricing(ctx context.Context, m *PlazaMode
 			Platform: m.Platform,
 		})
 		if err == nil && sched != nil && len(sched.Tiers) > 0 {
-			m.Pricing = withDefaultMaxReasoningEffortMultiplier(plazaPricingFromSchedule(m.Pricing, sched), m.Name)
+			m.Pricing = plazaPricingFromSchedule(m.Pricing, sched)
 			if len(sched.Tiers) > 1 {
 				m.LongContextBasis = sched.Basis
 			}
@@ -263,20 +270,7 @@ func (s *ModelPlazaService) fillDisplayPricing(ctx context.Context, m *PlazaMode
 			return
 		}
 	}
-	m.Pricing = withDefaultMaxReasoningEffortMultiplier(plazaImageDisplayPricing(m.Pricing, g), m.Name)
-}
-
-func withDefaultMaxReasoningEffortMultiplier(pricing *ChannelModelPricing, model string) *ChannelModelPricing {
-	if pricing == nil || pricing.MaxReasoningEffortMultiplier != nil {
-		return pricing
-	}
-	multiplier := defaultMaxReasoningEffortMultiplier(model)
-	if multiplier == nil {
-		return pricing
-	}
-	cloned := pricing.Clone()
-	cloned.MaxReasoningEffortMultiplier = multiplier
-	return &cloned
+	m.Pricing = plazaImageDisplayPricing(m.Pricing, g)
 }
 
 // plazaPricingFromSchedule 把阶梯表压成展示用的 ChannelModelPricing：
@@ -287,7 +281,7 @@ func plazaPricingFromSchedule(raw *ChannelModelPricing, sched *ContextPricingSch
 		out.ImageInputPrice = raw.ImageInputPrice
 		out.ImageOutputPrice = raw.ImageOutputPrice
 		out.PerRequestPrice = raw.PerRequestPrice
-		out.MaxReasoningEffortMultiplier = raw.MaxReasoningEffortMultiplier
+		out.ReasoningEffortMultipliers = reasoningEffortMultipliersFromPricing(raw)
 	}
 	first := sched.Tiers[0]
 	out.InputPrice = first.Input

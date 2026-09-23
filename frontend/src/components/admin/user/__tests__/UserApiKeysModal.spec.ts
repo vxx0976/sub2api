@@ -1,5 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { mount, flushPromises } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
+import type { AdminUser } from '@/types'
 
 const apiMocks = vi.hoisted(() => ({
   getUserApiKeys: vi.fn(),
@@ -25,6 +26,8 @@ vi.mock('@/stores/app', () => ({
   useAppStore: () => ({ showSuccess: apiMocks.showSuccess, showError: apiMocks.showError })
 }))
 
+vi.mock('@/utils/format', () => ({ formatDateTime: (value: string) => value }))
+
 vi.mock('vue-i18n', async () => {
   const actual = await vi.importActual<typeof import('vue-i18n')>('vue-i18n')
   return { ...actual, useI18n: () => ({ t: (key: string) => key }) }
@@ -39,6 +42,16 @@ vi.mock('@/components/common/BaseDialog.vue', () => ({
 }))
 
 import UserApiKeysModal from '../UserApiKeysModal.vue'
+
+enableAutoUnmount(afterEach)
+
+beforeEach(() => {
+  for (const fn of Object.values(apiMocks)) fn.mockReset()
+  apiMocks.getAllGroups.mockResolvedValue([])
+  vi.spyOn(console, 'error').mockImplementation(() => {})
+})
+
+afterEach(() => vi.restoreAllMocks())
 
 const activeKey = {
   id: 10,
@@ -62,9 +75,7 @@ async function mountAndOpen() {
 
 describe('UserApiKeysModal 单把 key 启停', () => {
   beforeEach(() => {
-    for (const fn of Object.values(apiMocks)) fn.mockReset()
     apiMocks.getUserApiKeys.mockResolvedValue({ items: [{ ...activeKey }] })
-    apiMocks.getAllGroups.mockResolvedValue([])
   })
 
   it('停用按钮把该 key 置为 inactive，并只影响这一把 key', async () => {
@@ -98,5 +109,70 @@ describe('UserApiKeysModal 单把 key 启停', () => {
 
     expect(wrapper.find('[data-test="toggle-key-status-10"]').exists()).toBe(false)
     wrapper.unmount()
+  })
+})
+
+function deferred() {
+  let resolve!: (value: unknown) => void
+  let reject!: (error: Error) => void
+  const promise = new Promise((res, rej) => { resolve = res; reject = rej })
+  return { promise, resolve, reject }
+}
+const user = (id: number) => ({ id, email: `user${id}@example.com`, username: `user${id}` }) as AdminUser
+const keys = (id: number, name: string) => ({ items: [{ id, name, key: 'sk-example-key-value-for-tests', status: 'active', created_at: '2026-09-20', group_id: null }] })
+async function open() {
+  const wrapper = mount(UserApiKeysModal, {
+    props: { show: false, user: user(1) },
+    global: { stubs: { GroupBadge: true, GroupOptionItem: true } },
+  })
+  await wrapper.setProps({ show: true })
+  return wrapper
+}
+async function switchUser(wrapper: Awaited<ReturnType<typeof open>>) {
+  await wrapper.setProps({ show: false })
+  await wrapper.setProps({ show: true, user: user(2) })
+}
+
+describe('user API key loading', () => {
+  const getKeys = apiMocks.getUserApiKeys
+
+  it('does not display the previous user keys when the next load fails', async () => {
+    getKeys.mockResolvedValueOnce(keys(1, 'first-user-key')).mockRejectedValueOnce(new Error('unavailable'))
+    const wrapper = await open(); await flushPromises()
+    expect(wrapper.text()).toContain('first-user-key')
+    await switchUser(wrapper); await flushPromises()
+    expect(wrapper.text()).toContain('user2@example.com')
+    expect(wrapper.text()).not.toContain('first-user-key')
+  })
+
+  it('does not replace current keys with a late previous response', async () => {
+    const old = deferred()
+    getKeys.mockReturnValueOnce(old.promise).mockResolvedValueOnce(keys(2, 'current-user-key'))
+    const wrapper = await open()
+    await switchUser(wrapper); await flushPromises()
+    old.resolve(keys(1, 'old-user-key')); await flushPromises()
+    expect(wrapper.text()).toContain('current-user-key')
+    expect(wrapper.text()).not.toContain('old-user-key')
+  })
+
+  it('keeps the current request loading when an obsolete request fails', async () => {
+    const old = deferred(); const current = deferred()
+    getKeys.mockReturnValueOnce(old.promise).mockReturnValueOnce(current.promise)
+    const wrapper = await open()
+    await switchUser(wrapper)
+    old.reject(new Error('obsolete')); await flushPromises()
+    expect(wrapper.find('.animate-spin').exists()).toBe(true)
+    current.resolve(keys(2, 'current-user-key')); await flushPromises()
+    expect(wrapper.text()).toContain('current-user-key')
+    expect(wrapper.find('.animate-spin').exists()).toBe(false)
+  })
+
+  it('loads keys when the selected user changes while the dialog is open', async () => {
+    getKeys.mockResolvedValueOnce(keys(1, 'first-user-key')).mockResolvedValueOnce(keys(2, 'second-user-key'))
+    const wrapper = await open(); await flushPromises()
+    await wrapper.setProps({ user: user(2) }); await flushPromises()
+    expect(getKeys).toHaveBeenLastCalledWith(2)
+    expect(wrapper.text()).toContain('second-user-key')
+    expect(wrapper.text()).not.toContain('first-user-key')
   })
 })
