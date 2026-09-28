@@ -1434,8 +1434,8 @@ func (s *BillingService) GetModelPricingAt(model string, at time.Time) (*ModelPr
 	return nil, fmt.Errorf("%w for model: %s", ErrModelPricingUnavailable, model)
 }
 
-// GetModelPricingWithChannel 获取模型定价，渠道配置的价格覆盖默认值
-// 渠道存在时，未配置的图片输出价格归零（不回退到 LiteLLM）
+// GetModelPricingWithChannel 获取模型定价，渠道配置的价格覆盖默认值。
+// 与其他 token 字段一致，渠道留空的图片输入/输出价沿用目录价，见 applyChannelImagePriceOverrides。
 func (s *BillingService) GetModelPricingWithChannel(model string, channelPricing *ChannelModelPricing) (*ModelPricing, error) {
 	return s.GetModelPricingWithChannelAt(model, channelPricing, time.Time{})
 }
@@ -1456,13 +1456,7 @@ func (s *BillingService) GetModelPricingWithChannelAt(model string, channelPrici
 	pricing.FastMultiplier = channelPricing.FastMultiplier
 	pricing.FlexMultiplier = channelPricing.FlexMultiplier
 	pricing.ReasoningEffortMultipliers = maps.Clone(channelPricing.ReasoningEffortMultipliers)
-	if channelPricing.ImageOutputPrice != nil {
-		pricing.ImageOutputPricePerToken = *channelPricing.ImageOutputPrice
-	} else {
-		pricing.ImageOutputPricePerToken = 0
-	}
-	pricing.ImageOutputPriceExplicit = true
-	applyChannelImageInputPrice(channelPricing, pricing)
+	applyChannelImagePriceOverrides(channelPricing, pricing)
 	return pricing, nil
 }
 
@@ -1564,8 +1558,9 @@ func (s *BillingService) CalculateCostUnified(input CostInput) (*CostBreakdown, 
 	}
 
 	// 优先使用预解析结果，避免重复 Resolve 调用。
-	// 注意：预解析结果只在命中价卡时产生，而价卡路径按设计不应用官方时段档，
-	// 因此这里不把 PricingAt 补进已解析的结果里——两者本就该得到同一个基准价底价。
+	// 注意：这里不会把 PricingAt 补进已解析的结果里。价卡路径按设计不应用官方时段档；
+	// 未命中价卡也预解析的调用方（如 account_stats_pricing.go 的 tryModelFilePricing）
+	// 必须自己在 PricingInput.At 里带上 pricingAt，否则闲时也会按高峰价计。
 	resolved := input.Resolved
 	if resolved == nil {
 		resolved = input.Resolver.Resolve(input.Ctx, PricingInput{

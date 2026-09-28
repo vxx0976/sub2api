@@ -88,10 +88,15 @@ func TestFilterGrokFreeQuotaAccountsOnlyBlocksExplicitFreeOAuth(t *testing.T) {
 	filtered := scheduler.filterGrokFreeQuotaAccounts(context.Background(), accounts)
 	require.Equal(t, []int64{1, 2, 3, 4}, accountIDs(filtered), "miss fails open on hot path")
 
+	// 等缓存写入而不是等 repo 被调用：后台刷新在 stub 返回后才 cache.Store，
+	// 只等 calls>=1 在整包并发负载下会抢在写缓存之前做第二遍断言。
 	require.Eventually(t, func() bool {
-		repo.mu.Lock()
-		defer repo.mu.Unlock()
-		return repo.calls >= 1
+		cached, ok := scheduler.grokFreeQuotaGateCache.Load(int64(1))
+		if !ok {
+			return false
+		}
+		entry, valid := cached.(grokFreeQuotaGateCacheEntry)
+		return valid && entry.known
 	}, 2*time.Second, 10*time.Millisecond)
 
 	// Second pass: uses refreshed cache and blocks over-gate free OAuth.

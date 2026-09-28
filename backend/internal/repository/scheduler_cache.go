@@ -1062,9 +1062,11 @@ func filterSchedulerExtra(extra map[string]any) map[string]any {
 		"auto_pause_7d_threshold",
 		"auto_pause_5h_disabled",
 		"auto_pause_7d_disabled",
-		// fork: 自动用卡(shouldAutoPauseOpenAIAccountByQuota)同样在候选过滤阶段读本投影；
-		// 缺失则 ResolveOpenAIAutoResetCreditConfig 恒为关闭，持有新鲜可用重置卡的账号
-		// 过了普通暂停阈值就在列表阶段被剔除，进不了 TopK/复核。state 是小 JSON 对象。
+		// 自动用卡：卡可用的 OpenAI 号在暂停阈值与用卡阈值之间继续调度。
+		// 候选过滤(shouldAutoPauseOpenAIAccountByQuota)读的是本投影，缺这几个键时
+		// ResolveOpenAIAutoResetCreditConfig 恒为关闭、放行分支永远不会生效，
+		// 账号会在暂停阈值处被一刀切停调，进不了 TopK/复核，直到窗口自然重置。
+		// state 是小 JSON 对象。
 		service.OpenAIAutoResetCreditEnabledExtraKey,
 		service.OpenAIAutoResetCredit5hThresholdExtraKey,
 		service.OpenAIAutoResetCredit7dThresholdExtraKey,

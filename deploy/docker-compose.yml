@@ -287,19 +287,29 @@ services:
         hard: 100000
     volumes:
       - redis_data:/data
-    # The command is one quoted script for the inner `sh -c`. Compose keeps
-    # the newlines inside the quoted string, so every line needs a trailing
-    # `\` — without it, `redis-server` on the first line runs with no flags
-    # at all, and the --save/--appendonly/--appendfsync lines are never read.
-    command: >
-      sh -c '
-        redis-server \
-        --maxmemory ${REDIS_MAXMEMORY:-512mb} \
-        --maxmemory-policy volatile-lru \
-        --save 60 1 \
-        --appendonly yes \
-        --appendfsync everysec \
-        ${REDIS_PASSWORD:+--requirepass "$REDIS_PASSWORD"}'
+    # Exec-list form (upstream c802c45e3): each argument is passed verbatim to
+    # redis-server with no `sh -c` in between, so a password containing shell
+    # metacharacters is never expanded or truncated. Compose still interpolates
+    # ${...} per item. An empty REDIS_PASSWORD yields `--requirepass ""`, which
+    # redis treats as "no password" (default user = nopass), same as the old
+    # conditional `${REDIS_PASSWORD:+--requirepass ...}`.
+    # Fork: keep the memory cap + volatile-lru eviction (only keys with a TTL
+    # are evicted, so persistent scheduler/billing keys are never dropped).
+    command:
+      - redis-server
+      - --maxmemory
+      - ${REDIS_MAXMEMORY:-512mb}
+      - --maxmemory-policy
+      - volatile-lru
+      - --save
+      - "60"
+      - "1"
+      - --appendonly
+      - "yes"
+      - --appendfsync
+      - everysec
+      - --requirepass
+      - ${REDIS_PASSWORD:-}
     environment:
       - TZ=${TZ:-Asia/Shanghai}
       # REDISCLI_AUTH is used by redis-cli for authentication (safer than -a flag)

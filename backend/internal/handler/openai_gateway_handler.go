@@ -1626,7 +1626,17 @@ func (h *OpenAIGatewayHandler) handleAnthropicFailoverExhausted(c *gin.Context, 
 
 // ensureAnthropicErrorResponse writes a fallback Anthropic error if no response was written.
 func (h *OpenAIGatewayHandler) ensureAnthropicErrorResponse(c *gin.Context, streamStarted bool) bool {
-	if c == nil || c.Writer == nil || c.Writer.Written() {
+	if c == nil || c.Writer == nil {
+		return false
+	}
+	// 与 ensureForwardErrorResponse 对齐：客户端已断开时标 499 而不是补写 502。
+	// 上游 f4f8ff04d 起传输层对客户端取消不再记 ops 上游错误，缺这一步的话
+	// 非流式原生 /v1/messages 的断开会以 502「上游失败」落进 ops_error_logs。
+	if c.Request != nil && errors.Is(c.Request.Context().Err(), context.Canceled) {
+		failoverClientGone(c)
+		return false
+	}
+	if c.Writer.Written() {
 		return false
 	}
 	h.anthropicStreamingAwareError(c, http.StatusBadGateway, "api_error", "Upstream request failed", streamStarted)
