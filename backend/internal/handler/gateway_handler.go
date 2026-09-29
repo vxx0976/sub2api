@@ -1837,6 +1837,13 @@ func (h *GatewayHandler) handleFailoverExhausted(c *gin.Context, failoverErr *se
 	upstreamMsg := service.ExtractUpstreamErrorMessage(responseBody)
 	service.SetOpsUpstreamError(c, statusCode, upstreamMsg, "")
 
+	// fork: 各中转都以客户端版本门槛拒绝时，原样回 400 升级提示（换号前的行为），
+	// 用户才知道要升级 Claude Code；默认映射会变成无从下手的 502。
+	if service.IsRelayClientVersionRejectedError(statusCode, responseBody) {
+		h.handleStreamingAwareError(c, http.StatusBadRequest, "invalid_request_error", service.SanitizeUpstreamErrorMessage(upstreamMsg), streamStarted)
+		return
+	}
+
 	// 使用默认的错误映射
 	status, errType, errMsg := h.mapUpstreamError(statusCode)
 	h.handleStreamingAwareError(c, status, errType, errMsg, streamStarted)

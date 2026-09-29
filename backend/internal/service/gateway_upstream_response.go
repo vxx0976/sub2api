@@ -227,25 +227,64 @@ func IsRelayRequestBlockedError(statusCode int, respBody []byte) bool {
 	return isRelayRequestBlockedError(statusCode, respBody)
 }
 
+// isRelayClientVersionRejectedError 识别中转按 Claude Code 客户端版本做的准入拒绝（400），例如
+// "Your Claude Code version (2.1.161) is below the minimum required version (2.1.220)"、
+// "Claude Code 2.1.274 does not support this model; version 2.1.280 or newer is required"。
+// 门槛是各家中转自定的，同组其他中转常能接；账号本身没问题，同样只换号、不做账号侧副作用。
+func isRelayClientVersionRejectedError(statusCode int, respBody []byte) bool {
+	if statusCode != http.StatusBadRequest {
+		return false
+	}
+	msg := strings.ToLower(extractUpstreamErrorMessage(respBody))
+	if !strings.Contains(msg, "claude code") {
+		return false
+	}
+	return strings.Contains(msg, "below the minimum required version") ||
+		(strings.Contains(msg, "does not support this model") && strings.Contains(msg, "or newer is required"))
+}
+
+// IsRelayClientVersionRejectedError 供 handler 在换号耗尽时识别版本门槛拒绝：
+// 此时应把中转原始的 400 升级提示回给客户端，而不是笼统的 502。
+func IsRelayClientVersionRejectedError(statusCode int, respBody []byte) bool {
+	return isRelayClientVersionRejectedError(statusCode, respBody)
+}
+
 // relayRequestBlockedFailover 读出 422 响应体；若是中转风控拦截则返回 failover 错误，
 // 否则把响应体放回 resp 并返回 nil，由调用方继续走常规错误处理。
 func (s *GatewayService) relayRequestBlockedFailover(c *gin.Context, resp *http.Response, account *Account, passthrough bool) *UpstreamFailoverError {
-	if resp.StatusCode != http.StatusUnprocessableEntity {
+	return s.relayRejectedFailover(c, resp, account, passthrough, false)
+}
+
+// relayMessagesRejectedFailover 用于 /v1/messages（Forward 与 API Key 透传）：在中转风控拦截之外，
+// 还对中转的 Claude Code 客户端版本门槛换号。版本门槛只针对 Claude Code 客户端，桥接端点不接。
+func (s *GatewayService) relayMessagesRejectedFailover(c *gin.Context, resp *http.Response, account *Account, passthrough bool) *UpstreamFailoverError {
+	return s.relayRejectedFailover(c, resp, account, passthrough, true)
+}
+
+func (s *GatewayService) relayRejectedFailover(c *gin.Context, resp *http.Response, account *Account, passthrough, allowVersionGate bool) *UpstreamFailoverError {
+	// 官方 OAuth 号的版本拒绝源自网关自身的 CLI 版本伪装，换号无济于事，只对中转生效。
+	allowVersionGate = allowVersionGate && !account.IsOAuth()
+	if resp.StatusCode != http.StatusUnprocessableEntity && !(allowVersionGate && resp.StatusCode == http.StatusBadRequest) {
 		return nil
 	}
 	respBody, readErr := s.readUpstreamErrorBody(resp)
 	_ = resp.Body.Close()
 	resp.Body = io.NopCloser(bytes.NewReader(respBody))
 	if readErr != nil {
-		logger.LegacyPrintf("service.gateway", "Account %d: failed to read 422 upstream error body: %v", account.ID, readErr)
+		logger.LegacyPrintf("service.gateway", "Account %d: failed to read %d upstream error body: %v", account.ID, resp.StatusCode, readErr)
 		return nil
 	}
-	if !isRelayRequestBlockedError(resp.StatusCode, respBody) {
+	if !isRelayRequestBlockedError(resp.StatusCode, respBody) &&
+		!(allowVersionGate && isRelayClientVersionRejectedError(resp.StatusCode, respBody)) {
 		return nil
 	}
 
-	logger.LegacyPrintf("service.gateway", "[RelayBlocked] Relay blocked request (failover): Account=%d(%s) Status=%d RequestID=%s Body=%s",
-		account.ID, account.Name, resp.StatusCode, resp.Header.Get("x-request-id"), truncateString(string(respBody), 1000))
+	reason := "Relay blocked request"
+	if resp.StatusCode == http.StatusBadRequest {
+		reason = "Relay client version gate"
+	}
+	logger.LegacyPrintf("service.gateway", "[RelayBlocked] %s (failover): Account=%d(%s) Status=%d RequestID=%s Body=%s",
+		reason, account.ID, account.Name, resp.StatusCode, resp.Header.Get("x-request-id"), truncateString(string(respBody), 1000))
 	appendOpsUpstreamError(c, OpsUpstreamErrorEvent{
 		ProxyID:            opsUpstreamProxyID(account),
 		ProxyName:          opsUpstreamProxyName(account),

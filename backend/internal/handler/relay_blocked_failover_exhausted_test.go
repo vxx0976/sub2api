@@ -58,3 +58,20 @@ func TestBridgeFailoverExhaustedOther422Unchanged(t *testing.T) {
 	(&GatewayHandler{}).handleResponsesFailoverExhausted(c, other, false)
 	require.Equal(t, http.StatusUnprocessableEntity, recorder.Code)
 }
+
+// fork: /v1/messages 上所有中转都以 Claude Code 版本门槛拒绝时，回 400 + 中转原始升级提示，
+// 而不是默认映射的 502 "Upstream request failed"。
+func TestMessagesFailoverExhaustedClientVersionGateReturns400(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	gate := &service.UpstreamFailoverError{
+		StatusCode:   http.StatusBadRequest,
+		ResponseBody: []byte(`{"error":{"message":"Claude Code 2.1.231 does not support this model; version 2.1.280 or newer is required. Run 'claude update'.","type":"invalid_request_error"},"type":"error"}`),
+	}
+	recorder := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(recorder)
+	(&GatewayHandler{}).handleFailoverExhausted(c, gate, service.PlatformAnthropic, false)
+
+	require.Equal(t, http.StatusBadRequest, recorder.Code)
+	require.Equal(t, "invalid_request_error", gjson.Get(recorder.Body.String(), "error.type").String())
+	require.Contains(t, gjson.Get(recorder.Body.String(), "error.message").String(), "2.1.280 or newer is required")
+}
