@@ -5761,6 +5761,19 @@
               <Toggle v-model="form.risk_control_enabled" />
             </div>
 
+            <!-- 风控白名单（上游 6a69dd051）：存 user id，选择器展示邮箱 -->
+            <div>
+              <label class="input-label">
+                {{ t('admin.settings.features.riskControl.riskControlUserAllowlist') }}
+              </label>
+              <OpenAIFastPolicyUserSelector
+                v-model="riskControlAllowlistedUserIds"
+              />
+              <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                {{ t('admin.settings.features.riskControl.riskControlUserAllowlistHint') }}
+              </p>
+            </div>
+
             <!-- Cyber 会话自动屏蔽 -->
             <div class="flex items-center justify-between">
               <div>
@@ -8418,6 +8431,7 @@ const form = reactive<SettingsForm>({
   google_oauth_client_secret: '',
   // Risk control (from main)
   risk_control_enabled: false,
+  cyber_policy_user_allowlist: '',
   cyber_session_block_enabled: false,
   cyber_session_block_ttl_seconds: 3600,
   // Allow user view error requests (from main)
@@ -8435,6 +8449,19 @@ function applyCaptchaSelection(provider: CaptchaProviderSelection | null): void 
   form.tencent_captcha_enabled = provider === "tencent";
   form.aliyun_captcha_enabled = provider === "aliyun";
 }
+
+// Keep the settings API representation as user IDs; the selector displays emails.
+const riskControlAllowlistedUserIds = computed<number[]>({
+  get: () => Array.from(new Set(
+    form.cyber_policy_user_allowlist
+      .split(/[,\s]+/)
+      .map(Number)
+      .filter((id) => Number.isSafeInteger(id) && id > 0),
+  )),
+  set: (ids) => {
+    form.cyber_policy_user_allowlist = ids.join(",");
+  },
+});
 
 const captchaMasterEnabled = computed({
   get: () =>
@@ -9927,6 +9954,7 @@ async function saveSettings() {
       plugin_management_enabled: form.plugin_management_enabled,
       // Risk Control (内容审计)
       risk_control_enabled: form.risk_control_enabled,
+      cyber_policy_user_allowlist: form.cyber_policy_user_allowlist,
       // Cyber 会话屏蔽
       cyber_session_block_enabled: form.cyber_session_block_enabled,
       cyber_session_block_ttl_seconds:

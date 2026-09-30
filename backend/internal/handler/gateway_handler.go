@@ -506,7 +506,7 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 				// （计入分组失败、不 failover——内容已写出，writer-size 检查已禁止 failover）。
 				if result != nil && result.PartialError {
 					h.submitForwardUsageRecord(c, result, apiKey, subscription, account,
-						body, parsedReq.OutputEffort, parsedReq.ThinkingEnabled, channelMapping, reqModel,
+						body, parsedReq.OutputEffort, channelMapping, reqModel,
 						fs.ForceCacheBilling, pricingAt, subject.UserID)
 				}
 				var failoverErr *service.UpstreamFailoverError
@@ -572,7 +572,7 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 
 			// 使用量记录走与部分交付错误分支同一个 helper，避免两处口径漂移。
 			h.submitForwardUsageRecord(c, result, apiKey, subscription, account,
-				body, parsedReq.OutputEffort, parsedReq.ThinkingEnabled, channelMapping, reqModel,
+				body, parsedReq.OutputEffort, channelMapping, reqModel,
 				fs.ForceCacheBilling, pricingAt, subject.UserID)
 			return
 		}
@@ -888,7 +888,7 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 				// （计入分组失败、不 failover——内容已写出，writer-size 检查已禁止 failover）。
 				if result != nil && result.PartialError {
 					h.submitForwardUsageRecord(c, result, currentAPIKey, currentSubscription, account,
-						attemptParsedReq.Body.Bytes(), attemptParsedReq.OutputEffort, attemptParsedReq.ThinkingEnabled, channelMapping, reqModel,
+						attemptParsedReq.Body.Bytes(), attemptParsedReq.OutputEffort, channelMapping, reqModel,
 						fs.ForceCacheBilling, pricingAt, subject.UserID)
 				}
 				// Beta policy block: return 400 immediately, no failover
@@ -1039,7 +1039,7 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 			// 使用量记录走与部分交付错误分支同一个 helper，避免口径漂移。
 			// Forward 内部可能继续改写 body，usage 去重指纹必须使用最终上游接受的当前 body。
 			h.submitForwardUsageRecord(c, result, currentAPIKey, currentSubscription, account,
-				attemptParsedReq.Body.Bytes(), attemptParsedReq.OutputEffort, attemptParsedReq.ThinkingEnabled, channelMapping, reqModel,
+				attemptParsedReq.Body.Bytes(), attemptParsedReq.OutputEffort, channelMapping, reqModel,
 				fs.ForceCacheBilling, pricingAt, subject.UserID)
 			// 转发成功，会话槽保持既有空闲超时语义
 			upstreamServedSession = true
@@ -2480,7 +2480,6 @@ func (h *GatewayHandler) submitForwardUsageRecord(
 	account *service.Account,
 	requestPayload []byte,
 	outputEffort string,
-	thinkingEnabled bool,
 	channelMapping service.ChannelMappingResult,
 	reqModel string,
 	forceCacheBilling bool,
@@ -2501,13 +2500,16 @@ func (h *GatewayHandler) submitForwardUsageRecord(
 	// 国产模型 thinking-enabled 默认 effort 填充：Kimi/GLM/MiniMax 这些不支持 effort 档位的
 	// passback-required 上游，仅要 thinking 启用且 OutputEffort 未明确传递时，在 usage_log 写 "high"
 	// 避免该字段长期为 NULL（详见 DefaultEffortForThinkingEnabled 文档）。
-	if result.ReasoningEffort == nil && thinkingEnabled {
-		protocolModel := result.UpstreamModel
-		if protocolModel == "" {
-			protocolModel = result.Model
-		}
-		result.ReasoningEffort = service.DefaultEffortForThinkingEnabled(protocolModel)
+	//
+	// 只认请求体里显式的 thinking.type=enabled/adaptive（与 OpenAI 分组各路径的
+	// ApplyThinkingEnabledFallback 同口径），不用 ParsedRequest.ThinkingEnabled：后者是给
+	// 调度/限流用的，会把 Claude 5.5 请求模型一律视为隐式开思考、并把 between_tools 算作开启，
+	// 映射到国产上游时 thinking 实际是关的，却会被记成 high 并吃到 high 档推理倍率。
+	protocolModel := result.UpstreamModel
+	if protocolModel == "" {
+		protocolModel = result.Model
 	}
+	result.ReasoningEffort = service.ApplyThinkingEnabledFallback(result.ReasoningEffort, requestPayload, protocolModel)
 	quotaPlatform := service.QuotaPlatform(c.Request.Context(), apiKey)
 	sessionID := service.ExtractClientSessionID(c)
 	h.submitUsageRecordTask(c.Request.Context(), func(ctx context.Context) {

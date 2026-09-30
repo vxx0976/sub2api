@@ -676,6 +676,7 @@ export interface SystemSettings {
   payment_enabled: boolean;
   risk_control_enabled: boolean;
   // Cyber session block
+  cyber_policy_user_allowlist: string;
   cyber_session_block_enabled: boolean;
   cyber_session_block_ttl_seconds: number;
   payment_min_amount: number;
@@ -1009,6 +1010,7 @@ export interface UpdateSettingsRequest {
   payment_enabled?: boolean;
   risk_control_enabled?: boolean;
   // Cyber session block
+  cyber_policy_user_allowlist?: string;
   cyber_session_block_enabled?: boolean;
   cyber_session_block_ttl_seconds?: number;
   payment_min_amount?: number;

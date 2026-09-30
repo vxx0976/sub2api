@@ -40,6 +40,56 @@ describe('UseKeyModal', () => {
     saveAsMock.mockClear()
   })
 
+  it('shows only Claude Code for Claude Code-only groups', async () => {
+    const wrapper = mount(UseKeyModal, {
+      props: {
+        show: true,
+        apiKey: 'sk-anthropic-test',
+        baseUrl: 'https://example.com/v1',
+        platform: 'anthropic'
+      },
+      global: {
+        stubs: {
+          BaseDialog: { template: '<div><slot /><slot name="footer" /></div>' },
+          Icon: { template: '<span />' }
+        }
+      }
+    })
+
+    const clientTabs = () => wrapper.find('nav[aria-label="Client"]').text()
+    expect(clientTabs()).toContain('keys.useKeyModal.cliTabs.codexCli')
+    // NOTE(fork): upstream expects an OpenCode tab on anthropic groups here, but this fork
+    // intentionally has no OpenCode tab for the anthropic/default platforms (commit 13b3776de),
+    // so the precondition is "Claude Code + Codex only". The OpenCode-hiding behavior is still
+    // exercised below on the openai platform, which does expose OpenCode in this fork.
+    expect(clientTabs()).not.toContain('keys.useKeyModal.cliTabs.opencode')
+
+    const codexTab = wrapper.find('nav[aria-label="Client"]').findAll('button').find(
+      (button) => button.text().includes('keys.useKeyModal.cliTabs.codexCli')
+    )
+    await codexTab!.trigger('click')
+    await wrapper.setProps({ claudeCodeOnly: true })
+
+    // NOTE(fork): this fork only renders the client tab bar when there is more than one option
+    // (`clientTabs.length > 1`, commit 13b3776de), so a Claude Code-only group shows no tab bar
+    // at all instead of a single "Claude Code" tab. Assert the tab model directly plus the
+    // absence of the bar, which is strictly stronger than upstream's text checks.
+    const clientTabIds = () => (wrapper.vm as unknown as { clientTabs: Array<{ id: string }> })
+      .clientTabs.map((tab) => tab.id)
+    expect(clientTabIds()).toEqual(['claude'])
+    expect(wrapper.find('nav[aria-label="Client"]').exists()).toBe(false)
+    expect(wrapper.find('pre code').text()).toContain('CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC')
+
+    await wrapper.setProps({ platform: 'openai', claudeCodeOnly: false })
+    expect(clientTabs()).toContain('keys.useKeyModal.cliTabs.codexCli')
+    expect(clientTabs()).toContain('keys.useKeyModal.cliTabs.opencode')
+
+    await wrapper.setProps({ claudeCodeOnly: true })
+    expect(clientTabIds()).toEqual(['claude'])
+    expect(wrapper.find('nav[aria-label="Client"]').exists()).toBe(false)
+    expect(wrapper.find('pre code').text()).toContain('ANTHROPIC_BASE_URL')
+  })
+
   it('omits the attribution override from every standard Claude Code setup form', async () => {
     const wrapper = mount(UseKeyModal, {
       props: {
@@ -706,6 +756,10 @@ describe('UseKeyModal', () => {
   // defaults" (0.2.8): the fork's anthropic/default platforms have no OpenCode tab either,
   // so generateOpenCodeConfig('anthropic', ...) (which now carries claude-opus-5-5) has no
   // entry point here and that test is dropped as well.
+  // 0.2.10: upstream renamed that test to "exports Claude 5.5 models on the Anthropic provider
+  // with adaptive defaults" and extended it with claude-sonnet-5-5 (8490a8186). The model entry
+  // is auto-merged into generateOpenCodeConfig('anthropic', ...), but the fork's anthropic tab
+  // list still has no OpenCode entry point, so the renamed test stays dropped too.
 
   // Scenario: API Key users can fetch a routed group catalog and reference it from config.toml.
   it('offers a downloadable Codex catalog for Composite API keys', async () => {
@@ -895,21 +949,9 @@ describe('UseKeyModal', () => {
     expect(config).toContain('review_model = "gpt-5.5"')
   })
 
-  it('derives OpenAI Codex reasoning effort from the selected catalog descriptor', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-      ok: true,
-      status: 200,
-      json: async () => ({
-        models: [
-          {
-            slug: 'glm-5.3',
-            default_reasoning_level: 'none',
-            supported_reasoning_levels: [{ effort: 'none' }]
-          }
-        ]
-      })
-    }))
-
+  it('omits the Codex catalog for OpenAI in both transport modes and on both platforms', async () => {
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
     const wrapper = mount(UseKeyModal, {
       props: {
         show: true,
@@ -929,13 +971,18 @@ describe('UseKeyModal', () => {
       }
     })
 
-    await wrapper.get('[data-testid="codex-model-catalog-fetch"]').trigger('click')
-    await flushPromises()
-
-    const configToml = wrapper.findAll('pre code')
-      .map((code) => code.text())
-      .find((content) => content.includes('model_provider = "OpenAI"'))
-    expect(configToml).toContain('model = "glm-5.3"')
-    expect(configToml).not.toContain('model_reasoning_effort')
+    for (const transport of ['keys.useKeyModal.cliTabs.codexCli', 'keys.useKeyModal.cliTabs.codexCliWs']) {
+      await wrapper.findAll('button').find((button) => button.text().trim() === transport)!.trigger('click')
+      for (const os of ['macOS / Linux', 'Windows']) {
+        await wrapper.findAll('button').find((button) => button.text().trim() === os)!.trigger('click')
+        const configToml = wrapper.findAll('pre code')
+          .map((code) => code.text())
+          .find((content) => content.includes('model_provider = "OpenAI"'))
+        expect(configToml).toContain('model = "gpt-5.5"')
+        expect(configToml).not.toContain('model_catalog_json')
+        expect(wrapper.find('[data-testid="codex-model-catalog"]').exists()).toBe(false)
+      }
+    }
+    expect(fetchMock).not.toHaveBeenCalled()
   })
 })

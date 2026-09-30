@@ -386,6 +386,33 @@ func TestFilterThinkingBlocksForRetry_DisablesThinkingAndPreservesAsText(t *test
 	require.Equal(t, "Let me think...", first["text"])
 }
 
+func TestClaude55FilterThinkingBlocksRemovesSignedChainAfterInvalidBlock(t *testing.T) {
+	input := []byte(`{"model":"claude-sonnet-5-5","messages":[{"role":"assistant","content":[{"type":"thinking","thinking":"old","signature":""},{"type":"text","text":"answer"}]},{"role":"assistant","content":[{"type":"thinking","thinking":"later","signature":"valid"},{"type":"redacted_thinking","data":"encrypted"},{"type":"text","text":"later answer"}]},{"role":"assistant","content":[{"type":"thinking","thinking":"only thought","signature":"valid"}]}]}`)
+	for _, model := range []string{"claude-sonnet-5-5", "claude-opus-5-5"} {
+		t.Run(model, func(t *testing.T) {
+			out := FilterThinkingBlocks(input, model)
+			require.False(t, gjson.GetBytes(out, "messages.0.content.#(type==thinking)").Exists())
+			require.Equal(t, "answer", gjson.GetBytes(out, "messages.0.content.0.text").String())
+			require.Len(t, gjson.GetBytes(out, "messages.1.content").Array(), 1)
+			require.Equal(t, "later answer", gjson.GetBytes(out, "messages.1.content.0.text").String())
+			require.Equal(t, "(assistant content removed)", gjson.GetBytes(out, "messages.2.content.0.text").String())
+		})
+	}
+}
+
+func TestSonnet55RetryKeepsBetweenToolsMode(t *testing.T) {
+	for _, messages := range []string{
+		`[{"role":"user","content":"hi"}]`,
+		`[{"role":"assistant","content":[{"type":"thinking","thinking":"old","signature":"invalid"},{"type":"text","text":"answer"}]}]`,
+	} {
+		input := []byte(`{"model":"claude-sonnet-5-5","thinking":{"type":"between_tools"},"output_config":{"effort":"low"},"messages":` + messages + `}`)
+		out := FilterThinkingBlocksForRetry(input, "claude-sonnet-5-5")
+		require.Equal(t, "between_tools", gjson.GetBytes(out, "thinking.type").String())
+		require.Equal(t, "low", gjson.GetBytes(out, "output_config.effort").String())
+		require.NoError(t, validateClaude55Request(out, "claude-sonnet-5-5"))
+	}
+}
+
 func TestFilterThinkingBlocksForRetry_DisablesThinkingEvenWithoutThinkingBlocks(t *testing.T) {
 	input := []byte(`{
 		"model":"claude-3-5-sonnet-20241022",
@@ -1481,6 +1508,23 @@ func TestApplyThinkingEnabledFallback(t *testing.T) {
 			body:        `{"thinking":{"type":"enabled"}}`,
 			model:       "deepseek-v4-pro",
 			wantPassThr: true,
+		},
+
+		// Anthropic 分组把 claude-sonnet-5-5 映射到国产上游：Claude Code 的 between_tools /
+		// 省略 thinking 在国产上游是思考关，不能按 high 记（会吃到 high 档推理倍率）。
+		{
+			name:   "kimi + sonnet-5-5 between_tools -> nil",
+			effort: nil,
+			body:   `{"model":"claude-sonnet-5-5","thinking":{"type":"between_tools"}}`,
+			model:  "kimi-k2.6",
+			want:   nil,
+		},
+		{
+			name:   "glm + sonnet-5-5 thinking omitted -> nil",
+			effort: nil,
+			body:   `{"model":"claude-sonnet-5-5"}`,
+			model:  "glm-5.1",
+			want:   nil,
 		},
 
 		// effort=nil + thinking enabled + passback-required 模型 → 填 high
