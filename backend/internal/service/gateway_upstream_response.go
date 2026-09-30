@@ -264,7 +264,8 @@ func (s *GatewayService) relayMessagesRejectedFailover(c *gin.Context, resp *htt
 func (s *GatewayService) relayRejectedFailover(c *gin.Context, resp *http.Response, account *Account, passthrough, allowVersionGate bool) *UpstreamFailoverError {
 	// 官方 OAuth 号的版本拒绝源自网关自身的 CLI 版本伪装，换号无济于事，只对中转生效。
 	allowVersionGate = allowVersionGate && !account.IsOAuth()
-	if resp.StatusCode != http.StatusUnprocessableEntity && !(allowVersionGate && resp.StatusCode == http.StatusBadRequest) {
+	versionGateCandidate := allowVersionGate && resp.StatusCode == http.StatusBadRequest
+	if resp.StatusCode != http.StatusUnprocessableEntity && !versionGateCandidate {
 		return nil
 	}
 	respBody, readErr := s.readUpstreamErrorBody(resp)
@@ -274,8 +275,9 @@ func (s *GatewayService) relayRejectedFailover(c *gin.Context, resp *http.Respon
 		logger.LegacyPrintf("service.gateway", "Account %d: failed to read %d upstream error body: %v", account.ID, resp.StatusCode, readErr)
 		return nil
 	}
-	if !isRelayRequestBlockedError(resp.StatusCode, respBody) &&
-		!(allowVersionGate && isRelayClientVersionRejectedError(resp.StatusCode, respBody)) {
+	relayBlocked := isRelayRequestBlockedError(resp.StatusCode, respBody)
+	versionRejected := allowVersionGate && isRelayClientVersionRejectedError(resp.StatusCode, respBody)
+	if !relayBlocked && !versionRejected {
 		return nil
 	}
 
