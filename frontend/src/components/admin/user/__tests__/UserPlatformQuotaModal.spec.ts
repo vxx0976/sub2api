@@ -75,11 +75,11 @@ beforeEach(() => {
 })
 
 // 与 api/admin/users.ts 的 PLATFORM_QUOTA_PLATFORMS（真源 = 后端 service.AllowedQuotaPlatforms）
-// 保持一致；加平台时改这个数字，并同步下方 'renders all ten supported platforms' 的顺序断言。
-const PLATFORM_COUNT = 10
+// 保持一致；加平台时改这个数字，并同步下方 'renders all eleven supported platforms' 的顺序断言。
+const PLATFORM_COUNT = 11
 
 describe('UserPlatformQuotaModal', () => {
-  it.each([0, 4, 14])('does not turn a negative limit in input %s into unlimited', async (index) => {
+  it.each([0, 4, 14, 17])('does not turn a negative limit in input %s into unlimited', async (index) => {
     const w = await mountAndOpen()
     await w.findAll('input[type=number]')[index].setValue('-1')
     await w.findAll('button').find(b => b.text() === 'admin.users.platformQuota.save')!.trigger('click')
@@ -105,12 +105,12 @@ describe('UserPlatformQuotaModal', () => {
     expect(apiMocks.getPlatformQuotas).toHaveBeenCalledWith(99)
   })
 
-  it('renders all ten supported platforms with empty limits', async () => {
+  it('renders all eleven supported platforms with empty limits', async () => {
     const w = await mountAndOpen()
     const rows = w.findAll('tbody tr')
     expect(rows.map(row => row.find('td').text())).toEqual([
       'anthropic', 'openai', 'gemini', 'antigravity', 'grok',
-      'kimi', 'zhipu', 'deepseek', 'minimax', 'opencode_go',
+      'kimi', 'zhipu', 'deepseek', 'minimax', 'opencode_go', 'typesafe',
     ])
     for (const row of rows) {
       const inputs = row.findAll('input[type=number]')
@@ -120,11 +120,11 @@ describe('UserPlatformQuotaModal', () => {
     w.unmount()
   })
 
-  it.each(['kimi', 'zhipu', 'deepseek', 'minimax', 'opencode_go'] as const)(
+  it.each(['kimi', 'zhipu', 'deepseek', 'minimax', 'opencode_go', 'typesafe'] as const)(
     'saves edits to %s without erasing existing platform limits', async (platform) => {
       const existing: PlatformQuotaUpdateItem[] = [
         { platform: 'openai', daily_limit_usd: 10, weekly_limit_usd: 20, monthly_limit_usd: 100 },
-        ...(['kimi', 'zhipu', 'deepseek', 'minimax', 'opencode_go'] as const).map(p => ({
+        ...(['kimi', 'zhipu', 'deepseek', 'minimax', 'opencode_go', 'typesafe'] as const).map(p => ({
           platform: p, daily_limit_usd: 0, weekly_limit_usd: null, monthly_limit_usd: 50,
         })),
       ]

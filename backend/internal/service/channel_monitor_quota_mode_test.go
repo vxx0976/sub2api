@@ -389,6 +389,12 @@ func TestProviderProbeCapabilityMatrix(t *testing.T) {
 // 上游 98d86915b 加 minimax 时就是这么漏的，这条测试用来钉住。
 func TestMonitorProvidersCoverAllPlatforms(t *testing.T) {
 	for _, platform := range AllowedQuotaPlatforms {
+		if platform == PlatformTypeSafe {
+			// TypeSafe（Jev System One）不是对话模型，上游刻意不纳入渠道监控：
+			// 241_add_typesafe_platform.sql 也没有放宽 channel_monitors 的 provider CHECK。
+			require.Error(t, validateProvider(platform), platform)
+			continue
+		}
 		require.NoError(t, validateProvider(platform),
 			"平台 %s 能配 quota 却不能建渠道监控，白名单漏了", platform)
 		if platform == MonitorProviderAntigravity {

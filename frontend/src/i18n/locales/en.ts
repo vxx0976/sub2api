@@ -1190,7 +1190,12 @@ export default {
         codexCli: 'Codex CLI',
         codexCliWs: 'Codex CLI (WebSocket)',
         grokCli: 'Grok CLI',
+        systemOne: 'System One',
         opencode: 'OpenCode',
+      },
+      typesafe: {
+        description: 'Call Jev through the native TypeSafe System One endpoint.',
+        note: 'System One is non-streaming and is not compatible with Chat Completions, Responses, Claude Code, or Codex clients.'
       },
       antigravity: {
         description: 'Configure API access for Antigravity group. Select the configuration method based on your client.',
@@ -1227,29 +1232,33 @@ export default {
       deepseek: {
         description: 'Configure Claude Code, Codex, or OpenCode through the current DeepSeek group.',
         codexDescription: 'Configure Codex with API key authentication through the current DeepSeek group.',
-        codexConfigTomlHint: 'Download the model catalog below, save both files under the Codex config directory, and restart Codex.',
+        codexConfigTomlHint: 'Save config.toml and restart Codex to load the remote catalog. In local file mode, also download the catalog to the configured path.',
         codexNote: 'Export SUB2API_API_KEY before starting Codex. The downloaded catalog contains model metadata only, not your API key.'
       },
       minimax: {
         description: 'Configure Claude Code, Codex, or OpenCode through the current MiniMax group.',
         codexDescription: 'Configure Codex with API key authentication through the current MiniMax group.',
-        codexConfigTomlHint: 'Download the model catalog below, save both files under the Codex config directory, and restart Codex.',
+        codexConfigTomlHint: 'Save config.toml and restart Codex to load the remote catalog. In local file mode, also download the catalog to the configured path.',
         codexNote: 'Export SUB2API_API_KEY before starting Codex. The downloaded catalog contains model metadata only, not your API key.'
       },
       composite: {
         description: 'Configure supported clients through the current Composite routing group.',
         codexDescription: 'Configure Codex with API key authentication and the complete model catalog for this Composite group.',
-        codexConfigTomlHint: 'Download the model catalog below, save both files under the Codex config directory, and restart Codex.',
+        codexConfigTomlHint: 'Save config.toml and restart Codex to load the remote catalog. In local file mode, also download the catalog to the configured path.',
         codexNote: 'Export SUB2API_API_KEY before starting Codex. Model requests are routed by the selected catalog slug.'
       },
       routedCodex: {
         description: 'Configure Codex with the complete model catalog for the current routed group.',
-        configTomlHint: 'Download the model catalog below, save both files under the Codex config directory, and restart Codex.',
+        configTomlHint: 'Save config.toml and restart Codex to load the remote catalog. In local file mode, also download the catalog to the configured path.',
         note: 'Export SUB2API_API_KEY before starting Codex. The downloaded catalog contains model metadata only, not your API key.'
       },
       codexModelCatalog: {
+        mode: 'Catalog source',
+        remote: 'Remote catalog (Codex 0.156.0+)',
+        local: 'Local file (older clients)',
+        oversized: 'The complete catalog exceeds the 1 MiB remote limit. Local file mode is selected; download it to the configured path.',
         title: 'Codex model catalog',
-        description: 'Fetch with this API key, then save the catalog at the path referenced by config.toml.',
+        description: 'Codex loads and refreshes the remote catalog using your configured authentication. For local file mode, fetch the catalog below and save it at the configured path.',
         fetch: 'Fetch catalog',
         retry: 'Retry',
         download: 'Download catalog',
@@ -3466,7 +3475,8 @@ export default {
         minimax: 'MiniMax',
         ollama: 'Ollama',
         composite: 'Composite',
-        opencode_go: 'OpenCode'
+        opencode_go: 'OpenCode',
+        typesafe: 'TypeSafe / Jev'
       },
       deleteConfirm:
         "Are you sure you want to delete '{name}'? All associated API keys will no longer belong to any group.",
@@ -4768,6 +4778,12 @@ export default {
       schedulableEnabled: 'Scheduling enabled',
       schedulableDisabled: 'Scheduling disabled',
       failedToToggleSchedulable: 'Failed to toggle scheduling status',
+      priorityQuick: {
+        raise: 'Raise priority (value -1)',
+        lower: 'Lower priority (value +1)',
+        editHint: 'Click to type a value; lower is used first',
+        failed: 'Failed to update priority'
+      },
       groupCountTotal: '{count} groups total',
       platforms: {
         anthropic: 'Anthropic',
@@ -4780,7 +4796,8 @@ export default {
         kimi: 'Kimi',
         zhipu: 'GLM',
         minimax: 'MiniMax',
-        opencode_go: 'OpenCode'
+        opencode_go: 'OpenCode',
+        typesafe: 'TypeSafe / Jev'
       },
       types: {
         oauth: 'OAuth',
@@ -5484,7 +5501,7 @@ export default {
       customErrorCodes: 'Custom Error Codes',
       customErrorCodesHint: 'Only stop scheduling for selected error codes',
       customErrorCodesWarning:
-        'Only selected error codes will stop scheduling. Other errors will return 500.',
+        'Custom error codes only filter normal account-error handling (such as stopping scheduling or marking rate limits). They do not decide whether a request is retried or switched to another account. Unselected errors may still trigger a retry or an account switch, and the status returned to the client depends on the gateway path and error-passthrough rules; it is not always 500. An empty list applies no filtering.',
       customErrorCodes429Warning:
         '429 already has built-in rate limit handling. Adding it to custom error codes will disable the account instead of temporary rate limiting. Are you sure?',
       customErrorCodes529Warning:
@@ -5579,7 +5596,33 @@ export default {
 	    expiresAtFull: 'Reset credit expires at: {time}',
 	    clears: 'Clears windows: {windows}',
 	    notUsableNow: 'Not usable now',
-	    requiresLimit: 'Usable only after hitting a limit'
+	    requiresLimit: 'Usable only after hitting a limit',
+	    reset: 'Reset',
+	    resetTooltipNeedQuery: 'Check the count first; reset is available once a usable credit is found',
+	    resetTooltipNone: 'No reset can be used right now',
+	    resetTooltipReady: 'Consume 1 reset to clear limit windows (asks for confirmation)',
+	    confirmTitle: 'Confirm Claude Reset',
+	    confirmMessage: 'This will consume 1 reset credit to immediately restore the {windows} window(s) ({count} remaining). This action cannot be undone. Continue?',
+	    windows: {
+	      fiveHour: '5h',
+	      sevenDay: '7d',
+	      sevenDayOverage: '7d overage'
+	    },
+	    outcome: {
+	      reset: 'Reset applied; cleared: {windows}',
+	      alreadyUsed: 'This reset was already used; refreshing to confirm',
+	      cooldown: 'Resets are cooling down; try again later',
+	      cooldownUntil: 'Resets are cooling down until {time}',
+	      notLimited: 'Not at a limit, so nothing was reset and no credit was used',
+	      ineligible: 'This account cannot use resets right now',
+	      unknown: 'Result unconfirmed; further redemption is blocked for now. Check again later',
+	      unavailable: 'Reset service is temporarily unavailable; retry after a while',
+	      inProgress: 'This reset request is still processing; check again shortly',
+	      retryBackoff: 'This reset request just failed; retry after a moment',
+	      busy: 'Another reset is in progress; try again later',
+	      notAvailable: 'No reset can be used right now; no credit was used',
+	      failed: 'Reset request failed'
+	    }
 	  },
 	  autoResetCredit: {
 	    title: 'Automatically use reset credits',
@@ -8759,6 +8802,36 @@ export default {
         rechargeFeeRate: 'Recharge Fee Rate',
         rechargeFeeRateHint: 'Percentage of service fee charged on top of recharge amount, 0 means no fee',
         rechargeFeePreview: 'Preview: Recharge 100, fee {fee}',
+        rechargeBonus: {
+          label: 'Recharge Promotion Tiers',
+          hint: 'Balance top-ups match a tier by the amount the user enters (highest threshold not above it). Leave empty for no promotion. Subscriptions are not affected.',
+          modeLabel: 'Promotion type',
+          modeBonus: 'Bonus',
+          modeDiscount: 'Discount OFF',
+          modeBonusHint: 'Bonus: the payment stays the same and the credited base (amount × multiplier) gets the percentage added on top.',
+          modeDiscountHint: 'Discount: the credit stays the same (amount × multiplier) and the payment is reduced by the percentage; must be below 100.',
+          addTier: 'Add Tier',
+          empty: 'No promotion tiers configured; top-ups are credited at face value.',
+          minAmountLabel: 'Amount ≥',
+          percentLabel: 'Bonus',
+          percentLabelDiscount: 'Discount',
+          removeTier: 'Remove tier',
+          invalidMinAmount: 'Amount must be a number ≥ 0 with at most 2 decimals',
+          invalidPercent: 'Percent must be between 0 and 1000 with at most 2 decimals',
+          invalidDiscountPercent: 'Discount percent must be below 100',
+          duplicateMinAmount: 'This threshold already exists',
+          incompleteRow: 'Fill in both amount and percent for this tier to take effect',
+          previewTitle: 'Range preview',
+          previewRange: '{from} ~ {to}: {percent}% bonus',
+          previewRangeNone: '{from} ~ {to}: no bonus',
+          previewRangeDiscount: '{from} ~ {to}: {percent}% OFF',
+          previewOpen: '≥ {from}: {percent}% bonus',
+          previewOpenDiscount: '≥ {from}: {percent}% OFF',
+          previewOpenNone: '≥ {from}: no bonus',
+          noticeLabel: 'Recharge Bonus Notice',
+          noticeHint: 'Markdown supported. Shown at the top of the amount picker on the recharge page; leave empty to hide.',
+          noticePlaceholder: 'e.g. 🎁 Limited offer: get 20% extra on top-ups of $100+, 30% on $500+ …'
+        },
         orderTimeout: 'Order Timeout',
         orderTimeoutHint: 'In minutes, minimum 1',
         maxPendingOrders: 'Max Pending Orders',
@@ -9988,6 +10061,13 @@ export default {
     amountLabel: 'Amount',
     paymentAmount: 'Payment Amount',
     creditedBalance: 'Credited Balance',
+    rechargeBonus: {
+      creditedShort: 'Get {amount}',
+      payShort: 'Pay {amount}',
+      amountLabel: 'Bonus',
+      amountLabelWithPercent: 'Bonus (+{percent}%)',
+      discountLabelWithPercent: 'Discount ({percent}% OFF)'
+    },
     quickAmounts: 'Quick Amounts',
     customAmount: 'Custom Amount',
     enterAmount: 'Enter amount',
@@ -10054,6 +10134,8 @@ export default {
       amount: 'Amount',
       payAmount: 'Paid',
       creditedAmount: 'Credited Amount',
+      bonusAmount: 'Bonus',
+      bonusIncluded: 'incl. bonus {amount}',
       fee: 'Fee',
       baseAmount: 'Base Amount',
       includedInPayAmount: 'included in paid amount',

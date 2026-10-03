@@ -139,6 +139,16 @@ describe('UserDashboardStats 按平台拆分', () => {
     expect(w.text()).toContain('Kimi')
   })
 
+  // fork 的 PLATFORM_ORDER 已收录国产各家（kimi 是已知平台、排在 typesafe 之前），
+  // 所以这里用一个真正未知的平台名来验证「已知平台先于未知平台」。
+  it('TypeSafe 使用 Jev 标签并位于未知平台之前', () => {
+    const w = mountStats(
+      makeStats({ total_actual_cost: 0.5, today_actual_cost: 0, by_platform: [usage('future_platform', 0.3), usage('typesafe', 0.2)] })
+    )
+    expect(cardPlatforms(w)).toEqual(['typesafe', 'future_platform'])
+    expect(w.text()).toContain('TypeSafe / Jev')
+  })
+
   it('总值大于各平台之和时追加"其他"卡片，且不计入平台计数', () => {
     const w = mountStats(
       makeStats({ total_actual_cost: 1.0, today_actual_cost: 0, by_platform: [usage('anthropic', 0.4)] })

@@ -1191,7 +1191,12 @@ export default {
         codexCli: 'Codex CLI',
         codexCliWs: 'Codex CLI (WebSocket)',
         grokCli: 'Grok CLI',
+        systemOne: 'System One',
         opencode: 'OpenCode'
+      },
+      typesafe: {
+        description: '通过 TypeSafe 原生 System One 端点调用 Jev。',
+        note: 'System One 不支持流式请求，也不兼容 Chat Completions、Responses、Claude Code 或 Codex 客户端。'
       },
       antigravity: {
         description: '为 Antigravity 分组配置 API 访问。请根据您使用的客户端选择对应的配置方式。',
@@ -1231,29 +1236,33 @@ export default {
       deepseek: {
         description: '通过当前 DeepSeek 分组配置 Claude Code、Codex 或 OpenCode。',
         codexDescription: '使用 API Key 配置 Codex，并通过当前 DeepSeek 分组发送请求。',
-        codexConfigTomlHint: '下载下方模型目录，将两个文件保存到 Codex 配置目录后重启 Codex。',
+        codexConfigTomlHint: '保存 config.toml 后重启 Codex，客户端会加载远程目录。使用本地文件模式时，还需下载目录并保存到配置中的路径。',
         codexNote: '启动 Codex 前先导出 SUB2API_API_KEY。下载的目录只包含模型元数据，不包含 API Key。'
       },
       minimax: {
         description: '通过当前 MiniMax 分组配置 Claude Code、Codex 或 OpenCode。',
         codexDescription: '使用 API Key 配置 Codex，并通过当前 MiniMax 分组发送请求。',
-        codexConfigTomlHint: '下载下方模型目录，将两个文件保存到 Codex 配置目录后重启 Codex。',
+        codexConfigTomlHint: '保存 config.toml 后重启 Codex，客户端会加载远程目录。使用本地文件模式时，还需下载目录并保存到配置中的路径。',
         codexNote: '启动 Codex 前先导出 SUB2API_API_KEY。下载的目录只包含模型元数据，不包含 API Key。'
       },
       composite: {
         description: '通过当前 Composite 路由分组配置受支持的客户端。',
         codexDescription: '使用 API Key 和当前 Composite 分组的完整模型目录配置 Codex。',
-        codexConfigTomlHint: '下载下方模型目录，将两个文件保存到 Codex 配置目录后重启 Codex。',
+        codexConfigTomlHint: '保存 config.toml 后重启 Codex，客户端会加载远程目录。使用本地文件模式时，还需下载目录并保存到配置中的路径。',
         codexNote: '启动 Codex 前先导出 SUB2API_API_KEY；分组会根据目录中选中的模型路由请求。'
       },
       routedCodex: {
         description: '使用当前路由分组的完整模型目录配置 Codex。',
-        configTomlHint: '下载下方模型目录，将两个文件保存到 Codex 配置目录后重启 Codex。',
+        configTomlHint: '保存 config.toml 后重启 Codex，客户端会加载远程目录。使用本地文件模式时，还需下载目录并保存到配置中的路径。',
         note: '启动 Codex 前先导出 SUB2API_API_KEY。下载的目录只包含模型元数据，不包含 API Key。'
       },
       codexModelCatalog: {
+        mode: '目录来源',
+        remote: '远程目录（Codex 0.156.0+）',
+        local: '本地文件（旧版客户端）',
+        oversized: '完整目录超过远程加载的 1 MiB 限制，已改为本地文件。请下载目录并保存到配置中的路径。',
         title: 'Codex 模型目录',
-        description: '使用当前 API Key 获取目录，并保存到 config.toml 引用的路径。',
+        description: 'Codex 会使用配置中的认证信息加载并刷新远程目录。使用本地文件模式时，请在下方获取目录并保存到配置中的路径。',
         fetch: '获取目录',
         retry: '重试',
         download: '下载目录',
@@ -3393,7 +3402,8 @@ export default {
         minimax: 'MiniMax',
         ollama: 'Ollama',
         composite: 'Composite',
-        opencode_go: 'OpenCode'
+        opencode_go: 'OpenCode',
+        typesafe: 'TypeSafe / Jev'
       },
       saving: '保存中...',
       noGroups: '暂无分组',
@@ -4742,6 +4752,12 @@ export default {
       schedulableEnabled: '调度已开启',
       schedulableDisabled: '调度已关闭',
       failedToToggleSchedulable: '切换调度状态失败',
+      priorityQuick: {
+        raise: '提高优先级（数值 -1）',
+        lower: '降低优先级（数值 +1）',
+        editHint: '点击直接输入；数值越小越优先',
+        failed: '更新优先级失败'
+      },
       groupCountTotal: '共 {count} 个分组',
       columns: {
         name: '名称',
@@ -5002,7 +5018,8 @@ export default {
         kimi: 'Kimi',
         zhipu: 'GLM',
         minimax: 'MiniMax',
-        opencode_go: 'OpenCode'
+        opencode_go: 'OpenCode',
+        typesafe: 'TypeSafe / Jev'
       },
       types: {
         oauth: 'OAuth',
@@ -5608,7 +5625,7 @@ export default {
       poolModeRetryStatusCodesHint: '仅在池模式下生效。以英文逗号分隔的 HTTP 状态码（100-599），命中时触发同账号重试。留空使用默认值（{default}）。',
       customErrorCodes: '自定义错误码',
       customErrorCodesHint: '仅对选中的错误码停止调度',
-      customErrorCodesWarning: '仅选中的错误码会停止调度，其他错误将返回 500。',
+      customErrorCodesWarning: '自定义错误码仅用于筛选常规的账号错误处理（如停止调度、限流标记），不决定请求是否重试或切换账号。未选中的错误仍可能触发重试或切换账号，最终返回给客户端的状态码取决于网关路径和错误透传规则，并非统一返回 500。列表为空时不做筛选。',
       customErrorCodes429Warning:
         '429 已有内置的限流处理机制。添加到自定义错误码后，将直接停止调度而非临时限流。确定要添加吗？',
       customErrorCodes529Warning:
@@ -5679,7 +5696,33 @@ export default {
 	    expiresAtFull: '重置次数到期时间：{time}',
 	    clears: '可清除窗口：{windows}',
 	    notUsableNow: '暂不可用',
-	    requiresLimit: '需达到限额后才能使用'
+	    requiresLimit: '需达到限额后才能使用',
+	    reset: '重置',
+	    resetTooltipNeedQuery: '请先点「次数」查询；查询到可用的重置后才能使用',
+	    resetTooltipNone: '当前没有可立即使用的重置',
+	    resetTooltipReady: '消耗 1 次重置，清除限额窗口（需确认）',
+	    confirmTitle: '确认使用 Claude 重置',
+	    confirmMessage: '将消耗 1 次重置次数，立即恢复 {windows} 窗口，剩余 {count} 次。此操作不可撤销，确定继续吗？',
+	    windows: {
+	      fiveHour: '5h',
+	      sevenDay: '7d',
+	      sevenDayOverage: '7d 超额'
+	    },
+	    outcome: {
+	      reset: '重置成功，已清除：{windows}',
+	      alreadyUsed: '该重置已被使用，正在刷新确认',
+	      cooldown: '重置处于冷却中，请稍后再试',
+	      cooldownUntil: '重置处于冷却中，冷却至 {time}',
+	      notLimited: '当前未达到限额，无需重置，未消耗次数',
+	      ineligible: '此账号当前不可使用重置',
+	      unknown: '结果未确认，已阻止再次兑换，请稍后查询',
+	      unavailable: '重置服务暂时不可用，未确认消耗，请稍后再试',
+	      inProgress: '该重置请求仍在处理中，请稍后查询结果',
+	      retryBackoff: '该重置请求刚刚失败，请稍后再试',
+	      busy: '另一个重置正在进行中，请稍后再试',
+	      notAvailable: '当前没有可立即使用的重置，未消耗次数',
+	      failed: '重置请求失败'
+	    }
 	  },
 	  autoResetCredit: {
 	    title: '自动使用重置卡',
@@ -8710,6 +8753,36 @@ export default {
         rechargeFeeRate: '充值手续费率',
         rechargeFeeRateHint: '用户充值时额外收取的手续费百分比，0 表示不收取手续费',
         rechargeFeePreview: '预览：充值 100 元，手续费 {fee} 元',
+        rechargeBonus: {
+          label: '充值优惠阶梯',
+          hint: '余额充值按用户输入的金额命中档位（取不超过该金额的最大档）；不配置则无优惠。订阅订单不参与。',
+          modeLabel: '优惠方式',
+          modeBonus: '赠金',
+          modeDiscount: '折扣 OFF',
+          modeBonusHint: '赠金：实付不变，在到账基数（输入金额 × 充值倍率）之上额外赠送对应百分比的余额。',
+          modeDiscountHint: '折扣：到账不变（输入金额 × 充值倍率），实付金额按对应百分比打折；百分比必须小于 100。',
+          addTier: '添加档位',
+          empty: '尚未配置优惠档位，充值按原价到账。',
+          minAmountLabel: '充值金额 ≥',
+          percentLabel: '赠送',
+          percentLabelDiscount: '优惠',
+          removeTier: '删除档位',
+          invalidMinAmount: '金额需为 ≥ 0 且最多两位小数的数字',
+          invalidPercent: '百分比需在 0 ~ 1000 之间，最多两位小数',
+          invalidDiscountPercent: '折扣模式下百分比必须小于 100',
+          duplicateMinAmount: '该金额档位已存在',
+          incompleteRow: '金额与百分比都填写后该档位才会生效',
+          previewTitle: '区间预览',
+          previewRange: '{from} ~ {to}：赠送 {percent}%',
+          previewRangeNone: '{from} ~ {to}：不赠送',
+          previewRangeDiscount: '{from} ~ {to}：{percent}% OFF',
+          previewOpen: '≥ {from}：赠送 {percent}%',
+          previewOpenDiscount: '≥ {from}：{percent}% OFF',
+          previewOpenNone: '≥ {from}：不赠送',
+          noticeLabel: '充值赠送活动文案',
+          noticeHint: '支持 Markdown，展示在充值页金额选择区顶部；留空则不展示。',
+          noticePlaceholder: '例如：🎁 限时活动：单笔充值满 $100 送 20%，满 $500 送 30%……'
+        },
         subscriptionUsdToCnyRate: '订阅 CNY 换算汇率',
         subscriptionUsdToCnyRateHint: 'CNY 支付通道下，套餐每 1 USD 价格收取多少 CNY（如 7.15）。0 或留空 = 不换算，订阅按 price 数值直接收款。启用后所有套餐 price 必须按 USD 定价',
         subscriptionUsdToCnyRateDisabled: '未启用（按 price 直付）',
@@ -9963,6 +10036,13 @@ export default {
     amountLabel: '充值金额',
     paymentAmount: '支付金额',
     creditedBalance: '到账余额',
+    rechargeBonus: {
+      creditedShort: '到账 {amount}',
+      payShort: '实付 {amount}',
+      amountLabel: '赠送额度',
+      amountLabelWithPercent: '赠送额度 (+{percent}%)',
+      discountLabelWithPercent: '优惠 ({percent}% OFF)'
+    },
     quickAmounts: '快捷金额',
     customAmount: '自定义金额',
     enterAmount: '输入金额',
@@ -10029,6 +10109,8 @@ export default {
       amount: '金额',
       payAmount: '实付',
       creditedAmount: '到账金额',
+      bonusAmount: '赠送额度',
+      bonusIncluded: '含赠送 {amount}',
       fee: '手续费',
       baseAmount: '充值金额',
       includedInPayAmount: '已含在实付金额中',

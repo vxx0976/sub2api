@@ -16,9 +16,11 @@
  * 与 GroupBadge.vue 的 BADGE_COLORS.anthropic.std 里与 anthropic 逐字撞色，因此本 fork
  * 固定用 lime（全前端未被占用）。上游后续若再送 amber 同样要改回 lime。
  *
+ * typesafe：沿用上游的 sky（平台徽章/配色表里未被占用）。
+ *
  * 当前占用一览：anthropic=orange、openai=green/emerald、antigravity=purple、
  * gemini=blue、deepseek=cyan、kimi=indigo、zhipu=rose、minimax=fuchsia、
- * opencode_go=lime、grok=zinc、composite=cyan。
+ * opencode_go=lime、typesafe=sky、grok=zinc、composite=cyan。
  */
 
 export type Platform =
@@ -32,6 +34,7 @@ export type Platform =
   | 'deepseek'
   | 'minimax'
   | 'opencode_go'
+  | 'typesafe'
   | 'composite'
 
 // ── Badge (bg + text + border, for inline badges with border) ───────
@@ -46,6 +49,7 @@ const BADGE: Record<Platform, string> = {
   grok: 'bg-zinc-800/10 text-zinc-800 border-zinc-800/30 dark:bg-zinc-500/10 dark:text-zinc-200 dark:border-zinc-500/30',
   minimax: 'bg-fuchsia-500/10 text-fuchsia-600 border-fuchsia-500/30 dark:text-fuchsia-400',
   opencode_go: 'bg-lime-500/10 text-lime-700 border-lime-500/30 dark:text-lime-300',
+  typesafe: 'bg-sky-500/10 text-sky-700 border-sky-500/30 dark:text-sky-300',
   composite: 'bg-cyan-500/10 text-cyan-700 border-cyan-500/30 dark:text-cyan-300',
 }
 const BADGE_DEFAULT = 'bg-slate-500/10 text-slate-600 border-slate-500/30 dark:text-slate-400'
@@ -62,6 +66,7 @@ const BADGE_LIGHT: Record<Platform, string> = {
   grok: 'bg-zinc-800/10 text-zinc-800 dark:bg-zinc-500/10 dark:text-zinc-200',
   minimax: 'bg-fuchsia-500/10 text-fuchsia-600 dark:bg-fuchsia-500/10 dark:text-fuchsia-300',
   opencode_go: 'bg-lime-500/10 text-lime-700 dark:bg-lime-500/10 dark:text-lime-300',
+  typesafe: 'bg-sky-500/10 text-sky-700 dark:bg-sky-500/10 dark:text-sky-300',
   composite: 'bg-cyan-500/10 text-cyan-700 dark:bg-cyan-500/10 dark:text-cyan-300',
 }
 
@@ -77,6 +82,7 @@ const BORDER: Record<Platform, string> = {
   grok: 'border-zinc-800/20 dark:border-zinc-500/20',
   minimax: 'border-fuchsia-500/20 dark:border-fuchsia-500/20',
   opencode_go: 'border-lime-500/20 dark:border-lime-500/20',
+  typesafe: 'border-sky-500/20 dark:border-sky-500/20',
   composite: 'border-cyan-500/20 dark:border-cyan-500/20',
 }
 const BORDER_DEFAULT = 'border-gray-200 dark:border-dark-700'
@@ -94,6 +100,7 @@ const BORDER_STRONG: Record<Platform, string> = {
   grok: 'border-zinc-800/35 dark:border-zinc-500/35',
   minimax: 'border-fuchsia-500/35 dark:border-fuchsia-500/30',
   opencode_go: 'border-lime-500/35 dark:border-lime-500/30',
+  typesafe: 'border-sky-500/35 dark:border-sky-500/30',
   composite: 'border-cyan-500/35 dark:border-cyan-500/30',
 }
 const BORDER_STRONG_DEFAULT = 'border-gray-300 dark:border-dark-600'
@@ -112,6 +119,7 @@ const ACCENT: Record<Platform, string> = {
   grok: '#71717a', // zinc-500
   minimax: '#d946ef', // fuchsia-500
   opencode_go: '#84cc16', // lime-500
+  typesafe: '#0ea5e9', // sky-500
   composite: '#06b6d4', // cyan-500
 }
 const ACCENT_DEFAULT = '#14b8a6' // primary-500 (teal)
@@ -128,6 +136,7 @@ const ACCENT_BAR: Record<Platform, string> = {
   grok: 'bg-gradient-to-r from-zinc-700 to-zinc-900',
   minimax: 'bg-gradient-to-r from-fuchsia-400 to-fuchsia-500',
   opencode_go: 'bg-gradient-to-r from-lime-400 to-lime-500',
+  typesafe: 'bg-gradient-to-r from-sky-400 to-sky-500',
   composite: 'bg-gradient-to-r from-slate-500 to-cyan-500',
 }
 const ACCENT_BAR_DEFAULT = 'bg-gradient-to-r from-primary-400 to-primary-500'
@@ -144,6 +153,7 @@ const TEXT: Record<Platform, string> = {
   grok: 'text-zinc-800 dark:text-zinc-200',
   minimax: 'text-fuchsia-600 dark:text-fuchsia-400',
   opencode_go: 'text-lime-700 dark:text-lime-300',
+  typesafe: 'text-sky-700 dark:text-sky-300',
   composite: 'text-cyan-700 dark:text-cyan-300',
 }
 const TEXT_DEFAULT = 'text-primary-600 dark:text-primary-400'
@@ -160,6 +170,7 @@ const ICON: Record<Platform, string> = {
   grok: 'text-zinc-800 dark:text-zinc-200',
   minimax: 'text-fuchsia-500 dark:text-fuchsia-400',
   opencode_go: 'text-lime-500 dark:text-lime-300',
+  typesafe: 'text-sky-500 dark:text-sky-300',
   composite: 'text-cyan-600 dark:text-cyan-300',
 }
 const ICON_DEFAULT = 'text-primary-500 dark:text-primary-400'
@@ -176,6 +187,7 @@ const BUTTON: Record<Platform, string> = {
   grok: 'bg-zinc-800 text-white hover:bg-zinc-900 active:bg-black dark:bg-zinc-700 dark:hover:bg-zinc-600',
   minimax: 'bg-fuchsia-500 text-white hover:bg-fuchsia-600 active:bg-fuchsia-700 dark:bg-fuchsia-500/80 dark:hover:bg-fuchsia-500',
   opencode_go: 'bg-lime-500 text-white hover:bg-lime-600 active:bg-lime-700 dark:bg-lime-500/80 dark:hover:bg-lime-500',
+  typesafe: 'bg-sky-600 text-white hover:bg-sky-700 active:bg-sky-800 dark:bg-sky-600/80 dark:hover:bg-sky-600',
   composite: 'bg-cyan-700 text-white hover:bg-cyan-800 active:bg-cyan-900 dark:bg-cyan-600 dark:hover:bg-cyan-500',
 }
 const BUTTON_DEFAULT = 'bg-primary-500 text-white hover:bg-primary-600 dark:bg-primary-600 dark:hover:bg-primary-500'
@@ -192,6 +204,7 @@ const DISCOUNT: Record<Platform, string> = {
   grok: 'bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200',
   minimax: 'bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-900/40 dark:text-fuchsia-300',
   opencode_go: 'bg-lime-100 text-lime-800 dark:bg-lime-900/40 dark:text-lime-300',
+  typesafe: 'bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-300',
   composite: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/40 dark:text-cyan-300',
 }
 const DISCOUNT_DEFAULT = 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
@@ -208,6 +221,7 @@ const GRADIENT: Record<Platform, string> = {
   grok: 'from-zinc-700 to-zinc-900',
   minimax: 'from-fuchsia-500 to-fuchsia-600',
   opencode_go: 'from-lime-500 to-lime-600',
+  typesafe: 'from-sky-500 to-sky-600',
   composite: 'from-slate-600 to-cyan-600',
 }
 const GRADIENT_DEFAULT = 'from-primary-500 to-primary-600'
@@ -224,6 +238,7 @@ const GRADIENT_TEXT: Record<Platform, string> = {
   grok: 'text-zinc-100',
   minimax: 'text-fuchsia-100',
   opencode_go: 'text-lime-100',
+  typesafe: 'text-sky-100',
   composite: 'text-cyan-100',
 }
 const GRADIENT_TEXT_DEFAULT = 'text-primary-100'
@@ -239,6 +254,7 @@ const GRADIENT_SUBTEXT: Record<Platform, string> = {
   grok: 'text-zinc-300',
   minimax: 'text-fuchsia-200',
   opencode_go: 'text-lime-200',
+  typesafe: 'text-sky-200',
   composite: 'text-cyan-200',
 }
 const GRADIENT_SUBTEXT_DEFAULT = 'text-primary-200'
@@ -257,6 +273,7 @@ function isPlatform(p: string): p is Platform {
     p === 'deepseek' ||
     p === 'minimax' ||
     p === 'opencode_go' ||
+    p === 'typesafe' ||
     p === 'composite'
   )
 }
@@ -330,6 +347,7 @@ export function platformLabel(p: string): string {
     case 'minimax': return 'MiniMax'
     case 'grok': return 'Grok'
     case 'opencode_go': return 'OpenCode'
+    case 'typesafe': return 'TypeSafe / Jev'
     case 'composite': return 'Composite'
     default: return p || 'API'
   }
