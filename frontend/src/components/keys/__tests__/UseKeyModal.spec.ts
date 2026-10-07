@@ -427,7 +427,8 @@ describe('UseKeyModal', () => {
     expect(configToml).not.toContain('image_generation')
     expect(configToml).not.toContain('supports_websockets')
     expect(configToml).not.toContain('responses_websockets_v2')
-    expect(configToml).not.toContain('[features]')
+    // 默认远程目录模式下，[features] 只含上游 0.2.14 的 api_key_model_discovery（fork 不写 goals）。
+    expect(configToml).toContain('[features]\napi_key_model_discovery = true')
     expect(configToml).not.toContain('goals = true')
     expect(configToml).not.toContain('model_reasoning_effort = "xhigh"')
     expect(codeBlocks).toContain('{\n  "OPENAI_API_KEY": "sk-test"\n}')
@@ -570,7 +571,7 @@ describe('UseKeyModal', () => {
     expect(configToml).not.toContain('env_key')
     expect(configToml).not.toContain('image_generation')
     expect(configToml).toContain('supports_websockets = true')
-    expect(configToml).toContain('[features]\nresponses_websockets_v2 = true')
+    expect(configToml).toContain('[features]\napi_key_model_discovery = true\nresponses_websockets_v2 = true')
     expect(configToml).not.toContain('goals = true')
     expect(codeBlocks).toContain('{\n  "OPENAI_API_KEY": "sk-test"\n}')
     expect(wrapper.text()).toContain('auth.json')
@@ -620,8 +621,9 @@ describe('UseKeyModal', () => {
     expect(configToml).not.toContain('image_generation')
     expect(configToml).toContain('supports_websockets = true')
     // NOTE(fork): this fork drops upstream's `goals = true` from both Codex config.toml
-    // templates, so only responses_websockets_v2 is expected under [features].
-    expect(configToml).toContain('[features]\nresponses_websockets_v2 = true')
+    // templates; under [features] only api_key_model_discovery (remote catalog mode) and
+    // responses_websockets_v2 are expected.
+    expect(configToml).toContain('[features]\napi_key_model_discovery = true\nresponses_websockets_v2 = true')
     expect(configToml).not.toContain('goals = true')
     // Upstream 本轮改为只在 legacy 模式写 auth.json，api-key 模式改用 experimental_bearer_token。
     expect(codeBlocks).not.toContain('{\n  "OPENAI_API_KEY": "sk-test"\n}')
