@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	"github.com/Wei-Shaw/sub2api/internal/domain"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
 )
 
@@ -203,33 +204,28 @@ func (s *GatewayService) resolveCompositeRouteDecision(ctx context.Context, grou
 	return decision, decision.Matched, nil
 }
 
-// compositeRequestPlatforms 是复合分组能够真正承载的具体平台集合。
+// compositeRequestPlatforms 是复合分组能够真正承载的具体平台集合，由上游平台清单
+// 派生（domain.CompositePrecedencePlatformIDs）：全部已登记的具体平台。
 //
-// 本集合与 AllowedQuotaPlatforms 现已同为 11 个，但仍是两条独立不变量：调度桶
+// 本集合与 AllowedQuotaPlatforms 现在同为平台清单全集，但仍是两条独立不变量：调度桶
 // （schedulerCanonicalBuckets / schedulerBucketsForGroup）对任意分组通用，本集合
 // 只描述「复合分组能承载什么」。别把两者当同一件事，也别用其中一个去证明另一个。
 //
-// opencode_go（OpenCode，Zen 按量 / Go 订阅）随上游 0.2.5 加入：它不是国产供应商
-// （IsCNProvider 不含它），但同走 OpenAI 网关，NormalizeOpenAICompatiblePlatform 保留其原值，
-// 故一并纳入本集合（仍在队尾）。
-// ⚠️ 与 PlatformAntigravity 同理，DetectModelPlatform **不会**产出 opencode_go——
-// 它的目录全是 grok-*/gpt-*/glm-*/kimi-*/deepseek-* 等借用名，按模型名探测只会解析成
-// 原厂平台；opencode_go 只能经分组/账号的显式平台进来。
+// ⚠️ 次序是**行为契约**，勿随手调整：matchingPlatforms(PlatformComposite) 直接返回
+// 本函数的结果，lookupPricingAcrossPlatforms / lookupMappingAcrossPlatforms 先整轮
+// 精确匹配、再整轮通配匹配，两轮都按此顺序取**首个命中**。复合分组下同名模型在多个
+// 平台都配了定价/映射时，由这个顺序决定用哪一份。
+// 平台清单保证固定前缀 anthropic、gemini、openai，其余按登记顺序（antigravity、grok、
+// 国产四家、opencode_go、typesafe、command_code、cline……）**追加在队尾**，因此与 fork
+// 此前手写的列表逐项一致，新平台不会改变存量复合分组的既有命中。
+// TestCompositeRequestPlatformsOrderIsPricingContract 钉住这一前缀。
 //
-// typesafe（TypeSafe Jev System One）随上游 0.2.12 加入，追加在 opencode_go 之后。
-// 它不是对话模型，只服务 /v1/systemone；DetectModelPlatform 认 typesafe/、jev/ 前缀
-// 与 jev-* 模型名。
-//
-// 国产四家（kimi / zhipu / deepseek / minimax）曾因三处运行时缺口被刻意排除在外，现已全部补齐：
-//
-//  1. DetectModelPlatform 认 kimi/moonshot、zhipu/glm/bigmodel、deepseek、minimax 四组
-//     provider 前缀，以及 kimi- / moonshot- / glm- / deepseek- / minimax- / abab5|6|7
-//     六组模型名前缀。
-//  2. handler 侧 openAICompatibleRequestPlatform 改走
-//     service.NormalizeOpenAICompatiblePlatform：grok/kimi/zhipu/deepseek/minimax 原样保留，
-//     不再被压成 PlatformOpenAI（压平会进错号池、错计费平台）。
-//  3. 文本类端点白名单 openAICompatibleTextTargetAllowed 含 Kimi/Zhipu/Deepseek/MiniMax，
-//     覆盖 /v1/chat/completions、/v1/responses、/v1/messages 及两个 count_tokens 端点。
+// 各平台的接入说明（fork 历史注释精简）：
+//   - opencode_go / command_code / cline 是多模型聚合平台，目录全是借用名，
+//     DetectModelPlatform **不会**产出它们，只能经分组/账号的显式平台进来；
+//     antigravity 同理，只经 /antigravity 路由的 ForcePlatform 进来。
+//   - typesafe（Jev System One）不是对话模型，只服务 /v1/systemone；DetectModelPlatform
+//     认 typesafe/、jev/ 前缀与 jev-* 模型名。
 //
 // ⚠️ 仍**刻意**不放开的窄口（这是当前设计，不是待办事项，解冲突/重构时别顺手补齐）：
 //   - /v1/images/*、/v1/alpha/search、/v1/realtime 仍只允许 PlatformOpenAI（各自硬写死）。
@@ -239,39 +235,11 @@ func (s *GatewayService) resolveCompositeRouteDecision(ctx context.Context, grou
 //     openai + grok：CN 账号过不了 WSv2 ingress 的 transport 过滤，且 WS HTTP 桥
 //     没有面向 CN 的 Responses 转换，放行只会把明确的策略拒绝变成误导性的
 //     "no available account"。
-//
-// 注意 PlatformAntigravity 在集合内但 DetectModelPlatform 不会产出它——它只经
-// /antigravity 路由的 ForcePlatform 进来，属于正常情况。
-//
-// ⚠️ 次序是**行为契约**，勿随手调整：matchingPlatforms(PlatformComposite) 直接返回
-// 本函数的结果，lookupPricingAcrossPlatforms / lookupMappingAcrossPlatforms 先整轮
-// 精确匹配、再整轮通配匹配，两轮都按此顺序取**首个命中**。复合分组下同名模型在多个
-// 平台都配了定价/映射时，由这个顺序决定用哪一份。
-// 国产各家一律**追加在队尾**，理由是：前 5 个平台之间的既有命中结果因此一字不变，
-// 从 5 扩到 11 对存量复合分组零回归。把它们插进前 5 个中间会改变既有命中。
 func compositeRequestPlatforms() []string {
-	return []string{
-		PlatformAnthropic,
-		PlatformGemini,
-		PlatformOpenAI,
-		PlatformAntigravity,
-		PlatformGrok,
-		PlatformKimi,
-		PlatformZhipu,
-		PlatformDeepseek,
-		PlatformMiniMax,
-		PlatformOpenCodeGo,
-		PlatformTypeSafe,
-	}
+	return domain.CompositePrecedencePlatformIDs()
 }
 
-// isConcreteRequestPlatform 报告 platform 是否为复合分组可承载的具体平台。
-// 集合与取舍理由见 compositeRequestPlatforms。
+// isConcreteRequestPlatform 报告 platform 是否为复合分组可承载的具体平台（平台清单登记的具体平台）。
 func isConcreteRequestPlatform(platform string) bool {
-	for _, p := range compositeRequestPlatforms() {
-		if p == platform {
-			return true
-		}
-	}
-	return false
+	return domain.IsConcretePlatform(platform)
 }

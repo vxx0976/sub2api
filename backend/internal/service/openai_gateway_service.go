@@ -22,6 +22,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
+	"github.com/Wei-Shaw/sub2api/internal/domain"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/apicompat"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/geoip"
@@ -1461,27 +1462,6 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 		return s.forwardGrokResponses(ctx, c, account, body, originalModel, reqStream, startTime)
 	}
 
-	// OpenCode（Zen/Go）：按 protocol_rules 解析出的映射模型决定原生协议。
-	// 第 5 个实参刻意传空串而不是 reqModel——映射目标由 resolveOpenCodeGoMappedModel 决定，
-	// 与下面 CN anthropic 分支传 reqModel 的语义不同。
-	if account.IsOpenCodeGo() {
-		mapped := resolveOpenCodeGoMappedModel(account, body, "")
-		switch openCodeGoNativeProtocol(account, mapped) {
-		case APIProtocolAnthropic:
-			return s.forwardResponsesViaNativeAnthropic(ctx, c, account, body, "")
-		case APIProtocolResponses:
-			break
-		default:
-			return s.forwardResponsesViaRawChatCompletions(ctx, c, account, body)
-		}
-	}
-
-	// CN 供应商 anthropic 协议账号：/v1/responses 入站是交叉协议组合
-	// （Responses 客户端 × Anthropic 上游），转成 Anthropic 请求走原生端点。
-	// 不能落到下面的 raw-CC 分支——其 URL 构造会把 anthropic base 当 CC base 用。
-	if account.IsAnthropicProtocol() {
-		return s.forwardResponsesViaNativeAnthropic(ctx, c, account, body, reqModel)
-	}
 	if account.IsOpenAIApiKey() {
 		if normalized, changed, normalizeErr := normalizeOpenAIParallelToolCallsWithoutTools(body, responsesLite); normalizeErr != nil {
 			return nil, normalizeErr
@@ -1500,7 +1480,19 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 		originalModel = reqModel
 	}
 
-	if shouldForwardOpenAIResponsesViaRawChatCompletions(account) {
+	// 上游协议统一由 resolveUpstreamProtocol 判定（按模型分流时带上游模型目录）。OpenAI API Key 账号只会落到
+	// Responses / Chat Completions，上面的归一化对两条路径都生效。
+	routingModel := upstreamRoutingModel(account, body, "")
+	if account.IsOpenCodeGo() && IsOpenCodeUnsupportedModel(routingModel) {
+		return nil, writeOpenCodeUnsupportedModelError(c, false, routingModel)
+	}
+	switch s.resolveUpstreamProtocolFor(ctx, account, APIProtocolResponses, routingModel) {
+	case APIProtocolAnthropic:
+		// Responses 客户端 × Anthropic 上游：转成 Anthropic 请求走原生端点。不能落到
+		// raw-CC 分支——其 URL 构造会把 anthropic base 当 CC base 用。
+		// 账号映射未命中时以去除首尾空白的请求模型兜底，计费名与上游模型名一致。
+		return s.forwardResponsesViaNativeAnthropic(ctx, c, account, body, reqModel)
+	case APIProtocolChatCompletions:
 		return s.forwardResponsesViaRawChatCompletions(ctx, c, account, body)
 	}
 	SetActualOpenAIUpstreamEndpoint(c, openAIResponsesUpstreamEndpoint)
@@ -1819,6 +1811,7 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 				SkipDefaultInstructions:             true,
 				PreserveToolCallIDs:                 true,
 				OmitPromotedSystemMessagesFromInput: omitPromotedSystemMessages,
+				ResponsesLite:                       responsesLite,
 			})
 			ensureCodexOAuthInstructionsField(decoded)
 			markDecodedModified()
@@ -1827,6 +1820,7 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 				IsCodexCLI:                          isCodexCLI,
 				IsCompact:                           isCompactRequest,
 				OmitPromotedSystemMessagesFromInput: omitPromotedSystemMessages,
+				ResponsesLite:                       responsesLite,
 			})
 		}
 		if codexResult.Error != nil {
@@ -2418,7 +2412,12 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 			}
 			respBody = s.redactAgentIdentitySensitiveBody(ctx, account, respBody)
 			resp.Body = io.NopCloser(bytes.NewReader(respBody))
-			if !httpInvalidEncryptedContentRetryTried && resp.StatusCode == http.StatusBadRequest && upstreamCode == "invalid_encrypted_content" {
+			invalidEncryptedContentError := upstreamCode == "invalid_encrypted_content" ||
+				(upstreamCode == "thinking_signature_invalid" &&
+					strings.Contains(upstreamMsg, "The encrypted content") &&
+					strings.Contains(upstreamMsg, "could not be verified") &&
+					strings.Contains(upstreamMsg, "could not be decrypted or parsed"))
+			if !httpInvalidEncryptedContentRetryTried && resp.StatusCode == http.StatusBadRequest && invalidEncryptedContentError {
 				decoded, decodeErr := ensureReqBody()
 				if decodeErr != nil {
 					return nil, decodeErr
@@ -2660,14 +2659,15 @@ func shouldForwardOpenAIResponsesViaRawChatCompletions(account *Account) bool {
 	if account == nil || account.Type != AccountTypeAPIKey {
 		return false
 	}
-	if account.IsOpenCodeGo() {
+	if account.routesByModel() {
 		// Model protocol_rules are the authority. Probe Extra must not collapse
 		// Grok/GPT/Muse into Chat Completions.
 		return false
 	}
-	if account.IsCNProvider() {
-		// CN 的显式协议配置优先于异步探针 Extra；adaptive 仅 DeepSeek / Kimi
-		// 有原生 Responses，GLM 回退 Chat Completions。
+	if account.RoutesProtocolByInbound() {
+		// 按入站协议分流的供应商（国产厂商等）：显式协议配置优先于异步探针
+		// Extra；adaptive 仅在供应商有原生 Responses 端点时直转，否则回退
+		// Chat Completions（如 GLM）。
 		switch account.GetAPIProtocol() {
 		case APIProtocolChatCompletions:
 			return true
@@ -3051,7 +3051,10 @@ func (s *OpenAIGatewayService) forwardOpenAIPassthrough(
 	}
 	if account != nil && account.IsOpenAI() {
 		responsesLite := isOpenAIResponsesLiteHeader(c.GetHeader(responsesLiteHeader)) || isOpenAIResponsesLiteWebSocketPayload(body)
-		normalizedBody, normalized, normalizeErr := normalizeOpenAIResponsesWebSocketCompatibilityBody(body, account, responsesLite)
+		normalizedBody, normalized, normalizeErr := normalizeOpenAIResponsesCompatibilityBodyWithOptions(body, account, openAIResponsesCompatibilityOptions{
+			ResponsesLite: responsesLite,
+			Compact:       isOpenAIResponsesCompactPath(c),
+		})
 		if normalizeErr != nil {
 			return nil, fmt.Errorf("normalize passthrough Responses compatibility: %w", normalizeErr)
 		}
@@ -5520,11 +5523,11 @@ func buildOpenAIResponsesURL(base string) string {
 }
 
 // buildOpenAIResponsesURLForPlatform 组装 Responses 端点（平台感知）。
-// DeepSeek 官方 Responses 端点为 /responses（无 /v1 前缀，适配 Codex）；
-// 其余平台维持 /v1/responses。
+// 供应商 profile 声明了 ResponsesPath 时按其拼接（如 DeepSeek 为无 /v1 前缀的
+// /responses）；其余平台维持 /v1/responses。
 func buildOpenAIResponsesURLForPlatform(platform string, base string) string {
-	if platform == PlatformDeepseek {
-		return buildOpenAIEndpointURL(base, "/responses")
+	if profile := LookupProviderProfile(platform); profile != nil && profile.ResponsesPath != "" {
+		return buildOpenAIEndpointURL(base, profile.ResponsesPath)
 	}
 	return buildOpenAIResponsesURL(base)
 }
@@ -6898,6 +6901,18 @@ func normalizeOpenAIResponseFormatSchemasBody(body []byte) ([]byte, bool, error)
 }
 
 func normalizeOpenAIResponsesWebSocketCompatibilityBody(body []byte, account *Account, responsesLite bool) ([]byte, bool, error) {
+	return normalizeOpenAIResponsesCompatibilityBodyWithOptions(body, account, openAIResponsesCompatibilityOptions{ResponsesLite: responsesLite})
+}
+
+type openAIResponsesCompatibilityOptions struct {
+	ResponsesLite bool
+	// Compact marks the /responses/compact wire shape, which is left as-is
+	// by request-shape compatibility rewrites such as web_search history.
+	Compact bool
+}
+
+func normalizeOpenAIResponsesCompatibilityBodyWithOptions(body []byte, account *Account, opts openAIResponsesCompatibilityOptions) ([]byte, bool, error) {
+	responsesLite := opts.ResponsesLite
 	if account == nil || !account.IsOpenAI() {
 		return body, false, nil
 	}
@@ -6961,6 +6976,14 @@ func normalizeOpenAIResponsesWebSocketCompatibilityBody(body []byte, account *Ac
 			}
 			normalized = next
 			changed = true
+		}
+		if !opts.Compact {
+			webSearchBody, webSearchChanged, err := ensureOpenAIOAuthWebSearchToolForHistoryBody(normalized, responsesLite)
+			if err != nil {
+				return body, false, fmt.Errorf("normalize websocket body: %w", err)
+			}
+			normalized = webSearchBody
+			changed = changed || webSearchChanged
 		}
 	}
 	needsOrphanCleanup := account != nil && account.IsOpenAIOAuthLike() &&
@@ -8769,8 +8792,12 @@ func (s *OpenAIGatewayService) handleStreamingResponseWithReasoning(ctx context.
 			// OpenAI Responses streams that terminate with an empty
 			// response.completed (no output, no usage, no error, nothing sent
 			// to the client) are silent upstream refusals: fail over instead of
-			// recording a successful 0/0 usage turn (issue #5009).
-			if account != nil && account.Platform == PlatformOpenAI &&
+			// recording a successful 0/0 usage turn (issue #5009). Grok
+			// subscriptions behind vendor gateways show the same silent-refusal
+			// shape on /v1/responses (forwardGrokResponses reaches this same
+			// handler), so cover PlatformGrok too — the passthrough-path guard
+			// is already unconditional.
+			if account != nil && (account.Platform == PlatformOpenAI || account.Platform == PlatformGrok) &&
 				(eventType == "response.completed" || eventType == "response.done") &&
 				!sawFailedEvent && !responsesSemanticOutputSeen && !clientOutputStarted &&
 				openAIResponsesCompletedEventIsEmpty(dataBytes, usage) {
@@ -10754,21 +10781,19 @@ func (s *OpenAIGatewayService) SelectAccountForTokenCount(
 	)
 }
 
-// NormalizeOpenAICompatiblePlatform 保留 grok、国产 OpenAI 兼容供应商（kimi/zhipu/
-// deepseek/minimax）与 OpenCode（opencode_go）的原值，其他值一律归一为 openai。
+// NormalizeOpenAICompatiblePlatform 保留走 OpenAI 网关的平台（openai、grok 与多协议
+// API Key 供应商，见平台清单 domain.UsesOpenAIGateway）的原值，其他值一律归一为 openai。
 // 调度器据此对账号与请求做精确平台匹配：kimi 分组请求只命中 kimi 账号，语义与 openai/grok 一致。
 // （upstream 曾将本函数改为未导出 normalizeOpenAICompatiblePlatform，本分支的
 // handler 调度入口仍需导出，保持导出名。）
 //
-// ⚠️ 这里只是调度归一用的 switch，case 次序无语义；别和 composite_platform.go 的
+// ⚠️ 这里只做调度归一，不涉及次序；别和 composite_platform.go 的
 // compositeRequestPlatforms() 搞混，那个的次序是定价/映射命中的行为契约。
 func NormalizeOpenAICompatiblePlatform(platform string) string {
-	switch platform {
-	case PlatformGrok, PlatformKimi, PlatformZhipu, PlatformDeepseek, PlatformMiniMax, PlatformOpenCodeGo:
+	if domain.UsesOpenAIGateway(platform) {
 		return platform
-	default:
-		return PlatformOpenAI
 	}
+	return PlatformOpenAI
 }
 
 // noAvailableOpenAISelectionError builds the standard "no account available" error

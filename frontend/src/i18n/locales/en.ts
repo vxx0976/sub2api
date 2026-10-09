@@ -1544,6 +1544,8 @@ export default {
         loadFailed: 'Failed to load detail, please try again',
       },
     },
+    outputTps: 'Output TPS',
+    outputTpsHint: 'Output tokens divided by total duration, including first-token wait, in tok/s. Output tokens may include reasoning tokens.',
   },
 
   // Shared keys for channel monitor (admin + user views)
@@ -3476,7 +3478,9 @@ export default {
         ollama: 'Ollama',
         composite: 'Composite',
         opencode_go: 'OpenCode',
-        typesafe: 'TypeSafe / Jev'
+        typesafe: 'TypeSafe / Jev',
+        command_code: 'Command Code',
+        cline: 'Cline'
       },
       deleteConfirm:
         "Are you sure you want to delete '{name}'? All associated API keys will no longer belong to any group.",
@@ -4785,6 +4789,8 @@ export default {
         failed: 'Failed to update priority'
       },
       groupCountTotal: '{count} groups total',
+      moreFilters: 'More filters',
+      moreFiltersActive: 'More filters ({count} active)',
       platforms: {
         anthropic: 'Anthropic',
         claude: 'Claude',
@@ -4797,7 +4803,9 @@ export default {
         zhipu: 'GLM',
         minimax: 'MiniMax',
         opencode_go: 'OpenCode',
-        typesafe: 'TypeSafe / Jev'
+        typesafe: 'TypeSafe / Jev',
+        command_code: 'Command Code',
+        cline: 'Cline'
       },
       types: {
         oauth: 'OAuth',
@@ -6482,12 +6490,15 @@ export default {
         },
         protocolRules: {
           title: 'Model protocol routing',
-          hint: 'In adaptive mode, each model is sent to a native upstream protocol. Use an exact ID or a trailing * glob (e.g. grok-*, qwen*). The first matching rule wins; unmatched models use Chat Completions.',
+          hint: 'In adaptive mode, each model is sent to a native upstream protocol. Use an exact ID or a trailing * glob (e.g. grok-*, qwen*). The first matching rule wins. If the inbound protocol is one the model also supports, the request passes through on that protocol without conversion; otherwise the selected protocol is used.',
           patternPlaceholder: 'grok-* or deepseek-v4-flash',
           add: 'Add rule',
           remove: 'Remove rule',
           restoreDefaults: 'Restore defaults',
-          fallback: 'Unmatched models → Chat Completions (/v1/chat/completions)'
+          fallback: 'Unmatched models → Chat Completions (/v1/chat/completions)',
+          alsoSupports: 'Also supports',
+          alsoSupportsHint: 'Requests arriving on one of these protocols are passed through unchanged, avoiding protocol conversion',
+          catalogFallback: 'Unmatched models → protocols from the upstream model list (supported_endpoints in /models); Chat Completions when unavailable'
         },
         title: 'OpenCode Go usage',
         panelHint: 'Usage windows reported by the upstream OpenCode Go account. Refreshed on demand or automatically when enabled.',
@@ -6512,7 +6523,8 @@ export default {
         refreshSuccess: 'OpenCode Go usage refreshed',
         refreshFailed: 'Failed to refresh OpenCode Go usage',
         errors: {
-          OPENCODE_GO_USAGE_REFRESH_RATE_LIMITED: 'Refresh is limited. Try again in {retry_after_seconds} seconds.'
+          OPENCODE_GO_USAGE_REFRESH_RATE_LIMITED: 'Refresh is limited. Try again in {retry_after_seconds} seconds.',
+          forbidden: 'Upstream returned 403: could be a missing/expired OpenCode Go subscription or a WAF/access-policy block; check the network path and HTTP status.'
         }
       }
     },
@@ -7104,7 +7116,9 @@ export default {
           failed: 'Failed',
           canceled: 'Canceled'
         }
-      }
+      },
+      longContext: 'Long context',
+      longContextPricingTooltip: 'Long-context pricing was applied. Input and output rates depend on the pricing tier, not a uniform multiplier.'
     },
 
     // Ops Monitoring
@@ -7931,7 +7945,8 @@ export default {
         upstreamErrors: 'Upstream failures that were not recovered by failover and reached the client (excluding 429/529 rate limits; recovered errors are not counted).',
         latency: 'Request duration statistics, including p50, p90, p95, p99 percentiles.',
         ttft: 'Time To First Token, measuring the speed of first token return in streaming responses.',
-        health: 'System health score (0-100), considering SLA, error rate, and resource usage.'
+        health: 'System health score (0-100), considering SLA, error rate, and resource usage.',
+        outputTps: 'Percentiles of each valid usage record’s output tokens / total duration, including first-token wait, within the selected time, platform and group. Output may include reasoning tokens; they are not added again. P50 is the median; P5/P10 show slower requests. Higher is faster. Excludes images, Live and records without positive output or duration. Samples come from retained usage logs; — means no samples or temporarily unavailable statistics.'
       },
       charts: {
         emptyRequest: 'No requests in this window.',
@@ -7940,7 +7955,9 @@ export default {
         resetZoomHint: 'Reset zoom (if enabled)',
         downloadChart: 'Download',
         downloadChartHint: 'Download chart as image'
-      }
+      },
+      outputTps: 'Per-request output TPS',
+      outputTpsSamples: 'Valid samples: {count}'
     },
 
     // Settings

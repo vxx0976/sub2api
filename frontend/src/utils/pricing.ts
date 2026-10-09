@@ -1,6 +1,5 @@
 import type { UserPricingInterval } from '@/api/channels'
 
-import { trimTrailingZeros } from './formatters'
 
 /**
  * formatScaled formats a per-token (or per-request) price scaled by `scale`.
@@ -24,7 +23,7 @@ export function formatScaled(
   symbol = '$'
 ): string {
   if (value == null) return '-'
-  let s = trimTrailingZeros((value * scale).toPrecision(10))
+  let s = Number((value * scale).toPrecision(10)).toString()
   if (minFractionDigits > 0 && !s.includes('e')) {
     const dot = s.indexOf('.')
     const digits = dot === -1 ? 0 : s.length - dot - 1

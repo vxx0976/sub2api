@@ -389,9 +389,10 @@ func TestProviderProbeCapabilityMatrix(t *testing.T) {
 // 上游 98d86915b 加 minimax 时就是这么漏的，这条测试用来钉住。
 func TestMonitorProvidersCoverAllPlatforms(t *testing.T) {
 	for _, platform := range AllowedQuotaPlatforms {
-		if platform == PlatformTypeSafe {
-			// TypeSafe（Jev System One）不是对话模型，上游刻意不纳入渠道监控：
-			// 241_add_typesafe_platform.sql 也没有放宽 channel_monitors 的 provider CHECK。
+		if platform == PlatformTypeSafe || platform == PlatformCommandCode || platform == PlatformCline {
+			// 上游刻意不纳入渠道监控的平台：TypeSafe（Jev System One）不是对话模型；
+			// Command Code / Cline 随上游 0.2.15 加入，渠道监控的 provider 约束表示「已实现的
+			// 探测能力」，不属于平台清单，上游没有为它们实现监控探测。
 			require.Error(t, validateProvider(platform), platform)
 			continue
 		}

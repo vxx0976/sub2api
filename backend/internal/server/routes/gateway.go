@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
+	"github.com/Wei-Shaw/sub2api/internal/domain"
 	"github.com/Wei-Shaw/sub2api/internal/handler"
 	pkghttputil "github.com/Wei-Shaw/sub2api/internal/pkg/httputil"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/requestmodel"
@@ -46,10 +47,8 @@ func RegisterGatewayRoutes(
 	groupModelAllowlist := middleware.GroupModelAllowlist()
 
 	isOpenAIResponsesCompatibleGatewayPlatform := func(c *gin.Context) bool {
-		// 国产 OpenAI 兼容供应商（kimi/zhipu/deepseek/minimax）与 OpenCode、openai/grok
-		// 一样经 OpenAI 网关转发。与上游的字面量列表等价，这里走单一真源。
-		platform := getGroupPlatform(c)
-		return isOpenAIGatewayForwardPlatform(platform) || platform == service.PlatformGrok
+		// openai、grok 与多协议 API Key 供应商经 OpenAI 网关转发（平台清单）。
+		return domain.UsesOpenAIGateway(getGroupPlatform(c))
 	}
 	isOpenAIGatewayPlatform := func(c *gin.Context) bool {
 		return isOpenAICompatPlatform(getGroupPlatform(c))
@@ -58,11 +57,11 @@ func RegisterGatewayRoutes(
 	// 走 Anthropic-compat 桥接(count_tokens -> responses input_tokens)；Grok 本地估算；
 	// 其余 Anthropic 兼容平台保留原生路径。
 	countTokensHandler := func(c *gin.Context) {
-		switch {
-		case isOpenAIGatewayForwardPlatform(getGroupPlatform(c)):
-			h.OpenAIGateway.CountTokens(c)
-		case getGroupPlatform(c) == service.PlatformGrok:
+		switch platform := getGroupPlatform(c); {
+		case platform == service.PlatformGrok:
 			h.OpenAIGateway.GrokCountTokens(c)
+		case domain.UsesOpenAIGateway(platform):
+			h.OpenAIGateway.CountTokens(c)
 		default:
 			h.Gateway.CountTokens(c)
 		}
@@ -555,14 +554,12 @@ func getGroupPlatform(c *gin.Context) string {
 // isOpenAICompatPlatform returns true for platforms that use the OpenAI-compatible
 // gateway (OpenAI, Kimi, Zhipu, Deepseek, MiniMax). These platforms share the
 // same /v1/chat/completions and /v1/responses handler.
-// 加平台时必须同步这里：它是 fork 把上游多处字面量列表收敛后的单一真源。
-// 四个消费点：isOpenAIResponsesCompatibleGatewayPlatform（进 OpenAI 网关的门）、
-// count_tokens、isEmbeddingsCapableGatewayPlatform（/v1/embeddings）与
-// supportsImageGenEndpoint（/v1/images/*）。
+// 消费点：isEmbeddingsCapableGatewayPlatform（/v1/embeddings）与
+// supportsImageGenEndpoint（/v1/images/*）。「能否进 OpenAI 网关转发（含 count_tokens）」
+// 已随上游 0.2.15 改由平台清单 domain.UsesOpenAIGateway 判定，不再经本函数。
 //
-// ⚠️ opencode_go **不在**本函数里，只经 isOpenAIGatewayForwardPlatform 进前两个：
-// DefaultOpenCodeGoModelIDs() 里没有任何 embedding / 图片模型，放开 embeddings
-// 与 images 只会把上游的 404/400 透给用户。
+// ⚠️ opencode_go / command_code / cline 等多模型聚合平台**不在**本函数里：它们的
+// 目录里没有 embedding / 图片模型，放开 embeddings 与 images 只会把上游的 404/400 透给用户。
 func isOpenAICompatPlatform(platform string) bool {
 	switch platform {
 	case service.PlatformOpenAI,
@@ -573,12 +570,6 @@ func isOpenAICompatPlatform(platform string) bool {
 		return true
 	}
 	return false
-}
-
-// isOpenAIGatewayForwardPlatform 是「能进 OpenAI 网关转发（含 count_tokens）」的门，
-// 比 isOpenAICompatPlatform 多一个 opencode_go。两者刻意分开，理由见上。
-func isOpenAIGatewayForwardPlatform(platform string) bool {
-	return isOpenAICompatPlatform(platform) || platform == service.PlatformOpenCodeGo
 }
 
 // supportsImageGenEndpoint returns true for platforms that may use the

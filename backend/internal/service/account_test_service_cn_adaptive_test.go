@@ -319,15 +319,15 @@ func TestEffectiveCNAccountModeInfersCodingFromBaseURL(t *testing.T) {
 		Credentials: map[string]any{"api_key": "sk-x", "base_url": "https://api.kimi.com/coding/v1"},
 	}
 	require.Equal(t, AccountModeCoding, codingKimi.effectiveCNAccountMode())
-	require.Equal(t, DefaultKimiCodingAnthropicBaseURL, codingKimi.defaultCNProtocolBaseURL(APIProtocolAnthropic))
-	require.Equal(t, DefaultKimiCodingBaseURL, codingKimi.defaultCNProtocolBaseURL(APIProtocolResponses))
+	require.Equal(t, DefaultKimiCodingAnthropicBaseURL, codingKimi.defaultProviderBaseURL(APIProtocolAnthropic))
+	require.Equal(t, DefaultKimiCodingBaseURL, codingKimi.defaultProviderBaseURL(APIProtocolResponses))
 
 	paygKimi := &Account{
 		ID: 401, Platform: PlatformKimi, Type: AccountTypeAPIKey, Status: StatusActive,
 		Credentials: map[string]any{"api_key": "sk-x", "base_url": "https://api.moonshot.cn/v1"},
 	}
 	require.Equal(t, AccountModePayG, paygKimi.effectiveCNAccountMode())
-	require.Equal(t, DefaultKimiPayGAnthropicBaseURL, paygKimi.defaultCNProtocolBaseURL(APIProtocolAnthropic))
+	require.Equal(t, DefaultKimiPayGAnthropicBaseURL, paygKimi.defaultProviderBaseURL(APIProtocolAnthropic))
 
 	// 显式 account_mode 优先于推断。
 	explicitPayG := &Account{
@@ -340,7 +340,7 @@ func TestEffectiveCNAccountModeInfersCodingFromBaseURL(t *testing.T) {
 		ID: 403, Platform: PlatformZhipu, Type: AccountTypeAPIKey, Status: StatusActive,
 		Credentials: map[string]any{"api_key": "sk-x", "base_url": "https://open.bigmodel.cn/api/coding/paas/v4"},
 	}
-	require.Equal(t, DefaultZhipuCodingBaseURL, codingZhipu.defaultCNProtocolBaseURL(APIProtocolChatCompletions))
+	require.Equal(t, DefaultZhipuCodingBaseURL, codingZhipu.defaultProviderBaseURL(APIProtocolChatCompletions))
 
 	// 纯 API 建号可能只填了 api_base_urls.chat_completions。
 	noLegacyBaseURL := &Account{

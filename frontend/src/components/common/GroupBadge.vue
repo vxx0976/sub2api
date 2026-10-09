@@ -159,6 +159,8 @@ const labelClass = computed(() => {
     // opencode_go 用 lime：上游给的 amber 与本表 anthropic 的 std 档撞色。
     opencode_go: 'bg-lime-200/60 text-lime-800 dark:bg-lime-800/40 dark:text-lime-300',
     typesafe: 'bg-sky-200/60 text-sky-800 dark:bg-sky-800/40 dark:text-sky-300',
+    command_code: 'bg-neutral-200/70 text-neutral-800 dark:bg-neutral-700/60 dark:text-neutral-200',
+    cline: 'bg-violet-200/60 text-violet-800 dark:bg-violet-800/40 dark:text-violet-300',
     grok: 'bg-zinc-300/70 text-zinc-800 dark:bg-zinc-700/60 dark:text-zinc-200',
     composite: 'bg-cyan-200/70 text-cyan-900 dark:bg-cyan-900/50 dark:text-cyan-300',
   }
@@ -183,6 +185,8 @@ const BADGE_COLORS: Record<GroupPlatform, { sub: string; std: string }> = {
   opencode_go: { sub: 'bg-lime-100 text-lime-700 dark:bg-lime-900/30 dark:text-lime-400',           std: 'bg-lime-50 text-lime-700 dark:bg-lime-900/20 dark:text-lime-400' },
   // typesafe 沿用 platformColors 的 sky；std 档加深一级，避免与 gemini 的 std（sky-50）完全相同。
   typesafe:    { sub: 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400',            std: 'bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-300' },
+  command_code: { sub: 'bg-neutral-200 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-100', std: 'bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200' },
+  cline:       { sub: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400',     std: 'bg-violet-50 text-violet-700 dark:bg-violet-900/20 dark:text-violet-400' },
   grok:        { sub: 'bg-zinc-200 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-100',              std: 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200' },
   composite:   { sub: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300',          std: 'bg-cyan-50 text-cyan-800 dark:bg-cyan-900/20 dark:text-cyan-300' },
 }

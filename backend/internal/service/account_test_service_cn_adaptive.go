@@ -31,14 +31,24 @@ func accountTestSkipsAuthFailureMark(c *gin.Context) bool {
 }
 
 // testCNProviderAdaptiveConnection verifies every native endpoint used by an
-// adaptive CN-provider account. Zhipu uses Chat Completions plus Anthropic;
-// DeepSeek and Kimi additionally use their native Responses endpoints.
+// adaptive account of a provider that routes by inbound protocol. Zhipu uses
+// Chat Completions plus Anthropic; DeepSeek and Kimi additionally use their
+// native Responses endpoints. Endpoints the provider profile does not offer are
+// skipped.
 func (s *AccountTestService) testCNProviderAdaptiveConnection(c *gin.Context, account *Account, modelID string, prompt string) error {
-	testModelID := strings.TrimSpace(modelID)
-	if testModelID == "" {
-		testModelID = openai.DefaultTestModel
+	requestedModelID := strings.TrimSpace(modelID)
+	if requestedModelID == "" {
+		requestedModelID = account.providerDefaultTestModel()
 	}
-	testModelID = account.GetMappedModel(testModelID)
+	if requestedModelID == "" {
+		// fork：CN 上游不认 openai.DefaultTestModel，按平台取默认测试模型（与
+		// testCNProviderChatCompletionsConnection 同一张表），三条通道用同一个模型。
+		requestedModelID = getDefaultTestModel(account.Platform)
+	}
+	if requestedModelID == "" {
+		requestedModelID = openai.DefaultTestModel
+	}
+	testModelID := account.GetMappedModel(requestedModelID)
 
 	authToken := strings.TrimSpace(account.GetOpenAIProtocolAPIKey())
 	if authToken == "" {
@@ -52,12 +62,14 @@ func (s *AccountTestService) testCNProviderAdaptiveConnection(c *gin.Context, ac
 	// 三条通道共用一把 key，任一条的 401 都不得停用账号（含下面复用的 chat_completions 探针）。
 	c.Set(accountTestSkipAuthFailureMarkContextKey, true)
 	defer c.Set(accountTestSkipAuthFailureMarkContextKey, false)
-	if err := s.testCNProviderChatCompletionsConnection(c, account, modelID, prompt); err != nil {
+	if err := s.testCNProviderChatCompletionsConnection(c, account, requestedModelID, prompt); err != nil {
 		return err
 	}
 
-	if err := s.testCNProviderAdaptiveAnthropicConnection(c, account, testModelID, authToken); err != nil {
-		return err
+	if account.providerSupportsProtocol(APIProtocolAnthropic) {
+		if err := s.testCNProviderAdaptiveAnthropicConnection(c, account, testModelID, authToken); err != nil {
+			return err
+		}
 	}
 
 	if account.SupportsNativeCNResponses() {
@@ -259,10 +271,10 @@ func (s *AccountTestService) testCNProviderAnthropicConnection(c *gin.Context, a
 	if err != nil {
 		return s.sendErrorAndEnd(c, fmt.Sprintf("Invalid Anthropic base URL: %s", err.Error()))
 	}
-	if hint := cnAnthropicBaseURLMisconfigHint(baseURL); hint != "" {
+	if hint := cnAnthropicBaseURLMisconfigHint(baseURL, account.routesByModel()); hint != "" {
 		return s.sendErrorAndEnd(c, hint)
 	}
-	apiURL := strings.TrimRight(baseURL, "/") + "/v1/messages"
+	apiURL := nativeAnthropicMessagesURL(account, baseURL)
 
 	c.Writer.Header().Set("Content-Type", "text/event-stream")
 	c.Writer.Header().Set("Cache-Control", "no-cache")
@@ -317,7 +329,9 @@ func (s *AccountTestService) testCNProviderAnthropicConnection(c *gin.Context, a
 // endpoint (paas path, version segment, or chat/completions / responses
 // suffix). The naive {base}/v1/messages join would 404 (e.g.
 // .../api/paas/v4/v1/messages) with no hint about the actual misconfiguration.
-func cnAnthropicBaseURLMisconfigHint(baseURL string) string {
+// versionAware is set for providers whose join is version-aware (see
+// nativeAnthropicMessagesURL), where a trailing version segment is valid.
+func cnAnthropicBaseURLMisconfigHint(baseURL string, versionAware bool) string {
 	parsed, err := url.Parse(strings.TrimSpace(baseURL))
 	if err != nil || parsed.Scheme == "" || parsed.Host == "" {
 		return ""
@@ -329,7 +343,7 @@ func cnAnthropicBaseURLMisconfigHint(baseURL string) string {
 	openAICompatShaped := strings.Contains(path, "/paas/") ||
 		strings.HasSuffix(path, "/chat/completions") ||
 		strings.HasSuffix(path, "/responses") ||
-		openAIBaseURLHasVersionSuffix(path)
+		(!versionAware && openAIBaseURLHasVersionSuffix(path))
 	if !openAICompatShaped {
 		return ""
 	}

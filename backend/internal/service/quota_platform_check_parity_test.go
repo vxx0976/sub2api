@@ -25,6 +25,11 @@ import (
 // 已发布迁移受 checksum 保护不能原地改，加平台**只能**追加一个新的收紧/放宽 CHECK 的迁移。
 // 因此这里按迁移号取**最后一个**重建该 CHECK 的迁移作为 DB 侧终态。
 // 新增平台时若忘了补迁移，最后一个 CHECK 里就没有新平台，这条照样会红。
+//
+// 上游 0.2.15 起（迁移 242_drop_platform_check_constraints.sql）删除了这条 CHECK，平台合法性
+// 改由应用层（平台清单 + repository 写入前校验）保证。最后一个触及该约束的迁移若是只删不建，
+// DB 侧不再有名单可比，这里只确认删除确实发生在所有重建之后（迁移包的
+// platform_check_constraints_drop_migration_test.go 与仓储集成测试覆盖应用层校验）。
 func TestQuotaPlatformCheckMatchesAllowedQuotaPlatforms(t *testing.T) {
 	entries, err := migrations.FS.ReadDir(".")
 	require.NoError(t, err, "读取迁移目录失败")
@@ -55,11 +60,18 @@ func TestQuotaPlatformCheckMatchesAllowedQuotaPlatforms(t *testing.T) {
 	var (
 		sqlPlatforms []string
 		sourceFile   string
+		droppedIn    string
 	)
 	for _, f := range files {
 		content, readErr := migrations.FS.ReadFile(f.name)
 		require.NoError(t, readErr, "读取迁移 %s 失败", f.name)
 		sql := string(content)
+		if strings.Contains(sql, "DROP CONSTRAINT IF EXISTS user_platform_quotas_platform_check") &&
+			!strings.Contains(sql, "ADD CONSTRAINT user_platform_quotas_platform_check") {
+			droppedIn = f.name
+			sqlPlatforms = nil
+			continue
+		}
 
 		// 定位 ADD CONSTRAINT ... CHECK (platform IN (...)) 里的平台列表；
 		// 同一个文件里可能重建多次，取最后一次。
@@ -88,8 +100,14 @@ func TestQuotaPlatformCheckMatchesAllowedQuotaPlatforms(t *testing.T) {
 			}
 			sqlPlatforms = parsed
 			sourceFile = f.name
+			droppedIn = ""
 			search = rest[end:]
 		}
+	}
+	if droppedIn != "" {
+		require.Empty(t, sqlPlatforms)
+		t.Logf("user_platform_quotas_platform_check 已由 %s 删除，平台名单改由应用层校验", droppedIn)
+		return
 	}
 	require.NotEmpty(t, sqlPlatforms, "所有迁移里都找不到 user_platform_quotas_platform_check 的 CHECK 名单")
 

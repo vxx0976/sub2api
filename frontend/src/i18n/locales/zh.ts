@@ -1549,6 +1549,8 @@ export default {
         loadFailed: '加载详情失败，请稍后重试',
       },
     },
+    outputTps: '输出 TPS',
+    outputTpsHint: '输出 Token ÷ 总耗时（包含首字等待），单位 tok/s。输出 Token 可能包含推理 Token。',
   },
 
   // Shared keys for channel monitor (admin + user views)
@@ -3403,7 +3405,9 @@ export default {
         ollama: 'Ollama',
         composite: 'Composite',
         opencode_go: 'OpenCode',
-        typesafe: 'TypeSafe / Jev'
+        typesafe: 'TypeSafe / Jev',
+        command_code: 'Command Code',
+        cline: 'Cline'
       },
       saving: '保存中...',
       noGroups: '暂无分组',
@@ -4759,6 +4763,8 @@ export default {
         failed: '更新优先级失败'
       },
       groupCountTotal: '共 {count} 个分组',
+      moreFilters: '更多筛选',
+      moreFiltersActive: '更多筛选（已启用 {count} 项）',
       columns: {
         name: '名称',
         id: '账号ID',
@@ -5019,7 +5025,9 @@ export default {
         zhipu: 'GLM',
         minimax: 'MiniMax',
         opencode_go: 'OpenCode',
-        typesafe: 'TypeSafe / Jev'
+        typesafe: 'TypeSafe / Jev',
+        command_code: 'Command Code',
+        cline: 'Cline'
       },
       types: {
         oauth: 'OAuth',
@@ -6444,12 +6452,15 @@ export default {
         },
         protocolRules: {
           title: '模型协议分流',
-          hint: '自适应模式下按模型匹配上游协议。支持精确 ID 或末尾 * 通配（如 grok-*、qwen*）；自上而下第一条命中生效；未命中走 Chat Completions。',
+          hint: '自适应模式下按模型匹配上游协议。支持精确 ID 或末尾 * 通配（如 grok-*、qwen*）；自上而下第一条命中生效。入站协议是模型也支持的协议时同协议直通、不做转换，否则走所选协议。',
           patternPlaceholder: 'grok-* 或 deepseek-v4-flash',
           add: '添加规则',
           remove: '删除规则',
           restoreDefaults: '恢复默认',
-          fallback: '未命中以上规则 → Chat Completions（/v1/chat/completions）'
+          fallback: '未命中以上规则 → Chat Completions（/v1/chat/completions）',
+          alsoSupports: '也支持',
+          alsoSupportsHint: '以这些协议进来的请求同协议直通，免去协议转换',
+          catalogFallback: '未命中以上规则 → 按上游模型列表（/models 的 supported_endpoints）选协议；列表不可用时走 Chat Completions'
         },
         title: 'OpenCode Go 用量',
         panelHint: '上游 OpenCode Go 账号上报的用量窗口。可手动刷新，或开启自动刷新。',
@@ -6474,7 +6485,8 @@ export default {
         refreshSuccess: 'OpenCode Go 用量已刷新',
         refreshFailed: '刷新 OpenCode Go 用量失败',
         errors: {
-          OPENCODE_GO_USAGE_REFRESH_RATE_LIMITED: '刷新过于频繁，请在 {retry_after_seconds} 秒后重试。'
+          OPENCODE_GO_USAGE_REFRESH_RATE_LIMITED: '刷新过于频繁，请在 {retry_after_seconds} 秒后重试。',
+          forbidden: '上游返回 403：可能是订阅缺失/失效，也可能是 WAF 或访问策略拦截，请结合网络路径与 HTTP 状态排查。'
         }
       }
     },
@@ -7063,7 +7075,9 @@ export default {
           failed: '失败',
           canceled: '已取消'
         }
-      }
+      },
+      longContext: '长上下文',
+      longContextPricingTooltip: '已应用长上下文计费。输入和输出费率取决于定价档位，并非统一倍率。'
     },
 
     // Ops Monitoring
@@ -7891,7 +7905,8 @@ export default {
         errors: '真实失败率：最终返回给用户的失败请求占比（含上游出错后用户放弃等待）。换号后已恢复的上游错误与业务限制不计。',
         latency: '请求时长统计，包括 p50、p90、p95、p99 等百分位数。',
         ttft: '首 Token 延迟（Time To First Token），衡量流式响应的首 Token 返回速度。',
-        health: '系统健康评分（0-100），综合考虑 SLA、错误率和资源使用情况。'
+        health: '系统健康评分（0-100），综合考虑 SLA、错误率和资源使用情况。',
+        outputTps: '每条有效用量记录的输出 Token ÷ 总耗时（含首字等待），再按当前时间、平台和分组计算分位数。输出可含推理 Token，不重复相加。P50 为中位数，P5/P10 反映较慢请求；数值越高越快。排除图片、Live、无有效输出或耗时的记录。样本来自仍保留的使用明细；无样本或统计暂不可用时显示 —。'
       },
       charts: {
         emptyRequest: '该时间窗口内暂无请求。',
@@ -7900,7 +7915,9 @@ export default {
         resetZoomHint: '重置缩放（若启用）',
         downloadChart: '下载',
         downloadChartHint: '下载图表图片'
-      }
+      },
+      outputTps: '单次输出 TPS',
+      outputTpsSamples: '有效样本：{count}'
     },
 
     // Settings
