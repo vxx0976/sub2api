@@ -276,7 +276,9 @@ func getDefaultTestModel(platform string) string {
 		// 单账号测试超时正好是 60 秒——用 terra 会让号少的分组被误判不健康。
 		return "gpt-5.6-sol"
 	case "gemini":
-		return "gemini-2.0-flash"
+		// gemini-2.0-flash 已退役，pigcode 等中转也不再提供（分组 166 因此恒判异常）；
+		// 2.5-flash-lite 官方与中转都在售，且是最便宜的文本档。
+		return "gemini-2.5-flash-lite"
 	case "antigravity":
 		return "claude-haiku-4-5-20251001"
 	case "deepseek":
@@ -285,7 +287,9 @@ func getDefaultTestModel(platform string) string {
 	case "kimi":
 		return "kimi-k2"
 	case "zhipu":
-		return "GLM-5.1"
+		// pigcode 等中转只上架 glm-5.3 系列（分组 167 用 GLM-5.1 恒判异常）；
+		// glm-5.3-flash 也是 z.ai 公开 SKU，且最便宜。
+		return "glm-5.3-flash"
 	case "minimax":
 		// MiniMax 官方在售型号（与 gateway_handler.go 的 minimax 默认模型列表、
 		// billing_service.go 的 fallbackPrices["minimax-m2.7"] 同款；

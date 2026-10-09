@@ -3697,7 +3697,7 @@ export default {
         intervalHint: 'Interval for automatic group availability checks, default 30 minutes',
         testModelLabel: 'Health Check Test Model',
         testModelPlaceholder: 'Leave empty to use platform default',
-        testModelHint: 'Model ID used for health check requests, e.g. claude-haiku-4-5-20251001, gpt-4o-mini, gemini-2.0-flash. Empty = platform default lightweight model'
+        testModelHint: 'Model ID used for health check requests, e.g. claude-haiku-4-5-20251001, gpt-4o-mini, gemini-2.5-flash-lite. Empty = platform default lightweight model'
       },
       openaiLive: {
         title: 'OpenAI Live',
