@@ -1008,6 +1008,14 @@ func (s *RateLimitService) handle403(ctx context.Context, account *Account, upst
 	if account.Platform == PlatformAntigravity {
 		return s.handleAntigravity403(ctx, account, upstreamMsg, responseBody)
 	}
+	// fork: 中转（API Key）号回的内容审核拦截 403 只针对这一条请求的内容
+	// （pigcode："内容审计命中风险规则，请调整输入后重试"），不是账号凭据失效。
+	// 返回 false：不 SetError、不临时停调度（OpenAI/Grok 侧 true 会触发 2 分钟运行时阻断）；
+	// 403 换号由状态码驱动，不依赖这里的返回值。否则一个用户的一条请求就让整号停调度。
+	if isRelayContentModeration403(account, upstreamMsg) {
+		slog.Warn("relay_403_content_moderation_skips_account_penalty", "account_id", account.ID, "upstream_message", upstreamMsg)
+		return false
+	}
 	// Kimi reports its transient per-account concurrency/business limit as a 403.
 	// Keep the normal 403 failover signal (true), but never feed this exact message
 	// into the escalating 403 counter that can permanently mark the account error.
@@ -2918,4 +2926,33 @@ func (s *RateLimitService) triggerStreamTimeoutError(ctx context.Context, accoun
 
 	slog.Warn("stream_timeout_account_error", "account_id", account.ID, "model", model)
 	return true
+}
+
+// 中转内容审核 403 判定：须同时含「审核类词」与「请求级提示」，且不含账号级处罚字样，
+// 避免把「账号触发风险规则已封禁」这类真封号放过（放过后坏号永不停调度、每次白打一枪）。
+var (
+	relayContentModerationAuditWords   = []string{"内容审计", "内容审核", "content moderation", "content audit"}
+	relayContentModerationRequestHints = []string{"调整输入", "修改输入", "调整内容", "修改内容", "adjust your input", "modify your input", "rephrase"}
+	relayContentModerationAccountVetos = []string{"封禁", "禁用", "冻结", "账号", "账户", "令牌", "suspend", "banned", "disabled", "account"}
+)
+
+// isRelayContentModeration403 判断中转（API Key）号的 403 是否为请求级内容审核拦截。
+// 官方 OAuth 号的 403 仍按账号级处理。
+func isRelayContentModeration403(account *Account, upstreamMsg string) bool {
+	if account == nil || account.Type != AccountTypeAPIKey {
+		return false
+	}
+	msg := strings.ToLower(upstreamMsg)
+	return containsAnyFold(msg, relayContentModerationAuditWords) &&
+		containsAnyFold(msg, relayContentModerationRequestHints) &&
+		!containsAnyFold(msg, relayContentModerationAccountVetos)
+}
+
+func containsAnyFold(lowerMsg string, words []string) bool {
+	for _, w := range words {
+		if strings.Contains(lowerMsg, w) {
+			return true
+		}
+	}
+	return false
 }
