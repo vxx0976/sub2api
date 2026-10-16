@@ -26,10 +26,8 @@ const (
 	FieldName = "name"
 	// FieldDescription holds the string denoting the description field in the database.
 	FieldDescription = "description"
-	// FieldNameI18n holds the string denoting the name_i18n field in the database.
-	FieldNameI18n = "name_i18n"
-	// FieldDescriptionI18n holds the string denoting the description_i18n field in the database.
-	FieldDescriptionI18n = "description_i18n"
+	// FieldI18n holds the string denoting the i18n field in the database.
+	FieldI18n = "i18n"
 	// FieldRateMultiplier holds the string denoting the rate_multiplier field in the database.
 	FieldRateMultiplier = "rate_multiplier"
 	// FieldPeakRateEnabled holds the string denoting the peak_rate_enabled field in the database.
@@ -267,8 +265,7 @@ var Columns = []string{
 	FieldDeletedAt,
 	FieldName,
 	FieldDescription,
-	FieldNameI18n,
-	FieldDescriptionI18n,
+	FieldI18n,
 	FieldRateMultiplier,
 	FieldPeakRateEnabled,
 	FieldPeakStart,
@@ -380,6 +377,8 @@ var (
 	UpdateDefaultUpdatedAt func() time.Time
 	// NameValidator is a validator for the "name" field. It is called by the builders before save.
 	NameValidator func(string) error
+	// DefaultI18n holds the default value on creation for the "i18n" field.
+	DefaultI18n domain.GroupI18n
 	// DefaultRateMultiplier holds the default value on creation for the "rate_multiplier" field.
 	DefaultRateMultiplier float64
 	// DefaultPeakRateEnabled holds the default value on creation for the "peak_rate_enabled" field.

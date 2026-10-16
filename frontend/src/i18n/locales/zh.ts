@@ -420,7 +420,7 @@ export default {
       noUsableImage: '未生成可用图片',
       cancelled: '任务已取消',
       waiting: '等待生成结果',
-      emptyImageOutput: '上游返回了结果，但这条没有图片内容。通常是 Gemini/Vertex 单条生成失败或被安全策略拦截。',
+      emptyImageOutput: '上游返回了结果，但这条没有图片内容。通常是 Gemini/Agent Platform (Vertex) 单条生成失败或被安全策略拦截。',
       providerItemFailed: '上游返回的这条结果没有可用图片。',
     },
     imagePreview: {
@@ -498,10 +498,10 @@ export default {
       loadingModels: '加载可用模型中...',
       noModels: '无可用模型',
       noModelsHint: '当前密钥所属分组没有配置可用于批量生图的模型。',
-      noCompatibleAccount: '当前密钥所属分组没有可用的批量生图上游账号。请联系管理员检查：该分组是否绑定了可调度的 Gemini API Key 或 Vertex 服务账号，以及账号是否支持所选模型。',
+      noCompatibleAccount: '当前密钥所属分组没有可用的批量生图上游账号。请联系管理员检查：该分组是否绑定了可调度的 Gemini API Key 或 Agent Platform (Vertex) Service Account 账号，以及账号是否支持所选模型。',
       unsupportedProvider: '这个任务使用的批量生图通道当前不可用。请联系管理员检查批量生图通道配置。',
       providerSubmitFailed: '上游批量生图任务提交失败。请联系管理员检查上游账号状态、模型权限或服务状态。',
-      vertexGcsBucketMissing: 'Vertex 批量生图缺少托管 GCS 存储桶配置。请联系管理员配置 BATCH_IMAGE_VERTEX_MANAGED_GCS_BUCKET 后再提交。',
+      vertexGcsBucketMissing: 'Agent Platform (Vertex) 批量生图缺少托管 GCS 存储桶配置。请联系管理员配置 BATCH_IMAGE_VERTEX_MANAGED_GCS_BUCKET 后再提交。',
       queueFailed: '任务队列暂时不可用，批量任务没有成功入队。请联系管理员检查队列服务。',
       billingHoldFailed: '费用冻结失败，批量任务没有成功提交。请联系管理员检查余额冻结或计费服务。',
       groupDisabled: '当前密钥所属分组没有开启批量生图。你可以换一个已开启批量生图的密钥，或联系管理员开启。',
@@ -1683,6 +1683,8 @@ export default {
         latency: '延迟展示 AVG · P50 · P90；不展示绝对请求数 / 错误数',
         models: '模型列表留空时展示真实模型名，不会全部归入「其他」',
       },
+      selectPlatform: '选择平台',
+      addPlatform: '添加平台',
     },
     admin: {
       descriptionV1: '当前系统设置为 V1 主动探测：可管理监控项并立即检测；V2 聚合不会运行。',
@@ -3783,6 +3785,12 @@ export default {
         geminiImage: 'Gemini Image',
         hint: '至少选择一个模型系列'
       },
+      i18nField: {
+        default: '默认',
+        add: '新增 {language} 版',
+        edit: '编辑 {language} 版',
+        placeholder: '{language} 版，留空则显示默认内容'
+      },
     },
 
     // Available Channels (aggregated read-only view)
@@ -4763,8 +4771,6 @@ export default {
         failed: '更新优先级失败'
       },
       groupCountTotal: '共 {count} 个分组',
-      moreFilters: '更多筛选',
-      moreFiltersActive: '更多筛选（已启用 {count} 项）',
       columns: {
         name: '名称',
         id: '账号ID',
@@ -5078,7 +5084,7 @@ export default {
       tempUnschedulable: {
         title: '临时不可调度',
         statusTitle: '临时不可调度状态',
-        hint: '当错误码与关键词同时匹配时，账号会在指定时间内被临时禁用。',
+        hint: '当错误码与关键词同时匹配时，按规则的作用范围在指定时间内暂停整个账号，或只冷却对应模型。',
         notice: '规则按顺序匹配，需同时满足错误码与关键词。',
         addRule: '添加规则',
         ruleOrder: '规则序号',
@@ -5120,7 +5126,13 @@ export default {
           rateLimitDesc: '触发限流 - 暂停 10 分钟',
           unavailableLabel: '503 维护',
           unavailableDesc: '服务不可用 - 暂停 30 分钟'
-        }
+        },
+        scope: '作用范围',
+        scopeModel: '模型级',
+        scopeModelDesc: '只冷却本次请求的模型',
+        scopeAccount: '账户级',
+        scopeAccountDesc: '暂停整个账号的调度',
+        scopeHint: '无法识别请求模型时，模型级规则按账户级处理。'
       },
       usageWindow: {
         statsTitle: '5小时窗口用量统计',
@@ -5382,10 +5394,18 @@ export default {
       claudeConsole: 'Claude Console',
       bedrockLabel: 'AWS Bedrock',
       bedrockDesc: 'SigV4 / API Key',
-      vertexLabel: 'Vertex',
+      vertexLabel: 'Agent Platform (Vertex)',
       vertexDesc: 'Service Account',
-      vertexAnthropicHint: '使用 Google Cloud Service Account JSON 通过 Vertex AI 调用 Anthropic Claude。建议配置模型映射，将客户端 Claude 模型名映射到 Vertex 模型 ID。',
-      vertexGeminiHint: '使用 Google Cloud Service Account JSON 访问 Vertex AI Gemini。建议将 Vertex 账号放入独立分组，避免和 AI Studio/Gemini OAuth 同模型混调。',
+      vertexAnthropicHint: '使用 Google Cloud Service Account JSON 通过 Agent Platform (Vertex) 调用 Anthropic Claude。建议配置模型映射，将客户端 Claude 模型名映射到 Agent Platform (Vertex) 模型 ID。',
+      vertexGeminiHint: '通过 Agent Platform (Vertex) 调用 Gemini，支持 Service Account JSON 或 API Key 认证。建议将此类账号放入独立分组，避免和 AI Studio/Gemini OAuth 同模型混调。',
+      vertexGeminiDesc: 'Service Account / API Key',
+      vertexAuthMode: '认证方式',
+      vertexAuthModeServiceAccount: 'Service Account JSON',
+      vertexAuthModeApiKey: 'API Key',
+      vertexApiKeyHint: '在 Google Cloud 控制台 Agent Platform 的 API Keys 页面创建。Google 显式缓存接口不接受 API Key，此类账号不参与显式缓存与批量生图；隐式缓存正常生效。',
+      vertexApiKeyRequired: '请输入 API Key',
+      vertexApiKeyProjectIdPlaceholder: '可选',
+      vertexApiKeyProjectIdHint: '留空走 Express mode 全局端点（不区分 Location）；绑定 Service Account 的标准 API Key 可填写 Project ID，按 Project ID + Location 访问。',
       vertexSaJsonLabel: 'Service Account JSON',
       vertexSaJsonLoaded: '已读取 Service Account JSON',
       vertexSaJsonDrop: '拖入 Service Account JSON',
@@ -5395,8 +5415,13 @@ export default {
       vertexSaJsonUploadHint: '上传或拖入 JSON 后会自动读取 project_id，密钥内容仅用于创建账号提交。',
       vertexSaJsonEditHint: 'Service Account JSON 不在编辑页显示；需要更换 JSON 时请删除账号后重新创建。',
       vertexProjectIdPlaceholder: '从 JSON 自动读取',
-      vertexLocationHint: '不同 Vertex 模型可用 location 可能不同，这里选择账号默认 endpoint location。',
-      vertexLocationRequired: '请填写 Vertex location',
+      vertexLocationHint: '不同模型可用 location 可能不同，这里选择账号默认 endpoint location。',
+      vertexLocationRequired: '请选择 Location',
+      explicitCacheUpstream: '上游支持显式缓存',
+      explicitCacheUpstreamHint: '仅当上游是已支持显式缓存的本系统时开启',
+      explicitCacheUpstreamInfo: '开启后该账号可创建 Gemini 显式缓存（cachedContents）：缓存只在本账号上使用，失败不换号。上游必须保证缓存只发往创建它的账号；号池类网关或未支持显式缓存的上游开启后，缓存会时有时无。',
+      explicitCacheUpstreamMaxTTL: '上游缓存有效期上限（秒）',
+      explicitCacheUpstreamMaxTTLHint: '填写上游网关允许的最长有效期，超出的请求不会发往该账号；留空沿用本站上限。',
       vertexSaJsonMissingFields: 'Service Account JSON 缺少 project_id、client_email 或 private_key',
       vertexSaJsonMissingProjectId: 'Service Account JSON 缺少 project_id',
       vertexSaJsonMissingClientEmail: 'Service Account JSON 缺少 client_email',
@@ -6157,7 +6182,7 @@ export default {
         modelPassthrough: 'Gemini 直接转发模型',
         modelPassthroughDesc: '所有模型请求将直接转发至 Gemini API，不进行模型限制或映射。',
         baseUrlHint: '留空使用官方 Gemini API',
-        apiKeyHint: '您的 Gemini API Key（以 AIza 开头）',
+        apiKeyHint: 'AI Studio 新建的 Key 以 AQ. 开头（旧版以 AIza 开头）；第三方上游填写其提供的 Key',
         tier: {
           label: '账号等级',
           hint: '提示：系统会优先尝试自动识别账号等级；若自动识别不可用或失败，则使用你选择的等级作为回退（本地模拟配额）。',
@@ -6180,8 +6205,8 @@ export default {
         accountType: {
           oauthTitle: 'OAuth 授权（Gemini）',
           oauthDesc: '使用 Google 账号授权，并选择 OAuth 子类型。',
-          apiKeyTitle: 'API 密钥（AI Studio）',
-          apiKeyDesc: '最快接入方式，使用 AIza API Key。',
+          apiKeyTitle: 'API 密钥',
+          apiKeyDesc: 'AI Studio 官方 Key，或兼容 Gemini 协议的第三方上游。',
           apiKeyNote: '适合轻量测试。免费层限流严格，数据可能用于训练。',
           apiKeyLink: '获取 API Key',
           quotaLink: '配额说明'
@@ -6241,7 +6266,7 @@ export default {
           docs: {
             codeAssist: 'Code Assist 配额',
             aiStudio: 'AI Studio 定价',
-            vertex: 'Vertex AI 配额'
+            vertex: 'Agent Platform (Vertex) 配额'
           },
           simulatedNote: '本地模拟配额，仅供参考',
           rows: {
@@ -7511,7 +7536,8 @@ export default {
           duration: '耗时',
           status: '状态码',
           requestId: '请求ID',
-          actions: '操作'
+          actions: '操作',
+          account: '账号'
         }
       },
       alertEvents: {

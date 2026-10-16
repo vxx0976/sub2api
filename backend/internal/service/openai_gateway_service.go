@@ -642,7 +642,14 @@ func (s *OpenAIGatewayService) ResolveChannelMappingAndRestrict(ctx context.Cont
 	return s.channelService.ResolveChannelMappingAndRestrict(ctx, groupID, model)
 }
 
+// isCodexImageGenerationBridgeEnabled 决定是否为 Codex 客户端自动注入 hosted
+// image_generation 工具。该工具是 OpenAI Responses 专属能力，Kimi / DeepSeek /
+// MiniMax 等经 OpenAI 网关转发的原生 Responses 上游不识别，注入后会被 400 拒绝，
+// 因此非 OpenAI 平台账号一律不桥接，后续再按账号 → 渠道 → 全局的优先级取开关。
 func (s *OpenAIGatewayService) isCodexImageGenerationBridgeEnabled(ctx context.Context, account *Account, apiKey *APIKey) bool {
+	if account == nil || account.Platform != PlatformOpenAI {
+		return false
+	}
 	if override := account.CodexImageGenerationBridgeOverride(); override != nil {
 		return *override
 	}
@@ -1368,7 +1375,7 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 	if normalized {
 		body = normalizedBody
 	}
-	legacyIngressBody, legacyIngressChanged, legacyIngressErr := normalizeOpenAIResponsesLegacyIngress(body)
+	legacyIngressBody, legacyIngressChanged, legacyIngressErr := normalizeOpenAIResponsesLegacyIngressWithConfig(s.cfg, body)
 	if legacyIngressErr != nil {
 		return nil, legacyIngressErr
 	}
@@ -1493,7 +1500,7 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 		// 账号映射未命中时以去除首尾空白的请求模型兜底，计费名与上游模型名一致。
 		return s.forwardResponsesViaNativeAnthropic(ctx, c, account, body, reqModel)
 	case APIProtocolChatCompletions:
-		return s.forwardResponsesViaRawChatCompletions(ctx, c, account, body)
+		return s.forwardResponsesViaRawChatCompletions(ctx, c, account, body, startTime)
 	}
 	SetActualOpenAIUpstreamEndpoint(c, openAIResponsesUpstreamEndpoint)
 	if account.IsOpenAI() && (account.IsOpenAIApiKey() || account.IsOpenAIOAuthLike()) {
@@ -3052,6 +3059,7 @@ func (s *OpenAIGatewayService) forwardOpenAIPassthrough(
 	if account != nil && account.IsOpenAI() {
 		responsesLite := isOpenAIResponsesLiteHeader(c.GetHeader(responsesLiteHeader)) || isOpenAIResponsesLiteWebSocketPayload(body)
 		normalizedBody, normalized, normalizeErr := normalizeOpenAIResponsesCompatibilityBodyWithOptions(body, account, openAIResponsesCompatibilityOptions{
+			Config:        s.cfg,
 			ResponsesLite: responsesLite,
 			Compact:       isOpenAIResponsesCompactPath(c),
 		})
@@ -4847,6 +4855,9 @@ func (s *OpenAIGatewayService) handleStreamingResponsePassthrough(
 	responseFailedPending := false
 	var bareErrorPayload []byte
 	bareErrorAccountSideEffectsPending := false
+	// Passthrough leaves upstream events untouched; the tracker only learns the
+	// upstream created_at so a synthesized response.failed matches the stream.
+	var createdAtTracker responsesCreatedAtStamper
 	upstreamRequestID := strings.TrimSpace(resp.Header.Get("x-request-id"))
 	// pendingLines 在首个可见输出前保留前导事件，确保无输出失败仍可安全 failover。
 	// pendingLineBytes 为其设上限，见下方追加处的说明。
@@ -4930,7 +4941,7 @@ func (s *OpenAIGatewayService) handleStreamingResponsePassthrough(
 		if clientDisconnected || !writePendingLines() {
 			return
 		}
-		if _, err := fmt.Fprint(w, buildOpenAIResponseFailedSSE(responseID, originalModel, bareErrorPayload, failedMessage)); err != nil {
+		if _, err := fmt.Fprint(w, buildOpenAIResponseFailedSSE(responseID, originalModel, createdAtTracker.Value(), bareErrorPayload, failedMessage)); err != nil {
 			clientDisconnected = true
 			return
 		}
@@ -5006,6 +5017,7 @@ func (s *OpenAIGatewayService) handleStreamingResponsePassthrough(
 				}
 			}
 			eventType := effectiveOpenAISSEEventType(dataBytes, rawEventType)
+			createdAtTracker.Observe(dataBytes, eventType)
 			if codexFailureTerminal && sawBareError && !sawResponseFailed && eventType != "response.failed" {
 				suppressCurrentEvent = true
 			}
@@ -5093,7 +5105,7 @@ func (s *OpenAIGatewayService) handleStreamingResponsePassthrough(
 								stopKeepalive()
 								MarkResponseCommitted(c)
 								if writePendingLines() {
-									if _, werr := fmt.Fprint(w, buildOpenAIResponseFailedSSE(responseID, originalModel, dataBytes, errMsg)); werr == nil {
+									if _, werr := fmt.Fprint(w, buildOpenAIResponseFailedSSE(responseID, originalModel, createdAtTracker.Value(), dataBytes, errMsg)); werr == nil {
 										failureDelivered = true
 									}
 								}
@@ -6904,7 +6916,12 @@ func normalizeOpenAIResponsesWebSocketCompatibilityBody(body []byte, account *Ac
 	return normalizeOpenAIResponsesCompatibilityBodyWithOptions(body, account, openAIResponsesCompatibilityOptions{ResponsesLite: responsesLite})
 }
 
+func normalizeOpenAIResponsesWebSocketCompatibilityBodyWithConfig(cfg *config.Config, body []byte, account *Account, responsesLite bool) ([]byte, bool, error) {
+	return normalizeOpenAIResponsesCompatibilityBodyWithOptions(body, account, openAIResponsesCompatibilityOptions{Config: cfg, ResponsesLite: responsesLite})
+}
+
 type openAIResponsesCompatibilityOptions struct {
+	Config        *config.Config
 	ResponsesLite bool
 	// Compact marks the /responses/compact wire shape, which is left as-is
 	// by request-shape compatibility rewrites such as web_search history.
@@ -6920,7 +6937,7 @@ func normalizeOpenAIResponsesCompatibilityBodyWithOptions(body []byte, account *
 	changed := false
 	if account.IsOpenAIOAuthLike() {
 		var err error
-		normalized, changed, err = normalizeOpenAIResponsesLegacyIngress(body)
+		normalized, changed, err = normalizeOpenAIResponsesLegacyIngressWithConfig(opts.Config, body)
 		if err != nil {
 			return body, false, err
 		}
@@ -8427,6 +8444,7 @@ func (s *OpenAIGatewayService) handleStreamingResponseWithReasoning(ctx context.
 	}
 
 	needModelReplace := originalModel != mappedModel
+	var createdAtStamper responsesCreatedAtStamper
 	streamOutputAccumulator := apicompat.NewBufferedResponseAccumulator()
 	streamDoneItems := newResponsesStreamOutputItems()
 	streamImageOutputs := make([]json.RawMessage, 0, 1)
@@ -8468,7 +8486,7 @@ func (s *OpenAIGatewayService) handleStreamingResponseWithReasoning(ctx context.
 		}
 		if codexFailureTerminal && sawBareError && !sawResponseFailed && !clientDisconnected {
 			applyAttemptResponseHeaders()
-			if _, err := writePendingString(buildOpenAIResponseFailedSSE(responseID, originalModel, bareErrorPayload, failedMessage)); err != nil {
+			if _, err := writePendingString(buildOpenAIResponseFailedSSE(responseID, originalModel, createdAtStamper.Value(), bareErrorPayload, failedMessage)); err != nil {
 				handlePendingWriteError(err)
 			} else {
 				failureDelivered = true
@@ -8687,7 +8705,7 @@ func (s *OpenAIGatewayService) handleStreamingResponseWithReasoning(ctx context.
 							if openAIStreamResponseCommittedByKeepalive(c) {
 								MarkResponseCommitted(c)
 								applyAttemptResponseHeaders()
-								if _, werr := writePendingString(buildOpenAIResponseFailedSSE(responseID, originalModel, dataBytes, errMsg)); werr == nil {
+								if _, werr := writePendingString(buildOpenAIResponseFailedSSE(responseID, originalModel, createdAtStamper.Value(), dataBytes, errMsg)); werr == nil {
 									if flushErr := flushBuffered(); flushErr == nil {
 										clientOutputStarted = true
 										failureDelivered = true
@@ -8768,6 +8786,11 @@ func (s *OpenAIGatewayService) handleStreamingResponseWithReasoning(ctx context.
 			); sanitized {
 				dataBytes = sanitizedData
 				data = string(sanitizedData)
+				line = "data: " + data
+			}
+			if stampedData, stamped := createdAtStamper.Stamp(dataBytes, eventType); stamped {
+				dataBytes = stampedData
+				data = string(stampedData)
 				line = "data: " + data
 			}
 			// Replace model in response if needed.
@@ -9774,6 +9797,7 @@ func (s *OpenAIGatewayService) handleNonStreamingResponse(ctx context.Context, r
 		return nil, fmt.Errorf("restore OpenAI namespace response: %w", err)
 	}
 	body = restoreCodexToolNamesFromContext(c, body)
+	body = ensureOpenAIResponseObjectCreatedAt(body)
 	responseheaders.WriteFilteredHeaders(c.Writer.Header(), resp.Header, s.responseHeaderFilter)
 	// Codex 协议要求 /responses/compact JSON 响应携带 x-codex-turn-state
 	// （codex-api/src/endpoint/compact.rs 从响应头捕获），显式回传。
@@ -9874,7 +9898,7 @@ func (s *OpenAIGatewayService) handleSSEToJSON(resp *http.Response, c *gin.Conte
 			return nil, fmt.Errorf("restore OpenAI namespace response: %w", restoreErr)
 		}
 		restoredBody = restoreCodexToolNamesFromContext(c, restoredBody)
-		body = restoredBody
+		body = ensureOpenAIResponseObjectCreatedAt(restoredBody)
 	} else {
 		if originalModel != mappedModel {
 			bodyText = s.replaceModelInSSEBody(bodyText, mappedModel, originalModel)
@@ -9947,7 +9971,10 @@ func openAIStreamResponseCommittedByKeepalive(c *gin.Context) bool {
 	return c != nil && c.Writer != nil && c.Writer.Written()
 }
 
-func buildOpenAIResponseFailedSSE(responseID, model string, source []byte, fallbackMessage string) string {
+// buildOpenAIResponseFailedSSE synthesizes the response.failed terminal for a
+// stream that ended on a bare error. created_at and sequence_number are always
+// written: strict clients (grok-build, Codex) reject the frame without them.
+func buildOpenAIResponseFailedSSE(responseID, model string, createdAt int64, source []byte, fallbackMessage string) string {
 	responseID = strings.TrimSpace(responseID)
 	if responseID == "" {
 		responseID = "resp_" + strings.ReplaceAll(uuid.NewString(), "-", "")
@@ -9974,23 +10001,31 @@ func buildOpenAIResponseFailedSSE(responseID, model string, source []byte, fallb
 	if errorType != "" {
 		errorBody["type"] = errorType
 	}
+	if createdAt <= 0 {
+		createdAt = time.Now().Unix()
+	}
+	sequenceNumber := openAIResponsesFailedSequenceNumber(source)
 	response := gin.H{
-		"id":     responseID,
-		"object": "response",
-		"status": "failed",
-		"output": []any{},
-		"error":  errorBody,
+		"id":         responseID,
+		"object":     "response",
+		"created_at": createdAt,
+		"status":     "failed",
+		"output":     []any{},
+		"error":      errorBody,
 	}
 	if model = strings.TrimSpace(model); model != "" {
 		response["model"] = model
 	}
 	payload, err := marshalOpenAIUpstreamJSON(gin.H{
-		"type":     "response.failed",
-		"response": response,
+		"type":            "response.failed",
+		"sequence_number": sequenceNumber,
+		"response":        response,
 	})
 	if err != nil {
 		// All values above are JSON primitives, so this is only a defensive fallback.
-		payload = []byte(`{"type":"response.failed","response":{"status":"failed","output":[],"error":{"code":"upstream_error","message":"Upstream response failed"}}}`)
+		payload = []byte(`{"type":"response.failed","sequence_number":` + strconv.FormatInt(sequenceNumber, 10) +
+			`,"response":{"object":"response","created_at":` + strconv.FormatInt(createdAt, 10) +
+			`,"status":"failed","output":[],"error":{"code":"upstream_error","message":"Upstream response failed"}}}`)
 	}
 	return "event: response.failed\ndata: " + string(payload) + "\n\n"
 }
@@ -10938,7 +10973,7 @@ func openAICompatibleAccountEligibilityFailureReasonBeforeProfit(ctx context.Con
 			return "quota_auto_pause"
 		}
 	}
-	if requestedModel != "" && !account.IsModelSupported(requestedModel) {
+	if requestedModel != "" && !supportsOpenAIRequestModel(account, requestedModel, requireCompact) {
 		return "model_not_supported"
 	}
 	if !account.SupportsOpenAIEndpointCapability(requiredCapability) {
@@ -13453,6 +13488,7 @@ func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRec
 		serviceTier = strings.TrimSpace(*result.ServiceTier)
 	}
 	longContextBillingGate := openAILongContextBillingGate(billingAccount)
+	modelLongContextExempt := openAISubscriptionLongContextExempt(billingAccount, result)
 	cost, err = s.calculateOpenAIRecordUsageCost(
 		ctx,
 		result,
@@ -13465,6 +13501,7 @@ func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRec
 		tokens,
 		serviceTier,
 		longContextBillingGate,
+		modelLongContextExempt,
 		usagePricingAt,
 	)
 	if err != nil {
@@ -13498,7 +13535,7 @@ func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRec
 			responseModels := s.filterCNProviderBillingModelCandidates(ctx, account, apiKey, usageBillingModelCandidates(responseModel))
 			responseCost, responseErr := s.calculateOpenAIRecordUsageCost(
 				ctx, result, apiKey, responseModels, multiplier, imageMultiplier,
-				videoMultiplier, baseMultiplier, tokens, serviceTier, longContextBillingGate,
+				videoMultiplier, baseMultiplier, tokens, serviceTier, longContextBillingGate, modelLongContextExempt,
 				usagePricingAt,
 			)
 			// 基线定价源以 baselineBillingModel 为准：它正是 calculateOpenAIRecordUsageCost
@@ -13530,6 +13567,7 @@ func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRec
 			tokens,
 			"",
 			longContextBillingGate,
+			modelLongContextExempt,
 			usagePricingAt,
 		)
 		if standardErr != nil && !isUsagePricingUnavailableError(standardErr) {
@@ -13716,7 +13754,7 @@ func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRec
 		applyAccountStatsCost(ctx, usageLog, s.channelService, s.billingService,
 			account.ID, *apiKey.GroupID, result.UpstreamModel, result.Model,
 			tokens, cost.TotalCost, usagePricingAt,
-			accountStatsLongContextPricingEnabled(longContextBillingGate),
+			accountStatsLongContextPricingEnabled(longContextBillingGate) && !modelLongContextExempt,
 		)
 	}
 
@@ -13789,6 +13827,20 @@ func openAILongContextBillingGate(account *Account) *bool {
 	return &enabled
 }
 
+// openAISubscriptionLongContextExempt 按实际凭据和最终发送模型判断订阅豁免。
+// GPT-6.1 Sol 的订阅请求不再收取模型长上下文附加费；API Key 仍使用 API 价卡。
+// 使用发送模型，避免客户别名、渠道计费模型或响应模型计费切换改变上游订阅规则。
+func openAISubscriptionLongContextExempt(account *Account, result *OpenAIForwardResult) bool {
+	if !account.IsOpenAIOAuthLike() || result == nil {
+		return false
+	}
+	model := strings.TrimSpace(result.UpstreamModel)
+	if model == "" {
+		model = result.Model
+	}
+	return openai.IsGPT61SolModelSpelling(model)
+}
+
 func (s *OpenAIGatewayService) calculateOpenAIRecordUsageCost(
 	ctx context.Context,
 	result *OpenAIForwardResult,
@@ -13801,6 +13853,7 @@ func (s *OpenAIGatewayService) calculateOpenAIRecordUsageCost(
 	tokens UsageTokens,
 	serviceTier string,
 	longContextBillingGate *bool,
+	modelLongContextExempt bool,
 	pricingAt time.Time,
 ) (*CostBreakdown, error) {
 	billingModel := firstUsageBillingModel(billingModels)
@@ -13857,6 +13910,7 @@ func (s *OpenAIGatewayService) calculateOpenAIRecordUsageCost(
 				serviceTier,
 				optionalStringValue(result.ReasoningEffort),
 				longContextBillingGate,
+				modelLongContextExempt,
 			)
 			if err == nil {
 				tokenCost = cost
@@ -13951,6 +14005,7 @@ func (s *OpenAIGatewayService) calculateOpenAIRecordUsageTokenCost(
 	serviceTier string,
 	reasoningEffort string,
 	longContextBillingGate *bool,
+	modelLongContextExempt bool,
 ) (*CostBreakdown, error) {
 	if s.resolver != nil && apiKey.Group != nil {
 		gid := apiKey.Group.ID
@@ -13958,7 +14013,8 @@ func (s *OpenAIGatewayService) calculateOpenAIRecordUsageTokenCost(
 			Ctx: ctx, Model: billingModel, GroupID: &gid, Group: apiKey.Group,
 			Tokens: tokens, RequestCount: 1, RateMultiplier: multiplier, PricingAt: pricingAt,
 			ServiceTier: serviceTier, ReasoningEffort: reasoningEffort, Resolver: s.resolver,
-			LongContextBillingEnabled: longContextBillingGate,
+			LongContextBillingEnabled:      longContextBillingGate,
+			DisableModelLongContextPricing: modelLongContextExempt,
 		})
 	}
 	return s.billingService.calculateCostWithServiceTierPolicy(
@@ -13966,7 +14022,7 @@ func (s *OpenAIGatewayService) calculateOpenAIRecordUsageTokenCost(
 		tokens,
 		multiplier,
 		serviceTier,
-		longContextBillingGate == nil || *longContextBillingGate,
+		(longContextBillingGate == nil || *longContextBillingGate) && !modelLongContextExempt,
 		pricingAt,
 	)
 }

@@ -428,16 +428,14 @@ func (h *KeyQueryHandler) UsageModels(c *gin.Context) {
 
 // keyQueryGroupInfo represents a group with optional subscription info for the public API
 type keyQueryGroupInfo struct {
-	GroupID          int64             `json:"group_id"`
-	GroupName        string            `json:"group_name"`
-	Description      string            `json:"description,omitempty"`
-	NameI18n         map[string]string `json:"name_i18n,omitempty"`
-	DescriptionI18n  map[string]string `json:"description_i18n,omitempty"`
-	Platform         string            `json:"platform"`
-	SubscriptionType string            `json:"subscription_type"`
-	RateMultiplier   float64           `json:"rate_multiplier"`
-	HealthStatus     string            `json:"health_status,omitempty"`
-	HasSub           bool              `json:"has_subscription"`
+	GroupID          int64   `json:"group_id"`
+	GroupName        string  `json:"group_name"`
+	Description      string  `json:"description,omitempty"`
+	Platform         string  `json:"platform"`
+	SubscriptionType string  `json:"subscription_type"`
+	RateMultiplier   float64 `json:"rate_multiplier"`
+	HealthStatus     string  `json:"health_status,omitempty"`
+	HasSub           bool    `json:"has_subscription"`
 	// Subscription fields (populated when has_subscription is true)
 	SubStatus       string     `json:"status,omitempty"`
 	ExpiresAt       *time.Time `json:"expires_at,omitempty"`
@@ -488,12 +486,12 @@ func (h *KeyQueryHandler) ListGroups(c *gin.Context) {
 			continue
 		}
 
+		// 分组名称/描述按请求语言（Accept-Language）换成译文，口径与上游用户侧接口一致。
+		name, description := g.I18n.Localize(c.GetHeader("Accept-Language"), g.Name, g.Description)
 		info := keyQueryGroupInfo{
 			GroupID:          g.ID,
-			GroupName:        g.Name,
-			Description:      g.Description,
-			NameI18n:         g.NameI18n,
-			DescriptionI18n:  g.DescriptionI18n,
+			GroupName:        name,
+			Description:      description,
 			Platform:         g.Platform,
 			SubscriptionType: g.SubscriptionType,
 			RateMultiplier:   g.RateMultiplier,

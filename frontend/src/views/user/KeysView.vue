@@ -1241,11 +1241,9 @@
 	import { useAppStore } from '@/stores/app'
 	import { useOnboardingStore } from '@/stores/onboarding'
 	import { useClipboard } from '@/composables/useClipboard'
-	import { useI18nField } from '@/composables/useI18nField'
 import { getPersistedPageSize } from '@/composables/usePersistedPageSize'
 
 const { t } = useI18n()
-const { resolveI18n } = useI18nField()
 import { keysAPI, authAPI, usageAPI, userGroupsAPI } from '@/api'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import TablePageLayout from '@/components/layout/TablePageLayout.vue'
@@ -1530,7 +1528,7 @@ const shouldSubmitEditStatus = (key: ApiKey, status: 'active' | 'inactive') => {
 const groupFilterOptions = computed(() => [
   { value: '', label: t('keys.allGroups') },
   { value: 0, label: t('keys.noGroup') },
-  ...groups.value.map((g) => ({ value: g.id, label: resolveI18n(g.name_i18n, g.name) }))
+  ...groups.value.map((g) => ({ value: g.id, label: g.name }))
 ])
 
 const statusFilterOptions = computed(() => [
@@ -1561,8 +1559,8 @@ const onStatusFilterChange = (value: string | number | boolean | null) => {
 const groupOptions = computed(() =>
   groups.value.map((group) => ({
     value: group.id,
-    label: resolveI18n(group.name_i18n, group.name),
-    description: resolveI18n(group.description_i18n, group.description || ''),
+    label: group.name,
+    description: group.description || '',
     rate: group.rate_multiplier,
     userRate: userGroupRates.value[group.id] ?? null,
     peakRateEnabled: group.peak_rate_enabled,

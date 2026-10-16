@@ -248,8 +248,7 @@ type AdminBoundAuthIdentityChannel struct {
 type CreateGroupInput struct {
 	Name                      string
 	Description               string
-	NameI18n                  map[string]string
-	DescriptionI18n           map[string]string
+	I18n                      GroupI18n // 名称与描述的界面语言译文
 	Platform                  string
 	RateMultiplier            float64
 	IsExclusive               bool
@@ -340,9 +339,8 @@ type CreateGroupInput struct {
 
 type UpdateGroupInput struct {
 	Name                      string
-	Description               *string           // nil 表示不修改；&"" 表示清空（来自 main 的清空修复）
-	NameI18n                  map[string]string // 来自 dev：多语言
-	DescriptionI18n           map[string]string // 来自 dev：多语言
+	Description               *string    // nil 表示不修改；&"" 表示清空（来自 main 的清空修复）
+	I18n                      *GroupI18n // nil 表示不修改；非 nil 整体替换
 	Platform                  string
 	RateMultiplier            *float64 // 使用指针以支持设置为0
 	IsExclusive               *bool

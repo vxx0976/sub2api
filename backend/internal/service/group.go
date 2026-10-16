@@ -16,11 +16,12 @@ type GroupCodexModelsManifestConfig = domain.GroupCodexModelsManifestConfig
 type ReasoningEffortMapping = domain.ReasoningEffortMapping
 
 type Group struct {
-	ID             int64   `json:"id"`
-	Name           string  `json:"name"`
-	Description    string  `json:"description"`
-	Platform       string  `json:"platform"`
-	RateMultiplier float64 `json:"rate_multiplier"`
+	ID             int64     `json:"id"`
+	Name           string    `json:"name"`
+	Description    string    `json:"description"`
+	I18n           GroupI18n `json:"i18n,omitempty"` // 名称与描述的界面语言译文；缺失的语言沿用 Name/Description
+	Platform       string    `json:"platform"`
+	RateMultiplier float64   `json:"rate_multiplier"`
 	// 高峰时段倍率：peak_rate_enabled 为 true 且当前时刻处于 [PeakStart, PeakEnd) 时，
 	// token 计费倍率额外乘以 PeakRateMultiplier。详见 PeakMultiplierAt。
 	PeakRateEnabled    bool    `json:"peak_rate_enabled"`
@@ -34,9 +35,7 @@ type Group struct {
 	DuplicateOperationID string `json:"-"`
 
 	// 多语言名称/描述（可选，前端根据当前语言自动选择）
-	NameI18n        map[string]string `json:"name_i18n,omitempty"`
-	DescriptionI18n map[string]string `json:"description_i18n,omitempty"`
-	Hydrated        bool              `json:"-"` // indicates the group was loaded from a trusted repository source
+	Hydrated bool `json:"-"` // indicates the group was loaded from a trusted repository source
 
 	SubscriptionType    string   `json:"subscription_type"`
 	DailyLimitUSD       *float64 `json:"daily_limit_usd"`

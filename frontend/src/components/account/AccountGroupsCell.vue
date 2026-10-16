@@ -9,6 +9,7 @@
       :subscription-type="group.subscription_type"
       :rate-multiplier="group.rate_multiplier"
       :show-rate="false"
+      :truncate="false"
       class="max-w-full"
     />
   </div>

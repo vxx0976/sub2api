@@ -414,7 +414,7 @@ export default {
       noUsableImage: 'Пригодное изображение не сгенерировано.',
       cancelled: 'Задача отменена.',
       waiting: 'Ожидание результатов.',
-      emptyImageOutput: 'Вышестоящий сервис вернул результат, но у этого элемента нет содержимого изображения. Обычно это означает, что отдельная генерация Gemini/Vertex завершилась ошибкой или была заблокирована политиками безопасности.',
+      emptyImageOutput: 'Апстрим вернул результат, но в этом элементе нет изображения. Обычно это значит, что отдельная генерация Gemini/Agent Platform (Vertex) не удалась или была заблокирована политиками безопасности.',
       providerItemFailed: 'Вышестоящий результат для этого элемента не содержит пригодного изображения.',
     },
     imagePreview: {
@@ -492,10 +492,10 @@ export default {
       loadingModels: 'Загрузка доступных моделей...',
       noModels: 'Нет доступных моделей',
       noModelsHint: 'В группе этого ключа нет моделей, настроенных для пакетной генерации изображений.',
-      noCompatibleAccount: 'Для группы этого ключа нет пригодного вышестоящего аккаунта пакетной генерации изображений. Обратитесь к администратору для проверки планируемого API-ключа Gemini или сервисного аккаунта Vertex в группе и поддержки моделей.',
+      noCompatibleAccount: 'Для группы этого ключа нет доступного аккаунта пакетной генерации изображений. Обратитесь к администратору, чтобы проверить планируемый Gemini API Key или сервисный аккаунт Agent Platform (Vertex) в группе и поддержку модели.',
       unsupportedProvider: 'Провайдер пакетной генерации изображений для этой задачи недоступен. Обратитесь к администратору для проверки конфигурации провайдера пакетной генерации изображений.',
       providerSubmitFailed: 'Не удалось отправить вышестоящую пакетную задачу изображений. Обратитесь к администратору для проверки вышестоящего аккаунта, разрешений модели или статуса провайдера.',
-      vertexGcsBucketMissing: 'В пакетной генерации изображений Vertex отсутствует конфигурация управляемого бакета GCS. Обратитесь к администратору для настройки BATCH_IMAGE_VERTEX_MANAGED_GCS_BUCKET перед повторной отправкой.',
+      vertexGcsBucketMissing: 'Для пакетной генерации изображений Agent Platform (Vertex) не настроен управляемый бакет GCS. Обратитесь к администратору, чтобы задать BATCH_IMAGE_VERTEX_MANAGED_GCS_BUCKET, и отправьте задание снова.',
       queueFailed: 'Очередь задач временно недоступна, поэтому пакетная задача не поставлена в очередь. Обратитесь к администратору для проверки сервиса очередей.',
       billingHoldFailed: 'Не удалось зарезервировать стоимость, поэтому пакетная задача не была отправлена. Обратитесь к администратору для проверки биллинга или сервиса резервирования баланса.',
       groupDisabled: 'Пакетная генерация изображений не включена для группы этого ключа. Выберите другой включённый ключ или обратитесь к администратору.',
@@ -1644,7 +1644,9 @@ export default {
         trend: 'Тренд переключается между матрицей блоков и линейным графиком (ошибки · кэш · первый токен)',
         latency: 'Задержка показывается как AVG · P50 · P90; абсолютные количества запросов и ошибок не отображаются',
         models: 'При пустых списках моделей показываются реальные названия, всё не сворачивается в «Прочее»'
-      }
+      },
+      selectPlatform: 'Выберите платформу',
+      addPlatform: 'Добавить платформу'
     },
     admin: {
       descriptionV1: 'Системный режим — V1 (активные пробы): можно управлять мониторами и запускать проверки сразу; агрегация V2 не выполняется.',
@@ -3745,6 +3747,12 @@ export default {
         endTimePlaceholder: '20:00',
         activeHint: 'Группа доступна ежедневно с {start} до {end}',
         noScheduleHint: 'Расписание не задано — доступна весь день (нужно заполнить оба поля)'
+      },
+      i18nField: {
+        default: 'По умолчанию',
+        add: 'Добавить версию: {language}',
+        edit: 'Изменить версию: {language}',
+        placeholder: 'Версия: {language}; оставьте пустым, чтобы показывать текст по умолчанию'
       }
     },
     availableChannels: {
@@ -4756,8 +4764,6 @@ export default {
         failed: 'Не удалось обновить приоритет'
       },
       groupCountTotal: 'Всего групп: {count}',
-      moreFilters: 'Ещё фильтры',
-      moreFiltersActive: 'Ещё фильтры (активно: {count})',
       columns: {
         name: 'Имя',
         id: 'ID аккаунта',
@@ -5080,7 +5086,7 @@ export default {
       tempUnschedulable: {
         title: 'Временно недоступен',
         statusTitle: 'Статус временной недоступности',
-        hint: 'Временно отключает аккаунты при совпадении кода ошибки и ключевого слова.',
+        hint: 'Когда совпадают и код ошибки, и ключевое слово, в зависимости от области правила на заданное время приостанавливается весь аккаунт или только модель запроса.',
         notice: 'Правила оцениваются по порядку и требуют совпадения кода ошибки и ключевого слова.',
         addRule: 'Добавить правило',
         ruleOrder: 'Порядок правил',
@@ -5122,7 +5128,13 @@ export default {
           rateLimitDesc: 'Ограничение частоты — пауза 10 минут',
           unavailableLabel: '503 Недоступен',
           unavailableDesc: 'Недоступен — пауза 30 минут'
-        }
+        },
+        scope: 'Область',
+        scopeModel: 'Модель',
+        scopeModelDesc: 'Приостановить только запрошенную модель',
+        scopeAccount: 'Аккаунт',
+        scopeAccountDesc: 'Приостановить планирование всего аккаунта',
+        scopeHint: 'Если модель запроса определить не удаётся, правила с областью «Модель» действуют на весь аккаунт.'
       },
       usageWindow: {
         statsTitle: 'Статистика использования 5-часового окна',
@@ -5377,10 +5389,18 @@ export default {
       claudeConsole: 'Claude Console',
       bedrockLabel: 'AWS Bedrock',
       bedrockDesc: 'SigV4 / API Key',
-      vertexLabel: 'Vertex',
+      vertexLabel: 'Agent Platform (Vertex)',
       vertexDesc: 'Service Account',
-      vertexAnthropicHint: 'Используйте Google Cloud Service Account JSON для вызова Anthropic Claude через Vertex AI. Рекомендуется настроить сопоставление моделей, чтобы связать имена моделей Claude на стороне клиента с ID моделей Vertex.',
-      vertexGeminiHint: 'Используйте Google Cloud Service Account JSON для доступа к Vertex AI Gemini. Рекомендуется поместить аккаунты Vertex в отдельную группу, чтобы избежать смешивания с AI Studio/Gemini OAuth на одних и тех же моделях.',
+      vertexAnthropicHint: 'Использует JSON сервисного аккаунта Google Cloud для вызова Anthropic Claude через Agent Platform (Vertex). Рекомендуется настроить сопоставление моделей, чтобы имена моделей Claude у клиента соответствовали ID моделей Agent Platform (Vertex).',
+      vertexGeminiHint: 'Вызов Gemini через Agent Platform (Vertex) с JSON сервисного аккаунта или API Key. Рекомендуется вынести такие аккаунты в отдельную группу, чтобы не смешивать их с AI Studio/Gemini OAuth на одних и тех же моделях.',
+      vertexGeminiDesc: 'Service Account / API Key',
+      vertexAuthMode: 'Аутентификация',
+      vertexAuthModeServiceAccount: 'JSON сервисного аккаунта',
+      vertexAuthModeApiKey: 'API Key',
+      vertexApiKeyHint: 'Создайте ключ на странице API Keys Agent Platform в консоли Google Cloud. API явного кэширования контекста Google не принимает API Key, поэтому такие аккаунты не обслуживают явное кэширование и пакетную генерацию изображений; неявное кэширование работает.',
+      vertexApiKeyRequired: 'Введите API Key',
+      vertexApiKeyProjectIdPlaceholder: 'Необязательно',
+      vertexApiKeyProjectIdHint: 'Оставьте пустым, чтобы использовать глобальный эндпоинт express mode (регион игнорируется). Для стандартного API Key, привязанного к сервисному аккаунту, укажите Project ID — тогда вызывается эндпоинт проекта по Project ID + региону.',
       vertexSaJsonLabel: 'Service Account JSON',
       vertexSaJsonLoaded: 'Service Account JSON загружен',
       vertexSaJsonDrop: 'Перетащите сюда Service Account JSON',
@@ -5390,8 +5410,13 @@ export default {
       vertexSaJsonUploadHint: 'После загрузки или перетаскивания файла JSON значение project_id извлекается автоматически. Содержимое ключа используется только для создания аккаунта.',
       vertexSaJsonEditHint: 'Service Account JSON не отображается на странице редактирования; чтобы заменить JSON, удалите аккаунт и создайте его заново.',
       vertexProjectIdPlaceholder: 'Извлечено из JSON автоматически',
-      vertexLocationHint: 'Доступные location различаются для разных моделей Vertex. Выберите location endpoint по умолчанию для этого аккаунта.',
-      vertexLocationRequired: 'Укажите Vertex location',
+      vertexLocationHint: 'Доступные регионы зависят от модели. Выберите регион эндпоинта по умолчанию для этого аккаунта.',
+      vertexLocationRequired: 'Выберите регион',
+      explicitCacheUpstream: 'Апстрим поддерживает явное кэширование',
+      explicitCacheUpstreamHint: 'Включайте, только если апстрим — эта же система с поддержкой явного кэширования',
+      explicitCacheUpstreamInfo: 'Если включено, этот аккаунт может создавать явные кэши Gemini (cachedContents). Кэш используется только на этом аккаунте и никогда не переключается на другой. Апстрим должен направлять каждый кэш на создавший его аккаунт; шлюзы с пулом аккаунтов или апстримы без поддержки явного кэширования сделают кэши ненадёжными.',
+      explicitCacheUpstreamMaxTTL: 'Лимит TTL кэша апстрима (секунды)',
+      explicitCacheUpstreamMaxTTLHint: 'Максимальный TTL, разрешённый шлюзом апстрима; запросы с большим TTL не отправляются на этот аккаунт. Оставьте пустым, чтобы использовать лимит этого сайта.',
       vertexSaJsonMissingFields: 'В Service Account JSON отсутствует project_id, client_email или private_key',
       vertexSaJsonMissingProjectId: 'В Service Account JSON отсутствует project_id',
       vertexSaJsonMissingClientEmail: 'В Service Account JSON отсутствует client_email',
@@ -6074,7 +6099,7 @@ export default {
         modelPassthrough: 'Прямая передача модели Gemini',
         modelPassthroughDesc: 'Все запросы моделей перенаправляются напрямую в Gemini API без ограничений и маппинга моделей.',
         baseUrlHint: 'Оставьте по умолчанию для официального Gemini API',
-        apiKeyHint: 'Ваш Gemini API Key (начинается с AIza)',
+        apiKeyHint: 'Новые ключи AI Studio начинаются с AQ. (старые — с AIza); для стороннего апстрима используйте выданный им ключ',
         tier: {
           label: 'Уровень аккаунта',
           hint: 'Совет: система сначала попытается автоматически определить уровень; если автоопределение недоступно или не удалось, выбранный вами уровень используется как резервный (имитированная квота).',
@@ -6096,8 +6121,8 @@ export default {
         accountType: {
           oauthTitle: 'OAuth (Gemini)',
           oauthDesc: 'Авторизуйтесь через аккаунт Google и выберите тип OAuth.',
-          apiKeyTitle: 'API Key (AI Studio)',
-          apiKeyDesc: 'Быстрая настройка. Используйте API Key AIza.',
+          apiKeyTitle: 'API Key',
+          apiKeyDesc: 'Официальный ключ AI Studio или сторонний апстрим, совместимый с Gemini.',
           apiKeyNote: 'Лучше всего для лёгкого тестирования. Бесплатный уровень имеет строгие лимиты, и данные могут использоваться для обучения.',
           apiKeyLink: 'Получить API Key',
           quotaLink: 'Руководство по квотам'
@@ -6148,7 +6173,7 @@ export default {
           docs: {
             codeAssist: 'Квоты Code Assist',
             aiStudio: 'Цены AI Studio',
-            vertex: 'Квоты Vertex AI'
+            vertex: 'Квоты Agent Platform (Vertex)'
           },
           simulatedNote: 'Имитированная квота, только для справки',
           rows: {
@@ -7425,7 +7450,8 @@ export default {
           duration: 'Длительность',
           status: 'Статус',
           requestId: 'ID запроса',
-          actions: 'Действия'
+          actions: 'Действия',
+          account: 'Аккаунт'
         }
       },
       alertEvents: {

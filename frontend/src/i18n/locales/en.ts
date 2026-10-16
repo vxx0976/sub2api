@@ -100,7 +100,7 @@ export default {
       noUsableImage: 'No usable image was generated.',
       cancelled: 'Job cancelled.',
       waiting: 'Waiting for results.',
-      emptyImageOutput: 'The upstream returned a result, but this item has no image content. This usually means a single Gemini/Vertex generation failed or was blocked by safety policies.',
+      emptyImageOutput: 'The upstream returned a result, but this item has no image content. This usually means a single Gemini/Agent Platform (Vertex) generation failed or was blocked by safety policies.',
       providerItemFailed: 'The upstream result for this item has no usable image.',
     },
     imagePreview: {
@@ -178,10 +178,10 @@ export default {
       loadingModels: 'Loading available models...',
       noModels: 'No available models',
       noModelsHint: 'This key’s group has no models configured for batch image generation.',
-      noCompatibleAccount: 'No usable upstream batch image account is available for this key’s group. Contact an administrator to check the group’s schedulable Gemini API key or Vertex service account and model support.',
+      noCompatibleAccount: 'No usable upstream batch image account is available for this key’s group. Contact an administrator to check the group’s schedulable Gemini API key or Agent Platform (Vertex) service account and model support.',
       unsupportedProvider: 'The batch image provider for this job is not available. Contact an administrator to check the batch image provider configuration.',
       providerSubmitFailed: 'The upstream batch image job failed to submit. Contact an administrator to check the upstream account, model permission, or provider status.',
-      vertexGcsBucketMissing: 'Vertex batch image generation is missing the managed GCS bucket configuration. Contact an administrator to configure BATCH_IMAGE_VERTEX_MANAGED_GCS_BUCKET before submitting again.',
+      vertexGcsBucketMissing: 'Agent Platform (Vertex) batch image generation is missing the managed GCS bucket configuration. Contact an administrator to configure BATCH_IMAGE_VERTEX_MANAGED_GCS_BUCKET before submitting again.',
       queueFailed: 'The task queue is temporarily unavailable, so the batch job was not queued. Contact an administrator to check the queue service.',
       billingHoldFailed: 'The cost hold failed, so the batch job was not submitted. Contact an administrator to check billing or balance hold service.',
       groupDisabled: 'Batch image generation is not enabled for this key’s group. Choose another enabled key or contact an administrator.',
@@ -1681,6 +1681,8 @@ export default {
         latency: 'Latency shows AVG · P50 · P90; absolute request / error counts are not shown',
         models: 'Empty model lists show real names and never dump everything into “Other”',
       },
+      selectPlatform: 'Select a platform',
+      addPlatform: 'Add platform',
     },
     admin: {
       descriptionV1:
@@ -3786,6 +3788,12 @@ export default {
         geminiImage: 'Gemini Image',
         hint: 'Select at least one model family'
       },
+      i18nField: {
+        default: 'Default',
+        add: 'Add {language} version',
+        edit: 'Edit {language} version',
+        placeholder: '{language} version; leave empty to show the default text'
+      },
     },
 
     // Available Channels (aggregated read-only view)
@@ -4789,8 +4797,6 @@ export default {
         failed: 'Failed to update priority'
       },
       groupCountTotal: '{count} groups total',
-      moreFilters: 'More filters',
-      moreFiltersActive: 'More filters ({count} active)',
       platforms: {
         anthropic: 'Anthropic',
         claude: 'Claude',
@@ -5020,7 +5026,7 @@ export default {
       tempUnschedulable: {
         title: 'Temp Unschedulable',
         statusTitle: 'Temp Unschedulable Status',
-        hint: 'Disable accounts temporarily when error code and keyword both match.',
+        hint: 'When error code and keyword both match, pause the whole account or cool down only the model for the configured duration, per the rule scope.',
         notice: 'Rules are evaluated in order and require both error code and keyword match.',
         addRule: 'Add Rule',
         ruleOrder: 'Rule Order',
@@ -5062,7 +5068,13 @@ export default {
           rateLimitDesc: 'Rate limited - pause 10 minutes',
           unavailableLabel: '503 Unavailable',
           unavailableDesc: 'Unavailable - pause 30 minutes'
-        }
+        },
+        scope: 'Scope',
+        scopeModel: 'Model',
+        scopeModelDesc: 'Cool down only the requested model',
+        scopeAccount: 'Account',
+        scopeAccountDesc: 'Pause scheduling for the whole account',
+        scopeHint: 'Model-scoped rules fall back to account scope when the request model cannot be identified.'
       },
       clearRateLimit: 'Clear Rate Limit',
       resetQuota: 'Reset Quota',
@@ -5246,10 +5258,18 @@ export default {
       claudeConsole: 'Claude Console',
       bedrockLabel: 'AWS Bedrock',
       bedrockDesc: 'SigV4 / API Key',
-      vertexLabel: 'Vertex',
+      vertexLabel: 'Agent Platform (Vertex)',
       vertexDesc: 'Service Account',
-      vertexAnthropicHint: 'Use a Google Cloud Service Account JSON to call Anthropic Claude via Vertex AI. It is recommended to configure model mapping to map client Claude model names to Vertex model IDs.',
-      vertexGeminiHint: 'Use a Google Cloud Service Account JSON to access Vertex AI Gemini. It is recommended to place Vertex accounts in a separate group to avoid mixing with AI Studio/Gemini OAuth on the same models.',
+      vertexAnthropicHint: 'Use a Google Cloud Service Account JSON to call Anthropic Claude via Agent Platform (Vertex). It is recommended to configure model mapping to map client Claude model names to Agent Platform (Vertex) model IDs.',
+      vertexGeminiHint: 'Call Gemini via Agent Platform (Vertex) with a Service Account JSON or an API key. It is recommended to place these accounts in a separate group to avoid mixing with AI Studio/Gemini OAuth on the same models.',
+      vertexGeminiDesc: 'Service Account / API Key',
+      vertexAuthMode: 'Authentication',
+      vertexAuthModeServiceAccount: 'Service Account JSON',
+      vertexAuthModeApiKey: 'API Key',
+      vertexApiKeyHint: 'Create it on the Agent Platform API Keys page in the Google Cloud console. Google\'s explicit context caching API does not accept API keys, so these accounts do not serve explicit caching or batch image generation; implicit caching still applies.',
+      vertexApiKeyRequired: 'Please enter an API key',
+      vertexApiKeyProjectIdPlaceholder: 'Optional',
+      vertexApiKeyProjectIdHint: 'Leave empty to use the express mode global endpoint (location is ignored). For a standard API key bound to a service account, enter the Project ID to call the project endpoint with Project ID + Location.',
       vertexSaJsonLabel: 'Service Account JSON',
       vertexSaJsonLoaded: 'Service Account JSON loaded',
       vertexSaJsonDrop: 'Drop Service Account JSON here',
@@ -5259,8 +5279,13 @@ export default {
       vertexSaJsonUploadHint: 'After uploading or dropping a JSON file, the project_id will be auto-extracted. Key content is only used for account creation.',
       vertexSaJsonEditHint: 'Service Account JSON is not shown on the edit page; to change the JSON, delete the account and recreate it.',
       vertexProjectIdPlaceholder: 'Auto-extracted from JSON',
-      vertexLocationHint: 'Available locations vary by Vertex model. Select the default endpoint location for this account.',
-      vertexLocationRequired: 'Please enter a Vertex location',
+      vertexLocationHint: 'Available locations vary by model. Select the default endpoint location for this account.',
+      vertexLocationRequired: 'Please select a location',
+      explicitCacheUpstream: 'Upstream Supports Explicit Caching',
+      explicitCacheUpstreamHint: 'Enable only when the upstream is this system with explicit caching support',
+      explicitCacheUpstreamInfo: 'When enabled, this account can create Gemini explicit caches (cachedContents). A cache is only used on this account and never fails over. The upstream must route each cache to the account that created it; account-pool gateways or upstreams without explicit caching support will make caches unreliable.',
+      explicitCacheUpstreamMaxTTL: 'Upstream Cache TTL Limit (seconds)',
+      explicitCacheUpstreamMaxTTLHint: 'Maximum TTL allowed by the upstream gateway; requests above it are not sent to this account. Leave blank to use this site\'s limit.',
       vertexSaJsonMissingFields: 'Service Account JSON is missing project_id, client_email, or private_key',
       vertexSaJsonMissingProjectId: 'Service Account JSON is missing project_id',
       vertexSaJsonMissingClientEmail: 'Service Account JSON is missing client_email',
@@ -6075,7 +6100,7 @@ export default {
         modelPassthroughDesc:
           'All model requests are forwarded directly to the Gemini API without model restrictions or mappings.',
         baseUrlHint: 'Leave default for official Gemini API',
-        apiKeyHint: 'Your Gemini API Key (starts with AIza)',
+        apiKeyHint: 'New AI Studio keys start with AQ. (legacy keys start with AIza); for a third-party upstream, use the key it provides',
         tier: {
           label: 'Account Tier',
           hint: 'Tip: The system will try to auto-detect the tier first; if auto-detection is unavailable or fails, your selected tier is used as a fallback (simulated quota).',
@@ -6098,8 +6123,8 @@ export default {
         accountType: {
           oauthTitle: 'OAuth (Gemini)',
           oauthDesc: 'Authorize with your Google account and choose an OAuth type.',
-          apiKeyTitle: 'API Key (AI Studio)',
-          apiKeyDesc: 'Fastest setup. Use an AIza API key.',
+          apiKeyTitle: 'API Key',
+          apiKeyDesc: 'An official AI Studio key, or a Gemini-compatible third-party upstream.',
           apiKeyNote:
             'Best for light testing. Free tier has strict rate limits and data may be used for training.',
           apiKeyLink: 'Get API Key',
@@ -6160,7 +6185,7 @@ export default {
           docs: {
             codeAssist: 'Code Assist Quotas',
             aiStudio: 'AI Studio Pricing',
-            vertex: 'Vertex AI Quotas'
+            vertex: 'Agent Platform (Vertex) Quotas'
           },
           simulatedNote: 'Simulated quota, for reference only',
           rows: {
@@ -7552,7 +7577,8 @@ export default {
           duration: 'Duration',
           status: 'Status',
           requestId: 'Request ID',
-          actions: 'Actions'
+          actions: 'Actions',
+          account: 'Account'
         }
       },
       alertEvents: {

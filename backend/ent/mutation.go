@@ -25667,8 +25667,7 @@ type GroupMutation struct {
 	deleted_at                              *time.Time
 	name                                    *string
 	description                             *string
-	name_i18n                               *map[string]string
-	description_i18n                        *map[string]string
+	i18n                                    *domain.GroupI18n
 	rate_multiplier                         *float64
 	addrate_multiplier                      *float64
 	peak_rate_enabled                       *bool
@@ -26110,102 +26109,40 @@ func (m *GroupMutation) ResetDescription() {
 	delete(m.clearedFields, group.FieldDescription)
 }
 
-// SetNameI18n sets the "name_i18n" field.
-func (m *GroupMutation) SetNameI18n(value map[string]string) {
-	m.name_i18n = &value
+// SetI18n sets the "i18n" field.
+func (m *GroupMutation) SetI18n(di domain.GroupI18n) {
+	m.i18n = &di
 }
 
-// NameI18n returns the value of the "name_i18n" field in the mutation.
-func (m *GroupMutation) NameI18n() (r map[string]string, exists bool) {
-	v := m.name_i18n
+// I18n returns the value of the "i18n" field in the mutation.
+func (m *GroupMutation) I18n() (r domain.GroupI18n, exists bool) {
+	v := m.i18n
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldNameI18n returns the old "name_i18n" field's value of the Group entity.
+// OldI18n returns the old "i18n" field's value of the Group entity.
 // If the Group object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *GroupMutation) OldNameI18n(ctx context.Context) (v map[string]string, err error) {
+func (m *GroupMutation) OldI18n(ctx context.Context) (v domain.GroupI18n, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldNameI18n is only allowed on UpdateOne operations")
+		return v, errors.New("OldI18n is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldNameI18n requires an ID field in the mutation")
+		return v, errors.New("OldI18n requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldNameI18n: %w", err)
+		return v, fmt.Errorf("querying old value for OldI18n: %w", err)
 	}
-	return oldValue.NameI18n, nil
+	return oldValue.I18n, nil
 }
 
-// ClearNameI18n clears the value of the "name_i18n" field.
-func (m *GroupMutation) ClearNameI18n() {
-	m.name_i18n = nil
-	m.clearedFields[group.FieldNameI18n] = struct{}{}
-}
-
-// NameI18nCleared returns if the "name_i18n" field was cleared in this mutation.
-func (m *GroupMutation) NameI18nCleared() bool {
-	_, ok := m.clearedFields[group.FieldNameI18n]
-	return ok
-}
-
-// ResetNameI18n resets all changes to the "name_i18n" field.
-func (m *GroupMutation) ResetNameI18n() {
-	m.name_i18n = nil
-	delete(m.clearedFields, group.FieldNameI18n)
-}
-
-// SetDescriptionI18n sets the "description_i18n" field.
-func (m *GroupMutation) SetDescriptionI18n(value map[string]string) {
-	m.description_i18n = &value
-}
-
-// DescriptionI18n returns the value of the "description_i18n" field in the mutation.
-func (m *GroupMutation) DescriptionI18n() (r map[string]string, exists bool) {
-	v := m.description_i18n
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldDescriptionI18n returns the old "description_i18n" field's value of the Group entity.
-// If the Group object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *GroupMutation) OldDescriptionI18n(ctx context.Context) (v map[string]string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldDescriptionI18n is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldDescriptionI18n requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldDescriptionI18n: %w", err)
-	}
-	return oldValue.DescriptionI18n, nil
-}
-
-// ClearDescriptionI18n clears the value of the "description_i18n" field.
-func (m *GroupMutation) ClearDescriptionI18n() {
-	m.description_i18n = nil
-	m.clearedFields[group.FieldDescriptionI18n] = struct{}{}
-}
-
-// DescriptionI18nCleared returns if the "description_i18n" field was cleared in this mutation.
-func (m *GroupMutation) DescriptionI18nCleared() bool {
-	_, ok := m.clearedFields[group.FieldDescriptionI18n]
-	return ok
-}
-
-// ResetDescriptionI18n resets all changes to the "description_i18n" field.
-func (m *GroupMutation) ResetDescriptionI18n() {
-	m.description_i18n = nil
-	delete(m.clearedFields, group.FieldDescriptionI18n)
+// ResetI18n resets all changes to the "i18n" field.
+func (m *GroupMutation) ResetI18n() {
+	m.i18n = nil
 }
 
 // SetRateMultiplier sets the "rate_multiplier" field.
@@ -30334,7 +30271,7 @@ func (m *GroupMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *GroupMutation) Fields() []string {
-	fields := make([]string, 0, 81)
+	fields := make([]string, 0, 80)
 	if m.created_at != nil {
 		fields = append(fields, group.FieldCreatedAt)
 	}
@@ -30350,11 +30287,8 @@ func (m *GroupMutation) Fields() []string {
 	if m.description != nil {
 		fields = append(fields, group.FieldDescription)
 	}
-	if m.name_i18n != nil {
-		fields = append(fields, group.FieldNameI18n)
-	}
-	if m.description_i18n != nil {
-		fields = append(fields, group.FieldDescriptionI18n)
+	if m.i18n != nil {
+		fields = append(fields, group.FieldI18n)
 	}
 	if m.rate_multiplier != nil {
 		fields = append(fields, group.FieldRateMultiplier)
@@ -30596,10 +30530,8 @@ func (m *GroupMutation) Field(name string) (ent.Value, bool) {
 		return m.Name()
 	case group.FieldDescription:
 		return m.Description()
-	case group.FieldNameI18n:
-		return m.NameI18n()
-	case group.FieldDescriptionI18n:
-		return m.DescriptionI18n()
+	case group.FieldI18n:
+		return m.I18n()
 	case group.FieldRateMultiplier:
 		return m.RateMultiplier()
 	case group.FieldPeakRateEnabled:
@@ -30767,10 +30699,8 @@ func (m *GroupMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldName(ctx)
 	case group.FieldDescription:
 		return m.OldDescription(ctx)
-	case group.FieldNameI18n:
-		return m.OldNameI18n(ctx)
-	case group.FieldDescriptionI18n:
-		return m.OldDescriptionI18n(ctx)
+	case group.FieldI18n:
+		return m.OldI18n(ctx)
 	case group.FieldRateMultiplier:
 		return m.OldRateMultiplier(ctx)
 	case group.FieldPeakRateEnabled:
@@ -30963,19 +30893,12 @@ func (m *GroupMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetDescription(v)
 		return nil
-	case group.FieldNameI18n:
-		v, ok := value.(map[string]string)
+	case group.FieldI18n:
+		v, ok := value.(domain.GroupI18n)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetNameI18n(v)
-		return nil
-	case group.FieldDescriptionI18n:
-		v, ok := value.(map[string]string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetDescriptionI18n(v)
+		m.SetI18n(v)
 		return nil
 	case group.FieldRateMultiplier:
 		v, ok := value.(float64)
@@ -31930,12 +31853,6 @@ func (m *GroupMutation) ClearedFields() []string {
 	if m.FieldCleared(group.FieldDescription) {
 		fields = append(fields, group.FieldDescription)
 	}
-	if m.FieldCleared(group.FieldNameI18n) {
-		fields = append(fields, group.FieldNameI18n)
-	}
-	if m.FieldCleared(group.FieldDescriptionI18n) {
-		fields = append(fields, group.FieldDescriptionI18n)
-	}
 	if m.FieldCleared(group.FieldDuplicateOperationID) {
 		fields = append(fields, group.FieldDuplicateOperationID)
 	}
@@ -32030,12 +31947,6 @@ func (m *GroupMutation) ClearField(name string) error {
 		return nil
 	case group.FieldDescription:
 		m.ClearDescription()
-		return nil
-	case group.FieldNameI18n:
-		m.ClearNameI18n()
-		return nil
-	case group.FieldDescriptionI18n:
-		m.ClearDescriptionI18n()
 		return nil
 	case group.FieldDuplicateOperationID:
 		m.ClearDuplicateOperationID()
@@ -32135,11 +32046,8 @@ func (m *GroupMutation) ResetField(name string) error {
 	case group.FieldDescription:
 		m.ResetDescription()
 		return nil
-	case group.FieldNameI18n:
-		m.ResetNameI18n()
-		return nil
-	case group.FieldDescriptionI18n:
-		m.ResetDescriptionI18n()
+	case group.FieldI18n:
+		m.ResetI18n()
 		return nil
 	case group.FieldRateMultiplier:
 		m.ResetRateMultiplier()

@@ -98,27 +98,9 @@ func (_u *GroupUpdate) ClearDescription() *GroupUpdate {
 	return _u
 }
 
-// SetNameI18n sets the "name_i18n" field.
-func (_u *GroupUpdate) SetNameI18n(v map[string]string) *GroupUpdate {
-	_u.mutation.SetNameI18n(v)
-	return _u
-}
-
-// ClearNameI18n clears the value of the "name_i18n" field.
-func (_u *GroupUpdate) ClearNameI18n() *GroupUpdate {
-	_u.mutation.ClearNameI18n()
-	return _u
-}
-
-// SetDescriptionI18n sets the "description_i18n" field.
-func (_u *GroupUpdate) SetDescriptionI18n(v map[string]string) *GroupUpdate {
-	_u.mutation.SetDescriptionI18n(v)
-	return _u
-}
-
-// ClearDescriptionI18n clears the value of the "description_i18n" field.
-func (_u *GroupUpdate) ClearDescriptionI18n() *GroupUpdate {
-	_u.mutation.ClearDescriptionI18n()
+// SetI18n sets the "i18n" field.
+func (_u *GroupUpdate) SetI18n(v domain.GroupI18n) *GroupUpdate {
+	_u.mutation.SetI18n(v)
 	return _u
 }
 
@@ -1906,17 +1888,8 @@ func (_u *GroupUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if _u.mutation.DescriptionCleared() {
 		_spec.ClearField(group.FieldDescription, field.TypeString)
 	}
-	if value, ok := _u.mutation.NameI18n(); ok {
-		_spec.SetField(group.FieldNameI18n, field.TypeJSON, value)
-	}
-	if _u.mutation.NameI18nCleared() {
-		_spec.ClearField(group.FieldNameI18n, field.TypeJSON)
-	}
-	if value, ok := _u.mutation.DescriptionI18n(); ok {
-		_spec.SetField(group.FieldDescriptionI18n, field.TypeJSON, value)
-	}
-	if _u.mutation.DescriptionI18nCleared() {
-		_spec.ClearField(group.FieldDescriptionI18n, field.TypeJSON)
+	if value, ok := _u.mutation.I18n(); ok {
+		_spec.SetField(group.FieldI18n, field.TypeJSON, value)
 	}
 	if value, ok := _u.mutation.RateMultiplier(); ok {
 		_spec.SetField(group.FieldRateMultiplier, field.TypeFloat64, value)
@@ -2745,27 +2718,9 @@ func (_u *GroupUpdateOne) ClearDescription() *GroupUpdateOne {
 	return _u
 }
 
-// SetNameI18n sets the "name_i18n" field.
-func (_u *GroupUpdateOne) SetNameI18n(v map[string]string) *GroupUpdateOne {
-	_u.mutation.SetNameI18n(v)
-	return _u
-}
-
-// ClearNameI18n clears the value of the "name_i18n" field.
-func (_u *GroupUpdateOne) ClearNameI18n() *GroupUpdateOne {
-	_u.mutation.ClearNameI18n()
-	return _u
-}
-
-// SetDescriptionI18n sets the "description_i18n" field.
-func (_u *GroupUpdateOne) SetDescriptionI18n(v map[string]string) *GroupUpdateOne {
-	_u.mutation.SetDescriptionI18n(v)
-	return _u
-}
-
-// ClearDescriptionI18n clears the value of the "description_i18n" field.
-func (_u *GroupUpdateOne) ClearDescriptionI18n() *GroupUpdateOne {
-	_u.mutation.ClearDescriptionI18n()
+// SetI18n sets the "i18n" field.
+func (_u *GroupUpdateOne) SetI18n(v domain.GroupI18n) *GroupUpdateOne {
+	_u.mutation.SetI18n(v)
 	return _u
 }
 
@@ -4583,17 +4538,8 @@ func (_u *GroupUpdateOne) sqlSave(ctx context.Context) (_node *Group, err error)
 	if _u.mutation.DescriptionCleared() {
 		_spec.ClearField(group.FieldDescription, field.TypeString)
 	}
-	if value, ok := _u.mutation.NameI18n(); ok {
-		_spec.SetField(group.FieldNameI18n, field.TypeJSON, value)
-	}
-	if _u.mutation.NameI18nCleared() {
-		_spec.ClearField(group.FieldNameI18n, field.TypeJSON)
-	}
-	if value, ok := _u.mutation.DescriptionI18n(); ok {
-		_spec.SetField(group.FieldDescriptionI18n, field.TypeJSON, value)
-	}
-	if _u.mutation.DescriptionI18nCleared() {
-		_spec.ClearField(group.FieldDescriptionI18n, field.TypeJSON)
+	if value, ok := _u.mutation.I18n(); ok {
+		_spec.SetField(group.FieldI18n, field.TypeJSON, value)
 	}
 	if value, ok := _u.mutation.RateMultiplier(); ok {
 		_spec.SetField(group.FieldRateMultiplier, field.TypeFloat64, value)

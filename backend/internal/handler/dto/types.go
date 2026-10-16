@@ -104,9 +104,9 @@ type Group struct {
 	IsExclusive    bool    `json:"is_exclusive"`
 	Status         string  `json:"status"`
 
-	// 多语言名称/描述
-	NameI18n        map[string]string `json:"name_i18n,omitempty"`
-	DescriptionI18n map[string]string `json:"description_i18n,omitempty"`
+	// I18n 名称与描述的各语言译文。只有管理端输出；用户侧接口经 Localized 把
+	// name/description 换成请求语言的版本后清空本字段。
+	I18n domain.GroupI18n `json:"i18n,omitempty"`
 
 	SubscriptionType          string   `json:"subscription_type"`
 	DailyLimitUSD             *float64 `json:"daily_limit_usd"`

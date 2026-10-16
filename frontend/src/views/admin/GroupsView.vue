@@ -500,26 +500,26 @@
         class="space-y-5"
       >
         <div>
-          <label class="input-label">{{ t("admin.groups.form.name") }}</label>
-          <input
+          <GroupI18nField
             v-model="createForm.name"
-            type="text"
+            v-model:i18n="createForm.i18n"
+            :label="t('admin.groups.form.name')"
+            field="name"
             required
-            class="input"
             :placeholder="t('admin.groups.enterGroupName')"
             data-tour="group-form-name"
           />
         </div>
         <div>
-          <label class="input-label">{{
-            t("admin.groups.form.description")
-          }}</label>
-          <textarea
+          <GroupI18nField
             v-model="createForm.description"
+            v-model:i18n="createForm.i18n"
+            :label="t('admin.groups.form.description')"
+            field="description"
+            multiline
             rows="3"
-            class="input"
             :placeholder="t('admin.groups.optionalDescription')"
-          ></textarea>
+          />
         </div>
         <!-- i18n translations -->
         <details class="rounded-lg border border-gray-200 dark:border-dark-600">
@@ -540,12 +540,6 @@
                   ? t('admin.groups.form.translating')
                   : t('admin.groups.form.translateAll') }}
               </button>
-            </div>
-            <div v-for="lang in i18nLangs" :key="lang.code">
-              <label class="input-label">{{ lang.label }} - {{ t('admin.groups.form.name') }}</label>
-              <input v-model="createForm.name_i18n[lang.code]" type="text" class="input" />
-              <label class="input-label mt-1">{{ lang.label }} - {{ t('admin.groups.form.description') }}</label>
-              <input v-model="createForm.description_i18n[lang.code]" type="text" class="input" />
             </div>
           </div>
         </details>
@@ -2264,24 +2258,24 @@
         class="space-y-5"
       >
         <div>
-          <label class="input-label">{{ t("admin.groups.form.name") }}</label>
-          <input
+          <GroupI18nField
             v-model="editForm.name"
-            type="text"
+            v-model:i18n="editForm.i18n"
+            :label="t('admin.groups.form.name')"
+            field="name"
             required
-            class="input"
             data-tour="edit-group-form-name"
           />
         </div>
         <div>
-          <label class="input-label">{{
-            t("admin.groups.form.description")
-          }}</label>
-          <textarea
+          <GroupI18nField
             v-model="editForm.description"
+            v-model:i18n="editForm.i18n"
+            :label="t('admin.groups.form.description')"
+            field="description"
+            multiline
             rows="3"
-            class="input"
-          ></textarea>
+          />
         </div>
         <!-- i18n translations -->
         <details class="rounded-lg border border-gray-200 dark:border-dark-600">
@@ -2302,12 +2296,6 @@
                   ? t('admin.groups.form.translating')
                   : t('admin.groups.form.translateAll') }}
               </button>
-            </div>
-            <div v-for="lang in i18nLangs" :key="lang.code">
-              <label class="input-label">{{ lang.label }} - {{ t('admin.groups.form.name') }}</label>
-              <input v-model="editForm.name_i18n[lang.code]" type="text" class="input" />
-              <label class="input-label mt-1">{{ lang.label }} - {{ t('admin.groups.form.description') }}</label>
-              <input v-model="editForm.description_i18n[lang.code]" type="text" class="input" />
             </div>
           </div>
         </details>
@@ -4547,6 +4535,7 @@ import type {
   CompositeRouteDecision,
   CompositeRouteEndpoint,
   CompositeRouteMatchType,
+  GroupI18n,
   GroupPlatform,
   SubscriptionType,
 } from "@/types";
@@ -4567,6 +4556,7 @@ import Select from "@/components/common/Select.vue";
 import PlatformIcon from "@/components/common/PlatformIcon.vue";
 import { platformLabel } from "@/utils/platformColors";
 import Icon from "@/components/icons/Icon.vue";
+import GroupI18nField from "@/components/admin/group/GroupI18nField.vue";
 import GroupRateMultipliersModal from "@/components/admin/group/GroupRateMultipliersModal.vue";
 import GroupRPMOverridesModal from "@/components/admin/group/GroupRPMOverridesModal.vue";
 import GroupCapacityBadge from "@/components/common/GroupCapacityBadge.vue";
@@ -4882,16 +4872,8 @@ const exclusiveOptions = computed(() => [
   { value: "false", label: t("admin.groups.nonExclusive") },
 ]);
 
-// Strip empty values from i18n map, return null if all empty
-function cleanI18nMap(map: Record<string, string>): Record<string, string> | null {
-  const cleaned: Record<string, string> = {}
-  for (const [k, v] of Object.entries(map)) {
-    if (v && v.trim()) cleaned[k] = v.trim()
-  }
-  return Object.keys(cleaned).length > 0 ? cleaned : null
-}
-
-// Supported i18n languages (excluding zh which is the default stored in name/description)
+// 一键翻译的目标语言（zh 为默认内容，存于 name/description）。译文写入上游格式的
+// form.i18n（语言代码 -> {name, description}），名称/描述输入框右侧的语言下拉可查看与修改。
 const i18nLangs = [
   { code: 'en', label: 'English' },
   { code: 'ru', label: 'Русский' }
@@ -4901,7 +4883,7 @@ const i18nLangs = [
 const createI18nTranslating = ref(false)
 const editI18nTranslating = ref(false)
 
-async function translateGroupForm(form: { name: string; description: string; name_i18n: Record<string, string>; description_i18n: Record<string, string> }, busy: { value: boolean }) {
+async function translateGroupForm(form: { name: string; description: string; i18n: GroupI18n }, busy: { value: boolean }) {
   const name = (form.name || '').trim()
   const description = (form.description || '').trim()
   if (!name && !description) {
@@ -4933,6 +4915,7 @@ async function translateGroupForm(form: { name: string; description: string; nam
     // 回填：始终覆盖（用户点了一键翻译就是想要 LLM 的结果）；用大小写无关的查找
     // 防止上游模型大小写不一致（"En" / "EN"）。
     let filledCount = 0
+    const next: GroupI18n = { ...(form.i18n ?? {}) }
     res.translations.forEach((row, idx) => {
       const slot = slots[idx]
       const lookup: Record<string, string> = {}
@@ -4943,17 +4926,12 @@ async function translateGroupForm(form: { name: string; description: string; nam
       for (const lang of targetLangs) {
         const value = (lookup[lang.toLowerCase()] || '').trim()
         if (!value) continue
-        if (slot === 'name') {
-          form.name_i18n[lang] = value
-        } else {
-          form.description_i18n[lang] = value
-        }
+        next[lang] = { ...(next[lang] ?? {}), [slot]: value }
         filledCount += 1
       }
     })
-    // 触发响应式更新（替换引用，确保 v-model 能识别新增 key）
-    form.name_i18n = { ...form.name_i18n }
-    form.description_i18n = { ...form.description_i18n }
+    // 整体替换引用，确保 v-model 能识别新增 key
+    form.i18n = next
 
     if (filledCount === 0) {
       appStore.showError(t('admin.groups.form.translateEmpty'))
@@ -5327,8 +5305,7 @@ const submitEditAllowlistCustomEntry = () => {
 const createForm = reactive({
   name: '',
   description: '',
-  name_i18n: {} as Record<string, string>,
-  description_i18n: {} as Record<string, string>,
+  i18n: {} as GroupI18n,
   platform: 'anthropic' as GroupPlatform,
   rate_multiplier: 1.0,
   is_exclusive: false,
@@ -5704,8 +5681,7 @@ const convertApiFormatToRoutingRules = async (
 const editForm = reactive({
   name: '',
   description: '',
-  name_i18n: {} as Record<string, string>,
-  description_i18n: {} as Record<string, string>,
+  i18n: {} as GroupI18n,
   platform: 'anthropic' as GroupPlatform,
   rate_multiplier: 1.0,
   is_exclusive: false,
@@ -6210,8 +6186,7 @@ const closeCreateModal = () => {
   clearAllAccountSearchState();
   createForm.name = "";
   createForm.description = "";
-  createForm.name_i18n = {};
-  createForm.description_i18n = {};
+  createForm.i18n = {};
   createForm.platform = "anthropic";
   createForm.rate_multiplier = 1.0;
   createForm.is_exclusive = false;
@@ -6369,8 +6344,6 @@ const handleCreateGroup = async () => {
     // 构建请求数据，包含模型路由配置
     const requestData = {
       ...createGroupForm,
-      name_i18n: cleanI18nMap(createForm.name_i18n),
-      description_i18n: cleanI18nMap(createForm.description_i18n),
       force_openai_fast: normalizeGroupOpenAIFast(
         createForm.platform,
         createForm.force_openai_fast,
@@ -6480,6 +6453,7 @@ const handleCreateGroup = async () => {
       ? {
           name: createForm.name,
           description: createForm.description,
+          i18n: createForm.i18n,
           platform: createForm.platform,
         }
       : requestData;
@@ -6521,8 +6495,12 @@ const handleEdit = async (group: AdminGroup) => {
   editingGroup.value = group;
   editForm.name = group.name;
   editForm.description = group.description || "";
-  editForm.name_i18n = { ...(group.name_i18n || {}) };
-  editForm.description_i18n = { ...(group.description_i18n || {}) };
+  editForm.i18n = Object.fromEntries(
+    Object.entries(group.i18n ?? {}).map(([locale, text]) => [
+      locale,
+      { ...text },
+    ]),
+  );
   editForm.platform = group.platform;
   editForm.rate_multiplier = group.rate_multiplier;
   editForm.is_exclusive = group.is_exclusive;
@@ -6726,8 +6704,6 @@ const handleUpdateGroup = async () => {
     // 转换 fallback_group_id: null -> 0 (后端使用 0 表示清除)
     const payload: Record<string, unknown> = {
       ...editForm,
-      name_i18n: cleanI18nMap(editForm.name_i18n),
-      description_i18n: cleanI18nMap(editForm.description_i18n),
       force_openai_fast: normalizeGroupOpenAIFast(
         editForm.platform,
         editForm.force_openai_fast,
@@ -6857,6 +6833,7 @@ const handleUpdateGroup = async () => {
       ? {
           name: editForm.name,
           description: editForm.description,
+          i18n: editForm.i18n,
         }
       : payload;
     await adminAPI.groups.update(editingGroup.value.id, requestData);

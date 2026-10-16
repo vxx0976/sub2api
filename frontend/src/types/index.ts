@@ -599,8 +599,6 @@ export interface GroupAccountInfo {
   }
 }
 
-export type I18nMap = Record<string, string>
-
 export interface OpenAIMessagesDispatchModelConfig {
   opus_mapped_model?: string
   sonnet_mapped_model?: string
@@ -617,12 +615,20 @@ export interface ReasoningEffortMapping {
   model?: string
 }
 
+/** 分组名称与描述在某个语言下的译文；字段为空表示沿用分组自身的 name/description。 */
+export interface GroupLocaleText {
+  name?: string
+  description?: string
+}
+
+/** 以语言代码（en、zh…）为键的分组文案译文。 */
+export type GroupI18n = Record<string, GroupLocaleText>
+
+// 用户侧接口返回的 name / description 已由后端按请求语言（Accept-Language）选好
 export interface Group {
   id: number
   name: string
   description: string | null
-  name_i18n?: I18nMap | null
-  description_i18n?: I18nMap | null
   platform: GroupPlatform
   rate_multiplier: number
   rpm_limit?: number // Group-level RPM cap (0 = unlimited); overrides user-level rpm_limit when set
@@ -696,6 +702,8 @@ export interface Group {
 }
 
 export interface AdminGroup extends Group {
+  // 管理端的 name / description 始终是原字段，各语言译文另放在 i18n 里
+  i18n?: GroupI18n
   force_openai_fast: boolean
   free_openai_fast: boolean
   model_pricing: import('@/api/admin/channels').ChannelModelPricing[]
@@ -876,8 +884,7 @@ export interface UpdateApiKeyRequest {
 export interface CreateGroupRequest {
   name: string
   description?: string | null
-  name_i18n?: I18nMap | null
-  description_i18n?: I18nMap | null
+  i18n?: GroupI18n
   platform?: GroupPlatform
   rate_multiplier?: number
   is_exclusive?: boolean
@@ -945,8 +952,7 @@ export interface CreateGroupRequest {
 export interface UpdateGroupRequest {
   name?: string
   description?: string | null
-  name_i18n?: I18nMap | null
-  description_i18n?: I18nMap | null
+  i18n?: GroupI18n
   platform?: GroupPlatform
   rate_multiplier?: number
   is_exclusive?: boolean
@@ -1106,6 +1112,7 @@ export interface ProxyQualityCheckResult {
 export interface GeminiCredentials {
   // API Key authentication
   api_key?: string
+  base_url?: string
 
   // OAuth authentication
   access_token?: string
@@ -1130,11 +1137,15 @@ export interface GeminiCredentials {
   model_mapping?: Record<string, string>
 }
 
+export type TempUnschedulableScope = 'account' | 'model'
+
 export interface TempUnschedulableRule {
   error_code: number
   keywords: string[]
   duration_minutes: number
   description: string
+  // 作用范围：account 暂停整个账号，model 只冷却本次请求的模型；缺省时 401 按 account、其余按 model 处理。
+  scope?: TempUnschedulableScope
 }
 
 export interface TempUnschedulableState {
@@ -1142,6 +1153,8 @@ export interface TempUnschedulableState {
   triggered_at_unix: number
   status_code: number
   matched_keyword: string
+  scope?: TempUnschedulableScope
+  model?: string
   rule_index: number
   error_message: string
   trigger_count?: number

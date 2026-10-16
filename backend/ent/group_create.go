@@ -93,15 +93,9 @@ func (_c *GroupCreate) SetNillableDescription(v *string) *GroupCreate {
 	return _c
 }
 
-// SetNameI18n sets the "name_i18n" field.
-func (_c *GroupCreate) SetNameI18n(v map[string]string) *GroupCreate {
-	_c.mutation.SetNameI18n(v)
-	return _c
-}
-
-// SetDescriptionI18n sets the "description_i18n" field.
-func (_c *GroupCreate) SetDescriptionI18n(v map[string]string) *GroupCreate {
-	_c.mutation.SetDescriptionI18n(v)
+// SetI18n sets the "i18n" field.
+func (_c *GroupCreate) SetI18n(v domain.GroupI18n) *GroupCreate {
+	_c.mutation.SetI18n(v)
 	return _c
 }
 
@@ -1257,6 +1251,10 @@ func (_c *GroupCreate) defaults() error {
 		v := group.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.I18n(); !ok {
+		v := group.DefaultI18n
+		_c.mutation.SetI18n(v)
+	}
 	if _, ok := _c.mutation.RateMultiplier(); !ok {
 		v := group.DefaultRateMultiplier
 		_c.mutation.SetRateMultiplier(v)
@@ -1471,6 +1469,9 @@ func (_c *GroupCreate) check() error {
 		if err := group.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Group.name": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.I18n(); !ok {
+		return &ValidationError{Name: "i18n", err: errors.New(`ent: missing required field "Group.i18n"`)}
 	}
 	if _, ok := _c.mutation.RateMultiplier(); !ok {
 		return &ValidationError{Name: "rate_multiplier", err: errors.New(`ent: missing required field "Group.rate_multiplier"`)}
@@ -1741,13 +1742,9 @@ func (_c *GroupCreate) createSpec() (*Group, *sqlgraph.CreateSpec) {
 		_spec.SetField(group.FieldDescription, field.TypeString, value)
 		_node.Description = &value
 	}
-	if value, ok := _c.mutation.NameI18n(); ok {
-		_spec.SetField(group.FieldNameI18n, field.TypeJSON, value)
-		_node.NameI18n = value
-	}
-	if value, ok := _c.mutation.DescriptionI18n(); ok {
-		_spec.SetField(group.FieldDescriptionI18n, field.TypeJSON, value)
-		_node.DescriptionI18n = value
+	if value, ok := _c.mutation.I18n(); ok {
+		_spec.SetField(group.FieldI18n, field.TypeJSON, value)
+		_node.I18n = value
 	}
 	if value, ok := _c.mutation.RateMultiplier(); ok {
 		_spec.SetField(group.FieldRateMultiplier, field.TypeFloat64, value)
@@ -2277,39 +2274,15 @@ func (u *GroupUpsert) ClearDescription() *GroupUpsert {
 	return u
 }
 
-// SetNameI18n sets the "name_i18n" field.
-func (u *GroupUpsert) SetNameI18n(v map[string]string) *GroupUpsert {
-	u.Set(group.FieldNameI18n, v)
+// SetI18n sets the "i18n" field.
+func (u *GroupUpsert) SetI18n(v domain.GroupI18n) *GroupUpsert {
+	u.Set(group.FieldI18n, v)
 	return u
 }
 
-// UpdateNameI18n sets the "name_i18n" field to the value that was provided on create.
-func (u *GroupUpsert) UpdateNameI18n() *GroupUpsert {
-	u.SetExcluded(group.FieldNameI18n)
-	return u
-}
-
-// ClearNameI18n clears the value of the "name_i18n" field.
-func (u *GroupUpsert) ClearNameI18n() *GroupUpsert {
-	u.SetNull(group.FieldNameI18n)
-	return u
-}
-
-// SetDescriptionI18n sets the "description_i18n" field.
-func (u *GroupUpsert) SetDescriptionI18n(v map[string]string) *GroupUpsert {
-	u.Set(group.FieldDescriptionI18n, v)
-	return u
-}
-
-// UpdateDescriptionI18n sets the "description_i18n" field to the value that was provided on create.
-func (u *GroupUpsert) UpdateDescriptionI18n() *GroupUpsert {
-	u.SetExcluded(group.FieldDescriptionI18n)
-	return u
-}
-
-// ClearDescriptionI18n clears the value of the "description_i18n" field.
-func (u *GroupUpsert) ClearDescriptionI18n() *GroupUpsert {
-	u.SetNull(group.FieldDescriptionI18n)
+// UpdateI18n sets the "i18n" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateI18n() *GroupUpsert {
+	u.SetExcluded(group.FieldI18n)
 	return u
 }
 
@@ -3649,45 +3622,17 @@ func (u *GroupUpsertOne) ClearDescription() *GroupUpsertOne {
 	})
 }
 
-// SetNameI18n sets the "name_i18n" field.
-func (u *GroupUpsertOne) SetNameI18n(v map[string]string) *GroupUpsertOne {
+// SetI18n sets the "i18n" field.
+func (u *GroupUpsertOne) SetI18n(v domain.GroupI18n) *GroupUpsertOne {
 	return u.Update(func(s *GroupUpsert) {
-		s.SetNameI18n(v)
+		s.SetI18n(v)
 	})
 }
 
-// UpdateNameI18n sets the "name_i18n" field to the value that was provided on create.
-func (u *GroupUpsertOne) UpdateNameI18n() *GroupUpsertOne {
+// UpdateI18n sets the "i18n" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateI18n() *GroupUpsertOne {
 	return u.Update(func(s *GroupUpsert) {
-		s.UpdateNameI18n()
-	})
-}
-
-// ClearNameI18n clears the value of the "name_i18n" field.
-func (u *GroupUpsertOne) ClearNameI18n() *GroupUpsertOne {
-	return u.Update(func(s *GroupUpsert) {
-		s.ClearNameI18n()
-	})
-}
-
-// SetDescriptionI18n sets the "description_i18n" field.
-func (u *GroupUpsertOne) SetDescriptionI18n(v map[string]string) *GroupUpsertOne {
-	return u.Update(func(s *GroupUpsert) {
-		s.SetDescriptionI18n(v)
-	})
-}
-
-// UpdateDescriptionI18n sets the "description_i18n" field to the value that was provided on create.
-func (u *GroupUpsertOne) UpdateDescriptionI18n() *GroupUpsertOne {
-	return u.Update(func(s *GroupUpsert) {
-		s.UpdateDescriptionI18n()
-	})
-}
-
-// ClearDescriptionI18n clears the value of the "description_i18n" field.
-func (u *GroupUpsertOne) ClearDescriptionI18n() *GroupUpsertOne {
-	return u.Update(func(s *GroupUpsert) {
-		s.ClearDescriptionI18n()
+		s.UpdateI18n()
 	})
 }
 
@@ -5396,45 +5341,17 @@ func (u *GroupUpsertBulk) ClearDescription() *GroupUpsertBulk {
 	})
 }
 
-// SetNameI18n sets the "name_i18n" field.
-func (u *GroupUpsertBulk) SetNameI18n(v map[string]string) *GroupUpsertBulk {
+// SetI18n sets the "i18n" field.
+func (u *GroupUpsertBulk) SetI18n(v domain.GroupI18n) *GroupUpsertBulk {
 	return u.Update(func(s *GroupUpsert) {
-		s.SetNameI18n(v)
+		s.SetI18n(v)
 	})
 }
 
-// UpdateNameI18n sets the "name_i18n" field to the value that was provided on create.
-func (u *GroupUpsertBulk) UpdateNameI18n() *GroupUpsertBulk {
+// UpdateI18n sets the "i18n" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateI18n() *GroupUpsertBulk {
 	return u.Update(func(s *GroupUpsert) {
-		s.UpdateNameI18n()
-	})
-}
-
-// ClearNameI18n clears the value of the "name_i18n" field.
-func (u *GroupUpsertBulk) ClearNameI18n() *GroupUpsertBulk {
-	return u.Update(func(s *GroupUpsert) {
-		s.ClearNameI18n()
-	})
-}
-
-// SetDescriptionI18n sets the "description_i18n" field.
-func (u *GroupUpsertBulk) SetDescriptionI18n(v map[string]string) *GroupUpsertBulk {
-	return u.Update(func(s *GroupUpsert) {
-		s.SetDescriptionI18n(v)
-	})
-}
-
-// UpdateDescriptionI18n sets the "description_i18n" field to the value that was provided on create.
-func (u *GroupUpsertBulk) UpdateDescriptionI18n() *GroupUpsertBulk {
-	return u.Update(func(s *GroupUpsert) {
-		s.UpdateDescriptionI18n()
-	})
-}
-
-// ClearDescriptionI18n clears the value of the "description_i18n" field.
-func (u *GroupUpsertBulk) ClearDescriptionI18n() *GroupUpsertBulk {
-	return u.Update(func(s *GroupUpsert) {
-		s.ClearDescriptionI18n()
+		s.UpdateI18n()
 	})
 }
 
