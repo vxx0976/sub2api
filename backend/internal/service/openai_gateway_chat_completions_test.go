@@ -1877,3 +1877,51 @@ func TestGPT61SolOnlyChatFallbackRejectsToolsAndDisabledReasoning(t *testing.T) 
 		}
 	}
 }
+
+func TestForwardAsChatCompletions_APIKeyRewritesSystemRoleToDeveloper(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	body := []byte(`{"model":"gpt-5.4","messages":[{"role":"system","content":"Reply in JSON"},{"role":"developer","content":"Be brief"},{"role":"user","content":"hello"}],"response_format":{"type":"json_object"},"stream":false}`)
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/chat/completions", bytes.NewReader(body))
+	c.Request.Header.Set("Content-Type", "application/json")
+
+	upstream := &httpUpstreamRecorder{resp: &http.Response{
+		StatusCode: http.StatusBadRequest,
+		Header:     http.Header{"Content-Type": []string{"application/json"}},
+		Body:       io.NopCloser(strings.NewReader(`{"error":{"type":"invalid_request_error","message":"stop before response parsing"}}`)),
+	}}
+	svc := &OpenAIGatewayService{cfg: &config.Config{}, httpUpstream: upstream}
+	account := &Account{
+		ID: 2, Name: "openai-compatible", Platform: PlatformOpenAI, Type: AccountTypeAPIKey, Concurrency: 1,
+		Credentials: map[string]any{"api_key": "sk-compatible"},
+		Extra:       map[string]any{"openai_responses_mode": "force_responses"},
+	}
+
+	_, err := svc.ForwardAsChatCompletions(context.Background(), c, account, body, "", "gpt-5.4")
+	require.Error(t, err)
+
+	require.Equal(t, int64(3), gjson.GetBytes(upstream.lastBody, "input.#").Int())
+	require.Equal(t, "developer", gjson.GetBytes(upstream.lastBody, "input.0.role").String())
+	require.Equal(t, "message", gjson.GetBytes(upstream.lastBody, "input.0.type").String())
+	require.Equal(t, "Reply in JSON", gjson.GetBytes(upstream.lastBody, "input.0.content").String())
+	require.Equal(t, "developer", gjson.GetBytes(upstream.lastBody, "input.1.role").String())
+	require.Equal(t, "user", gjson.GetBytes(upstream.lastBody, "input.2.role").String())
+	require.Equal(t, "json_object", gjson.GetBytes(upstream.lastBody, "text.format.type").String())
+	require.NotContains(t, string(upstream.lastBody), `"role":"system"`)
+}
+
+func TestRewriteResponsesInputSystemRoleToDeveloper(t *testing.T) {
+	unchanged := []byte(`{"input":"plain string"}`)
+	require.Equal(t, unchanged, rewriteResponsesInputSystemRoleToDeveloper(unchanged))
+
+	noSystem := []byte(`{"input":[{"type":"message","role":"user","content":"hi"}]}`)
+	require.Equal(t, noSystem, rewriteResponsesInputSystemRoleToDeveloper(noSystem))
+
+	out := rewriteResponsesInputSystemRoleToDeveloper([]byte(`{"input":[{"type":"function_call_output","call_id":"c1","output":"system"},{"role":"system","content":[{"type":"input_text","text":"x"}]}]}`))
+	require.Equal(t, "function_call_output", gjson.GetBytes(out, "input.0.type").String())
+	require.Equal(t, "system", gjson.GetBytes(out, "input.0.output").String())
+	require.Equal(t, "developer", gjson.GetBytes(out, "input.1.role").String())
+	require.Equal(t, "x", gjson.GetBytes(out, "input.1.content.0.text").String())
+}

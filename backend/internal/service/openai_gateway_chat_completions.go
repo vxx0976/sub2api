@@ -243,6 +243,12 @@ func (s *OpenAIGatewayService) forwardAsChatCompletions(
 		}
 	}
 
+	// API Key 中转若开了透传，会把 system 原样发给 ChatGPT Codex 端点而被 400
+	// 拒绝（实测 modelboxs）。developer 与 system 语义等价，统一改写。
+	if account.IsOpenAIApiKey() {
+		responsesBody = rewriteResponsesInputSystemRoleToDeveloper(responsesBody)
+	}
+
 	logFields := []zap.Field{
 		zap.Int64("account_id", account.ID),
 		zap.String("original_model", originalModel),
@@ -1346,4 +1352,23 @@ func buildChatStreamErrorSSE(code, message string) string {
 		return "data: {\"error\":{\"type\":\"invalid_request_error\",\"code\":\"" + code + "\",\"message\":\"upstream error\"}}\n\n"
 	}
 	return "data: " + string(payload) + "\n\n"
+}
+
+// rewriteResponsesInputSystemRoleToDeveloper 把 Responses input 中 role=system
+// 的消息项改写为 developer，其余字段原样保留。无需改写时返回原 body。
+func rewriteResponsesInputSystemRoleToDeveloper(body []byte) []byte {
+	input := gjson.GetBytes(body, "input")
+	if !input.IsArray() {
+		return body
+	}
+	out := body
+	for i, item := range input.Array() {
+		if item.Get("role").String() != "system" {
+			continue
+		}
+		if updated, err := sjson.SetBytes(out, fmt.Sprintf("input.%d.role", i), "developer"); err == nil {
+			out = updated
+		}
+	}
+	return out
 }
