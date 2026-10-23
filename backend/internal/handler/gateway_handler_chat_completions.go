@@ -113,6 +113,10 @@ func (h *GatewayHandler) ChatCompletions(c *gin.Context) {
 			"This group is restricted to Claude Code clients (/v1/messages only)")
 		return
 	}
+	if geminiImageGenerationRejected(c, apiKey, nil, reqModel, channelMapping.MappedModel) {
+		h.chatCompletionsErrorResponse(c, http.StatusBadRequest, "invalid_request_error", service.ImageGenerationPermissionMessage())
+		return
+	}
 
 	if decision := h.checkSecurityAudit(c, reqLog, apiKey, subject, service.ContentModerationProtocolOpenAIChat, reqModel, body); decision != nil && !decision.AllowNextStage {
 		h.openAISecurityAuditError(c, decision)
@@ -317,13 +321,13 @@ func (h *GatewayHandler) ChatCompletions(c *gin.Context) {
 			accountReleaseFunc()
 		}
 
+		// 提交 usage 记录。成功路径与"流中断但 Forward 已观测到 usage 的部分结果"
+		// 错误路径共用；failover 错误恒定 result=nil，不会重复计费。
+		submitForwardUsage := func(result *service.ForwardResult) {
+			h.submitChatCompletionsUsageRecord(c, reqLog, result, apiKey, subscription, account, body, channelMapping, reqModel, fs.ForceCacheBilling, pricingAt)
+		}
+
 		if err != nil {
-			// 流式部分交付后出错：对上游已产出/已交付的 token 计费（与成功分支同口径），
-			// 避免上游已产出、客户端已收到内容却整段零计费。随后继续正常失败处理
-			// （内容已写出，writer-size 检查已禁止 failover）。
-			if result != nil && result.PartialError {
-				h.submitChatCompletionsUsageRecord(c, reqLog, result, apiKey, subscription, account, body, channelMapping, reqModel, fs.ForceCacheBilling, pricingAt)
-			}
 			var failoverErr *service.UpstreamFailoverError
 			if errors.As(err, &failoverErr) {
 				if c.Writer.Size() != writerSizeBeforeForward {
@@ -353,11 +357,14 @@ func (h *GatewayHandler) ChatCompletions(c *gin.Context) {
 				zap.Bool("upstream_error_response_already_written", upstreamErrorAlreadyCommunicated),
 				zap.Error(err),
 			)
+			if result != nil {
+				submitForwardUsage(result)
+			}
 			return
 		}
 
 		// 6. Record usage
-		h.submitChatCompletionsUsageRecord(c, reqLog, result, apiKey, subscription, account, body, channelMapping, reqModel, fs.ForceCacheBilling, pricingAt)
+		submitForwardUsage(result)
 		return
 	}
 }

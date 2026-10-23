@@ -203,7 +203,15 @@ func (s *GatewayService) ForwardAsResponses(
 	var result *ForwardResult
 	var handleErr error
 	if clientStream {
+		writerSizeBeforeStream := c.Writer.Size()
 		result, handleErr = s.handleResponsesStreamingResponse(resp, c, originalModel, mappedModel, reasoningEffort, startTime, clientToolMapping)
+		var sseErr *sseStreamErrorEventError
+		switch {
+		case errors.As(handleErr, &sseErr):
+			return nil, s.sseStreamErrorEventFailover(ctx, c, account, resp, sseErr.RawData, mappedModel, c.Writer.Size() != writerSizeBeforeStream)
+		case errors.Is(handleErr, errAnthropicNativeStreamIdle) && s.rateLimitService != nil:
+			s.rateLimitService.HandleStreamTimeout(ctx, account, originalModel)
+		}
 	} else {
 		result, handleErr = s.handleResponsesBufferedStreamingResponse(resp, c, originalModel, mappedModel, reasoningEffort, startTime, clientToolMapping)
 	}
@@ -550,30 +558,28 @@ func (s *GatewayService) handleResponsesStreamingResponse(
 	var usage ClaudeUsage
 	var firstTokenMs *int
 	firstChunk := true
+	writerSizeBeforeStream := c.Writer.Size()
 
-	scanner := bufio.NewScanner(resp.Body)
-	maxLineSize := defaultMaxLineSize
-	if s.cfg != nil && s.cfg.Gateway.MaxLineSize > 0 {
-		maxLineSize = s.cfg.Gateway.MaxLineSize
-	}
-	scanner.Buffer(make([]byte, 0, 64*1024), maxLineSize)
+	stream := newAnthropicCompatStream(s.cfg, c, resp, "forward_as_responses", requestID)
+	defer stream.stop()
 
 	resultWithUsage := func() *ForwardResult {
 		return &ForwardResult{
-			RequestID:       requestID,
-			UpstreamHeaders: resp.Header,
-			Usage:           usage,
-			Model:           originalModel,
-			UpstreamModel:   mappedModel,
-			ReasoningEffort: reasoningEffort,
-			Stream:          true,
-			Duration:        time.Since(startTime),
-			FirstTokenMs:    firstTokenMs,
+			RequestID:        requestID,
+			UpstreamHeaders:  resp.Header,
+			Usage:            usage,
+			Model:            originalModel,
+			UpstreamModel:    mappedModel,
+			ReasoningEffort:  reasoningEffort,
+			Stream:           true,
+			Duration:         time.Since(startTime),
+			FirstTokenMs:     firstTokenMs,
+			ClientDisconnect: stream.clientDisconnected,
 		}
 	}
 
 	// processEvent handles a single parsed Anthropic SSE event.
-	processEvent := func(event *apicompat.AnthropicStreamEvent) bool {
+	processEvent := func(event *apicompat.AnthropicStreamEvent) {
 		if firstChunk {
 			firstChunk = false
 			ms := int(time.Since(startTime).Milliseconds())
@@ -587,6 +593,9 @@ func (s *GatewayService) handleResponsesStreamingResponse(
 		// Also capture usage from message_start
 		if event.Type == "message_start" && event.Message != nil {
 			mergeAnthropicUsage(&usage, event.Message.Usage)
+		}
+		if stream.clientDisconnected {
+			return
 		}
 
 		// Keep the terminal Responses usage aligned with the normalized billing
@@ -618,32 +627,55 @@ func (s *GatewayService) handleResponsesStreamingResponse(
 			for _, restored := range payloads {
 				eventType := gjson.GetBytes(restored, "type").String()
 				if _, err := fmt.Fprintf(c.Writer, "event: %s\ndata: %s\n\n", eventType, restored); err != nil {
-					logger.L().Info("forward_as_responses stream: client disconnected",
-						zap.String("request_id", requestID),
-					)
-					return true // client disconnected
+					stream.markClientDisconnected()
+					return
 				}
 			}
 		}
 		if len(events) > 0 {
 			c.Writer.Flush()
 		}
-		return false
+	}
+
+	finalizeStream := func() (*ForwardResult, error) {
+		if failure := stream.failure(); failure != nil {
+			return finishAnthropicCompatStreamFailure(c, writerSizeBeforeStream, failure, resultWithUsage(), func() {
+				writeAnthropicCompatResponsesStreamFailure(c, state, clientToolRestorer, failure)
+			})
+		}
+		if stream.clientDisconnected {
+			return resultWithUsage(), nil
+		}
+		if finalEvents := apicompat.FinalizeAnthropicResponsesStream(state); len(finalEvents) > 0 {
+			for _, evt := range finalEvents {
+				sse, err := apicompat.ResponsesEventToSSE(evt)
+				if err != nil {
+					continue
+				}
+				out := string(reverseToolNamesIfPresent(c, []byte(sse)))
+				fmt.Fprint(c.Writer, out) //nolint:errcheck
+			}
+			c.Writer.Flush()
+		}
+		return resultWithUsage(), nil
 	}
 
 	// Read Anthropic SSE events
-	for scanner.Scan() {
-		line := scanner.Text()
+	for {
+		line, ok := stream.nextLine()
+		if !ok {
+			break
+		}
 		eventType, ok := parseAnthropicSSEField(line, "event")
 		if !ok {
 			continue
 		}
 
 		// Read data line
-		if !scanner.Scan() {
+		dataLine, ok := stream.nextLine()
+		if !ok {
 			break
 		}
-		dataLine := scanner.Text()
 		payload, ok := parseAnthropicSSEField(dataLine, "data")
 		if !ok {
 			continue
@@ -659,64 +691,14 @@ func (s *GatewayService) handleResponsesStreamingResponse(
 			continue
 		}
 
-		if processEvent(&event) {
-			return resultWithUsage(), nil
+		stream.observe(&event, payload)
+		if stream.upstreamErrType != "" {
+			break
 		}
+		processEvent(&event)
 	}
 
-	scanErr := scanner.Err()
-
-	// message_stop 已正常转换为 response.completed（state.CompletedSent）：干净收尾。
-	if state.CompletedSent {
-		return resultWithUsage(), nil
-	}
-
-	// 以下均为缺终止事件的异常收尾（上游断流/截断），与 /v1/messages 主路径同口径。
-	// 此前这里会用 FinalizeAnthropicResponsesStream 合成 response.completed，把截断的流
-	// 当成功交付并计费；严格 SDK（Codex CLI）也会因缺真实终止语义出现不一致。
-
-	// 客户端取消：携带已收集 usage 返回，交上层按部分交付计费。
-	if scanErr != nil && (errors.Is(scanErr, context.Canceled) || errors.Is(scanErr, context.DeadlineExceeded)) {
-		result := resultWithUsage()
-		result.ClientDisconnect = true
-		result.PartialError = firstTokenMs != nil
-		return result, fmt.Errorf("stream usage incomplete: %w", scanErr)
-	}
-
-	if scanErr != nil {
-		logger.L().Warn("forward_as_responses stream: read error",
-			zap.Error(scanErr),
-			zap.String("request_id", requestID),
-		)
-	}
-
-	// 尚未向客户端写出任何字节：包成 failover 错误让 handler 换号重试。
-	// （SSE 头仅 Set 未 flush，gin 尚未固化 200，重试仍可写新响应。）
-	if !c.Writer.Written() {
-		logger.L().Warn("forward_as_responses stream: upstream ended before any client output, failing over",
-			zap.String("request_id", requestID),
-		)
-		body, _ := json.Marshal(gin.H{
-			"error": gin.H{
-				"code":    "upstream_disconnected",
-				"message": "Upstream stream ended before a terminal event",
-			},
-		})
-		return nil, &UpstreamFailoverError{
-			StatusCode:             http.StatusBadGateway,
-			ResponseBody:           body,
-			RetryableOnSameAccount: true,
-		}
-	}
-
-	// 已部分交付：返回 PartialError 让 handler 对已交付 token 计费，
-	// 并由 handler 的 ensureForwardErrorResponse 补协议合规的 response.failed 终止事件。
-	result := resultWithUsage()
-	result.PartialError = firstTokenMs != nil
-	if scanErr != nil {
-		return result, fmt.Errorf("stream read error: %w", scanErr)
-	}
-	return result, fmt.Errorf("stream usage incomplete: missing terminal event")
+	return finalizeStream()
 }
 
 // appendRawJSON appends a JSON fragment string to existing raw JSON.

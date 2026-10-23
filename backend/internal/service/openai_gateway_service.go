@@ -52,7 +52,7 @@ const (
 	openaiPlatformAPIURL            = "https://api.openai.com/v1/responses"
 	openaiPlatformAPIInputTokensURL = "https://api.openai.com/v1/responses/input_tokens"
 	openaiStickySessionTTL          = time.Hour // 粘性会话TTL
-	// 与真实 Codex TUI 的 User-Agent 结构对齐：
+	// 与真实 Codex CLI 的 User-Agent 结构对齐：
 	// {originator}/{version} ({OS} {OS_version}; {arch}) {terminal}
 	// 缺少 OS/架构/终端后缀的形态易被上游指纹识别为非官方客户端。
 	// 该后缀是 UA 形态的唯一定义处，buildCodexCLIUserAgent 按运行时版本号复用它。
@@ -83,8 +83,8 @@ const (
 	openAICompactSessionSeedKey        = "openai_compact_session_seed"
 	openAIUpstreamEndpointContextKey   = "openai_actual_upstream_endpoint"
 	// codexCLIVersion 是网关对上游声明的 Codex 客户端版本，同时供 codexCLIUserAgent
-	// 与 version 头使用。上游 /backend-api/codex 在容量紧张时按客户端身份分优先级降载，
-	// 陈旧版本会被优先丢弃（HTTP 200 + 流内 server_is_overloaded）；非官方客户端配不出
+	// 与 version 头使用。上游 /backend-api/codex 会按客户端身份进行风控分层，
+	// 陈旧版本可能被优先丢弃（HTTP 200 + 流内 server_is_overloaded）；非官方客户端配不出
 	// 官方身份时整体回退到本常量，因此它必须跟随官方 CLI 的当前发布版本，
 	// 落后多个版本会让这些请求稳定落在被优先丢弃的一侧。
 	codexCLIVersion = "0.154.0"
@@ -3967,7 +3967,9 @@ func openAIStreamClientOutputStarted(c *gin.Context, localStarted bool) bool {
 func openAIStreamEventIsPreamble(eventType string) bool {
 	eventType = strings.TrimSpace(eventType)
 	switch eventType {
-	case "response.created", "response.in_progress", "response.metadata", "keepalive", "ping":
+	// Queuing and moderation metadata do not commit model output or disarm the
+	// first-output timeout; a following overload must remain safe to retry.
+	case "response.created", "response.queued", "response.in_progress", "response.metadata", "keepalive", "ping":
 		return true
 	}
 	return strings.HasPrefix(eventType, "codex.")
@@ -4028,7 +4030,7 @@ func openAIStreamAddedEventStartsClientOutput(payload []byte, eventType string) 
 		default:
 			return true
 		}
-	case "response.content_part.added":
+	case "response.content_part.added", "response.content_part.done":
 		part := gjson.GetBytes(payload, "part")
 		if !part.Exists() || !part.IsObject() {
 			return true
@@ -4041,7 +4043,7 @@ func openAIStreamAddedEventStartsClientOutput(payload []byte, eventType string) 
 		default:
 			return true
 		}
-	case "response.reasoning_summary_part.added":
+	case "response.reasoning_summary_part.added", "response.reasoning_summary_part.done":
 		part := gjson.GetBytes(payload, "part")
 		if !part.Exists() || !part.IsObject() || strings.TrimSpace(part.Get("type").String()) != "summary_text" {
 			return true
@@ -4063,6 +4065,7 @@ func openAIStreamDataStartsClientOutput(data, eventType string) bool {
 		// effectiveOpenAISSEEventType 归一化（现有三个调用点都做了，此分支对它们是 no-op）。
 		eventType = strings.TrimSpace(gjson.Get(trimmed, "type").String())
 	}
+	field := ""
 	switch eventType {
 	case "response.failed":
 		return false
@@ -4074,8 +4077,21 @@ func openAIStreamDataStartsClientOutput(data, eventType string) bool {
 		// （content_policy / invalid_request 等）维持原样转发，保留上游错误细节。
 		payload := []byte(trimmed)
 		return !openAIStreamFailedEventShouldFailover(payload, extractOpenAISSEErrorMessage(payload))
-	case "response.output_item.added", "response.content_part.added", "response.reasoning_summary_part.added":
+	case "response.output_item.added", "response.content_part.added", "response.reasoning_summary_part.added",
+		"response.content_part.done", "response.reasoning_summary_part.done":
 		return openAIStreamAddedEventStartsClientOutput([]byte(trimmed), eventType)
+	case "response.output_text.delta", "response.reasoning_summary_text.delta", "response.reasoning_text.delta",
+		"response.function_call_arguments.delta", "response.custom_tool_call_input.delta", "response.refusal.delta":
+		field = "delta"
+	case "response.output_text.done", "response.reasoning_summary_text.done", "response.reasoning_text.done":
+		field = "text"
+	case "response.refusal.done":
+		field = "refusal"
+	}
+	// 空增量 / 空文本收尾不算客户端输出（上游 0.2.18）：其后的 overload 仍可安全重试。
+	if field != "" && gjson.Valid(trimmed) {
+		value := gjson.Get(trimmed, field)
+		return value.Type != gjson.String || value.String() != ""
 	}
 	return !openAIStreamEventIsPreamble(eventType)
 }
@@ -5548,9 +5564,8 @@ func buildOpenAIResponsesURLForPlatform(platform string, base string) string {
 // 强制 store=false 并清除 previous_response_id（DeepSeek / Kimi 官方
 // Responses 均不支持服务端状态存储，携带这些字段会被拒绝）。
 //
-// DeepSeek 另需把 Codex/OpenAI 的 input_image.image_url 写成线上 serde
-// 要求的 url 字段；openai 平台但 base_url 指向 api.deepseek.com 的映射
-// 账号同样走这条出站改写（Codex 贴图会 422 missing field url）。
+// DeepSeek 另需把兼容格式的图片输入归一化为官方 image_url 字段；openai
+// 平台但 base_url 指向 api.deepseek.com 的映射账号同样走这条出站改写。
 // 非 CN / 非 DeepSeek 上游原样返回。
 func normalizeDeepSeekResponsesRequestBody(account *Account, body []byte) []byte {
 	if account == nil {
@@ -5609,10 +5624,9 @@ func shouldAliasDeepSeekResponsesInputImages(account *Account) bool {
 	return targetsDeepSeekAPIHost(account)
 }
 
-// aliasDeepSeekResponsesInputImages 把图片 part 改写成 DeepSeek 能反序列化
-// 的形状：type=input_image，同时带字符串字段 image_url 与 url。
-// 文档与部分 400 提 image_url；线上 serde 要求 url。只发其中一个都会踩坑。
-// 仅有 file_id、没有可用 URL 的 part 原样保留。
+// aliasDeepSeekResponsesInputImages 把图片 part 改写成 DeepSeek 官方形状：
+// type=input_image，同时只保留字符串字段 image_url。仅有 file_id、没有可用
+// URL 的 part 原样保留。
 func aliasDeepSeekResponsesInputImages(input any) (any, bool) {
 	items, ok := asDeepSeekResponsesSlice(input)
 	if !ok {
@@ -5694,18 +5708,18 @@ func aliasDeepSeekResponsesImagePart(part map[string]any) bool {
 		part["image_url"] = imageURL
 		changed = true
 	}
-	if current, ok := part["url"].(string); !ok || strings.TrimSpace(current) != imageURL {
-		part["url"] = imageURL
+	if _, exists := part["url"]; exists {
+		delete(part, "url")
 		changed = true
 	}
 	return changed
 }
 
 func extractDeepSeekResponsesImageURL(part map[string]any) string {
-	if imageURL := deepSeekResponsesURLValue(part["url"]); imageURL != "" {
+	if imageURL := deepSeekResponsesURLValue(part["image_url"]); imageURL != "" {
 		return imageURL
 	}
-	if imageURL := deepSeekResponsesURLValue(part["image_url"]); imageURL != "" {
+	if imageURL := deepSeekResponsesURLValue(part["url"]); imageURL != "" {
 		return imageURL
 	}
 	if imageURL := deepSeekResponsesURLValue(part["image"]); imageURL != "" {
@@ -12493,6 +12507,63 @@ func isOpenAIRequestScopedCapacityShed(upstreamMsg string, upstreamBody []byte) 
 		(!gjson.ValidBytes(upstreamBody) && isOpenAICapacityShedMessage(string(upstreamBody)))
 }
 
+const openAIRequestScopedRetryMaxDelay = 8 * time.Second
+
+func openAIRequestScopedRetryDelay(responseHeaders http.Header, responseBody []byte) time.Duration {
+	type retryAfterValue struct {
+		raw          string
+		milliseconds bool
+	}
+	for _, value := range []retryAfterValue{
+		{raw: responseHeaders.Get("Retry-After")},
+		{raw: responseHeaders.Get("Retry-After-Ms"), milliseconds: true},
+		{raw: gjson.GetBytes(responseBody, "error.headers.retry-after").String()},
+		{raw: gjson.GetBytes(responseBody, "response.error.headers.retry-after").String()},
+		{raw: gjson.GetBytes(responseBody, "error.headers.retry-after-ms").String(), milliseconds: true},
+		{raw: gjson.GetBytes(responseBody, "response.error.headers.retry-after-ms").String(), milliseconds: true},
+	} {
+		raw := strings.TrimSpace(value.raw)
+		if raw == "" {
+			continue
+		}
+		var delay time.Duration
+		var ok bool
+		if value.milliseconds {
+			delay, ok = parseOpenAIRequestScopedRetryDelayMilliseconds(raw)
+		} else {
+			delay, ok = parseOpenAIRequestScopedRetryDelay(raw)
+		}
+		if !ok || delay <= 0 {
+			continue
+		}
+		if delay > openAIRequestScopedRetryMaxDelay {
+			return openAIRequestScopedRetryMaxDelay
+		}
+		return delay
+	}
+	return 0
+}
+
+func parseOpenAIRequestScopedRetryDelay(raw string) (time.Duration, bool) {
+	if seconds, err := strconv.ParseFloat(raw, 64); err == nil && seconds > 0 {
+		return time.Duration(seconds * float64(time.Second)), true
+	}
+	if resetAt, err := http.ParseTime(raw); err == nil {
+		delay := time.Until(resetAt)
+		if delay > 0 {
+			return delay, true
+		}
+	}
+	return 0, false
+}
+
+func parseOpenAIRequestScopedRetryDelayMilliseconds(raw string) (time.Duration, bool) {
+	if millis, err := strconv.ParseFloat(raw, 64); err == nil && millis > 0 {
+		return time.Duration(millis * float64(time.Millisecond)), true
+	}
+	return 0, false
+}
+
 func isOpenAIContextWindowError(upstreamMsg string, upstreamBody []byte) bool {
 	match := func(text string) bool {
 		lower := strings.ToLower(strings.TrimSpace(text))
@@ -12671,6 +12742,11 @@ func newOpenAIUpstreamFailoverError(
 		// 徒增一个看起来有用实则无效的旋钮。总放大的真正上限是 maxAccountSwitches。
 		failoverErr.SameAccountRetryMax = openAICapacityShedSameAccountRetryMax
 		failoverErr.SameAccountRetryDelay = openAICapacityShedSameAccountRetryDelay
+		// 上游 0.2.18：Retry-After / Retry-After-Ms（含 body 内嵌 headers）给出更长的等待时，
+		// 以其为准（封顶 openAIRequestScopedRetryMaxDelay），固定 2s 作为下限。
+		if delay := openAIRequestScopedRetryDelay(responseHeaders, responseBody); delay > failoverErr.SameAccountRetryDelay {
+			failoverErr.SameAccountRetryDelay = delay
+		}
 	}
 	if isOpenAIRequestBodyTooLargeError(statusCode, upstreamMsg, responseBody) {
 		failoverErr.RetryableOnSameAccount = false
