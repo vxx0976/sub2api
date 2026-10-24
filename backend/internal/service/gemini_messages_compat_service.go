@@ -2131,7 +2131,8 @@ type geminiStreamResult struct {
 // firstTokenMs 非 nil（确实已向客户端交付过内容）时才计费。出错发生在产出任何内容之前
 // 或 streamRes 为 nil 时返回 false，不计费、保留上层 failover 语义。
 func shouldBillPartialGeminiStream(streamRes *geminiStreamResult) bool {
-	return streamRes != nil && streamRes.usage != nil && streamRes.firstTokenMs != nil
+	// 没观测到任何 token 时不按部分交付返回结果，否则会落一条 0 用量的幽灵账单行。
+	return streamRes != nil && streamRes.firstTokenMs != nil && streamRes.usage.hasObservedTokens()
 }
 
 func (s *GeminiMessagesCompatService) handleNonStreamingResponse(c *gin.Context, resp *http.Response, originalModel string) (*ClaudeUsage, error) {
@@ -2743,7 +2744,8 @@ type geminiNativeStreamResult struct {
 // usage、firstTokenMs 非 nil（确实已向客户端交付过内容）时才计费。出错发生在产出任何
 // 内容之前或 streamRes 为 nil 时返回 false，不计费、保留上层 failover 语义。
 func shouldBillPartialGeminiNativeStream(streamRes *geminiNativeStreamResult) bool {
-	return streamRes != nil && streamRes.usage != nil && streamRes.firstTokenMs != nil
+	// 没观测到任何 token 时不按部分交付返回结果，否则会落一条 0 用量的幽灵账单行。
+	return streamRes != nil && streamRes.firstTokenMs != nil && streamRes.usage.hasObservedTokens()
 }
 
 func isGeminiInsufficientScope(headers http.Header, body []byte) bool {

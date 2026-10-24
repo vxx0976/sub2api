@@ -229,6 +229,8 @@ func finishAnthropicCompatStreamFailure(c *gin.Context, writerSizeBeforeStream i
 	if !result.Usage.hasObservedTokens() {
 		return nil, failure.err
 	}
+	// fork：已交付后中途失败与其他网关路径同口径标 PartialError（已交付 token 计费、请求按失败处理）。
+	result.PartialError = true
 	return result, failure.err
 }
 

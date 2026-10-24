@@ -260,6 +260,15 @@ func TestAnthropicCompatStreaming_ReadErrorBeforeTerminalEventFails(t *testing.T
 
 				result, err := handle(&GatewayService{}, &http.Response{Header: http.Header{}, Body: body}, c)
 
+				// fork：Responses 路径在 message_start 之前就断开、尚未写出任何字节时换号重试
+				// （UpstreamFailoverError），而不是写出终止错误事件。
+				if name == "responses" && tc.name == "before_any_event" {
+					var failoverErr *UpstreamFailoverError
+					require.ErrorAs(t, err, &failoverErr)
+					require.Nil(t, result)
+					require.Empty(t, rec.Body.String())
+					return
+				}
 				if tc.wantErr {
 					require.ErrorIs(t, err, io.ErrUnexpectedEOF)
 					require.NotErrorIs(t, err, errAnthropicNativeStreamIdle)
@@ -358,6 +367,14 @@ func TestAnthropicCompatStreaming_EOFBeforeMessageStartKeepsExistingEnding(t *te
 
 			result, err := handle(&GatewayService{}, &http.Response{Header: http.Header{}, Body: io.NopCloser(strings.NewReader("event: ping\ndata: {\"type\":\"ping\"}\n\n"))}, c)
 
+			// fork：Responses 路径未写出任何字节就结束时换号重试，不合成空的 response.completed。
+			if name == "responses" {
+				var failoverErr *UpstreamFailoverError
+				require.ErrorAs(t, err, &failoverErr)
+				require.Nil(t, result)
+				require.Empty(t, rec.Body.String())
+				return
+			}
 			require.NoError(t, err)
 			require.NotNil(t, result)
 			require.NotContains(t, rec.Body.String(), compatStreamFailureMarkers[name])

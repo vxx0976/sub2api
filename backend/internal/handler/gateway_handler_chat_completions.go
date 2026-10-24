@@ -434,6 +434,10 @@ func (h *GatewayHandler) chatCompletionsErrorResponse(c *gin.Context, status int
 // handleCCFailoverExhausted writes a failover-exhausted error in CC format.
 func (h *GatewayHandler) handleCCFailoverExhausted(c *gin.Context, lastErr *service.UpstreamFailoverError, streamStarted bool) {
 	if streamStarted {
+		// 兼容流已写出协议内终止错误帧（MarkResponseCommitted）时不再追加第二个错误帧和 [DONE]。
+		if service.IsResponseCommitted(c) {
+			return
+		}
 		// SSE 头/数据已 flush，HTTP 200 已固化，无法回退 JSON。
 		// 通过 Chat Completions SSE 发一个 error chunk，再补 data: [DONE]，
 		// 避免客户端因连接直接 EOF 而把流当成异常截断。

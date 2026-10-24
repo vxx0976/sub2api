@@ -65,6 +65,7 @@ func runGeminiImageGateEndpoint(t *testing.T, ep geminiImageGateEndpoint, group 
 		nil, nil, nil, nil, nil, nil, nil,
 		service.NewSchedulerSnapshotService(schedulerCache, nil, nil, nil, nil),
 		nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil,
+		nil, // fork：多一个 ResellerSettingRepository 参数，其后全为 nil，补在末尾等价
 	)
 	cfg := &config.Config{RunMode: config.RunModeSimple}
 	billingCacheService := service.NewBillingCacheService(nil, nil, nil, nil, nil, nil, cfg, nil)

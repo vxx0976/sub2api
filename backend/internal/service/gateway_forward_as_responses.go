@@ -638,6 +638,30 @@ func (s *GatewayService) handleResponsesStreamingResponse(
 	}
 
 	finalizeStream := func() (*ForwardResult, error) {
+		// fork：上游在 message_start 之前就结束（空流 / 读错误）且尚未向客户端写出任何字节时，
+		// 换号重试而不是合成空的 response.completed 或写终止错误——此时 gin 尚未提交 200，
+		// 重试仍能写出新响应。上游流内 error 事件与读间隔超时保持上游原有处理。
+		if !stream.clientDisconnected && !stream.sawMessageStart && !stream.sawTerminal &&
+			c.Writer.Size() == writerSizeBeforeStream && !usage.hasObservedTokens() {
+			failure := stream.failure()
+			var sseErr *sseStreamErrorEventError
+			if failure == nil || (!errors.As(failure.err, &sseErr) && !errors.Is(failure.err, errAnthropicNativeStreamIdle)) {
+				logger.L().Warn("forward_as_responses stream: upstream ended before any client output, failing over",
+					zap.String("request_id", requestID),
+				)
+				body, _ := json.Marshal(gin.H{
+					"error": gin.H{
+						"code":    "upstream_disconnected",
+						"message": "Upstream stream ended before any output",
+					},
+				})
+				return nil, &UpstreamFailoverError{
+					StatusCode:             http.StatusBadGateway,
+					ResponseBody:           body,
+					RetryableOnSameAccount: true,
+				}
+			}
+		}
 		if failure := stream.failure(); failure != nil {
 			return finishAnthropicCompatStreamFailure(c, writerSizeBeforeStream, failure, resultWithUsage(), func() {
 				writeAnthropicCompatResponsesStreamFailure(c, state, clientToolRestorer, failure)

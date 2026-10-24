@@ -93,7 +93,13 @@ func TestGeminiForwardNative_UpstreamReadErrorWithLiveClientStaysError(t *testin
 
 	result, err := svc.ForwardNative(context.Background(), c, geminiVertexAPIKeyTestAccount(""), "gemini-3-flash-preview", "streamGenerateContent", true, reqBody)
 	require.ErrorIs(t, err, io.ErrUnexpectedEOF)
-	require.Nil(t, result)
+	// fork：客户端在线时上游读错误仍报错，但已交付给客户端的 token 照样按 PartialError
+	// 计费（与 /v1/messages 等各路径同口径）；上游这里是不计费、result 为 nil。
+	require.NotNil(t, result)
+	require.True(t, result.PartialError)
+	require.False(t, result.ClientDisconnect)
+	require.Equal(t, 10, result.Usage.InputTokens)
+	require.Equal(t, 5, result.Usage.OutputTokens)
 }
 
 func TestGeminiForwardNative_ClientDisconnectBillsOnlyDeliveredImages(t *testing.T) {
@@ -133,7 +139,12 @@ func TestGeminiCompatForward_ClientDisconnectAfterFinalChunkBillsCollectedUsage(
 		svc, c, _ := newGeminiAbortingStreamService(t, "/v1/messages", reqBody, geminiAbortTextChunk+geminiAbortFinalChunk, false)
 		result, err := svc.Forward(context.Background(), c, geminiVertexAPIKeyTestAccount(""), reqBody)
 		require.ErrorIs(t, err, io.ErrUnexpectedEOF)
-		require.Nil(t, result)
+		// fork：客户端在线时上游读错误仍报错，但已交付给客户端的 token 照样按 PartialError
+		// 计费（与 /v1/messages 等各路径同口径）；上游这里是不计费、result 为 nil。
+		require.NotNil(t, result)
+		require.True(t, result.PartialError)
+		require.Equal(t, 10, result.Usage.InputTokens)
+		require.Equal(t, 5, result.Usage.OutputTokens)
 	})
 }
 

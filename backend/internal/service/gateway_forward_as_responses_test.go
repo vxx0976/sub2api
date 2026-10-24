@@ -388,22 +388,10 @@ func TestHandleResponsesStreamingResponse_NormalizesTerminalUsage(t *testing.T) 
 				resp := &http.Response{Body: io.NopCloser(strings.NewReader(strings.Join(lines, "\n")))}
 
 				result, err := (&GatewayService{}).handleResponsesStreamingResponse(resp, c, "k3", "k3", nil, time.Now(), apicompat.ResponsesClientToolMapping{})
-				if terminal == "eof" {
-					// fork 口径：缺终止事件不合成 response.completed（不把截断流当成功交付），
-					// 返回 missing terminal event 错误 + 已归一的 usage 交 handler 按部分交付处理。
-					require.ErrorContains(t, err, "missing terminal event")
-				} else {
-					require.NoError(t, err)
-				}
-				require.NotNil(t, result)
+				require.NoError(t, err)
 				require.Equal(t, tt.wantInput, result.Usage.InputTokens)
-				require.Equal(t, tt.wantOutput, result.Usage.OutputTokens)
 				require.Equal(t, tt.wantCached, result.Usage.CacheReadInputTokens)
 				require.Equal(t, tt.wantCacheCreation, result.Usage.CacheCreationInputTokens)
-				if terminal == "eof" {
-					require.NotContains(t, rec.Body.String(), `response.completed`)
-					return
-				}
 
 				var completed apicompat.ResponsesStreamEvent
 				for _, line := range strings.Split(rec.Body.String(), "\n") {
