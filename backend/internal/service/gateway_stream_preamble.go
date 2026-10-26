@@ -1,8 +1,18 @@
 package service
 
 import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"strings"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/tidwall/gjson"
+
+	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
 )
 
 // streamPreambleOnlyKey 标记本次转发尝试写给客户端的只有前导帧（ping/注释/我方 keepalive），
@@ -71,4 +81,101 @@ func anthropicStreamPreambleKind(data string, usagePatch *sseUsagePatch) string 
 	default:
 		return ""
 	}
+}
+
+// relayQueueRejectCooldown 中转排队后流内拒绝（并发超限）时的短冷却。
+// 中转自身上游并发是共享的瞬时资源，冷却太长会把最便宜的主号闲置；
+// 不冷却则下一个请求还会选回来再空等一轮 ping。
+const relayQueueRejectCooldown = 90 * time.Second
+
+// isRelayQueueRejectStreamError 判断首个语义事件之前的流内错误是否为中转并发排队失败
+// （如 rate_limit_error "Concurrency limit exceeded for account"）。
+// "No available accounts" 可能只是单个模型无容量，不在此列（仅换号、不冷却整个账号）。
+func isRelayQueueRejectStreamError(body []byte) bool {
+	if gjson.GetBytes(body, "error.type").String() == "rate_limit_error" {
+		return true
+	}
+	return strings.Contains(strings.ToLower(extractUpstreamErrorMessage(body)), "concurrency limit")
+}
+
+// tempUnscheduleRelayQueueReject 对 API Key 中转的排队拒绝做短冷却，让后续请求先走其他号。
+// 分组内没有其他可调度账号时不冷却：冷却只会把"慢、偶尔成功"变成"全部失败"。
+func (s *GatewayService) tempUnscheduleRelayQueueReject(ctx context.Context, c *gin.Context, account *Account, body []byte) {
+	if s == nil || s.accountRepo == nil || account == nil || account.Type != AccountTypeAPIKey {
+		return
+	}
+	if !isRelayQueueRejectStreamError(body) {
+		return
+	}
+	now := time.Now()
+	if account.TempUnschedulableUntil != nil && now.Before(*account.TempUnschedulableUntil) {
+		return
+	}
+	apiKey := getAPIKeyFromContext(c)
+	if apiKey == nil || apiKey.GroupID == nil || *apiKey.GroupID <= 0 {
+		return
+	}
+	peers, err := s.accountRepo.ListSchedulableByGroupIDAndPlatform(ctx, *apiKey.GroupID, account.Platform)
+	if err != nil {
+		return
+	}
+	hasAlternative := false
+	for i := range peers {
+		if peers[i].ID != account.ID && peers[i].IsSchedulable() {
+			hasAlternative = true
+			break
+		}
+	}
+	if !hasAlternative {
+		return
+	}
+	until := now.Add(relayQueueRejectCooldown).Truncate(time.Second).Add(time.Second)
+	reason := fmt.Sprintf("relay queue reject in stream (auto temp-unschedule %s): %s",
+		relayQueueRejectCooldown, truncateString(extractUpstreamErrorMessage(body), 120))
+	if err := s.accountRepo.SetTempUnschedulable(ctx, account.ID, until, reason); err != nil {
+		logger.LegacyPrintf("service.gateway", "[Forward] relay queue reject temp_unschedule_failed account=%d error=%v", account.ID, err)
+		return
+	}
+	logger.LegacyPrintf("service.gateway", "[Forward] relay queue reject cooldown account=%d(%s) until=%s", account.ID, account.Name, until.Format("15:04:05"))
+}
+
+// writeClaudeErrorBody 写出 Anthropic 风格错误响应。若本次请求已以 200 SSE 开始
+// （先前尝试只发过前导 ping 后换号），改写为 SSE error 帧，避免裸 JSON 混进事件流。
+func writeClaudeErrorBody(c *gin.Context, status int, body []byte) {
+	if c == nil {
+		return
+	}
+	if !c.Writer.Written() || !strings.Contains(strings.ToLower(c.Writer.Header().Get("Content-Type")), "text/event-stream") {
+		c.Data(status, "application/json; charset=utf-8", body)
+		return
+	}
+	errType := gjson.GetBytes(body, "error.type").String()
+	message := extractUpstreamErrorMessage(body)
+	var compact bytes.Buffer
+	if gjson.GetBytes(body, "type").String() != "error" || errType == "" || json.Compact(&compact, body) != nil {
+		if errType == "" {
+			errType = "api_error"
+		}
+		if message == "" {
+			message = http.StatusText(status)
+		}
+		compact.Reset()
+		data, _ := json.Marshal(gin.H{"type": "error", "error": gin.H{"type": errType, "message": message}})
+		compact.Write(data)
+	}
+	MarkOpsStreamError(c, errType, message, status)
+	_, _ = fmt.Fprintf(c.Writer, "event: error\ndata: %s\n\n", compact.Bytes())
+	if flusher, ok := c.Writer.(http.Flusher); ok {
+		flusher.Flush()
+	}
+}
+
+// writeClaudeErrorJSON 同 writeClaudeErrorBody，接受 gin.H。
+func writeClaudeErrorJSON(c *gin.Context, status int, obj gin.H) {
+	body, err := json.Marshal(obj)
+	if err != nil {
+		c.JSON(status, obj)
+		return
+	}
+	writeClaudeErrorBody(c, status, body)
 }

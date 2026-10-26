@@ -1051,6 +1051,8 @@ func (s *GatewayService) sseStreamErrorEventFailover(ctx context.Context, c *gin
 			Body:       io.NopCloser(bytes.NewReader(body)),
 		}
 		s.handleFailoverSideEffects(ctx, syntheticResp, account, model)
+	} else if !outputStarted {
+		s.tempUnscheduleRelayQueueReject(ctx, c, account, body)
 	}
 
 	upstreamMsg := sanitizeUpstreamErrorMessage(

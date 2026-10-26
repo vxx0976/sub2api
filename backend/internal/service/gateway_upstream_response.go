@@ -552,7 +552,7 @@ func (s *GatewayService) handleErrorResponse(ctx context.Context, resp *http.Res
 		"upstream_error",
 		"Upstream request failed",
 	); matched {
-		c.JSON(status, gin.H{
+		writeClaudeErrorJSON(c, status, gin.H{
 			"type": "error",
 			"error": gin.H{
 				"type":    errType,
@@ -576,7 +576,7 @@ func (s *GatewayService) handleErrorResponse(ctx context.Context, resp *http.Res
 
 	switch resp.StatusCode {
 	case 400:
-		c.Data(http.StatusBadRequest, "application/json", body)
+		writeClaudeErrorBody(c, http.StatusBadRequest, body)
 		summary := upstreamMsg
 		if summary == "" {
 			summary = truncateForLog(body, 512)
@@ -612,7 +612,7 @@ func (s *GatewayService) handleErrorResponse(ctx context.Context, resp *http.Res
 	}
 
 	// 返回自定义错误响应
-	c.JSON(statusCode, gin.H{
+	writeClaudeErrorJSON(c, statusCode, gin.H{
 		"type": "error",
 		"error": gin.H{
 			"type":    errType,
@@ -723,7 +723,7 @@ func (s *GatewayService) handleRetryExhaustedError(ctx context.Context, resp *ht
 		"upstream_error",
 		"Upstream request failed after retries",
 	); matched {
-		c.JSON(status, gin.H{
+		writeClaudeErrorJSON(c, status, gin.H{
 			"type": "error",
 			"error": gin.H{
 				"type":    errType,
@@ -742,7 +742,7 @@ func (s *GatewayService) handleRetryExhaustedError(ctx context.Context, resp *ht
 	}
 
 	// 返回统一的重试耗尽错误响应
-	c.JSON(http.StatusBadGateway, gin.H{
+	writeClaudeErrorJSON(c, http.StatusBadGateway, gin.H{
 		"type": "error",
 		"error": gin.H{
 			"type":    "upstream_error",

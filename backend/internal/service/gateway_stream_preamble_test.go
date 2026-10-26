@@ -137,3 +137,91 @@ func TestStreamOutputCommitted(t *testing.T) {
 	ResetStreamPreamble(c)
 	require.True(t, StreamOutputCommitted(c, before), "Reset 后不应残留上一次尝试的前导标记")
 }
+
+func TestIsRelayQueueRejectStreamError(t *testing.T) {
+	require.True(t, isRelayQueueRejectStreamError([]byte(`{"type":"error","error":{"type":"rate_limit_error","message":"Concurrency limit exceeded for account, please retry later"}}`)))
+	require.True(t, isRelayQueueRejectStreamError([]byte(`{"type":"error","error":{"type":"api_error","message":"Concurrency limit exceeded"}}`)))
+	// 可能只是单个模型无容量：仅换号，不冷却整个账号。
+	require.False(t, isRelayQueueRejectStreamError([]byte(`{"type":"error","error":{"type":"api_error","message":"No available accounts: no available accounts"}}`)))
+	require.False(t, isRelayQueueRejectStreamError([]byte(`{"type":"error","error":{"type":"api_error","message":"Internal server error"}}`)))
+	require.False(t, isRelayQueueRejectStreamError([]byte(`not json`)))
+}
+
+type relayQueueRejectRepoStub struct {
+	internal500AccountRepoStub
+	peers []Account
+}
+
+func (r *relayQueueRejectRepoStub) ListSchedulableByGroupIDAndPlatform(_ context.Context, _ int64, _ string) ([]Account, error) {
+	return r.peers, nil
+}
+
+func relayQueueRejectContext(groupID int64) *gin.Context {
+	gin.SetMode(gin.TestMode)
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	c.Set("api_key", &APIKey{ID: 1, GroupID: &groupID})
+	return c
+}
+
+func TestTempUnscheduleRelayQueueReject(t *testing.T) {
+	reject := []byte(`{"type":"error","error":{"type":"rate_limit_error","message":"Concurrency limit exceeded for account"}}`)
+	relay := &Account{ID: 232, Name: "Max-hh", Platform: PlatformAnthropic, Type: AccountTypeAPIKey, Status: StatusActive, Schedulable: true}
+	peer := Account{ID: 172, Platform: PlatformAnthropic, Type: AccountTypeAPIKey, Status: StatusActive, Schedulable: true}
+
+	repo := &relayQueueRejectRepoStub{peers: []Account{*relay, peer}}
+	svc := &GatewayService{accountRepo: repo}
+	svc.tempUnscheduleRelayQueueReject(context.Background(), relayQueueRejectContext(86), relay, reject)
+	require.Len(t, repo.tempUnschedCalls, 1)
+	require.Equal(t, int64(232), repo.tempUnschedCalls[0].accountID)
+	require.WithinDuration(t, time.Now().Add(relayQueueRejectCooldown), repo.tempUnschedCalls[0].until, 5*time.Second)
+
+	// 分组内没有其他可调度账号：不冷却，避免整组 90 秒不可用。
+	solo := &relayQueueRejectRepoStub{peers: []Account{*relay}}
+	(&GatewayService{accountRepo: solo}).tempUnscheduleRelayQueueReject(context.Background(), relayQueueRejectContext(168), relay, reject)
+	require.Empty(t, solo.tempUnschedCalls)
+
+	// 已在冷却中、OAuth 账号、非排队类错误、无分组上下文：均不冷却。
+	repo2 := &relayQueueRejectRepoStub{peers: []Account{*relay, peer}}
+	svc2 := &GatewayService{accountRepo: repo2}
+	future := time.Now().Add(time.Minute)
+	cooling := *relay
+	cooling.TempUnschedulableUntil = &future
+	svc2.tempUnscheduleRelayQueueReject(context.Background(), relayQueueRejectContext(86), &cooling, reject)
+	svc2.tempUnscheduleRelayQueueReject(context.Background(), relayQueueRejectContext(86), &Account{ID: 1, Platform: PlatformAnthropic, Type: AccountTypeOAuth}, reject)
+	svc2.tempUnscheduleRelayQueueReject(context.Background(), relayQueueRejectContext(86), relay, []byte(`{"type":"error","error":{"type":"api_error","message":"boom"}}`))
+	gin.SetMode(gin.TestMode)
+	bare, _ := gin.CreateTestContext(httptest.NewRecorder())
+	svc2.tempUnscheduleRelayQueueReject(context.Background(), bare, relay, reject)
+	require.Empty(t, repo2.tempUnschedCalls)
+}
+
+func TestWriteClaudeErrorBody(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	// 未开始流：照常写 JSON 与状态码。
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	writeClaudeErrorBody(c, http.StatusBadRequest, []byte(`{"type":"error","error":{"type":"invalid_request_error","message":"prompt is too long"}}`))
+	require.Equal(t, http.StatusBadRequest, rec.Code)
+	require.Contains(t, rec.Header().Get("Content-Type"), "application/json")
+	require.True(t, strings.HasPrefix(rec.Body.String(), `{"type":"error"`))
+
+	// 已以 200 SSE 发过 ping：改写为 SSE error 帧，保留上游错误类型与文案（客户端靠它触发自动压缩）。
+	rec = httptest.NewRecorder()
+	c, _ = gin.CreateTestContext(rec)
+	c.Header("Content-Type", "text/event-stream")
+	_, _ = c.Writer.WriteString("event: ping\ndata: {\"type\":\"ping\"}\n\n")
+	writeClaudeErrorBody(c, http.StatusBadRequest, []byte("{\n  \"type\": \"error\",\n  \"error\": {\"type\":\"invalid_request_error\",\"message\":\"prompt is too long\"}\n}"))
+	require.Equal(t, http.StatusOK, rec.Code)
+	require.Contains(t, rec.Body.String(), "event: error\ndata: {\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"prompt is too long\"}}\n\n")
+
+	// 非 Anthropic 形状的错误体：包装成标准 error 帧。
+	rec = httptest.NewRecorder()
+	c, _ = gin.CreateTestContext(rec)
+	c.Header("Content-Type", "text/event-stream")
+	_, _ = c.Writer.WriteString("event: ping\ndata: {}\n\n")
+	writeClaudeErrorBody(c, http.StatusBadRequest, []byte(`upstream exploded`))
+	body := rec.Body.String()
+	require.Contains(t, body, "event: error\ndata: ")
+	require.Contains(t, body, `"type":"api_error"`)
+}
