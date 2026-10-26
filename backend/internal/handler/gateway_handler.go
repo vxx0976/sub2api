@@ -881,7 +881,9 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 				requestCtx = service.WithForceCacheBilling(requestCtx)
 			}
 			// 记录 Forward 前已写入字节数，Forward 后若增加则说明 SSE 内容已发，禁止 failover
+			// （只写过 ping 等前导帧的除外，见 service.StreamOutputCommitted）
 			writerSizeBeforeForward := c.Writer.Size()
+			service.ResetStreamPreamble(c)
 			if account.Platform == service.PlatformAntigravity && account.Type != service.AccountTypeAPIKey {
 				result, err = h.antigravityGatewayService.Forward(requestCtx, c, account, attemptBody, hasBoundSession)
 			} else {
@@ -974,9 +976,13 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 				var failoverErr *service.UpstreamFailoverError
 				if errors.As(err, &failoverErr) {
 					// 流式内容已写入客户端，无法撤销，禁止 failover 以防止流拼接腐化
-					if c.Writer.Size() != writerSizeBeforeForward {
+					if service.StreamOutputCommitted(c, writerSizeBeforeForward) {
 						h.handleFailoverExhausted(c, failoverErr, account.Platform, true)
 						return
+					}
+					// 只写过前导 ping 时响应头已固化为 200 SSE，后续错误只能以 SSE 帧回传。
+					if c.Writer.Written() {
+						streamStarted = true
 					}
 					action := fs.HandleFailoverError(c.Request.Context(), h.gatewayService, account.ID, account.Platform, account.GetPoolModeRetryCount(), failoverErr)
 					switch action {

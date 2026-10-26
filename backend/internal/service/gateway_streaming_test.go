@@ -545,10 +545,10 @@ func TestHandleStreamingResponse_SSEErrorEvent_AfterPartialStreamOutput(t *testi
 	require.True(t, errors.As(err, &sseErr), "已发数据后再来的 SSE event:error 必须仍包成 typed error，期望: %v", err)
 	require.Equal(t, errorJSON, sseErr.RawData)
 
-	// c.Writer 必定已被写过（message_start 已转发）— 这是 handler 838 行 streamStarted 守卫触发的条件，
-	// 修复前/后均会让 handler 直接走 handleFailoverExhausted 而非切账号；不变。
+	// 携带 token 的 message_start 视为已提交：handler 不换号、按部分交付计费；不变。
 	require.Greater(t, rec.Body.Len(), 0, "message_start 应被转发到客户端")
 	require.Contains(t, rec.Body.String(), "message_start")
+	require.True(t, StreamOutputCommitted(c, -1))
 }
 
 // 对抗用例：上游发 event:error 但 data 行不是合法 JSON。

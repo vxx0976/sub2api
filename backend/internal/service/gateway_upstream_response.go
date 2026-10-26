@@ -1118,10 +1118,66 @@ func (s *GatewayService) handleStreamingResponse(ctx context.Context, resp *http
 		return []string{block}, string(newData), usagePatch, nil
 	}
 
+	// 首个语义事件之前，ping 照常转发保活但不算提交，message_start 暂存（usage 延后合并）。
+	// 期间上游若在流内报错或断流，客户端只收到过 ping，handler 仍可换号重试。
+	type heldStreamEvent struct {
+		blocks     []string
+		data       string
+		usagePatch *sseUsagePatch
+	}
+	committed := false
+	var heldEvents []heldStreamEvent
+	setStreamPreambleOnly(c, true)
+	emitEvent := func(outputBlocks []string, data string, usagePatch *sseUsagePatch) {
+		for _, block := range outputBlocks {
+			if !clientDisconnected {
+				restored := reverseToolNamesIfPresent(c, []byte(block))
+				if _, werr := fmt.Fprint(w, string(restored)); werr != nil {
+					clientDisconnected = true
+					logger.LegacyPrintf("service.gateway", "Client disconnected during streaming, continuing to drain upstream for billing")
+					// 不 break：客户端断开后仍需继续合并本事件及后续事件的 usage，
+					// 否则会漏计当前事件携带的 usage 导致少计费。后续写入由
+					// clientDisconnected 守卫跳过。
+				} else {
+					flusher.Flush()
+					lastDataAt = time.Now()
+					resetKeepaliveTimer()
+				}
+			}
+			if data != "" {
+				if firstTokenMs == nil && data != "[DONE]" {
+					ms := int(time.Since(startTime).Milliseconds())
+					firstTokenMs = &ms
+				}
+				if usagePatch != nil {
+					mergeSSEUsagePatch(usage, usagePatch)
+				}
+			}
+		}
+	}
+	commitHeld := func() {
+		if committed {
+			return
+		}
+		committed = true
+		setStreamPreambleOnly(c, false)
+		for _, held := range heldEvents {
+			emitEvent(held.blocks, held.data, held.usagePatch)
+		}
+		heldEvents = nil
+	}
+	// 我方写出的错误帧属于语义输出，写之前先提交（含暂存的 message_start）。
+	rawSendErrorEvent := sendErrorEvent
+	sendErrorEvent = func(reason, message string) {
+		commitHeld()
+		rawSendErrorEvent(reason, message)
+	}
+
 	for {
 		select {
 		case ev, ok := <-events:
 			if !ok {
+				commitHeld()
 				// 上游完成，返回结果
 				if !sawTerminalEvent {
 					return &streamingResult{usage: usage, firstTokenMs: firstTokenMs, clientDisconnect: clientDisconnected}, fmt.Errorf("stream usage incomplete: missing terminal event")
@@ -1153,7 +1209,7 @@ func (s *GatewayService) handleStreamingResponse(ctx context.Context, resp *http
 				// 默认 *net.OpError 的 Error() 会泄露内部 IP/端口和上游地址。完整 ev.err
 				// 仅在下方 LegacyPrintf 内部日志中保留供运维诊断。
 				disconnectMsg := "upstream stream disconnected: " + sanitizeStreamError(ev.err)
-				if !c.Writer.Written() {
+				if !committed {
 					logger.LegacyPrintf("service.gateway", "Upstream stream read error before any client output (account=%d), failing over: %v", account.ID, ev.err)
 					body, _ := json.Marshal(map[string]any{
 						"type": "error",
@@ -1190,31 +1246,19 @@ func (s *GatewayService) handleStreamingResponse(ctx context.Context, resp *http
 					return &streamingResult{usage: usage, firstTokenMs: firstTokenMs}, err
 				}
 
-				for _, block := range outputBlocks {
-					if !clientDisconnected {
-						restored := reverseToolNamesIfPresent(c, []byte(block))
-						if _, werr := fmt.Fprint(w, string(restored)); werr != nil {
-							clientDisconnected = true
-							logger.LegacyPrintf("service.gateway", "Client disconnected during streaming, continuing to drain upstream for billing")
-							// 不 break：客户端断开后仍需继续合并本事件及后续事件的 usage，
-							// 否则会漏计当前事件携带的 usage 导致少计费。后续写入由
-							// clientDisconnected 守卫跳过。
-						} else {
-							flusher.Flush()
-							lastDataAt = time.Now()
-							resetKeepaliveTimer()
-						}
-					}
-					if data != "" {
-						if firstTokenMs == nil && data != "[DONE]" {
-							ms := int(time.Since(startTime).Milliseconds())
-							firstTokenMs = &ms
-						}
-						if usagePatch != nil {
-							mergeSSEUsagePatch(usage, usagePatch)
-						}
+				if !committed {
+					switch anthropicStreamPreambleKind(data, usagePatch) {
+					case "hold":
+						heldEvents = append(heldEvents, heldStreamEvent{blocks: outputBlocks, data: data, usagePatch: usagePatch})
+						continue
+					case "ping":
+						emitEvent(outputBlocks, data, usagePatch)
+						continue
+					default:
+						commitHeld()
 					}
 				}
+				emitEvent(outputBlocks, data, usagePatch)
 				continue
 			}
 
