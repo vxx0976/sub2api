@@ -83,28 +83,37 @@ func anthropicStreamPreambleKind(data string, usagePatch *sseUsagePatch) string 
 	}
 }
 
-// relayQueueRejectCooldown 中转排队后流内拒绝（并发超限）时的短冷却。
-// 中转自身上游并发是共享的瞬时资源，冷却太长会把最便宜的主号闲置；
-// 不冷却则下一个请求还会选回来再空等一轮 ping。
-const relayQueueRejectCooldown = 90 * time.Second
+// relayQueueRejectCooldown 中转排队后流内明确报"并发超限"时的冷却。
+// 中转并发打满通常会持续一段时间，每次选回来都要先空等 30~120s 的 ping 才报错，
+// 宁可让主号闲置一段时间，也不让用户反复空等。
+const relayQueueRejectCooldown = 30 * time.Minute
 
-// isRelayQueueRejectStreamError 判断首个语义事件之前的流内错误是否为中转并发排队失败
-// （如 rate_limit_error "Concurrency limit exceeded for account"）。
+// relayRateLimitRejectCooldown 其他流内 rate_limit_error（中转按 key/模型的 RPM、
+// 级联中转透传的上游 429 等）的短冷却：这类限流往往只针对单个模型、几十秒内恢复，
+// 不能按并发超限冷却 30 分钟。
+const relayRateLimitRejectCooldown = 90 * time.Second
+
+// relayQueueRejectStreamCooldown 返回首个语义事件之前的流内错误应冷却的时长，0 表示不冷却。
 // "No available accounts" 可能只是单个模型无容量，不在此列（仅换号、不冷却整个账号）。
-func isRelayQueueRejectStreamError(body []byte) bool {
-	if gjson.GetBytes(body, "error.type").String() == "rate_limit_error" {
-		return true
+func relayQueueRejectStreamCooldown(body []byte) time.Duration {
+	if strings.Contains(strings.ToLower(extractUpstreamErrorMessage(body)), "concurrency limit") {
+		return relayQueueRejectCooldown
 	}
-	return strings.Contains(strings.ToLower(extractUpstreamErrorMessage(body)), "concurrency limit")
+	if gjson.GetBytes(body, "error.type").String() == "rate_limit_error" {
+		return relayRateLimitRejectCooldown
+	}
+	return 0
 }
 
-// tempUnscheduleRelayQueueReject 对 API Key 中转的排队拒绝做短冷却，让后续请求先走其他号。
-// 分组内没有其他可调度账号时不冷却：冷却只会把"慢、偶尔成功"变成"全部失败"。
-func (s *GatewayService) tempUnscheduleRelayQueueReject(ctx context.Context, c *gin.Context, account *Account, body []byte) {
+// tempUnscheduleRelayQueueReject 对 API Key 中转的排队拒绝做冷却，让后续请求先走其他号。
+// 冷却作用于账号本身（所有分组），因此要求账号所在的每个分组都还有能服务该模型的
+// 其他可调度账号；任一分组只剩它时不冷却：冷却只会把"慢、偶尔成功"变成"全部失败"。
+func (s *GatewayService) tempUnscheduleRelayQueueReject(ctx context.Context, c *gin.Context, account *Account, body []byte, model string) {
 	if s == nil || s.accountRepo == nil || account == nil || account.Type != AccountTypeAPIKey {
 		return
 	}
-	if !isRelayQueueRejectStreamError(body) {
+	cooldown := relayQueueRejectStreamCooldown(body)
+	if cooldown <= 0 {
 		return
 	}
 	now := time.Now()
@@ -115,28 +124,43 @@ func (s *GatewayService) tempUnscheduleRelayQueueReject(ctx context.Context, c *
 	if apiKey == nil || apiKey.GroupID == nil || *apiKey.GroupID <= 0 {
 		return
 	}
-	peers, err := s.accountRepo.ListSchedulableByGroupIDAndPlatform(ctx, *apiKey.GroupID, account.Platform)
-	if err != nil {
-		return
-	}
-	hasAlternative := false
-	for i := range peers {
-		if peers[i].ID != account.ID && peers[i].IsSchedulable() {
-			hasAlternative = true
-			break
+	groupIDs := []int64{*apiKey.GroupID}
+	for _, gid := range account.GroupIDs {
+		if gid > 0 && gid != *apiKey.GroupID {
+			groupIDs = append(groupIDs, gid)
 		}
 	}
-	if !hasAlternative {
-		return
+	for _, gid := range groupIDs {
+		if !s.groupHasRelayAlternative(ctx, gid, account, model) {
+			return
+		}
 	}
-	until := now.Add(relayQueueRejectCooldown).Truncate(time.Second).Add(time.Second)
+	until := now.Add(cooldown).Truncate(time.Second).Add(time.Second)
 	reason := fmt.Sprintf("relay queue reject in stream (auto temp-unschedule %s): %s",
-		relayQueueRejectCooldown, truncateString(extractUpstreamErrorMessage(body), 120))
+		cooldown, truncateString(extractUpstreamErrorMessage(body), 120))
 	if err := s.accountRepo.SetTempUnschedulable(ctx, account.ID, until, reason); err != nil {
 		logger.LegacyPrintf("service.gateway", "[Forward] relay queue reject temp_unschedule_failed account=%d error=%v", account.ID, err)
 		return
 	}
 	logger.LegacyPrintf("service.gateway", "[Forward] relay queue reject cooldown account=%d(%s) until=%s", account.ID, account.Name, until.Format("15:04:05"))
+}
+
+// groupHasRelayAlternative 报告分组内是否还有除 account 外、可调度且支持 model 的账号。
+func (s *GatewayService) groupHasRelayAlternative(ctx context.Context, groupID int64, account *Account, model string) bool {
+	peers, err := s.accountRepo.ListSchedulableByGroupIDAndPlatform(ctx, groupID, account.Platform)
+	if err != nil {
+		return false
+	}
+	for i := range peers {
+		if peers[i].ID == account.ID || !peers[i].IsSchedulable() {
+			continue
+		}
+		if model != "" && !s.isModelSupportedByAccountWithContext(ctx, &peers[i], model) {
+			continue
+		}
+		return true
+	}
+	return false
 }
 
 // writeClaudeErrorBody 写出 Anthropic 风格错误响应。若本次请求已以 200 SSE 开始

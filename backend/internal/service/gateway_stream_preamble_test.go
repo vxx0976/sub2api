@@ -138,21 +138,27 @@ func TestStreamOutputCommitted(t *testing.T) {
 	require.True(t, StreamOutputCommitted(c, before), "Reset 后不应残留上一次尝试的前导标记")
 }
 
-func TestIsRelayQueueRejectStreamError(t *testing.T) {
-	require.True(t, isRelayQueueRejectStreamError([]byte(`{"type":"error","error":{"type":"rate_limit_error","message":"Concurrency limit exceeded for account, please retry later"}}`)))
-	require.True(t, isRelayQueueRejectStreamError([]byte(`{"type":"error","error":{"type":"api_error","message":"Concurrency limit exceeded"}}`)))
+func TestRelayQueueRejectStreamCooldown(t *testing.T) {
+	require.Equal(t, relayQueueRejectCooldown, relayQueueRejectStreamCooldown([]byte(`{"type":"error","error":{"type":"rate_limit_error","message":"Concurrency limit exceeded for account, please retry later"}}`)))
+	require.Equal(t, relayQueueRejectCooldown, relayQueueRejectStreamCooldown([]byte(`{"type":"error","error":{"type":"api_error","message":"Concurrency limit exceeded"}}`)))
+	// 非并发类限流（RPM、级联上游 429）：只短冷却。
+	require.Equal(t, relayRateLimitRejectCooldown, relayQueueRejectStreamCooldown([]byte(`{"type":"error","error":{"type":"rate_limit_error","message":"Upstream rate limit exceeded, please retry later"}}`)))
 	// 可能只是单个模型无容量：仅换号，不冷却整个账号。
-	require.False(t, isRelayQueueRejectStreamError([]byte(`{"type":"error","error":{"type":"api_error","message":"No available accounts: no available accounts"}}`)))
-	require.False(t, isRelayQueueRejectStreamError([]byte(`{"type":"error","error":{"type":"api_error","message":"Internal server error"}}`)))
-	require.False(t, isRelayQueueRejectStreamError([]byte(`not json`)))
+	require.Zero(t, relayQueueRejectStreamCooldown([]byte(`{"type":"error","error":{"type":"api_error","message":"No available accounts: no available accounts"}}`)))
+	require.Zero(t, relayQueueRejectStreamCooldown([]byte(`{"type":"error","error":{"type":"api_error","message":"Internal server error"}}`)))
+	require.Zero(t, relayQueueRejectStreamCooldown([]byte(`not json`)))
 }
 
 type relayQueueRejectRepoStub struct {
 	internal500AccountRepoStub
-	peers []Account
+	peers      []Account
+	groupPeers map[int64][]Account
 }
 
-func (r *relayQueueRejectRepoStub) ListSchedulableByGroupIDAndPlatform(_ context.Context, _ int64, _ string) ([]Account, error) {
+func (r *relayQueueRejectRepoStub) ListSchedulableByGroupIDAndPlatform(_ context.Context, groupID int64, _ string) ([]Account, error) {
+	if peers, ok := r.groupPeers[groupID]; ok {
+		return peers, nil
+	}
 	return r.peers, nil
 }
 
@@ -170,14 +176,28 @@ func TestTempUnscheduleRelayQueueReject(t *testing.T) {
 
 	repo := &relayQueueRejectRepoStub{peers: []Account{*relay, peer}}
 	svc := &GatewayService{accountRepo: repo}
-	svc.tempUnscheduleRelayQueueReject(context.Background(), relayQueueRejectContext(86), relay, reject)
+	svc.tempUnscheduleRelayQueueReject(context.Background(), relayQueueRejectContext(86), relay, reject, "claude-opus-5-5")
 	require.Len(t, repo.tempUnschedCalls, 1)
 	require.Equal(t, int64(232), repo.tempUnschedCalls[0].accountID)
 	require.WithinDuration(t, time.Now().Add(relayQueueRejectCooldown), repo.tempUnschedCalls[0].until, 5*time.Second)
 
-	// 分组内没有其他可调度账号：不冷却，避免整组 90 秒不可用。
+	// 账号同时在另一个只有它自己的分组：冷却作用于所有分组，不冷却。
+	multi := *relay
+	multi.GroupIDs = []int64{86, 168}
+	multiRepo := &relayQueueRejectRepoStub{peers: []Account{*relay, peer}, groupPeers: map[int64][]Account{168: {*relay}}}
+	(&GatewayService{accountRepo: multiRepo}).tempUnscheduleRelayQueueReject(context.Background(), relayQueueRejectContext(86), &multi, reject, "claude-opus-5-5")
+	require.Empty(t, multiRepo.tempUnschedCalls)
+
+	// 其他账号不支持该模型：不算替补，不冷却。
+	narrow := peer
+	narrow.Credentials = map[string]any{"model_mapping": map[string]any{"claude-sonnet-5": "claude-sonnet-5"}}
+	narrowRepo := &relayQueueRejectRepoStub{peers: []Account{*relay, narrow}}
+	(&GatewayService{accountRepo: narrowRepo}).tempUnscheduleRelayQueueReject(context.Background(), relayQueueRejectContext(86), relay, reject, "claude-opus-5-5")
+	require.Empty(t, narrowRepo.tempUnschedCalls)
+
+	// 分组内没有其他可调度账号：不冷却，避免整组不可用。
 	solo := &relayQueueRejectRepoStub{peers: []Account{*relay}}
-	(&GatewayService{accountRepo: solo}).tempUnscheduleRelayQueueReject(context.Background(), relayQueueRejectContext(168), relay, reject)
+	(&GatewayService{accountRepo: solo}).tempUnscheduleRelayQueueReject(context.Background(), relayQueueRejectContext(168), relay, reject, "claude-opus-5-5")
 	require.Empty(t, solo.tempUnschedCalls)
 
 	// 已在冷却中、OAuth 账号、非排队类错误、无分组上下文：均不冷却。
@@ -186,12 +206,12 @@ func TestTempUnscheduleRelayQueueReject(t *testing.T) {
 	future := time.Now().Add(time.Minute)
 	cooling := *relay
 	cooling.TempUnschedulableUntil = &future
-	svc2.tempUnscheduleRelayQueueReject(context.Background(), relayQueueRejectContext(86), &cooling, reject)
-	svc2.tempUnscheduleRelayQueueReject(context.Background(), relayQueueRejectContext(86), &Account{ID: 1, Platform: PlatformAnthropic, Type: AccountTypeOAuth}, reject)
-	svc2.tempUnscheduleRelayQueueReject(context.Background(), relayQueueRejectContext(86), relay, []byte(`{"type":"error","error":{"type":"api_error","message":"boom"}}`))
+	svc2.tempUnscheduleRelayQueueReject(context.Background(), relayQueueRejectContext(86), &cooling, reject, "claude-opus-5-5")
+	svc2.tempUnscheduleRelayQueueReject(context.Background(), relayQueueRejectContext(86), &Account{ID: 1, Platform: PlatformAnthropic, Type: AccountTypeOAuth}, reject, "claude-opus-5-5")
+	svc2.tempUnscheduleRelayQueueReject(context.Background(), relayQueueRejectContext(86), relay, []byte(`{"type":"error","error":{"type":"api_error","message":"boom"}}`), "claude-opus-5-5")
 	gin.SetMode(gin.TestMode)
 	bare, _ := gin.CreateTestContext(httptest.NewRecorder())
-	svc2.tempUnscheduleRelayQueueReject(context.Background(), bare, relay, reject)
+	svc2.tempUnscheduleRelayQueueReject(context.Background(), bare, relay, reject, "claude-opus-5-5")
 	require.Empty(t, repo2.tempUnschedCalls)
 }
 

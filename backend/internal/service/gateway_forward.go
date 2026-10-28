@@ -1052,7 +1052,7 @@ func (s *GatewayService) sseStreamErrorEventFailover(ctx context.Context, c *gin
 		}
 		s.handleFailoverSideEffects(ctx, syntheticResp, account, model)
 	} else if !outputStarted {
-		s.tempUnscheduleRelayQueueReject(ctx, c, account, body)
+		s.tempUnscheduleRelayQueueReject(ctx, c, account, body, model)
 	}
 
 	upstreamMsg := sanitizeUpstreamErrorMessage(
