@@ -248,6 +248,11 @@ func (s *ModelPlazaService) fillDisplayPricing(ctx context.Context, m *PlazaMode
 	// 展示口径要跟着实收走；推理等级倍率也随分组价卡带出。
 	if groupPricing := MatchGroupModelPricing(g, m.Name); groupPricing != nil {
 		m.Pricing = groupPricing
+		// 分组模型级固定价就是实收价，不能再被分组图片兜底档位覆盖。
+		// 否则模型广场会显示 image_price_1k/2k/4k，而实际按 model_pricing 扣费。
+		if groupPricing.BillingMode == BillingModeImage || groupPricing.BillingMode == BillingModePerRequest {
+			return
+		}
 	}
 	// 按图片计费的模型不能走 token 阶梯表：plazaPricingFromSchedule 会无条件把
 	// BillingMode 写成 token，覆盖掉 synthesizePricingFromLiteLLM 判定出的 image 模式，

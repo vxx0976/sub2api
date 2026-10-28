@@ -304,14 +304,17 @@ type OpenAIForwardResult struct {
 	FirstTokenMs          *int
 	ClientDisconnect      bool
 	ImageCount            int
-	ImageSize             string
-	ImageInputSize        string
-	ImageOutputSize       string
-	ImageOutputSizes      []string
-	ImageSizeSource       string
-	ImageSizeBreakdown    map[string]int
-	VideoCount            int
-	VideoResolution       string
+	// ImageEndpoint 标记请求来自专用图片端点；分组 image_count_billing 开关
+	// 只对这类请求生效，混合 Responses/Chat/WS 请求仍按 token 计费。
+	ImageEndpoint      bool
+	ImageSize          string
+	ImageInputSize     string
+	ImageOutputSize    string
+	ImageOutputSizes   []string
+	ImageSizeSource    string
+	ImageSizeBreakdown map[string]int
+	VideoCount         int
+	VideoResolution    string
 	// VideoDurationSeconds 是提交时请求的生成时长（xAI 按输出秒数计费），已归一化到 1-15 秒。
 	VideoDurationSeconds int
 	// WebSearchCalls 是 Codex alpha/search 网页搜索调用次数（每次成功请求为 1）。
@@ -9717,6 +9720,7 @@ func openAICacheReadTokensFromUsage(value gjson.Result) int {
 		value.Get("cache_read_input_tokens"),
 		value.Get("cache_read_tokens"),
 		value.Get("cached_tokens"),
+		value.Get("prompt_cache_hit_tokens"), // DeepSeek：prompt_tokens = hit + miss
 	)
 }
 
@@ -13961,7 +13965,11 @@ func (s *OpenAIGatewayService) calculateOpenAIRecordUsageCost(
 	}
 
 	if result != nil && result.ImageCount > 0 {
-		// 渠道定价为 token 计费时走 token 路径，否则走图片计费
+		// 分组显式开启按张计费且来自图片端点时强制走图片计费；否则渠道 token 定价优先。
+		// 混合的 Responses/Chat/WS 请求即使产出了图片，也不能因开关丢失文本 token 费用。
+		if imageCountBillingApplies(apiKey, result.ImageEndpoint) {
+			return s.calculateOpenAIImageCost(ctx, billingModel, apiKey, result, imageMultiplier), nil
+		}
 		if resolved := s.resolveOpenAIChannelPricing(ctx, billingModel, apiKey); resolved == nil || resolved.Mode != BillingModeToken {
 			return s.calculateOpenAIImageCost(ctx, billingModel, apiKey, result, imageMultiplier), nil
 		}

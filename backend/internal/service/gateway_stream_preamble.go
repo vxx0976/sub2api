@@ -185,7 +185,7 @@ func writeClaudeErrorBody(c *gin.Context, status int, body []byte) {
 		}
 		compact.Reset()
 		data, _ := json.Marshal(gin.H{"type": "error", "error": gin.H{"type": errType, "message": message}})
-		compact.Write(data)
+		_, _ = compact.Write(data)
 	}
 	MarkOpsStreamError(c, errType, message, status)
 	_, _ = fmt.Fprintf(c.Writer, "event: error\ndata: %s\n\n", compact.Bytes())
