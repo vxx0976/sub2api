@@ -19,9 +19,6 @@ func AnthropicToResponses(req *AnthropicRequest) (*ResponsesRequest, error) {
 // AnthropicToResponsesWithMinOutputTokens converts an Anthropic request using
 // the supplied max_output_tokens floor.
 func AnthropicToResponsesWithMinOutputTokens(req *AnthropicRequest, minOutputTokens int) (*ResponsesRequest, error) {
-	if err := openai.ValidateGPT61SolReasoningEffort(req.Model, anthropicReasoningEffort(req)); err != nil {
-		return nil, err
-	}
 	input, err := convertAnthropicToResponsesInput(req.System, req.Messages)
 	if err != nil {
 		return nil, err
@@ -66,9 +63,11 @@ func AnthropicToResponsesWithMinOutputTokens(req *AnthropicRequest, minOutputTok
 		out.Tools = convertAnthropicToolsToResponses(req.Tools)
 	}
 
-	// An explicit thinking disable takes precedence over output_config.effort.
-	effort := anthropicReasoningEffort(req)
-	if (openai.IsGPT61SolModelSpelling(req.Model) || openai.IsGPT61TerraModelSpelling(req.Model)) && req.OutputConfig != nil && req.OutputConfig.Effort == "max" && effort != "none" {
+	// An explicit thinking disable takes precedence over output_config.effort;
+	// gpt-6.1-sol has no disabled mode, so that falls back to medium.
+	requestedEffort := anthropicReasoningEffort(req)
+	effort := openai.CoerceGPT61SolReasoningEffort(req.Model, requestedEffort)
+	if (openai.IsGPT61SolModelSpelling(req.Model) || openai.IsGPT61TerraModelSpelling(req.Model)) && req.OutputConfig != nil && req.OutputConfig.Effort == "max" && requestedEffort != "none" {
 		effort = "max"
 	}
 	out.Reasoning = &ResponsesReasoning{

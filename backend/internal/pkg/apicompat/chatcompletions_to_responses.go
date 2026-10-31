@@ -24,9 +24,6 @@ func ChatCompletionsToResponses(req *ChatCompletionsRequest) (*ResponsesRequest,
 // ChatCompletionsToResponsesWithMinOutputTokens converts a Chat Completions
 // request using the supplied max_output_tokens floor.
 func ChatCompletionsToResponsesWithMinOutputTokens(req *ChatCompletionsRequest, minOutputTokens int) (*ResponsesRequest, error) {
-	if err := openai.ValidateGPT61SolReasoningEffort(req.Model, req.ReasoningEffort); err != nil {
-		return nil, err
-	}
 	input, err := convertChatMessagesToResponsesInput(req.Messages)
 	if err != nil {
 		return nil, err
@@ -77,7 +74,7 @@ func ChatCompletionsToResponsesWithMinOutputTokens(req *ChatCompletionsRequest, 
 	// reasoning_effort → reasoning.effort + reasoning.summary="auto"
 	if req.ReasoningEffort != "" {
 		out.Reasoning = &ResponsesReasoning{
-			Effort:  req.ReasoningEffort,
+			Effort:  openai.CoerceGPT61SolReasoningEffort(req.Model, req.ReasoningEffort),
 			Summary: "auto",
 		}
 	}

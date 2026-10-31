@@ -1795,29 +1795,58 @@ func TestGPT6MappedCompatibilityBridgesKeepReasoningAndTools(t *testing.T) {
 	}
 }
 
-func TestGPT61SolRejectsDisabledReasoningBeforeForwarding(t *testing.T) {
-	for _, body := range []string{
-		`{"model":"public","reasoning_effort":"none"}`,
-		`{"model":"public","reasoning":{"effort":"minimal"}}`,
-		`{"model":"public","output_config":{"effort":"none"}}`,
-		`{"model":"public","thinking":{"type":"disabled"}}`,
-		`{"model":"gpt-6.1-sol-minimal"}`,
+func TestGPT61SolCoercesDisabledReasoningToMedium(t *testing.T) {
+	for _, tc := range []struct{ body, path string }{
+		{`{"model":"public","reasoning_effort":"none"}`, "reasoning_effort"},
+		{`{"model":"public","reasoning":{"effort":"minimal"}}`, "reasoning.effort"},
+		{`{"model":"public","output_config":{"effort":"none"}}`, "output_config.effort"},
 	} {
+		out := normalizeGPT61SolCompatRequestBody([]byte(tc.body), "gpt-6.1-sol")
+		require.Equal(t, "medium", gjson.GetBytes(out, tc.path).String(), tc.body)
+		require.NoError(t, validateGPT61SolCompatRequest(out, "gpt-6.1-sol"))
+		// 其他模型保持原样。
+		require.Equal(t, tc.body, string(normalizeGPT61SolCompatRequestBody([]byte(tc.body), "gpt-6-sol")))
+	}
+
+	disabled := normalizeGPT61SolCompatRequestBody([]byte(`{"model":"public","thinking":{"type":"disabled"}}`), "gpt-6.1-sol")
+	require.False(t, gjson.GetBytes(disabled, "thinking").Exists())
+	require.Equal(t, "high", gjson.GetBytes(normalizeGPT61SolCompatRequestBody([]byte(`{"reasoning_effort":"high"}`), "gpt-6.1-sol"), "reasoning_effort").String())
+
+	// 显式点名不存在的模型变体仍然拒绝。
+	for _, body := range []string{`{"model":"gpt-6.1-sol-minimal"}`, `{"model":"gpt-6.1-sol-none"}`} {
 		require.Error(t, validateGPT61SolCompatRequest([]byte(body), "gpt-6.1-sol"))
 		require.NoError(t, validateGPT61SolCompatRequest([]byte(body), "gpt-6-sol"))
 	}
-	for _, field := range []string{`"reasoning_effort":"none"`, `"reasoning_effort":"minimal"`, `"tools":[{"type":"function","function":{"name":"lookup"}}]`} {
-		body := []byte(`{"model":"public",` + field + `,"messages":[{"role":"user","content":"hello"}]}`)
-		rec := httptest.NewRecorder()
-		c, _ := gin.CreateTestContext(rec)
-		c.Request = httptest.NewRequest(http.MethodPost, "/v1/chat/completions", bytes.NewReader(body))
-		account := &Account{ID: 1, Platform: PlatformOpenAI, Type: AccountTypeAPIKey, Credentials: map[string]any{"model_mapping": map[string]any{"public": "gpt-6.1-sol"}}}
-		svc := &OpenAIGatewayService{cfg: &config.Config{}}
-		_, err := svc.forwardAsRawChatCompletions(context.Background(), c, account, body, "")
-		require.Error(t, err)
-		require.Equal(t, http.StatusBadRequest, rec.Code)
-		require.Contains(t, rec.Body.String(), "gpt-6.1-sol")
+
+	// Claude Code 关闭 thinking 的请求经 Anthropic→Responses 转换后为 medium。
+	converted, err := apicompat.AnthropicToResponses(&apicompat.AnthropicRequest{Model: "gpt-6.1-sol", Thinking: &apicompat.AnthropicThinking{Type: "disabled"}})
+	require.NoError(t, err)
+	require.Equal(t, "medium", converted.Reasoning.Effort)
+	require.Equal(t, "auto", converted.Reasoning.Summary)
+	// 关闭 thinking 优先于 output_config.effort：即使带 max 也只按 medium，不抬到最贵档。
+	for _, outputEffort := range []string{"max", "high", "low"} {
+		converted, err = apicompat.AnthropicToResponses(&apicompat.AnthropicRequest{Model: "gpt-6.1-sol", Thinking: &apicompat.AnthropicThinking{Type: "disabled"}, OutputConfig: &apicompat.AnthropicOutputConfig{Effort: outputEffort}})
+		require.NoError(t, err)
+		require.Equal(t, "medium", converted.Reasoning.Effort, outputEffort)
 	}
+	converted, err = apicompat.AnthropicToResponses(&apicompat.AnthropicRequest{Model: "gpt-6.1-sol", OutputConfig: &apicompat.AnthropicOutputConfig{Effort: "max"}})
+	require.NoError(t, err)
+	require.Equal(t, "max", converted.Reasoning.Effort)
+	chatConverted, err := apicompat.ChatCompletionsToResponses(&apicompat.ChatCompletionsRequest{Model: "gpt-6.1-sol", ReasoningEffort: "none"})
+	require.NoError(t, err)
+	require.Equal(t, "medium", chatConverted.Reasoning.Effort)
+
+	// 只走 Chat Completions 的账号带工具调用仍需 Responses，照旧拒绝。
+	body := []byte(`{"model":"public","tools":[{"type":"function","function":{"name":"lookup"}}],"messages":[{"role":"user","content":"hello"}]}`)
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/chat/completions", bytes.NewReader(body))
+	account := &Account{ID: 1, Platform: PlatformOpenAI, Type: AccountTypeAPIKey, Credentials: map[string]any{"model_mapping": map[string]any{"public": "gpt-6.1-sol"}}}
+	svc := &OpenAIGatewayService{cfg: &config.Config{}}
+	_, err = svc.forwardAsRawChatCompletions(context.Background(), c, account, body, "")
+	require.Error(t, err)
+	require.Equal(t, http.StatusBadRequest, rec.Code)
+	require.Contains(t, rec.Body.String(), "gpt-6.1-sol")
 }
 
 func TestGPT61SolMappedReasoningModeAndSampling(t *testing.T) {
@@ -1838,43 +1867,58 @@ func TestGPT61SolMessagesEffortAliasesPreserveIntent(t *testing.T) {
 		applyOpenAICompatModelNormalization(req)
 		require.Equal(t, "gpt-6.1-sol", req.Model)
 		require.Equal(t, effort, req.OutputConfig.Effort)
-		_, err := apicompat.AnthropicToResponses(req)
+		converted, err := apicompat.AnthropicToResponses(req)
+		require.NoError(t, err)
 		if effort == "none" || effort == "minimal" {
-			require.Error(t, err)
-		} else {
-			require.NoError(t, err)
+			require.Equal(t, "medium", converted.Reasoning.Effort)
 		}
 	}
 }
 
-func TestGPT61SolOnlyChatFallbackRejectsToolsAndDisabledReasoning(t *testing.T) {
+func TestGPT61SolOnlyChatFallbackRejectsTools(t *testing.T) {
 	for _, responses := range []bool{false, true} {
-		bodies := []string{
-			`{"model":"public","max_tokens":100,"messages":[{"role":"user","content":"hi"}],"tools":[{"name":"lookup","input_schema":{"type":"object"}}]}`,
-			`{"model":"public","max_tokens":100,"messages":[{"role":"user","content":"hi"}],"thinking":{"type":"disabled"}}`,
-		}
+		body := `{"model":"public","max_tokens":100,"messages":[{"role":"user","content":"hi"}],"tools":[{"name":"lookup","input_schema":{"type":"object"}}]}`
 		if responses {
-			bodies = []string{
-				`{"model":"public","input":"hi","tools":[{"type":"function","name":"lookup","parameters":{"type":"object"}}]}`,
-				`{"model":"public","input":"hi","reasoning":{"effort":"none"}}`,
-			}
+			body = `{"model":"public","input":"hi","tools":[{"type":"function","name":"lookup","parameters":{"type":"object"}}]}`
 		}
-		for _, body := range bodies {
-			rec := httptest.NewRecorder()
-			c, _ := gin.CreateTestContext(rec)
-			c.Request = httptest.NewRequest(http.MethodPost, "/v1/messages", strings.NewReader(body))
-			account := &Account{ID: 1, Platform: PlatformOpenAI, Type: AccountTypeAPIKey, Credentials: map[string]any{"model_mapping": map[string]any{"public": "gpt-6.1-sol"}}}
-			svc := &OpenAIGatewayService{cfg: &config.Config{}}
-			var err error
-			if responses {
-				_, err = svc.forwardResponsesViaRawChatCompletions(context.Background(), c, account, []byte(body), time.Now())
-			} else {
-				_, err = svc.forwardAnthropicViaRawChatCompletions(context.Background(), c, account, []byte(body), "")
-			}
-			require.Error(t, err)
-			require.Equal(t, http.StatusBadRequest, rec.Code)
-			require.Contains(t, rec.Body.String(), "gpt-6.1-sol")
+		rec := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(rec)
+		c.Request = httptest.NewRequest(http.MethodPost, "/v1/messages", strings.NewReader(body))
+		account := &Account{ID: 1, Platform: PlatformOpenAI, Type: AccountTypeAPIKey, Credentials: map[string]any{"model_mapping": map[string]any{"public": "gpt-6.1-sol"}}}
+		svc := &OpenAIGatewayService{cfg: &config.Config{}}
+		var err error
+		if responses {
+			_, err = svc.forwardResponsesViaRawChatCompletions(context.Background(), c, account, []byte(body), time.Now())
+		} else {
+			_, err = svc.forwardAnthropicViaRawChatCompletions(context.Background(), c, account, []byte(body), "")
 		}
+		require.Error(t, err)
+		require.Equal(t, http.StatusBadRequest, rec.Code)
+		require.Contains(t, rec.Body.String(), "gpt-6.1-sol")
+	}
+}
+
+func TestGPT61SolOnlyChatFallbackForwardsDisabledReasoningAsMedium(t *testing.T) {
+	for _, responses := range []bool{false, true} {
+		body := `{"model":"public","max_tokens":100,"messages":[{"role":"user","content":"hi"}],"thinking":{"type":"disabled"}}`
+		if responses {
+			body = `{"model":"public","input":"hi","reasoning":{"effort":"none"}}`
+		}
+		rec := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(rec)
+		c.Request = httptest.NewRequest(http.MethodPost, "/v1/messages", strings.NewReader(body))
+		account := &Account{ID: 1, Platform: PlatformOpenAI, Type: AccountTypeAPIKey, Credentials: map[string]any{"api_key": "sk-test", "base_url": "https://api.example.com", "model_mapping": map[string]any{"public": "gpt-6.1-sol"}}}
+		upstream := &httpUpstreamRecorder{resp: &http.Response{StatusCode: http.StatusOK, Header: http.Header{"Content-Type": []string{"application/json"}}, Body: io.NopCloser(strings.NewReader(`{"id":"chatcmpl_1","choices":[{"message":{"role":"assistant","content":"ok"},"finish_reason":"stop"}],"usage":{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2}}`))}}
+		svc := &OpenAIGatewayService{cfg: &config.Config{Security: config.SecurityConfig{URLAllowlist: config.URLAllowlistConfig{AllowInsecureHTTP: true}}}, httpUpstream: upstream}
+		var err error
+		if responses {
+			_, err = svc.forwardResponsesViaRawChatCompletions(context.Background(), c, account, []byte(body), time.Now())
+		} else {
+			_, err = svc.forwardAnthropicViaRawChatCompletions(context.Background(), c, account, []byte(body), "")
+		}
+		require.NoError(t, err, rec.Body.String())
+		require.Equal(t, "gpt-6.1-sol", gjson.GetBytes(upstream.lastBody, "model").String())
+		require.Equal(t, "medium", gjson.GetBytes(upstream.lastBody, "reasoning_effort").String(), string(upstream.lastBody))
 	}
 }
 

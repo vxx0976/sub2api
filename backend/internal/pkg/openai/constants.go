@@ -236,8 +236,23 @@ func RequiresResponsesForToolCalls(model string) bool {
 	return IsGPT61SolModelSpelling(model) || IsGPT61TerraModelSpelling(model)
 }
 
-// ValidateGPT61SolReasoningEffort rejects disabled reasoning instead of silently
-// increasing the client's requested effort on compatibility paths.
+// CoerceGPT61SolReasoningEffort maps the disabled-reasoning efforts that
+// gpt-6.1-sol does not offer (none/minimal) to its default medium. Clients such
+// as Claude Code send disabled thinking for side requests; rejecting them broke
+// otherwise valid traffic. Other models and efforts pass through unchanged.
+func CoerceGPT61SolReasoningEffort(model, effort string) string {
+	if IsGPT61SolModelSpelling(model) {
+		switch strings.ToLower(strings.TrimSpace(effort)) {
+		case "none", "minimal":
+			return "medium"
+		}
+	}
+	return effort
+}
+
+// ValidateGPT61SolReasoningEffort rejects disabled reasoning. Request parameters
+// are coerced via CoerceGPT61SolReasoningEffort instead; this remains for
+// explicit model-name variants such as gpt-6.1-sol-none.
 func ValidateGPT61SolReasoningEffort(model, effort string) error {
 	if IsGPT61SolModelSpelling(model) {
 		switch strings.ToLower(strings.TrimSpace(effort)) {

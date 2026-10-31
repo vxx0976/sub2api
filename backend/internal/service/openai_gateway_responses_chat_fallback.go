@@ -71,6 +71,7 @@ func (s *OpenAIGatewayService) forwardResponsesViaRawChatCompletions(
 
 	billingModel := resolveOpenAIForwardModel(account, originalModel, "")
 	upstreamModel := normalizeOpenAIModelForUpstream(account, billingModel)
+	body = normalizeGPT61SolCompatRequestBody(body, upstreamModel)
 	if err := validateGPT61SolCompatRequest(body, upstreamModel); err != nil {
 		writeOpenAIResponsesFallbackError(c, http.StatusBadRequest, "invalid_request_error", err.Error())
 		return nil, err
@@ -84,6 +85,7 @@ func (s *OpenAIGatewayService) forwardResponsesViaRawChatCompletions(
 	// 国产模型默认 effort 补充：需要 mappedModel 判定，推迟到 billingModel 算出之后。
 	reasoningEffort = ApplyThinkingEnabledFallback(reasoningEffort, body, billingModel)
 	chatReq.Model = upstreamModel
+	chatReq.ReasoningEffort = openai.CoerceGPT61SolReasoningEffort(upstreamModel, chatReq.ReasoningEffort)
 	if clientStream {
 		chatReq.StreamOptions = &apicompat.ChatStreamOptions{IncludeUsage: true}
 	}

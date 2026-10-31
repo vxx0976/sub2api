@@ -8107,19 +8107,37 @@ func supportsOpenAIReasoningEffortMax(model string) bool {
 	}
 }
 
-// validateGPT61SolCompatRequest runs after model mapping, before conversion can
-// discard unsupported explicit effort selections or disabled thinking.
-func validateGPT61SolCompatRequest(body []byte, model string) error {
+// normalizeGPT61SolCompatRequestBody runs after model mapping: gpt-6.1-sol has no
+// disabled-reasoning mode, so none/minimal efforts and thinking.type=disabled fall
+// back to its default medium instead of failing the request.
+func normalizeGPT61SolCompatRequestBody(body []byte, model string) []byte {
 	if !openai.IsGPT61SolModelSpelling(model) {
-		return nil
+		return body
 	}
 	for _, path := range []string{"reasoning.effort", "reasoning_effort", "output_config.effort"} {
-		if err := openai.ValidateGPT61SolReasoningEffort(model, gjson.GetBytes(body, path).String()); err != nil {
-			return err
+		effort := gjson.GetBytes(body, path)
+		if effort.Type != gjson.String {
+			continue
+		}
+		if coerced := openai.CoerceGPT61SolReasoningEffort(model, effort.String()); coerced != effort.String() {
+			if out, err := sjson.SetBytes(body, path, coerced); err == nil {
+				body = out
+			}
 		}
 	}
 	if gjson.GetBytes(body, "thinking.type").String() == "disabled" {
-		return openai.ValidateGPT61SolReasoningEffort(model, "none")
+		if out, err := sjson.DeleteBytes(body, "thinking"); err == nil {
+			body = out
+		}
+	}
+	return body
+}
+
+// validateGPT61SolCompatRequest rejects explicit gpt-6.1-sol-none/-minimal model
+// variants; effort parameters are coerced by normalizeGPT61SolCompatRequestBody.
+func validateGPT61SolCompatRequest(body []byte, model string) error {
+	if !openai.IsGPT61SolModelSpelling(model) {
+		return nil
 	}
 	requestedModel := gjson.GetBytes(body, "model").String()
 	for _, effort := range []string{"none", "minimal"} {
