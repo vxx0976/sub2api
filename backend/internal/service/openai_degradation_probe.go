@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"math"
 	"math/big"
 	"net/http"
 	"slices"
@@ -63,6 +64,18 @@ type OpenAIDegradationProbeSettings struct {
 	LowReasoningTokens int  `json:"low_reasoning_tokens"`
 	// AlertOnlyAccountIDs 中的账号只判定、记录、打日志，不暂停调度。
 	AlertOnlyAccountIDs []int64 `json:"alert_only_account_ids,omitempty"`
+	// RelativeMargin 相对判定：账号的降智比例须比同模型表现最好的号高出至少该值才暂停。
+	// 降智也可能是官方行为——同模型所有号都降智时差距拉不开，一律不停（已停的放回）。
+	// nil 取默认 0.3。
+	RelativeMargin *float64 `json:"relative_margin,omitempty"`
+
+	// 首字异常慢：最近 SlowTTFTWindowMinutes 分钟真实流量里，某号某模型的首字中位数
+	// ≥ 同模型其他号中位数的 SlowTTFTRatio 倍且多出 SlowTTFTMinGapSeconds 秒，暂停该号该模型。
+	SlowTTFTDisabled      bool    `json:"slow_ttft_disabled,omitempty"`
+	SlowTTFTWindowMinutes int     `json:"slow_ttft_window_minutes,omitempty"`
+	SlowTTFTMinRequests   int     `json:"slow_ttft_min_requests,omitempty"`
+	SlowTTFTRatio         float64 `json:"slow_ttft_ratio,omitempty"`
+	SlowTTFTMinGapSeconds int     `json:"slow_ttft_min_gap_seconds,omitempty"`
 }
 
 func DefaultOpenAIDegradationProbeSettings() *OpenAIDegradationProbeSettings {
@@ -71,11 +84,17 @@ func DefaultOpenAIDegradationProbeSettings() *OpenAIDegradationProbeSettings {
 		IntervalMinutes:    10,
 		Models:             []string{"gpt-6.1-sol", "gpt-6-sol", "gpt-6-astra", "gpt-5.6-terra"},
 		Window:             10,
-		TripCount:          5,
-		ModelTripCount:     map[string]int{"gpt-6-sol": 7},
+		TripCount:          6,
+		ModelTripCount:     map[string]int{"gpt-6-sol": 8},
 		RecoverWindow:      6,
 		RecoverMaxDegraded: new(1),
 		LowReasoningTokens: 60,
+		RelativeMargin:     new(0.3),
+
+		SlowTTFTWindowMinutes: 30,
+		SlowTTFTMinRequests:   8,
+		SlowTTFTRatio:         2,
+		SlowTTFTMinGapSeconds: 10,
 	}
 }
 
@@ -140,7 +159,32 @@ func normalizeOpenAIDegradationProbeSettings(settings *OpenAIDegradationProbeSet
 	if result.LowReasoningTokens <= 0 {
 		result.LowReasoningTokens = def.LowReasoningTokens
 	}
+	margin := *def.RelativeMargin
+	if result.RelativeMargin != nil {
+		margin = *result.RelativeMargin
+	}
+	result.RelativeMargin = new(math.Max(0, math.Min(margin, 1)))
+	if result.SlowTTFTWindowMinutes <= 0 {
+		result.SlowTTFTWindowMinutes = def.SlowTTFTWindowMinutes
+	}
+	result.SlowTTFTWindowMinutes = clampInt(result.SlowTTFTWindowMinutes, 10, 120)
+	if result.SlowTTFTMinRequests <= 0 {
+		result.SlowTTFTMinRequests = def.SlowTTFTMinRequests
+	}
+	if result.SlowTTFTRatio < 1.2 {
+		result.SlowTTFTRatio = def.SlowTTFTRatio
+	}
+	if result.SlowTTFTMinGapSeconds <= 0 {
+		result.SlowTTFTMinGapSeconds = def.SlowTTFTMinGapSeconds
+	}
 	return &result
+}
+
+func (s *OpenAIDegradationProbeSettings) relativeMargin() float64 {
+	if s.RelativeMargin == nil {
+		return 0.3
+	}
+	return *s.RelativeMargin
 }
 
 func (s *OpenAIDegradationProbeSettings) recoverMaxDegraded() int {
@@ -228,8 +272,11 @@ type degradationModelState struct {
 	Paused  bool   `json:"paused"`
 	At      string `json:"at"`
 	Last    string `json:"last,omitempty"`
-	// Held 判定为降智但因分组内没有替补而未暂停。
+	// Held 判定为需暂停但因分组内没有替补而未暂停。
 	Held bool `json:"held,omitempty"`
+	// Effective 本轮是否实际处于暂停（Paused 只是自身迟滞状态，还要叠加相对判定/首字慢/保底）。
+	Effective bool `json:"effective,omitempty"`
+	SlowTTFT  bool `json:"slow_ttft,omitempty"`
 }
 
 // nextDegradationState 追加样本并按迟滞规则决定是否暂停。
@@ -285,7 +332,7 @@ func isDegradationProbeRateLimitEntry(entry any) bool {
 		return false
 	}
 	reason, _ := m["reason"].(string)
-	return reason == degradationProbeReason
+	return reason == degradationProbeReason || strings.HasPrefix(reason, degradationProbeReason+":")
 }
 
 func degradationProbeRandomOperand() *big.Int {
@@ -437,6 +484,22 @@ type degradationProbeResult struct {
 	err           error
 }
 
+// degradationDecision 判定阶段某账号 × 某模型的中间结果。
+type degradationDecision struct {
+	result degradationProbeResult
+	prev   degradationModelState
+	next   degradationModelState
+}
+
+const (
+	degradationPauseReasonSlowTTFT = degradationProbeReason + ":slow_first_token"
+	// degradationSlowTTFTMinKeys 首字比较要求的最少不同 API Key 数：首字主要取决于上下文长度与推理档，
+	// 粘性会话会把单个重度长上下文用户固定在一个号上，只看中位数会把「负载重」误判成「号慢」。
+	degradationSlowTTFTMinKeys = 3
+	// degradationRelativeMinSamples 参与「同模型最好号」比较的最少样本数。
+	degradationRelativeMinSamples = 5
+)
+
 // runDegradationProbe 一轮探测：先并行探测（每个账号内串行，部分中转按 key 限并发），
 // 再串行逐个判定与暂停——判定必须串行，且要计入本轮已决定暂停的号，否则两个号同轮
 // 同时降智时会互相以为对方还在、一起被停，把模型整个停掉。
@@ -501,65 +564,175 @@ func (s *GroupHealthCheckService) runDegradationProbe() {
 	// 判定阶段用独立 context：探测阶段可能已耗尽本轮预算，但续期/持久化不能因此丢失。
 	decideCtx, decideCancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer decideCancel()
+	slow := map[degradationTTFTKey]bool{}
+	if !settings.SlowTTFTDisabled {
+		slow = s.loadSlowFirstTokenAccounts(decideCtx, settings)
+	}
+	s.decideDegradationRound(decideCtx, targets, results, settings, slow)
+}
+
+// decideDegradationRound 串行判定一轮：先更新每个「账号 × 模型」的历史，再按同模型最好号
+// 做相对判定（全部降智视为官方行为、不停），叠加首字异常慢，最后按上游模型合并结论、
+// 逐个写入/解除暂停。
+func (s *GroupHealthCheckService) decideDegradationRound(ctx context.Context, targets []*Account, results [][]degradationProbeResult, settings *OpenAIDegradationProbeSettings, slow map[degradationTTFTKey]bool) {
+	decisions := make([][]degradationDecision, len(targets))
+	bestRate := map[string]float64{}
+	for idx, account := range targets {
+		states := readDegradationProbeStates(account)
+		for _, r := range results[idx] {
+			prev := states[r.model]
+			next := prev
+			if r.err != nil {
+				// 请求失败不计入判定（过载/限流由熔断与冷却处理），但已暂停的照常续期——
+				// 中转往往在降智的同时也在过载，失败时不续期会让暂停过期、降智号重新接流量。
+				logger.LegacyPrintf("service.degradation_probe", "[DegradationProbe] account=%d(%s) model=%s probe failed: %v", account.ID, account.Name, r.upstreamModel, r.err)
+			} else {
+				verdict := classifyDegradationSample(r.sample, r.upstreamModel, settings.LowReasoningTokens)
+				next = nextDegradationState(prev, verdict, settings, r.model)
+				next.At = time.Now().UTC().Format(time.RFC3339)
+				next.Last = fmt.Sprintf("model=%s reasoning=%d correct=%v", r.sample.ReturnedModel, r.sample.ReasoningTokens, r.sample.Correct)
+				// 参照线只取本轮探测成功的号：长期失败的号带着旧的干净历史会把参照线压低，
+				// 让「全部降智（官方行为）」时所有号都显得突出、被一路停到只剩保底。
+				if rate, ok := degradationRecentRate(next.History, settings.Window); ok {
+					if best, seen := bestRate[r.model]; !seen || rate < best {
+						bestRate[r.model] = rate
+					}
+				}
+			}
+			decisions[idx] = append(decisions[idx], degradationDecision{result: r, prev: prev, next: next})
+		}
+	}
+
 	pausedThisRound := map[string]map[int64]bool{}
 	for idx, account := range targets {
-		s.decideAccountDegradation(decideCtx, account, results[idx], settings, pausedThisRound)
+		if len(decisions[idx]) == 0 {
+			continue
+		}
+		// 探测阶段可能持续数分钟，期间线上流量可能已对同一模型写入真实限流；暂停/解除前
+		// 重读账号，避免用旧快照把真实限流当成探针条目覆盖或解除。
+		fresh := account
+		if latest, err := s.accountRepo.GetByID(ctx, account.ID); err == nil && latest != nil {
+			fresh = latest
+		}
+		states := readDegradationProbeStates(account)
+		alertOnly := slices.Contains(settings.AlertOnlyAccountIDs, account.ID)
+
+		// 多个请求模型可能映射到同一上游模型，暂停/解除都作用在上游 key 上：先合并结论，
+		// 否则一个要停、一个要解，会每轮来回翻转。
+		type upstreamVerdict struct {
+			reason string
+			model  string
+		}
+		verdicts := map[string]*upstreamVerdict{}
+		order := []string{}
+		for i := range decisions[idx] {
+			d := &decisions[idx][i]
+			margin := settings.relativeMargin()
+			if d.prev.Effective && !d.prev.SlowTTFT {
+				// 已在停的放宽留存门槛，避免参照线小幅波动导致停/放来回切。
+				margin = math.Max(0, margin-0.1)
+			}
+			degraded := d.next.Paused && degradationStandsOut(d.next.History, settings.Window, margin, bestRate, d.result.model)
+			slowTTFT := slow[degradationTTFTKey{accountID: account.ID, upstreamModel: d.result.upstreamModel}]
+			d.next.SlowTTFT = slowTTFT
+			d.next.Effective = degraded // 暂存，下方按上游合并后改写为实际结果
+			v := verdicts[d.result.upstreamModel]
+			if v == nil {
+				v = &upstreamVerdict{model: d.result.model}
+				verdicts[d.result.upstreamModel] = v
+				order = append(order, d.result.upstreamModel)
+			}
+			switch {
+			case degraded:
+				v.reason, v.model = degradationProbeReason, d.result.model
+			case slowTTFT && v.reason == "":
+				v.reason, v.model = degradationPauseReasonSlowTTFT, d.result.model
+			}
+		}
+
+		applied := map[string]struct{ effective, held bool }{}
+		for _, upstream := range order {
+			v := verdicts[upstream]
+			held := false
+			if v.reason != "" && !alertOnly {
+				// 每轮都重新检查替补：其他号之后出问题时，不能继续停着把模型整个停掉。
+				if !s.degradationPauseLeavesAlternative(ctx, account, v.model, pausedThisRound) {
+					held = true
+				} else if err := s.pauseModelForDegradation(ctx, fresh, upstream, s.degradationPauseUntil(settings, v.reason), v.reason); err != nil {
+					logger.LegacyPrintf("service.degradation_probe", "[DegradationProbe] account=%d model=%s pause failed: %v", account.ID, upstream, err)
+				} else {
+					if pausedThisRound[v.model] == nil {
+						pausedThisRound[v.model] = map[int64]bool{}
+					}
+					pausedThisRound[v.model][account.ID] = true
+				}
+			}
+			effective := v.reason != "" && !held && !alertOnly
+			if !effective {
+				s.liftDegradationPause(ctx, fresh, upstream)
+			}
+			applied[upstream] = struct{ effective, held bool }{effective, held}
+		}
+
+		for _, d := range decisions[idx] {
+			next := d.next
+			degradedVsBest := next.Effective
+			ap := applied[d.result.upstreamModel]
+			next.Effective, next.Held = ap.effective, ap.held
+			if next.Effective != d.prev.Effective || next.Held != d.prev.Held || next.Paused != d.prev.Paused {
+				slog.Warn("openai_degradation_probe_state_changed",
+					"account_id", account.ID, "account_name", account.Name, "model", d.result.model,
+					"tripped", next.Paused, "degraded_vs_best", degradedVsBest, "slow_first_token", next.SlowTTFT,
+					"effective_pause", next.Effective, "held_last_account", next.Held, "alert_only", alertOnly,
+					"history", next.History, "last", next.Last)
+			}
+			states[d.result.model] = next
+		}
+		if err := s.accountRepo.UpdateExtra(ctx, account.ID, map[string]any{degradationProbeExtraKey: states}); err != nil {
+			logger.LegacyPrintf("service.degradation_probe", "[DegradationProbe] account=%d persist state failed: %v", account.ID, err)
+		}
 	}
 }
 
-func (s *GroupHealthCheckService) decideAccountDegradation(ctx context.Context, account *Account, results []degradationProbeResult, settings *OpenAIDegradationProbeSettings, pausedThisRound map[string]map[int64]bool) {
-	if len(results) == 0 {
-		return
+// degradationRecentRate 最近 window 个样本的降智比例；样本不足时 ok=false。
+func degradationRecentRate(history string, window int) (float64, bool) {
+	if len(history) > window {
+		history = history[len(history)-window:]
 	}
-	states := readDegradationProbeStates(account)
-	alertOnly := slices.Contains(settings.AlertOnlyAccountIDs, account.ID)
-	pauseUntil := time.Now().Add(time.Duration(2*settings.IntervalMinutes+5) * time.Minute)
+	if len(history) < degradationRelativeMinSamples {
+		return 0, false
+	}
+	return float64(strings.Count(history, string(degradationSampleDegraded))) / float64(len(history)), true
+}
 
-	for _, r := range results {
-		prev := states[r.model]
-		next := prev
-		if r.err != nil {
-			// 请求失败不计入判定（过载/限流由熔断与冷却处理），但已暂停的照常续期——
-			// 中转往往在降智的同时也在过载，失败时不续期会让暂停过期、降智号重新接流量。
-			logger.LegacyPrintf("service.degradation_probe", "[DegradationProbe] account=%d(%s) model=%s probe failed: %v", account.ID, account.Name, r.upstreamModel, r.err)
-		} else {
-			verdict := classifyDegradationSample(r.sample, r.upstreamModel, settings.LowReasoningTokens)
-			next = nextDegradationState(prev, verdict, settings, r.model)
-			next.At = time.Now().UTC().Format(time.RFC3339)
-			next.Last = fmt.Sprintf("model=%s reasoning=%d correct=%v", r.sample.ReturnedModel, r.sample.ReasoningTokens, r.sample.Correct)
-		}
+// degradationStandsOut 相对判定：降智比例须比同模型表现最好的号高出 RelativeMargin。
+// 同模型只有自己有足够样本时无从比较，视同「所有号都降智」，不停。
+func degradationStandsOut(history string, window int, margin float64, bestRate map[string]float64, model string) bool {
+	rate, ok := degradationRecentRate(history, window)
+	if !ok {
+		return false
+	}
+	best, seen := bestRate[model]
+	if !seen {
+		return false
+	}
+	return rate-best >= margin-1e-9
+}
 
-		held := false
-		if next.Paused && !alertOnly {
-			// 每轮都重新检查替补：其他号之后出问题时，不能继续停着把模型整个停掉。
-			if !s.degradationPauseLeavesAlternative(ctx, account, r.model, pausedThisRound) {
-				held = true
-			} else if err := s.pauseModelForDegradation(ctx, account, r.upstreamModel, pauseUntil); err != nil {
-				logger.LegacyPrintf("service.degradation_probe", "[DegradationProbe] account=%d model=%s pause failed: %v", account.ID, r.upstreamModel, err)
-			} else {
-				if pausedThisRound[r.model] == nil {
-					pausedThisRound[r.model] = map[int64]bool{}
-				}
-				pausedThisRound[r.model][account.ID] = true
-			}
+func (s *GroupHealthCheckService) degradationPauseUntil(settings *OpenAIDegradationProbeSettings, reason string) time.Time {
+	d := time.Duration(2*settings.IntervalMinutes+5) * time.Minute
+	if reason == degradationPauseReasonSlowTTFT {
+		// 首字慢按真实流量判定：暂停期间该号没有流量，窗口内旧数据老化后自然解除并重新评估。
+		if w := time.Duration(settings.SlowTTFTWindowMinutes) * time.Minute; w > d {
+			d = w
 		}
-		if next.Paused != prev.Paused || held != prev.Held {
-			slog.Warn("openai_degradation_probe_state_changed",
-				"account_id", account.ID, "account_name", account.Name, "model", r.model,
-				"paused", next.Paused, "held_last_account", held, "alert_only", alertOnly,
-				"history", next.History, "last", next.Last)
-		}
-		next.Held = held
-		states[r.model] = next
 	}
-	if err := s.accountRepo.UpdateExtra(ctx, account.ID, map[string]any{degradationProbeExtraKey: states}); err != nil {
-		logger.LegacyPrintf("service.degradation_probe", "[DegradationProbe] account=%d persist state failed: %v", account.ID, err)
-	}
+	return time.Now().Add(d)
 }
 
 // pauseModelForDegradation 写入/续期探针暂停。已有更晚到期的非探针限流（如上游真实 429）时不覆盖：
 // 那样会把真实限流提前结束，还会给它打上探针标记、让通用清理不再清它。
-func (s *GroupHealthCheckService) pauseModelForDegradation(ctx context.Context, account *Account, upstreamModel string, until time.Time) error {
+func (s *GroupHealthCheckService) pauseModelForDegradation(ctx context.Context, account *Account, upstreamModel string, until time.Time, reason string) error {
 	if limits, ok := account.Extra[modelRateLimitsKey].(map[string]any); ok {
 		if entry, ok := limits[upstreamModel]; ok && !isDegradationProbeRateLimitEntry(entry) {
 			if resetAt := account.modelRateLimitResetAt(upstreamModel); resetAt != nil && resetAt.After(until) {
@@ -567,7 +740,23 @@ func (s *GroupHealthCheckService) pauseModelForDegradation(ctx context.Context, 
 			}
 		}
 	}
-	return s.accountRepo.SetModelRateLimit(ctx, account.ID, upstreamModel, until, degradationProbeReason)
+	return s.accountRepo.SetModelRateLimit(ctx, account.ID, upstreamModel, until, reason)
+}
+
+// liftDegradationPause 立即解除仍在生效的探针暂停（恢复、被判为官方行为、保底、改为只告警时）。
+// 只动探针自己写的条目；写一个已到期的时间即可让调度立刻放行。
+func (s *GroupHealthCheckService) liftDegradationPause(ctx context.Context, account *Account, upstreamModel string) {
+	limits, ok := account.Extra[modelRateLimitsKey].(map[string]any)
+	if !ok {
+		return
+	}
+	entry, ok := limits[upstreamModel]
+	if !ok || !isDegradationProbeRateLimitEntry(entry) || !account.isRateLimitActiveForKey(upstreamModel) {
+		return
+	}
+	if err := s.accountRepo.SetModelRateLimit(ctx, account.ID, upstreamModel, time.Now(), degradationProbeReason); err != nil {
+		logger.LegacyPrintf("service.degradation_probe", "[DegradationProbe] account=%d model=%s lift failed: %v", account.ID, upstreamModel, err)
+	}
 }
 
 // degradationPauseLeavesAlternative 报告账号所在的每个分组里，是否都还有其他能服务该模型的
@@ -597,4 +786,76 @@ func (s *GroupHealthCheckService) degradationPauseLeavesAlternative(ctx context.
 		}
 	}
 	return true
+}
+
+type degradationTTFTKey struct {
+	accountID     int64
+	upstreamModel string
+}
+
+type degradationTTFTStat struct {
+	key      degradationTTFTKey
+	medianMs float64
+}
+
+// loadSlowFirstTokenAccounts 用最近一段时间的真实流量找出首字明显异常慢的「账号 × 模型」。
+func (s *GroupHealthCheckService) loadSlowFirstTokenAccounts(ctx context.Context, settings *OpenAIDegradationProbeSettings) map[degradationTTFTKey]bool {
+	if s.db == nil {
+		return map[degradationTTFTKey]bool{}
+	}
+	rows, err := s.db.QueryContext(ctx, `
+		SELECT account_id, upstream_model, percentile_cont(0.5) WITHIN GROUP (ORDER BY first_token_ms)
+		FROM usage_logs
+		WHERE created_at > NOW() - make_interval(mins => $1)
+		  AND stream AND first_token_ms > 0 AND upstream_model IS NOT NULL AND upstream_model <> ''
+		  AND account_id IN (SELECT id FROM accounts WHERE platform = $2 AND type = $3 AND deleted_at IS NULL)
+		GROUP BY account_id, upstream_model
+		HAVING count(*) >= $4 AND count(DISTINCT api_key_id) >= $5`,
+		settings.SlowTTFTWindowMinutes, PlatformOpenAI, AccountTypeAPIKey, settings.SlowTTFTMinRequests, degradationSlowTTFTMinKeys)
+	if err != nil {
+		logger.LegacyPrintf("service.degradation_probe", "[DegradationProbe] load first-token stats failed: %v", err)
+		return map[degradationTTFTKey]bool{}
+	}
+	defer func() { _ = rows.Close() }()
+	var stats []degradationTTFTStat
+	for rows.Next() {
+		var st degradationTTFTStat
+		if err := rows.Scan(&st.key.accountID, &st.key.upstreamModel, &st.medianMs); err != nil {
+			continue
+		}
+		stats = append(stats, st)
+	}
+	return detectSlowFirstToken(stats, settings.SlowTTFTRatio, float64(settings.SlowTTFTMinGapSeconds)*1000)
+}
+
+// detectSlowFirstToken 同一上游模型下，某号首字中位数 ≥ 其他号中位数的中位数 × ratio 且多出 minGapMs 即判慢。
+// 同模型只有一个号有数据时无从比较，不判。所有号一起慢时参照系也慢，不会误停。
+func detectSlowFirstToken(stats []degradationTTFTStat, ratio, minGapMs float64) map[degradationTTFTKey]bool {
+	byModel := map[string][]degradationTTFTStat{}
+	for _, st := range stats {
+		byModel[st.key.upstreamModel] = append(byModel[st.key.upstreamModel], st)
+	}
+	slow := map[degradationTTFTKey]bool{}
+	for _, group := range byModel {
+		if len(group) < 2 {
+			continue
+		}
+		for _, st := range group {
+			others := make([]float64, 0, len(group)-1)
+			for _, o := range group {
+				if o.key != st.key {
+					others = append(others, o.medianMs)
+				}
+			}
+			slices.Sort(others)
+			ref := others[len(others)/2]
+			if len(others)%2 == 0 {
+				ref = (others[len(others)/2-1] + others[len(others)/2]) / 2
+			}
+			if st.medianMs >= ref*ratio && st.medianMs-ref >= minGapMs {
+				slow[st.key] = true
+			}
+		}
+	}
+	return slow
 }

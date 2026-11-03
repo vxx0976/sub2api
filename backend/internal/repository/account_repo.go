@@ -2700,10 +2700,10 @@ func (r *accountRepository) ClearModelRateLimits(ctx context.Context, id int64) 
 		// 不能被「测试成功即恢复」、清除限流等通用清理顺手抹掉。
 		`UPDATE accounts SET extra = CASE
 			WHEN jsonb_typeof(extra->'model_rate_limits') = 'object' AND EXISTS (
-				SELECT 1 FROM jsonb_each(extra->'model_rate_limits') e WHERE e.value->>'reason' = 'degradation_probe'
+				SELECT 1 FROM jsonb_each(extra->'model_rate_limits') e WHERE e.value->>'reason' = 'degradation_probe' OR starts_with(e.value->>'reason', 'degradation_probe:')
 			) THEN jsonb_set(extra, '{model_rate_limits}', (
 				SELECT jsonb_object_agg(e.key, e.value) FROM jsonb_each(extra->'model_rate_limits') e
-				WHERE e.value->>'reason' = 'degradation_probe'
+				WHERE e.value->>'reason' = 'degradation_probe' OR starts_with(e.value->>'reason', 'degradation_probe:')
 			))
 			ELSE COALESCE(extra, '{}'::jsonb) - 'model_rate_limits'
 		END, updated_at = NOW() WHERE id = $1 AND deleted_at IS NULL`,
