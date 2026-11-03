@@ -86,6 +86,10 @@ func (s *GroupHealthCheckService) Start() {
 			logger.LegacyPrintf("service.group_health_check", "[GroupHealthCheck] not started (invalid schedule): %v", err)
 			return
 		}
+		// 降智探针：每 5 分钟 tick 一次，按配置的间隔取模决定本轮是否执行（默认关闭）。
+		if _, err := c.AddFunc("*/5 * * * *", func() { s.runDegradationProbe() }); err != nil {
+			logger.LegacyPrintf("service.group_health_check", "[GroupHealthCheck] degradation probe not scheduled: %v", err)
+		}
 		// 每天 03:17（按配置时区）清理过期历史日志，错峰避开整点流量高峰。
 		if _, err := c.AddFunc("17 3 * * *", func() { s.runLogRetention() }); err != nil {
 			logger.LegacyPrintf("service.group_health_check", "[GroupHealthCheck] log retention not scheduled: %v", err)

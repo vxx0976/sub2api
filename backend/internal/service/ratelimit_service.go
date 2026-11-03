@@ -2307,8 +2307,28 @@ func hasRecoverableRuntimeState(account *Account) bool {
 	if len(account.Extra) == 0 {
 		return false
 	}
-	return hasNonEmptyMapValue(account.Extra, "model_rate_limits") ||
+	return hasRecoverableModelRateLimits(account.Extra) ||
 		hasNonEmptyMapValue(account.Extra, "antigravity_quota_scopes")
+}
+
+// hasRecoverableModelRateLimits 报告 model_rate_limits 中是否有可被「恢复」清除的条目。
+// 降智探针写入的条目由探针自己续期/到期（ClearModelRateLimits 也会保留它们），不算在内，
+// 否则每次测试成功都会白跑一遍恢复流程。
+func hasRecoverableModelRateLimits(extra map[string]any) bool {
+	raw, ok := extra[modelRateLimitsKey]
+	if !ok || raw == nil {
+		return false
+	}
+	limits, ok := raw.(map[string]any)
+	if !ok {
+		return hasNonEmptyMapValue(extra, modelRateLimitsKey)
+	}
+	for _, entry := range limits {
+		if !isDegradationProbeRateLimitEntry(entry) {
+			return true
+		}
+	}
+	return false
 }
 
 func hasNonEmptyMapValue(extra map[string]any, key string) bool {

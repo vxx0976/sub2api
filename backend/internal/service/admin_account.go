@@ -729,10 +729,25 @@ func (s *adminServiceImpl) UpdateAccount(ctx context.Context, id int64, input *U
 			OpenAIAutoResetCreditStateExtraKey,
 			OpenCodeGoUsageAutoRefreshExtraKey,
 			OpenCodeGoUsageSnapshotExtraKey,
+			degradationProbeExtraKey,
 		} {
 			if _, inputHas := normalizedExtra[key]; !inputHas {
 				if v, ok := account.Extra[key]; ok {
 					normalizedExtra[key] = v
+				}
+			}
+		}
+		// 降智探针写入的模型级暂停由探针续期/到期，表单未带 model_rate_limits 时保留这些条目。
+		if _, inputHas := normalizedExtra[modelRateLimitsKey]; !inputHas {
+			if limits, ok := account.Extra[modelRateLimitsKey].(map[string]any); ok {
+				kept := map[string]any{}
+				for k, v := range limits {
+					if isDegradationProbeRateLimitEntry(v) {
+						kept[k] = v
+					}
+				}
+				if len(kept) > 0 {
+					normalizedExtra[modelRateLimitsKey] = kept
 				}
 			}
 		}

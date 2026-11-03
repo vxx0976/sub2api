@@ -70,6 +70,8 @@ var schedulerNeutralExtraKeys = map[string]struct{}{
 	"codex_referral_snapshot":    {},
 	"grok_billing_snapshot":      {},
 	"session_window_utilization": {},
+	// 降智探针状态只供探针自身与管理端查看，调度不读；每轮都会写，不能触发调度重建。
+	"degradation_probe": {},
 }
 
 const postgresParameterBatchSize = 50000
@@ -2694,7 +2696,17 @@ func (r *accountRepository) ClearModelRateLimits(ctx context.Context, id int64) 
 	client := clientFromContext(ctx, r.client)
 	result, err := client.ExecContext(
 		ctx,
-		"UPDATE accounts SET extra = COALESCE(extra, '{}'::jsonb) - 'model_rate_limits', updated_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
+		// 降智探针写入的条目（reason=degradation_probe）保留：它们由探针续期/到期，
+		// 不能被「测试成功即恢复」、清除限流等通用清理顺手抹掉。
+		`UPDATE accounts SET extra = CASE
+			WHEN jsonb_typeof(extra->'model_rate_limits') = 'object' AND EXISTS (
+				SELECT 1 FROM jsonb_each(extra->'model_rate_limits') e WHERE e.value->>'reason' = 'degradation_probe'
+			) THEN jsonb_set(extra, '{model_rate_limits}', (
+				SELECT jsonb_object_agg(e.key, e.value) FROM jsonb_each(extra->'model_rate_limits') e
+				WHERE e.value->>'reason' = 'degradation_probe'
+			))
+			ELSE COALESCE(extra, '{}'::jsonb) - 'model_rate_limits'
+		END, updated_at = NOW() WHERE id = $1 AND deleted_at IS NULL`,
 		id,
 	)
 	if err != nil {

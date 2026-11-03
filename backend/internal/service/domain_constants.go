@@ -607,6 +607,8 @@ const (
 	SettingKeyOpenAIImagesOAuthUnavailableCooldownSettings = "openai_images_oauth_unavailable_cooldown_settings"
 	// SettingKeyOpenAIAPIKeyHealthBreakerSettings stores the opt-in OpenAI pool API-key breaker config.
 	SettingKeyOpenAIAPIKeyHealthBreakerSettings = "openai_apikey_health_breaker_settings"
+	// SettingKeyOpenAIDegradationProbeSettings stores the opt-in OpenAI relay degradation probe config.
+	SettingKeyOpenAIDegradationProbeSettings = "openai_degradation_probe_settings"
 
 	// =========================
 	// Stream Timeout Handling
