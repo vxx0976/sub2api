@@ -6,7 +6,7 @@ export default {
     secretWarning: 'The full key is shown only once. Copy and save it before closing.',
     copySecret: 'Copy key',
     dismissSecret: 'Saved, close',
-    create: 'Create scoped key',
+    create: 'Create administrator key',
     refresh: 'Refresh',
     loading: 'Loading keys and permissions…',
     noDescription: 'No description',
@@ -32,7 +32,7 @@ export default {
     accountTypes: 'Account types (account operations only; none means no account access)',
     platforms: 'Platforms (multiple selection; empty allows all)',
     accountOperations: 'Allowed account operations',
-    groupOperations: 'Allowed group model operations (subject to the group and platform scopes above)',
+    groupOperations: 'Allowed group operations (restricted by the groups and platforms above)',
     modelAllowlistHint: 'The group model allowlist restricts which models the group can use.',
     removeRule: 'Remove rule',
     addRule: 'Add resource rule',
@@ -70,7 +70,318 @@ export default {
     rotateConfirm: 'Rotating “{name}” immediately invalidates its current key. Continue?',
     revokeConfirm: 'Permanently revoking “{name}” cannot be undone. Continue?',
     deleteConfirm: 'Delete the key record “{name}”? This removes it from the list only. Historical operation records are retained.',
-    legacy: 'Legacy full-access key (migration to scoped keys recommended)'
+    legacy: 'Legacy full-access key (migration to scoped keys recommended)',
+    "fullAccessLabel": "Full access (legacy administrator key compatibility)",
+    "fullAccessWarning": "This key can access all administrative resources, read sensitive data, and change account and financial settings, including future administrative endpoints. Group, platform, account type, and operation rules no longer restrict this key. Endpoints requiring an administrator browser session or step-up verification keep those requirements.",
+    "rulesSuspended": "Resource rules are suspended and resume when full access is disabled. Expiration, IP restrictions, rate limits, and auditing remain active.",
+    "fullAccessConfirmTitle": "Confirm full access",
+    "fullAccessPhrase": "ENABLE FULL ACCESS",
+    "fullAccessPhraseHint": "Type “{phrase}” to confirm:",
+    "unknownPermission": "Unknown permission ({id})",
+    "permissions": {
+      "accounts_didentity_dread": {
+        "label": "Read account email, plan, and creation time (no tokens)",
+        "category": "Accounts"
+      },
+      "accounts_dusage_dread": {
+        "label": "Read and refresh authorized account quota and snapshots",
+        "category": "Accounts"
+      },
+      "accounts_dstats_dread": {
+        "label": "Read account usage and cost statistics",
+        "category": "Accounts"
+      },
+      "openai_dquota_dread": {
+        "label": "Read OpenAI upstream quota and remaining resets",
+        "category": "OpenAI"
+      },
+      "openai_dquota_dreset": {
+        "label": "Use an OpenAI reset to restore quota",
+        "category": "OpenAI"
+      },
+      "openai_dreferrals_dread": {
+        "label": "Read OpenAI referral eligibility and remaining invitations",
+        "category": "OpenAI"
+      },
+      "openai_dreferrals_dinvite": {
+        "label": "Send OpenAI invitation emails",
+        "category": "OpenAI"
+      },
+      "accounts_doptions_dwrite": {
+        "label": "Write OpenAI OAuth identity and connection options",
+        "category": "Accounts"
+      },
+      "accounts_drate_dwrite": {
+        "label": "Set account billing multiplier",
+        "category": "Accounts"
+      },
+      "groups_dlist_dread": {
+        "label": "Read selected group details (name, platform, and status)",
+        "category": "Groups"
+      },
+      "groups_dcapacity_dread": {
+        "label": "Read selected group capacity (entire group, regardless of account type)",
+        "category": "Groups"
+      },
+      "openai_dtokens_drefresh": {
+        "label": "Refresh caller-provided OpenAI tokens (returns tokens; selected proxy allowed)",
+        "category": "OAuth"
+      },
+      "accounts_dread": {
+        "label": "Read accounts (redacted)",
+        "category": "Accounts"
+      },
+      "accounts_dcreate": {
+        "label": "Create accounts",
+        "category": "Accounts"
+      },
+      "accounts_dupdate": {
+        "label": "Edit account names and notes",
+        "category": "Accounts"
+      },
+      "accounts_dcredentials": {
+        "label": "Write credentials (no read access)",
+        "category": "Accounts"
+      },
+      "accounts_dmodels_dwrite": {
+        "label": "Edit account model allowlist IDs and mappings",
+        "category": "Accounts"
+      },
+      "accounts_dnetwork": {
+        "label": "Change endpoints, proxies, and connection options",
+        "category": "Accounts"
+      },
+      "accounts_dstatus": {
+        "label": "Enable, disable, and toggle account scheduling",
+        "category": "Accounts"
+      },
+      "accounts_dschedule": {
+        "label": "Change concurrency, priority, and expiration",
+        "category": "Accounts"
+      },
+      "accounts_drefresh": {
+        "label": "Refresh OAuth credentials",
+        "category": "Accounts"
+      },
+      "accounts_drecover": {
+        "label": "Clear account errors and rate-limit state",
+        "category": "Accounts"
+      },
+      "accounts_ddelete": {
+        "label": "Delete accounts (affects shared groups)",
+        "category": "Accounts"
+      },
+      "accounts_dgroups": {
+        "label": "Change authorized group associations",
+        "category": "Accounts"
+      },
+      "groups_dmodels_dread": {
+        "label": "Read selected group model allowlists and candidate IDs",
+        "category": "Group models"
+      },
+      "groups_dmodels_dwrite": {
+        "label": "Edit selected group model allowlists (affects the entire group)",
+        "category": "Group models"
+      },
+      "proxies_dread": {
+        "label": "Read proxy IP candidates (paginated, without credentials)",
+        "category": "Proxies"
+      },
+      "models_ddefaults_dread": {
+        "label": "Read default model allowlist IDs and mappings",
+        "category": "Models"
+      },
+      "dashboard_dread": {
+        "label": "Read site-wide business reports",
+        "category": "Reports"
+      },
+      "users_dread": {
+        "label": "Read all user profiles (including contact details)",
+        "category": "Users"
+      },
+      "users_dbalance_dread": {
+        "label": "Read all user balances and transaction history",
+        "category": "Finance"
+      },
+      "users_dbalance_dwrite": {
+        "label": "Add or subtract any user balance",
+        "category": "Finance"
+      },
+      "users_dquotas_dread": {
+        "label": "Read all user platform quotas",
+        "category": "Users"
+      },
+      "users_dquotas_dwrite": {
+        "label": "Change and reset all user platform quotas",
+        "category": "Users"
+      },
+      "groups_dread": {
+        "label": "Read all group configurations",
+        "category": "Groups"
+      },
+      "usage_dread": {
+        "label": "Read site-wide usage details and user usage",
+        "category": "Reports"
+      },
+      "payment_dread": {
+        "label": "Read all payment orders and reports",
+        "category": "Finance"
+      },
+      "payment_dcancel": {
+        "label": "Cancel payment orders",
+        "category": "Finance"
+      },
+      "payment_dfulfill": {
+        "label": "Retry payment order fulfillment",
+        "category": "Finance"
+      },
+      "payment_drefund": {
+        "label": "Issue refunds and confirm refund results",
+        "category": "Finance"
+      },
+      "payment_dplans_dread": {
+        "label": "Read all payment plans",
+        "category": "Finance"
+      },
+      "payment_dplans_dwrite": {
+        "label": "Create, edit, and delete payment plans",
+        "category": "Finance"
+      },
+      "subscriptions_dread": {
+        "label": "Read all subscription records",
+        "category": "Subscriptions"
+      },
+      "subscriptions_dassign": {
+        "label": "Assign subscriptions to any user",
+        "category": "Subscriptions"
+      },
+      "subscriptions_dextend": {
+        "label": "Extend subscription expiration",
+        "category": "Subscriptions"
+      },
+      "subscriptions_drevoke": {
+        "label": "Revoke subscriptions",
+        "category": "Subscriptions"
+      },
+      "subscriptions_drestore": {
+        "label": "Restore subscriptions",
+        "category": "Subscriptions"
+      },
+      "subscriptions_dreset": {
+        "label": "Reset subscription quota",
+        "category": "Subscriptions"
+      },
+      "announcements_dread": {
+        "label": "Read all announcements and read receipts",
+        "category": "Content"
+      },
+      "announcements_dwrite": {
+        "label": "Create, publish, and edit announcements",
+        "category": "Content"
+      },
+      "announcements_ddelete": {
+        "label": "Delete announcements",
+        "category": "Content"
+      },
+      "promo_dread": {
+        "label": "Read promotion codes and usage records",
+        "category": "Finance"
+      },
+      "promo_dwrite": {
+        "label": "Create and edit promotion code benefits",
+        "category": "Finance"
+      },
+      "promo_ddelete": {
+        "label": "Delete promotion codes",
+        "category": "Finance"
+      },
+      "ops_dread": {
+        "label": "Read site-wide operational metrics",
+        "category": "Monitoring"
+      },
+      "ops_derrors_dread": {
+        "label": "Read site-wide request error details (sensitive)",
+        "category": "Monitoring"
+      },
+      "ops_derrors_dresolve": {
+        "label": "Mark request error resolution status",
+        "category": "Monitoring"
+      },
+      "ops_dalerts_dread": {
+        "label": "Read site-wide alert rules and events",
+        "category": "Monitoring"
+      },
+      "ops_dalerts_dwrite": {
+        "label": "Change alert rules, status, and silences",
+        "category": "Monitoring"
+      },
+      "system_dread": {
+        "label": "Read current and available system versions",
+        "category": "System"
+      }
+    },
+    "listSeparator": ", "
+  },
+  mcp: {
+    title: 'MCP Connection',
+    description: 'Connect an AI assistant with OAuth and manage its access to your account.',
+    connectionTitle: 'Connect your AI assistant',
+    connectionDescription: 'Use a client that supports remote MCP over Streamable HTTP and OAuth sign-in.',
+    endpoint: 'Server URL',
+    copyEndpoint: 'Copy URL',
+    connectionLoading: 'Loading server URL…',
+    connectionLoadFailed: 'Unable to load the MCP server URL. Please try again.',
+    connectStep1: 'Add a remote MCP server in your AI client and enter this server URL.',
+    connectStep2: 'Choose Connect or Sign in. Your client opens this platform in your browser.',
+    connectStep3: 'Sign in, check the application and return address, then choose its permissions and approve access.',
+    capabilities: 'Personal access lets an application view your balance, usage and subscriptions, and manage your API keys. Platform access also supports managing users, groups and upstream accounts. Available tools follow the permissions you approve.',
+    grantsTitle: 'Authorized applications',
+    grantsDescription: 'Review the applications you have connected. Revoking access disconnects the application; reconnect from its client to authorize it again.',
+    scope: 'Access scope',
+    userScope: 'Personal account',
+    adminScope: 'Platform management',
+    userScopeHint: 'Access only your own resources, subject to existing platform permissions.',
+    adminScopeHint: 'Access platform management tools while your account remains an active administrator. Approval may require two-factor verification.',
+    permissions: 'Permissions',
+    readOnly: 'Read only',
+    readWrite: 'Allow changes',
+    readOnlyHint: 'Expose query tools only, for analyzing usage and checking status.',
+    readWriteHint: 'Allow creating, updating and deleting resources within this scope, including API keys and billing entitlements. Only approve this for an application you trust.',
+    adminWriteHint: 'Platform write access always requires two-factor authentication (TOTP) to be enabled and verified when you approve.',
+    empty: 'No authorized applications yet. Start a connection from your AI client using the server URL above.',
+    loading: 'Loading authorized applications…',
+    loadFailed: 'Failed to load authorized applications. Please try again.',
+    revokeFailed: 'Failed to revoke application access.',
+    createdAt: 'Authorized {date}',
+    expiresAt: 'Expires: {date}',
+    lastUsedAt: 'Last used: {date}',
+    neverUsed: 'Never used',
+    active: 'Active',
+    expired: 'Expired',
+    invalidated: 'Invalidated (account permissions or password changed)',
+    revoked: 'Revoked',
+    revoke: 'Revoke access',
+    revokeTitle: 'Revoke application access',
+    revokeConfirm: '“{name}” will lose access to the platform. To connect it again, start a new sign-in from that application.',
+    revokeSuccess: 'Application access revoked',
+    consentTitle: 'Authorize an MCP application',
+    consentDescription: 'Choose what this application can access on your behalf.',
+    consentLoading: 'Checking the authorization request…',
+    consentLoadFailed: 'Unable to verify this authorization request.',
+    consentRetryHint: 'Return to your AI client and start a new connection.',
+    backToConnections: 'Manage MCP connections',
+    applicationName: 'Application name (provided by the client)',
+    clientId: 'Client ID',
+    returnAddress: 'Return address',
+    requestedAccess: 'Requested access',
+    requestedAccessDescription: 'MCP access to this platform, limited to the scope and permissions you select below.',
+    untrustedApplicationHint: 'Application names are supplied by their clients and are not verified. Check the return address and approve only if you intended to connect this application.',
+    signedInAs: 'Signed in as {email}',
+    approve: 'Approve access',
+    deny: 'Deny',
+    invalidRequest: 'This authorization request is invalid or incomplete. No access has been granted.',
+    invalidRedirect: 'The server returned an unexpected return address. Please reconnect from your client.',
+    consentSubmitFailed: 'Unable to complete authorization. Please try again.'
   },
   batchImageGuide: {
     title: 'Batch Image Generation',
@@ -892,6 +1203,7 @@ export default {
     loginFailed: 'Login failed. Please check your credentials and try again.',
     errors: {
       USER_NOT_ACTIVE: 'Account has been disabled.',
+      EMAIL_BLOCKED: 'This email address is not allowed. Please use a different one.',
     },
     registrationFailed: 'Registration failed. Please try again.',
     emailDomainRegistrationLimit:
@@ -1249,10 +1561,10 @@ export default {
       openai: {
         description: 'Add the following configuration files to your Codex CLI config directory.',
         authModeTitle: 'Codex authentication mode',
-        authModeDescription: 'Compatibility mode keeps the existing setup for older Codex clients. API Key Mode authorizes the client-side image executor.',
+        authModeDescription: 'The configuration enables live web search. API Key mode supports native Codex image generation by default. Choose compatibility mode for older clients.',
         authModeLegacy: 'Compatibility mode',
-        authModeApiKey: 'API Key Mode',
-        authModeApiKeyRestartNotice: 'After saving this configuration, completely quit and restart Codex Desktop or CLI, then create a new task so the client can rebuild its tool registry.',
+        authModeApiKey: 'API Key Mode (recommended)',
+        authModeApiKeyRestartNotice: 'This configuration contains your API key; do not share it or commit it. Save it and test in a new conversation; restart Codex if it has not loaded. Image generation still requires group permission, available balance, and upstream support.',
         configTomlHint: 'Make sure the following content is at the beginning of the config.toml file',
         note: 'Make sure the config directory exists. macOS/Linux users can run mkdir -p ~/.codex to create it.',
         noteWindows: 'Press Win+R and enter %userprofile%\\.codex to open the config directory. Create it manually if it does not exist.',
@@ -1579,6 +1891,7 @@ export default {
     noDataToExport: 'No data to export',
     exportSuccess: 'Usage data exported successfully',
     exportFailed: 'Failed to export usage data',
+    exportRateLimited: 'Too many requests, export will resume in {seconds} seconds',
     exportExcelSuccess: 'Usage data exported successfully (Excel format)',
     exportExcelFailed: 'Failed to export usage data',
     imageUnit: ' images',
@@ -1909,6 +2222,7 @@ export default {
       cacheWritePrice: 'Cache Write',
       cacheWrite5mPrice: 'Cache Write (5m)',
       cacheWrite1hPrice: 'Cache Write (1h)',
+      cacheWrite12hPrice: 'Cache Write (12h)',
       cacheReadPrice: 'Cache Read',
       imageInputPrice: 'Image Input',
       imageOutputPrice: 'Image Output',
@@ -3905,7 +4219,10 @@ export default {
         outputPrice: 'Output',
         cacheWritePrice: 'Cache Write',
         cacheWrite5mPrice: 'Cache Write (5m)',
+        cacheWrite30mPrice: 'Cache Write (30m)',
+        cacheWrite12hHint: 'Leave empty to use the generic cache-write price. Applies only to reported OpenAI 12h writes.',
         cacheWrite1hPrice: 'Cache Write (1h)',
+        cacheWrite12hPrice: 'Cache Write (12h)',
         cacheReadPrice: 'Cache Read',
         imageOutputPrice: 'Image Output',
         perRequestPrice: 'Per Request',
@@ -3959,6 +4276,7 @@ export default {
           outputPrice: 'output price',
           cacheWritePrice: 'cache write price',
           cacheWrite1hPrice: '1h cache write price',
+          cacheWrite12hPrice: '12h cache write price',
           cacheReadPrice: 'cache read price',
           perRequestPrice: 'per-request price'
         },
@@ -4000,11 +4318,15 @@ export default {
         outputPrice: 'Output',
         cacheWritePrice: 'Cache Write',
         cacheWrite5mPrice: 'Cache Write (5m)',
+        cacheWrite30mPrice: 'Cache Write (30m)',
+        cacheWrite12hHint: 'Leave empty to use the generic cache-write price. Applies only to reported OpenAI 12h writes.',
         cacheWrite1hPrice: 'Cache Write (1h)',
+        cacheWrite12hPrice: 'Cache Write (12h)',
         cacheReadPrice: 'Cache Read',
         cacheWritePriceShort: 'Cache W',
         cacheWrite5mPriceShort: 'Cache W 5m',
         cacheWrite1hPriceShort: 'Cache W 1h',
+        cacheWrite12hPriceShort: 'Cache W 12h',
         cacheReadPriceShort: 'Cache R',
         imageInputPrice: 'Image Input',
         imageTokenPrice: 'Image Output',
@@ -5426,6 +5748,10 @@ export default {
           'Only applies to non-streaming Images responses of OpenAI API Key accounts. When an upstream image item has a url but no b64_json, the gateway downloads the url and fills b64_json with its base64 content (url is kept) for clients built on the official API; the response is returned unchanged if the download fails.',
         responsesModeTextDisabledHint:
           'Not applicable when the Responses / Chat Completions endpoint is not enabled.',
+        imageSizeTiers: 'Image size tiers',
+        imageSizeTiersDesc:
+          'Limits the image size tiers this account serves, using the billing tiers: longest edge ≤1024 is 1K, ≤2048 is 2K, larger is 4K (2560x1440 is 4K). Requests with an explicit size are only scheduled to accounts allowing that tier; requests without a size or with auto prefer accounts without a tier limit, then accounts allowing 4K, 2K and 1K in that order. Selecting all tiers means no limit. Applies to the Images API and the Responses image generation tool.',
+        imageSizeTiersAtLeastOne: 'Keep at least one tier',
         endpointCapabilities: 'Endpoint capabilities',
         endpointCapabilitiesDesc:
           'Used by account routing. The text endpoint follows the Responses API support setting above and is shown as Responses, Chat Completions, or auto mode; Embeddings independently controls /v1/embeddings.',
@@ -6482,6 +6808,12 @@ export default {
         gemini3Pro: 'G3P',
         gemini3Flash: 'G3F',
         gemini3Image: 'G31FI',
+        antigravityGemini5h: 'G·5h',
+        antigravityGeminiWeekly: 'G·wk',
+        antigravityArgon5h: 'A·5h',
+        antigravityArgonWeekly: 'A·wk',
+        antigravityOther5h: 'C·5h',
+        antigravityOtherWeekly: 'C·wk',
         claude: 'Claude',
         grokRequests: 'Req',
         grokTokens: 'Tok',
@@ -8309,6 +8641,43 @@ export default {
         emailDomainQuota: 'Non-allowlist Domain Quota',
         emailDomainQuotaHint:
           'When enabled and the allowlist is not empty, every other registrable domain can register one account. When disabled, non-allowlist domains are rejected. Has no effect while the allowlist is empty',
+        emailBlacklist: {
+          title: 'Email Blacklist (Exact Match)',
+          hint: 'Listed addresses cannot register or be bound as an account email. Matching is per inbox: dots in Gmail addresses, the googlemail.com domain and +suffixes are treated as the same address. Existing accounts are not affected; use Check Registered Users to find and disable them. The list is saved from its own dialog, independent of the Save button at the bottom of this page.',
+          count: '{count} addresses',
+          loadFailed: 'Failed to load the blacklist',
+          retry: 'Retry',
+          edit: 'Edit List',
+          checkUsers: 'Check Registered Users',
+          editorTitle: 'Edit Email Blacklist',
+          bulkLabel: 'Bulk Add',
+          bulkPlaceholder: 'One address per line; commas, spaces or semicolons also work',
+          bulkAdd: 'Add to List',
+          addResult: 'Added {added}, skipped {duplicates} duplicates',
+          invalidResult: '{count} invalid entries were left in the input: {sample}',
+          listLabel: 'List ({count})',
+          pending: 'Unsaved: {added} added, {removed} removed',
+          searchPlaceholder: 'Search addresses',
+          clear: 'Clear',
+          empty: 'The list is empty',
+          noMatch: 'No matching addresses',
+          truncated: '{total} matches; showing the first {limit}. Narrow it down with search.',
+          newTag: 'Unsaved',
+          remove: 'Remove',
+          save: 'Save List',
+          saved: 'Blacklist saved with {count} addresses',
+          tooMany: 'The list can hold at most {max} addresses',
+          disableTitle: 'Disable blacklisted users?',
+          disableMessage: 'The emails of the {count} registered users below are blacklisted (including alias variants of the same inbox). Disabled users cannot sign in and their API keys stop working immediately. Disable them?',
+          disableConfirm: 'Disable {count} users',
+          disableLater: 'Not Now',
+          disabled: 'Disabled {count} users',
+          noActiveMatches: 'No active registered users match the list',
+          discardTitle: 'Discard unsaved changes?',
+          discardMessage: '{added} additions and {removed} removals have not been saved and will be lost.',
+          discardConfirm: 'Discard',
+          discardCancel: 'Keep Editing',
+        },
         promoCode: 'Promo Code',
         promoCodeHint: 'Allow users to use promo codes during registration',
         invitationCode: 'Invitation Code Registration',
@@ -8659,6 +9028,8 @@ export default {
         fingerprintUnificationHint: 'Unify X-Stainless-* headers across users sharing the same OAuth account. Disabling passes through each client\'s original headers.',
         metadataPassthrough: 'Metadata Passthrough',
         metadataPassthroughHint: 'Pass through client\'s original metadata.user_id without rewriting. May improve upstream cache hit rates.',
+        cchSigning: 'CCH Signing',
+        cchSigningHint: 'Sign the billing header in forwarded requests with CCH hash. When disabled, the placeholder is preserved.',
         claudeOAuthSystemPromptInjection: 'Claude OAuth System Blocks',
         claudeOAuthSystemPromptInjectionHint: 'Inject Claude Code-like system blocks for Claude OAuth requests from non-Claude-Code clients. Enabled by default.',
         claudeOAuthSystemPrompt: 'Claude OAuth Expansion Prompt',

@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -123,15 +122,19 @@ func isResponsesWebSocketRoute(c *gin.Context) bool {
 func groupModelAllowlistModelsFromBody(c *gin.Context) ([]string, bool) {
 	body, err := httputil.ReadRequestBodyWithPrealloc(c.Request)
 	if err != nil {
-		status := http.StatusBadRequest
-		message := httputil.RequestBodyReadFailureMessage(err)
-		var maxErr *http.MaxBytesError
-		if errors.As(err, &maxErr) {
-			status = http.StatusRequestEntityTooLarge
-			message = "Request body is too large"
+		if RejectRequestBodyReadError(c, "middleware.group_model_allowlist", err) {
+			return nil, false
 		}
-		c.JSON(status, gin.H{"error": gin.H{"type": "invalid_request_error", "message": message}})
-		c.Abort()
+		// 保留 fork 的详细读体失败原因，同时采纳上游的状态分级（413 超大 / 408 超时 / 499 断开）。
+		failure := httputil.DescribeRequestBodyReadFailure(c.Request, err)
+		message := failure.Message
+		if failure.Status == http.StatusBadRequest {
+			message = httputil.RequestBodyReadFailureMessage(err)
+		}
+		if failure.Kind != httputil.RequestBodyReadErrorMaxBytes {
+			logRequestBodyReadFailure(c, "middleware.group_model_allowlist", failure)
+		}
+		c.AbortWithStatusJSON(failure.Status, gin.H{"error": gin.H{"type": "invalid_request_error", "message": message}})
 		return nil, false
 	}
 	requestmodel.ResetRequestBody(c.Request, body)

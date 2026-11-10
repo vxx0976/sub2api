@@ -1289,6 +1289,9 @@
               <Toggle v-model="form.registration_email_domain_quota_enabled" />
             </div>
 
+            <!-- Exact Email Blacklist -->
+            <RegistrationEmailBlacklistEditor />
+
             <!-- Promo Code -->
             <div
               class="flex items-center justify-between border-t border-gray-100 pt-4 dark:border-dark-700"
@@ -7349,6 +7352,7 @@ import {
   type RechargeBonusMode,
   type RechargeBonusTierDraft
 } from '@/utils/rechargeBonus'
+import RegistrationEmailBlacklistEditor from '@/components/admin/settings/RegistrationEmailBlacklistEditor.vue'
 import OpenAIFastPolicyUserSelector from '@/views/admin/settings/OpenAIFastPolicyUserSelector.vue'
 import AliMPayConfigCard from '@/views/admin/components/AliMPayConfigCard.vue'
 import UsdtConfigCard from '@/views/admin/components/UsdtConfigCard.vue'

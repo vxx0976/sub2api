@@ -1,0 +1,41 @@
+//go:build unit
+
+package service
+
+import (
+	"testing"
+	"time"
+)
+
+// A manual refresh (force=true) must not be answered from the antigravity usage cache: an
+// account upgraded or reset upstream otherwise keeps showing old figures for the cache TTL.
+func TestCachedAntigravityUsage_ForceSkipsFreshCache(t *testing.T) {
+	s := &AccountUsageService{cache: NewUsageCache()}
+	resetsAt := time.Now().Add(2 * time.Hour)
+	stored := &UsageInfo{FiveHour: &UsageProgress{ResetsAt: &resetsAt}}
+	s.cache.antigravityCache.Store(int64(6), &antigravityUsageCache{usageInfo: stored, timestamp: time.Now()})
+
+	// fork 命中缓存时返回副本（避免并发改共享对象触发 data race），所以这里比较内容而非指针。
+	usage, ok := s.cachedAntigravityUsage(6, false)
+	if !ok || usage == nil || usage.FiveHour == nil || usage.FiveHour.ResetsAt == nil ||
+		!usage.FiveHour.ResetsAt.Equal(*stored.FiveHour.ResetsAt) {
+		t.Fatalf("fresh cache should answer a normal query, got ok=%v usage=%+v", ok, usage)
+	}
+	if usage.FiveHour.RemainingSeconds <= 0 {
+		t.Fatalf("remaining seconds should be recalculated, got %d", usage.FiveHour.RemainingSeconds)
+	}
+	if usage, ok := s.cachedAntigravityUsage(6, true); ok || usage != nil {
+		t.Fatalf("a forced query must skip the cache")
+	}
+}
+
+func TestCachedAntigravityUsage_ExpiredOrMissing(t *testing.T) {
+	s := &AccountUsageService{cache: NewUsageCache()}
+	if _, ok := s.cachedAntigravityUsage(7, false); ok {
+		t.Fatalf("missing entry must miss")
+	}
+	s.cache.antigravityCache.Store(int64(7), &antigravityUsageCache{usageInfo: &UsageInfo{}, timestamp: time.Now().Add(-time.Hour)})
+	if _, ok := s.cachedAntigravityUsage(7, false); ok {
+		t.Fatalf("expired entry must miss")
+	}
+}

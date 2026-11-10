@@ -380,11 +380,11 @@ func (h *GatewayHandler) GeminiV1BetaModels(c *gin.Context) {
 
 	body, err := pkghttputil.ReadRequestBodyWithPrealloc(c.Request)
 	if err != nil {
-		if maxErr, ok := extractMaxBytesError(err); ok {
-			googleError(c, http.StatusRequestEntityTooLarge, buildBodyTooLargeMessage(maxErr.Limit))
+		if handleRequestBodyReadError(c, reqLog, err) {
 			return
 		}
-		googleError(c, http.StatusBadRequest, requestBodyReadFailureMessage(err))
+		status, message := requestBodyReadFailure(reqLog, c.Request, err)
+		googleErrorWithType(c, status, "invalid_request_error", "", message)
 		return
 	}
 	if len(body) == 0 {
@@ -801,6 +801,10 @@ func (h *GatewayHandler) GeminiV1BetaModels(c *gin.Context) {
 			// 长上下文阶梯改由目录数据驱动、统一在计费路径内生效（上游本轮移除了
 			// LegacyLongContextRule / RecordUsageWithLongContext 这套入口侧声明 API），
 			// 因此这里与其它入口一样只调 RecordUsage。
+			// channelUsageFields 必须在提交异步任务前算好：worker 闭包在 handler 返回后
+			// 才执行，此时 gin.Context 可能已被复用/释放，闭包内再读 c.Request 会拿到错误
+			// 或空的客户端请求模型（上游 457602c8f 已将其提到 h.submitUsageRecordTask 之前）。
+			channelUsageFields := clientRequestedUsageFields(c, channelMapping, reqModel, result.UpstreamModel)
 			h.submitUsageRecordTask(c.Request.Context(), func(ctx context.Context) {
 				if err := h.gatewayService.RecordUsage(ctx, &service.RecordUsageInput{
 					Result:             result,
@@ -818,7 +822,7 @@ func (h *GatewayHandler) GeminiV1BetaModels(c *gin.Context) {
 					ForceCacheBilling:  forceCacheBilling,
 					APIKeyService:      h.apiKeyService,
 					SessionID:          sessionID,
-					ChannelUsageFields: clientRequestedUsageFields(c, channelMapping, reqModel, result.UpstreamModel),
+					ChannelUsageFields: channelUsageFields,
 				}); err != nil {
 					logger.L().With(
 						zap.String("component", "handler.gemini_v1beta.models"),

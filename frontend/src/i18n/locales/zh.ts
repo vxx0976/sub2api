@@ -6,7 +6,7 @@ export default {
     secretWarning: '完整密钥仅展示本次，请立即复制保存。关闭后无法再次查看。',
     copySecret: '复制密钥',
     dismissSecret: '已保存，关闭展示',
-    create: '创建受限密钥',
+    create: '创建管理密钥',
     refresh: '刷新列表',
     loading: '正在加载密钥及权限目录…',
     noDescription: '无备注',
@@ -32,7 +32,7 @@ export default {
     accountTypes: '账户类型（仅限制账户操作，未选表示无账户权限）',
     platforms: '平台（可多选，未选表示不限平台）',
     accountOperations: '允许的账户操作',
-    groupOperations: '允许的分组模型操作（同样受上方分组与平台限制）',
+    groupOperations: '允许的分组操作（受上方分组与平台限制）',
     modelAllowlistHint: '分组模型白名单会限制分组可调用的模型。',
     removeRule: '删除规则',
     addRule: '添加资源规则',
@@ -70,7 +70,318 @@ export default {
     rotateConfirm: '轮换“{name}”将立即使原密钥失效，是否继续？',
     revokeConfirm: '永久撤销“{name}”后无法恢复，是否继续？',
     deleteConfirm: '确定删除“{name}”的密钥记录？删除只是从列表移除，历史操作记录仍会继续保留。',
-    legacy: '旧版全权密钥兼容区（建议迁移到受限密钥）'
+    legacy: '旧版全权密钥兼容区（建议迁移到受限密钥）',
+    "fullAccessLabel": "全权访问（兼容旧版管理员 Key）",
+    "fullAccessWarning": "开启后，此密钥可访问全部管理资源、读取敏感数据并修改账户和财务配置；未来新增的管理接口也将允许访问。分组、平台、账户类型和操作规则不再限制此密钥。仅限管理员登录会话及二次验证的接口仍遵循原要求。",
+    "rulesSuspended": "资源规则已暂停，关闭全权访问后恢复；有效期、IP 限制、限流和审计继续生效。",
+    "fullAccessConfirmTitle": "确认开启全权访问",
+    "fullAccessPhrase": "开启全权访问",
+    "fullAccessPhraseHint": "请输入“{phrase}”以确认：",
+    "unknownPermission": "未知权限（{id}）",
+    "permissions": {
+      "accounts_didentity_dread": {
+        "label": "读取账户邮箱、套餐及创建时间（不含令牌）",
+        "category": "账户"
+      },
+      "accounts_dusage_dread": {
+        "label": "读取及主动刷新授权账户额度与快照",
+        "category": "账户"
+      },
+      "accounts_dstats_dread": {
+        "label": "读取账户用量与费用统计",
+        "category": "账户"
+      },
+      "openai_dquota_dread": {
+        "label": "查询 OpenAI 上游额度与重置次数",
+        "category": "OpenAI"
+      },
+      "openai_dquota_dreset": {
+        "label": "消耗 OpenAI 重置次数恢复额度",
+        "category": "OpenAI"
+      },
+      "openai_dreferrals_dread": {
+        "label": "查询 OpenAI 邀请资格与次数",
+        "category": "OpenAI"
+      },
+      "openai_dreferrals_dinvite": {
+        "label": "发送 OpenAI 邀请邮件",
+        "category": "OpenAI"
+      },
+      "accounts_doptions_dwrite": {
+        "label": "写入 OpenAI OAuth 身份与连接选项",
+        "category": "账户"
+      },
+      "accounts_drate_dwrite": {
+        "label": "设置账户计费倍率",
+        "category": "账户"
+      },
+      "groups_dlist_dread": {
+        "label": "读取所选分组基本信息（名称、平台、状态）",
+        "category": "分组"
+      },
+      "groups_dcapacity_dread": {
+        "label": "读取所选分组容量（整个分组，不按账户类型过滤）",
+        "category": "分组"
+      },
+      "openai_dtokens_drefresh": {
+        "label": "刷新调用方提供的 OpenAI 令牌（返回令牌，可使用所选代理）",
+        "category": "OAuth"
+      },
+      "accounts_dread": {
+        "label": "查看账户（脱敏）",
+        "category": "账户"
+      },
+      "accounts_dcreate": {
+        "label": "创建账户",
+        "category": "账户"
+      },
+      "accounts_dupdate": {
+        "label": "编辑名称与备注",
+        "category": "账户"
+      },
+      "accounts_dcredentials": {
+        "label": "写入凭证（不包含读取）",
+        "category": "账户"
+      },
+      "accounts_dmodels_dwrite": {
+        "label": "编辑账户白名单模型 ID 与映射",
+        "category": "账户"
+      },
+      "accounts_dnetwork": {
+        "label": "修改接入地址、代理与连接选项",
+        "category": "账户"
+      },
+      "accounts_dstatus": {
+        "label": "启用、停用与调度开关",
+        "category": "账户"
+      },
+      "accounts_dschedule": {
+        "label": "修改并发、优先级与有效期",
+        "category": "账户"
+      },
+      "accounts_drefresh": {
+        "label": "刷新 OAuth 凭证",
+        "category": "账户"
+      },
+      "accounts_drecover": {
+        "label": "清除账户错误与限流状态",
+        "category": "账户"
+      },
+      "accounts_ddelete": {
+        "label": "删除账户（影响共享分组）",
+        "category": "账户"
+      },
+      "accounts_dgroups": {
+        "label": "调整授权分组关联",
+        "category": "账户"
+      },
+      "groups_dmodels_dread": {
+        "label": "读取所选分组模型白名单与候选 ID",
+        "category": "分组模型"
+      },
+      "groups_dmodels_dwrite": {
+        "label": "编辑所选分组模型白名单（影响整个分组）",
+        "category": "分组模型"
+      },
+      "proxies_dread": {
+        "label": "读取代理 IP 候选（分页，不含认证凭证）",
+        "category": "代理"
+      },
+      "models_ddefaults_dread": {
+        "label": "读取默认白名单模型 ID（含默认映射）",
+        "category": "模型"
+      },
+      "dashboard_dread": {
+        "label": "读取全站经营报表",
+        "category": "报表"
+      },
+      "users_dread": {
+        "label": "读取全站用户资料（含联系方式）",
+        "category": "用户"
+      },
+      "users_dbalance_dread": {
+        "label": "读取全站用户余额及流水",
+        "category": "财务"
+      },
+      "users_dbalance_dwrite": {
+        "label": "增减任意用户余额",
+        "category": "财务"
+      },
+      "users_dquotas_dread": {
+        "label": "读取全站用户平台额度",
+        "category": "用户"
+      },
+      "users_dquotas_dwrite": {
+        "label": "修改与重置全站用户平台额度",
+        "category": "用户"
+      },
+      "groups_dread": {
+        "label": "读取所有分组配置",
+        "category": "分组"
+      },
+      "usage_dread": {
+        "label": "读取全站用量明细及用户用量",
+        "category": "报表"
+      },
+      "payment_dread": {
+        "label": "读取全站支付订单与报表",
+        "category": "财务"
+      },
+      "payment_dcancel": {
+        "label": "取消支付订单",
+        "category": "财务"
+      },
+      "payment_dfulfill": {
+        "label": "重新履约支付订单",
+        "category": "财务"
+      },
+      "payment_drefund": {
+        "label": "发起退款及确认退款结果",
+        "category": "财务"
+      },
+      "payment_dplans_dread": {
+        "label": "读取全部支付套餐",
+        "category": "财务"
+      },
+      "payment_dplans_dwrite": {
+        "label": "创建、修改和删除支付套餐",
+        "category": "财务"
+      },
+      "subscriptions_dread": {
+        "label": "读取全站订阅记录",
+        "category": "订阅"
+      },
+      "subscriptions_dassign": {
+        "label": "分配全站用户订阅",
+        "category": "订阅"
+      },
+      "subscriptions_dextend": {
+        "label": "延长订阅有效期",
+        "category": "订阅"
+      },
+      "subscriptions_drevoke": {
+        "label": "撤销订阅",
+        "category": "订阅"
+      },
+      "subscriptions_drestore": {
+        "label": "恢复订阅",
+        "category": "订阅"
+      },
+      "subscriptions_dreset": {
+        "label": "重置订阅额度",
+        "category": "订阅"
+      },
+      "announcements_dread": {
+        "label": "读取所有公告与阅读记录",
+        "category": "内容"
+      },
+      "announcements_dwrite": {
+        "label": "创建、发布与修改公告",
+        "category": "内容"
+      },
+      "announcements_ddelete": {
+        "label": "删除公告",
+        "category": "内容"
+      },
+      "promo_dread": {
+        "label": "读取优惠码及使用记录",
+        "category": "财务"
+      },
+      "promo_dwrite": {
+        "label": "创建与修改优惠码权益",
+        "category": "财务"
+      },
+      "promo_ddelete": {
+        "label": "删除优惠码",
+        "category": "财务"
+      },
+      "ops_dread": {
+        "label": "读取全站运维指标",
+        "category": "监控"
+      },
+      "ops_derrors_dread": {
+        "label": "读取全站请求错误详情（敏感）",
+        "category": "监控"
+      },
+      "ops_derrors_dresolve": {
+        "label": "标记请求错误处理状态",
+        "category": "监控"
+      },
+      "ops_dalerts_dread": {
+        "label": "读取全站告警规则与事件",
+        "category": "监控"
+      },
+      "ops_dalerts_dwrite": {
+        "label": "修改告警规则、状态与静默",
+        "category": "监控"
+      },
+      "system_dread": {
+        "label": "读取系统版本与可更新版本",
+        "category": "系统"
+      }
+    },
+    "listSeparator": "、"
+  },
+  mcp: {
+    title: 'MCP 接入',
+    description: '通过 OAuth 连接 AI 助手，并管理它对你账户的访问权限。',
+    connectionTitle: '连接你的 AI 助手',
+    connectionDescription: '请使用支持 Streamable HTTP 远程 MCP 和 OAuth 登录的客户端。',
+    endpoint: '服务地址',
+    copyEndpoint: '复制地址',
+    connectionLoading: '正在加载服务地址…',
+    connectionLoadFailed: '无法加载 MCP 服务地址，请重试。',
+    connectStep1: '在 AI 客户端中添加远程 MCP 服务，并填写此服务地址。',
+    connectStep2: '选择连接或登录，客户端会在浏览器中打开本平台。',
+    connectStep3: '登录后核对应用及返回地址，选择访问范围和操作权限，再确认授权。',
+    capabilities: '个人权限可查看余额、用量和订阅，并管理自己的 API 密钥。管理员权限还可管理用户、分组和上游账号。实际可用工具由你批准的权限决定。',
+    grantsTitle: '已授权应用',
+    grantsDescription: '查看你已连接的应用。撤销授权后应用将失去访问权限；如需再次连接，请从客户端重新发起授权。',
+    scope: '访问范围',
+    userScope: '个人账户',
+    adminScope: '平台管理',
+    userScopeHint: '只能访问你自己的资源，沿用平台现有的权限限制。',
+    adminScopeHint: '允许访问平台管理工具，仅在你仍是有效管理员时可用。授权时可能需要两步验证。',
+    permissions: '操作权限',
+    readOnly: '只读',
+    readWrite: '允许修改',
+    readOnlyHint: '只开放查询工具，适合分析用量、查看状态。',
+    readWriteHint: '允许创建、修改和删除范围内的资源，包括 API 密钥和计费权益。请只授权给你信任的应用。',
+    adminWriteHint: '平台管理的修改权限始终需要你已开启两步验证（TOTP），并在授权时完成验证。',
+    empty: '尚未授权任何应用。请在 AI 客户端中使用上方服务地址发起连接。',
+    loading: '正在加载已授权应用…',
+    loadFailed: '加载已授权应用失败，请重试。',
+    revokeFailed: '撤销应用授权失败。',
+    createdAt: '授权于 {date}',
+    expiresAt: '到期时间：{date}',
+    lastUsedAt: '上次使用：{date}',
+    neverUsed: '尚未使用',
+    active: '有效',
+    expired: '已过期',
+    invalidated: '已失效（账户权限或密码已变更）',
+    revoked: '已撤销',
+    revoke: '撤销授权',
+    revokeTitle: '撤销应用授权',
+    revokeConfirm: '“{name}”将失去平台访问权限。如需再次连接，请从该应用重新发起登录授权。',
+    revokeSuccess: '应用授权已撤销',
+    consentTitle: '授权 MCP 应用',
+    consentDescription: '选择此应用可以代表你访问的资源和操作权限。',
+    consentLoading: '正在验证授权请求…',
+    consentLoadFailed: '无法验证此授权请求。',
+    consentRetryHint: '请返回 AI 客户端，重新发起连接。',
+    backToConnections: '管理 MCP 连接',
+    applicationName: '应用名称（由客户端提供）',
+    clientId: '客户端 ID',
+    returnAddress: '返回地址',
+    requestedAccess: '申请访问',
+    requestedAccessDescription: '通过 MCP 访问此平台，权限受下方选择的访问范围和操作权限限制。',
+    untrustedApplicationHint: '应用名称由客户端自行提供，未经平台认证。请核对返回地址，仅在你主动连接此应用时确认授权。',
+    signedInAs: '当前登录账户：{email}',
+    approve: '确认授权',
+    deny: '拒绝',
+    invalidRequest: '授权请求无效或不完整，尚未授予任何访问权限。',
+    invalidRedirect: '服务器返回了非预期的地址，请从客户端重新发起连接。',
+    consentSubmitFailed: '无法完成授权，请重试。'
   },
   // Home Page
   home: {
@@ -893,6 +1204,7 @@ export default {
     loginFailed: '登录失败，请检查您的凭据后重试。',
     errors: {
       USER_NOT_ACTIVE: '账号已被禁用',
+      EMAIL_BLOCKED: '该邮箱不允许注册，请更换其他邮箱。',
     },
     registrationFailed: '注册失败，请重试。',
     emailDomainRegistrationLimit:
@@ -1249,10 +1561,10 @@ export default {
       openai: {
         description: '将以下配置文件添加到 Codex CLI 配置目录中。',
         authModeTitle: 'Codex 认证模式',
-        authModeDescription: '兼容模式保留旧版 Codex 配置；API Key Mode 用于授权客户端图片执行器。',
+        authModeDescription: '配置默认启用实时联网搜索；API Key 模式支持 Codex 原生生图，旧版客户端可选择兼容模式。',
         authModeLegacy: '兼容模式',
-        authModeApiKey: 'API Key Mode',
-        authModeApiKeyRestartNotice: '保存此配置后，必须完全退出并重启 Codex Desktop 或 CLI，然后新建 task，让客户端重新构建工具注册表。',
+        authModeApiKey: 'API Key 模式（推荐）',
+        authModeApiKeyRestartNotice: '此配置包含 API 密钥，请勿共享或提交到仓库。保存后新建会话验证；若配置未加载，再重启 Codex。生图仍需分组权限、可用余额和上游支持。',
         configTomlHint: '请确保以下内容位于 config.toml 文件的开头部分',
         note: '请确保配置目录存在。macOS/Linux 用户可运行 mkdir -p ~/.codex 创建目录。',
         noteWindows:
@@ -1584,6 +1896,7 @@ export default {
     noDataToExport: '没有可导出的数据',
     exportSuccess: '使用数据导出成功',
     exportFailed: '使用数据导出失败',
+    exportRateLimited: '请求过于频繁，{seconds} 秒后自动继续导出',
     exportExcelSuccess: '使用数据导出成功（Excel格式）',
     exportExcelFailed: '使用数据导出失败',
     imageUnit: '张',
@@ -1909,6 +2222,7 @@ export default {
       cacheWritePrice: '缓存写入',
       cacheWrite5mPrice: '缓存写入（5m）',
       cacheWrite1hPrice: '缓存写入（1h）',
+      cacheWrite12hPrice: '缓存写入（12h）',
       cacheReadPrice: '缓存读取',
       imageInputPrice: '图片输入',
       imageOutputPrice: '图片输出',
@@ -3902,7 +4216,10 @@ export default {
         outputPrice: '输出',
         cacheWritePrice: '缓存写入',
         cacheWrite5mPrice: '缓存写入（5m）',
+        cacheWrite30mPrice: '缓存写入（30m）',
+        cacheWrite12hHint: '留空沿用通用缓存写入价，仅对上游报告的 OpenAI 12h 写入生效。',
         cacheWrite1hPrice: '缓存写入（1h）',
+        cacheWrite12hPrice: '缓存写入（12h）',
         cacheReadPrice: '缓存读取',
         imageOutputPrice: '图片输出',
         perRequestPrice: '每次请求',
@@ -3956,6 +4273,7 @@ export default {
           outputPrice: '输出价格',
           cacheWritePrice: '缓存写入价格',
           cacheWrite1hPrice: '1h 缓存写入价格',
+          cacheWrite12hPrice: '12h 缓存写入价格',
           cacheReadPrice: '缓存读取价格',
           perRequestPrice: '单次价格'
         },
@@ -3997,11 +4315,15 @@ export default {
         outputPrice: '输出',
         cacheWritePrice: '缓存写入',
         cacheWrite5mPrice: '缓存写入（5m）',
+        cacheWrite30mPrice: '缓存写入（30m）',
+        cacheWrite12hHint: '留空沿用通用缓存写入价，仅对上游报告的 OpenAI 12h 写入生效。',
         cacheWrite1hPrice: '缓存写入（1h）',
+        cacheWrite12hPrice: '缓存写入（12h）',
         cacheReadPrice: '缓存读取',
         cacheWritePriceShort: '缓存写',
         cacheWrite5mPriceShort: '缓存写 5m',
         cacheWrite1hPriceShort: '缓存写 1h',
+        cacheWrite12hPriceShort: '缓存写 12h',
         cacheReadPriceShort: '缓存读',
         imageInputPrice: '图片输入',
         imageTokenPrice: '图片输出',
@@ -5216,6 +5538,12 @@ export default {
         gemini3Pro: 'G3P',
         gemini3Flash: 'G3F',
         gemini3Image: 'G31FI',
+        antigravityGemini5h: 'G·5h',
+        antigravityGeminiWeekly: 'G·周',
+        antigravityArgon5h: 'A·5h',
+        antigravityArgonWeekly: 'A·周',
+        antigravityOther5h: 'C·5h',
+        antigravityOtherWeekly: 'C·周',
         claude: 'Claude',
         grokRequests: '请求',
         grokTokens: 'Token',
@@ -5559,6 +5887,10 @@ export default {
         imagesUrlToB64Json: '生图结果 URL 转 base64',
         imagesUrlToB64JsonDesc:
           '仅对 OpenAI API Key 的 Images 非流式响应生效。上游返回的图片缺少 b64_json 但带 url 时，网关下载该 url 并以 base64 回填 b64_json（url 保留），兼容按官方接口实现的客户端；下载失败则原样返回。',
+        imageSizeTiers: '生图尺寸档位',
+        imageSizeTiersDesc:
+          '限制本账号承接的生图尺寸档位，档位与计费一致：最长边 ≤1024 为 1K，≤2048 为 2K，更大为 4K（2560x1440 属于 4K）。指定了尺寸的请求只会调度到允许该档位的账号；未传尺寸或 auto 的请求优先调度到不限档位的账号，没有时依次选允许 4K、2K、1K 的账号。全选即不限，对 Images 接口与 Responses 生图工具生效。',
+        imageSizeTiersAtLeastOne: '至少保留一个档位',
         endpointCapabilities: '端点能力',
         endpointCapabilitiesDesc:
           '用于调度筛选。文本端点会跟随上方 Responses API 支持显示为 Responses、Chat Completions 或自动模式；Embeddings 独立控制 /v1/embeddings。',
@@ -8269,6 +8601,43 @@ export default {
         emailDomainQuota: '非白名单域名限量注册',
         emailDomainQuotaHint:
           '开启后，白名单非空时，其他可注册主域名各限注册一个账户；关闭时非白名单域名直接拒绝注册。白名单为空时本开关无效果',
+        emailBlacklist: {
+          title: '邮箱黑名单（精确匹配）',
+          hint: '禁止名单中的邮箱注册，或绑定为账号邮箱。按收件箱匹配：Gmail 地址里的点号、googlemail.com 域名，以及各邮箱的 + 后缀都视为同一邮箱。已注册的账号不受影响，可用「检查已注册用户」找出后禁用。名单在弹窗里单独保存，不受页面底部保存按钮影响。',
+          count: '当前 {count} 个邮箱',
+          loadFailed: '黑名单加载失败',
+          retry: '重试',
+          edit: '编辑名单',
+          checkUsers: '检查已注册用户',
+          editorTitle: '编辑邮箱黑名单',
+          bulkLabel: '批量添加',
+          bulkPlaceholder: '每行一个邮箱，也可以用逗号、空格或分号分隔',
+          bulkAdd: '添加到列表',
+          addResult: '新增 {added} 个，跳过重复 {duplicates} 个',
+          invalidResult: '{count} 个格式无效，已留在输入框中：{sample}',
+          listLabel: '名单（{count} 个）',
+          pending: '未保存：新增 {added}，移除 {removed}',
+          searchPlaceholder: '搜索邮箱',
+          clear: '清空',
+          empty: '名单为空',
+          noMatch: '没有匹配的邮箱',
+          truncated: '共 {total} 条匹配，仅显示前 {limit} 条，请用搜索缩小范围',
+          newTag: '未保存',
+          remove: '移除',
+          save: '保存名单',
+          saved: '黑名单已保存，共 {count} 个邮箱',
+          tooMany: '名单最多 {max} 个邮箱',
+          disableTitle: '禁用命中黑名单的用户？',
+          disableMessage: '以下 {count} 个已注册用户的邮箱在黑名单中（含同一收件箱的别名变体）。禁用后无法登录，API Key 也会立即停用。是否禁用？',
+          disableConfirm: '禁用 {count} 个用户',
+          disableLater: '暂不禁用',
+          disabled: '已禁用 {count} 个用户',
+          noActiveMatches: '名单中没有仍在启用的已注册用户',
+          discardTitle: '放弃未保存的改动？',
+          discardMessage: '还有新增 {added} 个、移除 {removed} 个改动没有保存，关闭后会丢失。',
+          discardConfirm: '放弃改动',
+          discardCancel: '继续编辑',
+        },
         promoCode: '优惠码',
         promoCodeHint: '允许用户在注册时使用优惠码',
         invitationCode: '邀请码注册',
@@ -8612,6 +8981,8 @@ export default {
         fingerprintUnificationHint: '统一共享同一 OAuth 账号的用户的 X-Stainless-* 请求头。关闭后透传客户端原始请求头。',
         metadataPassthrough: 'Metadata 透传',
         metadataPassthroughHint: '透传客户端原始 metadata.user_id，不进行重写。可能提高上游缓存命中率。',
+        cchSigning: 'CCH 签名',
+        cchSigningHint: '对转发请求的 billing header 进行 CCH 哈希签名。关闭时保留原始占位符。',
         claudeOAuthSystemPromptInjection: 'Claude OAuth System 注入',
         claudeOAuthSystemPromptInjectionHint: '为非 Claude Code 客户端的 Claude OAuth 请求注入 Claude Code 形态的 system blocks。默认开启。',
         claudeOAuthSystemPrompt: 'Claude OAuth 扩展提示词',

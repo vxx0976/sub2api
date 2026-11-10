@@ -1795,6 +1795,12 @@ func TestGPT6MappedCompatibilityBridgesKeepReasoningAndTools(t *testing.T) {
 	}
 }
 
+// NOTE(fork-merge): upstream's TestGPT61SolRejectsDisabledReasoningBeforeForwarding
+// asserted that none/minimal effort and thinking.type=disabled are REJECTED. The dev
+// fork instead coerces them to gpt-6.1-sol's default medium (CoerceGPT61SolReasoningEffort +
+// normalizeGPT61SolCompatRequestBody); rejecting them broke Claude Code side requests.
+// The cases below keep the equivalent upstream coverage (explicit -none/-minimal model
+// variants still rejected, non-target models unaffected) against the coerced behavior.
 func TestGPT61SolCoercesDisabledReasoningToMedium(t *testing.T) {
 	for _, tc := range []struct{ body, path string }{
 		{`{"model":"public","reasoning_effort":"none"}`, "reasoning_effort"},
@@ -1803,7 +1809,7 @@ func TestGPT61SolCoercesDisabledReasoningToMedium(t *testing.T) {
 	} {
 		out := normalizeGPT61SolCompatRequestBody([]byte(tc.body), "gpt-6.1-sol")
 		require.Equal(t, "medium", gjson.GetBytes(out, tc.path).String(), tc.body)
-		require.NoError(t, validateGPT61SolCompatRequest(out, "gpt-6.1-sol"))
+		require.NoError(t, validateGPT61CompatRequest(out, "gpt-6.1-sol"))
 		// 其他模型保持原样。
 		require.Equal(t, tc.body, string(normalizeGPT61SolCompatRequestBody([]byte(tc.body), "gpt-6-sol")))
 	}
@@ -1814,8 +1820,8 @@ func TestGPT61SolCoercesDisabledReasoningToMedium(t *testing.T) {
 
 	// 显式点名不存在的模型变体仍然拒绝。
 	for _, body := range []string{`{"model":"gpt-6.1-sol-minimal"}`, `{"model":"gpt-6.1-sol-none"}`} {
-		require.Error(t, validateGPT61SolCompatRequest([]byte(body), "gpt-6.1-sol"))
-		require.NoError(t, validateGPT61SolCompatRequest([]byte(body), "gpt-6-sol"))
+		require.Error(t, validateGPT61CompatRequest([]byte(body), "gpt-6.1-sol"))
+		require.NoError(t, validateGPT61CompatRequest([]byte(body), "gpt-6-sol"))
 	}
 
 	// Claude Code 关闭 thinking 的请求经 Anthropic→Responses 转换后为 medium。
