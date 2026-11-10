@@ -420,7 +420,7 @@ func (s *AccountTestService) runDegradationProbeSample(ctx context.Context, acco
 	gjson.GetBytes(final, "output").ForEach(func(_, item gjson.Result) bool {
 		if item.Get("type").String() == "message" {
 			item.Get("content").ForEach(func(_, c gjson.Result) bool {
-				text.WriteString(c.Get("text").String())
+				_, _ = text.WriteString(c.Get("text").String())
 				return true
 			})
 		}
@@ -462,7 +462,7 @@ func readDegradationProbeFinalResponse(body io.Reader) ([]byte, error) {
 				return nil, fmt.Errorf("stream failed: %s", msg)
 			}
 		} else if !sawEvent {
-			plain.Write(line)
+			_, _ = plain.Write(line)
 		}
 		if err != nil {
 			if !sawEvent && gjson.ValidBytes(bytes.TrimSpace(plain.Bytes())) && gjson.GetBytes(plain.Bytes(), "output").Exists() {
