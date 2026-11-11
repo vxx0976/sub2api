@@ -750,7 +750,7 @@ func (s *GatewayService) Forward(ctx context.Context, c *gin.Context, account *A
 		}
 	}
 	if resp.StatusCode >= 400 {
-		if failoverErr := s.relayMessagesRejectedFailover(c, resp, account, false); failoverErr != nil {
+		if failoverErr := s.relayMessagesRejectedFailover(ctx, c, resp, account, false, originalModel); failoverErr != nil {
 			return nil, failoverErr
 		}
 		// 可选：对部分 400 触发 failover（默认关闭以保持语义）

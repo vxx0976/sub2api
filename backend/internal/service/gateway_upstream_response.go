@@ -251,17 +251,17 @@ func IsRelayClientVersionRejectedError(statusCode int, respBody []byte) bool {
 
 // relayRequestBlockedFailover 读出 422 响应体；若是中转风控拦截则返回 failover 错误，
 // 否则把响应体放回 resp 并返回 nil，由调用方继续走常规错误处理。
-func (s *GatewayService) relayRequestBlockedFailover(c *gin.Context, resp *http.Response, account *Account, passthrough bool) *UpstreamFailoverError {
-	return s.relayRejectedFailover(c, resp, account, passthrough, false)
+func (s *GatewayService) relayRequestBlockedFailover(ctx context.Context, c *gin.Context, resp *http.Response, account *Account, passthrough bool, requestedModel ...string) *UpstreamFailoverError {
+	return s.relayRejectedFailover(ctx, c, resp, account, passthrough, false, requestedModel...)
 }
 
 // relayMessagesRejectedFailover 用于 /v1/messages（Forward 与 API Key 透传）：在中转风控拦截之外，
 // 还对中转的 Claude Code 客户端版本门槛换号。版本门槛只针对 Claude Code 客户端，桥接端点不接。
-func (s *GatewayService) relayMessagesRejectedFailover(c *gin.Context, resp *http.Response, account *Account, passthrough bool) *UpstreamFailoverError {
-	return s.relayRejectedFailover(c, resp, account, passthrough, true)
+func (s *GatewayService) relayMessagesRejectedFailover(ctx context.Context, c *gin.Context, resp *http.Response, account *Account, passthrough bool, requestedModel ...string) *UpstreamFailoverError {
+	return s.relayRejectedFailover(ctx, c, resp, account, passthrough, true, requestedModel...)
 }
 
-func (s *GatewayService) relayRejectedFailover(c *gin.Context, resp *http.Response, account *Account, passthrough, allowVersionGate bool) *UpstreamFailoverError {
+func (s *GatewayService) relayRejectedFailover(ctx context.Context, c *gin.Context, resp *http.Response, account *Account, passthrough, allowVersionGate bool, requestedModel ...string) *UpstreamFailoverError {
 	// 官方 OAuth 号的版本拒绝源自网关自身的 CLI 版本伪装，换号无济于事，只对中转生效。
 	allowVersionGate = allowVersionGate && !account.IsOAuth()
 	versionGateCandidate := allowVersionGate && resp.StatusCode == http.StatusBadRequest
@@ -277,12 +277,22 @@ func (s *GatewayService) relayRejectedFailover(c *gin.Context, resp *http.Respon
 	}
 	relayBlocked := isRelayRequestBlockedError(resp.StatusCode, respBody)
 	versionRejected := allowVersionGate && isRelayClientVersionRejectedError(resp.StatusCode, respBody)
-	if !relayBlocked && !versionRejected {
+	// 中转对 Claude Code 工具结构的拒绝：同一请求换一家中转通常能过，
+	// 且要顺带冷却这家号，否则粘性会话会一直把该会话钉在它上面反复失败。
+	// 官方 OAuth 号不会返回这种中转文案，出现即属异常，按原逻辑处理不换号。
+	toolStructureRejected := !account.IsOAuth() && isRelayToolStructureRejectedError(resp.StatusCode, respBody)
+	if !relayBlocked && !versionRejected && !toolStructureRejected {
 		return nil
+	}
+	if toolStructureRejected {
+		s.tempUnscheduleRelayToolStructureReject(ctx, c, account, respBody, firstRequestedModel(requestedModel))
 	}
 
 	reason := "Relay blocked request"
-	if resp.StatusCode == http.StatusBadRequest {
+	switch {
+	case toolStructureRejected:
+		reason = "Relay rejected Claude Code tool structure"
+	case resp.StatusCode == http.StatusBadRequest:
 		reason = "Relay client version gate"
 	}
 	logger.LegacyPrintf("service.gateway", "[RelayBlocked] %s (failover): Account=%d(%s) Status=%d RequestID=%s Body=%s",

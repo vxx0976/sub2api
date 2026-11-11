@@ -147,20 +147,7 @@ func (s *GatewayService) tempUnscheduleRelayQueueReject(ctx context.Context, c *
 
 // groupHasRelayAlternative 报告分组内是否还有除 account 外、可调度且支持 model 的账号。
 func (s *GatewayService) groupHasRelayAlternative(ctx context.Context, groupID int64, account *Account, model string) bool {
-	peers, err := s.accountRepo.ListSchedulableByGroupIDAndPlatform(ctx, groupID, account.Platform)
-	if err != nil {
-		return false
-	}
-	for i := range peers {
-		if peers[i].ID == account.ID || !peers[i].IsSchedulable() {
-			continue
-		}
-		if model != "" && !s.isModelSupportedByAccountWithContext(ctx, &peers[i], model) {
-			continue
-		}
-		return true
-	}
-	return false
+	return s.countRelayAlternatives(ctx, groupID, account, model) > 0
 }
 
 // writeClaudeErrorBody 写出 Anthropic 风格错误响应。若本次请求已以 200 SSE 开始

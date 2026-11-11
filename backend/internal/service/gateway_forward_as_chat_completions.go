@@ -153,7 +153,7 @@ func (s *GatewayService) ForwardAsChatCompletions(
 		resp.Body = io.NopCloser(bytes.NewReader(respBody))
 
 		// fork: 中转 422 风控拦截与 Forward 同口径换号（不记限流/封禁），须在写客户端错误之前判断。
-		if failoverErr := s.relayRequestBlockedFailover(c, resp, account, false); failoverErr != nil {
+		if failoverErr := s.relayRequestBlockedFailover(ctx, c, resp, account, false, originalModel); failoverErr != nil {
 			return nil, failoverErr
 		}
 

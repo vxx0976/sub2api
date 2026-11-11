@@ -3,6 +3,7 @@
 package service
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"strings"
@@ -26,7 +27,7 @@ func TestRelayRequestBlockedFailover_422BlockedSwitchesAccount(t *testing.T) {
 	body := `{"error":{"message":"request blocked: client identity could not be fully anonymized","type":"invalid_request_error"},"type":"error"}`
 	resp := newRelayBlockedTestResp(http.StatusUnprocessableEntity, body)
 
-	failoverErr := s.relayRequestBlockedFailover(c, resp, account, false)
+	failoverErr := s.relayRequestBlockedFailover(context.Background(), c, resp, account, false)
 	if failoverErr == nil {
 		t.Fatal("expected failover error for relay-blocked 422")
 	}
@@ -68,7 +69,7 @@ func TestRelayRequestBlockedFailover_OtherErrorsUnchanged(t *testing.T) {
 			account := &Account{ID: 1, Name: "acc", Platform: PlatformAnthropic}
 			resp := newRelayBlockedTestResp(tc.status, tc.body)
 
-			if failoverErr := s.relayRequestBlockedFailover(c, resp, account, false); failoverErr != nil {
+			if failoverErr := s.relayRequestBlockedFailover(context.Background(), c, resp, account, false); failoverErr != nil {
 				t.Fatalf("unexpected failover: %+v", failoverErr)
 			}
 			got, err := io.ReadAll(resp.Body)
@@ -100,7 +101,7 @@ func TestRelayMessagesRejectedFailover_ClientVersionGateSwitchesAccount(t *testi
 		account := &Account{ID: 232, Name: "relay", Platform: PlatformAnthropic, Type: AccountTypeAPIKey}
 		resp := newRelayBlockedTestResp(http.StatusBadRequest, body)
 
-		failoverErr := s.relayMessagesRejectedFailover(c, resp, account, false)
+		failoverErr := s.relayMessagesRejectedFailover(context.Background(), c, resp, account, false)
 		if failoverErr == nil {
 			t.Fatalf("expected failover for version gate: %s", body)
 		}
@@ -136,9 +137,9 @@ func TestRelayMessagesRejectedFailover_OtherErrorsUnchanged(t *testing.T) {
 
 			var failoverErr *UpstreamFailoverError
 			if tc.messages {
-				failoverErr = s.relayMessagesRejectedFailover(c, resp, account, false)
+				failoverErr = s.relayMessagesRejectedFailover(context.Background(), c, resp, account, false)
 			} else {
-				failoverErr = s.relayRequestBlockedFailover(c, resp, account, false)
+				failoverErr = s.relayRequestBlockedFailover(context.Background(), c, resp, account, false)
 			}
 			if failoverErr != nil {
 				t.Fatalf("unexpected failover: %+v", failoverErr)
@@ -161,7 +162,7 @@ func TestRelayMessagesRejectedFailover_OAuthVersionGateUnchanged(t *testing.T) {
 	c := newTransportErrorTestGin(t)
 	account := &Account{ID: 9, Name: "oauth", Platform: PlatformAnthropic, Type: AccountTypeOAuth}
 	resp := newRelayBlockedTestResp(http.StatusBadRequest, body)
-	if failoverErr := s.relayMessagesRejectedFailover(c, resp, account, false); failoverErr != nil {
+	if failoverErr := s.relayMessagesRejectedFailover(context.Background(), c, resp, account, false); failoverErr != nil {
 		t.Fatalf("unexpected failover for OAuth account: %+v", failoverErr)
 	}
 	if got, _ := io.ReadAll(resp.Body); string(got) != body {
