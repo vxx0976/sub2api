@@ -64,7 +64,10 @@ func (s *OpenAIGatewayService) forwardAnthropicViaRawChatCompletions(
 	billingModel := resolveOpenAIForwardModel(account, anthropicReq.Model, defaultMappedModel)
 	upstreamModel := normalizeOpenAIModelForUpstream(account, billingModel)
 	body = normalizeGPT61SolCompatRequestBody(body, upstreamModel)
-	if err := validateGPT61CompatRequest(body, upstreamModel); err != nil {
+	// fork keeps pre-conversion normalization + raw-effort validation so explicit
+	// invalid selections fail fast; upstream's synthesized check runs on the final
+	// chatBody below (validateGPT61CompatRequest).
+	if err := validateGPT61RawEffort(body, upstreamModel); err != nil {
 		writeAnthropicError(c, http.StatusBadRequest, "invalid_request_error", err.Error())
 		return nil, err
 	}
@@ -74,6 +77,14 @@ func (s *OpenAIGatewayService) forwardAnthropicViaRawChatCompletions(
 		return nil, err
 	}
 	chatReq.Model = upstreamModel
+	// fork: gpt-6.1-sol has no disabled mode; coerce none/minimal after the effort
+	// is derived from the Anthropic request (this struct path bypasses body normalization).
+	// 6.1 系推理模型（sol/terra）不接受自定义采样参数；chat 转换会带上 anthropic 的
+	// temperature/top_p，这里统一剥掉，避免上游 400。
+	if openai.IsGPT61SolModelSpelling(upstreamModel) || openai.IsGPT61TerraModelSpelling(upstreamModel) {
+		chatReq.Temperature = nil
+		chatReq.TopP = nil
+	}
 	chatReq.ReasoningEffort = openai.CoerceGPT61SolReasoningEffort(upstreamModel, openAICompatAnthropicReasoningEffort(&anthropicReq, upstreamModel, chatReq.ReasoningEffort))
 	chatReq.Stream = clientStream
 	if clientStream {
@@ -101,6 +112,10 @@ func (s *OpenAIGatewayService) forwardAnthropicViaRawChatCompletions(
 		if changed {
 			chatBody = policyBody
 		}
+	}
+	if err := validateGPT61CompatRequest(chatBody, upstreamModel); err != nil {
+		writeAnthropicError(c, http.StatusBadRequest, "invalid_request_error", err.Error())
+		return nil, err
 	}
 	// Provider normalization and policy caps can both change the converted effort.
 	// Use the final outbound value for usage logs and billing.

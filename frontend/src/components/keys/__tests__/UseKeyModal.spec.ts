@@ -767,20 +767,88 @@ describe('UseKeyModal', () => {
     })
   })
 
-  // NOTE(fork): upstream has a "renders Claude Fable 5 OpenCode config with adaptive thinking"
-  // test here, but this fork intentionally removed the OpenCode tab for the antigravity
-  // platform (commit 13b3776de "feat 优化用户页"), so that UI is unreachable and the test
-  // was dropped during the origin/main merge. Upstream extended it this round with
-  // claude-fable-5-1 assertions; generateOpenCodeConfig() still carries that model entry
-  // (auto-merged), it just has no antigravity entry point in this fork.
-  // Same for upstream's "exports Opus 5.5 only on the Anthropic provider with adaptive
-  // defaults" (0.2.8): the fork's anthropic/default platforms have no OpenCode tab either,
-  // so generateOpenCodeConfig('anthropic', ...) (which now carries claude-opus-5-5) has no
-  // entry point here and that test is dropped as well.
-  // 0.2.10: upstream renamed that test to "exports Claude 5.5 models on the Anthropic provider
-  // with adaptive defaults" and extended it with claude-sonnet-5-5 (8490a8186). The model entry
-  // is auto-merged into generateOpenCodeConfig('anthropic', ...), but the fork's anthropic tab
-  // list still has no OpenCode entry point, so the renamed test stays dropped too.
+  // NOTE(fork): this fork intentionally removed the OpenCode tab for the anthropic and
+  // antigravity platforms (commit 13b3776de "feat 优化用户页"), so upstream's OpenCode-tab
+  // tests are unreachable through the UI here (the anthropic/default tab list is
+  // "Claude Code + Codex" only). Instead of deleting upstream's model assertions we adapt
+  // them to call generateOpenCodeConfig() directly through the component instance, keeping
+  // every upstream expectation (this round: claude-fable-5-2 / claude-mythos-5-2 and the
+  // antigravity "no 5.2 models" negative checks).
+
+  it('exports Claude 5.5 models on the Anthropic provider with adaptive defaults', async () => {
+    // NOTE(fork): no OpenCode tab on the anthropic platform in this fork, so exercise the
+    // generator directly instead of clicking an unreachable `keys.useKeyModal.cliTabs.opencode`.
+    const wrapper = mount(UseKeyModal, {
+      props: { show: true, apiKey: 'sk-test', baseUrl: 'https://example.com/v1', platform: 'anthropic' },
+      global: { stubs: { BaseDialog: { template: '<div><slot /><slot name="footer" /></div>' }, Icon: { template: '<span />' } } }
+    })
+    const generate = (wrapper.vm as unknown as {
+      generateOpenCodeConfig: (platform: string, baseUrl: string, apiKey: string) => { content: string }
+    }).generateOpenCodeConfig
+    const models = JSON.parse(generate('anthropic', 'https://example.com/v1', 'sk-test').content)
+      .provider.anthropic.models
+    expect(models['claude-opus-5-5'].limit).toEqual({ context: 1000000, output: 128000 })
+    expect(models['claude-opus-5-5'].options).toEqual({ thinking: { type: 'adaptive' }, effort: 'medium' })
+    expect(models['claude-opus-5-5'].variants.xhigh.effort).toBe('xhigh')
+    expect(models['claude-opus-5-5'].variants).not.toHaveProperty('none')
+    expect(models['claude-sonnet-5-5'].limit).toEqual({ context: 1000000, output: 128000 })
+    expect(models['claude-sonnet-5-5'].options).toEqual({ thinking: { type: 'adaptive' }, effort: 'high' })
+    expect(models['claude-sonnet-5-5'].variants.xhigh.effort).toBe('xhigh')
+    expect(models['claude-sonnet-5-5'].variants).not.toHaveProperty('none')
+  })
+
+  it.each([
+    ['claude-fable-5-2', 'Claude Fable 5.2'],
+    ['claude-mythos-5-2', 'Claude Mythos 5.2']
+  ])('exports %s on Anthropic with adaptive thinking and all supported effort levels', async (model, name) => {
+    const wrapper = mount(UseKeyModal, {
+      props: { show: true, apiKey: 'sk-test', baseUrl: 'https://example.com/v1', platform: 'anthropic' },
+      global: { stubs: { BaseDialog: { template: '<div><slot /><slot name="footer" /></div>' }, Icon: { template: '<span />' } } }
+    })
+    const generate = (wrapper.vm as unknown as {
+      generateOpenCodeConfig: (platform: string, baseUrl: string, apiKey: string) => { content: string }
+    }).generateOpenCodeConfig
+    const config = JSON.parse(generate('anthropic', 'https://example.com/v1', 'sk-test').content)
+      .provider.anthropic.models[model]
+    expect(config.name).toBe(name)
+    expect(config.limit).toEqual({ context: 1000000, output: 128000 })
+    expect(config.modalities).toEqual({ input: ['text', 'image', 'pdf'], output: ['text'] })
+    expect(config.options).toEqual({ thinking: { type: 'adaptive' }, effort: 'high' })
+    expect(config.variants).toEqual({
+      low: { effort: 'low' },
+      medium: { effort: 'medium' },
+      high: { effort: 'high' },
+      xhigh: { effort: 'xhigh' },
+      max: { effort: 'max' }
+    })
+  })
+
+  it('renders Claude Fable 5 OpenCode config with adaptive thinking', async () => {
+    // NOTE(fork): the antigravity platform has no OpenCode tab in this fork; call the
+    // generator directly so upstream's Fable 5 / Fable 5.1 assertions and this round's
+    // "no 5.2 models on antigravity-claude" checks are preserved instead of being deleted.
+    const wrapper = mount(UseKeyModal, {
+      props: { show: true, apiKey: 'sk-test', baseUrl: 'https://example.com/v1', platform: 'antigravity' },
+      global: { stubs: { BaseDialog: { template: '<div><slot /><slot name="footer" /></div>' }, Icon: { template: '<span />' } } }
+    })
+    const generate = (wrapper.vm as unknown as {
+      generateOpenCodeConfig: (platform: string, baseUrl: string, apiKey: string) => { content: string }
+    }).generateOpenCodeConfig
+    const parsed = JSON.parse(generate('antigravity-claude', 'https://example.com/v1', 'sk-test').content)
+    expect(parsed.provider['antigravity-claude'].models).not.toHaveProperty('claude-fable-5-2')
+    expect(parsed.provider['antigravity-claude'].models).not.toHaveProperty('claude-mythos-5-2')
+    const fable51 = parsed.provider['antigravity-claude'].models['claude-fable-5-1']
+    const fable = parsed.provider['antigravity-claude'].models['claude-fable-5']
+
+    expect(fable51.name).toBe('Claude Fable 5.1')
+    expect(fable51.limit).toEqual({ context: 1048576, output: 128000 })
+    expect(fable51.options.thinking).toEqual({ type: 'adaptive' })
+    expect(fable51.options.thinking).not.toHaveProperty('budgetTokens')
+    expect(fable.name).toBe('Claude Fable 5')
+    expect(fable.limit).toEqual({ context: 1048576, output: 128000 })
+    expect(fable.options.thinking).toEqual({ type: 'adaptive' })
+    expect(fable.options.thinking).not.toHaveProperty('budgetTokens')
+  })
 
   // Scenario: API Key users can load a routed catalog remotely or download it for older clients.
   it('offers remote and downloadable Codex catalogs for Composite API keys', async () => {

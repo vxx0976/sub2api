@@ -6804,9 +6804,9 @@
                 <div><label class="input-label">{{ t('admin.settings.payment.dailyLimit') }}</label><input :value="form.payment_daily_limit || ''" @input="form.payment_daily_limit = parseFloat(($event.target as HTMLInputElement).value) || 0" type="number" step="0.01" min="0" class="input" :placeholder="t('admin.settings.payment.noLimit')" /></div>
                 <div>
                   <label class="input-label">{{ t('admin.settings.payment.balanceRechargeMultiplier') }}</label>
-                  <input :value="form.payment_balance_recharge_multiplier || ''" @input="form.payment_balance_recharge_multiplier = parseFloat(($event.target as HTMLInputElement).value) || 1" type="number" step="0.01" min="0.01" class="input" />
+                  <input :value="form.payment_balance_recharge_multiplier || ''" @input="form.payment_balance_recharge_multiplier = parseFloat(($event.target as HTMLInputElement).value) || 1" type="number" step="0.000001" min="0.000001" class="input" />
                   <p class="mt-0.5 text-xs text-gray-400">{{ t('admin.settings.payment.balanceRechargeMultiplierHint') }}</p>
-                  <p class="mt-1 text-xs font-medium text-primary-600 dark:text-primary-400">{{ t('admin.settings.payment.balanceRechargePreview', { usd: (Number(form.payment_balance_recharge_multiplier) || 1).toFixed(2) }) }}</p>
+                  <p class="mt-1 text-xs font-medium text-primary-600 dark:text-primary-400">{{ t('admin.settings.payment.balanceRechargePreview', { usd: formatBalanceRechargeMultiplier(Number(form.payment_balance_recharge_multiplier) || 1) }) }}</p>
                 </div>
                 <div>
                   <label class="input-label">{{ t('admin.settings.payment.subscriptionUsdToCnyRate') }}</label>
@@ -7227,10 +7227,19 @@
           <BackupSettings />
         </div>
 
-        <!-- Save Button -->
-        <div v-show="activeTab !== 'backup'" class="flex justify-end">
-          <button type="submit" :disabled="saving || loadFailed" class="btn btn-primary">
-            <svg v-if="saving" class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+        <!-- Save dock — sticky so long tabs never require scrolling to the end -->
+        <div v-show="activeTab !== 'backup'" class="settings-save-dock">
+          <button
+            type="submit"
+            :disabled="saving || loadFailed"
+            class="btn btn-primary"
+          >
+            <svg
+              v-if="saving"
+              class="h-4 w-4 animate-spin"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
               <circle
                 class="opacity-25"
                 cx="12"
@@ -7346,6 +7355,7 @@ import MarkdownEditor from '@/components/common/MarkdownEditor.vue'
 import BackupSettings from '@/views/admin/BackupView.vue'
 import RechargeBonusTierEditor from '@/components/admin/settings/RechargeBonusTierEditor.vue'
 import {
+  formatBalanceRechargeMultiplier,
   normalizeRechargeBonusMode,
   normalizeRechargeBonusTiers,
   sanitizeRechargeBonusTiersForSubmit,
@@ -11470,6 +11480,14 @@ watch(
 .settings-tab-label {
   @apply min-w-0 overflow-hidden text-ellipsis whitespace-nowrap leading-none;
 }
+
+/* ============ 系统设置 保存浮标 ============ */
+.settings-save-dock {
+  @apply sticky bottom-3 z-20 ml-auto flex w-fit items-center rounded-full border border-white/80 bg-white/90 p-1.5 backdrop-blur-xl;
+  box-shadow:
+    0 10px 26px rgb(15 23 42 / 0.12),
+    0 1px 0 rgb(255 255 255 / 0.9) inset;
+}
 </style>
 
 <style>
@@ -11492,5 +11510,13 @@ watch(
   box-shadow:
     0 12px 26px rgb(0 0 0 / 0.22),
     0 1px 0 rgb(255 255 255 / 0.08) inset;
+}
+
+.dark .settings-save-dock {
+  border-color: rgb(51 65 85 / 0.65);
+  background: rgb(15 23 42 / 0.86);
+  box-shadow:
+    0 14px 32px rgb(0 0 0 / 0.34),
+    0 1px 0 rgb(255 255 255 / 0.06) inset;
 }
 </style>
