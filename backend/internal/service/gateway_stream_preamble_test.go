@@ -215,33 +215,30 @@ func TestTempUnscheduleRelayQueueReject(t *testing.T) {
 	require.Empty(t, repo2.tempUnschedCalls)
 }
 
-func TestWriteClaudeErrorBody(t *testing.T) {
+// 未提交响应时错误按 JSON + 状态码写出；已以 200 SSE 开始（只发过前导 ping 后换号）
+// 时必须改写为 SSE error 帧，否则裸 JSON 会混进事件流，客户端解析失败。
+func TestWriteGatewayErrorResponse(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	// 未开始流：照常写 JSON 与状态码。
 	rec := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(rec)
-	writeClaudeErrorBody(c, http.StatusBadRequest, []byte(`{"type":"error","error":{"type":"invalid_request_error","message":"prompt is too long"}}`))
+	writeGatewayErrorResponse(c, http.StatusBadRequest, "invalid_request_error", "prompt is too long")
 	require.Equal(t, http.StatusBadRequest, rec.Code)
 	require.Contains(t, rec.Header().Get("Content-Type"), "application/json")
-	require.True(t, strings.HasPrefix(rec.Body.String(), `{"type":"error"`))
+	require.Contains(t, rec.Body.String(), `"type":"error"`)
+	require.Contains(t, rec.Body.String(), `"invalid_request_error"`)
+	require.Contains(t, rec.Body.String(), `"prompt is too long"`)
 
-	// 已以 200 SSE 发过 ping：改写为 SSE error 帧，保留上游错误类型与文案（客户端靠它触发自动压缩）。
+	// 已提交 200 SSE：状态码无法再改，错误必须走事件流。
 	rec = httptest.NewRecorder()
 	c, _ = gin.CreateTestContext(rec)
 	c.Header("Content-Type", "text/event-stream")
 	_, _ = c.Writer.WriteString("event: ping\ndata: {\"type\":\"ping\"}\n\n")
-	writeClaudeErrorBody(c, http.StatusBadRequest, []byte("{\n  \"type\": \"error\",\n  \"error\": {\"type\":\"invalid_request_error\",\"message\":\"prompt is too long\"}\n}"))
+	writeGatewayErrorResponse(c, http.StatusBadRequest, "invalid_request_error", "prompt is too long")
 	require.Equal(t, http.StatusOK, rec.Code)
-	require.Contains(t, rec.Body.String(), "event: error\ndata: {\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"prompt is too long\"}}\n\n")
-
-	// 非 Anthropic 形状的错误体：包装成标准 error 帧。
-	rec = httptest.NewRecorder()
-	c, _ = gin.CreateTestContext(rec)
-	c.Header("Content-Type", "text/event-stream")
-	_, _ = c.Writer.WriteString("event: ping\ndata: {}\n\n")
-	writeClaudeErrorBody(c, http.StatusBadRequest, []byte(`upstream exploded`))
 	body := rec.Body.String()
-	require.Contains(t, body, "event: error\ndata: ")
-	require.Contains(t, body, `"type":"api_error"`)
+	require.Contains(t, body, "event:error")
+	require.Contains(t, body, `"type":"invalid_request_error"`)
+	require.Contains(t, body, `"prompt is too long"`)
+	require.True(t, strings.HasSuffix(body, "\n\n"), "an SSE frame must stay terminated")
 }

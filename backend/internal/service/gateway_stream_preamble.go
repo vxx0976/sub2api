@@ -1,11 +1,8 @@
 package service
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
 	"strings"
 	"time"
 
@@ -148,45 +145,4 @@ func (s *GatewayService) tempUnscheduleRelayQueueReject(ctx context.Context, c *
 // groupHasRelayAlternative 报告分组内是否还有除 account 外、可调度且支持 model 的账号。
 func (s *GatewayService) groupHasRelayAlternative(ctx context.Context, groupID int64, account *Account, model string) bool {
 	return s.countRelayAlternatives(ctx, groupID, account, model) > 0
-}
-
-// writeClaudeErrorBody 写出 Anthropic 风格错误响应。若本次请求已以 200 SSE 开始
-// （先前尝试只发过前导 ping 后换号），改写为 SSE error 帧，避免裸 JSON 混进事件流。
-func writeClaudeErrorBody(c *gin.Context, status int, body []byte) {
-	if c == nil {
-		return
-	}
-	if !c.Writer.Written() || !strings.Contains(strings.ToLower(c.Writer.Header().Get("Content-Type")), "text/event-stream") {
-		c.Data(status, "application/json; charset=utf-8", body)
-		return
-	}
-	errType := gjson.GetBytes(body, "error.type").String()
-	message := extractUpstreamErrorMessage(body)
-	var compact bytes.Buffer
-	if gjson.GetBytes(body, "type").String() != "error" || errType == "" || json.Compact(&compact, body) != nil {
-		if errType == "" {
-			errType = "api_error"
-		}
-		if message == "" {
-			message = http.StatusText(status)
-		}
-		compact.Reset()
-		data, _ := json.Marshal(gin.H{"type": "error", "error": gin.H{"type": errType, "message": message}})
-		_, _ = compact.Write(data)
-	}
-	MarkOpsStreamError(c, errType, message, status)
-	_, _ = fmt.Fprintf(c.Writer, "event: error\ndata: %s\n\n", compact.Bytes())
-	if flusher, ok := c.Writer.(http.Flusher); ok {
-		flusher.Flush()
-	}
-}
-
-// writeClaudeErrorJSON 同 writeClaudeErrorBody，接受 gin.H。
-func writeClaudeErrorJSON(c *gin.Context, status int, obj gin.H) {
-	body, err := json.Marshal(obj)
-	if err != nil {
-		c.JSON(status, obj)
-		return
-	}
-	writeClaudeErrorBody(c, status, body)
 }
