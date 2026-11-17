@@ -111,11 +111,12 @@ type Group struct {
 
 	// OpenAI Messages 调度配置（仅 openai 平台使用）
 	AllowMessagesDispatch       bool                              `json:"allow_messages_dispatch"`
-	AllowLive                   bool                              `json:"allow_live"`          // 允许 OpenAI Live（Realtime）会话
-	ForceOpenAIFast             bool                              `json:"force_openai_fast"`   // 强制 OpenAI 网关请求使用 service_tier=priority
-	FreeOpenAIFast              bool                              `json:"free_openai_fast"`    // OpenAI Fast 请求按 Standard 价格向用户计费
-	RequireOAuthOnly            bool                              `json:"require_oauth_only"`  // 仅允许非 apikey 类型账号关联（OpenAI/Antigravity/Anthropic/Gemini）
-	RequirePrivacySet           bool                              `json:"require_privacy_set"` // 调度时仅允许 privacy 已成功设置的账号（OpenAI/Antigravity/Anthropic/Gemini）
+	AllowLive                   bool                              `json:"allow_live"`             // 允许 OpenAI Live（Realtime）会话
+	ForceOpenAIFast             bool                              `json:"force_openai_fast"`      // 强制 OpenAI 网关请求使用 service_tier=priority
+	ForceOpenAIUltrafast        bool                              `json:"force_openai_ultrafast"` // 对支持 Ultrafast 的模型强制 service_tier=ultrafast，优先于 force_openai_fast
+	FreeOpenAIFast              bool                              `json:"free_openai_fast"`       // OpenAI Fast 请求按 Standard 价格向用户计费
+	RequireOAuthOnly            bool                              `json:"require_oauth_only"`     // 仅允许非 apikey 类型账号关联（OpenAI/Antigravity/Anthropic/Gemini）
+	RequirePrivacySet           bool                              `json:"require_privacy_set"`    // 调度时仅允许 privacy 已成功设置的账号（OpenAI/Antigravity/Anthropic/Gemini）
 	DefaultMappedModel          string                            `json:"default_mapped_model"`
 	MessagesDispatchModelConfig OpenAIMessagesDispatchModelConfig `json:"messages_dispatch_model_config"`
 	// ModelAllowlist 分组级模型白名单：既过滤模型列表类接口，也约束请求准入。

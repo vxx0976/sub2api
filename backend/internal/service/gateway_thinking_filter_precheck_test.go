@@ -3,6 +3,7 @@ package service
 import (
 	"bytes"
 	"encoding/json"
+	"math"
 	"strings"
 	"testing"
 
@@ -76,13 +77,20 @@ func signedThinkingHistoryBody() []byte {
 
 func TestFilterThinkingBlocksSignedHistorySkipsDecode(t *testing.T) {
 	body := signedThinkingHistoryBody()
-	allocs := testing.AllocsPerRun(5, func() {
-		got := filterThinkingBlocksInternal(body, false)
-		if &got[0] != &body[0] {
-			t.Fatal("valid signed history must be returned unchanged")
-		}
-	})
-	require.Less(t, allocs, float64(16), "allocs: %v", allocs)
+	// AllocsPerRun 统计的是进程级 malloc 计数：同包其它用例留下的后台 worker/ticker
+	// 会在测量窗口内分配，把计数抬到远超真实值（0）。真实分配数为 0 时噪声只会抬高
+	// 结果，所以取多轮最小值作为判据。
+	best := math.MaxFloat64
+	for i := 0; i < 3; i++ {
+		allocs := testing.AllocsPerRun(5, func() {
+			got := filterThinkingBlocksInternal(body, false)
+			if &got[0] != &body[0] {
+				t.Fatal("valid signed history must be returned unchanged")
+			}
+		})
+		best = math.Min(best, allocs)
+	}
+	require.Less(t, best, float64(16), "allocs: %v", best)
 }
 
 func FuzzThinkingBlocksNeedFiltering(f *testing.F) {

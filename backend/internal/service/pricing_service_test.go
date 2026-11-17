@@ -1196,6 +1196,57 @@ func TestDefaultPricingIncludesGemini4ArgonRates(t *testing.T) {
 	require.Contains(t, pricingSvc.ListModelNamesByProvider("gemini"), "gemini-4-argon")
 }
 
+func TestBillingService_Gemini4HydrogenFallbackIsBillable(t *testing.T) {
+	svc := NewBillingService(&config.Config{}, nil)
+	tokens := UsageTokens{InputTokens: 1_000_000, OutputTokens: 1_000_000, CacheReadTokens: 1_000_000}
+
+	for _, tc := range []struct {
+		model               string
+		serviceTier         string
+		input, output, read float64
+	}{
+		{"gemini-4-hydrogen", "", 1.5, 7.5, 0.075},
+		{"models/gemini-4-hydrogen", "", 1.5, 7.5, 0.075},
+		{"projects/p/locations/global/publishers/google/models/gemini-4-hydrogen", "", 1.5, 7.5, 0.075},
+		// fork 的 service_tier 准入门（见 #3）：Gemini 不是真 OpenAI 型号，priority 档
+		// 不参与成交价（价卡里的 priority 价仅作为目录数据保留，见上一个目录断言）。
+		{"gemini-4-hydrogen", "priority", 1.5, 7.5, 0.075},
+	} {
+		t.Run(tc.model+"/"+tc.serviceTier, func(t *testing.T) {
+			cost, err := svc.CalculateCostWithServiceTier(tc.model, tokens, 1, tc.serviceTier)
+			require.NoError(t, err)
+			require.InDelta(t, tc.input, cost.InputCost, 1e-12)
+			require.InDelta(t, tc.output, cost.OutputCost, 1e-12)
+			require.InDelta(t, tc.read, cost.CacheReadCost, 1e-12)
+			require.InDelta(t, tc.input+tc.output+tc.read, cost.TotalCost, 1e-12)
+		})
+	}
+}
+
+func TestDefaultPricingIncludesGemini4HydrogenRates(t *testing.T) {
+	data, err := os.ReadFile(filepath.Join("..", "..", "resources", "model-pricing", "model_prices_and_context_window.json"))
+	require.NoError(t, err)
+
+	pricingSvc := &PricingService{}
+	pricingData, err := pricingSvc.parsePricingData(data)
+	require.NoError(t, err)
+	pricingSvc.pricingData = pricingData
+
+	pricing := pricingSvc.GetModelPricing("gemini-4-hydrogen")
+	require.NotNil(t, pricing)
+	require.Equal(t, "gemini", pricing.LiteLLMProvider)
+	require.InDelta(t, 1.5e-6, pricing.InputCostPerToken, 1e-15)
+	require.InDelta(t, 7.5e-6, pricing.OutputCostPerToken, 1e-15)
+	require.InDelta(t, 0.075e-6, pricing.CacheReadInputTokenCost, 1e-15)
+	// Priority 档为标准价的 1.8 倍；单一价档不分提示词长度，显式缓存不可用故无存储价。
+	require.InDelta(t, 2.7e-6, pricing.InputCostPerTokenPriority, 1e-15)
+	require.InDelta(t, 13.5e-6, pricing.OutputCostPerTokenPriority, 1e-15)
+	require.InDelta(t, 0.135e-6, pricing.CacheReadInputTokenCostPriority, 1e-15)
+	require.Zero(t, pricing.LongContextInputTokenThreshold)
+	require.Zero(t, pricing.CacheStorageCostPerTokenPerHour)
+	require.Contains(t, pricingSvc.ListModelNamesByProvider("gemini"), "gemini-4-hydrogen")
+}
+
 func TestDefaultPricingIncludesGrok47FastRates(t *testing.T) {
 	data, err := os.ReadFile(filepath.Join("..", "..", "resources", "model-pricing", "model_prices_and_context_window.json"))
 	require.NoError(t, err)

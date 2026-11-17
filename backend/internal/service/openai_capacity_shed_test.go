@@ -250,6 +250,13 @@ func TestOpenAIStreamMetadataAndKeepaliveBeforeOverloadFailOver(t *testing.T) {
 			require.True(t, failoverErr.RequestScopedTransient)
 			require.Equal(t, http.StatusServiceUnavailable, failoverErr.ClientStatusCode)
 			require.Contains(t, failoverErr.ClientMessage, "servers are currently overloaded")
+			if tt.name == "native" {
+				// Only the upstream keepalive events reach the client before first output.
+				require.Equal(t, "event: keepalive\ndata: {\"type\":\"keepalive\"}\n\ndata: {\"type\":\"keepalive\"}\n\n", rec.Body.String())
+				require.Equal(t, -1, OpenAICompactKeepaliveAdjustedWrittenSize(c))
+				require.Empty(t, rec.Header().Get("X-Request-Id"))
+				return
+			}
 			require.False(t, c.Writer.Written())
 			require.Empty(t, rec.Body.String())
 		})
@@ -363,6 +370,12 @@ func TestOpenAIStreamKeepaliveOnlyFailureDoesNotRecordFirstToken(t *testing.T) {
 			require.ErrorAs(t, err, &failoverErr)
 			require.True(t, failoverErr.RetryableOnSameAccount)
 			require.True(t, failoverErr.RequestScopedTransient)
+			if !passthrough {
+				// Only the upstream keepalive event reaches the client before first output.
+				require.Equal(t, "data: {\"type\":\"keepalive\"}\n\n", rec.Body.String())
+				require.Equal(t, -1, OpenAICompactKeepaliveAdjustedWrittenSize(c))
+				return
+			}
 			require.Empty(t, rec.Body.String())
 		})
 	}
@@ -663,12 +676,25 @@ func TestOpenAIStreamRelayKeepaliveBeforeCapacityShedStillFailsOver(t *testing.T
 			// 生产默认开着 10s 的 ":" 注释心跳，Writer.Written() 可能为 true；真正的判据是
 			// 扣除心跳字节后没有任何语义字节写出（与 handler 侧 openAIForwardMayFailover 同口径）。
 			require.Less(t, OpenAICompactKeepaliveAdjustedWrittenSize(c), 0, "中转心跳不得提交响应，否则 failover 无法重放")
-			require.Empty(t, rec.Body.String())
+			// 0.2.22 起上游把 event: keepalive 改成 native 路径直通（字节只记成非语义输出，
+			// 见 openai_gateway_stream_keepalive_forward_test.go）：客户端会看到心跳帧，但
+			// created/in_progress/failed 这些生命周期事件仍然不得泄漏，failover 照旧重放
+			// （OpenAICompactKeepaliveAdjustedWrittenSize < 0 就是这条判据）。
+			body := rec.Body.String()
+			require.NotContains(t, body, "response.created")
+			require.NotContains(t, body, "response.in_progress")
+			require.NotContains(t, body, "response.failed")
+			if tt.name == "native" {
+				require.Equal(t, 2, strings.Count(body, `"type":"keepalive"`), "两个上游心跳帧都应到达客户端：%q", body)
+			} else {
+				require.Empty(t, body, "passthrough 不直通心跳，暂存期必须零字节")
+			}
 		})
 	}
 }
 
-// 正常流：中转心跳只是被暂存，首个可见输出到达时必须按原序一并送出，客户端不丢事件。
+// 正常流：codex.* 元数据与前导事件被暂存，首个可见输出到达时按原序一并送出；
+// 0.2.22 起上游心跳在 native 路径直通（先于暂存事件到达客户端），passthrough 仍按暂存顺序回放。
 func TestOpenAIStreamRelayKeepaliveIsReplayedOnFirstVisibleOutput(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	stream := strings.Join([]string{
@@ -711,8 +737,14 @@ func TestOpenAIStreamRelayKeepaliveIsReplayedOnFirstVisibleOutput(t *testing.T) 
 			delta := strings.Index(body, "event: response.output_text.delta")
 			require.GreaterOrEqual(t, rateLimits, 0, "codex.* 元数据事件必须原样回放给客户端")
 			require.Greater(t, created, rateLimits)
-			require.Greater(t, keepalive, created, "心跳事件应在 created 之后按原序送出")
-			require.Greater(t, delta, keepalive, "首个可见输出应在暂存事件之后")
+			require.Greater(t, delta, created, "首个可见输出应在暂存事件之后")
+			require.Equal(t, 1, strings.Count(body, "event: keepalive"), "心跳只能出现一次：%q", body)
+			if path == "native" {
+				require.Greater(t, created, keepalive, "native 路径心跳直通，先于暂存事件到达客户端")
+			} else {
+				require.Greater(t, keepalive, created, "passthrough 心跳随暂存事件按原序回放")
+				require.Greater(t, delta, keepalive)
+			}
 			require.Contains(t, body, "event: response.completed")
 		})
 	}
