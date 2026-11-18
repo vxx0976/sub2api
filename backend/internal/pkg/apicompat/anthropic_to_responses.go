@@ -87,7 +87,7 @@ func AnthropicToResponsesWithOptions(req *AnthropicRequest, options AnthropicToR
 	// gpt-6.1-sol has no disabled mode, so that falls back to medium.
 	requestedEffort := anthropicReasoningEffort(req)
 	effort := openai.CoerceGPT61SolReasoningEffort(req.Model, requestedEffort)
-	if (openai.IsGPT61SolModelSpelling(req.Model) || openai.IsGPT61TerraModelSpelling(req.Model)) && req.OutputConfig != nil && req.OutputConfig.Effort == "max" && requestedEffort != "none" {
+	if (openai.GPT62ModelID(req.Model) != "" || openai.IsGPT61SolModelSpelling(req.Model) || openai.IsGPT61TerraModelSpelling(req.Model)) && req.OutputConfig != nil && req.OutputConfig.Effort == "max" && requestedEffort != "none" {
 		effort = "max"
 	}
 	out.Reasoning = &ResponsesReasoning{

@@ -81,7 +81,7 @@ func (s *OpenAIGatewayService) forwardAnthropicViaRawChatCompletions(
 	// is derived from the Anthropic request (this struct path bypasses body normalization).
 	// 6.1 系推理模型（sol/terra）不接受自定义采样参数；chat 转换会带上 anthropic 的
 	// temperature/top_p，这里统一剥掉，避免上游 400。
-	if openai.IsGPT61SolModelSpelling(upstreamModel) || openai.IsGPT61TerraModelSpelling(upstreamModel) {
+	if openai.IsGPT61SolModelSpelling(upstreamModel) || openai.IsGPT61TerraModelSpelling(upstreamModel) || openai.GPT62ModelID(upstreamModel) != "" {
 		chatReq.Temperature = nil
 		chatReq.TopP = nil
 	}
