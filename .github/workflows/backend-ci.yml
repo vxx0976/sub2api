@@ -25,8 +25,12 @@ jobs:
 
   apple-container:
     # Apple container 生命周期测试依赖 macOS 的 stat -f / plutil，只能在 macOS 上跑。
-    # macos-15-intel 实测可分配（arm64 的 macos-15 / macos-14 / macos-latest 长期排队）。
+    # 本账号的 macOS runner 供给长期不稳（macos-15 / macos-14 / macos-latest / macos-26 /
+    # macos-15-intel 都出现过排队 15 分钟后被取消），因此该 job 不阻塞流水线：
+    # 有 runner 时照常跑并暴露真实回归，缺 runner 时不拖红整条 CI。
+    # 生产用的是 Linux + docker compose，对应检查在 shell job 里阻塞执行。
     runs-on: macos-15-intel
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v6
       - name: Apple container lifecycle
