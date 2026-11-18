@@ -29,10 +29,14 @@ describe("groupsOpenAIFast", () => {
   it("provides localized Ultra Fast switch labels naming the supported models", () => {
     for (const messages of [zh, en, ru]) {
       const locale = messages.admin;
+      // Upstream 0.2.23 rewrote the Ultra Fast hint to describe subscription
+      // tier gating (GPT-6.2 Sol/Astra) instead of the raw service_tier header,
+      // so only assert the copy still names the supported models.
       expect(locale.groups.openaiFast).toMatchObject({
         forceUltrafast: expect.stringContaining("ultrafast"),
-        ultrafastHint: expect.stringContaining("service_tier=ultrafast"),
+        ultrafastHint: expect.stringContaining("Ultra Fast"),
       });
+      expect(locale.groups.openaiFast.ultrafastHint).toContain("GPT-6.2");
       expect(locale.groups.openaiFast.ultrafastHint).toContain("GPT-6 Astra");
       expect(locale.groups.openaiFast.ultrafastHint).toContain("GPT-6.1 Sol");
     }
