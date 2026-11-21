@@ -125,16 +125,18 @@ func groupModelAllowlistModelsFromBody(c *gin.Context) ([]string, bool) {
 		if RejectRequestBodyReadError(c, "middleware.group_model_allowlist", err) {
 			return nil, false
 		}
-		// 保留 fork 的详细读体失败原因，同时采纳上游的状态分级（413 超大 / 408 超时 / 499 断开）。
+		// 保留 fork 的详细读体失败原因，同时采纳上游的状态分级（413 超大 / 408 超时 / 499 断开）
+		// 与按入口协议选择错误格式（Anthropic / Google / OpenAI）。
 		failure := httputil.DescribeRequestBodyReadFailure(c.Request, err)
-		message := failure.Message
+		message := failure.ClientMessage()
 		if failure.Status == http.StatusBadRequest {
 			message = httputil.RequestBodyReadFailureMessage(err)
 		}
 		if failure.Kind != httputil.RequestBodyReadErrorMaxBytes {
 			logRequestBodyReadFailure(c, "middleware.group_model_allowlist", failure)
 		}
-		c.AbortWithStatusJSON(failure.Status, gin.H{"error": gin.H{"type": "invalid_request_error", "message": message}})
+		writeGatewayInvalidRequest(c, failure.Status, message)
+		c.Abort()
 		return nil, false
 	}
 	requestmodel.ResetRequestBody(c.Request, body)

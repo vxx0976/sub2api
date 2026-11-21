@@ -1530,9 +1530,8 @@ func newContractDeps(t *testing.T) *contractDeps {
 	settingRepo := newStubSettingRepo()
 	settingService := service.NewSettingService(settingRepo, cfg)
 
-	// 23 args: upstream 本轮把 cfg 提到首参（原 22 = fork 已跟进的 compositeRouteRepo/
-	// compositeResolver/channelCacheInvalidator 三个尾参）。
-	adminService := service.NewAdminService(nil, userRepo, groupRepo, &accountRepo, proxyRepo, apiKeyRepo, redeemRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	// 24 args: upstream 本轮在 channelCacheInvalidator 之后新增 userPlatformQuotaRepo。
+	adminService := service.NewAdminService(nil, userRepo, groupRepo, &accountRepo, proxyRepo, apiKeyRepo, redeemRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	// 9 args: fork 在 promoService 之后插入 referralService
 	authHandler := handler.NewAuthHandler(cfg, nil, userService, settingService, nil, nil, redeemService, nil, nil)
 	apiKeyHandler := handler.NewAPIKeyHandler(apiKeyService)
