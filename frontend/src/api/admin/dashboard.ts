@@ -306,7 +306,7 @@ export interface FinanceTrendResponse {
   total_channel_balance: number
   /** 今日（按 tz）4 类来源充值合计（USD），不随顶部日期过滤变化。 */
   today_recharge: number
-  /** 今日（按 tz）毛利 = today_recharge - 今日 account_cost。 */
+  /** 今日（按 tz）毛利 = 客户今日实际消耗 - 客户今日上游成本，均排除管理员。 */
   today_gross_profit: number
   trend: FinanceTrendPoint[]
   recharge_breakdown: RechargeBreakdown

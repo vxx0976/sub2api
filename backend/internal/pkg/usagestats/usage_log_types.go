@@ -70,6 +70,8 @@ type DashboardStats struct {
 	TodayCost                float64 `json:"today_cost"`         // 今日标准计费
 	TodayActualCost          float64 `json:"today_actual_cost"`  // 今日实际扣除
 	TodayAccountCost         float64 `json:"today_account_cost"` // 今日账号成本
+	// FinanceStartDate 累计经营金额所基于的最早明细日期；早期汇总无法扣除管理员。
+	FinanceStartDate string `json:"finance_start_date"`
 
 	// 系统运行统计
 	AverageDurationMs float64 `json:"average_duration_ms"` // 平均响应时间

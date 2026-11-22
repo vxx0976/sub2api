@@ -9,6 +9,7 @@ import (
 	"time"
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/timezone"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/usagestats"
 	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/lib/pq"
@@ -314,6 +315,7 @@ func (r *usageLogRepository) BackfillCountryCode(ctx context.Context, ip, countr
 
 // SumUsageCostsByDay 按用户时区分桶同时聚合 actual_cost（从用户余额扣的钱）和
 // account_cost（平台向上游 AI 服务实际支付的金额，口径与 GetDashboardStats 的 total_account_cost 一致）。
+// 管理员账号属于内部测试/运营消耗，不计入经营消费及对应上游成本。
 // 直接走 usage_logs 实时聚合，**用 AT TIME ZONE 按用户时区分桶**——不能用预聚合
 // 表 usage_dashboard_daily，因为它的 bucket_date 在 PG session(UTC)tz 下被强制
 // 截取过，跨日边界会偏一天；且预聚合表没有 account_cost 字段。
@@ -328,6 +330,7 @@ func (r *usageLogRepository) SumUsageCostsByDay(ctx context.Context, startTime, 
 			COALESCE(SUM(COALESCE(account_stats_cost, total_cost) * COALESCE(account_rate_multiplier, 1)), 0) AS account_cost
 		FROM usage_logs
 		WHERE created_at >= $1 AND created_at < $2
+		  AND user_id NOT IN (SELECT id FROM users WHERE role = 'admin')
 		GROUP BY 1
 		ORDER BY 1
 	`
@@ -367,6 +370,42 @@ func (r *usageLogRepository) SumCommissionByUserIDs(ctx context.Context, userIDs
 		return 0, err
 	}
 	return totalCost, nil
+}
+
+// FillDashboardBusinessCostStats 用保留的 usage_logs 明细覆盖经营统计中的金额。
+// usage_dashboard_daily 已无用户维度，无法从早期汇总中扣除管理员历史消费，因此累计金额
+// 明确从最早仍保留的明细开始；请求数和 Token 总量仍由原有运维汇总提供。
+func (r *usageLogRepository) FillDashboardBusinessCostStats(ctx context.Context, stats *usagestats.DashboardStats, todayStart, todayEnd time.Time) error {
+	if stats == nil {
+		return nil
+	}
+	query := `
+		WITH business_logs AS (
+			SELECT created_at, total_cost, actual_cost,
+				COALESCE(account_stats_cost, total_cost) * COALESCE(account_rate_multiplier, 1) AS account_cost
+			FROM usage_logs
+			WHERE user_id NOT IN (SELECT id FROM users WHERE role = 'admin')
+		)
+		SELECT
+			MIN(created_at),
+			COALESCE(SUM(total_cost), 0),
+			COALESCE(SUM(actual_cost), 0),
+			COALESCE(SUM(account_cost), 0),
+			COALESCE(SUM(total_cost) FILTER (WHERE created_at >= $1 AND created_at < $2), 0),
+			COALESCE(SUM(actual_cost) FILTER (WHERE created_at >= $1 AND created_at < $2), 0),
+			COALESCE(SUM(account_cost) FILTER (WHERE created_at >= $1 AND created_at < $2), 0)
+		FROM business_logs
+	`
+	var earliest sql.NullTime
+	if err := scanSingleRow(ctx, r.sql, query, []any{todayStart, todayEnd}, &earliest, &stats.TotalCost, &stats.TotalActualCost, &stats.TotalAccountCost, &stats.TodayCost, &stats.TodayActualCost, &stats.TodayAccountCost); err != nil {
+		return err
+	}
+	if earliest.Valid {
+		stats.FinanceStartDate = earliest.Time.In(timezone.Location()).Format("2006-01-02")
+	} else {
+		stats.FinanceStartDate = ""
+	}
+	return nil
 }
 
 // SumTodayCostByUserIDs returns today's total_cost for the given user IDs.

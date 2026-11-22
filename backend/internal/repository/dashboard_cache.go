@@ -10,7 +10,8 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-const dashboardStatsCacheKey = "dashboard:stats:v1"
+// v2：经营金额排除管理员，且累计金额按可核实的明细窗口计算，不复用 v1 混合口径。
+const dashboardStatsCacheKey = "dashboard:stats:v2"
 
 type dashboardCache struct {
 	rdb       *redis.Client

@@ -415,7 +415,7 @@ func (s *DashboardService) GetFinanceTrend(ctx context.Context, startTime, endTi
 }
 
 func (s *DashboardService) GetUsageTrendWithFilters(ctx context.Context, startTime, endTime time.Time, granularity string, userID, apiKeyID, accountID, groupID int64, model string, requestType *int16, stream *bool, billingType *int8) ([]usagestats.TrendDataPoint, error) {
-	trend, err := s.usageRepo.GetUsageTrendWithFilters(ctx, startTime, endTime, granularity, userID, apiKeyID, accountID, groupID, model, requestType, stream, billingType)
+	trend, err := s.usageRepo.GetUsageTrendWithFilters(usagestats.WithBusinessScope(ctx), startTime, endTime, granularity, userID, apiKeyID, accountID, groupID, model, requestType, stream, billingType)
 	if err != nil {
 		return nil, fmt.Errorf("get usage trend with filters: %w", err)
 	}
@@ -427,7 +427,7 @@ func (s *DashboardService) GetUsageTrendWithUsageFilters(ctx context.Context, st
 		GetUsageTrendWithUsageFilters(context.Context, time.Time, time.Time, string, usagestats.UsageLogFilters) ([]usagestats.TrendDataPoint, error)
 	}
 	if repo, ok := s.usageRepo.(usageTrendWithFiltersRepo); ok {
-		trend, err := repo.GetUsageTrendWithUsageFilters(ctx, startTime, endTime, granularity, filters)
+		trend, err := repo.GetUsageTrendWithUsageFilters(usagestats.WithBusinessScope(ctx), startTime, endTime, granularity, filters)
 		if err != nil {
 			return nil, fmt.Errorf("get usage trend with usage filters: %w", err)
 		}
@@ -437,7 +437,7 @@ func (s *DashboardService) GetUsageTrendWithUsageFilters(ctx context.Context, st
 }
 
 func (s *DashboardService) GetModelStatsWithFilters(ctx context.Context, startTime, endTime time.Time, userID, apiKeyID, accountID, groupID int64, requestType *int16, stream *bool, billingType *int8) ([]usagestats.ModelStat, error) {
-	stats, err := s.usageRepo.GetModelStatsWithFilters(ctx, startTime, endTime, userID, apiKeyID, accountID, groupID, requestType, stream, billingType)
+	stats, err := s.usageRepo.GetModelStatsWithFilters(usagestats.WithBusinessScope(ctx), startTime, endTime, userID, apiKeyID, accountID, groupID, requestType, stream, billingType)
 	if err != nil {
 		return nil, fmt.Errorf("get model stats with filters: %w", err)
 	}
@@ -455,7 +455,7 @@ func (s *DashboardService) GetModelStatsWithFiltersBySource(ctx context.Context,
 	}
 
 	if sourceRepo, ok := s.usageRepo.(modelStatsBySourceRepo); ok {
-		stats, err := sourceRepo.GetModelStatsWithFiltersBySource(ctx, startTime, endTime, userID, apiKeyID, accountID, groupID, requestType, stream, billingType, normalizedSource)
+		stats, err := sourceRepo.GetModelStatsWithFiltersBySource(usagestats.WithBusinessScope(ctx), startTime, endTime, userID, apiKeyID, accountID, groupID, requestType, stream, billingType, normalizedSource)
 		if err != nil {
 			return nil, fmt.Errorf("get model stats with filters by source: %w", err)
 		}
@@ -471,7 +471,7 @@ func (s *DashboardService) GetModelStatsWithUsageFiltersBySource(ctx context.Con
 		GetModelStatsWithUsageFiltersBySource(context.Context, time.Time, time.Time, usagestats.UsageLogFilters, string) ([]usagestats.ModelStat, error)
 	}
 	if repo, ok := s.usageRepo.(modelStatsWithFiltersRepo); ok {
-		stats, err := repo.GetModelStatsWithUsageFiltersBySource(ctx, startTime, endTime, filters, normalizedSource)
+		stats, err := repo.GetModelStatsWithUsageFiltersBySource(usagestats.WithBusinessScope(ctx), startTime, endTime, filters, normalizedSource)
 		if err != nil {
 			return nil, fmt.Errorf("get model stats with usage filters by source: %w", err)
 		}
@@ -481,7 +481,7 @@ func (s *DashboardService) GetModelStatsWithUsageFiltersBySource(ctx context.Con
 }
 
 func (s *DashboardService) GetGroupStatsWithFilters(ctx context.Context, startTime, endTime time.Time, userID, apiKeyID, accountID, groupID int64, requestType *int16, stream *bool, billingType *int8) ([]usagestats.GroupStat, error) {
-	stats, err := s.usageRepo.GetGroupStatsWithFilters(ctx, startTime, endTime, userID, apiKeyID, accountID, groupID, requestType, stream, billingType)
+	stats, err := s.usageRepo.GetGroupStatsWithFilters(usagestats.WithBusinessScope(ctx), startTime, endTime, userID, apiKeyID, accountID, groupID, requestType, stream, billingType)
 	if err != nil {
 		return nil, fmt.Errorf("get group stats with filters: %w", err)
 	}
@@ -493,7 +493,7 @@ func (s *DashboardService) GetGroupStatsWithUsageFilters(ctx context.Context, st
 		GetGroupStatsWithUsageFilters(context.Context, time.Time, time.Time, usagestats.UsageLogFilters) ([]usagestats.GroupStat, error)
 	}
 	if repo, ok := s.usageRepo.(groupStatsWithFiltersRepo); ok {
-		stats, err := repo.GetGroupStatsWithUsageFilters(ctx, startTime, endTime, filters)
+		stats, err := repo.GetGroupStatsWithUsageFilters(usagestats.WithBusinessScope(ctx), startTime, endTime, filters)
 		if err != nil {
 			return nil, fmt.Errorf("get group stats with usage filters: %w", err)
 		}
@@ -570,6 +570,7 @@ func (s *DashboardService) refreshDashboardStatsAsync() {
 }
 
 func (s *DashboardService) fetchDashboardStats(ctx context.Context) (*usagestats.DashboardStats, error) {
+	ctx = usagestats.WithBusinessScope(ctx)
 	if !s.aggEnabled {
 		if fetcher, ok := s.usageRepo.(dashboardStatsRangeFetcher); ok {
 			now := time.Now().UTC()
@@ -675,7 +676,7 @@ func parseStatsUpdatedAt(raw string) time.Time {
 }
 
 func (s *DashboardService) GetAPIKeyUsageTrend(ctx context.Context, startTime, endTime time.Time, granularity string, limit int) ([]usagestats.APIKeyUsageTrendPoint, error) {
-	trend, err := s.usageRepo.GetAPIKeyUsageTrend(ctx, startTime, endTime, granularity, limit)
+	trend, err := s.usageRepo.GetAPIKeyUsageTrend(usagestats.WithBusinessScope(ctx), startTime, endTime, granularity, limit)
 	if err != nil {
 		return nil, fmt.Errorf("get api key usage trend: %w", err)
 	}
@@ -683,7 +684,7 @@ func (s *DashboardService) GetAPIKeyUsageTrend(ctx context.Context, startTime, e
 }
 
 func (s *DashboardService) GetUserUsageTrend(ctx context.Context, startTime, endTime time.Time, granularity string, limit int, metric string) ([]usagestats.UserUsageTrendPoint, error) {
-	trend, err := s.usageRepo.GetUserUsageTrend(ctx, startTime, endTime, granularity, limit, metric)
+	trend, err := s.usageRepo.GetUserUsageTrend(usagestats.WithBusinessScope(ctx), startTime, endTime, granularity, limit, metric)
 	if err != nil {
 		return nil, fmt.Errorf("get user usage trend: %w", err)
 	}
@@ -691,7 +692,7 @@ func (s *DashboardService) GetUserUsageTrend(ctx context.Context, startTime, end
 }
 
 func (s *DashboardService) GetUserSpendingRanking(ctx context.Context, startTime, endTime time.Time, limit int) (*usagestats.UserSpendingRankingResponse, error) {
-	ranking, err := s.usageRepo.GetUserSpendingRanking(ctx, startTime, endTime, limit)
+	ranking, err := s.usageRepo.GetUserSpendingRanking(usagestats.WithBusinessScope(ctx), startTime, endTime, limit)
 	if err != nil {
 		return nil, fmt.Errorf("get user spending ranking: %w", err)
 	}
@@ -699,7 +700,7 @@ func (s *DashboardService) GetUserSpendingRanking(ctx context.Context, startTime
 }
 
 func (s *DashboardService) GetUserBreakdownStats(ctx context.Context, startTime, endTime time.Time, dim usagestats.UserBreakdownDimension, limit int) ([]usagestats.UserBreakdownItem, error) {
-	stats, err := s.usageRepo.GetUserBreakdownStats(ctx, startTime, endTime, dim, limit)
+	stats, err := s.usageRepo.GetUserBreakdownStats(usagestats.WithBusinessScope(ctx), startTime, endTime, dim, limit)
 	if err != nil {
 		return nil, fmt.Errorf("get user breakdown stats: %w", err)
 	}

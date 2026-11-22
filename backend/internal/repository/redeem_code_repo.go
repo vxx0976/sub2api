@@ -517,7 +517,7 @@ func (r *redeemCodeRepository) SumPositiveBalanceByUser(ctx context.Context, use
 
 // SumPositiveValueByDayForTypes 按时区分桶汇总指定 type 列表中、value > 0、status='used'
 // 且 owner_id IS NULL（仅平台码）的兑换码 value 总和。常用于把"通过平台兑换码加余额"
-// 并入资金流入曲线；商户自费码已计入其它口径，此处排除以免双计。
+// 并入资金流入曲线；商户自费码已计入其它口径，此处排除以免双计；管理员自己使用的码不计入经营收入。
 // 返回的 map key 为 "YYYY-MM-DD"（按 tzName 解释 used_at），value 为当日 value 合计（USD）。
 func (r *redeemCodeRepository) SumPositiveValueByDayForTypes(ctx context.Context, startTime, endTime time.Time, tzName string, types []string) (map[string]float64, error) {
 	if r.sql == nil || len(types) == 0 {
@@ -541,6 +541,7 @@ func (r *redeemCodeRepository) SumPositiveValueByDayForTypes(ctx context.Context
 		  AND value > 0
 		  AND owner_id IS NULL
 		  AND type = ANY($4)
+		  AND used_by NOT IN (SELECT id FROM users WHERE role = 'admin')
 		GROUP BY 1
 		ORDER BY 1
 	`
@@ -595,7 +596,8 @@ func (r *redeemCodeRepository) SumManualAdminBalanceByDay(ctx context.Context, s
 		  AND used_at IS NOT NULL
 		  AND used_at >= $1
 		  AND used_at < $2
-		  AND value > 0%s
+		  AND value > 0
+		  AND used_by NOT IN (SELECT id FROM users WHERE role = 'admin')%s
 		GROUP BY 1
 		ORDER BY 1
 	`, notLike.String())

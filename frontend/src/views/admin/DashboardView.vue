@@ -122,6 +122,7 @@
                     :title="t('admin.dashboard.standard')"
                     >${{ formatCost(stats.today_cost) }}</span
                   >
+                  <span class="block text-[11px] text-gray-400 dark:text-gray-500">{{ t('admin.dashboard.financeExcludedAdmin') }}</span>
                 </p>
               </div>
             </div>
@@ -152,6 +153,9 @@
                     :title="t('admin.dashboard.standard')"
                     >${{ formatCost(stats.total_cost) }}</span
                   >
+                  <span class="block text-[11px] text-gray-400 dark:text-gray-500">
+                    {{ stats.finance_start_date ? t('admin.dashboard.financeSince', { date: stats.finance_start_date }) : t('admin.dashboard.financeNoDetails') }}
+                  </span>
                 </p>
               </div>
             </div>

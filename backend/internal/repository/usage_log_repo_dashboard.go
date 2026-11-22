@@ -89,6 +89,11 @@ func (r *usageLogRepository) GetDashboardStats(ctx context.Context) (*DashboardS
 	if err := r.fillDashboardUsageStatsAggregated(ctx, stats, todayStart, now); err != nil {
 		return nil, err
 	}
+	if usagestats.IsBusinessScope(ctx) {
+		if err := r.FillDashboardBusinessCostStats(ctx, stats, todayStart, now); err != nil {
+			return nil, err
+		}
+	}
 
 	rpm, tpm, err := r.getPerformanceStats(ctx, 0)
 	if err != nil {

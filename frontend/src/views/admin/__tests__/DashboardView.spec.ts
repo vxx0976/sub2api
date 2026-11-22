@@ -88,6 +88,7 @@ const createDashboardStats = (): DashboardStats => ({
   today_cost: 0,
   today_actual_cost: 0,
   today_account_cost: 0,
+  finance_start_date: '',
   average_duration_ms: 0,
   uptime: 0,
   rpm: 0,

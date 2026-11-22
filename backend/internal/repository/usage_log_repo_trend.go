@@ -26,6 +26,16 @@ type UserSpendingRankingResponse = usagestats.UserSpendingRankingResponse
 // APIKeyUsageTrendPoint represents API key usage trend data point
 type APIKeyUsageTrendPoint = usagestats.APIKeyUsageTrendPoint
 
+// dashboardBusinessUsageCondition only filters aggregate business views. An explicit
+// user selection retains the full personal history, including administrator usage.
+// userIDColumn is supplied only by internal query builders, never by request input.
+func dashboardBusinessUsageCondition(ctx context.Context, userID int64, userIDColumn string) string {
+	if !usagestats.IsBusinessScope(ctx) || userID > 0 {
+		return ""
+	}
+	return " AND NOT EXISTS (SELECT 1 FROM users dashboard_user WHERE dashboard_user.id = " + userIDColumn + " AND dashboard_user.role = 'admin')"
+}
+
 // GetAPIKeyUsageTrend returns usage trend data grouped by API key and date
 func (r *usageLogRepository) GetAPIKeyUsageTrend(ctx context.Context, startTime, endTime time.Time, granularity string, limit int) (results []APIKeyUsageTrendPoint, err error) {
 	dateFormat := safeDateFormat(granularity)
@@ -34,7 +44,7 @@ func (r *usageLogRepository) GetAPIKeyUsageTrend(ctx context.Context, startTime,
 		WITH top_keys AS (
 			SELECT api_key_id
 			FROM usage_logs
-			WHERE created_at >= $1 AND created_at < $2
+			WHERE created_at >= $1 AND created_at < $2%s
 			GROUP BY api_key_id
 			ORDER BY SUM(input_tokens + output_tokens + cache_creation_tokens + cache_read_tokens) DESC
 			LIMIT $3
@@ -48,10 +58,10 @@ func (r *usageLogRepository) GetAPIKeyUsageTrend(ctx context.Context, startTime,
 		FROM usage_logs u
 		LEFT JOIN api_keys k ON u.api_key_id = k.id
 		WHERE u.api_key_id IN (SELECT api_key_id FROM top_keys)
-		  AND u.created_at >= $4 AND u.created_at < $5
+		  AND u.created_at >= $4 AND u.created_at < $5%s
 		GROUP BY date, u.api_key_id, k.name
 		ORDER BY date ASC, tokens DESC
-	`, dateFormat)
+	`, dashboardBusinessUsageCondition(ctx, 0, "usage_logs.user_id"), dateFormat, dashboardBusinessUsageCondition(ctx, 0, "u.user_id"))
 
 	rows, err := r.sql.QueryContext(ctx, query, startTime, endTime, limit, startTime, endTime)
 	if err != nil {
@@ -93,7 +103,7 @@ func (r *usageLogRepository) GetUserUsageTrend(ctx context.Context, startTime, e
 		WITH top_users AS (
 			SELECT user_id
 			FROM usage_logs
-			WHERE created_at >= $1 AND created_at < $2
+			WHERE created_at >= $1 AND created_at < $2%s
 			GROUP BY user_id
 			ORDER BY %s DESC, user_id ASC
 			LIMIT $3
@@ -110,10 +120,10 @@ func (r *usageLogRepository) GetUserUsageTrend(ctx context.Context, startTime, e
 		FROM usage_logs u
 		LEFT JOIN users us ON u.user_id = us.id
 		WHERE u.user_id IN (SELECT user_id FROM top_users)
-		  AND u.created_at >= $4 AND u.created_at < $5
+		  AND u.created_at >= $4 AND u.created_at < $5%s
 		GROUP BY date, u.user_id, us.email, us.username
 		ORDER BY date ASC, tokens DESC
-	`, rankExpr, dateFormat)
+	`, dashboardBusinessUsageCondition(ctx, 0, "usage_logs.user_id"), rankExpr, dateFormat, dashboardBusinessUsageCondition(ctx, 0, "u.user_id"))
 
 	rows, err := r.sql.QueryContext(ctx, query, startTime, endTime, limit, startTime, endTime)
 	if err != nil {
@@ -149,7 +159,7 @@ func (r *usageLogRepository) GetUserSpendingRanking(ctx context.Context, startTi
 		limit = 12
 	}
 
-	query := `
+	query := fmt.Sprintf(`
 		WITH user_spend AS (
 			SELECT
 				u.user_id,
@@ -160,7 +170,7 @@ func (r *usageLogRepository) GetUserSpendingRanking(ctx context.Context, startTi
 				COALESCE(SUM(u.input_tokens + u.output_tokens + u.cache_creation_tokens + u.cache_read_tokens), 0) as tokens
 			FROM usage_logs u
 			LEFT JOIN users us ON u.user_id = us.id
-			WHERE u.created_at >= $1 AND u.created_at < $2
+			WHERE u.created_at >= $1 AND u.created_at < $2%s
 			GROUP BY u.user_id, us.email, us.username
 		),
 		ranked AS (
@@ -190,7 +200,7 @@ func (r *usageLogRepository) GetUserSpendingRanking(ctx context.Context, startTi
 			total_tokens
 		FROM ranked
 		ORDER BY actual_cost DESC, tokens DESC, user_id ASC
-	`
+	`, dashboardBusinessUsageCondition(ctx, 0, "u.user_id"))
 
 	rows, err := r.sql.QueryContext(ctx, query, startTime, endTime, limit)
 	if err != nil {
@@ -282,7 +292,7 @@ func (r *usageLogRepository) GetUsageTrendWithUsageFilters(ctx context.Context, 
 }
 
 func (r *usageLogRepository) getUsageTrendWithFilters(ctx context.Context, startTime, endTime time.Time, granularity string, userID, apiKeyID, accountID, groupID int64, model string, modelSource string, requestType *int16, stream *bool, billingType *int8, billingMode string, upstreamModelMismatch *bool, nativeCompactionV2 *bool) (results []TrendDataPoint, err error) {
-	if shouldUsePreaggregatedTrend(granularity, userID, apiKeyID, accountID, groupID, model, requestType, stream, billingType, billingMode, upstreamModelMismatch, nativeCompactionV2) {
+	if !usagestats.IsBusinessScope(ctx) && shouldUsePreaggregatedTrend(granularity, userID, apiKeyID, accountID, groupID, model, requestType, stream, billingType, billingMode, upstreamModelMismatch, nativeCompactionV2) {
 		aggregated, aggregatedErr := r.getUsageTrendFromAggregates(ctx, startTime, endTime, granularity)
 		if aggregatedErr == nil && len(aggregated) > 0 {
 			return aggregated, nil
@@ -306,6 +316,7 @@ func (r *usageLogRepository) getUsageTrendWithFilters(ctx context.Context, start
 		WHERE created_at >= $1 AND created_at < $2
 	`, dateFormat)
 
+	query += dashboardBusinessUsageCondition(ctx, userID, "usage_logs.user_id")
 	args := []any{startTime, endTime}
 	if userID > 0 {
 		query += fmt.Sprintf(" AND user_id = $%d", len(args)+1)
@@ -467,6 +478,7 @@ func (r *usageLogRepository) getModelStatsWithFiltersBySource(ctx context.Contex
 		WHERE created_at >= $1 AND created_at < $2
 	`, modelExpr)
 
+	query += dashboardBusinessUsageCondition(ctx, userID, "usage_logs.user_id")
 	args := []any{startTime, endTime}
 	if userID > 0 {
 		query += fmt.Sprintf(" AND user_id = $%d", len(args)+1)
@@ -544,6 +556,7 @@ func (r *usageLogRepository) getGroupStatsWithFilters(ctx context.Context, start
 		WHERE ul.created_at >= $1 AND ul.created_at < $2
 	`
 
+	query += dashboardBusinessUsageCondition(ctx, userID, "ul.user_id")
 	args := []any{startTime, endTime}
 	if userID > 0 {
 		query += fmt.Sprintf(" AND ul.user_id = $%d", len(args)+1)
@@ -629,6 +642,7 @@ func (r *usageLogRepository) GetUserBreakdownStats(ctx context.Context, startTim
 		LEFT JOIN users u ON u.id = ul.user_id
 		WHERE ul.created_at >= $1 AND ul.created_at < $2
 	`
+	query += dashboardBusinessUsageCondition(ctx, dim.UserID, "ul.user_id")
 	args := []any{startTime, endTime}
 
 	if dim.GroupID > 0 {

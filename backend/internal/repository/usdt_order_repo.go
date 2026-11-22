@@ -352,7 +352,7 @@ func (r *usdtOrderRepo) ListPaidByUserIDs(ctx context.Context, userIDs []int64, 
 }
 
 // SumPaidCreditByDay 汇总指定时区下每日 status='paid' 的 credit_amount（供仪表盘财务趋势）。
-// 与 orders/recharge_orders 的同名方法口径一致：按 paid_at 分桶，缺 paid_at 的不计。
+// 与 orders/recharge_orders 的同名方法口径一致：按 paid_at 分桶，缺 paid_at 的不计；管理员充值不计入。
 func (r *usdtOrderRepo) SumPaidCreditByDay(ctx context.Context, startTime, endTime time.Time, tzName string) (map[string]float64, error) {
 	if r.sql == nil {
 		return map[string]float64{}, nil
@@ -369,6 +369,7 @@ func (r *usdtOrderRepo) SumPaidCreditByDay(ctx context.Context, startTime, endTi
 		  AND paid_at IS NOT NULL
 		  AND paid_at >= $1
 		  AND paid_at < $2
+		  AND user_id NOT IN (SELECT id FROM users WHERE role = 'admin')
 		GROUP BY 1
 		ORDER BY 1
 	`

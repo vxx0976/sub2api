@@ -327,6 +327,7 @@ func (r *orderRepo) ListPaidByUserIDs(ctx context.Context, userIDs []int64, limi
 }
 
 // SumPaidCreditByDay 按时区分桶汇总指定区间内 status='paid' 的 AliMPay 订单 credit_amount。
+// 管理员账号的充值不计入经营收入。
 // 返回的 map key 为 "YYYY-MM-DD"（按 tzName 解释 paid_at），value 为当天到账余额合计（USD）。
 // 与 RechargeOrderRepository.SumPaidCreditByDay 共构成资金趋势中的"金钱充值"两条通道。
 func (r *orderRepo) SumPaidCreditByDay(ctx context.Context, startTime, endTime time.Time, tzName string) (map[string]float64, error) {
@@ -345,6 +346,7 @@ func (r *orderRepo) SumPaidCreditByDay(ctx context.Context, startTime, endTime t
 		  AND paid_at IS NOT NULL
 		  AND paid_at >= $1
 		  AND paid_at < $2
+		  AND user_id NOT IN (SELECT id FROM users WHERE role = 'admin')
 		GROUP BY 1
 		ORDER BY 1
 	`
