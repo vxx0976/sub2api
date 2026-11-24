@@ -391,7 +391,7 @@ func (s *AccountTestService) runDegradationProbeSample(ctx context.Context, acco
 	req.Header.Set("Authorization", "Bearer "+apiKey)
 	req.Header.Set("Accept", "text/event-stream")
 	applyOpenAICodexProbeHeaders(req.Header)
-	account.ApplyHeaderOverrides(req.Header)
+	account.ApplyHeaderOverrides(req.Context(), req.Header)
 
 	proxyURL := ""
 	if account.ProxyID != nil && account.Proxy != nil {

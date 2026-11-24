@@ -81,7 +81,11 @@ func TestDashboardFinanceQueriesExcludeAdminUsers(t *testing.T) {
 		name:   "retained business dashboard cost totals",
 		column: "user_id",
 		invoke: func(db *sql.DB) error {
-			return NewUsageLogRepository(nil, db).(*usageLogRepository).FillDashboardBusinessCostStats(ctx, &usagestats.DashboardStats{}, start, end)
+			repo, ok := NewUsageLogRepository(nil, db).(*usageLogRepository)
+			if !ok {
+				return fmt.Errorf("usage log repository has unexpected type")
+			}
+			return repo.FillDashboardBusinessCostStats(ctx, &usagestats.DashboardStats{}, start, end)
 		},
 	})
 
@@ -96,7 +100,11 @@ func TestDashboardFinanceQueriesExcludeAdminUsers(t *testing.T) {
 			})
 			db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(matcher))
 			require.NoError(t, err)
-			defer db.Close()
+			t.Cleanup(func() {
+				if closeErr := db.Close(); closeErr != nil {
+					t.Logf("close mock database: %v", closeErr)
+				}
+			})
 
 			rows := sqlmock.NewRows([]string{"day", "total"})
 			if tt.name == "retained business dashboard cost totals" {

@@ -139,6 +139,7 @@ type CreateAccountRequest struct {
 	ActiveStartTime         *string        `json:"active_start_time"`
 	ActiveEndTime           *string        `json:"active_end_time"`
 	ProbeEnabled            *bool          `json:"upstream_billing_probe_enabled"`
+	GroupSyncEnabled        *bool          `json:"upstream_billing_group_sync_enabled"`
 	ConfirmMixedChannelRisk *bool          `json:"confirm_mixed_channel_risk"` // 用户确认混合渠道风险
 }
 
@@ -162,6 +163,7 @@ type UpdateAccountRequest struct {
 	ActiveStartTime         *string        `json:"active_start_time"`
 	ActiveEndTime           *string        `json:"active_end_time"`
 	ProbeEnabled            *bool          `json:"upstream_billing_probe_enabled"`
+	GroupSyncEnabled        *bool          `json:"upstream_billing_group_sync_enabled"`
 	RateSyncEnabled         *bool          `json:"upstream_billing_rate_sync_enabled"`
 	ConfirmMixedChannelRisk *bool          `json:"confirm_mixed_channel_risk"` // 用户确认混合渠道风险
 }
@@ -1160,6 +1162,7 @@ func (h *AccountHandler) Create(c *gin.Context) {
 			ActiveStartTime:       req.ActiveStartTime,
 			ActiveEndTime:         req.ActiveEndTime,
 			ProbeEnabled:          req.ProbeEnabled,
+			GroupSyncEnabled:      req.GroupSyncEnabled,
 			SkipMixedChannelCheck: skipCheck,
 		})
 		if execErr != nil {
@@ -1294,6 +1297,7 @@ func (h *AccountHandler) Update(c *gin.Context) {
 		ActiveStartTime:       req.ActiveStartTime,
 		ActiveEndTime:         req.ActiveEndTime,
 		ProbeEnabled:          req.ProbeEnabled,
+		GroupSyncEnabled:      req.GroupSyncEnabled,
 		RateSyncEnabled:       req.RateSyncEnabled,
 		SkipMixedChannelCheck: skipCheck,
 	})
